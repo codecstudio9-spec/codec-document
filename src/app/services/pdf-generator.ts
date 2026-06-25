@@ -798,6 +798,22 @@ export class PDFGenerator {
     this.addSpacing(0.8);
   }
 
+  private addImageContain(dataUrl: string, x: number, y: number, width: number, height: number): void {
+    const props = this.doc.getImageProperties(dataUrl);
+    const imgW = Math.max(1, props.width);
+    const imgH = Math.max(1, props.height);
+    const scale = Math.min(width / imgW, height / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const drawX = x + (width - drawW) / 2;
+    const drawY = y + (height - drawH) / 2;
+    const fmt = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+
+    this.doc.setFillColor(255, 255, 255);
+    this.doc.rect(x, y, width, height, 'F');
+    this.doc.addImage(dataUrl, fmt, drawX, drawY, drawW, drawH, undefined, 'FAST');
+  }
+
   private addIdentityAuditPage(selfieDataUrl?: string, idDocDataUrl?: string, _language: 'en' | 'es' = 'en') {
     if (!selfieDataUrl && !idDocDataUrl) return;
 
@@ -859,8 +875,7 @@ export class PDFGenerator {
       const imgY = photoSectionY + 11;
       const imgH = colW - 2;
       try {
-        const fmt = selfieDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(selfieDataUrl, fmt, leftX + 1, imgY, colW - 2, imgH, undefined, 'FAST');
+        this.addImageContain(selfieDataUrl, leftX + 1, imgY, colW - 2, imgH);
       } catch {
         this.doc.setFontSize(7);
         this.doc.setTextColor(148, 163, 184);
@@ -893,8 +908,7 @@ export class PDFGenerator {
 
       const imgY = photoSectionY + 11;
       try {
-        const fmt = idDocDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(idDocDataUrl, fmt, rightX + 1, imgY, colW - 2, imgH, undefined, 'FAST');
+        this.addImageContain(idDocDataUrl, rightX + 1, imgY, colW - 2, imgH);
       } catch {
         this.doc.setFontSize(7);
         this.doc.setTextColor(148, 163, 184);
@@ -1205,8 +1219,7 @@ export class PDFGenerator {
 
       if (sig.signatureDataUrl) {
         try {
-          const fmt = sig.signatureDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-          this.doc.addImage(sig.signatureDataUrl, fmt, imgX, imgY, imgAreaW, IMG_H, undefined, 'FAST');
+          this.addImageContain(sig.signatureDataUrl, imgX, imgY, imgAreaW, IMG_H);
         } catch { /* skip broken image */ }
       }
 
@@ -1352,14 +1365,12 @@ export class PDFGenerator {
     // ── Signature images ──────────────────────────────────────────────────
     if (leftSig?.dataUrl) {
       try {
-        const fmt = leftSig.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(leftSig.dataUrl, fmt, leftX, this.currentY, colW, imgH, undefined, 'FAST');
+        this.addImageContain(leftSig.dataUrl, leftX, this.currentY, colW, imgH);
       } catch { /* skip broken image */ }
     }
     if (rightSig?.dataUrl) {
       try {
-        const fmt = rightSig.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(rightSig.dataUrl, fmt, rightX, this.currentY, colW, imgH, undefined, 'FAST');
+        this.addImageContain(rightSig.dataUrl, rightX, this.currentY, colW, imgH);
       } catch { /* skip broken image */ }
     }
 

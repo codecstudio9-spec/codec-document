@@ -19,6 +19,7 @@ import {
   dataUrlToBlob,
 } from '../../lib/signatureService';
 import { publicSupabase } from '../../lib/supabase';
+import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -188,7 +189,7 @@ function IdentityGate({
 
             {idPhotoDataUrl ? (
               <div className="relative overflow-hidden rounded-xl border border-slate-200">
-                <img src={idPhotoDataUrl} alt="ID" className="w-full max-h-48 object-cover" />
+                <img src={idPhotoDataUrl} alt="ID" className="w-full max-h-48 object-contain bg-white" />
                 <button
                   type="button"
                   onClick={() => idInputRef.current?.click()}
@@ -242,7 +243,7 @@ function IdentityGate({
 
             {selfieDataUrl ? (
               <div className="relative overflow-hidden rounded-xl border border-slate-200">
-                <img src={selfieDataUrl} alt="Selfie" className="w-full max-h-48 object-cover" />
+                <img src={selfieDataUrl} alt="Selfie" className="w-full max-h-48 object-contain bg-white" />
                 <button
                   type="button"
                   onClick={() => selfieInputRef.current?.click()}
@@ -823,7 +824,8 @@ export function GuestSignPage() {
             setUploadingId(true);
             try {
               const dataUrl = await fileToDataUrl(file);
-              setIdPhotoDataUrl(dataUrl);
+              const normalized = await normalizeIdEvidence(dataUrl);
+              setIdPhotoDataUrl(normalized);
               // Best-effort upload to storage
               try {
                 const { error } = await publicSupabase.storage
@@ -840,7 +842,8 @@ export function GuestSignPage() {
             setUploadingSelfie(true);
             try {
               const dataUrl = await fileToDataUrl(file);
-              setSelfieDataUrl(dataUrl);
+              const normalized = await normalizeSelfieEvidence(dataUrl);
+              setSelfieDataUrl(normalized);
               try {
                 const { error } = await publicSupabase.storage
                   .from('documents-bucket')

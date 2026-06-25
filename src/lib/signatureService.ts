@@ -224,8 +224,23 @@ export async function verifySigningTokenPublic(token: string): Promise<{
     return null;
   }
 
-  if (doc.status === 'completed') {
-    console.warn('verifySigningTokenPublic — document already completed');
+  const expiresAt = data.expires_at ? new Date(data.expires_at).getTime() : Number.NaN;
+  if (Number.isFinite(expiresAt) && Date.now() > expiresAt) {
+    console.warn('verifySigningTokenPublic — token expired at:', data.expires_at);
+    return null;
+  }
+
+  const activeStatuses = new Set(['pending_recipient', 'pending', 'sender_signed', 'signing']);
+  const terminalStatuses = new Set(['completed', 'cancelled', 'expired']);
+  const status = String(doc.status || '').toLowerCase();
+
+  if (terminalStatuses.has(status)) {
+    console.warn('verifySigningTokenPublic — document in terminal status:', doc.status);
+    return null;
+  }
+
+  if (!activeStatuses.has(status)) {
+    console.warn('verifySigningTokenPublic — document status is not signable:', doc.status);
     return null;
   }
 

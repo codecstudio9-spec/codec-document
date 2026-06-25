@@ -22,6 +22,7 @@ import { SignaturePad } from '../components/signatures/SignaturePad';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { QRCodeSVG } from 'qrcode.react';
 import { createMobileSignToken, pollMobileSignature, deleteMobileSignToken } from '../services/signature-storage-service';
+import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
 import { incrementSignTransaction } from '../services/user-limits-service';
 import { IntentModal } from '../components/IntentModal';
@@ -519,7 +520,7 @@ export function DocumentGeneratorPage() {
         document_data:   intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
         intent:          intent,
         security_config: config,
-        status:          'pending',
+        status:          'pending_recipient',
       });
       const shareUrl = `${window.location.origin}/sign/${txId}`;
       setTxShareData({ txId, shareUrl, config });
@@ -545,7 +546,7 @@ export function DocumentGeneratorPage() {
         document_data:    intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
         intent:           intent,
         security_config:  pendingSecConfig,
-        status:           'pending',
+        status:           'sender_signed',
         sender_signature: senderSigDataUrl,
       });
       const shareUrl = `${window.location.origin}/sign/${txId}`;
@@ -658,7 +659,7 @@ export function DocumentGeneratorPage() {
     }
   }, [language]);
 
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -668,9 +669,21 @@ export function DocumentGeneratorPage() {
     if (!ctx) return;
     if (activeCameraType === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-    if (activeCameraType === 'selfie') setSelfieDataUrl(dataUrl);
-    else setIdDocDataUrl(dataUrl);
+    const rawDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+    try {
+      if (activeCameraType === 'selfie') {
+        const normalized = await normalizeSelfieEvidence(rawDataUrl);
+        setSelfieDataUrl(normalized);
+      } else {
+        const normalized = await normalizeIdEvidence(rawDataUrl);
+        setIdDocDataUrl(normalized);
+      }
+    } catch {
+      if (activeCameraType === 'selfie') setSelfieDataUrl(rawDataUrl);
+      else setIdDocDataUrl(rawDataUrl);
+    }
+
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setActiveCameraType(null);
@@ -1522,7 +1535,7 @@ export function DocumentGeneratorPage() {
                   <div className="border-t border-slate-100 p-4 space-y-2">
                     <div className="flex justify-center">
                       <div className="relative">
-                        <img src={selfieDataUrl} alt="Selfie" className="size-24 rounded-full object-cover border-4 border-emerald-400 shadow-lg" />
+                        <img src={selfieDataUrl} alt="Selfie" className="size-24 rounded-full object-contain bg-white border-4 border-emerald-400 shadow-lg" />
                         <div className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-emerald-500 shadow">
                           <Check className="size-3.5 text-white" />
                         </div>
@@ -1608,7 +1621,7 @@ export function DocumentGeneratorPage() {
                 {idDocDataUrl && (
                   <div className="border-t border-slate-100 p-4 space-y-2">
                     <div className="overflow-hidden rounded-xl border border-emerald-200 shadow-sm">
-                      <img src={idDocDataUrl} alt="Identity Document" className="w-full object-cover max-h-36" />
+                      <img src={idDocDataUrl} alt="Identity Document" className="w-full object-contain bg-white max-h-36" />
                     </div>
                     <p className="text-center text-[11px] text-emerald-600 font-semibold">{language === 'en' ? 'Document captured ✓' : 'Documento capturado ✓'}</p>
                     <button type="button" onClick={() => { setIdDocDataUrl(''); void startCamera('id'); }} className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-[11px] text-slate-500 transition hover:bg-slate-50">

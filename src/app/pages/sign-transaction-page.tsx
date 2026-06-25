@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { publicSupabase } from '../../lib/supabase';
-import type { SignTransaction, SecurityConfig } from '../services/sign-transaction-service';
+import { isActiveTxStatus, isTerminalTxStatus, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
+import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -131,8 +132,13 @@ export default function SignTransactionPage() {
         setStepIdx(1);
         return;
       }
-      if (data.status === 'completed') {
+      if (isTerminalTxStatus(data.status)) {
         setSteps(['loading', 'already_signed']);
+        setStepIdx(1);
+        return;
+      }
+      if (!isActiveTxStatus(data.status)) {
+        setSteps(['loading', 'error']);
         setStepIdx(1);
         return;
       }
@@ -182,7 +188,7 @@ export default function SignTransactionPage() {
     }
   }, []);
 
-  const capturePhoto = useCallback((target: 'selfie' | 'id') => {
+  const capturePhoto = useCallback(async (target: 'selfie' | 'id') => {
     if (!videoRef.current) return;
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -191,9 +197,19 @@ export default function SignTransactionPage() {
     const ctx = canvas.getContext('2d')!;
     if (target === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    const url = canvas.toDataURL('image/jpeg', 0.85);
-    if (target === 'selfie') setSelfieDataUrl(url);
-    else                     setIdPhotoDataUrl(url);
+
+    const rawUrl = canvas.toDataURL('image/jpeg', 0.9);
+    try {
+      if (target === 'selfie') {
+        setSelfieDataUrl(await normalizeSelfieEvidence(rawUrl));
+      } else {
+        setIdPhotoDataUrl(await normalizeIdEvidence(rawUrl));
+      }
+    } catch {
+      if (target === 'selfie') setSelfieDataUrl(rawUrl);
+      else setIdPhotoDataUrl(rawUrl);
+    }
+
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     setCameraActive(false);
@@ -434,7 +450,7 @@ export default function SignTransactionPage() {
             {selfieDataUrl ? (
               <div className="space-y-3">
                 <div className="rounded-xl overflow-hidden border border-slate-200">
-                  <img src={selfieDataUrl} alt="selfie" className="w-full object-cover max-h-60" />
+                  <img src={selfieDataUrl} alt="selfie" className="w-full object-contain bg-white max-h-60" />
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -505,7 +521,7 @@ export default function SignTransactionPage() {
             {idPhotoDataUrl ? (
               <div className="space-y-3">
                 <div className="rounded-xl overflow-hidden border border-slate-200">
-                  <img src={idPhotoDataUrl} alt="id" className="w-full object-cover max-h-60" />
+                  <img src={idPhotoDataUrl} alt="id" className="w-full object-contain bg-white max-h-60" />
                 </div>
                 <div className="flex gap-2">
                   <button

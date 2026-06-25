@@ -32,7 +32,36 @@
 import { supabase } from '../../lib/supabase';
 
 export type SigningIntent = 'fill_send' | 'fill_self' | 'blank_send' | 'fill_approve';
-export type TxStatus     = 'pending' | 'signing' | 'completed';
+export type TxStatus     =
+  | 'draft'
+  | 'pending'
+  | 'sender_signed'
+  | 'pending_recipient'
+  | 'signing'
+  | 'completed'
+  | 'cancelled'
+  | 'expired';
+
+const ACTIVE_LINK_STATUSES = new Set<TxStatus>([
+  'pending_recipient',
+  'pending',
+  'sender_signed',
+  'signing',
+]);
+
+const TERMINAL_STATUSES = new Set<TxStatus>([
+  'completed',
+  'cancelled',
+  'expired',
+]);
+
+export function isActiveTxStatus(status: string | null | undefined): boolean {
+  return ACTIVE_LINK_STATUSES.has((status ?? 'pending') as TxStatus);
+}
+
+export function isTerminalTxStatus(status: string | null | undefined): boolean {
+  return TERMINAL_STATUSES.has((status ?? '') as TxStatus);
+}
 
 export interface SecurityConfig {
   standardSignature:  boolean;
