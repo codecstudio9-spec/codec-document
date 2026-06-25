@@ -21,6 +21,7 @@ import { SignatureModal } from '../components/signatures/SignatureModal';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
+import { analyzeIdVideo, analyzeSelfieVideo, type CaptureQuality } from '../utils/capture-quality';
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -117,6 +118,8 @@ export default function SignTransactionPage() {
   const [sigModalOpen,  setSigModalOpen]  = useState(false);
   const [cameraActive,  setCameraActive]  = useState(false);
   const [cameraError,   setCameraError]   = useState('');
+  const [selfieQuality, setSelfieQuality] = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
+  const [idQuality, setIdQuality]         = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
   const [submitting,    setSubmitting]    = useState(false);
   const [submitStatus,  setSubmitStatus]  = useState('');
 
@@ -166,9 +169,34 @@ export default function SignTransactionPage() {
     void video.play().catch(e => console.warn('Video play():', e));
   }, [cameraActive, currentStep]);
 
+  useEffect(() => {
+    if (!cameraActive || !videoRef.current) return;
+    let cancelled = false;
+    const check = async () => {
+      const v = videoRef.current;
+      if (!v || cancelled) return;
+      if (currentStep === 'selfie') {
+        const q = await analyzeSelfieVideo(v);
+        if (!cancelled) setSelfieQuality(q);
+      }
+      if (currentStep === 'id') {
+        const q = await analyzeIdVideo(v);
+        if (!cancelled) setIdQuality(q);
+      }
+    };
+    const timer = setInterval(() => { void check(); }, 700);
+    void check();
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [cameraActive, currentStep]);
+
   // ── Camera ─────────────────────────────────────────────────────────────────
   const startCamera = useCallback(async (facing: 'user' | 'environment') => {
     setCameraError('');
+    setSelfieQuality({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
+    setIdQuality({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     try {
@@ -190,6 +218,14 @@ export default function SignTransactionPage() {
 
   const capturePhoto = useCallback(async (target: 'selfie' | 'id') => {
     if (!videoRef.current) return;
+    if (target === 'selfie' && !selfieQuality.ready) {
+      toast.error('Selfie no válida aún. Ajusta encuadre, luz y enfoque.');
+      return;
+    }
+    if (target === 'id' && !idQuality.ready) {
+      toast.error('Foto de ID no válida aún. Asegura 4 esquinas, luz y enfoque.');
+      return;
+    }
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width  = v.videoWidth  || 1280;
@@ -214,7 +250,7 @@ export default function SignTransactionPage() {
     streamRef.current = null;
     setCameraActive(false);
     advance();
-  }, [advance]);
+  }, [advance, idQuality.ready, selfieQuality.ready]);
 
   // ── Final submit ───────────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
@@ -446,6 +482,12 @@ export default function SignTransactionPage() {
             <p className="text-sm text-slate-500">
               Toma una foto clara de tu rostro mirando directamente a la camara.
             </p>
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              <p className="font-semibold">Center your face inside the circle</p>
+              <p>✓ Look directly at camera</p>
+              <p>✓ Remove sunglasses</p>
+              <p>✓ Good lighting</p>
+            </div>
 
             {selfieDataUrl ? (
               <div className="space-y-3">
@@ -470,12 +512,15 @@ export default function SignTransactionPage() {
               </div>
             ) : cameraActive ? (
               <div className="space-y-3">
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-black">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black">
                   <video
                     ref={videoRef} autoPlay playsInline muted
                     className="w-full object-cover"
                     style={{ transform: 'scaleX(-1)', maxHeight: 280 }}
                   />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="size-36 rounded-full border-[3px] border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -486,12 +531,16 @@ export default function SignTransactionPage() {
                   </button>
                   <button
                     onClick={() => capturePhoto('selfie')}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
+                    disabled={!selfieQuality.ready}
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
                     <Camera className="size-4" /> Capturar
                   </button>
                 </div>
+                {!selfieQuality.ready && (
+                  <p className="text-xs text-amber-600 text-center">Captura bloqueada hasta detectar rostro completo con buena luz y enfoque.</p>
+                )}
                 {cameraError && <p className="text-xs text-red-500 text-center">{cameraError}</p>}
               </div>
             ) : (
@@ -517,6 +566,13 @@ export default function SignTransactionPage() {
               Toma una foto clara de tu identificacion oficial vigente (pasaporte, licencia de conducir, INE/IFE).
               Asegurate de que sea legible y sin reflejos.
             </p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+              <p className="font-semibold">Place your ID inside the frame</p>
+              <p>✓ Entire document is visible</p>
+              <p>✓ No glare</p>
+              <p>✓ Good lighting</p>
+              <p>✓ All corners visible</p>
+            </div>
 
             {idPhotoDataUrl ? (
               <div className="space-y-3">
@@ -541,12 +597,15 @@ export default function SignTransactionPage() {
               </div>
             ) : cameraActive ? (
               <div className="space-y-3">
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-black">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black">
                   <video
                     ref={videoRef} autoPlay playsInline muted
                     className="w-full object-cover"
                     style={{ maxHeight: 280 }}
                   />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-xl border-[3px] border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" style={{ width: '82%', height: '72%' }} />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -557,12 +616,16 @@ export default function SignTransactionPage() {
                   </button>
                   <button
                     onClick={() => capturePhoto('id')}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
+                    disabled={!idQuality.ready}
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
                     <Camera className="size-4" /> Capturar
                   </button>
                 </div>
+                {!idQuality.ready && (
+                  <p className="text-xs text-amber-600 text-center">Captura bloqueada hasta detectar documento completo, enfocado y bien iluminado.</p>
+                )}
               </div>
             ) : (
               <button

@@ -37,6 +37,25 @@ function normalizeCorruptedText(input: string): string {
     .replace(/â•/g, '═').replace(/Ã/g, 'í');
 }
 
+function normalizeLanguageSensitiveFields(data: DocumentData, language: 'en' | 'es'): DocumentData {
+  const next: DocumentData = { ...data };
+  const specialRaw = String(next.special_provisions ?? '').trim();
+  const isSpanishNone = /^(ninguna|ninguno|ningun|n\/a|na|no aplica|sin disposiciones)$/i.test(specialRaw);
+  const isEnglishNone = /^(none|no special provisions|n\/a|na)$/i.test(specialRaw);
+
+  if (language === 'en') {
+    if (specialRaw === '' || isSpanishNone || isEnglishNone) {
+      next.special_provisions = 'NONE';
+    }
+  } else if (language === 'es') {
+    if (specialRaw === '' || isSpanishNone || isEnglishNone) {
+      next.special_provisions = 'NINGUNA';
+    }
+  }
+
+  return next;
+}
+
 interface PlacedSig {
   id: string;
   name: string;
@@ -564,7 +583,7 @@ export function PreviewPage() {
 
       let content = templateToUse;
       
-      const dataWithDate = enrichDocumentDataWithDates(data, language);
+      const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(data, language), language);
       
       // Process Handlebars-like conditionals {{#if field}}...{{/if}}
       // Use a safe regex that handles nested content
@@ -649,7 +668,10 @@ export function PreviewPage() {
 
     let exportContent = templateForExport;
     
-    const enrichedData = enrichDocumentDataWithDates(documentData, exportLanguage);
+    const enrichedData = normalizeLanguageSensitiveFields(
+      enrichDocumentDataWithDates(documentData, exportLanguage),
+      exportLanguage,
+    );
     
     // Process Handlebars-like conditionals {{#if field}}...{{/if}}
     exportContent = exportContent.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, fieldName, innerContent) => {
@@ -712,6 +734,35 @@ export function PreviewPage() {
             }))
           : undefined;
 
+      const baseAudit = (auditResponse as any)?.found ? (auditResponse as any).audit : undefined;
+      const locationState = String(
+        (documentData as any)?.state ||
+        (documentData as any)?.governing_state ||
+        selectedState ||
+        '',
+      ).trim();
+      const locationCity = String(
+        (documentData as any)?.city ||
+        (documentData as any)?.property_city ||
+        (documentData as any)?.sale_location_city ||
+        '',
+      ).trim();
+      const locationCountry = String(
+        (documentData as any)?.country ||
+        'United States',
+      ).trim();
+
+      const enrichedAudit = baseAudit
+        ? {
+            ...baseAudit,
+            browser: baseAudit.browser || undefined,
+            operatingSystem: baseAudit.operatingSystem || undefined,
+            country: baseAudit.country || locationCountry || undefined,
+            state: baseAudit.state || locationState || undefined,
+            city: baseAudit.city || locationCity || undefined,
+          }
+        : undefined;
+
       await PDFGenerator.generate({
         content:      exportContent,
         title:        getDocumentTranslation(template.id, 'name', exportLanguage),
@@ -720,7 +771,7 @@ export function PreviewPage() {
         state:        selectedState,
         showWatermark: false,
         branding:     documentBranding,
-        auditLog:     (auditResponse as any)?.found ? (auditResponse as any).audit : undefined,
+        auditLog:     enrichedAudit,
         signatures:   fallbackSigs,
         // Mirror layout sigs for side-by-side block at bottom of document
         leftSig:  placedSignatures.find(s => s.id === 'owner')

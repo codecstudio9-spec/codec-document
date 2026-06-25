@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "validate:legal": "node scripts/validate-legal-content.mjs",
+    "build": "npm run validate:legal && vite build",
     "dev": "vite",
     "dev:server": "npm run dev --prefix server",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",

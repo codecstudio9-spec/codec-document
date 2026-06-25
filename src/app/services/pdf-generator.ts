@@ -29,6 +29,11 @@ interface PDFGeneratorOptions {
     buyerSignedAt?: string;
     guestSignedAt?: string;
     guestUserAgent?: string;
+    browser?: string;
+    operatingSystem?: string;
+    country?: string;
+    state?: string;
+    city?: string;
     signatureDataUrl?: string;
     signatureMethod?: string;
     legalStatus?: string;
@@ -63,6 +68,85 @@ export class PDFGenerator {
   private currentY: number;
   private maxWidth: number;
   private topReservedSpace: number = 0;
+
+  private static getAuditLocale(language: 'en' | 'es'): string {
+    return language === 'es' ? 'es-ES' : 'en-US';
+  }
+
+  private static formatAuditDateTime(input: Date, language: 'en' | 'es'): string {
+    const locale = PDFGenerator.getAuditLocale(language);
+    const date = input.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: language === 'es' ? '2-digit' : 'long',
+      day: '2-digit',
+    });
+    const time = input.toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+    return `${date} ${time}`;
+  }
+
+  private static parseAgent(userAgent?: string): { browser: string; os: string } {
+    const ua = String(userAgent || '').toLowerCase();
+    let browser = 'Unknown';
+    let os = 'Unknown';
+
+    if (ua.includes('edg/')) browser = 'Microsoft Edge';
+    else if (ua.includes('chrome/')) browser = 'Google Chrome';
+    else if (ua.includes('safari/') && !ua.includes('chrome/')) browser = 'Safari';
+    else if (ua.includes('firefox/')) browser = 'Firefox';
+
+    if (ua.includes('windows')) os = 'Windows';
+    else if (ua.includes('mac os')) os = 'macOS';
+    else if (ua.includes('android')) os = 'Android';
+    else if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ios')) os = 'iOS';
+    else if (ua.includes('linux')) os = 'Linux';
+
+    return { browser, os };
+  }
+
+  private static normalizeSignerDisplayName(name: string | undefined, language: 'en' | 'es'): string {
+    const raw = String(name || '').trim();
+    if (!raw) return language === 'es' ? 'ARRRENDATARIO' : 'TENANT';
+
+    const mapEn: Record<string, string> = {
+      DESTINATARIO: 'TENANT',
+      RECIPIENTE: 'TENANT',
+      RECEPTOR: 'TENANT',
+    };
+    const upper = raw.toUpperCase();
+    if (language === 'en' && mapEn[upper]) return mapEn[upper];
+    return raw;
+  }
+
+  private static normalizeSignerRole(role: string | undefined, language: 'en' | 'es'): string {
+    const raw = String(role || '').trim();
+    if (!raw) return language === 'es' ? 'Firmante' : 'Signatory';
+    const upper = raw.toUpperCase();
+
+    const toEn: Record<string, string> = {
+      ARRENDADOR: 'LANDLORD',
+      ARRENDATARIO: 'TENANT',
+      DESTINATARIO: 'TENANT',
+      RECIPIENTE: 'TENANT',
+      FIRMANTE: 'SIGNATORY',
+      RECEPTOR: 'RECIPIENT',
+    };
+    const toEs: Record<string, string> = {
+      LANDLORD: 'ARRENDADOR',
+      TENANT: 'ARRENDATARIO',
+      RECIPIENT: 'RECEPTOR',
+      SIGNATORY: 'FIRMANTE',
+      SIGNER: 'FIRMANTE',
+    };
+
+    if (language === 'en' && toEn[upper]) return toEn[upper];
+    if (language === 'es' && toEs[upper]) return toEs[upper];
+    return raw;
+  }
 
   // Defensive dictionaries for known OCR/template corruption fixes
   private readonly lexicalCorrections: Array<{ pattern: RegExp; replacement: string }> = [
@@ -994,6 +1078,17 @@ export class PDFGenerator {
   private addAuditLogPage(audit?: PDFGeneratorOptions['auditLog'], language: 'en' | 'es' = 'en') {
     if (!audit) return;
 
+    const parsedAgent = PDFGenerator.parseAgent(audit.guestUserAgent);
+    const browser = audit.browser || parsedAgent.browser;
+    const operatingSystem = audit.operatingSystem || parsedAgent.os;
+    const signerName = PDFGenerator.normalizeSignerDisplayName(audit.signerName, language);
+    const guestSignedAt = audit.guestSignedAt
+      ? PDFGenerator.formatAuditDateTime(new Date(audit.guestSignedAt), language)
+      : '-';
+    const buyerSignedAt = audit.buyerSignedAt
+      ? PDFGenerator.formatAuditDateTime(new Date(audit.buyerSignedAt), language)
+      : '-';
+
     this.doc.addPage();
     this.currentY = this.margin;
     this.addText(language === 'es' ? 'CERTIFICADO DE AUDITORÍA' : 'AUDIT CERTIFICATE', 16, 'bold', 'center');
@@ -1009,11 +1104,16 @@ export class PDFGenerator {
     const rows = [
       `${language === 'es' ? 'ID del Documento' : 'Document ID'}: ${audit.documentId || '-'}`,
       `${language === 'es' ? 'Nombre del Comprador' : 'Buyer Name'}: ${audit.buyerName || '-'}`,
-      `${language === 'es' ? 'Nombre del Firmante' : 'Signer Name'}: ${audit.signerName || '-'}`,
+      `${language === 'es' ? 'Nombre del Firmante' : 'Signer Name'}: ${signerName || '-'}`,
       `${language === 'es' ? 'IP del Comprador' : 'Buyer IP'}: ${audit.buyerIp || '-'}`,
       `${language === 'es' ? 'IP del Firmante Invitado' : 'Guest Signer IP'}: ${audit.guestIp || '-'}`,
-      `${language === 'es' ? 'Fecha y Hora del Comprador' : 'Buyer Timestamp'}: ${audit.buyerSignedAt || '-'}`,
-      `${language === 'es' ? 'Fecha y Hora del Firmante Invitado' : 'Guest Timestamp'}: ${audit.guestSignedAt || '-'}`,
+      `${language === 'es' ? 'Fecha y Hora del Comprador' : 'Buyer Timestamp'}: ${buyerSignedAt}`,
+      `${language === 'es' ? 'Fecha y Hora del Firmante Invitado' : 'Guest Timestamp'}: ${guestSignedAt}`,
+      `${language === 'es' ? 'Navegador' : 'Browser'}: ${browser || '-'}`,
+      `${language === 'es' ? 'Sistema Operativo' : 'Operating System'}: ${operatingSystem || '-'}`,
+      `${language === 'es' ? 'País' : 'Country'}: ${audit.country || '-'}`,
+      `${language === 'es' ? 'Estado' : 'State'}: ${audit.state || '-'}`,
+      `${language === 'es' ? 'Ciudad' : 'City'}: ${audit.city || '-'}`,
       `${language === 'es' ? 'Dispositivo del Firmante Invitado' : 'Guest User Agent'}: ${audit.guestUserAgent || '-'}`,
       `${language === 'es' ? 'Método de Firma' : 'Signature Method'}: ${audit.signatureMethod || (language === 'es' ? 'Dispositivo Móvil' : 'Mobile Device')}`,
       `Status: ${audit.legalStatus || 'Documento Validado bajo E-SIGN Act'}`,
@@ -1026,8 +1126,8 @@ export class PDFGenerator {
 
     // Compact legal security footer requested for signed documents
     const securityLine = language === 'es'
-      ? `Firmado electrónicamente por ${audit.buyerEmail || audit.signerName || '-'} el ${audit.guestSignedAt || '-'} desde la IP ${audit.guestIp || '-'}`
-      : `Electronically signed by ${audit.buyerEmail || audit.signerName || '-'} on ${audit.guestSignedAt || '-'} from IP ${audit.guestIp || '-'}`;
+      ? `Firmado electrónicamente por ${audit.buyerEmail || signerName || '-'} el ${guestSignedAt} desde la IP ${audit.guestIp || '-'}`
+      : `Electronically signed by ${audit.buyerEmail || signerName || '-'} on ${guestSignedAt} from IP ${audit.guestIp || '-'}`;
 
     this.addSpacing(0.8);
     this.doc.setTextColor(130, 130, 130);
@@ -1065,8 +1165,12 @@ export class PDFGenerator {
     }
 
     this.currentY += 24;
-    this.addText(`${language === 'es' ? 'Firmante' : 'Signer'}: ${signerName || '-'}`, 10, 'normal', 'left');
-    this.addText(`${language === 'es' ? 'Firmado en' : 'Signed at'}: ${guestSignedAt || '-'}`, 10, 'normal', 'left');
+    const normalizedSigner = PDFGenerator.normalizeSignerDisplayName(signerName, language);
+    const normalizedSignedAt = guestSignedAt
+      ? PDFGenerator.formatAuditDateTime(new Date(guestSignedAt), language)
+      : '-';
+    this.addText(`${language === 'es' ? 'Firmante' : 'Signer'}: ${normalizedSigner || '-'}`, 10, 'normal', 'left');
+    this.addText(`${language === 'es' ? 'Firmado en' : 'Signed at'}: ${normalizedSignedAt}`, 10, 'normal', 'left');
     this.addSpacing(0.3);
   }
 
@@ -1173,12 +1277,10 @@ export class PDFGenerator {
     const PAGE_STOP = PH - M - LEGAL_H - 12;
 
     const now = new Date();
-    const tzLabel = Intl.DateTimeFormat('es-CR', { timeZoneName: 'short' })
+    const locale = PDFGenerator.getAuditLocale(language);
+    const tzLabel = Intl.DateTimeFormat(locale, { timeZoneName: 'short' })
       .formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'UTC';
-    const dateStr = now.toLocaleString('es-CR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    }) + ` ${tzLabel}`;
+    const dateStr = `${PDFGenerator.formatAuditDateTime(now, language)} ${tzLabel}`;
 
     let pageY = START_Y;
 
@@ -1241,7 +1343,7 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(8);
       this.doc.setTextColor(20, 24, 50);
-      const name = (sig.signerName || 'Firmante').toUpperCase().slice(0, 34);
+      const name = PDFGenerator.normalizeSignerDisplayName(sig.signerName || 'Signer', language).toUpperCase().slice(0, 34);
       this.doc.text(name, x + COL_W / 2, textY, { align: 'center' });
       textY += 5;
 
@@ -1249,7 +1351,7 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(7);
       this.doc.setTextColor(90, 105, 233);
-      const role = (sig.signerRole || (language === 'es' ? 'Firmante' : 'Signatory')).toUpperCase().slice(0, 36);
+      const role = PDFGenerator.normalizeSignerRole(sig.signerRole || (language === 'es' ? 'Firmante' : 'Signatory'), language).toUpperCase().slice(0, 36);
       this.doc.text(role, x + COL_W / 2, textY, { align: 'center' });
       textY += 4.5;
 
@@ -1263,10 +1365,7 @@ export class PDFGenerator {
       // Datetime (centered)
       this.doc.setFontSize(6);
       const sigDate = sig.guestSignedAt
-        ? new Date(sig.guestSignedAt).toLocaleString('es-CR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-          }) + ` ${tzLabel}`
+        ? `${PDFGenerator.formatAuditDateTime(new Date(sig.guestSignedAt), language)} ${tzLabel}`
         : dateStr;
       this.doc.text(sigDate, x + COL_W / 2, textY, { align: 'center' });
     });
