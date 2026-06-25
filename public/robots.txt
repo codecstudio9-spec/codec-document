@@ -1,0 +1,19 @@
+# robots.txt for Codec Document
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://codecdocument.com/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Allow indexing of all pages
+Allow: /generate/*
+Allow: /preview/*
+
+# Block unnecessary paths (if any)
+Disallow: /api/
+Disallow: /_*
