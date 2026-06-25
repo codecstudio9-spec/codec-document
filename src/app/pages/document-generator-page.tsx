@@ -23,7 +23,6 @@ import { SignatureModal } from '../components/signatures/SignatureModal';
 import { QRCodeSVG } from 'qrcode.react';
 import { createMobileSignToken, pollMobileSignature, deleteMobileSignToken } from '../services/signature-storage-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
-import { analyzeIdVideo, analyzeSelfieVideo, type CaptureQuality } from '../utils/capture-quality';
 
 import { incrementSignTransaction } from '../services/user-limits-service';
 import { IntentModal } from '../components/IntentModal';
@@ -235,8 +234,6 @@ export function DocumentGeneratorPage() {
   const [idDocDataUrl, setIdDocDataUrl]           = useState('');
   const [activeCameraType, setActiveCameraType]   = useState<'selfie' | 'id' | null>(null);
   const [cameraError, setCameraError]             = useState('');
-  const [selfieQuality, setSelfieQuality]         = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
-  const [idQuality, setIdQuality]                 = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
   const videoRef  = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -372,32 +369,6 @@ export function DocumentGeneratorPage() {
         videoRef.current.play().catch(() => {});
       }
     });
-  }, [activeCameraType]);
-
-  // Guided capture quality checks (bank-style): block capture until quality gates pass.
-  useEffect(() => {
-    if (!activeCameraType || !videoRef.current) return;
-
-    let cancelled = false;
-    const run = async () => {
-      const video = videoRef.current;
-      if (!video || cancelled) return;
-      if (activeCameraType === 'selfie') {
-        const quality = await analyzeSelfieVideo(video);
-        if (!cancelled) setSelfieQuality(quality);
-      } else {
-        const quality = await analyzeIdVideo(video);
-        if (!cancelled) setIdQuality(quality);
-      }
-    };
-
-    const t = setInterval(() => { void run(); }, 700);
-    void run();
-
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
   }, [activeCameraType]);
 
   // Stop camera on unmount
@@ -690,14 +661,6 @@ export function DocumentGeneratorPage() {
 
   const capturePhoto = useCallback(async () => {
     if (!videoRef.current) return;
-    if (activeCameraType === 'selfie' && !selfieQuality.ready) {
-      toast.error(language === 'en' ? 'Selfie quality check failed. Please center your face with better light and focus.' : 'La selfie no cumple validación. Centra tu rostro con mejor luz y enfoque.');
-      return;
-    }
-    if (activeCameraType === 'id' && !idQuality.ready) {
-      toast.error(language === 'en' ? 'ID quality check failed. Ensure all 4 corners are visible, no blur, and good lighting.' : 'La foto de ID no cumple validación. Asegura 4 esquinas visibles, sin desenfoque y con buena iluminación.');
-      return;
-    }
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width  = video.videoWidth  || 640;
@@ -724,7 +687,7 @@ export function DocumentGeneratorPage() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setActiveCameraType(null);
-  }, [activeCameraType, idQuality.ready, language, selfieQuality.ready]);
+  }, [activeCameraType]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -1557,7 +1520,7 @@ export function DocumentGeneratorPage() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <button type="button" onClick={capturePhoto} disabled={!selfieQuality.ready} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed py-3 text-sm font-bold text-white shadow-md shadow-blue-600/30 transition">
+                          <button type="button" onClick={capturePhoto} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/30 transition">
                             <Camera className="size-4" />
                             {language === 'en' ? 'Capture Selfie' : 'Capturar Selfie'}
                           </button>
@@ -1571,13 +1534,6 @@ export function DocumentGeneratorPage() {
                       </button>
                     )}
                     {cameraError && <p className="text-xs text-red-500">{cameraError}</p>}
-                    {activeCameraType === 'selfie' && !selfieQuality.ready && (
-                      <p className="text-xs text-amber-600">
-                        {language === 'en'
-                          ? 'Capture disabled until full face, focus, and lighting checks pass.'
-                          : 'La captura está deshabilitada hasta cumplir rostro completo, enfoque y luz.'}
-                      </p>
-                    )}
                   </div>
                 )}
 
@@ -1658,7 +1614,7 @@ export function DocumentGeneratorPage() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <button type="button" onClick={capturePhoto} disabled={!idQuality.ready} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-950 hover:from-slate-600 hover:to-slate-900 disabled:opacity-40 disabled:cursor-not-allowed py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/30 transition">
+                          <button type="button" onClick={capturePhoto} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-950 hover:from-slate-600 hover:to-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/30 transition">
                             <Camera className="size-4" />
                             {language === 'en' ? 'Capture Document' : 'Capturar Documento'}
                           </button>
@@ -1672,13 +1628,6 @@ export function DocumentGeneratorPage() {
                       </button>
                     )}
                     {cameraError && <p className="text-xs text-red-500">{cameraError}</p>}
-                    {activeCameraType === 'id' && !idQuality.ready && (
-                      <p className="text-xs text-amber-600">
-                        {language === 'en'
-                          ? 'Capture disabled until document corners, focus, and lighting checks pass.'
-                          : 'La captura está deshabilitada hasta cumplir esquinas, enfoque y luz.'}
-                      </p>
-                    )}
                   </div>
                 )}
 

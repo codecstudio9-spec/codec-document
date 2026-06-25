@@ -20,7 +20,6 @@ import {
 } from '../../lib/signatureService';
 import { publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
-import { analyzeImageDataUrl } from '../utils/capture-quality';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -826,11 +825,6 @@ export function GuestSignPage() {
             try {
               const dataUrl = await fileToDataUrl(file);
               const normalized = await normalizeIdEvidence(dataUrl);
-              const quality = await analyzeImageDataUrl(normalized, 'id');
-              if (!quality.ready) {
-                toast.error('La foto del documento no es válida todavía. Asegura 4 esquinas, buena luz y enfoque.');
-                return;
-              }
               setIdPhotoDataUrl(normalized);
               // Best-effort upload to storage
               try {
@@ -849,11 +843,6 @@ export function GuestSignPage() {
             try {
               const dataUrl = await fileToDataUrl(file);
               const normalized = await normalizeSelfieEvidence(dataUrl);
-              const quality = await analyzeImageDataUrl(normalized, 'selfie');
-              if (!quality.ready) {
-                toast.error('La selfie no cumple calidad. Centra el rostro, mejora luz y enfoque.');
-                return;
-              }
               setSelfieDataUrl(normalized);
               try {
                 const { error } = await publicSupabase.storage

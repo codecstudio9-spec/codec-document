@@ -21,7 +21,6 @@ import { SignatureModal } from '../components/signatures/SignatureModal';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
-import { analyzeIdVideo, analyzeSelfieVideo, type CaptureQuality } from '../utils/capture-quality';
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -118,8 +117,6 @@ export default function SignTransactionPage() {
   const [sigModalOpen,  setSigModalOpen]  = useState(false);
   const [cameraActive,  setCameraActive]  = useState(false);
   const [cameraError,   setCameraError]   = useState('');
-  const [selfieQuality, setSelfieQuality] = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
-  const [idQuality, setIdQuality]         = useState<CaptureQuality>({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
   const [submitting,    setSubmitting]    = useState(false);
   const [submitStatus,  setSubmitStatus]  = useState('');
 
@@ -169,34 +166,9 @@ export default function SignTransactionPage() {
     void video.play().catch(e => console.warn('Video play():', e));
   }, [cameraActive, currentStep]);
 
-  useEffect(() => {
-    if (!cameraActive || !videoRef.current) return;
-    let cancelled = false;
-    const check = async () => {
-      const v = videoRef.current;
-      if (!v || cancelled) return;
-      if (currentStep === 'selfie') {
-        const q = await analyzeSelfieVideo(v);
-        if (!cancelled) setSelfieQuality(q);
-      }
-      if (currentStep === 'id') {
-        const q = await analyzeIdVideo(v);
-        if (!cancelled) setIdQuality(q);
-      }
-    };
-    const timer = setInterval(() => { void check(); }, 700);
-    void check();
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [cameraActive, currentStep]);
-
   // ── Camera ─────────────────────────────────────────────────────────────────
   const startCamera = useCallback(async (facing: 'user' | 'environment') => {
     setCameraError('');
-    setSelfieQuality({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
-    setIdQuality({ brightnessOk: false, sharpnessOk: false, subjectOk: false, ready: false, reasons: [] });
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     try {
@@ -218,14 +190,6 @@ export default function SignTransactionPage() {
 
   const capturePhoto = useCallback(async (target: 'selfie' | 'id') => {
     if (!videoRef.current) return;
-    if (target === 'selfie' && !selfieQuality.ready) {
-      toast.error('Selfie no válida aún. Ajusta encuadre, luz y enfoque.');
-      return;
-    }
-    if (target === 'id' && !idQuality.ready) {
-      toast.error('Foto de ID no válida aún. Asegura 4 esquinas, luz y enfoque.');
-      return;
-    }
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width  = v.videoWidth  || 1280;
@@ -250,7 +214,7 @@ export default function SignTransactionPage() {
     streamRef.current = null;
     setCameraActive(false);
     advance();
-  }, [advance, idQuality.ready, selfieQuality.ready]);
+  }, [advance]);
 
   // ── Final submit ───────────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
@@ -531,16 +495,12 @@ export default function SignTransactionPage() {
                   </button>
                   <button
                     onClick={() => capturePhoto('selfie')}
-                    disabled={!selfieQuality.ready}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
                     <Camera className="size-4" /> Capturar
                   </button>
                 </div>
-                {!selfieQuality.ready && (
-                  <p className="text-xs text-amber-600 text-center">Captura bloqueada hasta detectar rostro completo con buena luz y enfoque.</p>
-                )}
                 {cameraError && <p className="text-xs text-red-500 text-center">{cameraError}</p>}
               </div>
             ) : (
@@ -616,16 +576,12 @@ export default function SignTransactionPage() {
                   </button>
                   <button
                     onClick={() => capturePhoto('id')}
-                    disabled={!idQuality.ready}
-                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
                     <Camera className="size-4" /> Capturar
                   </button>
                 </div>
-                {!idQuality.ready && (
-                  <p className="text-xs text-amber-600 text-center">Captura bloqueada hasta detectar documento completo, enfocado y bien iluminado.</p>
-                )}
               </div>
             ) : (
               <button
