@@ -3,13 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { fetchMyPurchasedDocuments, fetchSubscriptionStatus } from '../services/auth-service';
 import { supabase } from '../../lib/supabase';
 import { ensureUserUsageRow } from '../services/usage-service';
-
-// Admin email — full bypass: no quotas, no paywall, all documents free
-const ADMIN_EMAIL = 'douglastabordasanchez@gmail.com';
-
-export function isAdminEmail(email?: string | null): boolean {
-  return (email ?? '').toLowerCase().trim() === ADMIN_EMAIL;
-}
+import { isAdminEmail } from '../utils/admin-access';
 
 type AuthUser = { email: string; name?: string; picture?: string };
 

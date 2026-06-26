@@ -58,6 +58,17 @@ export async function updateDocumentPdfUrl(
   if (error) throw new Error(`updateDocumentPdfUrl: ${error.message}`);
 }
 
+export async function updateDocumentSignedPdfUrl(
+  documentId: string,
+  signedPdfUrl: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('documents')
+    .update({ signed_pdf_url: signedPdfUrl })
+    .eq('id', documentId);
+  if (error) throw new Error(`updateDocumentSignedPdfUrl: ${error.message}`);
+}
+
 export async function finalizeDocument(
   documentId: string,
   signedPdfUrl: string,
@@ -184,14 +195,13 @@ export async function verifySigningTokenPublic(token: string): Promise<{
   documentId: string;
   signerId: string;
   originalPdfUrl: string;
+  signedPdfUrl: string;
   documentName: string;
+  documentStatus: string;
 } | null> {
-  // Do NOT filter by expires_at — a link is valid as long as the document
-  // status is 'pending'. Filtering by expiry caused "Enlace no valido" for
-  // any link older than 48 h even when the document had never been signed.
   const { data, error } = await publicSupabase
     .from('signing_links')
-    .select('document_id, signer_id, expires_at, documents:document_id(name, original_pdf_url, status)')
+    .select('document_id, signer_id, expires_at, documents:document_id(name, original_pdf_url, signed_pdf_url, status)')
     .eq('token', token)
     .maybeSingle();
 
@@ -210,7 +220,7 @@ export async function verifySigningTokenPublic(token: string): Promise<{
     return null;
   }
 
-  const doc = data.documents as { name: string; original_pdf_url: string; status: string } | null;
+  const doc = data.documents as { name: string; original_pdf_url: string; signed_pdf_url?: string | null; status: string } | null;
 
   console.log('Validando transaccion de firma:', {
     id: data.document_id,
@@ -248,7 +258,9 @@ export async function verifySigningTokenPublic(token: string): Promise<{
     documentId:     data.document_id as string,
     signerId:       data.signer_id as string,
     originalPdfUrl: doc.original_pdf_url || '',
+    signedPdfUrl:   doc.signed_pdf_url || '',
     documentName:   doc.name || 'Documento',
+    documentStatus: status,
   };
 }
 
@@ -386,6 +398,16 @@ export interface SignatureToEmbed {
   heightFraction?: number;
 }
 
+export interface EvidenceReportPayload {
+  signerName?: string;
+  signerEmail?: string;
+  selfieDataUrl?: string;
+  idDataUrl?: string;
+  ip?: string;
+  userAgent?: string;
+  signedAt?: string;
+}
+
 async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | null> {
   if (sig.imageUrl?.startsWith('data:')) {
     const base64 = sig.imageUrl.split(',')[1];
@@ -410,11 +432,29 @@ async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | nu
   return null;
 }
 
+async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8Array } | null> {
+  try {
+    const [regularRes, boldRes] = await Promise.all([
+      fetch('/fonts/arial.ttf'),
+      fetch('/fonts/arialbd.ttf'),
+    ]);
+
+    if (!regularRes.ok) return null;
+
+    const regularBytes = new Uint8Array(await regularRes.arrayBuffer());
+    const boldBytes = boldRes.ok ? new Uint8Array(await boldRes.arrayBuffer()) : undefined;
+    return { regular: regularBytes, bold: boldBytes };
+  } catch {
+    return null;
+  }
+}
+
 export async function compilePdfWithSignatures(params: {
   pdfBytes: Uint8Array;
   signatures: SignatureToEmbed[];
   documentId: string;
   fileHash: string;
+  evidence?: EvidenceReportPayload;
 }): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
 
@@ -425,8 +465,15 @@ export async function compilePdfWithSignatures(params: {
 
   const pdfDoc  = await PDFDocument.load(params.pdfBytes.slice(0));
   const pages   = pdfDoc.getPages();
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontReg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBundle = await loadPdfFontBundle();
+  const fontBold = fontBundle?.bold
+    ? await pdfDoc.embedFont(fontBundle.bold)
+    : fontBundle?.regular
+      ? await pdfDoc.embedFont(fontBundle.regular)
+      : await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontReg = fontBundle?.regular
+    ? await pdfDoc.embedFont(fontBundle.regular)
+    : await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   const nowStr = new Intl.DateTimeFormat('es-CO', {
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -604,6 +651,74 @@ export async function compilePdfWithSignatures(params: {
       'Codec Document Security Services - Cryptographic Audit Trail Verification String. Electronically signed document with full legal binding.',
       { x: TX, y: LY + 7, size: 5.5, font: fontReg, color: rgb(0.55, 0.60, 0.72) },
     );
+  }
+
+  if (params.evidence && (params.evidence.selfieDataUrl || params.evidence.idDataUrl)) {
+    const PAGE_W = 595.28;
+    const PAGE_H = 841.89;
+    const evidencePage = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    evidencePage.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: rgb(0.985, 0.987, 0.994) });
+    evidencePage.drawRectangle({ x: 24, y: PAGE_H - 80, width: PAGE_W - 48, height: 56, color: rgb(0.07, 0.08, 0.16) });
+    evidencePage.drawText('EVIDENCIA DE FIRMA', { x: 40, y: PAGE_H - 44, size: 16, font: fontBold, color: rgb(1, 1, 1) });
+    evidencePage.drawText(`Documento: ${params.documentId.toUpperCase()}`, { x: 40, y: PAGE_H - 62, size: 8, font: fontReg, color: rgb(0.85, 0.88, 0.95) });
+
+    const bodyY = PAGE_H - 120;
+    evidencePage.drawText('Datos del firmante', { x: 40, y: bodyY, size: 12, font: fontBold, color: rgb(0.15, 0.18, 0.28) });
+    if (params.evidence.signerName) evidencePage.drawText(`Nombre: ${params.evidence.signerName}`, { x: 40, y: bodyY - 18, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
+    if (params.evidence.signerEmail) evidencePage.drawText(`Correo: ${params.evidence.signerEmail}`, { x: 40, y: bodyY - 34, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
+    if (params.evidence.ip) evidencePage.drawText(`IP: ${params.evidence.ip}`, { x: 40, y: bodyY - 50, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
+    if (params.evidence.signedAt) evidencePage.drawText(`Timestamp: ${params.evidence.signedAt}`, { x: 40, y: bodyY - 66, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
+    if (params.evidence.userAgent) evidencePage.drawText(`Navegador: ${params.evidence.userAgent.substring(0, 120)}`, { x: 40, y: bodyY - 82, size: 7.5, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+
+    const photoBoxY = 140;
+    const photoW = 240;
+    const photoH = 190;
+    const leftX = 40;
+    const rightX = PAGE_W - photoW - 40;
+
+    if (params.evidence.selfieDataUrl) {
+      const selfieBytes = await resolveImageBytes({ imageUrl: params.evidence.selfieDataUrl });
+      if (selfieBytes) {
+        try {
+          const img = await pdfDoc.embedPng(selfieBytes);
+          evidencePage.drawRectangle({ x: leftX, y: photoBoxY, width: photoW, height: photoH, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
+          evidencePage.drawText('Selfie biométrica', { x: leftX + 10, y: photoBoxY + photoH + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
+          const dims = img.size();
+          const aspect = dims.width / dims.height;
+          let drawW = photoW - 16;
+          let drawH = drawW / aspect;
+          if (drawH > photoH - 24) {
+            drawH = photoH - 24;
+            drawW = drawH * aspect;
+          }
+          evidencePage.drawImage(img, { x: leftX + 8 + (photoW - 16 - drawW) / 2, y: photoBoxY + 12 + (photoH - 24 - drawH) / 2, width: drawW, height: drawH });
+        } catch {
+          evidencePage.drawText('Selfie no disponible', { x: leftX + 10, y: photoBoxY + 90, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        }
+      }
+    }
+
+    if (params.evidence.idDataUrl) {
+      const idBytes = await resolveImageBytes({ imageUrl: params.evidence.idDataUrl });
+      if (idBytes) {
+        try {
+          const img = await pdfDoc.embedPng(idBytes);
+          evidencePage.drawRectangle({ x: rightX, y: photoBoxY, width: photoW, height: photoH, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
+          evidencePage.drawText('Documento de identidad', { x: rightX + 10, y: photoBoxY + photoH + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
+          const dims = img.size();
+          const aspect = dims.width / dims.height;
+          let drawW = photoW - 16;
+          let drawH = drawW / aspect;
+          if (drawH > photoH - 24) {
+            drawH = photoH - 24;
+            drawW = drawH * aspect;
+          }
+          evidencePage.drawImage(img, { x: rightX + 8 + (photoW - 16 - drawW) / 2, y: photoBoxY + 12 + (photoH - 24 - drawH) / 2, width: drawW, height: drawH });
+        } catch {
+          evidencePage.drawText('Documento no disponible', { x: rightX + 10, y: photoBoxY + 90, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        }
+      }
+    }
   }
 
   return pdfDoc.save();

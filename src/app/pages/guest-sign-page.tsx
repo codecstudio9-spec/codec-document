@@ -6,6 +6,7 @@ import {
   IdCard, Camera, Upload, Lock,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { toast } from 'sonner';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -17,6 +18,7 @@ import {
   insertAuditLog,
   getPublicIp,
   dataUrlToBlob,
+  compilePdfWithSignatures,
 } from '../../lib/signatureService';
 import { publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
@@ -30,7 +32,9 @@ interface TokenData {
   documentId: string;
   signerId: string;
   originalPdfUrl: string;
+  signedPdfUrl: string;
   documentName: string;
+  documentStatus: string;
 }
 
 type SigningRequirements = { requireIdPhoto: boolean; requireSelfie: boolean };
@@ -358,6 +362,12 @@ export function GuestSignPage() {
   // ── Completion ────────────────────────────────────────────────────────────────
   const [isSigning, setIsSigning] = useState(false);
   const [done, setDone] = useState(false);
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+
+  const isPremiumLimitError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err ?? '');
+    return /freemium|premium|límite|limit|quota|usage/i.test(message);
+  };
 
   // ─── Verify token on mount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -502,7 +512,7 @@ export function GuestSignPage() {
 
       const auditUserAgent = JSON.stringify({ ...browserMeta, geolocation: geoMeta });
 
-      // 4. Persist
+      // 4. Persist signature row and document evidence package
       await insertSignature({
         documentId:   tokenData.documentId,
         signerName:   guestName || 'Invitado',
@@ -513,6 +523,60 @@ export function GuestSignPage() {
       });
 
       try { await updateSignerStatus(tokenData.signerId, 'completed'); } catch { /* non-fatal */ }
+
+      const currentPdfUrl = tokenData.signedPdfUrl || tokenData.originalPdfUrl;
+      if (currentPdfUrl) {
+        try {
+          const pdfResponse = await fetch(currentPdfUrl);
+          const pdfBlob = await pdfResponse.blob();
+          const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
+          const finalBytes = await compilePdfWithSignatures({
+            pdfBytes,
+            signatures: [{
+              imageUrl: dataUrl,
+              signerName: guestName || 'Invitado',
+              signerRole: getSignerRoleLabel(inferDocumentTypeHint(tokenData.documentName), 1, 'es'),
+              page: 1,
+              xFraction: 0.74,
+              yFraction: 0.84,
+              widthFraction: 0.42,
+              heightFraction: 0.24,
+            }],
+            documentId: tokenData.documentId,
+            fileHash: sha256Hash,
+            evidence: {
+              signerName: guestName || 'Invitado',
+              signerEmail: guestEmail || '',
+              selfieDataUrl: selfieDataUrl || undefined,
+              idDataUrl: idPhotoDataUrl || undefined,
+              ip,
+              userAgent: auditUserAgent,
+              signedAt: new Date().toISOString(),
+            },
+          });
+          const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
+          const storagePath = `documents/${tokenData.documentId}/signed.pdf`;
+          const { error: uploadError } = await publicSupabase.storage
+            .from('documents-bucket')
+            .upload(storagePath, finalBlob, { contentType: 'application/pdf', upsert: true });
+          if (uploadError) throw uploadError;
+          const { data: urlData } = publicSupabase.storage.from('documents-bucket').getPublicUrl(storagePath);
+          const signedPdfUrl = urlData?.publicUrl || '';
+          if (signedPdfUrl) {
+            const { error: dbError } = await publicSupabase
+              .from('documents')
+              .update({ signed_pdf_url: signedPdfUrl, status: 'completed' })
+              .eq('id', tokenData.documentId);
+            if (dbError) throw dbError;
+          }
+        } catch (compileErr) {
+          if (isPremiumLimitError(compileErr)) {
+            setPremiumModalOpen(true);
+            throw new Error('PREMIUM_LIMIT');
+          }
+          console.error('No se pudo actualizar el PDF acumulativo:', compileErr);
+        }
+      }
 
       insertAuditLog({
         documentId:  tokenData.documentId,
@@ -529,10 +593,16 @@ export function GuestSignPage() {
         geo: Object.keys(geoMeta).length > 0 ? geoMeta : 'no disponible',
       });
 
-      toast.success('Firma registrada exitosamente.');
+      toast.success('Firma registrada y documento actualizado correctamente.');
       setDone(true);
     } catch (err) {
-      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      const message = err instanceof Error ? err.message : String(err);
+      const isPremiumLimit = isPremiumLimitError(err) || /PREMIUM_LIMIT/i.test(message);
+      if (isPremiumLimit) {
+        setPremiumModalOpen(true);
+      } else {
+        toast.error(`Error: ${message}`);
+      }
     } finally {
       setIsSigning(false);
     }
@@ -878,6 +948,22 @@ export function GuestSignPage() {
             <p className="text-sm font-semibold text-slate-700">Registrando firma…</p>
           </div>
         </div>
+      )}
+
+      {tokenData && (
+        <PremiumDownloadModal
+          open={premiumModalOpen}
+          onOpenChange={setPremiumModalOpen}
+          documentName={tokenData.documentName}
+          documentId={tokenData.documentId}
+          onSuccess={() => {
+            setPremiumModalOpen(false);
+            toast.success('Acceso Premium activado. Puedes volver a intentarlo.');
+          }}
+          language="es"
+          price={7.99}
+          reason="72h_limit"
+        />
       )}
     </div>
   );

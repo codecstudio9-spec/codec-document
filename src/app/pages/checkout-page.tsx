@@ -13,6 +13,7 @@ import { getDocumentTranslation } from '../data/document-translations';
 import { PayPalCheckoutBackend } from '../components/paypal-checkout-backend';
 import { useAuth } from '../contexts/auth-context';
 import { saveMyPurchasedDocument } from '../services/auth-service';
+import { isAdminEmail } from '../utils/admin-access';
 
 const BUNDLE_PRICE = 12;
 const BUNDLE_BONUS_IDS = ['rental-application', 'move-in-checklist'];
@@ -98,10 +99,10 @@ export function CheckoutPage() {
 
   const handleAdminAccess = async () => {
     sessionStorage.setItem('isPurchased', 'true');
-    sessionStorage.setItem('purchaserEmail', 'douglastabordasanchez@gmail.com');
+    sessionStorage.setItem('purchaserEmail', email.trim());
     sessionStorage.setItem('purchasedBundle', 'true');
     localStorage.setItem(`codec_purchase_${purchaseData.template.id}`, 'true');
-    localStorage.setItem('purchaserEmail', 'douglastabordasanchez@gmail.com');
+    localStorage.setItem('purchaserEmail', email.trim());
     BUNDLE_BONUS_IDS.forEach((id) => localStorage.setItem(`codec_purchase_${id}`, 'true'));
 
     if (token) {

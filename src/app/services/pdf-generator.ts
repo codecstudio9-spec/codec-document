@@ -68,6 +68,7 @@ export class PDFGenerator {
   private currentY: number;
   private maxWidth: number;
   private topReservedSpace: number = 0;
+  private unicodeFontReady: Promise<void> | null = null;
 
   private static getAuditLocale(language: 'en' | 'es'): string {
     return language === 'es' ? 'es-ES' : 'en-US';
@@ -87,6 +88,46 @@ export class PDFGenerator {
       hour12: true,
     });
     return `${date} ${time}`;
+  }
+
+  private static async loadFontBase64(fontPath: string): Promise<string | null> {
+    try {
+      const response = await fetch(fontPath);
+      if (!response.ok) return null;
+      const buffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    } catch {
+      return null;
+    }
+  }
+
+  private async ensureUnicodeFont(): Promise<void> {
+    if (this.unicodeFontReady) return this.unicodeFontReady;
+
+    this.unicodeFontReady = (async () => {
+      try {
+        const regularBase64 = await PDFGenerator.loadFontBase64('/fonts/arial.ttf');
+        const boldBase64 = await PDFGenerator.loadFontBase64('/fonts/arialbd.ttf');
+        const boldFallbackBase64 = boldBase64 || regularBase64;
+
+        if (regularBase64) {
+          this.doc.addFileToVFS('CodecArial-Regular.ttf', regularBase64);
+          this.doc.addFont('CodecArial-Regular.ttf', 'helvetica', 'normal');
+        }
+
+        if (boldFallbackBase64) {
+          this.doc.addFileToVFS('CodecArial-Bold.ttf', boldFallbackBase64);
+          this.doc.addFont('CodecArial-Bold.ttf', 'helvetica', 'bold');
+        }
+      } catch {
+        // Fall back to built-in fonts if the bundled TTF cannot be registered.
+      }
+    })();
+
+    return this.unicodeFontReady;
   }
 
   private static parseAgent(userAgent?: string): { browser: string; os: string } {
@@ -270,9 +311,9 @@ export class PDFGenerator {
       .replace(/[­​‌‍﻿]/g, '')
       // Box-drawing characters that appear from template separators
       .replace(/[─-╿]/g, '-')
-      // Remove any remaining non-Latin-1 characters (above U+00FF)
-      // that the Times font cannot encode — strip rather than corrupt PDF.
-      .replace(/[^\x00-\xFF]/g, '');
+      // Preserve accented Latin characters and ñ so the PDF stays readable
+      // with the bundled UTF-8-capable font instead of stripping them.
+      .replace(/\u0000/g, '');
 
     // Normalize checkbox symbols to ASCII for reliable PDF rendering with standard fonts.
     // jsPDF built-in serif fonts may not support Unicode ballot symbols consistently.
@@ -1685,6 +1726,7 @@ export class PDFGenerator {
     const opts = { ...options, signatures: resolvedSigs };
 
     const generator = new PDFGenerator(opts.title);
+    await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
     generator.addLetterhead(opts.letterhead, opts.language);
@@ -1750,6 +1792,7 @@ export class PDFGenerator {
     const opts = { ...options, signatures: resolvedSigs };
 
     const generator = new PDFGenerator(opts.title);
+    await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
     generator.addLetterhead(opts.letterhead, opts.language);

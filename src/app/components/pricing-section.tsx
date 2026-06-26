@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
+import { isAdminEmail } from '../utils/admin-access';
 import { CheckCircle2, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 
 type Product = {
@@ -141,8 +142,6 @@ function ensurePayPalSdk(clientId: string) {
 
   return sdkPromise;
 }
-
-const ADMIN_EMAIL = 'douglastabordasanchez@gmail.com';
 
 export function PricingSection() {
   const { language } = useLanguage();
@@ -433,7 +432,7 @@ export function PricingSection() {
             {isAdmin ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-2">
                 <p className="text-sm font-semibold text-emerald-800">
-                  🛡 Admin bypass — {ADMIN_EMAIL}
+                  🛡 Admin bypass — {user?.email || 'admin'}
                 </p>
                 <button
                   type="button"

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { CheckCircle2, FileText, PenLine, Clock, User } from 'lucide-react';
+import { getSignerRoleLabel } from '../../utils/signer-roles';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -59,7 +60,7 @@ function SignerBlock({ signer, index }: { signer: PreviewSigner; index: number }
           color: signed ? '#065f46' : signer.color,
         }}
       >
-        {signed ? '✓ Firmado' : `Firmante ${index + 1}`}
+        {signed ? '✓ Firmado' : signer.role || `Firmante ${index + 1}`}
       </div>
 
       {signed ? (
@@ -274,11 +275,11 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
           {count === 0 ? (
             <>
               <SignerBlock
-                signer={{ name: 'Firmante 1', color: '#3B82F6', role: 'Firmante principal' }}
+                signer={{ name: 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(null, 0, 'es') }}
                 index={0}
               />
               <SignerBlock
-                signer={{ name: 'Firmante 2', color: '#F59E0B', role: 'Segundo firmante' }}
+                signer={{ name: 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(null, 1, 'es') }}
                 index={1}
               />
             </>

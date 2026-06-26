@@ -22,7 +22,7 @@ import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../../lib/supabase';
 import {
   getPublicIp, sha256Hex, dataUrlToBlob,
-  createDocumentRecord, updateDocumentPdfUrl, uploadPdfToStorage,
+  createDocumentRecord, updateDocumentPdfUrl, updateDocumentSignedPdfUrl, uploadPdfToStorage,
   uploadSignatureImage, insertSignature, createSigner, createSigningLink,
   insertSignaturePositions, finalizeDocument, insertAuditLog,
   getDocumentSignatures, compilePdfWithSignatures,
@@ -31,6 +31,7 @@ import {
   checkGeneratedDocLimit, incrementGeneratedDoc,
   checkUploadedDocLimit, incrementUploadedDoc,
 } from '../services/user-limits-service';
+import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
 type Step = 'upload' | 'creator-sign' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
 
@@ -238,6 +239,8 @@ export function ElectronicSignaturePage() {
   const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
   const [pendingPlacements, setPendingPlacements] = useState<PlacedSignature[] | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<string>('');
+  const resolvedDocumentType = inferDocumentTypeHint(documentType);
 
   // ── Document ───────────────────────────────────────────────────────────────
   const [documentId, setDocumentId] = useState('');
@@ -405,10 +408,12 @@ export function ElectronicSignaturePage() {
   // ── Auto-compile (left=creator, right=guest) ───────────────────────────────
   const doAutoCompile = async (guestDataUrl: string, guestStorageUrl: string) => {
     const W = 0.44, H = 0.30, Y = 0.84;
+    const creatorRole = getSignerRoleLabel(resolvedDocumentType, 0, 'es');
+    const guestRole = getSignerRoleLabel(resolvedDocumentType, 1, 'es');
     const placements: PlacedSignature[] = [
       {
         id: `creator-auto-${Date.now()}`, signerId: 'creator',
-        signerName: creatorName || 'Firmante 1', signerRole: 'Firmante principal', color: '#3B82F6',
+        signerName: creatorName || 'Firmante 1', signerRole: creatorRole, color: '#3B82F6',
         imageDataUrl: creatorSigDataUrl, storageUrl: creatorSigUrl,
         page: pdfPageCountRef.current,
         xFraction: 0.25, yFraction: Y, widthFraction: W, heightFraction: H,
@@ -416,7 +421,7 @@ export function ElectronicSignaturePage() {
       },
       {
         id: `guest-auto-${Date.now() + 1}`, signerId: 'guest',
-        signerName: guestName || 'Firmante 2', signerRole: 'Segundo firmante', color: '#F59E0B',
+        signerName: guestName || 'Firmante 2', signerRole: guestRole, color: '#F59E0B',
         imageDataUrl: guestDataUrl, storageUrl: guestStorageUrl,
         page: pdfPageCountRef.current,
         xFraction: 0.75, yFraction: Y, widthFraction: W, heightFraction: H,
@@ -451,6 +456,7 @@ export function ElectronicSignaturePage() {
       setLoadingMsg('Creando registro…');
       const docId = await createDocumentRecord({ name: file.name.replace(/\.pdf$/i, ''), userId: session?.user?.id ?? null });
       setDocumentId(docId);
+      setDocumentType(file.name.replace(/\.pdf$/i, '').toLowerCase());
       setLoadingMsg('Subiendo al almacenamiento seguro…');
       const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
       const pdfUrl = await uploadPdfToStorage(docId, pdfBlob);
@@ -479,6 +485,25 @@ export function ElectronicSignaturePage() {
       const sigHash = await sha256Hex(await blob.arrayBuffer());
       const ip = await getPublicIp();
       await insertSignature({ documentId, signerName: creatorName || 'Firmante 1', signerEmail: creatorEmail || '', ip, userAgent: navigator.userAgent, signatureUrl: sigUrl });
+      const partialBytes = await compilePdfWithSignatures({
+        pdfBytes: pdfBytes!,
+        signatures: [{
+          imageUrl: dataUrl,
+          signerName: creatorName || 'Firmante 1',
+          signerRole: getSignerRoleLabel(resolvedDocumentType, 0, 'es'),
+          page: pdfPageCountRef.current || 1,
+          xFraction: 0.25,
+          yFraction: 0.84,
+          widthFraction: 0.44,
+          heightFraction: 0.30,
+        }],
+        documentId,
+        fileHash,
+      });
+      const partialBlob = new Blob([partialBytes], { type: 'application/pdf' });
+      const partialSignedUrl = await uploadPdfToStorage(documentId, partialBlob, 'signed.pdf');
+      setSignedPdfUrl(partialSignedUrl);
+      await updateDocumentSignedPdfUrl(documentId, partialSignedUrl);
       await insertAuditLog({ documentId, action: 'creator_signed', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: sigHash });
       toast.success('Firma registrada correctamente.');
       setStep('invite-guest');
@@ -592,14 +617,14 @@ export function ElectronicSignaturePage() {
     if (requireIdPhoto) qp.set('req_id',     '1');
     if (requireSelfie)  qp.set('req_selfie', '1');
     const qs = qp.toString();
-    return `${window.location.origin}/sign/${signingToken}${qs ? '?' + qs : ''}`;
+    return `${window.location.origin}/guest-sign/${signingToken}${qs ? '?' + qs : ''}`;
   })() : '';
   const wizardStep    = toWizardStep(step);
   const isDone        = step === 'done';
 
   const editorSigners: EditorSigner[] = [
-    { id: 'creator', name: creatorName || 'Firmante 1', role: 'Firmante principal', color: '#3B82F6', imageDataUrl: creatorSigDataUrl, storageUrl: creatorSigUrl },
-    { id: 'guest',   name: guestName   || 'Invitado',   role: 'Segundo firmante',   color: '#F59E0B', imageDataUrl: guestSigDataUrl,   storageUrl: guestSigUrl   },
+    { id: 'creator', name: creatorName || 'Firmante 1', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), color: '#3B82F6', imageDataUrl: creatorSigDataUrl, storageUrl: creatorSigUrl },
+    { id: 'guest',   name: guestName   || 'Invitado',   role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), color: '#F59E0B', imageDataUrl: guestSigDataUrl,   storageUrl: guestSigUrl   },
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -773,7 +798,7 @@ export function ElectronicSignaturePage() {
                 pdfBytes={pdfBytes}
                 signers={[
                   {
-                    name: creatorName || 'Firmante 1', color: '#3B82F6', role: 'Firmante principal',
+                    name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'),
                     signatureDataUrl: creatorSigDataUrl || undefined,
                     canSign: !creatorSigDataUrl,
                     onSign: () => {
@@ -781,7 +806,7 @@ export function ElectronicSignaturePage() {
                       setCreatorModalOpen(true);
                     },
                   },
-                  { name: 'Firmante 2', color: '#F59E0B', role: 'Segundo firmante', signatureDataUrl: undefined, canSign: false },
+                  { name: 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
                 ]}
               />
             </div>
@@ -847,8 +872,8 @@ export function ElectronicSignaturePage() {
               <PdfSignaturePreview
                 pdfBytes={pdfBytes}
                 signers={[
-                  { name: creatorName || 'Firmante 1', color: '#3B82F6', role: 'Firmante principal', signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
-                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: 'Segundo firmante',   signatureDataUrl: undefined, canSign: false },
+                  { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
+                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
                 ]}
               />
             </div>
@@ -928,8 +953,8 @@ export function ElectronicSignaturePage() {
               <PdfSignaturePreview
                 pdfBytes={pdfBytes}
                 signers={[
-                  { name: creatorName || 'Firmante 1', color: '#3B82F6', role: 'Firmante principal', signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
-                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: 'Segundo firmante',   signatureDataUrl: guestSigDataUrl || undefined,   canSign: false },
+                  { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
+                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: guestSigDataUrl || undefined, canSign: false },
                 ]}
               />
             </div>

@@ -2,6 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, XCircle, ShieldCheck } from 'lucide-react';
 import { PAYPAL_LEASE_SDK_CLIENT_ID } from '../config/paypal';
+import { isAdminEmail } from '../utils/admin-access';
 
 interface PayPalCheckoutBackendProps {
   amount: number;
@@ -15,8 +16,6 @@ interface PayPalCheckoutBackendProps {
   onAdminAccess?: () => void;
   language: 'en' | 'es';
 }
-
-const ADMIN_EMAIL = 'douglastabordasanchez@gmail.com';
 
 function restoreBodyScroll() {
   document.body.style.overflow = '';
@@ -296,7 +295,7 @@ export function PayPalCheckoutBackend({
   onAdminAccess,
   language,
 }: PayPalCheckoutBackendProps) {
-  const isAdmin = (customerEmail || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const isAdmin = isAdminEmail(customerEmail);
 
   if (isAdmin) {
     return (
