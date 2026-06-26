@@ -403,6 +403,8 @@ export interface EvidenceReportPayload {
   signerEmail?: string;
   selfieDataUrl?: string;
   idDataUrl?: string;
+  idFrontDataUrl?: string;
+  idBackDataUrl?: string;
   ip?: string;
   userAgent?: string;
   signedAt?: string;
@@ -653,7 +655,7 @@ export async function compilePdfWithSignatures(params: {
     );
   }
 
-  if (params.evidence && (params.evidence.selfieDataUrl || params.evidence.idDataUrl)) {
+  if (params.evidence && (params.evidence.selfieDataUrl || params.evidence.idDataUrl || params.evidence.idFrontDataUrl || params.evidence.idBackDataUrl)) {
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
     const evidencePage = pdfDoc.addPage([PAGE_W, PAGE_H]);
@@ -670,55 +672,67 @@ export async function compilePdfWithSignatures(params: {
     if (params.evidence.signedAt) evidencePage.drawText(`Timestamp: ${params.evidence.signedAt}`, { x: 40, y: bodyY - 66, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
     if (params.evidence.userAgent) evidencePage.drawText(`Navegador: ${params.evidence.userAgent.substring(0, 120)}`, { x: 40, y: bodyY - 82, size: 7.5, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
 
-    const photoBoxY = 140;
-    const photoW = 240;
-    const photoH = 190;
+    const selfieSource = params.evidence.selfieDataUrl;
+    const idFrontSource = params.evidence.idFrontDataUrl ?? params.evidence.idDataUrl;
+    const idBackSource = params.evidence.idBackDataUrl;
+
+    const photoTopY = 170;
+    const leftW = 262;
+    const rightW = 232;
     const leftX = 40;
-    const rightX = PAGE_W - photoW - 40;
+    const rightX = PAGE_W - rightW - 40;
+    const leftH = 320;
+    const rightCardH = 148;
+    const rightGap = 24;
 
-    if (params.evidence.selfieDataUrl) {
-      const selfieBytes = await resolveImageBytes({ imageUrl: params.evidence.selfieDataUrl });
-      if (selfieBytes) {
-        try {
-          const img = await pdfDoc.embedPng(selfieBytes);
-          evidencePage.drawRectangle({ x: leftX, y: photoBoxY, width: photoW, height: photoH, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
-          evidencePage.drawText('Selfie biométrica', { x: leftX + 10, y: photoBoxY + photoH + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
-          const dims = img.size();
-          const aspect = dims.width / dims.height;
-          let drawW = photoW - 16;
-          let drawH = drawW / aspect;
-          if (drawH > photoH - 24) {
-            drawH = photoH - 24;
-            drawW = drawH * aspect;
-          }
-          evidencePage.drawImage(img, { x: leftX + 8 + (photoW - 16 - drawW) / 2, y: photoBoxY + 12 + (photoH - 24 - drawH) / 2, width: drawW, height: drawH });
-        } catch {
-          evidencePage.drawText('Selfie no disponible', { x: leftX + 10, y: photoBoxY + 90, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
-        }
-      }
-    }
+    const drawEvidenceCard = async (title: string, subtitle: string, sourceUrl: string | undefined, x: number, y: number, width: number, height: number) => {
+      evidencePage.drawRectangle({ x, y, width, height, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
+      evidencePage.drawRectangle({ x, y: y + height - 3, width, height: 3, color: rgb(0.35, 0.41, 0.91) });
+      evidencePage.drawText(title, { x: x + 10, y: y + height + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
+      evidencePage.drawText(subtitle, { x: x + 10, y: y - 12, size: 7, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
 
-    if (params.evidence.idDataUrl) {
-      const idBytes = await resolveImageBytes({ imageUrl: params.evidence.idDataUrl });
-      if (idBytes) {
-        try {
-          const img = await pdfDoc.embedPng(idBytes);
-          evidencePage.drawRectangle({ x: rightX, y: photoBoxY, width: photoW, height: photoH, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
-          evidencePage.drawText('Documento de identidad', { x: rightX + 10, y: photoBoxY + photoH + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
-          const dims = img.size();
-          const aspect = dims.width / dims.height;
-          let drawW = photoW - 16;
-          let drawH = drawW / aspect;
-          if (drawH > photoH - 24) {
-            drawH = photoH - 24;
-            drawW = drawH * aspect;
-          }
-          evidencePage.drawImage(img, { x: rightX + 8 + (photoW - 16 - drawW) / 2, y: photoBoxY + 12 + (photoH - 24 - drawH) / 2, width: drawW, height: drawH });
-        } catch {
-          evidencePage.drawText('Documento no disponible', { x: rightX + 10, y: photoBoxY + 90, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
-        }
+      if (!sourceUrl) {
+        evidencePage.drawText('Evidencia no disponible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        return;
       }
-    }
+
+      const bytes = await resolveImageBytes({ imageUrl: sourceUrl });
+      if (!bytes) {
+        evidencePage.drawText('Evidencia no disponible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let img: any;
+      try { img = await pdfDoc.embedPng(bytes); }
+      catch { try { img = await pdfDoc.embedJpg(bytes); } catch { img = null; } }
+      if (!img) {
+        evidencePage.drawText('Formato de imagen no compatible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        return;
+      }
+
+      const dims = img.size() as { width: number; height: number };
+      const maxW = width - 16;
+      const maxH = height - 24;
+      const aspect = dims.width / dims.height;
+      let drawW = maxW;
+      let drawH = maxW / aspect;
+      if (drawH > maxH) {
+        drawH = maxH;
+        drawW = drawH * aspect;
+      }
+
+      evidencePage.drawImage(img, {
+        x: x + 8 + (maxW - drawW) / 2,
+        y: y + 12 + (maxH - drawH) / 2,
+        width: drawW,
+        height: drawH,
+      });
+    };
+
+    await drawEvidenceCard('Selfie biométrica', 'Captura de validación facial', selfieSource, leftX, photoTopY, leftW, leftH);
+    await drawEvidenceCard('Documento de identidad (Frente)', 'Cara frontal del documento oficial', idFrontSource, rightX, photoTopY + rightCardH + rightGap, rightW, rightCardH);
+    await drawEvidenceCard('Documento de identidad (Reverso)', 'Cara posterior con zona de lectura/código', idBackSource, rightX, photoTopY, rightW, rightCardH);
   }
 
   return pdfDoc.save();

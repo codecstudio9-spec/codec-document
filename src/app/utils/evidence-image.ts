@@ -72,7 +72,8 @@ export async function normalizeSelfieEvidence(dataUrl: string): Promise<string> 
   const img = await loadImage(dataUrl);
   const face = await detectSingleFace(dataUrl);
 
-  const outSize = 150;
+  // Keep high native detail for PDF embedding while preventing oversized payloads.
+  const outSize = Math.max(256, Math.min(1080, Math.min(img.width, img.height)));
   const canvas = document.createElement('canvas');
   canvas.width = outSize;
   canvas.height = outSize;
@@ -96,8 +97,11 @@ export async function normalizeSelfieEvidence(dataUrl: string): Promise<string> 
 export async function normalizeIdEvidence(dataUrl: string): Promise<string> {
   const img = await loadImage(dataUrl);
 
-  const outW = 300;
-  const outH = 190;
+  // Preserve ID legibility at HD-level resolution without unnecessary upscaling.
+  const targetMaxW = 1920;
+  const targetMaxH = 1210;
+  const outW = Math.max(480, Math.min(targetMaxW, img.width));
+  const outH = Math.max(300, Math.min(targetMaxH, img.height));
   const canvas = document.createElement('canvas');
   canvas.width = outW;
   canvas.height = outH;

@@ -396,7 +396,8 @@ export function PreviewPage() {
   const [exportLanguage, setExportLanguage] = useState<'en' | 'es'>('en');
   const [placedSignatures, setPlacedSignatures] = useState<PlacedSig[]>([]);
   const [identitySelfie, setIdentitySelfie] = useState<string | undefined>();
-  const [identityIdDoc, setIdentityIdDoc] = useState<string | undefined>();
+  const [identityIdDocFront, setIdentityIdDocFront] = useState<string | undefined>();
+  const [identityIdDocBack, setIdentityIdDocBack] = useState<string | undefined>();
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'download' | 'sign' | null>(null);
   const [selectedState, setSelectedState] = useState<string>('');
@@ -502,9 +503,14 @@ export function PreviewPage() {
 
       // Identity verification photos from Step 3
       const identitySelfie = sessionStorage.getItem('identitySelfie') || undefined;
-      const identityIdDoc = sessionStorage.getItem('identityIdDoc') || undefined;
+      const identityIdDocFront =
+        sessionStorage.getItem('identityIdDocFront') ||
+        sessionStorage.getItem('identityIdDoc') ||
+        undefined;
+      const identityIdDocBack = sessionStorage.getItem('identityIdDocBack') || undefined;
       if (identitySelfie) setIdentitySelfie(identitySelfie);
-      if (identityIdDoc) setIdentityIdDoc(identityIdDoc);
+      if (identityIdDocFront) setIdentityIdDocFront(identityIdDocFront);
+      if (identityIdDocBack) setIdentityIdDocBack(identityIdDocBack);
     } else {
       navigate(`/generator/${documentType}`);
     }
@@ -783,7 +789,8 @@ export function PreviewPage() {
         mirrorLayout: true,
         mirrorLanguage: exportLanguage,
         identitySelfie,
-        identityIdDoc,
+        identityIdDocFront,
+        identityIdDocBack,
       });
     }
 

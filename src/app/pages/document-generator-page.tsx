@@ -31,6 +31,21 @@ import { createSignTransaction, subscribeToTransaction, type SigningIntent, type
 
 type FlowStep = 'form' | 'sign' | 'verify';
 
+function parseIdEvidencePayload(value?: string): { front?: string; back?: string } {
+  if (!value) return {};
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{')) return { front: value };
+  try {
+    const parsed = JSON.parse(trimmed) as { front?: string; back?: string; idFront?: string; idBack?: string };
+    return {
+      front: parsed.front || parsed.idFront || undefined,
+      back: parsed.back || parsed.idBack || undefined,
+    };
+  } catch {
+    return { front: value };
+  }
+}
+
 interface CoSigner {
   id: string;
   name: string;
@@ -605,8 +620,19 @@ export function DocumentGeneratorPage() {
         sessionStorage.removeItem('identitySelfie');
       }
       if (activeTx.recipient_id_photo) {
-        sessionStorage.setItem('identityIdDoc', activeTx.recipient_id_photo);
+        const parsedId = parseIdEvidencePayload(activeTx.recipient_id_photo);
+        if (parsedId.front) {
+          sessionStorage.setItem('identityIdDocFront', parsedId.front);
+          sessionStorage.setItem('identityIdDoc', parsedId.front);
+        } else {
+          sessionStorage.removeItem('identityIdDocFront');
+          sessionStorage.removeItem('identityIdDoc');
+        }
+        if (parsedId.back) sessionStorage.setItem('identityIdDocBack', parsedId.back);
+        else sessionStorage.removeItem('identityIdDocBack');
       } else {
+        sessionStorage.removeItem('identityIdDocFront');
+        sessionStorage.removeItem('identityIdDocBack');
         sessionStorage.removeItem('identityIdDoc');
       }
 
@@ -647,8 +673,8 @@ export function DocumentGeneratorPage() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: type === 'selfie'
-          ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-          : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          ? { facingMode: 'user', width: { ideal: 1920, max: 3840 }, height: { ideal: 1080, max: 2160 } }
+          : { facingMode: { ideal: 'environment' }, width: { ideal: 1920, max: 3840 }, height: { ideal: 1080, max: 2160 } },
       });
       streamRef.current = stream;
       setActiveCameraType(type);
@@ -663,8 +689,8 @@ export function DocumentGeneratorPage() {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width  = video.videoWidth  || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width  = video.videoWidth  || 1920;
+    canvas.height = video.videoHeight || 1080;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     if (activeCameraType === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
@@ -700,8 +726,14 @@ export function DocumentGeneratorPage() {
     // Persist identity images for PDF audit page
     if (selfieDataUrl) sessionStorage.setItem('identitySelfie', selfieDataUrl);
     else sessionStorage.removeItem('identitySelfie');
-    if (idDocDataUrl) sessionStorage.setItem('identityIdDoc', idDocDataUrl);
-    else sessionStorage.removeItem('identityIdDoc');
+    if (idDocDataUrl) {
+      sessionStorage.setItem('identityIdDocFront', idDocDataUrl);
+      sessionStorage.setItem('identityIdDoc', idDocDataUrl);
+    } else {
+      sessionStorage.removeItem('identityIdDocFront');
+      sessionStorage.removeItem('identityIdDoc');
+    }
+    sessionStorage.removeItem('identityIdDocBack');
 
     sessionStorage.setItem('isPurchased', 'true');
     if (coSigners.length > 0) {

@@ -60,7 +60,7 @@ async function fetchTx(id: string): Promise<SignTransaction | null> {
  */
 async function uploadEvidenceImage(
   txId: string,
-  type: 'selfie' | 'id',
+  type: 'selfie' | 'id_front' | 'id_back',
   dataUrl: string,
 ): Promise<string> {
   try {
@@ -111,7 +111,9 @@ export default function SignTransactionPage() {
 
   const [signatureDataUrl, setSignatureDataUrl] = useState('');
   const [selfieDataUrl,    setSelfieDataUrl]     = useState('');
-  const [idPhotoDataUrl,   setIdPhotoDataUrl]    = useState('');
+  const [idFrontDataUrl,   setIdFrontDataUrl]    = useState('');
+  const [idBackDataUrl,    setIdBackDataUrl]     = useState('');
+  const [idCaptureSide,    setIdCaptureSide]     = useState<'front' | 'back'>('front');
   const [esignAccepted,    setEsignAccepted]     = useState(false);
 
   const [sigModalOpen,  setSigModalOpen]  = useState(false);
@@ -175,8 +177,8 @@ export default function SignTransactionPage() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facing,
-          width:  { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
         },
         audio: false,
       });
@@ -188,12 +190,12 @@ export default function SignTransactionPage() {
     }
   }, []);
 
-  const capturePhoto = useCallback(async (target: 'selfie' | 'id') => {
+  const capturePhoto = useCallback(async (target: 'selfie' | 'id_front' | 'id_back') => {
     if (!videoRef.current) return;
     const v = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width  = v.videoWidth  || 1280;
-    canvas.height = v.videoHeight || 720;
+    canvas.width  = v.videoWidth  || 1920;
+    canvas.height = v.videoHeight || 1080;
     const ctx = canvas.getContext('2d')!;
     if (target === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
@@ -202,19 +204,21 @@ export default function SignTransactionPage() {
     try {
       if (target === 'selfie') {
         setSelfieDataUrl(await normalizeSelfieEvidence(rawUrl));
+      } else if (target === 'id_front') {
+        setIdFrontDataUrl(await normalizeIdEvidence(rawUrl));
       } else {
-        setIdPhotoDataUrl(await normalizeIdEvidence(rawUrl));
+        setIdBackDataUrl(await normalizeIdEvidence(rawUrl));
       }
     } catch {
       if (target === 'selfie') setSelfieDataUrl(rawUrl);
-      else setIdPhotoDataUrl(rawUrl);
+      else if (target === 'id_front') setIdFrontDataUrl(rawUrl);
+      else setIdBackDataUrl(rawUrl);
     }
 
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     setCameraActive(false);
-    advance();
-  }, [advance]);
+  }, []);
 
   // ── Final submit ───────────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
@@ -250,10 +254,16 @@ export default function SignTransactionPage() {
       selfieValue = await uploadEvidenceImage(tx.id, 'selfie', selfieDataUrl);
     }
 
-    let idPhotoValue: string | undefined;
-    if (idPhotoDataUrl) {
-      setSubmitStatus('Procesando foto de ID...');
-      idPhotoValue = await uploadEvidenceImage(tx.id, 'id', idPhotoDataUrl);
+    let idFrontValue: string | undefined;
+    if (idFrontDataUrl) {
+      setSubmitStatus('Procesando frente de ID...');
+      idFrontValue = await uploadEvidenceImage(tx.id, 'id_front', idFrontDataUrl);
+    }
+
+    let idBackValue: string | undefined;
+    if (idBackDataUrl) {
+      setSubmitStatus('Procesando reverso de ID...');
+      idBackValue = await uploadEvidenceImage(tx.id, 'id_back', idBackDataUrl);
     }
 
     // ── Step 3: Build exact UPDATE payload ────────────────────────────────────
@@ -264,7 +274,11 @@ export default function SignTransactionPage() {
       signed_at:           new Date().toISOString(),
     };
     if (selfieValue)       updatePayload.recipient_selfie       = selfieValue;
-    if (idPhotoValue)      updatePayload.recipient_id_photo     = idPhotoValue;
+    if (idFrontValue || idBackValue) {
+      updatePayload.recipient_id_photo = idBackValue
+        ? JSON.stringify({ front: idFrontValue ?? '', back: idBackValue })
+        : (idFrontValue ?? '');
+    }
     if (esignAccepted)     updatePayload.esign_consent_accepted = true;
     if (recipientIp)       updatePayload.recipient_ip           = recipientIp;
 
@@ -520,38 +534,61 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <CreditCard className="size-5 text-blue-600 shrink-0" />
-              Foto de Documento de Identidad Oficial
+              Documento de Identidad (Frente y Reverso)
             </h2>
             <p className="text-sm text-slate-500">
-              Toma una foto clara de tu identificacion oficial vigente (pasaporte, licencia de conducir, INE/IFE).
-              Asegurate de que sea legible y sin reflejos.
+              Captura ambas caras de tu documento oficial en alta definición para completar la verificación legal.
             </p>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-              <p className="font-semibold">Place your ID inside the frame</p>
+              <p className="font-semibold">Captura requerida: frente y reverso</p>
               <p>✓ Entire document is visible</p>
               <p>✓ No glare</p>
               <p>✓ Good lighting</p>
               <p>✓ All corners visible</p>
             </div>
 
-            {idPhotoDataUrl ? (
+            {(idFrontDataUrl || idBackDataUrl) && !cameraActive ? (
               <div className="space-y-3">
-                <div className="rounded-xl overflow-hidden border border-slate-200">
-                  <img src={idPhotoDataUrl} alt="id" className="w-full object-contain bg-white max-h-60" />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                    {idFrontDataUrl ? (
+                      <img src={idFrontDataUrl} alt="id-front" className="w-full object-contain bg-white max-h-52" />
+                    ) : (
+                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">Frente pendiente</div>
+                    )}
+                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">Frente</p>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
+                    {idBackDataUrl ? (
+                      <img src={idBackDataUrl} alt="id-back" className="w-full object-contain bg-white max-h-52" />
+                    ) : (
+                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">Reverso pendiente</div>
+                    )}
+                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">Reverso</p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { setIdPhotoDataUrl(''); startCamera('environment'); }}
+                    onClick={() => { setIdCaptureSide('front'); void startCamera('environment'); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    Repetir foto
+                    {idFrontDataUrl ? 'Repetir frente' : 'Capturar frente'}
                   </button>
                   <button
+                    onClick={() => { setIdCaptureSide('back'); void startCamera('environment'); }}
+                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    {idBackDataUrl ? 'Repetir reverso' : 'Capturar reverso'}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
                     onClick={advance}
+                    disabled={!idFrontDataUrl || !idBackDataUrl}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white hover:brightness-110 transition-all"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    Usar esta foto
+                    Continuar
                   </button>
                 </div>
               </div>
@@ -575,21 +612,21 @@ export default function SignTransactionPage() {
                     <X className="size-4" /> Cancelar
                   </button>
                   <button
-                    onClick={() => capturePhoto('id')}
+                    onClick={() => capturePhoto(idCaptureSide === 'front' ? 'id_front' : 'id_back')}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    <Camera className="size-4" /> Capturar
+                    <Camera className="size-4" /> {idCaptureSide === 'front' ? 'Capturar frente' : 'Capturar reverso'}
                   </button>
                 </div>
               </div>
             ) : (
               <button
-                onClick={() => startCamera('environment')}
+                onClick={() => { setIdCaptureSide('front'); void startCamera('environment'); }}
                 className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:brightness-110 transition-all"
                 style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
               >
-                <CreditCard className="size-4" /> Fotografiar Documento de Identidad
+                <CreditCard className="size-4" /> Fotografiar Frente del Documento
               </button>
             )}
           </div>

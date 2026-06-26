@@ -52,6 +52,8 @@ interface PDFGeneratorOptions {
   }>;
   identitySelfie?: string;
   identityIdDoc?: string;
+  identityIdDocFront?: string;
+  identityIdDocBack?: string;
 }
 
 /**
@@ -939,8 +941,13 @@ export class PDFGenerator {
     this.doc.addImage(dataUrl, fmt, drawX, drawY, drawW, drawH, undefined, 'FAST');
   }
 
-  private addIdentityAuditPage(selfieDataUrl?: string, idDocDataUrl?: string, _language: 'en' | 'es' = 'en') {
-    if (!selfieDataUrl && !idDocDataUrl) return;
+  private addIdentityAuditPage(
+    selfieDataUrl?: string,
+    idDocFrontDataUrl?: string,
+    idDocBackDataUrl?: string,
+    _language: 'en' | 'es' = 'en',
+  ) {
+    if (!selfieDataUrl && !idDocFrontDataUrl && !idDocBackDataUrl) return;
 
     this.doc.addPage();
     const PW = this.pageWidth;
@@ -976,77 +983,57 @@ export class PDFGenerator {
     });
     this.currentY += 5;
 
-    // Photo section
-    const colW = (PW - M * 2 - 8) / 2;
+    // Photo section: selfie on the left, ID front/back stacked on the right.
+    const leftW = (PW - M * 2 - 10) * 0.52;
+    const rightW = (PW - M * 2 - 10) - leftW;
     const leftX = M;
-    const rightX = M + colW + 8;
+    const rightX = leftX + leftW + 10;
     const photoSectionY = this.currentY;
+    const topCardH = 62;
+    const bottomCardY = photoSectionY + topCardH + 8;
 
-    if (selfieDataUrl) {
+    const drawPhotoCard = (title: string, dataUrl: string | undefined, x: number, y: number, w: number, h: number, note: string) => {
       this.doc.setFillColor(248, 250, 252);
       this.doc.setDrawColor(226, 232, 240);
       this.doc.setLineWidth(0.3);
-      this.doc.roundedRect(leftX, photoSectionY, colW, colW + 12, 2, 2, 'FD');
+      this.doc.roundedRect(x, y, w, h, 2, 2, 'FD');
 
       this.doc.setFillColor(37, 99, 235);
-      this.doc.roundedRect(leftX, photoSectionY, colW, 3, 2, 2, 'F');
-      this.doc.rect(leftX, photoSectionY + 1, colW, 2, 'F');
+      this.doc.roundedRect(x, y, w, 3, 2, 2, 'F');
+      this.doc.rect(x, y + 1, w, 2, 'F');
 
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(7);
       this.doc.setTextColor(37, 99, 235);
-      this.doc.text('VALIDATION SELFIE', leftX + colW / 2, photoSectionY + 8, { align: 'center' });
+      this.doc.text(title, x + w / 2, y + 8, { align: 'center' });
 
-      const imgY = photoSectionY + 11;
-      const imgH = colW - 2;
-      try {
-        this.addImageContain(selfieDataUrl, leftX + 1, imgY, colW - 2, imgH);
-      } catch {
+      const imgY = y + 11;
+      const imgH = h - 20;
+      if (dataUrl) {
+        try {
+          this.addImageContain(dataUrl, x + 1, imgY, w - 2, imgH);
+        } catch {
+          this.doc.setFontSize(7);
+          this.doc.setTextColor(148, 163, 184);
+          this.doc.text('[Image unavailable]', x + w / 2, imgY + imgH / 2, { align: 'center' });
+        }
+      } else {
         this.doc.setFontSize(7);
         this.doc.setTextColor(148, 163, 184);
-        this.doc.text('[Selfie image unavailable]', leftX + colW / 2, imgY + imgH / 2, { align: 'center' });
+        this.doc.text('[Not provided]', x + w / 2, imgY + imgH / 2, { align: 'center' });
       }
 
       this.doc.setFont('helvetica', 'normal');
-      this.doc.setFontSize(6.5);
+      this.doc.setFontSize(6.3);
       this.doc.setTextColor(100, 116, 139);
-      this.doc.text("Signer's face captured via front camera", leftX + colW / 2, photoSectionY + colW + 10, { align: 'center' });
-    }
+      this.doc.text(note, x + w / 2, y + h - 3, { align: 'center' });
+    };
 
-    if (idDocDataUrl) {
-      const imgH = Math.round(colW * 0.65);
-      const cardH = imgH + 20;
+    drawPhotoCard('VALIDATION SELFIE', selfieDataUrl, leftX, photoSectionY, leftW, topCardH * 2 + 8, "Signer's face via front camera");
+    drawPhotoCard('ID FRONT', idDocFrontDataUrl, rightX, photoSectionY, rightW, topCardH, 'Government ID - front side');
+    drawPhotoCard('ID BACK', idDocBackDataUrl, rightX, bottomCardY, rightW, topCardH, 'Government ID - back side');
 
-      this.doc.setFillColor(248, 250, 252);
-      this.doc.setDrawColor(226, 232, 240);
-      this.doc.setLineWidth(0.3);
-      this.doc.roundedRect(rightX, photoSectionY, colW, cardH, 2, 2, 'FD');
-
-      this.doc.setFillColor(37, 99, 235);
-      this.doc.roundedRect(rightX, photoSectionY, colW, 3, 2, 2, 'F');
-      this.doc.rect(rightX, photoSectionY + 1, colW, 2, 'F');
-
-      this.doc.setFont('helvetica', 'bold');
-      this.doc.setFontSize(7);
-      this.doc.setTextColor(37, 99, 235);
-      this.doc.text('GOVERNMENT-ISSUED ID', rightX + colW / 2, photoSectionY + 8, { align: 'center' });
-
-      const imgY = photoSectionY + 11;
-      try {
-        this.addImageContain(idDocDataUrl, rightX + 1, imgY, colW - 2, imgH);
-      } catch {
-        this.doc.setFontSize(7);
-        this.doc.setTextColor(148, 163, 184);
-        this.doc.text('[ID image unavailable]', rightX + colW / 2, imgY + imgH / 2, { align: 'center' });
-      }
-
-      this.doc.setFont('helvetica', 'normal');
-      this.doc.setFontSize(6.5);
-      this.doc.setTextColor(100, 116, 139);
-      this.doc.text('Passport / License / National ID', rightX + colW / 2, photoSectionY + cardH - 3, { align: 'center' });
-    }
-
-    this.currentY = photoSectionY + colW + 20;
+    this.currentY = photoSectionY + topCardH * 2 + 18;
 
     // Audit data table
     const now = new Date();
@@ -1483,10 +1470,12 @@ export class PDFGenerator {
     rightSig?: { dataUrl: string; name: string },
     language: 'en' | 'es' = 'en',
     identitySelfie?: string,
-    identityIdDoc?: string,
+    identityIdDocFront?: string,
+    identityIdDocBack?: string,
   ) {
     if (!leftSig && !rightSig) return;
 
+    const identityIdDoc = identityIdDocFront || identityIdDocBack;
     const hasIdentity = !!(identitySelfie || identityIdDoc);
     // Space needed: sigs (~44) + optional compact identity strip (~32)
     const needed = hasIdentity ? 78 : 58;
@@ -1738,7 +1727,14 @@ export class PDFGenerator {
     if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
-      generator.addSignatureMirrorBlock(opts.leftSig, opts.rightSig, opts.mirrorLanguage ?? opts.language, opts.identitySelfie, opts.identityIdDoc);
+      generator.addSignatureMirrorBlock(
+        opts.leftSig,
+        opts.rightSig,
+        opts.mirrorLanguage ?? opts.language,
+        opts.identitySelfie,
+        opts.identityIdDocFront ?? opts.identityIdDoc,
+        opts.identityIdDocBack,
+      );
       if (after) generator.processContent(after);
     } else {
       generator.processContent(cleanContent);
@@ -1755,8 +1751,13 @@ export class PDFGenerator {
     }
 
     // Identity verification page (separate page when photos exist)
-    if (opts.identitySelfie || opts.identityIdDoc) {
-      generator.addIdentityAuditPage(opts.identitySelfie, opts.identityIdDoc, opts.language);
+    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
+      generator.addIdentityAuditPage(
+        opts.identitySelfie,
+        opts.identityIdDocFront ?? opts.identityIdDoc,
+        opts.identityIdDocBack,
+        opts.language,
+      );
     }
 
     // Optional audit certificate page

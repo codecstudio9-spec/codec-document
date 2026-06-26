@@ -119,29 +119,34 @@ function fileToDataUrl(file: File): Promise<string> {
 // ─── Identity gate overlay ────────────────────────────────────────────────────
 function IdentityGate({
   requirements,
-  idPhotoDataUrl, selfieDataUrl,
-  idPhotoReady, selfieReady,
-  uploadingId, uploadingSelfie,
-  onIdPhotoSelect, onSelfieSelect, onContinue, onBack,
+  idFrontDataUrl, idBackDataUrl, selfieDataUrl,
+  idFrontReady, idBackReady, selfieReady,
+  uploadingIdFront, uploadingIdBack, uploadingSelfie,
+  onIdFrontSelect, onIdBackSelect, onSelfieSelect, onContinue, onBack,
 }: {
   documentId: string;
   requirements: SigningRequirements;
-  idPhotoDataUrl: string;
+  idFrontDataUrl: string;
+  idBackDataUrl: string;
   selfieDataUrl: string;
-  idPhotoReady: boolean;
+  idFrontReady: boolean;
+  idBackReady: boolean;
   selfieReady: boolean;
-  uploadingId: boolean;
+  uploadingIdFront: boolean;
+  uploadingIdBack: boolean;
   uploadingSelfie: boolean;
-  onIdPhotoSelect: (file: File) => Promise<void>;
+  onIdFrontSelect: (file: File) => Promise<void>;
+  onIdBackSelect: (file: File) => Promise<void>;
   onSelfieSelect:  (file: File) => Promise<void>;
   onContinue: () => void;
   onBack: () => void;
 }) {
   const canContinue =
-    (!requirements.requireIdPhoto || idPhotoReady) &&
+    (!requirements.requireIdPhoto || (idFrontReady && idBackReady)) &&
     (!requirements.requireSelfie  || selfieReady);
 
-  const idInputRef     = useRef<HTMLInputElement>(null);
+  const idFrontInputRef = useRef<HTMLInputElement>(null);
+  const idBackInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -182,52 +187,96 @@ function IdentityGate({
         {requirements.requireIdPhoto && (
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className={`flex size-10 items-center justify-center rounded-xl ${idPhotoReady ? 'bg-emerald-100' : 'bg-indigo-50'}`}>
-                {idPhotoReady ? <CheckCircle2 className="size-5 text-emerald-600" /> : <IdCard className="size-5 text-indigo-600" />}
+              <div className={`flex size-10 items-center justify-center rounded-xl ${(idFrontReady && idBackReady) ? 'bg-emerald-100' : 'bg-indigo-50'}`}>
+                {(idFrontReady && idBackReady) ? <CheckCircle2 className="size-5 text-emerald-600" /> : <IdCard className="size-5 text-indigo-600" />}
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-900">Documento de identidad</p>
-                <p className="text-[11px] text-slate-400">Cédula, pasaporte o licencia (foto clara)</p>
+                <p className="text-sm font-bold text-slate-900">Documento de identidad (2 caras)</p>
+                <p className="text-[11px] text-slate-400">Frente y reverso obligatorios para validación legal</p>
               </div>
             </div>
 
-            {idPhotoDataUrl ? (
-              <div className="relative overflow-hidden rounded-xl border border-slate-200">
-                <img src={idPhotoDataUrl} alt="ID" className="w-full max-h-48 object-contain bg-white" />
-                <button
-                  type="button"
-                  onClick={() => idInputRef.current?.click()}
-                  className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
-                >
-                  Cambiar
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled={uploadingId}
-                onClick={() => idInputRef.current?.click()}
-                className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50 disabled:opacity-50"
-              >
-                {uploadingId ? (
-                  <Loader className="size-6 animate-spin text-indigo-400" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                {idFrontDataUrl ? (
+                  <div className="relative overflow-hidden rounded-xl border border-slate-200">
+                    <img src={idFrontDataUrl} alt="ID front" className="w-full max-h-48 object-contain bg-white" />
+                    <button
+                      type="button"
+                      onClick={() => idFrontInputRef.current?.click()}
+                      className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
+                    >
+                      Cambiar frente
+                    </button>
+                  </div>
                 ) : (
-                  <>
-                    <Upload className="size-6 text-indigo-400" />
-                    <span className="text-xs font-semibold text-indigo-600">Toca para subir foto del documento</span>
-                    <span className="text-[10px] text-slate-400">JPG, PNG, HEIC · Máx 10 MB</span>
-                  </>
+                  <button
+                    type="button"
+                    disabled={uploadingIdFront}
+                    onClick={() => idFrontInputRef.current?.click()}
+                    className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50 disabled:opacity-50"
+                  >
+                    {uploadingIdFront ? (
+                      <Loader className="size-6 animate-spin text-indigo-400" />
+                    ) : (
+                      <>
+                        <Upload className="size-6 text-indigo-400" />
+                        <span className="text-xs font-semibold text-indigo-600">Subir frente del documento</span>
+                        <span className="text-[10px] text-slate-400">JPG, PNG, HEIC · Máx 10 MB</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
+              </div>
+
+              <div>
+                {idBackDataUrl ? (
+                  <div className="relative overflow-hidden rounded-xl border border-slate-200">
+                    <img src={idBackDataUrl} alt="ID back" className="w-full max-h-48 object-contain bg-white" />
+                    <button
+                      type="button"
+                      onClick={() => idBackInputRef.current?.click()}
+                      className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
+                    >
+                      Cambiar reverso
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={uploadingIdBack}
+                    onClick={() => idBackInputRef.current?.click()}
+                    className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50 disabled:opacity-50"
+                  >
+                    {uploadingIdBack ? (
+                      <Loader className="size-6 animate-spin text-indigo-400" />
+                    ) : (
+                      <>
+                        <Upload className="size-6 text-indigo-400" />
+                        <span className="text-xs font-semibold text-indigo-600">Subir reverso del documento</span>
+                        <span className="text-[10px] text-slate-400">JPG, PNG, HEIC · Máx 10 MB</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
 
             <input
-              ref={idInputRef}
+              ref={idFrontInputRef}
               type="file"
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void onIdPhotoSelect(f); e.target.value = ''; }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void onIdFrontSelect(f); e.target.value = ''; }}
+            />
+            <input
+              ref={idBackInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void onIdBackSelect(f); e.target.value = ''; }}
             />
           </div>
         )}
@@ -305,7 +354,12 @@ function IdentityGate({
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ShieldCheck className="size-5" />
-          {canContinue ? 'Continuar a Firmar' : `Sube ${[requirements.requireIdPhoto && !idPhotoReady ? 'el documento de ID' : '', requirements.requireSelfie && !selfieReady ? 'la selfie' : ''].filter(Boolean).join(' y ')} para continuar`}
+          {canContinue
+            ? 'Continuar a Firmar'
+            : `Sube ${[
+              requirements.requireIdPhoto && (!idFrontReady || !idBackReady) ? 'frente y reverso del ID' : '',
+              requirements.requireSelfie && !selfieReady ? 'la selfie' : '',
+            ].filter(Boolean).join(' y ')} para continuar`}
         </button>
       </div>
     </div>
@@ -352,11 +406,14 @@ export function GuestSignPage() {
   const reqSelfie      = urlParams.get('req_selfie') === '1';
   const requirements   = { requireIdPhoto: reqIdPhoto, requireSelfie: reqSelfie };
   const [showIdGate, setShowIdGate] = useState(false);
-  const [idPhotoDataUrl, setIdPhotoDataUrl] = useState('');
+  const [idFrontDataUrl, setIdFrontDataUrl] = useState('');
+  const [idBackDataUrl, setIdBackDataUrl] = useState('');
   const [selfieDataUrl, setSelfieDataUrl]   = useState('');
-  const [idPhotoReady, setIdPhotoReady]     = useState(false);
+  const [idFrontReady, setIdFrontReady]     = useState(false);
+  const [idBackReady, setIdBackReady]       = useState(false);
   const [selfieReady, setSelfieReady]       = useState(false);
-  const [uploadingId, setUploadingId]       = useState(false);
+  const [uploadingIdFront, setUploadingIdFront] = useState(false);
+  const [uploadingIdBack, setUploadingIdBack] = useState(false);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
 
   // ── Completion ────────────────────────────────────────────────────────────────
@@ -548,7 +605,9 @@ export function GuestSignPage() {
               signerName: guestName || 'Invitado',
               signerEmail: guestEmail || '',
               selfieDataUrl: selfieDataUrl || undefined,
-              idDataUrl: idPhotoDataUrl || undefined,
+              idDataUrl: idFrontDataUrl || undefined,
+              idFrontDataUrl: idFrontDataUrl || undefined,
+              idBackDataUrl: idBackDataUrl || undefined,
               ip,
               userAgent: auditUserAgent,
               signedAt: new Date().toISOString(),
@@ -870,7 +929,7 @@ export function GuestSignPage() {
           type="button"
           disabled={!hasScrolledToEnd}
           onClick={() => {
-            const needsGate = (requirements.requireIdPhoto && !idPhotoReady) || (requirements.requireSelfie && !selfieReady);
+            const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
             if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
           }}
           className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
@@ -884,29 +943,49 @@ export function GuestSignPage() {
         <IdentityGate
           documentId={tokenData.documentId}
           requirements={requirements}
-          idPhotoDataUrl={idPhotoDataUrl}
+          idFrontDataUrl={idFrontDataUrl}
+          idBackDataUrl={idBackDataUrl}
           selfieDataUrl={selfieDataUrl}
-          idPhotoReady={idPhotoReady}
+          idFrontReady={idFrontReady}
+          idBackReady={idBackReady}
           selfieReady={selfieReady}
-          uploadingId={uploadingId}
+          uploadingIdFront={uploadingIdFront}
+          uploadingIdBack={uploadingIdBack}
           uploadingSelfie={uploadingSelfie}
-          onIdPhotoSelect={async (file) => {
-            setUploadingId(true);
+          onIdFrontSelect={async (file) => {
+            setUploadingIdFront(true);
             try {
               const dataUrl = await fileToDataUrl(file);
               const normalized = await normalizeIdEvidence(dataUrl);
-              setIdPhotoDataUrl(normalized);
+              setIdFrontDataUrl(normalized);
               // Best-effort upload to storage
               try {
                 const { error } = await publicSupabase.storage
                   .from('documents-bucket')
-                  .upload(`validations/${tokenData.documentId}/id_photo.jpg`, file, { upsert: true, contentType: file.type });
+                  .upload(`validations/${tokenData.documentId}/id_front.jpg`, file, { upsert: true, contentType: file.type });
                 if (error) throw error;
               } catch { /* non-fatal — data URL serves as proof */ }
-              setIdPhotoReady(true);
-              toast.success('Documento de identidad registrado.');
+              setIdFrontReady(true);
+              toast.success('Frente del documento registrado.');
             } catch { toast.error('No se pudo procesar la imagen.'); }
-            finally { setUploadingId(false); }
+            finally { setUploadingIdFront(false); }
+          }}
+          onIdBackSelect={async (file) => {
+            setUploadingIdBack(true);
+            try {
+              const dataUrl = await fileToDataUrl(file);
+              const normalized = await normalizeIdEvidence(dataUrl);
+              setIdBackDataUrl(normalized);
+              try {
+                const { error } = await publicSupabase.storage
+                  .from('documents-bucket')
+                  .upload(`validations/${tokenData.documentId}/id_back.jpg`, file, { upsert: true, contentType: file.type });
+                if (error) throw error;
+              } catch { /* non-fatal */ }
+              setIdBackReady(true);
+              toast.success('Reverso del documento registrado.');
+            } catch { toast.error('No se pudo procesar la imagen.'); }
+            finally { setUploadingIdBack(false); }
           }}
           onSelfieSelect={async (file) => {
             setUploadingSelfie(true);
