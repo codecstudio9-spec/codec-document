@@ -83,9 +83,11 @@ export function getSignerRoleLabel(
   language: SignerRoleLanguage = 'es',
   fallback?: string,
 ) {
+  const genericRoles = getGenericSignerRoles(language);
+  const fallbackRole = String(fallback || '').trim();
   const roles = getDocumentSignerRoles(documentType, language);
 
-  if (signerIndex === 0) return roles.primary || fallback || getGenericSignerRoles(language).primary;
-  if (signerIndex === 1) return roles.secondary || fallback || getGenericSignerRoles(language).secondary;
-  return roles.tertiary || fallback || getGenericSignerRoles(language).tertiary;
+  if (signerIndex === 0) return String(roles.primary || fallbackRole || genericRoles.primary || '').trim() || (language === 'es' ? 'Firmante' : 'Signer');
+  if (signerIndex === 1) return String(roles.secondary || fallbackRole || genericRoles.secondary || '').trim() || (language === 'es' ? 'Firmante' : 'Signer');
+  return String(roles.tertiary || fallbackRole || genericRoles.tertiary || '').trim() || (language === 'es' ? 'Firmante' : 'Signer');
 }

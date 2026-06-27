@@ -31,6 +31,7 @@ import {
   checkGeneratedDocLimit, incrementGeneratedDoc,
   checkUploadedDocLimit, incrementUploadedDoc,
 } from '../services/user-limits-service';
+import { checkDownloadAllowed } from '../services/download-gate-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
 type Step = 'upload' | 'creator-sign' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
@@ -155,6 +156,8 @@ function ShareHub({
     `Estimado ${guestName || 'firmante'},\n\nCodec Document le ha enviado el documento "${docName}" para su revisión y firma electrónica segura.\n\nAcceda al enlace para firmar:\n${link}\n\nEste enlace expirará en 48 horas.\n\nAtentamente,\nCodec Document`,
   );
   const mailtoUrl = `mailto:${guestEmail}?subject=${mailSubject}&body=${mailBody}`;
+
+  if (!link?.trim()) return null;
 
   const handleCopy = () => {
     void navigator.clipboard.writeText(link);
@@ -440,10 +443,10 @@ export function ElectronicSignaturePage() {
     if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
       setError('Solo se permiten archivos PDF.'); return;
     }
-    if (!bypassUsageCheck && session?.user?.id && !isAdmin) {
+    if (!bypassUsageCheck && !isAdmin) {
       try {
-        const s = await checkUploadedDocLimit(session.user.id, false);
-        if (!s.allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
+        const allowed = await checkDownloadAllowed(session?.user?.id ?? null);
+        if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
       } catch { /* fail open */ }
     }
     setError(''); setIsLoading(true); setLoadingMsg('Procesando documento…');
@@ -455,6 +458,11 @@ export function ElectronicSignaturePage() {
       const hash = await sha256Hex(arrayBuffer); setFileHash(hash);
       setLoadingMsg('Creando registro…');
       const docId = await createDocumentRecord({ name: file.name.replace(/\.pdf$/i, ''), userId: session?.user?.id ?? null });
+      if (!docId) {
+        setPendingFile(file);
+        setPaywallContext('upload');
+        return;
+      }
       setDocumentId(docId);
       setDocumentType(file.name.replace(/\.pdf$/i, '').toLowerCase());
       setLoadingMsg('Subiendo al almacenamiento seguro…');

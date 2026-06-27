@@ -38,6 +38,7 @@ export function QRShareModal({ open, onOpenChange, link, onCopy }: QRShareModalP
   }, [open]);
 
   if (!open) return null;
+  if (!link?.trim()) return null;
 
   const handleCopy = () => {
     onCopy();

@@ -653,8 +653,8 @@ export function PreviewPage() {
     }
 
     // Gate: check 72-hour rolling quota for free users
-    if (!canDownloadFree && user?.id) {
-      const allowed = await checkDownloadAllowed(user.id);
+    if (!canDownloadFree) {
+      const allowed = await checkDownloadAllowed(user?.id ?? null);
       if (!allowed) {
         setPendingAction('download');
         setPremiumModalOpen(true);

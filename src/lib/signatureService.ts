@@ -30,10 +30,25 @@ export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
 // ─── Documents ─────────────────────────────────────────────────────────────
 // Schema: id, user_id, original_pdf_url, signed_pdf_url, status, created_at, name, description
 
+async function checkUsageLimit(userId?: string | null): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('check_user_usage_limit', {
+      p_user_id: userId || null,
+    });
+    if (error) return true;
+    return Boolean(data);
+  } catch {
+    return true;
+  }
+}
+
 export async function createDocumentRecord(params: {
   name: string;
   userId?: string | null;
 }): Promise<string> {
+  const usageAllowed = await checkUsageLimit(params.userId ?? null);
+  if (!usageAllowed) return '';
+
   const { data, error } = await supabase
     .from('documents')
     .insert({

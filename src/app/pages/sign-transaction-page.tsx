@@ -378,7 +378,9 @@ export default function SignTransactionPage() {
   }
 
   // ── Main signing flow ──────────────────────────────────────────────────────
-  const docName = tx?.document_type?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? 'Documento';
+  const docName = tx?.document_type
+    ? tx.document_type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'Documento';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -406,7 +408,9 @@ export default function SignTransactionPage() {
             <FileText className="size-5 text-blue-600" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-800 text-sm leading-snug">{docName}</p>
+            <p className="font-bold text-slate-800 text-sm leading-snug">
+              <span>{docName}</span>
+            </p>
             <p className="text-xs text-slate-500 mt-0.5">
               Se requiere tu firma para completar este documento
             </p>
