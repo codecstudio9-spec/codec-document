@@ -1,4 +1,5 @@
 import { ShieldCheck, Download, FileCheck } from 'lucide-react';
+import { triggerDownloadFromUrl } from '../../utils/download';
 
 interface SignedSuccessScreenProps {
   onFinish: () => void;
@@ -54,16 +55,18 @@ export function SignedSuccessScreen({
           {/* Download + Finish buttons */}
           <div className="mt-7 flex flex-col gap-3">
             {downloadUrl && (
-              <a
-                href={downloadUrl}
-                download={`${documentName}.pdf`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => {
+                  void triggerDownloadFromUrl(downloadUrl, `${documentName}.pdf`).catch(() => {
+                    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+                  });
+                }}
                 className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.35)] transition hover:from-emerald-500 hover:to-teal-500"
               >
                 <Download className="size-4" />
                 Descargar PDF certificado
-              </a>
+              </button>
             )}
             <button
               type="button"

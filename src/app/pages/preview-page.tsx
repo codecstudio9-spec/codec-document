@@ -26,6 +26,7 @@ import { incrementGeneratedDoc } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { checkDownloadAllowed, recordDownloadEvent } from '../services/download-gate-service';
 import { getDocumentPrice } from '../config/paypal';
+import { triggerDownload } from '../utils/download';
 
 function normalizeCorruptedText(input: string): string {
   if (!input) return input;
@@ -976,7 +977,8 @@ export function PreviewPage() {
       }
 
       renderCertificationPage(pdf, inlineSigs, documentHash, exportLanguage, PW, PH, M);
-      pdf.save(fileName);
+      const blob = pdf.output('blob');
+      await triggerDownload(blob, fileName);
       return true;
     } catch (err) {
       console.warn('High-fidelity PDF failed, falling back:', err);
