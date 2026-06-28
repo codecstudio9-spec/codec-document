@@ -989,7 +989,9 @@ export function PreviewPage() {
           height:          clone.scrollHeight,
         });
       } finally {
-        document.body.removeChild(offscreen);
+        if (offscreen.parentNode) {
+          offscreen.parentNode.removeChild(offscreen);
+        }
       }
 
       if (!captured || captured.width === 0 || captured.height === 0) return false;
