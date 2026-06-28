@@ -426,7 +426,9 @@ export interface EvidenceReportPayload {
 }
 
 async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | null> {
-  if (sig.imageUrl?.startsWith('data:')) {
+  if (!sig?.imageUrl) return null;
+
+  if (sig.imageUrl.startsWith('data:')) {
     const base64 = sig.imageUrl.split(',')[1];
     if (base64) {
       try {
@@ -434,19 +436,39 @@ async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | nu
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         return bytes;
-      } catch { /* fall through */ }
+      } catch {
+        return null;
+      }
     }
+    return null;
   }
+
   const candidates = [sig.imageUrl, sig.storageUrl].filter(
-    (u): u is string => Boolean(u) && !u!.startsWith('data:'),
+    (u): u is string => Boolean(u) && !u.startsWith('data:'),
   );
   for (const url of candidates) {
     try {
       const res = await fetch(url, { cache: 'force-cache' });
       if (res.ok) return new Uint8Array(await res.arrayBuffer());
-    } catch { /* try next */ }
+    } catch {
+      // try next
+    }
   }
   return null;
+}
+
+async function embedImageSafely(pdfDoc: any, bytes: Uint8Array | null): Promise<any | null> {
+  if (!bytes || bytes.length === 0) return null;
+
+  try {
+    return await pdfDoc.embedPng(bytes);
+  } catch {
+    try {
+      return await pdfDoc.embedJpg(bytes);
+    } catch {
+      return null;
+    }
+  }
 }
 
 async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8Array } | null> {
@@ -506,9 +528,8 @@ export async function compilePdfWithSignatures(params: {
     if (!page || !imgBytes) continue;
 
     const { width: pw, height: ph } = page.getSize();
-    let pdfImage;
-    try { pdfImage = await pdfDoc.embedPng(imgBytes); }
-    catch { try { pdfImage = await pdfDoc.embedJpg(imgBytes); } catch { continue; } }
+    const pdfImage = await embedImageSafely(pdfDoc, imgBytes);
+    if (!pdfImage) continue;
 
     const sigW = (sig.widthFraction  ?? 0.38) * pw;
     const sigH = (sig.heightFraction ?? 0.16) * ph;
@@ -706,23 +727,36 @@ export async function compilePdfWithSignatures(params: {
       evidencePage.drawText(title, { x: x + 10, y: y + height + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
       evidencePage.drawText(subtitle, { x: x + 10, y: y - 12, size: 7, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
 
+      const renderFallback = (message: string) => {
+        evidencePage.drawText(message, { x: x + 10, y: y + height / 2, size: 9, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+      };
+
       if (!sourceUrl) {
-        evidencePage.drawText('Evidencia no disponible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        renderFallback('Evidencia en proceso de sincronización');
         return;
       }
 
-      const bytes = await resolveImageBytes({ imageUrl: sourceUrl });
-      if (!bytes) {
-        evidencePage.drawText('Evidencia no disponible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+      let bytes: Uint8Array | null = null;
+      try {
+        bytes = await resolveImageBytes({ imageUrl: sourceUrl });
+      } catch (error) {
+        console.error('Error al resolver imagen de evidencia:', error, { title, sourceUrl });
+      }
+
+      if (!bytes || bytes.length === 0) {
+        renderFallback('Evidencia en proceso de sincronización');
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let img: any;
-      try { img = await pdfDoc.embedPng(bytes); }
-      catch { try { img = await pdfDoc.embedJpg(bytes); } catch { img = null; } }
+      let img: any = null;
+      try {
+        img = await embedImageSafely(pdfDoc, bytes);
+      } catch (error) {
+        console.error('Error al incrustar imagen de evidencia:', error, { title, sourceUrl });
+      }
+
       if (!img) {
-        evidencePage.drawText('Formato de imagen no compatible', { x: x + 10, y: y + height / 2, size: 10, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+        renderFallback('Evidencia en proceso de sincronización');
         return;
       }
 

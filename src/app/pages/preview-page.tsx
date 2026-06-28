@@ -869,6 +869,7 @@ export function PreviewPage() {
     toast.success(t('preview.documentDownloaded'));
   } catch (error) {
     console.error('Preview download failed:', error);
+    console.error('Error detallado al generar PDF:', error);
     toast.error(
       language === 'en'
         ? 'Unable to generate the PDF. Please try again or refresh the page.'
