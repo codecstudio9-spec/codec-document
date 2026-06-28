@@ -237,10 +237,10 @@ export class PDFGenerator {
     // Ensure body/document text always renders in solid black regardless of previous style changes.
     this.doc.setTextColor(0, 0, 0);
     this.doc.setFontSize(fontSize);
-    this.doc.setFont('helvetica', fontStyle);
+    this.ensureFontMetadata('helvetica', fontStyle);
 
     // Split text into lines that fit within the page width
-    const lines = this.doc.splitTextToSize(text, this.maxWidth);
+    const lines = this.splitTextToSize(text, this.maxWidth);
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -281,6 +281,37 @@ export class PDFGenerator {
     if (this.currentY > this.pageHeight - this.margin) {
       this.doc.addPage();
       this.currentY = this.margin;
+    }
+  }
+
+  /**
+   * Ensure the current font is valid for jsPDF text measurement.
+   * If font metadata is missing or invalid, fall back to built-in Helvetica.
+   */
+  private ensureFontMetadata(fontName: string, fontStyle: 'normal' | 'bold') {
+    try {
+      this.doc.setFont(fontName, fontStyle);
+      const currentFont = this.doc.getFont();
+      if (!currentFont || !currentFont.metadata || typeof currentFont.metadata.Unicode === 'undefined') {
+        throw new Error('Invalid font metadata');
+      }
+    } catch {
+      this.doc.setFont('helvetica', 'normal');
+    }
+  }
+
+  private splitTextToSize(text: string, width: number): string[] {
+    try {
+      return this.doc.splitTextToSize(text, width);
+    } catch (error) {
+      console.warn('jsPDF splitTextToSize failed with current font, falling back to built-in helvetica', error);
+      this.doc.setFont('helvetica', 'normal');
+      try {
+        return this.doc.splitTextToSize(text, width);
+      } catch (fallbackError) {
+        console.error('jsPDF splitTextToSize fallback also failed', fallbackError);
+        return [text];
+      }
     }
   }
 
@@ -973,10 +1004,10 @@ export class PDFGenerator {
 
     // Disclaimer
     const disclaimer = 'The following biometric images and metadata were captured by the signer at the exact moment of executing this electronic signature. This record constitutes legally admissible evidence of signer identity under the federal E-SIGN Act (15 U.S.C. § 7001) and UETA.';
-    this.doc.setFont('helvetica', 'normal');
+    this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(71, 85, 105);
-    const discLines = this.doc.splitTextToSize(disclaimer, PW - M * 2);
+    const discLines = this.splitTextToSize(disclaimer, PW - M * 2);
     discLines.forEach((line: string) => {
       this.doc.text(line, M, this.currentY);
       this.currentY += 4;
@@ -1076,9 +1107,9 @@ export class PDFGenerator {
       this.doc.setTextColor(71, 85, 105);
       this.doc.text(label, M + 2, this.currentY + 2);
 
-      this.doc.setFont('helvetica', 'normal');
+      this.ensureFontMetadata('helvetica', 'normal');
       this.doc.setTextColor(15, 23, 42);
-      const valLines = this.doc.splitTextToSize(value, valueW);
+      const valLines = this.splitTextToSize(value, valueW);
       this.doc.text(valLines[0], valueX, this.currentY + 2);
       this.currentY += 7.5;
     });
@@ -1090,11 +1121,11 @@ export class PDFGenerator {
     this.doc.line(M, this.currentY, PW - M, this.currentY);
     this.currentY += 5;
 
-    this.doc.setFont('helvetica', 'normal');
+    this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(100, 116, 139);
     const legalNote = 'This Identity Verification Report is an integral part of the executed agreement. The biometric images and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.';
-    const legalLines = this.doc.splitTextToSize(legalNote, PW - M * 2);
+    const legalLines = this.splitTextToSize(legalNote, PW - M * 2);
     legalLines.forEach((line: string) => {
       this.doc.text(line, M, this.currentY);
       this.currentY += 4;
@@ -1159,9 +1190,9 @@ export class PDFGenerator {
 
     this.addSpacing(0.8);
     this.doc.setTextColor(130, 130, 130);
-    this.doc.setFont('helvetica', 'normal');
+    this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(8);
-    const footerLines = this.doc.splitTextToSize(securityLine, this.maxWidth);
+    const footerLines = this.splitTextToSize(securityLine, this.maxWidth);
     footerLines.forEach((line: string) => {
       if (this.currentY + 4 > this.pageHeight - this.margin) {
         this.doc.addPage();
@@ -1447,10 +1478,10 @@ export class PDFGenerator {
     const legalBody = language === 'es'
       ? 'Este documento fue firmado y certificado electronicamente segun la Ley Federal E-SIGN (15 U.S.C. Ch. 96) y la UETA. Las firmas criptograficas, marcas de tiempo y registros de auditoria de red garantizan la autenticidad e irrefutabilidad de las partes firmantes.'
       : 'This document is electronically signed and certified under the Federal E-SIGN Act (15 U.S.C. Ch. 96) and the UETA. The cryptographic signatures, timestamps, and network audit logs herein guarantee the authenticity, intent, and non-repudiation of the signing parties.';
-    this.doc.setFont('helvetica', 'normal');
+    this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(5.5);
     this.doc.setTextColor(60, 70, 110);
-    const legalLines = this.doc.splitTextToSize(legalBody, LEGAL_W - badgeLW - 20);
+    const legalLines = this.splitTextToSize(legalBody, LEGAL_W - badgeLW - 20);
     this.doc.text(legalLines, LEGAL_X + 8, LEGAL_Y + 16);
 
     // Attribution
