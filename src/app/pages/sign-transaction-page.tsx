@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { publicSupabase } from '../../lib/supabase';
-import { isActiveTxStatus, isTerminalTxStatus, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
+import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { toast } from 'sonner';
 
@@ -134,6 +134,12 @@ export default function SignTransactionPage() {
         setStepIdx(1);
         return;
       }
+      if (data.status === 'completed') {
+        setTx(data);
+        setSteps(['loading', 'done']);
+        setStepIdx(1);
+        return;
+      }
       if (isTerminalTxStatus(data.status)) {
         setSteps(['loading', 'already_signed']);
         setStepIdx(1);
@@ -148,6 +154,24 @@ export default function SignTransactionPage() {
       setSteps(buildSteps(data.security_config));
       setStepIdx(1);
     });
+  }, [transactionId]);
+
+  // ── Realtime transaction updates ──────────────────────────────────────────
+  useEffect(() => {
+    if (!transactionId) return;
+    const unsubscribe = subscribeToTransaction(transactionId, (updated) => {
+      setTx(updated);
+      if (updated.status === 'completed') {
+        setSteps(['loading', 'done']);
+        setStepIdx(1);
+        return;
+      }
+      if (isTerminalTxStatus(updated.status)) {
+        setSteps(['loading', 'already_signed']);
+        setStepIdx(1);
+      }
+    });
+    return unsubscribe;
   }, [transactionId]);
 
   // ── Camera cleanup on unmount ──────────────────────────────────────────────
@@ -246,48 +270,30 @@ export default function SignTransactionPage() {
       }
     }
 
-    // ── Step 2: Upload images to Storage (non-blocking, falls back to base64) ─
-    // uploadEvidenceImage NEVER throws — returns Storage URL or base64 fallback.
-    let selfieValue: string | undefined;
-    if (selfieDataUrl) {
-      setSubmitStatus('Procesando selfie...');
-      selfieValue = await uploadEvidenceImage(tx.id, 'selfie', selfieDataUrl);
-    }
-
-    let idFrontValue: string | undefined;
-    if (idFrontDataUrl) {
-      setSubmitStatus('Procesando frente de ID...');
-      idFrontValue = await uploadEvidenceImage(tx.id, 'id_front', idFrontDataUrl);
-    }
-
-    let idBackValue: string | undefined;
-    if (idBackDataUrl) {
-      setSubmitStatus('Procesando reverso de ID...');
-      idBackValue = await uploadEvidenceImage(tx.id, 'id_back', idBackDataUrl);
-    }
-
-    // ── Step 3: Build exact UPDATE payload ────────────────────────────────────
-    // Only send fields that have real values — never send null/undefined.
-    const updatePayload: Record<string, unknown> = {
+    // ── Step 2: Build exact UPDATE payload and complete the transaction first ─
+    // Preserve captured identity evidence immediately, then let uploads resolve in background.
+    const initialPayload: Record<string, unknown> = {
       status:              'completed',
       recipient_signature: signatureDataUrl,   // always present (validated above)
       signed_at:           new Date().toISOString(),
     };
-    if (selfieValue)       updatePayload.recipient_selfie       = selfieValue;
-    if (idFrontValue || idBackValue) {
-      updatePayload.recipient_id_photo = idBackValue
-        ? JSON.stringify({ front: idFrontValue ?? '', back: idBackValue })
-        : (idFrontValue ?? '');
+    if (selfieDataUrl) {
+      initialPayload.recipient_selfie = selfieDataUrl;
     }
-    if (esignAccepted)     updatePayload.esign_consent_accepted = true;
-    if (recipientIp)       updatePayload.recipient_ip           = recipientIp;
+    if (idFrontDataUrl || idBackDataUrl) {
+      initialPayload.recipient_id_photo = idBackDataUrl
+        ? JSON.stringify({ front: idFrontDataUrl ?? '', back: idBackDataUrl })
+        : (idFrontDataUrl ?? '');
+    }
+    if (esignAccepted)     initialPayload.esign_consent_accepted = true;
+    if (recipientIp)       initialPayload.recipient_ip           = recipientIp;
 
-    // ── Step 4: Execute UPDATE — this is the critical step ───────────────────
+    // ── Step 3: Execute UPDATE — complete transaction without waiting on storage.
     setSubmitStatus('Guardando firma...');
     try {
       const { error } = await publicSupabase
         .from('sign_transactions')
-        .update(updatePayload)
+        .update(initialPayload)
         .eq('id', tx.id);
 
       if (error) {
@@ -300,8 +306,41 @@ export default function SignTransactionPage() {
         return;
       }
 
-      console.log('Firma guardada exitosamente. Transaction:', tx.id, '| payload keys:', Object.keys(updatePayload));
+      console.log('Firma guardada exitosamente. Transaction:', tx.id, '| payload keys:', Object.keys(initialPayload));
       advance();
+
+      void (async () => {
+        try {
+          const selfieValue = selfieDataUrl
+            ? await uploadEvidenceImage(tx.id, 'selfie', selfieDataUrl)
+            : undefined;
+          const idFrontValue = idFrontDataUrl
+            ? await uploadEvidenceImage(tx.id, 'id_front', idFrontDataUrl)
+            : undefined;
+          const idBackValue = idBackDataUrl
+            ? await uploadEvidenceImage(tx.id, 'id_back', idBackDataUrl)
+            : undefined;
+
+          const patchPayload: Record<string, unknown> = {};
+          if (selfieValue && selfieValue !== selfieDataUrl) {
+            patchPayload.recipient_selfie = selfieValue;
+          }
+          if (idFrontValue || idBackValue) {
+            patchPayload.recipient_id_photo = idBackValue
+              ? JSON.stringify({ front: idFrontValue ?? '', back: idBackValue })
+              : (idFrontValue ?? '');
+          }
+
+          if (Object.keys(patchPayload).length > 0) {
+            await publicSupabase
+              .from('sign_transactions')
+              .update(patchPayload)
+              .eq('id', tx.id);
+          }
+        } catch (backgroundErr) {
+          console.warn('Background evidence upload failed:', backgroundErr);
+        }
+      })();
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
