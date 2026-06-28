@@ -773,9 +773,8 @@ export function PreviewPage() {
 
     // Generate professional PDF
     const stateSuffix = selectedState ? `_${selectedState.replace(/\s+/g, '_')}` : '';
-    const fileName = `${template.name.replace(/\s+/g, '_')}${stateSuffix}_${exportLanguage}.pdf`;
-    
-    // Build inline signatures from every chip the user has placed on the preview
+    const fileName = `${template.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-\.]/g, '')}${stateSuffix}_${exportLanguage}.pdf`;
+
     const inlineSigs = placedSignatures.map((s) => ({
       signerName: s.name,
       signedAt: new Date().toISOString(),
@@ -784,16 +783,13 @@ export function PreviewPage() {
       yDocPct: s.yPct,
     }));
 
-    // Try html2canvas first — pixel-perfect capture of the visual preview (same page count as preview)
     const hiFiOk = await downloadHighFidelityPdf(inlineSigs, exportContent, fileName);
 
     if (!hiFiOk) {
-      // Fallback: premium text-based PDF with embedded mirror signature block
       const orderId = sessionStorage.getItem('paypalOrderId') || localStorage.getItem('paypalOrderId') || '';
       const auditResponse  = orderId ? await getSignatureAuditByOrder(orderId).catch(() => ({ found: false })) : { found: false };
       const auditsResponse = orderId ? await getSignatureAuditsByOrder(orderId).catch(() => ({ found: false, signatures: [] })) : { found: false, signatures: [] };
 
-      // Prefer audit-trail signatures; fall back to sessionStorage-loaded placedSignatures
       const fallbackSigs = (auditsResponse as any)?.found && (auditsResponse as any).signatures?.length > 0
         ? (auditsResponse as any).signatures
         : placedSignatures.length > 0
@@ -838,7 +834,7 @@ export function PreviewPage() {
           }
         : undefined;
 
-      await PDFGenerator.generate({
+      const blob = await PDFGenerator.generateBlob({
         content:      exportContent,
         title:        getDocumentTranslation(template.id, 'name', exportLanguage),
         fileName,
@@ -848,7 +844,6 @@ export function PreviewPage() {
         branding:     documentBranding,
         auditLog:     enrichedAudit,
         signatures:   fallbackSigs,
-        // Mirror layout sigs for side-by-side block at bottom of document
         leftSig:  placedSignatures.find(s => s.id === 'owner')
           ? { dataUrl: placedSignatures.find(s => s.id === 'owner')!.dataUrl, name: placedSignatures.find(s => s.id === 'owner')!.name }
           : undefined,
@@ -861,6 +856,9 @@ export function PreviewPage() {
         identityIdDocFront,
         identityIdDocBack,
       });
+
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      await triggerDownloadFromBytes(bytes, fileName);
     }
 
     toast.success(t('preview.documentDownloaded'));

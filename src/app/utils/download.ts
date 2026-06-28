@@ -5,26 +5,35 @@ function createTemporaryDownloadLink(href: string, fileName: string) {
   link.href = href;
   link.download = fileName;
   link.style.display = 'none';
+  link.rel = 'noopener';
   document.body.appendChild(link);
   link.click();
-  link.remove();
+
+  // Keep the anchor and object URL alive long enough for the browser to process the click.
+  setTimeout(() => {
+    if (typeof document !== 'undefined' && link.parentNode) {
+      link.parentNode.removeChild(link);
+    }
+    if (href.startsWith('blob:')) {
+      window.URL.revokeObjectURL(href);
+    }
+  }, 500);
 }
 
 export async function triggerDownloadFromBytes(bytes: Uint8Array, fileName: string): Promise<void> {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   if (!fileName || typeof fileName !== 'string') {
-    console.error('download.ts: Invalid fileName passed to triggerDownloadFromBytes', { fileName });
+    throw new Error('download.ts: Invalid fileName passed to triggerDownloadFromBytes');
   }
 
   if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
-    console.error('download.ts: PDF byte array is empty or invalid. Falling back to forced anchor download.', { bytes });
+    throw new Error('download.ts: PDF byte array is empty or invalid.');
   }
 
   const blob = new Blob([bytes], { type: 'application/pdf' });
   const url = window.URL.createObjectURL(blob);
   createTemporaryDownloadLink(url, fileName);
-  window.URL.revokeObjectURL(url);
 }
 
 export async function triggerDownloadFromUrl(url: string, fileName: string): Promise<void> {
@@ -35,7 +44,6 @@ export async function triggerDownloadFromUrl(url: string, fileName: string): Pro
     const emptyBlob = new Blob([], { type: 'application/pdf' });
     const fallbackUrl = window.URL.createObjectURL(emptyBlob);
     createTemporaryDownloadLink(fallbackUrl, fileName || 'documento_firmado.pdf');
-    window.URL.revokeObjectURL(fallbackUrl);
     return;
   }
 
@@ -47,7 +55,6 @@ export async function triggerDownloadFromUrl(url: string, fileName: string): Pro
     const blob = await response.blob();
     const objectUrl = window.URL.createObjectURL(blob);
     createTemporaryDownloadLink(objectUrl, fileName);
-    window.URL.revokeObjectURL(objectUrl);
   } catch (error) {
     console.error('download.ts: Failed to download from URL, falling back to anchor', { url, fileName, error });
     createTemporaryDownloadLink(url, fileName);
