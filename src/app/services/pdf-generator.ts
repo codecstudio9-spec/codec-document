@@ -1803,7 +1803,14 @@ export class PDFGenerator {
     if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
-      generator.addSignatureMirrorBlock(opts.leftSig, opts.rightSig, opts.mirrorLanguage ?? opts.language, opts.identitySelfie, opts.identityIdDoc);
+      generator.addSignatureMirrorBlock(
+        opts.leftSig,
+        opts.rightSig,
+        opts.mirrorLanguage ?? opts.language,
+        opts.identitySelfie,
+        opts.identityIdDocFront ?? opts.identityIdDoc,
+        opts.identityIdDocBack,
+      );
       if (after) generator.processContent(after);
     } else {
       generator.processContent(cleanContent);
@@ -1820,8 +1827,13 @@ export class PDFGenerator {
     }
 
     // Identity verification page (separate page when photos exist)
-    if (opts.identitySelfie || opts.identityIdDoc) {
-      generator.addIdentityAuditPage(opts.identitySelfie, opts.identityIdDoc, opts.language);
+    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
+      generator.addIdentityAuditPage(
+        opts.identitySelfie,
+        opts.identityIdDocFront ?? opts.identityIdDoc,
+        opts.identityIdDocBack,
+        opts.language,
+      );
     }
 
     // Optional audit certificate page

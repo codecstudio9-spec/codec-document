@@ -410,6 +410,7 @@ export function PreviewPage() {
   const [identityIdDocBack, setIdentityIdDocBack] = useState<string | undefined>();
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'download' | 'sign' | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [selectedState, setSelectedState] = useState<string>('');
   const [estimatedPageCount, setEstimatedPageCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -716,22 +717,26 @@ export function PreviewPage() {
   const canEditDocument = unlimitedActive || subscriptionActive || isAdmin;
 
   const handleDownload = async () => {
-    if (!user || !token) {
-      toast.error(language === 'en' ? 'Please sign in with Google before generating documents.' : 'Debes iniciar sesión con Google antes de generar documentos.');
-      return;
-    }
+    if (isDownloading) return;
+    setIsDownloading(true);
 
-    // Gate: check 72-hour rolling quota for free users
-    if (!canDownloadFree) {
-      const allowed = await checkDownloadAllowed(user?.id ?? null);
-      if (!allowed) {
-        setPendingAction('download');
-        setPremiumModalOpen(true);
+    try {
+      if (!user || !token) {
+        toast.error(language === 'en' ? 'Please sign in with Google before generating documents.' : 'Debes iniciar sesión con Google antes de generar documentos.');
         return;
       }
-    }
 
-    // Generate content based on user's selected export language
+      // Gate: check 72-hour rolling quota for free users
+      if (!canDownloadFree) {
+        const allowed = await checkDownloadAllowed(user?.id ?? null);
+        if (!allowed) {
+          setPendingAction('download');
+          setPremiumModalOpen(true);
+          return;
+        }
+      }
+
+      // Generate content based on user's selected export language
     let templateForExport = exportLanguage === 'es' && spanishTemplates[template.id]
       ? spanishTemplates[template.id]
       : template.template;
@@ -862,6 +867,16 @@ export function PreviewPage() {
     }
 
     toast.success(t('preview.documentDownloaded'));
+  } catch (error) {
+    console.error('Preview download failed:', error);
+    toast.error(
+      language === 'en'
+        ? 'Unable to generate the PDF. Please try again or refresh the page.'
+        : 'No se pudo generar el PDF. Intenta de nuevo o actualiza la página.'
+    );
+  } finally {
+    setIsDownloading(false);
+  }
 
     // Record 72-hour download event for free-tier users (used by check_user_limits RPC)
     if (!canDownloadFree && user?.id) {
@@ -1131,14 +1146,24 @@ export function PreviewPage() {
                 {/* Primary download button */}
                 <Button
                   onClick={handleDownload}
+                  disabled={isDownloading}
                   className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 font-semibold"
                 >
-                  <Download className="size-4" />
-                  <span>
-                    {language === 'es'
-                      ? 'Descargar Documento Certificado'
-                      : 'Download Certified Document'}
-                  </span>
+                  {isDownloading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white" />
+                      <span>{language === 'es' ? 'Generando PDF…' : 'Generating PDF…'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="size-4" />
+                      <span>
+                        {language === 'es'
+                          ? 'Descargar Documento Certificado'
+                          : 'Download Certified Document'}
+                      </span>
+                    </>
+                  )}
                 </Button>
 
                 {/* Edit contract */}
@@ -1239,20 +1264,46 @@ export function PreviewPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Button
               size="lg"
-              onClick={() => { setExportLanguage('es'); requestAnimationFrame(() => requestAnimationFrame(handleDownload)); }}
+              onClick={() => {
+                setExportLanguage('es');
+                requestAnimationFrame(() => requestAnimationFrame(handleDownload));
+              }}
+              disabled={isDownloading}
               className="w-full sm:w-auto gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-md font-semibold"
             >
-              <Download className="size-5" />
-              Descargar Documento Certificado (PDF)
+              {isDownloading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white" />
+                  <span>Generando PDF…</span>
+                </>
+              ) : (
+                <>
+                  <Download className="size-5" />
+                  Descargar Documento Certificado (PDF)
+                </>
+              )}
             </Button>
             <Button
               size="lg"
-              onClick={() => { setExportLanguage('en'); requestAnimationFrame(() => requestAnimationFrame(handleDownload)); }}
+              onClick={() => {
+                setExportLanguage('en');
+                requestAnimationFrame(() => requestAnimationFrame(handleDownload));
+              }}
               variant="outline"
+              disabled={isDownloading}
               className="w-full sm:w-auto gap-2 border-slate-400 text-slate-700 font-semibold hover:bg-slate-100"
             >
-              <Download className="size-5" />
-              Download Certified Document (PDF)
+              {isDownloading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700/50 border-t-slate-700" />
+                  <span>Generating PDF…</span>
+                </>
+              ) : (
+                <>
+                  <Download className="size-5" />
+                  Download Certified Document (PDF)
+                </>
+              )}
             </Button>
           </div>
 

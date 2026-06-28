@@ -1,23 +1,32 @@
 function createTemporaryDownloadLink(href: string, fileName: string) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (!href) return;
 
   const link = document.createElement('a');
   link.href = href;
   link.download = fileName;
-  link.style.display = 'none';
   link.rel = 'noopener';
+  link.style.display = 'none';
   document.body.appendChild(link);
-  link.click();
 
-  // Keep the anchor and object URL alive long enough for the browser to process the click.
+  const clickEvent = new MouseEvent('click', {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+  });
+  const dispatched = link.dispatchEvent(clickEvent);
+  if (!dispatched) {
+    window.open(href, '_blank', 'noopener');
+  }
+
   setTimeout(() => {
-    if (typeof document !== 'undefined' && link.parentNode) {
+    if (link.parentNode) {
       link.parentNode.removeChild(link);
     }
     if (href.startsWith('blob:')) {
       window.URL.revokeObjectURL(href);
     }
-  }, 500);
+  }, 1500);
 }
 
 export async function triggerDownloadFromBytes(bytes: Uint8Array, fileName: string): Promise<void> {
