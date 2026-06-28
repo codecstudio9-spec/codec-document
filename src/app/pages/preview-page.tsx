@@ -57,6 +57,15 @@ function normalizeLanguageSensitiveFields(data: DocumentData, language: 'en' | '
   return next;
 }
 
+function safeParseJson<T>(value: string | null | undefined): T | null {
+  if (!value || value === 'undefined' || value === 'null') return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
 interface PlacedSig {
   id: string;
   name: string;
@@ -449,14 +458,73 @@ export function PreviewPage() {
     }
 
     if (savedData && savedType === documentType) {
-      const parsed = JSON.parse(savedData);
-      setDocumentData(parsed);
-      if (savedBranding) {
-        setDocumentBranding(JSON.parse(savedBranding));
-      }
+      const parsed = safeParseJson<DocumentData>(savedData);
+      if (parsed) {
+        setDocumentData(parsed);
+        if (savedBranding) {
+          const branding = safeParseJson<DocumentBranding>(savedBranding);
+          if (branding) setDocumentBranding(branding);
+        }
 
-      if (template) {
-        updatePreviewContent(parsed, savedState || '');
+        if (template) {
+          updatePreviewContent(parsed, savedState || '');
+        }
+
+        // Pre-populate owner signature from Step 2 (sign step)
+        const ownerSigUrl = sessionStorage.getItem('userSignatureDataUrl');
+        const sigX = parseFloat(sessionStorage.getItem('sigPlacementX') || '0');
+        const sigY = parseFloat(sessionStorage.getItem('sigPlacementY') || '0');
+
+        const allSigs: PlacedSig[] = [];
+
+        if (ownerSigUrl) {
+          allSigs.push({
+            id: 'owner',
+            name: parsed.landlord_name || parsed.owner_name || parsed.party_one || 'Owner',
+            dataUrl: ownerSigUrl,
+            xPct: sigX > 0 ? sigX : 18,
+            yPct: sigY > 0 ? sigY : 82,
+          });
+        }
+
+        // Load co-signer signatures saved by document-generator-page Step 2
+        const coSignersJson = sessionStorage.getItem('coSigners');
+        if (coSignersJson) {
+          const coSigners = safeParseJson<Array<{
+            id: string;
+            name: string;
+            sigDataUrl: string;
+            placement: { x: number; y: number } | null;
+          }>>(coSignersJson);
+          if (coSigners) {
+            coSigners
+              .filter((cs) => cs.sigDataUrl)
+              .forEach((cs, i) => {
+                allSigs.push({
+                  id: `cs-${cs.id}`,
+                  name: cs.name,
+                  dataUrl: cs.sigDataUrl,
+                  xPct: cs.placement ? cs.placement.x : Math.min(80, 30 + i * 22),
+                  yPct: cs.placement ? cs.placement.y : 86,
+                });
+              });
+          }
+        }
+
+        if (allSigs.length > 0) setPlacedSignatures(allSigs);
+
+        // Identity verification photos from Step 3
+        const identitySelfie = sessionStorage.getItem('identitySelfie') || undefined;
+        const identityIdDocFront =
+          sessionStorage.getItem('identityIdDocFront') ||
+          sessionStorage.getItem('identityIdDoc') ||
+          undefined;
+        const identityIdDocBack = sessionStorage.getItem('identityIdDocBack') || undefined;
+        if (identitySelfie) setIdentitySelfie(identitySelfie);
+        if (identityIdDocFront) setIdentityIdDocFront(identityIdDocFront);
+        if (identityIdDocBack) setIdentityIdDocBack(identityIdDocBack);
+      } else {
+        navigate(`/generator/${documentType}`);
       }
 
       // Pre-populate owner signature from Step 2 (sign step)
