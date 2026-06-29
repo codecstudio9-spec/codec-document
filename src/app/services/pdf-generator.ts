@@ -1460,7 +1460,15 @@ export class PDFGenerator {
     const badgeLabel = 'E-SIGN & UETA';
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(5.5);
-    const badgeLW = this.doc.getTextWidth(badgeLabel) + 8;
+    let badgeLW: number;
+    try {
+      badgeLW = this.doc.getTextWidth(badgeLabel) + 8;
+    } catch (e) {
+      console.warn('getTextWidth failed for badgeLabel, falling back to estimate', e, badgeLabel);
+      const size = (this.doc.getFontSize && typeof this.doc.getFontSize === 'function') ? this.doc.getFontSize() : 5.5;
+      badgeLW = badgeLabel.length * (size * 0.5) + 8;
+      try { this.doc.setFont('helvetica', 'normal'); } catch {};
+    }
     const badgeH  = 9;
     const badgeX  = LEGAL_X + LEGAL_W - badgeLW - 4;
     const badgeY  = LEGAL_Y + 4;
@@ -1539,6 +1547,42 @@ export class PDFGenerator {
       }
     };
 
+    // Helper: call text() but retry with built-in helvetica if jsPDF throws
+    const safeText = (text: string | string[], x: number, y: number, opts?: any) => {
+      try {
+        this.doc.text(text as any, x, y, opts);
+      } catch (err) {
+        console.error('jsPDF.text failed with current font, retrying with helvetica', err, text);
+        try {
+          this.doc.setFont('helvetica', 'normal');
+        } catch (e) {
+          // ignore
+        }
+        try {
+          this.doc.text(text as any, x, y, opts);
+        } catch (err2) {
+          console.error('jsPDF.text retry also failed', err2, text);
+        }
+      }
+    };
+
+    // Helper: getTextWidth but fallback to helvetica or estimate when jsPDF font metrics are missing
+    const safeGetTextWidth = (txt: string) => {
+      try {
+        return this.doc.getTextWidth(txt);
+      } catch (err) {
+        console.warn('getTextWidth failed with current font, retrying with helvetica', err, txt);
+        try {
+          this.doc.setFont('helvetica', 'normal');
+          return this.doc.getTextWidth(txt);
+        } catch (err2) {
+          console.error('getTextWidth retry also failed, estimating width', err2, txt);
+          const size = (this.doc.getFontSize && typeof this.doc.getFontSize === 'function') ? this.doc.getFontSize() : 7;
+          return txt.length * (size * 0.5);
+        }
+      }
+    };
+
     const identityIdDoc = identityIdDocFront || identityIdDocBack;
     const hasIdentity = !!(identitySelfie || identityIdDoc);
     // Space needed: sigs (~44) + optional compact identity strip (~32)
@@ -1585,11 +1629,11 @@ export class PDFGenerator {
     console.log('FONT ACTUAL', this.doc.getFont());
     console.log('FONT LIST', this.doc.getFontList());
     console.log('TEXT TO WRITE', leftRole);
-    this.doc.text(leftRole,  leftX  + colW / 2, lineY + 4, { align: 'center' });
+    safeText(leftRole, leftX + colW / 2, lineY + 4, { align: 'center' });
     console.log('FONT ACTUAL', this.doc.getFont());
     console.log('FONT LIST', this.doc.getFontList());
     console.log('TEXT TO WRITE', rightRole);
-    this.doc.text(rightRole, rightX + colW / 2, lineY + 4, { align: 'center' });
+    safeText(rightRole, rightX + colW / 2, lineY + 4, { align: 'center' });
 
     // ── Signer names ──────────────────────────────────────────────────────
     setFontSafe('helvetica', 'normal');
@@ -1599,13 +1643,13 @@ export class PDFGenerator {
       console.log('FONT ACTUAL', this.doc.getFont());
       console.log('FONT LIST', this.doc.getFontList());
       console.log('TEXT TO WRITE', leftSig.name);
-      this.doc.text(leftSig.name,  leftX  + colW / 2, lineY + 9,  { align: 'center' });
+      safeText(leftSig.name, leftX + colW / 2, lineY + 9, { align: 'center' });
     }
     if (rightSig?.name) {
       console.log('FONT ACTUAL', this.doc.getFont());
       console.log('FONT LIST', this.doc.getFontList());
       console.log('TEXT TO WRITE', rightSig.name);
-      this.doc.text(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
+      safeText(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
     }
 
     this.currentY = lineY + 14;
@@ -1629,10 +1673,10 @@ export class PDFGenerator {
     console.log('FONT ACTUAL', this.doc.getFont());
     console.log('FONT LIST', this.doc.getFontList());
     console.log('TEXT TO WRITE', idLabel);
-    this.doc.text(idLabel, leftX + 4.5, this.currentY + 4);
+    safeText(idLabel, leftX + 4.5, this.currentY + 4);
     // E-SIGN badge
     const badgeText = 'E-SIGN · UETA';
-    const badgeW = this.doc.getTextWidth(badgeText) + 5;
+    const badgeW = safeGetTextWidth(badgeText) + 5;
     this.doc.setFillColor(37, 99, 235);
     this.doc.roundedRect(leftX + this.maxWidth - badgeW, this.currentY, badgeW, 5.5, 0.8, 0.8, 'F');
     setFontSafe('helvetica', 'bold');
@@ -1641,7 +1685,7 @@ export class PDFGenerator {
     console.log('FONT ACTUAL', this.doc.getFont());
     console.log('FONT LIST', this.doc.getFontList());
     console.log('TEXT TO WRITE', badgeText);
-    this.doc.text(badgeText, leftX + this.maxWidth - badgeW / 2, this.currentY + 3.8, { align: 'center' });
+    safeText(badgeText, leftX + this.maxWidth - badgeW / 2, this.currentY + 3.8, { align: 'center' });
     this.currentY += 8;
 
     // Compact fixed dimensions — legible but small enough to share the signature page
@@ -1671,7 +1715,7 @@ export class PDFGenerator {
       console.log('FONT ACTUAL', this.doc.getFont());
       console.log('FONT LIST', this.doc.getFontList());
       console.log('TEXT TO WRITE', selfieLabel);
-      this.doc.text(selfieLabel, px + pw / 2, py + ph + 4, { align: 'center' });
+      safeText(selfieLabel, px + pw / 2, py + ph + 4, { align: 'center' });
     }
 
     if (identityIdDoc) {
@@ -1696,7 +1740,7 @@ export class PDFGenerator {
       console.log('FONT ACTUAL', this.doc.getFont());
       console.log('FONT LIST', this.doc.getFontList());
       console.log('TEXT TO WRITE', idDocLabel);
-      this.doc.text(idDocLabel, px + pw / 2, py + photoH + 4, { align: 'center' });
+      safeText(idDocLabel, px + pw / 2, py + photoH + 4, { align: 'center' });
     }
 
     this.currentY += photoH + 8;
