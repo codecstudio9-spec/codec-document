@@ -443,6 +443,8 @@ export class PDFGenerator {
    */
   private renderLegalEmphasisLine(line: string) {
     const clean = line.replace(/\*\*/g, '');
+    console.log('TEXTO PROCESADO:', clean);
+    console.log('FUENTE ACTUAL:', this.doc.getFont());
     this.addText(clean, 10, 'bold', 'left');
   }
 
@@ -528,7 +530,12 @@ export class PDFGenerator {
 
       // Detect and bold important legal terms and phrases
       if (this.containsLegalTerms(trimmedLine)) {
-        this.renderLegalEmphasisLine(trimmedLine);
+        try {
+          this.renderLegalEmphasisLine(trimmedLine);
+        } catch (error) {
+          console.error('Error al procesar renderLegalEmphasisLine para la línea:', trimmedLine, error);
+          throw error;
+        }
         this.addSpacing(0.15);
         continue;
       }
@@ -1506,6 +1513,32 @@ export class PDFGenerator {
   ) {
     if (!leftSig && !rightSig) return;
 
+    // Helper: set font but verify it's available; fallback to helvetica normal
+    const setFontSafe = (family: string, style: string) => {
+      try {
+        this.doc.setFont(family, style);
+      } catch (e) {
+        console.log('setFont error', family, style, e);
+        this.doc.setFont('helvetica', 'normal');
+        return;
+      }
+      try {
+        console.log('FONT ACTUAL', this.doc.getFont());
+        console.log('FONT LIST', this.doc.getFontList());
+      } catch (e) {
+        console.log('font introspect error', e);
+      }
+      try {
+        const fl = this.doc.getFontList ? this.doc.getFontList() : null;
+        if (fl && family && !Object.prototype.hasOwnProperty.call(fl, family)) {
+          console.log('Font not found in list:', family, '; falling back to helvetica normal');
+          this.doc.setFont('helvetica', 'normal');
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
     const identityIdDoc = identityIdDocFront || identityIdDocBack;
     const hasIdentity = !!(identitySelfie || identityIdDoc);
     // Space needed: sigs (~44) + optional compact identity strip (~32)
@@ -1546,18 +1579,34 @@ export class PDFGenerator {
     const leftRole  = language === 'es' ? 'ARRENDADOR' : 'LANDLORD';
     const rightRole = language === 'es' ? 'ARRENDATARIO' : 'TENANT';
 
-    this.doc.setFont('helvetica', 'bold');
+    setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(8.5);
     this.doc.setTextColor(0, 0, 0);
+    console.log('FONT ACTUAL', this.doc.getFont());
+    console.log('FONT LIST', this.doc.getFontList());
+    console.log('TEXT TO WRITE', leftRole);
     this.doc.text(leftRole,  leftX  + colW / 2, lineY + 4, { align: 'center' });
+    console.log('FONT ACTUAL', this.doc.getFont());
+    console.log('FONT LIST', this.doc.getFontList());
+    console.log('TEXT TO WRITE', rightRole);
     this.doc.text(rightRole, rightX + colW / 2, lineY + 4, { align: 'center' });
 
     // ── Signer names ──────────────────────────────────────────────────────
-    this.doc.setFont('helvetica', 'normal');
+    setFontSafe('helvetica', 'normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(60, 60, 60);
-    if (leftSig?.name)  this.doc.text(leftSig.name,  leftX  + colW / 2, lineY + 9,  { align: 'center' });
-    if (rightSig?.name) this.doc.text(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
+    if (leftSig?.name)  {
+      console.log('FONT ACTUAL', this.doc.getFont());
+      console.log('FONT LIST', this.doc.getFontList());
+      console.log('TEXT TO WRITE', leftSig.name);
+      this.doc.text(leftSig.name,  leftX  + colW / 2, lineY + 9,  { align: 'center' });
+    }
+    if (rightSig?.name) {
+      console.log('FONT ACTUAL', this.doc.getFont());
+      console.log('FONT LIST', this.doc.getFontList());
+      console.log('TEXT TO WRITE', rightSig.name);
+      this.doc.text(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
+    }
 
     this.currentY = lineY + 14;
 
@@ -1573,21 +1622,25 @@ export class PDFGenerator {
     // Section label with blue left accent
     this.doc.setFillColor(37, 99, 235);
     this.doc.rect(leftX, this.currentY - 1, 2, 6, 'F');
-    this.doc.setFont('helvetica', 'bold');
+    setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(6.5);
     this.doc.setTextColor(18, 24, 70);
-    this.doc.text(
-      language === 'es' ? 'VERIFICACIÓN DE IDENTIDAD' : 'IDENTITY VERIFICATION',
-      leftX + 4.5, this.currentY + 4,
-    );
+    const idLabel = language === 'es' ? 'VERIFICACIÓN DE IDENTIDAD' : 'IDENTITY VERIFICATION';
+    console.log('FONT ACTUAL', this.doc.getFont());
+    console.log('FONT LIST', this.doc.getFontList());
+    console.log('TEXT TO WRITE', idLabel);
+    this.doc.text(idLabel, leftX + 4.5, this.currentY + 4);
     // E-SIGN badge
     const badgeText = 'E-SIGN · UETA';
     const badgeW = this.doc.getTextWidth(badgeText) + 5;
     this.doc.setFillColor(37, 99, 235);
     this.doc.roundedRect(leftX + this.maxWidth - badgeW, this.currentY, badgeW, 5.5, 0.8, 0.8, 'F');
-    this.doc.setFont('helvetica', 'bold');
+    setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(5);
     this.doc.setTextColor(255, 255, 255);
+    console.log('FONT ACTUAL', this.doc.getFont());
+    console.log('FONT LIST', this.doc.getFontList());
+    console.log('TEXT TO WRITE', badgeText);
     this.doc.text(badgeText, leftX + this.maxWidth - badgeW / 2, this.currentY + 3.8, { align: 'center' });
     this.currentY += 8;
 
@@ -1611,13 +1664,14 @@ export class PDFGenerator {
         const fmt = identitySelfie.startsWith('data:image/png') ? 'PNG' : 'JPEG';
         this.doc.addImage(identitySelfie, fmt, px + 0.5, py + 0.5, pw - 1, ph - 1, undefined, 'FAST');
       } catch { /* skip */ }
-      this.doc.setFont('helvetica', 'normal');
+      setFontSafe('helvetica', 'normal');
       this.doc.setFontSize(5.5);
       this.doc.setTextColor(100, 110, 140);
-      this.doc.text(
-        language === 'es' ? 'Selfie de validación' : 'Validation selfie',
-        px + pw / 2, py + ph + 4, { align: 'center' },
-      );
+      const selfieLabel = language === 'es' ? 'Selfie de validación' : 'Validation selfie';
+      console.log('FONT ACTUAL', this.doc.getFont());
+      console.log('FONT LIST', this.doc.getFontList());
+      console.log('TEXT TO WRITE', selfieLabel);
+      this.doc.text(selfieLabel, px + pw / 2, py + ph + 4, { align: 'center' });
     }
 
     if (identityIdDoc) {
@@ -1635,13 +1689,14 @@ export class PDFGenerator {
         const fmt = identityIdDoc.startsWith('data:image/png') ? 'PNG' : 'JPEG';
         this.doc.addImage(identityIdDoc, fmt, px + 0.5, py + adjustY + 0.5, pw - 1, ph - 1, undefined, 'FAST');
       } catch { /* skip */ }
-      this.doc.setFont('helvetica', 'normal');
+      setFontSafe('helvetica', 'normal');
       this.doc.setFontSize(5.5);
       this.doc.setTextColor(100, 110, 140);
-      this.doc.text(
-        language === 'es' ? 'Documento de identidad' : 'Identity document',
-        px + pw / 2, py + photoH + 4, { align: 'center' },
-      );
+      const idDocLabel = language === 'es' ? 'Documento de identidad' : 'Identity document';
+      console.log('FONT ACTUAL', this.doc.getFont());
+      console.log('FONT LIST', this.doc.getFontList());
+      console.log('TEXT TO WRITE', idDocLabel);
+      this.doc.text(idDocLabel, px + pw / 2, py + photoH + 4, { align: 'center' });
     }
 
     this.currentY += photoH + 8;
