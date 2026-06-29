@@ -18,6 +18,7 @@ import {
   Loader, AlertCircle, FileText, ChevronRight, X, Upload,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { useAuth } from '../contexts/auth-context';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
@@ -124,6 +125,7 @@ export default function SignTransactionPage() {
 
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const { user, isAdmin } = useAuth();
 
   // ── Load transaction on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -207,6 +209,7 @@ export default function SignTransactionPage() {
         audio: false,
       });
       streamRef.current = stream;
+      try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
       setCameraActive(true); // triggers re-render → video mounts → useEffect assigns srcObject
     } catch (err) {
       console.error('Camera access error:', err);
@@ -215,6 +218,7 @@ export default function SignTransactionPage() {
   }, []);
 
   const capturePhoto = useCallback(async (target: 'selfie' | 'id_front' | 'id_back') => {
+    try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
     if (!videoRef.current) return;
     const v = videoRef.current;
     const canvas = document.createElement('canvas');

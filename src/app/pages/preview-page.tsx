@@ -903,6 +903,7 @@ export function PreviewPage() {
           }
         : undefined;
 
+      try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
       const blob = await PDFGenerator.generateBlob({
         content:      exportContent,
         title:        getDocumentTranslation(template.id, 'name', exportLanguage),

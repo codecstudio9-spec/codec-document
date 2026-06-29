@@ -677,15 +677,17 @@ export function DocumentGeneratorPage() {
           : { facingMode: { ideal: 'environment' }, width: { ideal: 1920, max: 3840 }, height: { ideal: 1080, max: 2160 } },
       });
       streamRef.current = stream;
+      try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
       setActiveCameraType(type);
     } catch {
       setCameraError(language === 'en'
         ? 'Camera access denied. Please allow camera access in your browser.'
         : 'Acceso a la cámara denegado. Por favor permite el acceso en tu navegador.');
     }
-  }, [language]);
+  }, [language, user, isAdmin]);
 
   const capturePhoto = useCallback(async () => {
+    try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');

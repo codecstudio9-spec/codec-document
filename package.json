@@ -6,6 +6,7 @@
   "scripts": {
     "validate:legal": "node scripts/validate-legal-content.mjs",
     "build": "npm run validate:legal && vite build",
+    "verify:fonts": "node scripts/verify-unicode-fonts.mjs",
     "dev": "vite",
     "dev:server": "npm run dev --prefix server",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",

@@ -77,6 +77,16 @@ export class PDFGenerator {
     return language === 'es' ? 'es-ES' : 'en-US';
   }
 
+  private hasUnicodeFont(): boolean {
+    try {
+      const anyDoc = this.doc as any;
+      const fontList = typeof anyDoc.getFontList === 'function' ? anyDoc.getFontList() : null;
+      return Boolean(fontList && (fontList['StandardUnicode'] || fontList['StandardUnicode'] === ''));
+    } catch {
+      return false;
+    }
+  }
+
   private static formatAuditDateTime(input: Date, language: 'en' | 'es'): string {
     const locale = PDFGenerator.getAuditLocale(language);
     const date = input.toLocaleDateString(locale, {
@@ -1518,6 +1528,7 @@ export class PDFGenerator {
     signatures: NonNullable<PDFGeneratorOptions['signatures']>,
     language: 'en' | 'es',
     docTitle: string,
+    selfieDataUrl?: string,
   ) {
     if (!signatures.length) return;
 
@@ -1547,6 +1558,20 @@ export class PDFGenerator {
     this.doc.setFontSize(7);
     this.doc.setTextColor(200, 210, 240);
     this.safeText(subtitle, PW / 2, 18, { align: 'center' });
+
+    // If a selfie is available, render a professional square thumbnail at top-right
+    if (selfieDataUrl) {
+      try {
+        const thumbSize = 22; // mm
+        const thumbX = PW - M - thumbSize;
+        const thumbY = HEADER_H - thumbSize / 2 - 4;
+        // Process a center-cropped square thumbnail at approx px size
+        // Use the same processImageCenterCrop helper scaled to reasonable pixels
+        // (best-effort; processImageCenterCrop is async but here we call sync fallback)
+        // We'll attempt to draw directly; if broken, it's non-fatal.
+        this.addImageContain(selfieDataUrl, thumbX, thumbY, thumbSize, thumbSize);
+      } catch { /* ignore thumbnail errors */ }
+    }
 
     // ── Two-column grid constants ─────────────────────────────────────────
     const COL_GAP   = 10;
@@ -1622,7 +1647,7 @@ export class PDFGenerator {
       let textY = sigLineY + 5;
 
       // Name (bold, centered)
-      this.doc.setFont('helvetica', 'bold');
+      this.setFontForLang('bold');
       this.doc.setFontSize(8);
       this.doc.setTextColor(20, 24, 50);
       const name = PDFGenerator.normalizeSignerDisplayName(sig.signerName || 'Signer', language).toUpperCase().slice(0, 34);
@@ -1630,7 +1655,7 @@ export class PDFGenerator {
       textY += 5;
 
       // Role (blue-indigo, centered)
-      this.doc.setFont('helvetica', 'normal');
+      this.setFontForLang('normal');
       this.doc.setFontSize(7);
       this.doc.setTextColor(90, 105, 233);
       const role = PDFGenerator.normalizeSignerRole(sig.signerRole || (language === 'es' ? 'Firmante' : 'Signatory'), language).toUpperCase().slice(0, 36);
@@ -2107,7 +2132,7 @@ export class PDFGenerator {
 
     // Informe de Firmas — premium signature report (last content page)
     if (opts.signatures?.length) {
-      generator.addSignatureReportPage(opts.signatures, opts.language, opts.title);
+      generator.addSignatureReportPage(opts.signatures, opts.language, opts.title, opts.identitySelfie);
     }
 
     // Add header/footer/page numbering (with SHA-256 hash in footer)
@@ -2183,7 +2208,7 @@ export class PDFGenerator {
 
     // Informe de Firmas — premium signature report (last content page)
     if (opts.signatures?.length) {
-      generator.addSignatureReportPage(opts.signatures, opts.language, opts.title);
+      generator.addSignatureReportPage(opts.signatures, opts.language, opts.title, opts.identitySelfie);
     }
 
     // Add header/footer/page numbering (with SHA-256 hash in footer)

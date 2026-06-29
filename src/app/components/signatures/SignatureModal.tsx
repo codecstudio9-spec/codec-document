@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useAuth } from '../../contexts/auth-context';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShieldCheck } from 'lucide-react';
 import { SignaturePad } from './SignaturePad';
@@ -22,8 +23,10 @@ export function SignatureModal({
   subtitle,
   userId,
 }: SignatureModalProps) {
+  const { user, isAdmin } = useAuth();
   useEffect(() => {
     if (!open) return;
+    try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onOpenChange(false); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
