@@ -132,6 +132,55 @@ export class PDFGenerator {
     return this.unicodeFontReady;
   }
 
+  // Safe font setter — falls back to built-in helvetica when custom fonts lack metrics
+  private setFontSafe(family: string, style: string) {
+    try {
+      this.doc.setFont(family, style);
+    } catch (e) {
+      try { this.doc.setFont('helvetica', 'normal'); } catch {}
+      return;
+    }
+    try {
+      const fl = (this.doc.getFontList && this.doc.getFontList()) || null;
+      if (fl && family && !Object.prototype.hasOwnProperty.call(fl, family)) {
+        this.doc.setFont('helvetica', 'normal');
+      }
+    } catch {}
+  }
+
+  private safeGetTextWidth(txt: string): number {
+    try {
+      return this.doc.getTextWidth(txt);
+    } catch (err) {
+      try { this.doc.setFont('helvetica', 'normal'); } catch {}
+      try { return this.doc.getTextWidth(txt); } catch (err2) {
+        const size = (this.doc.getFontSize && typeof this.doc.getFontSize === 'function') ? this.doc.getFontSize() : 7;
+        return txt.length * (size * 0.5);
+      }
+    }
+  }
+
+  private safeText(text: string | string[], x: number, y: number, opts?: any) {
+    try {
+      this.doc.text(text as any, x, y, opts);
+    } catch (err) {
+      try { this.doc.setFont('helvetica', 'normal'); } catch {}
+      try { this.doc.text(text as any, x, y, opts); } catch (err2) {
+        // last resort: if still failing, try splitting lines
+        try {
+          if (Array.isArray(text)) {
+            (text as string[]).forEach((ln, i) => {
+              try { this.doc.text(ln, x, y + i * 4); } catch {}
+            });
+          } else {
+            const lines = String(text).split('\n');
+            lines.forEach((ln, i) => { try { this.doc.text(ln, x, y + i * 4); } catch {} });
+          }
+        } catch {}
+      }
+    }
+  }
+
   private static parseAgent(userAgent?: string): { browser: string; os: string } {
     const ua = String(userAgent || '').toLowerCase();
     let browser = 'Unknown';
@@ -253,17 +302,17 @@ export class PDFGenerator {
       // Calculate X position based on alignment
       let xPosition = this.margin;
       if (align === 'center') {
-        const textWidth = this.doc.getTextWidth(line);
+        const textWidth = this.safeGetTextWidth(line);
         xPosition = (this.pageWidth - textWidth) / 2;
-        this.doc.text(line, xPosition, this.currentY);
+        this.safeText(line, xPosition, this.currentY);
       } else if (align === 'right') {
-        const textWidth = this.doc.getTextWidth(line);
+        const textWidth = this.safeGetTextWidth(line);
         xPosition = this.pageWidth - this.margin - textWidth;
-        this.doc.text(line, xPosition, this.currentY);
+        this.safeText(line, xPosition, this.currentY);
       } else if (align === 'justify') {
-        this.doc.text(line, this.margin, this.currentY);
+        this.safeText(line, this.margin, this.currentY);
       } else {
-        this.doc.text(line, this.margin, this.currentY);
+        this.safeText(line, this.margin, this.currentY);
       }
 
       const lh = Math.max(this.lineHeight, fontSize * 0.352 * 1.38);
@@ -653,7 +702,7 @@ export class PDFGenerator {
 
       for (let row = -2; row <= 2; row++) {
         for (let col = -1; col <= 1; col++) {
-          this.doc.text(
+          this.safeText(
             text === 'PREVIEW ONLY' ? 'PREVIEW' : 'VISTA PREVIA',
             centerX + (col * gridSpacingX),
             centerY + (row * gridSpacingY),
@@ -675,7 +724,7 @@ export class PDFGenerator {
       this.doc.setTextColor(255, 255, 255);
       this.doc.setFontSize(8);
       this.doc.setFont('helvetica', 'bold');
-      this.doc.text(
+      this.safeText(
         text === 'PREVIEW ONLY'
           ? '🔒 PREVIEW - Purchase to unlock full document without watermarks'
           : '🔒 VISTA PREVIA - Compra para desbloquear el documento completo sin marcas de agua',
@@ -769,21 +818,21 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(6.5);
       this.doc.setTextColor(37, 99, 235);
-      this.doc.text('CODEC DOCUMENT', this.margin, 8);
+      this.safeText('CODEC DOCUMENT', this.margin, 8);
 
       const centerTitle = (branding?.headerText || '').trim();
       if (centerTitle) {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setFontSize(6);
         this.doc.setTextColor(71, 85, 105);
-        this.doc.text(centerTitle.slice(0, 55), this.pageWidth / 2, 8, { align: 'center' });
+        this.safeText(centerTitle.slice(0, 55), this.pageWidth / 2, 8, { align: 'center' });
       }
 
       if (language === 'en' && branding?.companyState) {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setFontSize(6);
         this.doc.setTextColor(100, 116, 139);
-        this.doc.text(`State of ${branding.companyState}`, this.pageWidth - this.margin, 8, { align: 'right' });
+        this.safeText(`State of ${branding.companyState}`, this.pageWidth - this.margin, 8, { align: 'right' });
       }
 
       this.doc.setDrawColor(226, 232, 240);
@@ -800,24 +849,24 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(6);
       this.doc.setTextColor(100, 116, 139);
-      this.doc.text('Generated by Codec Document', this.margin, footerY + 2);
+      this.safeText('Generated by Codec Document', this.margin, footerY + 2);
 
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(6);
       this.doc.setTextColor(37, 99, 235);
-      this.doc.text('Legally Compliant E-SIGN & UETA', this.pageWidth / 2, footerY + 2, { align: 'center' });
+      this.safeText('Legally Compliant E-SIGN & UETA', this.pageWidth / 2, footerY + 2, { align: 'center' });
 
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(6);
       this.doc.setTextColor(100, 116, 139);
       const pageLabel = `Page ${i} of ${pageCount}`;
-      this.doc.text(pageLabel, this.pageWidth - this.margin, footerY + 2, { align: 'right' });
+      this.safeText(pageLabel, this.pageWidth - this.margin, footerY + 2, { align: 'right' });
 
       if (documentHash) {
         this.doc.setFontSize(5);
         this.doc.setTextColor(148, 163, 184);
         const hashSnip = `SHA-256: ${documentHash.slice(0, 12)}...${documentHash.slice(-6)}`;
-        this.doc.text(hashSnip, this.pageWidth - this.margin, footerY + 5.5, { align: 'right' });
+        this.safeText(hashSnip, this.pageWidth - this.margin, footerY + 5.5, { align: 'right' });
       }
     }
   }
@@ -910,7 +959,7 @@ export class PDFGenerator {
       this.doc.setFontSize(8.5);
       let businessY = topY + 12;
       for (const ln of companyLines) {
-        this.doc.text(ln, this.margin, businessY);
+        this.safeText(ln, this.margin, businessY);
         businessY += 4;
       }
       businessBottomY = businessY;
@@ -951,7 +1000,7 @@ export class PDFGenerator {
     if (letterhead.companyName) {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(12);
-      this.doc.text(letterhead.companyName, this.margin + 28, startY + 8);
+      this.safeText(letterhead.companyName || '', this.margin + 28, startY + 8);
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(9);
     }
@@ -1000,12 +1049,12 @@ export class PDFGenerator {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(13);
     this.doc.setTextColor(255, 255, 255);
-    this.doc.text('IDENTITY VERIFICATION REPORT', PW / 2, 10, { align: 'center' });
+    this.safeText('IDENTITY VERIFICATION REPORT', PW / 2, 10, { align: 'center' });
 
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(191, 219, 254);
-    this.doc.text('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 14.5, { align: 'center' });
+    this.safeText('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 14.5, { align: 'center' });
 
     this.currentY = 24;
 
@@ -1016,7 +1065,7 @@ export class PDFGenerator {
     this.doc.setTextColor(71, 85, 105);
     const discLines = this.splitTextToSize(disclaimer, PW - M * 2);
     discLines.forEach((line: string) => {
-      this.doc.text(line, M, this.currentY);
+      this.safeText(line, M, this.currentY);
       this.currentY += 4;
     });
     this.currentY += 5;
@@ -1043,7 +1092,7 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(7);
       this.doc.setTextColor(37, 99, 235);
-      this.doc.text(title, x + w / 2, y + 8, { align: 'center' });
+      this.safeText(title, x + w / 2, y + 8, { align: 'center' });
 
       const imgY = y + 11;
       const imgH = h - 20;
@@ -1053,18 +1102,18 @@ export class PDFGenerator {
         } catch {
           this.doc.setFontSize(7);
           this.doc.setTextColor(148, 163, 184);
-          this.doc.text('[Image unavailable]', x + w / 2, imgY + imgH / 2, { align: 'center' });
+          this.safeText('[Image unavailable]', x + w / 2, imgY + imgH / 2, { align: 'center' });
         }
       } else {
         this.doc.setFontSize(7);
         this.doc.setTextColor(148, 163, 184);
-        this.doc.text('[Not provided]', x + w / 2, imgY + imgH / 2, { align: 'center' });
+        this.safeText('[Not provided]', x + w / 2, imgY + imgH / 2, { align: 'center' });
       }
 
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(6.3);
       this.doc.setTextColor(100, 116, 139);
-      this.doc.text(note, x + w / 2, y + h - 3, { align: 'center' });
+      this.safeText(note, x + w / 2, y + h - 3, { align: 'center' });
     };
 
     drawPhotoCard('VALIDATION SELFIE', selfieDataUrl, leftX, photoSectionY, leftW, topCardH * 2 + 8, "Signer's face via front camera");
@@ -1089,7 +1138,7 @@ export class PDFGenerator {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(8.5);
     this.doc.setTextColor(15, 23, 42);
-    this.doc.text('VERIFICATION AUDIT TRAIL', M, this.currentY);
+    this.safeText('VERIFICATION AUDIT TRAIL', M, this.currentY);
     this.currentY += 3;
 
     this.doc.setDrawColor(37, 99, 235);
@@ -1112,12 +1161,12 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(7.5);
       this.doc.setTextColor(71, 85, 105);
-      this.doc.text(label, M + 2, this.currentY + 2);
+      this.safeText(label, M + 2, this.currentY + 2);
 
       this.ensureFontMetadata('helvetica', 'normal');
       this.doc.setTextColor(15, 23, 42);
       const valLines = this.splitTextToSize(value, valueW);
-      this.doc.text(valLines[0], valueX, this.currentY + 2);
+      this.safeText(valLines[0], valueX, this.currentY + 2);
       this.currentY += 7.5;
     });
 
@@ -1134,7 +1183,7 @@ export class PDFGenerator {
     const legalNote = 'This Identity Verification Report is an integral part of the executed agreement. The biometric images and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.';
     const legalLines = this.splitTextToSize(legalNote, PW - M * 2);
     legalLines.forEach((line: string) => {
-      this.doc.text(line, M, this.currentY);
+      this.safeText(line, M, this.currentY);
       this.currentY += 4;
     });
 
@@ -1205,7 +1254,7 @@ export class PDFGenerator {
         this.doc.addPage();
         this.currentY = this.margin;
       }
-      this.doc.text(line, this.margin, this.currentY);
+      this.safeText(line, this.margin, this.currentY);
       this.currentY += 4;
     });
   }
@@ -1322,7 +1371,7 @@ export class PDFGenerator {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(13);
     this.doc.setTextColor(255, 255, 255);
-    this.doc.text(reportTitle, PW / 2, 11, { align: 'center' });
+    this.safeText(reportTitle, PW / 2, 11, { align: 'center' });
 
     const subtitle = language === 'es'
       ? `Documento: ${docTitle.slice(0, 60)}`
@@ -1330,7 +1379,7 @@ export class PDFGenerator {
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(200, 210, 240);
-    this.doc.text(subtitle, PW / 2, 18, { align: 'center' });
+    this.safeText(subtitle, PW / 2, 18, { align: 'center' });
 
     // ── Two-column grid constants ─────────────────────────────────────────
     const COL_GAP   = 10;
@@ -1410,7 +1459,7 @@ export class PDFGenerator {
       this.doc.setFontSize(8);
       this.doc.setTextColor(20, 24, 50);
       const name = PDFGenerator.normalizeSignerDisplayName(sig.signerName || 'Signer', language).toUpperCase().slice(0, 34);
-      this.doc.text(name, x + COL_W / 2, textY, { align: 'center' });
+      this.safeText(name, x + COL_W / 2, textY, { align: 'center' });
       textY += 5;
 
       // Role (blue-indigo, centered)
@@ -1418,14 +1467,14 @@ export class PDFGenerator {
       this.doc.setFontSize(7);
       this.doc.setTextColor(90, 105, 233);
       const role = PDFGenerator.normalizeSignerRole(sig.signerRole || (language === 'es' ? 'Firmante' : 'Signatory'), language).toUpperCase().slice(0, 36);
-      this.doc.text(role, x + COL_W / 2, textY, { align: 'center' });
+      this.safeText(role, x + COL_W / 2, textY, { align: 'center' });
       textY += 4.5;
 
       // Token (centered)
       this.doc.setTextColor(130, 140, 165);
       this.doc.setFontSize(6.5);
       const token = sig.token || `CDX-${String(Date.now()).slice(-8, -4)}-${String(Date.now()).slice(-4)}-${String(i + 1).padStart(2, '0')}`;
-      this.doc.text(token, x + COL_W / 2, textY, { align: 'center' });
+      this.safeText(token, x + COL_W / 2, textY, { align: 'center' });
       textY += 4;
 
       // Datetime (centered)
@@ -1433,7 +1482,7 @@ export class PDFGenerator {
       const sigDate = sig.guestSignedAt
         ? `${PDFGenerator.formatAuditDateTime(new Date(sig.guestSignedAt), language)} ${tzLabel}`
         : dateStr;
-      this.doc.text(sigDate, x + COL_W / 2, textY, { align: 'center' });
+      this.safeText(sigDate, x + COL_W / 2, textY, { align: 'center' });
     });
 
     // ── Legal Compliance Section (bottom of page) ─────────────────────────
@@ -1475,19 +1524,19 @@ export class PDFGenerator {
     this.doc.setFillColor(90, 105, 233);
     this.doc.roundedRect(badgeX, badgeY, badgeLW, badgeH, 1, 1, 'F');
     this.doc.setTextColor(255, 255, 255);
-    this.doc.text(badgeLabel, badgeX + badgeLW / 2, badgeY + 6, { align: 'center' });
+    this.safeText(badgeLabel, badgeX + badgeLW / 2, badgeY + 6, { align: 'center' });
 
     const securedLabel = 'Secured by Codec Studio';
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(5);
     this.doc.setTextColor(130, 140, 165);
-    this.doc.text(securedLabel, badgeX + badgeLW / 2, badgeY + badgeH + 4, { align: 'center' });
+    this.safeText(securedLabel, badgeX + badgeLW / 2, badgeY + badgeH + 4, { align: 'center' });
 
     // Compliance title
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(7);
     this.doc.setTextColor(18, 24, 70);
-    this.doc.text('U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE', LEGAL_X + 8, LEGAL_Y + 9);
+    this.safeText('U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE', LEGAL_X + 8, LEGAL_Y + 9);
 
     // Legal body (wrapped)
     const legalBody = language === 'es'
@@ -1497,12 +1546,12 @@ export class PDFGenerator {
     this.doc.setFontSize(5.5);
     this.doc.setTextColor(60, 70, 110);
     const legalLines = this.splitTextToSize(legalBody, LEGAL_W - badgeLW - 20);
-    this.doc.text(legalLines, LEGAL_X + 8, LEGAL_Y + 16);
+    this.safeText(legalLines, LEGAL_X + 8, LEGAL_Y + 16);
 
     // Attribution
     this.doc.setFontSize(5);
     this.doc.setTextColor(140, 150, 175);
-    this.doc.text(
+    this.safeText(
       'Codec Document Security Services - Cryptographic Audit Trail Verification String. Electronically signed document with full legal binding.',
       LEGAL_X + 8,
       LEGAL_Y + LEGAL_H - 5,
