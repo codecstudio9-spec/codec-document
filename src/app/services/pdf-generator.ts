@@ -109,7 +109,58 @@ export class PDFGenerator {
   private async ensureUnicodeFont(): Promise<void> {
     if (this.unicodeFontReady) return this.unicodeFontReady;
 
-    this.unicodeFontReady = Promise.resolve();
+    this.unicodeFontReady = (async () => {
+      try {
+        // Try several common font paths (case-insensitive filenames and bold variants)
+        const regularCandidates = ['/fonts/Arial.ttf', '/fonts/arial.ttf', '/fonts/Arial-Regular.ttf'];
+        const boldCandidates = ['/fonts/Arial-Bold.ttf', '/fonts/arialbd.ttf', '/fonts/Arial-BoldReg.ttf'];
+
+        let regularB64: string | null = null;
+        for (const p of regularCandidates) {
+          // loadFontBase64 returns base64 or null
+          // eslint-disable-next-line no-await-in-loop
+          regularB64 = await PDFGenerator.loadFontBase64(p);
+          if (regularB64) break;
+        }
+
+        let boldB64: string | null = null;
+        for (const p of boldCandidates) {
+          // eslint-disable-next-line no-await-in-loop
+          boldB64 = await PDFGenerator.loadFontBase64(p);
+          if (boldB64) break;
+        }
+
+        const anyDoc = this.doc as any;
+        // Register regular font for full Unicode (Identity-H)
+        if (regularB64 && typeof anyDoc.addFileToVFS === 'function') {
+          try {
+            anyDoc.addFileToVFS('Arial.ttf', regularB64);
+            // addFont accepts (fileName, fontName, fontStyle, options) in some jspdf builds
+            // include encoding explicitly to request Identity-H (Unicode) cmap
+            if (typeof anyDoc.addFont === 'function') {
+              try { anyDoc.addFont('Arial.ttf', 'StandardArial', 'normal', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('Arial.ttf', 'StandardArial', 'normal'); }
+            }
+          } catch (err) {
+            // non-fatal
+            // console.warn('ensureUnicodeFont: regular font registration failed', err);
+          }
+        }
+
+        if (boldB64 && typeof anyDoc.addFileToVFS === 'function') {
+          try {
+            anyDoc.addFileToVFS('Arial-Bold.ttf', boldB64);
+            if (typeof anyDoc.addFont === 'function') {
+              try { anyDoc.addFont('Arial-Bold.ttf', 'StandardArial', 'bold', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('Arial-Bold.ttf', 'StandardArial', 'bold'); }
+            }
+          } catch (err) {
+            // non-fatal
+          }
+        }
+      } catch (err) {
+        // Ignore font registration failures — fallback paths remain intact
+      }
+    })();
+
     return this.unicodeFontReady;
   }
 
@@ -336,6 +387,18 @@ export class PDFGenerator {
    */
   private ensureFontMetadata(fontName: string, fontStyle: 'normal' | 'bold') {
     try {
+      const anyDoc = this.doc as any;
+      // Prefer registered Unicode Arial (StandardArial) when available
+      const fontList = typeof anyDoc.getFontList === 'function' ? anyDoc.getFontList() : null;
+      if (fontList && (fontList['StandardArial'] || fontList['StandardArial'] === '')) {
+        try {
+          this.doc.setFont('StandardArial', fontStyle);
+          return;
+        } catch {
+          // fallthrough
+        }
+      }
+
       this.doc.setFont(fontName, fontStyle);
       const currentFont = this.doc.getFont();
       const isCustomTTF = currentFont && typeof currentFont.postScriptName === 'string' && currentFont.postScriptName.toLowerCase().includes('.ttf');
@@ -343,11 +406,7 @@ export class PDFGenerator {
         throw new Error('Invalid or custom font metadata');
       }
     } catch {
-      try {
-        this.doc.setFont('helvetica', fontStyle);
-      } catch {
-        this.doc.setFont('times', fontStyle);
-      }
+      try { this.doc.setFont('helvetica', fontStyle); } catch { try { this.doc.setFont('times', fontStyle); } catch {} }
     }
   }
 
