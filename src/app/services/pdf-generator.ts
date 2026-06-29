@@ -109,43 +109,22 @@ export class PDFGenerator {
   private async ensureUnicodeFont(): Promise<void> {
     if (this.unicodeFontReady) return this.unicodeFontReady;
 
-    this.unicodeFontReady = (async () => {
-      try {
-        const regularBase64 = await PDFGenerator.loadFontBase64('/fonts/arial.ttf');
-        const boldBase64 = await PDFGenerator.loadFontBase64('/fonts/arialbd.ttf');
-        const boldFallbackBase64 = boldBase64 || regularBase64;
-
-        if (regularBase64) {
-          this.doc.addFileToVFS('CodecArial-Regular.ttf', regularBase64);
-          this.doc.addFont('CodecArial-Regular.ttf', 'helvetica', 'normal');
-        }
-
-        if (boldFallbackBase64) {
-          this.doc.addFileToVFS('CodecArial-Bold.ttf', boldFallbackBase64);
-          this.doc.addFont('CodecArial-Bold.ttf', 'helvetica', 'bold');
-        }
-      } catch {
-        // Fall back to built-in fonts if the bundled TTF cannot be registered.
-      }
-    })();
-
+    this.unicodeFontReady = Promise.resolve();
     return this.unicodeFontReady;
   }
 
   // Safe font setter — falls back to built-in helvetica when custom fonts lack metrics
   private setFontSafe(family: string, style: string) {
     try {
+      if (family !== 'helvetica' && family !== 'times' && family !== 'courier') {
+        this.doc.setFont('helvetica', style);
+        return;
+      }
       this.doc.setFont(family, style);
     } catch (e) {
-      try { this.doc.setFont('helvetica', 'normal'); } catch {}
-      return;
+      try { this.doc.setFont('helvetica', style); } catch {}
+      try { this.doc.setFont('times', style); } catch {}
     }
-    try {
-      const fl = (this.doc.getFontList && this.doc.getFontList()) || null;
-      if (fl && family && !Object.prototype.hasOwnProperty.call(fl, family)) {
-        this.doc.setFont('helvetica', 'normal');
-      }
-    } catch {}
   }
 
   private safeGetTextWidth(txt: string): number {
@@ -276,6 +255,24 @@ export class PDFGenerator {
     this.currentY = this.margin;
 
     this.doc.setFont('helvetica', 'normal');
+
+    // Override jsPDF setFont to avoid custom TTF font aliases returned as helvetica.
+    const anyDoc = this.doc as any;
+    const originalSetFont = anyDoc.setFont?.bind(anyDoc);
+    if (typeof originalSetFont === 'function') {
+      anyDoc.setFont = (font: string, style?: string) => {
+        try {
+          originalSetFont(font, style);
+          const currentFont = anyDoc.getFont?.();
+          if (currentFont && typeof currentFont.postScriptName === 'string' && /arial|codecarial|\.ttf/i.test(currentFont.postScriptName)) {
+            originalSetFont('times', style);
+          }
+        } catch {
+          try { originalSetFont('times', style); } catch {}
+        }
+      };
+    }
+
     this.currentY = this.margin + 6; // top header is 10mm; add 6mm safety gap
   }
 
@@ -341,11 +338,16 @@ export class PDFGenerator {
     try {
       this.doc.setFont(fontName, fontStyle);
       const currentFont = this.doc.getFont();
-      if (!currentFont || !currentFont.metadata || typeof currentFont.metadata.Unicode === 'undefined') {
-        throw new Error('Invalid font metadata');
+      const isCustomTTF = currentFont && typeof currentFont.postScriptName === 'string' && currentFont.postScriptName.toLowerCase().includes('.ttf');
+      if (!currentFont || !currentFont.metadata || typeof currentFont.metadata.Unicode === 'undefined' || isCustomTTF) {
+        throw new Error('Invalid or custom font metadata');
       }
     } catch {
-      this.doc.setFont('helvetica', 'normal');
+      try {
+        this.doc.setFont('helvetica', fontStyle);
+      } catch {
+        this.doc.setFont('times', fontStyle);
+      }
     }
   }
 
@@ -1509,15 +1511,7 @@ export class PDFGenerator {
     const badgeLabel = 'E-SIGN & UETA';
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(5.5);
-    let badgeLW: number;
-    try {
-      badgeLW = this.doc.getTextWidth(badgeLabel) + 8;
-    } catch (e) {
-      console.warn('getTextWidth failed for badgeLabel, falling back to estimate', e, badgeLabel);
-      const size = (this.doc.getFontSize && typeof this.doc.getFontSize === 'function') ? this.doc.getFontSize() : 5.5;
-      badgeLW = badgeLabel.length * (size * 0.5) + 8;
-      try { this.doc.setFont('helvetica', 'normal'); } catch {};
-    }
+    const badgeLW = this.safeGetTextWidth(badgeLabel) + 8;
     const badgeH  = 9;
     const badgeX  = LEGAL_X + LEGAL_W - badgeLW - 4;
     const badgeY  = LEGAL_Y + 4;

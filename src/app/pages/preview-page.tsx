@@ -252,6 +252,65 @@ async function computeDocumentHash(content: string): Promise<string> {
   }
 }
 
+function safePdfSetFont(pdf: import('jspdf').jsPDF, family: string, style: string = 'normal') {
+  const fontFamilies = [family, 'helvetica', 'times', 'courier'];
+  for (const font of fontFamilies) {
+    try {
+      pdf.setFont(font, style);
+      return;
+    } catch {
+      if (style !== 'normal') {
+        try {
+          pdf.setFont(font, 'normal');
+          return;
+        } catch {
+          // continue fallback chain
+        }
+      }
+      // try next font family
+    }
+  }
+}
+
+function safePdfSplitTextToSize(pdf: import('jspdf').jsPDF, text: string, width: number): string[] {
+  try {
+    return pdf.splitTextToSize(text, width);
+  } catch {
+    safePdfSetFont(pdf, 'helvetica', 'normal');
+    try {
+      return pdf.splitTextToSize(text, width);
+    } catch {
+      return [text];
+    }
+  }
+}
+
+function safePdfText(
+  pdf: import('jspdf').jsPDF,
+  text: string | string[],
+  x: number,
+  y: number,
+  opts?: any,
+) {
+  try {
+    pdf.text(text as any, x, y, opts);
+  } catch {
+    safePdfSetFont(pdf, 'helvetica', 'normal');
+    try {
+      pdf.text(text as any, x, y, opts);
+    } catch {
+      const lines = Array.isArray(text) ? text : String(text).split('\n');
+      lines.forEach((line, index) => {
+        try {
+          pdf.text(line, x, y + index * 4);
+        } catch {
+          // swallow; best effort only
+        }
+      });
+    }
+  }
+}
+
 function renderPdfHeader(
   pdf: import('jspdf').jsPDF,
   branding: import('../types/document').DocumentBranding,
@@ -278,22 +337,36 @@ function renderPdfHeader(
   pdf.rect(0, 0, PW, M + HEADER_H, 'F');
 
   if (hasLogo) {
-    try {
-      const fmt = branding.logoDataUrl!.includes('image/png') ? 'PNG' : 'JPEG';
-      pdf.addImage(branding.logoDataUrl!, fmt, M, 5, 14, 14, undefined, 'FAST');
-    } catch { /* skip */ }
+    const fmt = branding.logoDataUrl!.includes('image/png') ? 'PNG' : 'JPEG';
+    safePdfAddImage(pdf, branding.logoDataUrl!, fmt, M, 5, 14, 14);
   }
 
   if (hasCompany) {
-    pdf.setFont('helvetica', 'bold');
+    safePdfSetFont(pdf, 'helvetica', 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(30, 30, 60);
-    pdf.text(hasCompany, PW / 2, 12, { align: 'center' });
+    safePdfText(pdf, hasCompany, PW / 2, 12, { align: 'center' });
   }
 
   pdf.setDrawColor(210, 215, 230);
   pdf.setLineWidth(0.2);
   pdf.line(M, M + HEADER_H, PW - M, M + HEADER_H);
+}
+
+function safePdfAddImage(
+  pdf: import('jspdf').jsPDF,
+  imageData: string,
+  format: 'PNG' | 'JPEG',
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
+  try {
+    pdf.addImage(imageData, format, x, y, w, h, undefined, 'FAST');
+  } catch (err) {
+    console.warn('safePdfAddImage failed, skipping image', err, imageData?.slice?.(0, 40));
+  }
 }
 
 function renderPdfFooter(
@@ -315,26 +388,32 @@ function renderPdfFooter(
   pdf.setLineWidth(0.15);
   pdf.line(M, footerY, PW - M, footerY);
 
-  pdf.setFont('helvetica', 'normal');
+  safePdfSetFont(pdf, 'helvetica', 'normal');
   pdf.setFontSize(6);
   pdf.setTextColor(160, 160, 175);
 
   // Left: company (only if custom; omit Codec Document branding)
   const companyLabel = company !== 'Codec Document' ? company : '';
-  if (companyLabel) pdf.text(companyLabel, M, footerY + 5.5);
+  if (companyLabel) {
+    safePdfSetFont(pdf, 'helvetica', 'normal');
+    pdf.setFontSize(6);
+    pdf.setTextColor(160, 160, 175);
+    safePdfText(pdf, companyLabel, M, footerY + 5.5);
+  }
 
   // Center: SHA-256 snippet (audit trail, discrete gray)
   if (hashSnippet) {
+    safePdfSetFont(pdf, 'helvetica', 'normal');
     pdf.setFontSize(5.5);
     pdf.setTextColor(170, 170, 185);
-    pdf.text(hashSnippet, PW / 2, footerY + 5.5, { align: 'center' });
+    safePdfText(pdf, hashSnippet, PW / 2, footerY + 5.5, { align: 'center' });
   }
 
   // Right: page number
   pdf.setFontSize(6);
   pdf.setTextColor(160, 160, 175);
   const lbl = lang === 'es' ? `${pageNum} / ${totalPages}` : `${pageNum} / ${totalPages}`;
-  pdf.text(lbl, PW - M, footerY + 5.5, { align: 'right' });
+  safePdfText(pdf, lbl, PW - M, footerY + 5.5, { align: 'right' });
 }
 
 function renderCertificationPage(
@@ -350,10 +429,10 @@ function renderCertificationPage(
   const cy = { v: M };
   const line = (text: string, sz = 10, bold = false, color: [number, number, number] = [30, 30, 60]) => {
     if (cy.v + 8 > PH - M) { pdf.addPage(); cy.v = M; }
-    pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+    safePdfSetFont(pdf, 'helvetica', bold ? 'bold' : 'normal');
     pdf.setFontSize(sz);
     pdf.setTextColor(...color);
-    pdf.text(text, M, cy.v);
+    safePdfText(pdf, text, M, cy.v);
     cy.v += sz * 0.5 + 3;
   };
   const gap = (n = 4) => { cy.v += n; };
@@ -361,26 +440,26 @@ function renderCertificationPage(
   // Header
   pdf.setFillColor(30, 30, 80);
   pdf.rect(0, 0, PW, 28, 'F');
-  pdf.setFont('helvetica', 'bold');
+  safePdfSetFont(pdf, 'helvetica', 'bold');
   pdf.setFontSize(14);
   pdf.setTextColor(255, 255, 255);
-  pdf.text(lang === 'es' ? 'CERTIFICADO DE FIRMA DIGITAL' : 'DIGITAL SIGNATURE CERTIFICATE', PW / 2, 13, { align: 'center' });
-  pdf.setFont('helvetica', 'normal');
+  safePdfText(pdf, lang === 'es' ? 'CERTIFICADO DE FIRMA DIGITAL' : 'DIGITAL SIGNATURE CERTIFICATE', PW / 2, 13, { align: 'center' });
+  safePdfSetFont(pdf, 'helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(200, 200, 255);
-  pdf.text('Codec Document — E-SIGN Act / UETA Compliant', PW / 2, 22, { align: 'center' });
+  safePdfText(pdf, 'Codec Document — E-SIGN Act / UETA Compliant', PW / 2, 22, { align: 'center' });
   cy.v = 36;
 
   gap(2);
   line(lang === 'es' ? 'HASH SHA-256 DEL DOCUMENTO:' : 'DOCUMENT SHA-256 HASH:', 9, true, [80, 30, 180]);
   gap(1);
-  pdf.setFont('courier', 'normal');
+  safePdfSetFont(pdf, 'courier', 'normal');
   pdf.setFontSize(7.5);
   pdf.setTextColor(50, 50, 50);
   const halfLen = Math.floor(documentHash.length / 2);
-  pdf.text(documentHash.slice(0, halfLen), M, cy.v);
+  safePdfText(pdf, documentHash.slice(0, halfLen), M, cy.v);
   cy.v += 6;
-  pdf.text(documentHash.slice(halfLen), M, cy.v);
+  safePdfText(pdf, documentHash.slice(halfLen), M, cy.v);
   cy.v += 8;
 
   gap(4);
@@ -390,11 +469,9 @@ function renderCertificationPage(
     line(`${i + 1}. ${sig.signerName}`, 9, true);
     line(`   ${lang === 'es' ? 'Firmado el' : 'Signed at'}: ${new Date(sig.signedAt).toLocaleString()}`, 8, false, [80, 80, 110]);
     if (sig.signatureDataUrl) {
-      try {
-        const fmt = sig.signatureDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        pdf.addImage(sig.signatureDataUrl, fmt, M + 4, cy.v, 50, 14, undefined, 'FAST');
-        cy.v += 18;
-      } catch { cy.v += 4; }
+      const fmt = sig.signatureDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      safePdfAddImage(pdf, sig.signatureDataUrl, fmt, M + 4, cy.v, 50, 14);
+      cy.v += 18;
     }
     gap(4);
   });
@@ -405,11 +482,11 @@ function renderCertificationPage(
   const legal = lang === 'es'
     ? 'Este documento ha sido firmado electrónicamente de conformidad con la Ley ESIGN (Electronic Signatures in Global and National Commerce Act) y la UETA (Uniform Electronic Transactions Act). Las firmas digitales contenidas en este documento tienen la misma validez legal que las firmas manuscritas.'
     : 'This document was electronically signed in compliance with the Electronic Signatures in Global and National Commerce Act (E-SIGN Act) and the Uniform Electronic Transactions Act (UETA). Electronic signatures carry the same legal weight as handwritten signatures.';
-  pdf.setFont('helvetica', 'normal');
+  safePdfSetFont(pdf, 'helvetica', 'normal');
   pdf.setFontSize(7.5);
   pdf.setTextColor(80, 80, 100);
-  const wrapped = pdf.splitTextToSize(legal, PW - 2 * M);
-  wrapped.forEach((l: string) => { pdf.text(l, M, cy.v); cy.v += 5; });
+  const wrapped = safePdfSplitTextToSize(pdf, legal, PW - 2 * M);
+  wrapped.forEach((l: string) => { safePdfText(pdf, l, M, cy.v); cy.v += 5; });
 
   gap(10);
   line(`${lang === 'es' ? 'Generado' : 'Generated'}: ${new Date().toLocaleString()}`, 7.5, false, [120, 120, 140]);
@@ -512,7 +589,7 @@ export function PreviewPage() {
         if (ownerSigUrl) {
           allSigs.push({
             id: 'owner',
-            name: parsed.landlord_name || parsed.owner_name || parsed.party_one || 'Owner',
+            name: String(parsed.landlord_name || parsed.owner_name || parsed.party_one || 'Owner'),
             dataUrl: ownerSigUrl,
             xPct: sigX > 0 ? sigX : 18,
             yPct: sigY > 0 ? sigY : 82,
@@ -558,62 +635,6 @@ export function PreviewPage() {
       } else {
         navigate(`/generator/${documentType}`);
       }
-
-      // Pre-populate owner signature from Step 2 (sign step)
-      const ownerSigUrl = sessionStorage.getItem('userSignatureDataUrl');
-      const sigX = parseFloat(sessionStorage.getItem('sigPlacementX') || '0');
-      const sigY = parseFloat(sessionStorage.getItem('sigPlacementY') || '0');
-
-      const allSigs: PlacedSig[] = [];
-
-      if (ownerSigUrl) {
-        allSigs.push({
-          id: 'owner',
-          name: parsed.landlord_name || parsed.owner_name || parsed.party_one || 'Owner',
-          dataUrl: ownerSigUrl,
-          xPct: sigX > 0 ? sigX : 18,
-          yPct: sigY > 0 ? sigY : 82,
-        });
-      }
-
-      // Load co-signer signatures saved by document-generator-page Step 2
-      const coSignersJson = sessionStorage.getItem('coSigners');
-      if (coSignersJson) {
-        try {
-          const coSigners = JSON.parse(coSignersJson) as Array<{
-            id: string;
-            name: string;
-            sigDataUrl: string;
-            placement: { x: number; y: number } | null;
-          }>;
-          coSigners
-            .filter((cs) => cs.sigDataUrl)
-            .forEach((cs, i) => {
-              allSigs.push({
-                id: `cs-${cs.id}`,
-                name: cs.name,
-                dataUrl: cs.sigDataUrl,
-                xPct: cs.placement ? cs.placement.x : Math.min(80, 30 + i * 22),
-                yPct: cs.placement ? cs.placement.y : 86,
-              });
-            });
-        } catch { /* corrupted — skip */ }
-      }
-
-      if (allSigs.length > 0) setPlacedSignatures(allSigs);
-
-      // Identity verification photos from Step 3
-      const identitySelfie = sessionStorage.getItem('identitySelfie') || undefined;
-      const identityIdDocFront =
-        sessionStorage.getItem('identityIdDocFront') ||
-        sessionStorage.getItem('identityIdDoc') ||
-        undefined;
-      const identityIdDocBack = sessionStorage.getItem('identityIdDocBack') || undefined;
-      if (identitySelfie) setIdentitySelfie(identitySelfie);
-      if (identityIdDocFront) setIdentityIdDocFront(identityIdDocFront);
-      if (identityIdDocBack) setIdentityIdDocBack(identityIdDocBack);
-    } else {
-      navigate(`/generator/${documentType}`);
     }
 
     checkPersistentPurchase();
@@ -750,6 +771,7 @@ export function PreviewPage() {
   const handleDownload = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
+    let fileName = '';
 
     try {
       if (!user || !token) {
@@ -768,9 +790,9 @@ export function PreviewPage() {
       }
 
       // Generate content based on user's selected export language
-    let templateForExport = exportLanguage === 'es' && spanishTemplates[template.id]
-      ? spanishTemplates[template.id]
-      : template.template;
+      let templateForExport = exportLanguage === 'es' && spanishTemplates[template.id]
+        ? spanishTemplates[template.id]
+        : template.template;
 
     // Apply state-specific variations
     if (selectedState) {
@@ -920,21 +942,6 @@ export function PreviewPage() {
   } finally {
     setIsDownloading(false);
   }
-
-    // Record 72-hour download event for free-tier users (used by check_user_limits RPC)
-    if (!canDownloadFree && user?.id) {
-      void recordDownloadEvent(user.id, 'doc');
-    }
-
-    // Legacy daily counter — kept for analytics
-    if (user?.id && !unlimitedActive && !subscriptionActive && !isAdmin) {
-      void incrementGeneratedDoc(user.id);
-    }
-
-    // Save document record to cloud workspace (all authenticated users)
-    if (user?.id) {
-      void saveDocumentRecord(user.id, template.id, fileName);
-    }
   };
 
   const handleEdit = () => {
@@ -1104,7 +1111,7 @@ export function PreviewPage() {
           sCtx.fillStyle = '#ffffff';
           sCtx.fillRect(0, 0, slice.width, slice.height);
           sCtx.drawImage(captured, 0, sliceStartPx, captured.width, sliceHPx, 0, 0, captured.width, sliceHPx);
-          pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, M + HEADER_H, contentW, sliceHPx / pxPerMm);
+          safePdfAddImage(pdf, slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, M + HEADER_H, contentW, sliceHPx / pxPerMm);
         }
 
         renderPdfFooter(pdf, company, hashSnippet, page + 1, numPages, PW, PH, M, FOOTER_H, exportLanguage);

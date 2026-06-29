@@ -6,17 +6,31 @@ function createTemporaryDownloadLink(href: string, fileName: string) {
   link.href = href;
   link.download = fileName;
   link.rel = 'noopener';
+  link.target = '_blank';
   link.style.display = 'none';
   document.body.appendChild(link);
 
-  const clickEvent = new MouseEvent('click', {
-    view: window,
-    bubbles: true,
-    cancelable: true,
-  });
-  const dispatched = link.dispatchEvent(clickEvent);
+  const dispatchDownload = () => {
+    try {
+      link.click();
+      return true;
+    } catch {
+      const clickEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+      });
+      return link.dispatchEvent(clickEvent);
+    }
+  };
+
+  const dispatched = dispatchDownload();
   if (!dispatched) {
-    window.open(href, '_blank', 'noopener');
+    try {
+      window.open(href, '_blank', 'noopener');
+    } catch (error) {
+      console.error('download.ts: fallback window.open failed', error);
+    }
   }
 
   setTimeout(() => {

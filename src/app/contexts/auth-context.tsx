@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { ensureUserUsageRow } from '../services/usage-service';
 import { isAdminEmail } from '../utils/admin-access';
 
-type AuthUser = { email: string; name?: string; picture?: string };
+type AuthUser = { id?: string; email: string; name?: string; picture?: string };
 
 interface AuthContextType {
   user: AuthUser | null;
