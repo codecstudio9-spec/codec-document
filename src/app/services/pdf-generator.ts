@@ -71,6 +71,7 @@ export class PDFGenerator {
   private maxWidth: number;
   private topReservedSpace: number = 0;
   private unicodeFontReady: Promise<void> | null = null;
+  private language: 'en' | 'es' = 'en';
 
   private static getAuditLocale(language: 'en' | 'es'): string {
     return language === 'es' ? 'es-ES' : 'en-US';
@@ -112,8 +113,16 @@ export class PDFGenerator {
     this.unicodeFontReady = (async () => {
       try {
         // Try several common font paths (case-insensitive filenames and bold variants)
-        const regularCandidates = ['/fonts/Arial.ttf', '/fonts/arial.ttf', '/fonts/Arial-Regular.ttf'];
-        const boldCandidates = ['/fonts/Arial-Bold.ttf', '/fonts/arialbd.ttf', '/fonts/Arial-BoldReg.ttf'];
+        const regularCandidates = [
+          '/fonts/NotoSans-Regular.ttf', '/fonts/NotoSans-Regular.otf',
+          '/fonts/DejaVuSans.ttf', '/fonts/Roboto-Regular.ttf',
+          '/fonts/Arial.ttf', '/fonts/arial.ttf', '/fonts/Arial-Regular.ttf'
+        ];
+        const boldCandidates = [
+          '/fonts/NotoSans-Bold.ttf', '/fonts/NotoSans-Bold.otf',
+          '/fonts/DejaVuSans-Bold.ttf', '/fonts/Roboto-Bold.ttf',
+          '/fonts/Arial-Bold.ttf', '/fonts/arialbd.ttf', '/fonts/Arial-BoldReg.ttf'
+        ];
 
         let regularB64: string | null = null;
         for (const p of regularCandidates) {
@@ -131,14 +140,14 @@ export class PDFGenerator {
         }
 
         const anyDoc = this.doc as any;
-        // Register regular font for full Unicode (Identity-H)
+        // Register regular font for full Unicode (Identity-H) under the StandardArial alias
         if (regularB64 && typeof anyDoc.addFileToVFS === 'function') {
           try {
-            anyDoc.addFileToVFS('Arial.ttf', regularB64);
+            anyDoc.addFileToVFS('StandardUnicode-Regular.ttf', regularB64);
             // addFont accepts (fileName, fontName, fontStyle, options) in some jspdf builds
             // include encoding explicitly to request Identity-H (Unicode) cmap
             if (typeof anyDoc.addFont === 'function') {
-              try { anyDoc.addFont('Arial.ttf', 'StandardArial', 'normal', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('Arial.ttf', 'StandardArial', 'normal'); }
+              try { anyDoc.addFont('StandardUnicode-Regular.ttf', 'StandardUnicode', 'normal', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('StandardUnicode-Regular.ttf', 'StandardUnicode', 'normal'); }
             }
           } catch (err) {
             // non-fatal
@@ -148,9 +157,9 @@ export class PDFGenerator {
 
         if (boldB64 && typeof anyDoc.addFileToVFS === 'function') {
           try {
-            anyDoc.addFileToVFS('Arial-Bold.ttf', boldB64);
+            anyDoc.addFileToVFS('StandardUnicode-Bold.ttf', boldB64);
             if (typeof anyDoc.addFont === 'function') {
-              try { anyDoc.addFont('Arial-Bold.ttf', 'StandardArial', 'bold', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('Arial-Bold.ttf', 'StandardArial', 'bold'); }
+              try { anyDoc.addFont('StandardUnicode-Bold.ttf', 'StandardUnicode', 'bold', { encoding: 'Identity-H' }); } catch { anyDoc.addFont('StandardUnicode-Bold.ttf', 'StandardUnicode', 'bold'); }
             }
           } catch (err) {
             // non-fatal
@@ -334,7 +343,12 @@ export class PDFGenerator {
     // Ensure body/document text always renders in solid black regardless of previous style changes.
     this.doc.setTextColor(0, 0, 0);
     this.doc.setFontSize(fontSize);
-    this.ensureFontMetadata('helvetica', fontStyle);
+    // Prefer Unicode-registered font for Spanish content when available
+    if (this.language === 'es') {
+      try { (this.doc as any).setFont('StandardArial', fontStyle); } catch { this.ensureFontMetadata('helvetica', fontStyle); }
+    } else {
+      this.ensureFontMetadata('helvetica', fontStyle);
+    }
 
     // Split text into lines that fit within the page width
     const lines = this.splitTextToSize(text, this.maxWidth);
@@ -368,6 +382,78 @@ export class PDFGenerator {
     }
   }
 
+  // Process an image dataUrl to center-crop it to desired aspect and size.
+  // Attempts a lightweight skin-tone centroid heuristic to center on the face.
+  private async processImageCenterCrop(dataUrl: string, outW: number, outH: number): Promise<string> {
+    return await new Promise<string>((resolve) => {
+      if (!dataUrl || typeof document === 'undefined') return resolve(dataUrl);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const sw = img.width;
+          const sh = img.height;
+          const destAspect = outW / outH;
+
+          // Simple skin-tone centroid estimation sampling every 4th pixel
+          const sampleCanvas = document.createElement('canvas');
+          sampleCanvas.width = Math.min(256, sw);
+          sampleCanvas.height = Math.min(256, Math.round(sampleCanvas.width * (sh / sw)));
+          const sctx = sampleCanvas.getContext('2d')!;
+          sctx.drawImage(img, 0, 0, sampleCanvas.width, sampleCanvas.height);
+          const imgData = sctx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height).data;
+          let count = 0; let cx = 0; let cy = 0;
+          for (let y = 0; y < sampleCanvas.height; y += 4) {
+            for (let x = 0; x < sampleCanvas.width; x += 4) {
+              const i = (y * sampleCanvas.width + x) * 4;
+              const r = imgData[i] / 255; const g = imgData[i + 1] / 255; const b = imgData[i + 2] / 255;
+              const max = Math.max(r, g, b); const min = Math.min(r, g, b);
+              const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+              const chroma = max - min;
+              // crude skin hue-ish heuristic in RGB space
+              const isSkin = (r > 0.35 && g > 0.2 && b > 0.15 && chroma > 0.05 && luminance > 0.2 && luminance < 0.95);
+              if (isSkin) { cx += x; cy += y; count++; }
+            }
+          }
+
+          let srcCx = sw / 2;
+          let srcCy = sh / 2;
+          if (count > 8) {
+            srcCx = (cx / count) * (sw / sampleCanvas.width);
+            srcCy = (cy / count) * (sh / sampleCanvas.height);
+          }
+
+          let sWidth: number, sHeight: number;
+          if (sw / sh > destAspect) {
+            // source wider: crop left/right
+            sHeight = sh;
+            sWidth = Math.round(sh * destAspect);
+          } else {
+            sWidth = sw;
+            sHeight = Math.round(sw / destAspect);
+          }
+
+          let sx = Math.max(0, Math.round(srcCx - sWidth / 2));
+          let sy = Math.max(0, Math.round(srcCy - sHeight / 2));
+          if (sx + sWidth > sw) sx = sw - sWidth;
+          if (sy + sHeight > sh) sy = sh - sHeight;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = outW;
+          canvas.height = outH;
+          const ctx = canvas.getContext('2d')!;
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, outW, outH);
+          ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, outW, outH);
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        } catch (e) {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   /**
    * Add spacing between sections
    */
@@ -390,9 +476,9 @@ export class PDFGenerator {
       const anyDoc = this.doc as any;
       // Prefer registered Unicode Arial (StandardArial) when available
       const fontList = typeof anyDoc.getFontList === 'function' ? anyDoc.getFontList() : null;
-      if (fontList && (fontList['StandardArial'] || fontList['StandardArial'] === '')) {
+      if (fontList && (fontList['StandardUnicode'] || fontList['StandardUnicode'] === '')) {
         try {
-          this.doc.setFont('StandardArial', fontStyle);
+          this.doc.setFont('StandardUnicode', fontStyle);
           return;
         } catch {
           // fallthrough
@@ -423,6 +509,15 @@ export class PDFGenerator {
         return [text];
       }
     }
+  }
+
+  private setFontForLang(style: 'normal' | 'bold' = 'normal') {
+    try {
+      if (this.language === 'es') {
+        try { (this.doc as any).setFont('StandardArial', style); return; } catch {}
+      }
+    } catch {}
+    try { this.doc.setFont('helvetica', style); } catch { try { this.doc.setFont('times', style); } catch {} }
   }
 
   /**
@@ -1089,7 +1184,7 @@ export class PDFGenerator {
     this.doc.addImage(dataUrl, fmt, drawX, drawY, drawW, drawH, undefined, 'FAST');
   }
 
-  private addIdentityAuditPage(
+  private async addIdentityAuditPage(
     selfieDataUrl?: string,
     idDocFrontDataUrl?: string,
     idDocBackDataUrl?: string,
@@ -1107,12 +1202,12 @@ export class PDFGenerator {
     this.doc.setFillColor(255, 255, 255);
     this.doc.rect(0, 16, PW, 2, 'F');
 
-    this.doc.setFont('helvetica', 'bold');
+    this.setFontForLang('bold');
     this.doc.setFontSize(13);
     this.doc.setTextColor(255, 255, 255);
     this.safeText('IDENTITY VERIFICATION REPORT', PW / 2, 10, { align: 'center' });
 
-    this.doc.setFont('helvetica', 'normal');
+    this.setFontForLang('normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(191, 219, 254);
     this.safeText('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 14.5, { align: 'center' });
@@ -1150,7 +1245,7 @@ export class PDFGenerator {
       this.doc.roundedRect(x, y, w, 3, 2, 2, 'F');
       this.doc.rect(x, y + 1, w, 2, 'F');
 
-      this.doc.setFont('helvetica', 'bold');
+      this.setFontForLang('bold');
       this.doc.setFontSize(7);
       this.doc.setTextColor(37, 99, 235);
       this.safeText(title, x + w / 2, y + 8, { align: 'center' });
@@ -1171,15 +1266,26 @@ export class PDFGenerator {
         this.safeText('[Not provided]', x + w / 2, imgY + imgH / 2, { align: 'center' });
       }
 
-      this.doc.setFont('helvetica', 'normal');
+      this.setFontForLang('normal');
       this.doc.setFontSize(6.3);
       this.doc.setTextColor(100, 116, 139);
       this.safeText(note, x + w / 2, y + h - 3, { align: 'center' });
     };
 
-    drawPhotoCard('VALIDATION SELFIE', selfieDataUrl, leftX, photoSectionY, leftW, topCardH * 2 + 8, "Signer's face via front camera");
-    drawPhotoCard('ID FRONT', idDocFrontDataUrl, rightX, photoSectionY, rightW, topCardH, 'Government ID - front side');
-    drawPhotoCard('ID BACK', idDocBackDataUrl, rightX, bottomCardY, rightW, topCardH, 'Government ID - back side');
+    // Process images with center-crop to keep face in focus and fixed aspect ratio
+    const pxScale = 4; // approximate pixels per mm for canvas rendering
+    const leftWpx = Math.round(leftW * pxScale);
+    const leftHpx = Math.round((topCardH * 2 + 8) * pxScale);
+    const rightWpx = Math.round(rightW * pxScale);
+    const topHpx = Math.round(topCardH * pxScale);
+
+    const procSelfie = selfieDataUrl ? await this.processImageCenterCrop(selfieDataUrl, leftWpx, leftHpx) : undefined;
+    const procFront = idDocFrontDataUrl ? await this.processImageCenterCrop(idDocFrontDataUrl, rightWpx, topHpx) : undefined;
+    const procBack  = idDocBackDataUrl ? await this.processImageCenterCrop(idDocBackDataUrl, rightWpx, topHpx) : undefined;
+
+    drawPhotoCard('VALIDATION SELFIE', procSelfie, leftX, photoSectionY, leftW, topCardH * 2 + 8, "Signer's face via front camera");
+    drawPhotoCard('ID FRONT', procFront, rightX, photoSectionY, rightW, topCardH, 'Government ID - front side');
+    drawPhotoCard('ID BACK', procBack, rightX, bottomCardY, rightW, topCardH, 'Government ID - back side');
 
     this.currentY = photoSectionY + topCardH * 2 + 18;
 
@@ -1429,7 +1535,7 @@ export class PDFGenerator {
     this.doc.rect(0, HEADER_H - 2, PW, 2, 'F');
 
     const reportTitle = language === 'es' ? 'INFORME DE FIRMAS' : 'SIGNATURE REPORT';
-    this.doc.setFont('helvetica', 'bold');
+    this.setFontForLang('bold');
     this.doc.setFontSize(13);
     this.doc.setTextColor(255, 255, 255);
     this.safeText(reportTitle, PW / 2, 11, { align: 'center' });
@@ -1437,7 +1543,7 @@ export class PDFGenerator {
     const subtitle = language === 'es'
       ? `Documento: ${docTitle.slice(0, 60)}`
       : `Document: ${docTitle.slice(0, 60)}`;
-    this.doc.setFont('helvetica', 'normal');
+    this.setFontForLang('normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(200, 210, 240);
     this.safeText(subtitle, PW / 2, 18, { align: 'center' });
@@ -1948,6 +2054,10 @@ export class PDFGenerator {
 
     const generator = new PDFGenerator(opts.title);
     await generator.ensureUnicodeFont();
+    // set generator language so addText and other helpers can prefer Unicode font when needed
+    generator.language = opts.language ?? 'en';
+    // set generator language so addText and other helpers can prefer Unicode font when needed
+    generator.language = opts.language ?? 'en';
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
     generator.addLetterhead(opts.letterhead, opts.language);
@@ -1984,7 +2094,7 @@ export class PDFGenerator {
 
     // Identity verification page (separate page when photos exist)
     if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
-      generator.addIdentityAuditPage(
+      await generator.addIdentityAuditPage(
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
@@ -2060,7 +2170,7 @@ export class PDFGenerator {
 
     // Identity verification page (separate page when photos exist)
     if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
-      generator.addIdentityAuditPage(
+      await generator.addIdentityAuditPage(
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
