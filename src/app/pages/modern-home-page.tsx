@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { documentTemplates } from '../data/templates';
@@ -12,6 +12,7 @@ import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { PricingSection } from '../components/pricing-section';
 import { useAuth } from '../contexts/auth-context';
+import { getDocumentTemplate, getPilotStateDocumentCombos, getStateBySlug } from '../utils/seo';
 import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
 import { QRCodeSVG } from 'qrcode.react';
@@ -66,6 +67,21 @@ export function ModernHomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const pilotLandingLinks = useMemo(
+    () => getPilotStateDocumentCombos()
+      .map((combo) => {
+        const document = getDocumentTemplate(combo.documentType);
+        const stateName = getStateBySlug(combo.stateSlug);
+        if (!document || !stateName) return null;
+        return {
+          label: `${document.name} in ${stateName}`,
+          to: `/landing/${combo.documentType}/${combo.stateSlug}`,
+        };
+      })
+      .filter((item): item is { label: string; to: string } => Boolean(item)),
+    [],
+  );
 
   const premiumTestimonials = [
     {
@@ -833,6 +849,43 @@ export function ModernHomePage() {
       {/* Elige tu Documento */}
       <section id="documents-section">
         <DocumentBentoGrid documents={filteredDocuments} />
+      </section>
+
+      {/* Popular state-specific SEO pages */}
+      <section className="py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-8 text-center">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-600">
+              {language === 'en' ? 'Pilot pages' : 'Páginas piloto'}
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
+              {language === 'en' ? 'Top state-specific legal templates' : 'Plantillas legales por estado más buscadas'}
+            </h2>
+            <p className="mt-3 text-base text-slate-500 md:text-lg">
+              {language === 'en'
+                ? 'Explore the legal templates we are optimizing for organic traffic in the United States.'
+                : 'Explora las plantillas legales que estamos optimizando para tráfico orgánico en Estados Unidos.'}
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {pilotLandingLinks.map((landing) => (
+              <Link
+                key={landing.to}
+                to={landing.to}
+                className="group rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow-lg"
+              >
+                <p className="text-sm font-semibold text-indigo-700">{language === 'en' ? 'Popular Search' : 'Búsqueda popular'}</p>
+                <h3 className="mt-3 text-xl font-bold text-slate-900">{landing.label}</h3>
+                <p className="mt-4 text-sm text-slate-600">{language === 'en' ? 'Create, sign, and download a state-specific legal form.' : 'Crea, firma y descarga una forma legal específica por estado.'}</p>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
+                  {language === 'en' ? 'Launch page' : 'Abrir página'}
+                  <ArrowRight className="size-4" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Comparativa de IA Mejorada */}

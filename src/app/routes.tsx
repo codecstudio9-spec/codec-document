@@ -13,6 +13,14 @@ import { QuickSignPage } from "./pages/quick-sign-page";
 import SignTransactionPage from "./pages/sign-transaction-page";
 import { MyDocumentsPage } from "./pages/my-documents-page";
 import { ElectronicSignaturePage } from "./pages/electronic-signature-page";
+import FreeLegalDocumentsLanding from "./pages/landings/free-legal-documents";
+import ElectronicSignatureLanding from "./pages/landings/electronic-signature";
+import OnlineLeaseAgreementLanding from "./pages/landings/online-lease-agreement";
+import NdaGeneratorLanding from "./pages/landings/nda-generator";
+import IndependentContractorLanding from "./pages/landings/independent-contractor-agreement";
+import VehicleBillOfSaleLanding from "./pages/landings/billing-vehicle-bill-of-sale";
+import PromissoryNoteLanding from "./pages/landings/promissory-note";
+import StateDocumentLanding from './pages/landings/state-document';
 import { ProtectedRoute } from "./components/auth/protected-route";
 
 function ProtectedMyDocumentsPage() {
@@ -35,6 +43,38 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: ModernHomePage,
+  },
+  {
+    path: "/free-legal-documents",
+    Component: FreeLegalDocumentsLanding,
+  },
+  {
+    path: "/electronic-signature",
+    Component: ElectronicSignatureLanding,
+  },
+  {
+    path: "/online-lease-agreement",
+    Component: OnlineLeaseAgreementLanding,
+  },
+  {
+    path: "/nda-generator",
+    Component: NdaGeneratorLanding,
+  },
+  {
+    path: "/independent-contractor-agreement",
+    Component: IndependentContractorLanding,
+  },
+  {
+    path: "/vehicle-bill-of-sale",
+    Component: VehicleBillOfSaleLanding,
+  },
+  {
+    path: "/promissory-note",
+    Component: PromissoryNoteLanding,
+  },
+  {
+    path: "/landing/:documentType/:stateSlug",
+    Component: StateDocumentLanding,
   },
   {
     // Generator is open to all — auth/payment is gated at preview/download

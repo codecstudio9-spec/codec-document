@@ -63,6 +63,11 @@ export function SEOHead({
       updateMetaTag('og:description', ogDescription || description || '', true);
     }
     
+    if (canonicalUrl) {
+      updateMetaTag('og:url', canonicalUrl, true);
+      updateMetaTag('twitter:url', canonicalUrl);
+    }
+
     updateMetaTag('og:type', ogType, true);
     updateMetaTag('og:locale', language === 'es' ? 'es_US' : 'en_US', true);
 
