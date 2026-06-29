@@ -66,6 +66,37 @@ function safeParseJson<T>(value: string | null | undefined): T | null {
   }
 }
 
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('blobToDataUrl: FileReader error'));
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function ensureImageDataUrl(url?: string | null, retries = 3, timeoutMs = 6000): Promise<string | undefined> {
+  if (!url) return undefined;
+  if (url.startsWith('data:')) return url;
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(url, { signal: controller.signal, credentials: 'omit' });
+      clearTimeout(id);
+      if (!resp.ok) throw new Error(`Status ${resp.status}`);
+      const blob = await resp.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      if (dataUrl && dataUrl.startsWith('data:')) return dataUrl;
+    } catch (err) {
+      // small backoff
+      await new Promise(r => setTimeout(r, 250 + attempt * 200));
+    }
+  }
+  return undefined;
+}
+
 interface PlacedSig {
   id: string;
   name: string;
@@ -780,15 +811,26 @@ export function PreviewPage() {
     const stateSuffix = selectedState ? `_${selectedState.replace(/\s+/g, '_')}` : '';
     const fileName = `${template.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-\.]/g, '')}${stateSuffix}_${exportLanguage}.pdf`;
 
+    // Resolve remote image URLs to data URLs (signatures, identity photos, branding)
+    const allSrcs = new Set<string>();
+    placedSignatures.forEach(s => { if (s.dataUrl) allSrcs.add(s.dataUrl); });
+    if (identitySelfie) allSrcs.add(identitySelfie);
+    if (identityIdDocFront) allSrcs.add(identityIdDocFront);
+    if (identityIdDocBack) allSrcs.add(identityIdDocBack);
+    if (documentBranding?.logoDataUrl) allSrcs.add(documentBranding.logoDataUrl as string);
+
+    const resolvedEntries = await Promise.all(Array.from(allSrcs).map(async (src) => [src, await ensureImageDataUrl(src)] as const));
+    const resolvedMap = Object.fromEntries(resolvedEntries) as Record<string, string | undefined>;
+
     const inlineSigs = placedSignatures.map((s) => ({
       signerName: s.name,
       signedAt: new Date().toISOString(),
-      signatureDataUrl: s.dataUrl,
+      signatureDataUrl: resolvedMap[s.dataUrl] || s.dataUrl,
       xDocPct: s.xPct,
       yDocPct: s.yPct,
     }));
 
-    const hiFiOk = await downloadHighFidelityPdf(inlineSigs, exportContent, fileName);
+    const hiFiOk = await downloadHighFidelityPdf(inlineSigs, exportContent, fileName, resolvedMap);
 
     if (!hiFiOk) {
       const orderId = sessionStorage.getItem('paypalOrderId') || localStorage.getItem('paypalOrderId') || '';
@@ -924,6 +966,7 @@ export function PreviewPage() {
     inlineSigs: Array<{ signerName: string; signedAt: string; signatureDataUrl: string }>,
     exportContent: string,
     fileName: string,
+    resolvedImageMap?: Record<string, string | undefined>,
   ): Promise<boolean> => {
     const sourceEl = captureWrapperRef.current ?? documentCanvasRef.current;
     if (!sourceEl) return false;
@@ -956,6 +999,13 @@ export function PreviewPage() {
 
       // ── 3. Wait for sig images inside clone and record their positions ─────
       const cloneSigs = Array.from(clone.querySelectorAll<HTMLImageElement>('img[data-sig]'));
+      // Replace clone image src with resolved data URLs when available (non-destructive to live DOM)
+      if (resolvedImageMap && Object.keys(resolvedImageMap).length > 0) {
+        cloneSigs.forEach(img => {
+          const resolved = resolvedImageMap[img.src] || resolvedImageMap[decodeURIComponent(img.src)];
+          if (resolved) img.src = resolved;
+        });
+      }
       await Promise.all(cloneSigs.map(img => {
         if (img.complete && img.naturalWidth > 0) return Promise.resolve();
         return new Promise<void>(r => { img.onload = img.onerror = () => r(); });
