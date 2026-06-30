@@ -1248,23 +1248,22 @@ export class PDFGenerator {
     const drawPhotoCard = (title: string, dataUrl: string | undefined, x: number, y: number, w: number, h: number, note: string) => {
       this.doc.setFillColor(248, 250, 252);
       this.doc.setDrawColor(226, 232, 240);
-      this.doc.setLineWidth(0.3);
-      this.doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+      this.doc.setLineWidth(0.35);
+      this.doc.roundedRect(x, y, w, h, 3, 3, 'FD');
 
+      const titleHeight = 8;
       this.doc.setFillColor(37, 99, 235);
-      this.doc.roundedRect(x, y, w, 3, 2, 2, 'F');
-      this.doc.rect(x, y + 1, w, 2, 'F');
-
+      this.doc.roundedRect(x, y, w, titleHeight, 2, 2, 'F');
       this.setFontForLang('bold');
-      this.doc.setFontSize(7);
-      this.doc.setTextColor(37, 99, 235);
-      this.safeText(title, x + w / 2, y + 8, { align: 'center' });
+      this.doc.setFontSize(8);
+      this.doc.setTextColor(255, 255, 255);
+      this.safeText(title, x + w / 2, y + 5.5, { align: 'center' });
 
-      const imgY = y + 11;
-      const imgH = h - 20;
+      const imgY = y + titleHeight + 4;
+      const imgH = h - titleHeight - 12;
       if (dataUrl) {
         try {
-          this.addImageContain(dataUrl, x + 1, imgY, w - 2, imgH);
+          this.addImageContain(dataUrl, x + 2, imgY, w - 4, imgH);
         } catch {
           this.doc.setFontSize(7);
           this.doc.setTextColor(148, 163, 184);
@@ -1277,25 +1276,29 @@ export class PDFGenerator {
       }
 
       this.setFontForLang('normal');
-      this.doc.setFontSize(6.3);
+      this.doc.setFontSize(6.5);
       this.doc.setTextColor(100, 116, 139);
-      this.safeText(note, x + w / 2, y + h - 3, { align: 'center' });
+      this.safeText(note, x + w / 2, y + h - 4, { align: 'center' });
     };
 
-    // Process images with center-crop to keep face in focus and fixed aspect ratio
-    const pxScale = 4; // approximate pixels per mm for canvas rendering
-    const leftWpx = Math.round(leftW * pxScale);
-    const leftHpx = Math.round((topCardH * 2 + 8) * pxScale);
-    const rightWpx = Math.round(rightW * pxScale);
-    const topHpx = Math.round(topCardH * pxScale);
+    const availableWidth = PW - M * 2;
+    const cards: Array<{ title: string; dataUrl?: string; note: string }> = [
+      { title: 'VALIDATION SELFIE', dataUrl: selfieDataUrl, note: "Signer's face via front camera" },
+      { title: 'ID FRONT', dataUrl: idDocFrontDataUrl, note: 'Government ID - front side' },
+      { title: 'ID BACK', dataUrl: idDocBackDataUrl, note: 'Government ID - back side' },
+    ].filter((card) => card.dataUrl);
+    const cardCount = Math.max(1, cards.length);
+    const cardGap = 8;
+    const cardWidth = cardCount === 1 ? availableWidth : (availableWidth - cardGap * (cardCount - 1)) / cardCount;
+    const cardHeight = 60;
+    let cardX = M;
 
-    const procSelfie = selfieDataUrl ? await this.processImageCenterCrop(selfieDataUrl, leftWpx, leftHpx) : undefined;
-    const procFront = idDocFrontDataUrl ? await this.processImageCenterCrop(idDocFrontDataUrl, rightWpx, topHpx) : undefined;
-    const procBack  = idDocBackDataUrl ? await this.processImageCenterCrop(idDocBackDataUrl, rightWpx, topHpx) : undefined;
+    cards.forEach((card, index) => {
+      drawPhotoCard(card.title, card.dataUrl, cardX, photoSectionY, cardWidth, cardHeight, card.note);
+      cardX += cardWidth + cardGap;
+    });
 
-    drawPhotoCard('VALIDATION SELFIE', procSelfie, leftX, photoSectionY, leftW, topCardH * 2 + 8, "Signer's face via front camera");
-    drawPhotoCard('ID FRONT', procFront, rightX, photoSectionY, rightW, topCardH, 'Government ID - front side');
-    drawPhotoCard('ID BACK', procBack, rightX, bottomCardY, rightW, topCardH, 'Government ID - back side');
+    this.currentY = photoSectionY + cardHeight + 16;
 
     this.currentY = photoSectionY + topCardH * 2 + 18;
 
@@ -1576,14 +1579,12 @@ export class PDFGenerator {
     // ── Two-column grid constants ─────────────────────────────────────────
     const COL_GAP   = 10;
     const COL_W     = (PW - 2 * M - COL_GAP) / 2;
-    const BLOCK_H   = 78;
-    const IMG_H     = 44;
-    const CARD_PAD  = 5;
-    const START_Y   = HEADER_H + 8;
-    const LEGAL_H   = 52;
-    const PAGE_STOP = PH - M - LEGAL_H - 12;
-
-    const now = new Date();
+      const BLOCK_H   = 84;
+      const IMG_H     = 42;
+      const CARD_PAD  = 6;
+      const START_Y   = HEADER_H + 10;
+      const LEGAL_H   = 52;
+      const PAGE_STOP = PH - M - LEGAL_H - 14;
     const locale = PDFGenerator.getAuditLocale(language);
     const tzLabel = Intl.DateTimeFormat(locale, { timeZoneName: 'short' })
       .formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'UTC';
@@ -1667,7 +1668,7 @@ export class PDFGenerator {
       this.doc.setFontSize(6.5);
       const token = sig.token || `CDX-${String(Date.now()).slice(-8, -4)}-${String(Date.now()).slice(-4)}-${String(i + 1).padStart(2, '0')}`;
       this.safeText(token, x + COL_W / 2, textY, { align: 'center' });
-      textY += 4;
+      textY += 4.5;
 
       // Datetime (centered)
       this.doc.setFontSize(6);
@@ -1759,23 +1760,15 @@ export class PDFGenerator {
       try {
         this.doc.setFont(family, style);
       } catch (e) {
-        console.log('setFont error', family, style, e);
         this.doc.setFont('helvetica', 'normal');
         return;
       }
       try {
-        console.log('FONT ACTUAL', this.doc.getFont());
-        console.log('FONT LIST', this.doc.getFontList());
-      } catch (e) {
-        console.log('font introspect error', e);
-      }
-      try {
         const fl = this.doc.getFontList ? this.doc.getFontList() : null;
         if (fl && family && !Object.prototype.hasOwnProperty.call(fl, family)) {
-          console.log('Font not found in list:', family, '; falling back to helvetica normal');
           this.doc.setFont('helvetica', 'normal');
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     };
@@ -1859,29 +1852,17 @@ export class PDFGenerator {
     setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(8.5);
     this.doc.setTextColor(0, 0, 0);
-    console.log('FONT ACTUAL', this.doc.getFont());
-    console.log('FONT LIST', this.doc.getFontList());
-    console.log('TEXT TO WRITE', leftRole);
     safeText(leftRole, leftX + colW / 2, lineY + 4, { align: 'center' });
-    console.log('FONT ACTUAL', this.doc.getFont());
-    console.log('FONT LIST', this.doc.getFontList());
-    console.log('TEXT TO WRITE', rightRole);
     safeText(rightRole, rightX + colW / 2, lineY + 4, { align: 'center' });
 
     // ── Signer names ──────────────────────────────────────────────────────
     setFontSafe('helvetica', 'normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(60, 60, 60);
-    if (leftSig?.name)  {
-      console.log('FONT ACTUAL', this.doc.getFont());
-      console.log('FONT LIST', this.doc.getFontList());
-      console.log('TEXT TO WRITE', leftSig.name);
+    if (leftSig?.name) {
       safeText(leftSig.name, leftX + colW / 2, lineY + 9, { align: 'center' });
     }
     if (rightSig?.name) {
-      console.log('FONT ACTUAL', this.doc.getFont());
-      console.log('FONT LIST', this.doc.getFontList());
-      console.log('TEXT TO WRITE', rightSig.name);
       safeText(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
     }
 
@@ -1903,9 +1884,6 @@ export class PDFGenerator {
     this.doc.setFontSize(6.5);
     this.doc.setTextColor(18, 24, 70);
     const idLabel = language === 'es' ? 'VERIFICACIÓN DE IDENTIDAD' : 'IDENTITY VERIFICATION';
-    console.log('FONT ACTUAL', this.doc.getFont());
-    console.log('FONT LIST', this.doc.getFontList());
-    console.log('TEXT TO WRITE', idLabel);
     safeText(idLabel, leftX + 4.5, this.currentY + 4);
     // E-SIGN badge
     const badgeText = 'E-SIGN · UETA';
@@ -1915,69 +1893,49 @@ export class PDFGenerator {
     setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(5);
     this.doc.setTextColor(255, 255, 255);
-    console.log('FONT ACTUAL', this.doc.getFont());
-    console.log('FONT LIST', this.doc.getFontList());
-    console.log('TEXT TO WRITE', badgeText);
     safeText(badgeText, leftX + this.maxWidth - badgeW / 2, this.currentY + 3.8, { align: 'center' });
     this.currentY += 8;
 
     // Compact fixed dimensions — legible but small enough to share the signature page
-    const photoColW = identitySelfie && identityIdDoc ? 34 : 48;
-    const selfieH   = photoColW;                       // square crop
-    const idDocH    = Math.round(photoColW * 0.67);   // landscape proportions
-    const photoH    = Math.max(selfieH, idDocH);
+    const identityImages: Array<{ label: string; dataUrl: string }> = [];
+    if (identitySelfie) identityImages.push({ label: language === 'es' ? 'Selfie de validación' : 'Validation selfie', dataUrl: identitySelfie });
+    if (identityIdDocFront) identityImages.push({ label: language === 'es' ? 'ID frontal' : 'ID front', dataUrl: identityIdDocFront });
+    if (identityIdDocBack) identityImages.push({ label: language === 'es' ? 'ID posterior' : 'ID back', dataUrl: identityIdDocBack });
 
-    if (identitySelfie) {
-      const px = leftX;
-      const py = this.currentY;
-      const pw = photoColW;
-      const ph = selfieH;
-      // Light gray background placeholder
-      this.doc.setFillColor(245, 247, 251);
-      this.doc.setDrawColor(210, 218, 235);
-      this.doc.setLineWidth(0.3);
-      this.doc.roundedRect(px, py, pw, ph, 1.5, 1.5, 'FD');
-      try {
-        const fmt = identitySelfie.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(identitySelfie, fmt, px + 0.5, py + 0.5, pw - 1, ph - 1, undefined, 'FAST');
-      } catch { /* skip */ }
-      setFontSafe('helvetica', 'normal');
-      this.doc.setFontSize(5.5);
-      this.doc.setTextColor(100, 110, 140);
-      const selfieLabel = language === 'es' ? 'Selfie de validación' : 'Validation selfie';
-      console.log('FONT ACTUAL', this.doc.getFont());
-      console.log('FONT LIST', this.doc.getFontList());
-      console.log('TEXT TO WRITE', selfieLabel);
-      safeText(selfieLabel, px + pw / 2, py + ph + 4, { align: 'center' });
+    if (identityImages.length > 0) {
+      const cardGap = 6;
+      const cardCount = Math.min(identityImages.length, 3);
+      const maxCardWidth = 68;
+      const cardWidth = Math.min(maxCardWidth, (this.maxWidth - cardGap * (cardCount - 1)) / cardCount);
+      const cardHeight = 38;
+      let photoX = leftX;
+      const photoY = this.currentY;
+
+      identityImages.forEach((item) => {
+        this.doc.setFillColor(248, 250, 252);
+        this.doc.setDrawColor(212, 220, 230);
+        this.doc.setLineWidth(0.35);
+        this.doc.roundedRect(photoX, photoY, cardWidth, cardHeight, 2.5, 2.5, 'FD');
+
+        try {
+          this.addImageContain(item.dataUrl, photoX + 1.5, photoY + 1.5, cardWidth - 3, cardHeight - 10);
+        } catch {
+          this.doc.setFont('helvetica', 'normal');
+          this.doc.setFontSize(6);
+          this.doc.setTextColor(148, 163, 184);
+          this.safeText('[Image unavailable]', photoX + cardWidth / 2, photoY + cardHeight / 2 - 2, { align: 'center' });
+        }
+
+        this.setFontForLang('normal');
+        this.doc.setFontSize(6);
+        this.doc.setTextColor(80, 95, 120);
+        this.safeText(item.label, photoX + cardWidth / 2, photoY + cardHeight - 2, { align: 'center' });
+        photoX += cardWidth + cardGap;
+      });
+
+      this.currentY += cardHeight + 10;
+      this.doc.setTextColor(0, 0, 0);
     }
-
-    if (identityIdDoc) {
-      const px = identitySelfie ? leftX + photoColW + 8 : leftX;
-      const py = this.currentY;
-      const pw = photoColW;
-      const ph = idDocH;
-      // Center vertically if selfie is taller
-      const adjustY = identitySelfie ? (selfieH - idDocH) / 2 : 0;
-      this.doc.setFillColor(245, 247, 251);
-      this.doc.setDrawColor(210, 218, 235);
-      this.doc.setLineWidth(0.3);
-      this.doc.roundedRect(px, py + adjustY, pw, ph, 1.5, 1.5, 'FD');
-      try {
-        const fmt = identityIdDoc.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(identityIdDoc, fmt, px + 0.5, py + adjustY + 0.5, pw - 1, ph - 1, undefined, 'FAST');
-      } catch { /* skip */ }
-      setFontSafe('helvetica', 'normal');
-      this.doc.setFontSize(5.5);
-      this.doc.setTextColor(100, 110, 140);
-      const idDocLabel = language === 'es' ? 'Documento de identidad' : 'Identity document';
-      console.log('FONT ACTUAL', this.doc.getFont());
-      console.log('FONT LIST', this.doc.getFontList());
-      console.log('TEXT TO WRITE', idDocLabel);
-      safeText(idDocLabel, px + pw / 2, py + photoH + 4, { align: 'center' });
-    }
-
-    this.currentY += photoH + 8;
-    this.doc.setTextColor(0, 0, 0);
   }
 
   // ── Split document content at the natural signature block ────────────────────

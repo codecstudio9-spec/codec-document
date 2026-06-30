@@ -9,7 +9,10 @@ interface SEOHeadProps {
   ogDescription?: string;
   ogType?: string;
   canonicalUrl?: string;
+  image?: string;
 }
+
+const DEFAULT_OG_IMAGE = 'https://codecdocument.com/og-image.png';
 
 export function SEOHead({
   title,
@@ -19,6 +22,7 @@ export function SEOHead({
   ogDescription,
   ogType = 'website',
   canonicalUrl,
+  image,
 }: SEOHeadProps) {
   const { language } = useLanguage();
 
@@ -27,6 +31,9 @@ export function SEOHead({
     if (title) {
       document.title = title;
     }
+
+    // Set page language for SEO
+    document.documentElement.lang = language === 'es' ? 'es' : 'en';
 
     // Update or create meta tags
     const updateMetaTag = (name: string, content: string, isProperty = false) => {
@@ -68,6 +75,14 @@ export function SEOHead({
       updateMetaTag('twitter:url', canonicalUrl);
     }
 
+    const imageUrl = image || DEFAULT_OG_IMAGE;
+    updateMetaTag('og:image', imageUrl, true);
+    updateMetaTag('og:image:alt', title || 'Codec Document — Legal Document Generator', true);
+    updateMetaTag('twitter:image', imageUrl);
+    updateMetaTag('twitter:site', '@codecdocument');
+    updateMetaTag('twitter:creator', '@codecdocument');
+    updateMetaTag('og:site_name', 'Codec Document', true);
+
     updateMetaTag('og:type', ogType, true);
     updateMetaTag('og:locale', language === 'es' ? 'es_US' : 'en_US', true);
 
@@ -108,7 +123,7 @@ export function SEOHead({
     updateLangAlternate('es', currentUrl);
     updateLangAlternate('x-default', currentUrl);
 
-  }, [title, description, keywords, ogTitle, ogDescription, ogType, canonicalUrl, language]);
+  }, [title, description, keywords, ogTitle, ogDescription, ogType, canonicalUrl, image, language]);
 
   return null;
 }

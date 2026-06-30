@@ -83,6 +83,54 @@ export function ModernHomePage() {
     [],
   );
 
+  const seoLandingLinks = useMemo(
+    () => [
+      {
+        label: language === 'en' ? 'Free Legal Documents' : 'Documentos legales gratis',
+        to: '/free-legal-documents',
+        description: language === 'en'
+          ? 'State-specific templates, free e-signatures, and instant PDF generation.'
+          : 'Plantillas por estado, firmas electrónicas gratis y generación inmediata de PDF.',
+      },
+      {
+        label: language === 'en' ? 'Electronic Signature Platform' : 'Plataforma de firma electrónica',
+        to: '/electronic-signature',
+        description: language === 'en'
+          ? 'Learn how to sign documents online with ESIGN Act compliance and identity verification.'
+          : 'Aprende a firmar documentos en línea con cumplimiento ESIGN y verificación de identidad.',
+      },
+      {
+        label: language === 'en' ? 'NDA Generator' : 'Generador de NDA',
+        to: '/nda-generator',
+        description: language === 'en'
+          ? 'Generate non-disclosure agreements with audit-ready signature workflows.'
+          : 'Genera acuerdos de confidencialidad con flujos de firma listos para auditoría.',
+      },
+      {
+        label: language === 'en' ? 'Lease Agreement Generator' : 'Generador de contrato de arrendamiento',
+        to: '/online-lease-agreement',
+        description: language === 'en'
+          ? 'Create rental contracts tailored to your state and sign them electronically.'
+          : 'Crea contratos de alquiler adaptados a tu estado y fírmalo electrónicamente.',
+      },
+      {
+        label: language === 'en' ? 'Independent Contractor Agreement' : 'Contrato de contratista independiente',
+        to: '/independent-contractor-agreement',
+        description: language === 'en'
+          ? 'Draft contractor agreements quickly and collect verified e-signatures online.'
+          : 'Redacta acuerdos de contratista rápidamente y recibe firmas electrónicas verificadas.',
+      },
+      {
+        label: language === 'en' ? 'Promissory Note' : 'Pagaré comercial',
+        to: '/promissory-note',
+        description: language === 'en'
+          ? 'Generate payment promissory notes with secure signature and audit trail support.'
+          : 'Genera pagarés con firma segura y soporte de auditoría.',
+      },
+    ],
+    [language],
+  );
+
   const premiumTestimonials = [
     {
       quote: 'Saved me hours every week. I now close lease agreements in minutes instead of dealing with paper.',
@@ -633,6 +681,14 @@ export function ModernHomePage() {
                 </AnimatePresence>
               </div>
 
+              <Link
+                to="/free-legal-documents"
+                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+              >
+                <FileText className="size-4" />
+                {language === 'en' ? 'Free Docs' : 'Documentos gratis'}
+              </Link>
+
               <a
                 href="/firma-electronica"
                 className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
@@ -845,6 +901,41 @@ export function ModernHomePage() {
 
       {/* Hero Section */}
       <ModernHero />
+
+      <section className="bg-slate-950 py-16">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-5xl text-center">
+            <span className="inline-flex rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">
+              {language === 'en' ? 'SEO Landing Pages' : 'Páginas de destino SEO'}
+            </span>
+            <h2 className="mt-6 text-3xl font-bold text-white">
+              {language === 'en'
+                ? 'Explore our page flows for documents and signing'
+                : 'Explora nuestras páginas de destino para documentos y firmas'}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+              {language === 'en'
+                ? 'Browse the most optimized landing pages for document creation, e-signature workflows, and legal contract generation.'
+                : 'Explora las páginas más optimizadas para creación de documentos, flujos de firma electrónica y generación de contratos legales.'}
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            {seoLandingLinks.map((landing) => (
+              <Link
+                key={landing.to}
+                to={landing.to}
+                className="rounded-3xl border border-white/10 bg-slate-900/95 p-6 text-left text-white transition hover:-translate-y-0.5 hover:border-sky-400/30 hover:bg-slate-800"
+              >
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
+                  {landing.label}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-300">{landing.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Elige tu Documento */}
       <section id="documents-section">

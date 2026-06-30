@@ -993,10 +993,13 @@ export function PreviewPage() {
       // ── 2. Clone element into a hidden off-screen container ───────────────
       // Cloning avoids scroll-container clipping and timing issues with the live DOM.
       const clone = sourceEl.cloneNode(true) as HTMLElement;
-      const srcW = sourceEl.offsetWidth || 850;
+      const sourceW = sourceEl.offsetWidth || 850;
+      const targetWidth = Math.max(sourceW, 900);
+      const html2canvasScale = sourceW > 0 ? Math.min(3, Math.max(2, targetWidth / sourceW)) : 2;
+      clone.style.width = `${targetWidth}px`;
       const offscreen = document.createElement('div');
       offscreen.style.cssText =
-        `position:fixed;top:0;left:-${srcW + 200}px;width:${srcW}px;` +
+        `position:fixed;top:0;left:-${targetWidth + 200}px;width:${targetWidth}px;` +
         'overflow:visible;background:#ffffff;z-index:-9999;';
       offscreen.appendChild(clone);
       document.body.appendChild(offscreen);
@@ -1020,7 +1023,7 @@ export function PreviewPage() {
       }));
 
       type SigPos = { x: number; y: number; w: number; h: number; src: string };
-      const elementW = clone.offsetWidth || srcW;
+      const elementW = clone.offsetWidth || targetWidth;
       const sigPositions: SigPos[] = cloneSigs.map(img => {
         let top = 0, left = 0;
         let el: HTMLElement | null = img;
@@ -1036,13 +1039,15 @@ export function PreviewPage() {
       let captured: HTMLCanvasElement;
       try {
         captured = await html2canvas(clone, {
-          scale:           2,
+          scale:           html2canvasScale,
           useCORS:         true,
           allowTaint:      true,
           backgroundColor: '#ffffff',
           logging:         false,
           scrollX:         0,
           scrollY:         0,
+          windowWidth:     targetWidth,
+          windowHeight:    clone.scrollHeight,
           width:           clone.scrollWidth,
           height:          clone.scrollHeight,
         });
