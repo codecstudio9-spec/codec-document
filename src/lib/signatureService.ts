@@ -109,7 +109,11 @@ export async function uploadPdfToStorage(
     .from(BUCKET)
     .upload(path, pdfBlob, { contentType: 'application/pdf', upsert: true });
   if (error) throw new Error(`uploadPdf: ${error.message}`);
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+
+  const { data, error: urlError } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  if (urlError || !data?.publicUrl) {
+    throw new Error(`uploadPdf: could not retrieve public URL${urlError ? ` (${urlError.message})` : ''}`);
+  }
   return data.publicUrl;
 }
 
@@ -123,7 +127,11 @@ export async function uploadSignatureImage(
     .from(BUCKET)
     .upload(path, blob, { contentType: 'image/png', upsert: true });
   if (error) throw new Error(`uploadSignature: ${error.message}`);
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+
+  const { data, error: urlError } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  if (urlError || !data?.publicUrl) {
+    throw new Error(`uploadSignature: could not retrieve public URL${urlError ? ` (${urlError.message})` : ''}`);
+  }
   return data.publicUrl;
 }
 

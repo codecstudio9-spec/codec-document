@@ -6,39 +6,39 @@ import { useLanguage } from '../contexts/language-context';
 const SLIDES = [
   {
     image: '/imagen1.jpg',
-    text1Es: 'Contratos con validez legal',
-    text2Es: 'y verificación de identidad instantánea.',
-    text1En: 'Legally Binding Contracts',
-    text2En: 'with Instant ID Verification.',
-    subEs: 'Crea, firma y verifica documentos en 4 pasos simples. Verificación biométrica nativa para negocios modernos.',
-    subEn: 'Create, sign, and verify documents in 4 simple steps. Secure selfie & identity verification built for modern businesses.',
+    text1Es: 'Crea, Firma y Verifica',
+    text2Es: 'Documentos en una plataforma segura.',
+    text1En: 'Create, Sign & Verify',
+    text2En: 'Documents in one secure platform.',
+    subEs: 'Genera documentos legales, recopila firmas electrónicas y verifica la identidad del firmante con auditoría completa y geolocalización.',
+    subEn: 'Generate legal documents, collect electronic signatures and verify signer identity with audit trails and geolocation evidence.',
   },
   {
     image: '/imagen2.jpg',
-    text1Es: 'Facilita el trabajo legal',
-    text2Es: 'para que te enfoques en lo importante.',
-    text1En: 'Simplify your legal workflow',
-    text2En: 'so you focus on what matters.',
-    subEs: 'Plantillas editables listas en minutos. Válidas en los 50 estados de EE. UU.',
-    subEn: 'Editable templates ready in minutes. Valid across all 50 U.S. states.',
+    text1Es: 'Documentos Legales',
+    text2Es: 'Lista para usar en cualquier estado.',
+    text1En: 'Legal Documents',
+    text2En: 'Ready to use in any state.',
+    subEs: 'Plantillas editables válidas en los 50 estados de EE. UU. Firmas electrónicas con conformidad ESIGN y UETA.',
+    subEn: 'Editable templates valid across all 50 U.S. states. Electronic signatures with ESIGN Act and UETA compliance.',
   },
   {
     image: '/imagen3.jpg',
-    text1Es: 'Firma tus documentos gratis.',
-    text2Es: 'Descarga rápida con validez legal.',
-    text1En: 'Sign your documents for free.',
-    text2En: 'Instant download, legally valid.',
-    subEs: 'Firma digital con conformidad ESIGN y pista de auditoría SHA-256.',
-    subEn: 'Digital signature with ESIGN Act compliance and SHA-256 audit trail.',
+    text1Es: 'Firma Electrónica',
+    text2Es: 'Segura y verificable.',
+    text1En: 'Electronic Signatures',
+    text2En: 'Secure and verifiable.',
+    subEs: 'Verifica identidad con biometría. Pista de auditoría SHA-256 con geolocalización e IP logging automático.',
+    subEn: 'Identity verification with biometric authentication. SHA-256 audit trail with automatic geolocation and IP logging.',
   },
   {
     image: '/imagen4.jpg',
-    text1Es: 'Crea, firma, verifica y descarga.',
-    text2Es: 'Todo en una sola plataforma.',
-    text1En: 'Create, sign, verify, download.',
-    text2En: 'All in one premium platform.',
-    subEs: 'NDA, contratos de arrendamiento, acuerdos de servicios — todo desde cero.',
-    subEn: 'NDA, lease agreements, service contracts — built from scratch in seconds.',
+    text1Es: 'Verifica Signatarios',
+    text2Es: 'Con prueba completa de identidad.',
+    text1En: 'Verify Signers',
+    text2En: 'with Complete Identity Proof.',
+    subEs: 'Captura selfie, valida documentos y almacena registro de auditoría completo. Todo en una plataforma integrada.',
+    subEn: 'Capture selfie, validate documents and store complete audit record. All on one integrated platform.',
   },
 ];
 
@@ -144,7 +144,7 @@ export function ModernHero() {
   // Duplicate cards for seamless infinite loop
   const carouselCards = [...TEMPLATE_CARDS, ...TEMPLATE_CARDS];
 
-  const trustChips = ['ESIGN Act', 'UETA', 'SHA-256', language === 'en' ? 'All 50 States' : '50 Estados'];
+  const trustChips = ['Legal Documents', 'E-Signatures', 'Identity Verification', 'Audit Trail', 'Geolocation', 'Secure Workflow'];
 
   return (
     <section

@@ -27,7 +27,7 @@ import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-
 import { incrementSignTransaction } from '../services/user-limits-service';
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
-import { createSignTransaction, subscribeToTransaction, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
+import { createSignTransaction, subscribeToTransaction, getSignTransaction, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 
 type FlowStep = 'form' | 'sign' | 'verify';
 
@@ -787,8 +787,25 @@ export function DocumentGeneratorPage() {
   // Realtime listener for sign transaction — activates when share screen is open
   useEffect(() => {
     if (!txShareData?.txId) return;
+
     const unsub = subscribeToTransaction(txShareData.txId, (updated) => setActiveTx(updated));
-    return unsub;
+
+    const pollTx = async () => {
+      try {
+        const current = await getSignTransaction(txShareData.txId);
+        if (current) setActiveTx(current);
+      } catch {
+        // ignore transient errors and rely on realtime when available
+      }
+    };
+
+    pollTx();
+    const intervalId = window.setInterval(pollTx, 4000);
+
+    return () => {
+      unsub();
+      window.clearInterval(intervalId);
+    };
   }, [txShareData?.txId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // â"€â"€ All hooks are above this line â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€

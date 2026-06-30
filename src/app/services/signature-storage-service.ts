@@ -50,24 +50,35 @@ export async function clearSavedSignature(userId: string): Promise<void> {
 
 export async function createMobileSignToken(): Promise<string> {
   const token = crypto.randomUUID();
-  await supabase.from('mobile_signatures').insert({ token });
+  const { error } = await supabase.from('mobile_signatures').insert({ token });
+  if (error) throw new Error(`createMobileSignToken: ${error.message}`);
   return token;
 }
 
 export async function pollMobileSignature(token: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('mobile_signatures')
     .select('sig_data')
     .eq('token', token)
     .single();
+  if (error) {
+    console.warn(`pollMobileSignature failed for token ${token}:`, error.message);
+    return null;
+  }
   return (data as any)?.sig_data ?? null;
 }
 
 export async function submitMobileSignature(token: string, sigData: string): Promise<void> {
-  await supabase
+  const { data, error } = await supabase
     .from('mobile_signatures')
     .update({ sig_data: sigData })
-    .eq('token', token);
+    .eq('token', token)
+    .select('id');
+
+  if (error) throw new Error(`submitMobileSignature: ${error.message}`);
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('submitMobileSignature: token not found or already expired');
+  }
 }
 
 export async function deleteMobileSignToken(token: string): Promise<void> {
