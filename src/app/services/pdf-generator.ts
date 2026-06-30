@@ -1213,16 +1213,16 @@ export class PDFGenerator {
     this.doc.rect(0, 16, PW, 2, 'F');
 
     this.setFontForLang('bold');
-    this.doc.setFontSize(13);
+    this.doc.setFontSize(14);
     this.doc.setTextColor(255, 255, 255);
-    this.safeText('IDENTITY VERIFICATION REPORT', PW / 2, 10, { align: 'center' });
+    this.safeText('IDENTITY VERIFICATION REPORT', PW / 2, 10.5, { align: 'center' });
 
     this.setFontForLang('normal');
-    this.doc.setFontSize(7);
+    this.doc.setFontSize(8);
     this.doc.setTextColor(191, 219, 254);
-    this.safeText('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 14.5, { align: 'center' });
+    this.safeText('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 15.2, { align: 'center' });
 
-    this.currentY = 24;
+    this.currentY = 28;
 
     // Disclaimer
     const disclaimer = 'The following biometric images and metadata were captured by the signer at the exact moment of executing this electronic signature. This record constitutes legally admissible evidence of signer identity under the federal E-SIGN Act (15 U.S.C. § 7001) and UETA.';
@@ -1290,7 +1290,7 @@ export class PDFGenerator {
     const cardCount = Math.max(1, cards.length);
     const cardGap = 8;
     const cardWidth = cardCount === 1 ? availableWidth : (availableWidth - cardGap * (cardCount - 1)) / cardCount;
-    const cardHeight = 60;
+    const cardHeight = 64;
     let cardX = M;
 
     cards.forEach((card, index) => {
@@ -1299,8 +1299,6 @@ export class PDFGenerator {
     });
 
     this.currentY = photoSectionY + cardHeight + 16;
-
-    this.currentY = photoSectionY + topCardH * 2 + 18;
 
     // Audit data table
     const now = new Date();
@@ -1313,6 +1311,12 @@ export class PDFGenerator {
       ['Signature Algorithm',  'SHA-256 Cryptographic Hash'],
       ['Legal Status',         'VALID — Legally Binding Electronic Signature'],
     ];
+
+    const minTableHeight = tableRows.length * 9 + 34;
+    if (this.currentY + minTableHeight > this.pageHeight - M) {
+      this.doc.addPage();
+      this.currentY = M;
+    }
 
     this.currentY += 4;
     this.doc.setFont('helvetica', 'bold');
@@ -1334,20 +1338,27 @@ export class PDFGenerator {
     const valueW = PW - M - labelW - 3 - M;
 
     tableRows.forEach(([label, value], idx) => {
+      const valLines = this.splitTextToSize(value, valueW);
+      const rowHeight = Math.max(8.5, 3 + valLines.length * 4.5);
+      if (this.currentY + rowHeight > this.pageHeight - M) {
+        this.doc.addPage();
+        this.currentY = M;
+      }
       if (idx % 2 === 0) {
         this.doc.setFillColor(248, 250, 252);
-        this.doc.rect(M, this.currentY - 3, PW - M * 2, 7.5, 'F');
+        this.doc.rect(M, this.currentY - 3, PW - M * 2, rowHeight + 1, 'F');
       }
       this.doc.setFont('helvetica', 'bold');
-      this.doc.setFontSize(7.5);
+      this.doc.setFontSize(8);
       this.doc.setTextColor(71, 85, 105);
-      this.safeText(label, M + 2, this.currentY + 2);
+      this.safeText(label, M + 2, this.currentY + 3);
 
       this.ensureFontMetadata('helvetica', 'normal');
       this.doc.setTextColor(15, 23, 42);
-      const valLines = this.splitTextToSize(value, valueW);
-      this.safeText(valLines[0], valueX, this.currentY + 2);
-      this.currentY += 7.5;
+      valLines.forEach((line, lineIndex) => {
+        this.safeText(line, valueX, this.currentY + 3 + lineIndex * 4.5);
+      });
+      this.currentY += rowHeight + 1;
     });
 
     // Legal footer
@@ -1517,8 +1528,7 @@ export class PDFGenerator {
 
     this.doc.setPage(page);
     try {
-      const format = signatureDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-      this.doc.addImage(signatureDataUrl, format, targetX, targetY, boxWidth, boxHeight, undefined, 'FAST');
+      this.addImageContain(signatureDataUrl, targetX, targetY, boxWidth, boxHeight);
       return true;
     } catch {
       return false;
