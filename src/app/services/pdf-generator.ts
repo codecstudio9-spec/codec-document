@@ -1596,6 +1596,7 @@ export class PDFGenerator {
       const LEGAL_H   = 52;
       const PAGE_STOP = PH - M - LEGAL_H - 14;
     const locale = PDFGenerator.getAuditLocale(language);
+    const now = new Date();
     const tzLabel = Intl.DateTimeFormat(locale, { timeZoneName: 'short' })
       .formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'UTC';
     const dateStr = `${PDFGenerator.formatAuditDateTime(now, language)} ${tzLabel}`;
