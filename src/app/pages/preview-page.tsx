@@ -26,7 +26,7 @@ import { incrementGeneratedDoc } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { checkDownloadAllowed, recordDownloadEvent } from '../services/download-gate-service';
 import { getDocumentPrice } from '../config/paypal';
-import { triggerDownloadFromBytes, triggerDownloadFromUrl } from '../utils/download';
+import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 
 function normalizeCorruptedText(input: string): string {
   if (!input) return input;
@@ -927,8 +927,7 @@ export function PreviewPage() {
         identityIdDocBack,
       });
 
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      await triggerDownloadFromBytes(bytes, fileName);
+      await triggerDownload(blob, fileName);
     }
 
     toast.success(t('preview.documentDownloaded'));
@@ -1125,8 +1124,7 @@ export function PreviewPage() {
 
       renderCertificationPage(pdf, inlineSigs, documentHash, exportLanguage, PW, PH, M);
       const blob = pdf.output('blob');
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      await triggerDownloadFromBytes(bytes, fileName);
+      await triggerDownload(blob, fileName);
       return true;
     } catch (err) {
       console.warn('High-fidelity PDF failed, falling back:', err);
