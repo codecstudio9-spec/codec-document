@@ -251,7 +251,7 @@ export class PDFGenerator {
 
   private static normalizeSignerDisplayName(name: string | undefined, language: 'en' | 'es'): string {
     const raw = String(name || '').trim();
-    if (!raw) return language === 'es' ? 'ARRRENDATARIO' : 'TENANT';
+    if (!raw) return language === 'es' ? 'FIRMANTE' : 'Signatory';
 
     const mapEn: Record<string, string> = {
       DESTINATARIO: 'TENANT',
@@ -1857,14 +1857,16 @@ export class PDFGenerator {
     this.doc.line(rightX, lineY, rightX + colW, lineY);
 
     // ── Role labels ───────────────────────────────────────────────────────
-    const leftRole  = language === 'es' ? 'ARRENDADOR' : 'LANDLORD';
-    const rightRole = language === 'es' ? 'ARRENDATARIO' : 'TENANT';
+    // Use actual signer display names when available instead of legacy role labels
+    const leftDisplay = leftSig?.name ? String(leftSig.name).toUpperCase() : (language === 'es' ? 'FIRMANTE' : 'SIGNATORY');
+    const rightDisplay = rightSig?.name ? String(rightSig.name).toUpperCase() : (language === 'es' ? 'FIRMANTE' : 'SIGNATORY');
 
     setFontSafe('helvetica', 'bold');
     this.doc.setFontSize(8.5);
     this.doc.setTextColor(0, 0, 0);
-    safeText(leftRole, leftX + colW / 2, lineY + 4, { align: 'center' });
-    safeText(rightRole, rightX + colW / 2, lineY + 4, { align: 'center' });
+    // Present the signer's display name (or generic Signatory) instead of hardcoded role labels
+    safeText(leftDisplay, leftX + colW / 2, lineY + 4, { align: 'center' });
+    safeText(rightDisplay, rightX + colW / 2, lineY + 4, { align: 'center' });
 
     // ── Signer names ──────────────────────────────────────────────────────
     setFontSafe('helvetica', 'normal');
