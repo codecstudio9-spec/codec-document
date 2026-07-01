@@ -40,6 +40,19 @@ async function createTemporaryDownloadLink(href: string, fileName: string) {
   link.style.display = 'none';
   document.body.appendChild(link);
 
+  const cleanup = () => {
+    if (link.parentNode) {
+      link.parentNode.removeChild(link);
+    }
+    if (href.startsWith('blob:')) {
+      window.URL.revokeObjectURL(href);
+    }
+  };
+
+  const scheduleCleanup = () => {
+    window.setTimeout(cleanup, 2500);
+  };
+
   // On mobile browsers, the download attribute is often ignored or treated as a preview.
   // Opening in a new tab or using native share is usually more reliable for PDF access.
   if (isMobileBrowser() || isIOSBrowser()) {
@@ -49,7 +62,7 @@ async function createTemporaryDownloadLink(href: string, fileName: string) {
         const pdfBlob = await response.blob();
         const shared = await sharePdfFile(pdfBlob, fileName);
         if (shared) {
-          if (link.parentNode) link.parentNode.removeChild(link);
+          cleanup();
           return;
         }
       } catch {
@@ -62,7 +75,7 @@ async function createTemporaryDownloadLink(href: string, fileName: string) {
     } catch {
       link.click();
     }
-    if (link.parentNode) link.parentNode.removeChild(link);
+    scheduleCleanup();
     return;
   }
 
@@ -89,14 +102,7 @@ async function createTemporaryDownloadLink(href: string, fileName: string) {
     }
   }
 
-  setTimeout(() => {
-    if (link.parentNode) {
-      link.parentNode.removeChild(link);
-    }
-    if (href.startsWith('blob:')) {
-      window.URL.revokeObjectURL(href);
-    }
-  }, 1500);
+  scheduleCleanup();
 }
 
 export async function triggerDownloadFromBytes(bytes: Uint8Array, fileName: string): Promise<void> {
