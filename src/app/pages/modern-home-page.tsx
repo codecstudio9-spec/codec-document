@@ -12,7 +12,6 @@ import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { PricingSection } from '../components/pricing-section';
 import { useAuth } from '../contexts/auth-context';
-import { getDocumentTemplate, getPilotStateDocumentCombos, getStateBySlug } from '../utils/seo';
 import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
 import { QRCodeSVG } from 'qrcode.react';
@@ -68,68 +67,6 @@ export function ModernHomePage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const pilotLandingLinks = useMemo(
-    () => getPilotStateDocumentCombos()
-      .map((combo) => {
-        const document = getDocumentTemplate(combo.documentType);
-        const stateName = getStateBySlug(combo.stateSlug);
-        if (!document || !stateName) return null;
-        return {
-          label: `${document.name} in ${stateName}`,
-          to: `/landing/${combo.documentType}/${combo.stateSlug}`,
-        };
-      })
-      .filter((item): item is { label: string; to: string } => Boolean(item)),
-    [],
-  );
-
-  const seoLandingLinks = useMemo(
-    () => [
-      {
-        label: language === 'en' ? 'Free Legal Documents' : 'Documentos legales gratis',
-        to: '/free-legal-documents',
-        description: language === 'en'
-          ? 'State-specific templates, free e-signatures, and instant PDF generation.'
-          : 'Plantillas por estado, firmas electrónicas gratis y generación inmediata de PDF.',
-      },
-      {
-        label: language === 'en' ? 'Electronic Signature Platform' : 'Plataforma de firma electrónica',
-        to: '/electronic-signature',
-        description: language === 'en'
-          ? 'Learn how to sign documents online with ESIGN Act compliance and identity verification.'
-          : 'Aprende a firmar documentos en línea con cumplimiento ESIGN y verificación de identidad.',
-      },
-      {
-        label: language === 'en' ? 'NDA Generator' : 'Generador de NDA',
-        to: '/nda-generator',
-        description: language === 'en'
-          ? 'Generate non-disclosure agreements with audit-ready signature workflows.'
-          : 'Genera acuerdos de confidencialidad con flujos de firma listos para auditoría.',
-      },
-      {
-        label: language === 'en' ? 'Lease Agreement Generator' : 'Generador de contrato de arrendamiento',
-        to: '/online-lease-agreement',
-        description: language === 'en'
-          ? 'Create rental contracts tailored to your state and sign them electronically.'
-          : 'Crea contratos de alquiler adaptados a tu estado y fírmalo electrónicamente.',
-      },
-      {
-        label: language === 'en' ? 'Independent Contractor Agreement' : 'Contrato de contratista independiente',
-        to: '/independent-contractor-agreement',
-        description: language === 'en'
-          ? 'Draft contractor agreements quickly and collect verified e-signatures online.'
-          : 'Redacta acuerdos de contratista rápidamente y recibe firmas electrónicas verificadas.',
-      },
-      {
-        label: language === 'en' ? 'Promissory Note' : 'Pagaré comercial',
-        to: '/promissory-note',
-        description: language === 'en'
-          ? 'Generate payment promissory notes with secure signature and audit trail support.'
-          : 'Genera pagarés con firma segura y soporte de auditoría.',
-      },
-    ],
-    [language],
-  );
 
   const premiumTestimonials = [
     {
@@ -902,81 +839,8 @@ export function ModernHomePage() {
       {/* Hero Section */}
       <ModernHero />
 
-      <section className="bg-slate-950 py-16">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-5xl text-center">
-            <span className="inline-flex rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">
-              {language === 'en' ? 'SEO Landing Pages' : 'Páginas de destino SEO'}
-            </span>
-            <h2 className="mt-6 text-3xl font-bold text-white">
-              {language === 'en'
-                ? 'Explore our page flows for documents and signing'
-                : 'Explora nuestras páginas de destino para documentos y firmas'}
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              {language === 'en'
-                ? 'Browse the most optimized landing pages for document creation, e-signature workflows, and legal contract generation.'
-                : 'Explora las páginas más optimizadas para creación de documentos, flujos de firma electrónica y generación de contratos legales.'}
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-4 md:grid-cols-3">
-            {seoLandingLinks.map((landing) => (
-              <Link
-                key={landing.to}
-                to={landing.to}
-                className="rounded-3xl border border-white/10 bg-slate-900/95 p-6 text-left text-white transition hover:-translate-y-0.5 hover:border-sky-400/30 hover:bg-slate-800"
-              >
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
-                  {landing.label}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{landing.description}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Elige tu Documento */}
       <section id="documents-section">
         <DocumentBentoGrid documents={filteredDocuments} />
-      </section>
-
-      {/* Popular state-specific SEO pages */}
-      <section className="py-16 md:py-24">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-8 text-center">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-600">
-              {language === 'en' ? 'Pilot pages' : 'Páginas piloto'}
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-              {language === 'en' ? 'Top state-specific legal templates' : 'Plantillas legales por estado más buscadas'}
-            </h2>
-            <p className="mt-3 text-base text-slate-500 md:text-lg">
-              {language === 'en'
-                ? 'Explore the legal templates we are optimizing for organic traffic in the United States.'
-                : 'Explora las plantillas legales que estamos optimizando para tráfico orgánico en Estados Unidos.'}
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {pilotLandingLinks.map((landing) => (
-              <Link
-                key={landing.to}
-                to={landing.to}
-                className="group rounded-3xl border border-slate-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow-lg"
-              >
-                <p className="text-sm font-semibold text-indigo-700">{language === 'en' ? 'Popular Search' : 'Búsqueda popular'}</p>
-                <h3 className="mt-3 text-xl font-bold text-slate-900">{landing.label}</h3>
-                <p className="mt-4 text-sm text-slate-600">{language === 'en' ? 'Create, sign, and download a state-specific legal form.' : 'Crea, firma y descarga una forma legal específica por estado.'}</p>
-                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600">
-                  {language === 'en' ? 'Launch page' : 'Abrir página'}
-                  <ArrowRight className="size-4" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* Comparativa de IA Mejorada */}
@@ -1306,6 +1170,18 @@ export function ModernHomePage() {
                   <li><a href="/my-documents" className="transition hover:text-white">{language === 'en' ? 'My Documents' : 'Mis Documentos'}</a></li>
                   <li><button type="button" onClick={() => document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' })} className="transition hover:text-amber-300 text-amber-400/70">{language === 'en' ? 'Pricing' : 'Precios'}</button></li>
                   <li><a href="/firma-electronica" className="transition hover:text-white">{language === 'en' ? 'ID Verification' : 'Verificación ID'}</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-5 text-xs font-bold uppercase tracking-widest text-white/50">
+                  {language === 'en' ? 'Resources' : 'Recursos'}
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li><a href="/free-legal-documents" className="transition hover:text-white">{language === 'en' ? 'Free Legal Docs' : 'Documentos Legales Gratis'}</a></li>
+                  <li><a href="/electronic-signature" className="transition hover:text-white">{language === 'en' ? 'E-Signature Platform' : 'Plataforma de Firma Electrónica'}</a></li>
+                  <li><a href="/nda-generator" className="transition hover:text-white">{language === 'en' ? 'NDA Generator' : 'Generador de NDA'}</a></li>
+                  <li><a href="/online-lease-agreement" className="transition hover:text-white">{language === 'en' ? 'Lease Agreement' : 'Contrato de Arrendamiento'}</a></li>
+                  <li><a href="/promissory-note" className="transition hover:text-white">{language === 'en' ? 'Promissory Note' : 'Pagaré Comercial'}</a></li>
                 </ul>
               </div>
 
