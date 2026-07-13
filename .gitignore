@@ -42,3 +42,6 @@ coverage/
 *.tmp
 *.swp
 *.bak
+
+# Supabase CLI local cache (project-ref link, not repo state)
+supabase/.temp/
