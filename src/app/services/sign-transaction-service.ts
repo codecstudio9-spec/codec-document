@@ -24,9 +24,14 @@
  *   created_at             timestamptz NOT NULL DEFAULT now()
  * );
  * ALTER TABLE public.sign_transactions ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "tx_select" ON public.sign_transactions FOR SELECT USING (true);
  * CREATE POLICY "tx_insert" ON public.sign_transactions FOR INSERT WITH CHECK (true);
  * CREATE POLICY "tx_update" ON public.sign_transactions FOR UPDATE USING (true);
+ *
+ * Do NOT add a public `USING (true)` SELECT policy — this table stores
+ * recipient_selfie / recipient_id_photo (biometric + government ID data).
+ * Public reads go through the get_sign_transaction_public(uuid) RPC and
+ * the owner-scoped tx_select_own policy instead — see
+ * supabase_lockdown_public_read_migration.sql.
  */
 
 import { supabase } from '../../lib/supabase';
@@ -103,11 +108,12 @@ export async function createSignTransaction(payload: CreatePayload): Promise<str
 }
 
 export async function getSignTransaction(id: string): Promise<SignTransaction | null> {
+  // Goes through a SECURITY DEFINER RPC — see supabase_lockdown_public_read_migration.sql
+  // for why a raw `.select('*')` here would let anyone dump every user's
+  // sign_transactions row (including selfies and ID photos).
   const { data, error } = await supabase
-    .from('sign_transactions')
-    .select('*')
-    .eq('id', id)
-    .single();
+    .rpc('get_sign_transaction_public', { p_id: id })
+    .maybeSingle();
   if (error || !data) return null;
   return data as SignTransaction;
 }

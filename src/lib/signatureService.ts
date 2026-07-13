@@ -166,10 +166,13 @@ export async function getDocumentSignatures(
   signer_name: string;
   signed_at: string;
 }>> {
-  const { data, error } = await supabase
-    .from('signatures')
-    .select('signature_url, signer_email, signer_name, signed_at')
-    .eq('document_id', documentId);
+  // Goes through a SECURITY DEFINER RPC (not a raw table SELECT) so that
+  // RLS can deny public listing of `signatures` while this by-id lookup
+  // still works for guests who hold a valid document id. See
+  // supabase_lockdown_public_read_migration.sql.
+  const { data, error } = await supabase.rpc('get_document_signatures', {
+    p_document_id: documentId,
+  });
   if (error) throw new Error(`getSignatures: ${error.message}`);
   return data ?? [];
 }
@@ -194,6 +197,24 @@ export async function createSigner(params: {
 export async function updateSignerStatus(signerId: string, status: string): Promise<void> {
   const { error } = await supabase.from('signers').update({ status }).eq('id', signerId);
   if (error) throw new Error(`updateSignerStatus: ${error.message}`);
+}
+
+/**
+ * Same as updateSignerStatus, but guarded: only applies the transition if the
+ * signer's current status still matches `fromStatus`. Returns false (no throw)
+ * if a concurrent request already completed it — e.g. the same signing link
+ * opened twice — so the caller can stop before compiling a duplicate PDF
+ * instead of silently racing another in-flight submission.
+ */
+export async function tryCompleteSignerOnce(signerId: string, fromStatus: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('signers')
+    .update({ status: 'completed' })
+    .eq('id', signerId)
+    .eq('status', fromStatus)
+    .select('id');
+  if (error) throw new Error(`tryCompleteSignerOnce: ${error.message}`);
+  return Boolean(data && data.length > 0);
 }
 
 // ─── Signing Links ───────────────────────────────────────────────────────────
@@ -222,10 +243,12 @@ export async function verifySigningTokenPublic(token: string): Promise<{
   documentName: string;
   documentStatus: string;
 } | null> {
+  // Goes through a SECURITY DEFINER RPC (not a raw table SELECT) so that
+  // RLS can deny public listing of `signing_links` while this by-token
+  // lookup still works for guests who hold a valid signing link. See
+  // supabase_lockdown_public_read_migration.sql.
   const { data, error } = await publicSupabase
-    .from('signing_links')
-    .select('document_id, signer_id, expires_at, documents:document_id(name, original_pdf_url, signed_pdf_url, status)')
-    .eq('token', token)
+    .rpc('verify_signing_link', { p_token: token })
     .maybeSingle();
 
   console.log('Validando token de firma:', {
@@ -243,46 +266,45 @@ export async function verifySigningTokenPublic(token: string): Promise<{
     return null;
   }
 
-  const doc = data.documents as { name: string; original_pdf_url: string; signed_pdf_url?: string | null; status: string } | null;
+  const row = data as {
+    document_id: string; signer_id: string; expires_at: string | null;
+    doc_name: string | null; original_pdf_url: string | null;
+    signed_pdf_url: string | null; doc_status: string | null;
+  };
 
   console.log('Validando transaccion de firma:', {
-    id: data.document_id,
-    status: doc?.status ?? 'unknown',
-    expire_at: data.expires_at,
-    original_pdf: doc?.original_pdf_url ?? null,
+    id: row.document_id,
+    status: row.doc_status ?? 'unknown',
+    expire_at: row.expires_at,
+    original_pdf: row.original_pdf_url ?? null,
   });
 
-  if (!doc) {
-    console.warn('verifySigningTokenPublic — document record not found for id:', data.document_id);
-    return null;
-  }
-
-  const expiresAt = data.expires_at ? new Date(data.expires_at).getTime() : Number.NaN;
+  const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : Number.NaN;
   if (Number.isFinite(expiresAt) && Date.now() > expiresAt) {
-    console.warn('verifySigningTokenPublic — token expired at:', data.expires_at);
+    console.warn('verifySigningTokenPublic — token expired at:', row.expires_at);
     return null;
   }
 
   const activeStatuses = new Set(['pending_recipient', 'pending', 'sender_signed', 'signing']);
   const terminalStatuses = new Set(['completed', 'cancelled', 'expired']);
-  const status = String(doc.status || '').toLowerCase();
+  const status = String(row.doc_status || '').toLowerCase();
 
   if (terminalStatuses.has(status)) {
-    console.warn('verifySigningTokenPublic — document in terminal status:', doc.status);
+    console.warn('verifySigningTokenPublic — document in terminal status:', row.doc_status);
     return null;
   }
 
   if (!activeStatuses.has(status)) {
-    console.warn('verifySigningTokenPublic — document status is not signable:', doc.status);
+    console.warn('verifySigningTokenPublic — document status is not signable:', row.doc_status);
     return null;
   }
 
   return {
-    documentId:     data.document_id as string,
-    signerId:       data.signer_id as string,
-    originalPdfUrl: doc.original_pdf_url || '',
-    signedPdfUrl:   doc.signed_pdf_url || '',
-    documentName:   doc.name || 'Documento',
+    documentId:     row.document_id,
+    signerId:       row.signer_id,
+    originalPdfUrl: row.original_pdf_url || '',
+    signedPdfUrl:   row.signed_pdf_url || '',
+    documentName:   row.doc_name || 'Documento',
     documentStatus: status,
   };
 }
@@ -504,6 +526,7 @@ export async function compilePdfWithSignatures(params: {
   evidence?: EvidenceReportPayload;
 }): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+  const { default: fontkit } = await import('@pdf-lib/fontkit');
 
   // Phase 0: pre-load ALL images in parallel before touching the PDF
   const resolvedImages = await Promise.all(
@@ -511,6 +534,7 @@ export async function compilePdfWithSignatures(params: {
   );
 
   const pdfDoc  = await PDFDocument.load(params.pdfBytes.slice(0));
+  pdfDoc.registerFontkit(fontkit);
   const pages   = pdfDoc.getPages();
   const fontBundle = await loadPdfFontBundle();
   const fontBold = fontBundle?.bold
@@ -521,6 +545,26 @@ export async function compilePdfWithSignatures(params: {
   const fontReg = fontBundle?.regular
     ? await pdfDoc.embedFont(fontBundle.regular)
     : await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // No real bold TTF is shipped (public/fonts has no arialbd.ttf), so `fontBold`
+  // above falls back to the *regular* accent-safe custom font — correct glyphs,
+  // but visually not bold. Switching that fallback to StandardFonts.HelveticaBold
+  // would bring back the exact mojibake/missing-glyph bug the fontkit fix solved
+  // (WinAnsi standard fonts don't render á/é/í/ó/ú/ñ correctly). Instead, when
+  // there's no real bold face, we fake it by drawing the text twice with a
+  // sub-pixel horizontal offset, which thickens the strokes without touching
+  // the font/encoding at all.
+  const hasRealBoldFace = Boolean(fontBundle?.bold);
+  function drawBold(
+    pageObj: { drawText: (t: string, o: Record<string, unknown>) => void },
+    text: string,
+    opts: { x: number; y: number; size: number; color: unknown },
+  ) {
+    pageObj.drawText(text, { ...opts, font: fontBold });
+    if (!hasRealBoldFace) {
+      pageObj.drawText(text, { ...opts, font: fontBold, x: opts.x + 0.35 });
+    }
+  }
 
   const nowStr = new Intl.DateTimeFormat('es-CO', {
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -552,13 +596,27 @@ export async function compilePdfWithSignatures(params: {
 
     page.drawRectangle({ x, y, width: sigW, height: sigH, color: rgb(0.982, 0.984, 0.996), borderColor: rgb(0.70, 0.74, 0.91), borderWidth: 0.5 });
     page.drawRectangle({ x, y: y + sigH - 3, width: sigW, height: 3, color: rgb(0.35, 0.41, 0.91) });
-    page.drawText('FIRMA DIGITAL', { x: x + PAD, y: y + TEXT_ZONE + IMG_ZONE + 2, size: 5.5, font: fontBold, color: rgb(0.35, 0.41, 0.88) });
-    page.drawImage(pdfImage, { x: x + PAD, y: y + TEXT_ZONE + 2, width: sigW - 2 * PAD, height: IMG_ZONE - 4, opacity: 0.97 });
-    page.drawText('X', { x: x + PAD, y: y + TEXT_ZONE - LINE_H / 2 - 1, size: 8, font: fontBold, color: rgb(0.07, 0.10, 0.24) });
+    drawBold(page, 'FIRMA DIGITAL', { x: x + PAD, y: y + TEXT_ZONE + IMG_ZONE + 2, size: 5.5, color: rgb(0.35, 0.41, 0.88) });
+
+    // Fit the signature image into its box preserving aspect ratio — drawing
+    // it at the raw box dimensions stretches/squishes it whenever the canvas
+    // ratio doesn't match the box ratio.
+    const imgDims  = pdfImage.size() as { width: number; height: number };
+    const imgAspect = imgDims.width / imgDims.height;
+    const maxImgW  = sigW - 2 * PAD;
+    const maxImgH  = IMG_ZONE - 4;
+    let imgDrawW = maxImgW, imgDrawH = maxImgW / imgAspect;
+    if (imgDrawH > maxImgH) { imgDrawH = maxImgH; imgDrawW = maxImgH * imgAspect; }
+    page.drawImage(pdfImage, {
+      x: x + PAD + (maxImgW - imgDrawW) / 2,
+      y: y + TEXT_ZONE + 2 + (maxImgH - imgDrawH) / 2,
+      width: imgDrawW, height: imgDrawH, opacity: 0.97,
+    });
+    drawBold(page, 'X', { x: x + PAD, y: y + TEXT_ZONE - LINE_H / 2 - 1, size: 8, color: rgb(0.07, 0.10, 0.24) });
     page.drawLine({ start: { x: x + PAD + 12, y: y + TEXT_ZONE - LINE_H / 2 + 2 }, end: { x: x + sigW - PAD, y: y + TEXT_ZONE - LINE_H / 2 + 2 }, thickness: 0.9, color: rgb(0.35, 0.40, 0.65) });
 
     const name = (sig.signerName ?? '').trim().toUpperCase().substring(0, 30);
-    if (name) page.drawText(name, { x: x + PAD, y: y + DATE_H + ROLE_H + PAD + 1, size: Math.max(5.5, Math.min(7.5, sigW / 16)), font: fontBold, color: rgb(0.07, 0.08, 0.14) });
+    if (name) drawBold(page, name, { x: x + PAD, y: y + DATE_H + ROLE_H + PAD + 1, size: Math.max(5.5, Math.min(7.5, sigW / 16)), color: rgb(0.07, 0.08, 0.14) });
     const role = (sig.signerRole ?? '').trim().substring(0, 34);
     if (role) page.drawText(role, { x: x + PAD, y: y + DATE_H + PAD + 1, size: Math.max(4.5, Math.min(6, sigW / 22)), font: fontReg, color: rgb(0.35, 0.41, 0.91) });
     page.drawText(new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()), { x: x + PAD, y: y + PAD, size: 5, font: fontReg, color: rgb(0.50, 0.55, 0.72) });
@@ -582,7 +640,7 @@ export async function compilePdfWithSignatures(params: {
     reportPage.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 2, width: PAGE_W, height: 2.5, color: rgb(0.35, 0.41, 0.91) });
 
     const TITLE = 'INFORME DE FIRMAS';
-    reportPage.drawText(TITLE, { x: (PAGE_W - fontBold.widthOfTextAtSize(TITLE, 15)) / 2, y: PAGE_H - 30, size: 15, font: fontBold, color: rgb(0.97, 0.97, 1) });
+    drawBold(reportPage, TITLE, { x: (PAGE_W - fontBold.widthOfTextAtSize(TITLE, 15)) / 2, y: PAGE_H - 30, size: 15, color: rgb(0.97, 0.97, 1) });
 
     const docRef  = params.documentId.replace(/-/g, '').toUpperCase().substring(0, 16);
     const subText = `Codec Document  ·  Ref: ${docRef}`;
@@ -638,7 +696,7 @@ export async function compilePdfWithSignatures(params: {
       const sigName = (sig.signerName ?? '').trim().toUpperCase().substring(0, 32);
       if (sigName) {
         const tw = fontBold.widthOfTextAtSize(sigName, 8.5);
-        reportPage.drawText(sigName, { x: blockX + Math.max(INNER_PAD, (COL_W - tw) / 2), y: textAreaTopY - 34, size: 8.5, font: fontBold, color: rgb(0.07, 0.08, 0.14) });
+        drawBold(reportPage, sigName, { x: blockX + Math.max(INNER_PAD, (COL_W - tw) / 2), y: textAreaTopY - 34, size: 8.5, color: rgb(0.07, 0.08, 0.14) });
       }
       const sigRole = (sig.signerRole ?? '').trim().toUpperCase().substring(0, 36);
       if (sigRole) {
@@ -665,13 +723,13 @@ export async function compilePdfWithSignatures(params: {
     const BW = fontBold.widthOfTextAtSize(badgeLabel, badgeSz) + 14, BH = 14;
     const BX = LX + LW - BW - 6, BY = LY + LEGAL_H - BH - 6;
     reportPage.drawRectangle({ x: BX, y: BY, width: BW, height: BH, color: rgb(0.35, 0.41, 0.91) });
-    reportPage.drawText(badgeLabel, { x: BX + (BW - fontBold.widthOfTextAtSize(badgeLabel, badgeSz)) / 2, y: BY + 4.5, size: badgeSz, font: fontBold, color: rgb(1, 1, 1) });
+    drawBold(reportPage, badgeLabel, { x: BX + (BW - fontBold.widthOfTextAtSize(badgeLabel, badgeSz)) / 2, y: BY + 4.5, size: badgeSz, color: rgb(1, 1, 1) });
     const securedLabel = 'Secured by Codec Studio';
     reportPage.drawText(securedLabel, { x: BX + (BW - fontReg.widthOfTextAtSize(securedLabel, 5.5)) / 2, y: BY - 7, size: 5.5, font: fontReg, color: rgb(0.50, 0.54, 0.66) });
 
     // Compliance title
     const compTitle = 'U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE';
-    reportPage.drawText(compTitle, { x: TX, y: LY + LEGAL_H - 14, size: 7.5, font: fontBold, color: rgb(0.10, 0.14, 0.38) });
+    drawBold(reportPage, compTitle, { x: TX, y: LY + LEGAL_H - 14, size: 7.5, color: rgb(0.10, 0.14, 0.38) });
 
     // Legal body (word-wrapped)
     const legalBody  = 'This document is electronically signed and certified under the provisions of the Federal E-SIGN Act (15 U.S.C. Ch. 96) and the Uniform Electronic Transactions Act (UETA). The captured cryptographic signatures, timestamps, and network audit logs herein guarantee the authenticity, intent, and non-repudiation of the signing parties.';
@@ -691,10 +749,16 @@ export async function compilePdfWithSignatures(params: {
     const AIBOXW     = Math.min(LW - 20, fontBold.widthOfTextAtSize(auditIdStr, 7) + 14);
     const AIBY       = lBodyY + (lBodyY > LY + 80 ? 0 : -2);
     reportPage.drawRectangle({ x: TX - 4, y: AIBY - 4, width: AIBOXW, height: 14, color: rgb(0.91, 0.93, 1.00), borderColor: rgb(0.74, 0.79, 0.96), borderWidth: 0.3 });
-    reportPage.drawText(auditIdStr, { x: TX, y: AIBY, size: 7, font: fontBold, color: rgb(0.10, 0.14, 0.45) });
+    drawBold(reportPage, auditIdStr, { x: TX, y: AIBY, size: 7, color: rgb(0.10, 0.14, 0.45) });
 
+    // Print the real SHA-256 of the source document — this is the actual
+    // cryptographic evidence a reader (or a court) can independently verify
+    // by hashing the original PDF, not decorative boilerplate.
+    const hashLabel = params.fileHash
+      ? `SHA-256: ${params.fileHash.toUpperCase()}`
+      : 'Codec Document Security Services - Electronically signed document with full legal binding.';
     reportPage.drawText(
-      'Codec Document Security Services - Cryptographic Audit Trail Verification String. Electronically signed document with full legal binding.',
+      hashLabel,
       { x: TX, y: LY + 7, size: 5.5, font: fontReg, color: rgb(0.55, 0.60, 0.72) },
     );
   }
@@ -705,11 +769,11 @@ export async function compilePdfWithSignatures(params: {
     const evidencePage = pdfDoc.addPage([PAGE_W, PAGE_H]);
     evidencePage.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: rgb(0.985, 0.987, 0.994) });
     evidencePage.drawRectangle({ x: 24, y: PAGE_H - 80, width: PAGE_W - 48, height: 56, color: rgb(0.07, 0.08, 0.16) });
-    evidencePage.drawText('EVIDENCIA DE FIRMA', { x: 40, y: PAGE_H - 44, size: 16, font: fontBold, color: rgb(1, 1, 1) });
+    drawBold(evidencePage, 'EVIDENCIA DE FIRMA', { x: 40, y: PAGE_H - 44, size: 16, color: rgb(1, 1, 1) });
     evidencePage.drawText(`Documento: ${params.documentId.toUpperCase()}`, { x: 40, y: PAGE_H - 62, size: 8, font: fontReg, color: rgb(0.85, 0.88, 0.95) });
 
     const bodyY = PAGE_H - 120;
-    evidencePage.drawText('Datos del firmante', { x: 40, y: bodyY, size: 12, font: fontBold, color: rgb(0.15, 0.18, 0.28) });
+    drawBold(evidencePage, 'Datos del firmante', { x: 40, y: bodyY, size: 12, color: rgb(0.15, 0.18, 0.28) });
     if (params.evidence.signerName) evidencePage.drawText(`Nombre: ${params.evidence.signerName}`, { x: 40, y: bodyY - 18, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
     if (params.evidence.signerEmail) evidencePage.drawText(`Correo: ${params.evidence.signerEmail}`, { x: 40, y: bodyY - 34, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
     if (params.evidence.ip) evidencePage.drawText(`IP: ${params.evidence.ip}`, { x: 40, y: bodyY - 50, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
@@ -732,7 +796,7 @@ export async function compilePdfWithSignatures(params: {
     const drawEvidenceCard = async (title: string, subtitle: string, sourceUrl: string | undefined, x: number, y: number, width: number, height: number) => {
       evidencePage.drawRectangle({ x, y, width, height, color: rgb(1, 1, 1), borderColor: rgb(0.83, 0.86, 0.92), borderWidth: 0.8 });
       evidencePage.drawRectangle({ x, y: y + height - 3, width, height: 3, color: rgb(0.35, 0.41, 0.91) });
-      evidencePage.drawText(title, { x: x + 10, y: y + height + 8, size: 9, font: fontBold, color: rgb(0.2, 0.24, 0.33) });
+      drawBold(evidencePage, title, { x: x + 10, y: y + height + 8, size: 9, color: rgb(0.2, 0.24, 0.33) });
       evidencePage.drawText(subtitle, { x: x + 10, y: y - 12, size: 7, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
 
       const renderFallback = (message: string) => {

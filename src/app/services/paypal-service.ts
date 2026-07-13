@@ -299,11 +299,13 @@ export async function createSignatureRequest(payload: CreateSignatureRequestPayl
   return data;
 }
 
-// Fallback used when the backend is unreachable (ECONNREFUSED / offline dev)
+// Fallback used when the backend is unreachable (ECONNREFUSED / offline dev).
+// Must match SIGNATURE_EXTRA_REQUEST_FEE_USD in server/server.js — showing a
+// lower fee here than what the server actually charges is a billing bug.
 const SIGNATURE_PRICING_FALLBACK: SignaturePricingStatus = {
   buyerEmail: '',
   freePerDay: 1,
-  extraFeeUsd: 2.00,
+  extraFeeUsd: 3.00,
   dailyUsage: 0,
   freeRemaining: 1,
   nextRequestFeeUsd: 0,

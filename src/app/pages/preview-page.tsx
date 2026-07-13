@@ -22,9 +22,8 @@ import { getPurchaseUnlockStatus } from '../services/paypal-service';
 import { getSignatureAuditByOrder, getSignatureAuditsByOrder } from '../services/paypal-service';
 import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
-import { incrementGeneratedDoc } from '../services/user-limits-service';
+import { consumeGeneratedDocLimit } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
-import { checkDownloadAllowed, recordDownloadEvent } from '../services/download-gate-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 
@@ -779,9 +778,11 @@ export function PreviewPage() {
         return;
       }
 
-      // Gate: check 72-hour rolling quota for free users
+      // Gate: atomically check-and-consume today's free document quota (2/day)
       if (!canDownloadFree) {
-        const allowed = await checkDownloadAllowed(user?.id ?? null);
+        const { allowed } = user.id
+          ? await consumeGeneratedDocLimit(user.id, false)
+          : { allowed: false };
         if (!allowed) {
           setPendingAction('download');
           setPremiumModalOpen(true);

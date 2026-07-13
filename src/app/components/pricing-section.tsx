@@ -3,6 +3,8 @@ import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
+import { verifyPaypalOrder } from '../../lib/paypal-verify';
+import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 import { CheckCircle2, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 
 type Product = {
@@ -172,6 +174,13 @@ export function PricingSection() {
     fillFields: language === 'en' ? 'Enter your data to unlock secure checkout.' : 'Ingresa tus datos para habilitar el checkout seguro.',
   }), [language]);
 
+  // PayPal's SDK can lock body scroll while its card-fields overlay is
+  // expanded, without our code getting a lifecycle event to react to.
+  useEffect(() => {
+    if (!modalOpen) return;
+    return watchAndUnlockBodyScroll();
+  }, [modalOpen]);
+
   useEffect(() => {
     if (!modalOpen || !selectedProduct || !checkoutReady) return;
 
@@ -198,22 +207,25 @@ export function PricingSection() {
           });
         },
         onApprove: async (data: any, actions: any) => {
-          await actions.order.capture();
-          const response = await fetch(`${API_BASE_URL}/payments/webhook-success`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: payerEmail || user?.email,
-              hostedButtonId: selectedProduct.hostedButtonId,
-              orderId: data?.orderID || data?.orderId || null,
-              documentId: null,
-              documentName: language === 'en' ? selectedProduct.titleEn : selectedProduct.titleEs,
-            }),
-          });
+          const order = await actions.order.capture();
+          const orderId = order?.id || data?.orderID || data?.orderId || '';
 
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            throw new Error(payload?.error || payload?.message || 'No se pudo registrar el pago.');
+          // Server confirms with PayPal (real payment, correct amount, not
+          // reused) and activates the plan itself — this used to POST to an
+          // unauthenticated endpoint that trusted whatever hostedButtonId/
+          // orderId the browser sent, with no verification against PayPal.
+          const planProductMap: Record<Product['planId'], 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
+            monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
+          };
+          try {
+            await verifyPaypalOrder({ orderId, product: planProductMap[selectedProduct.planId] });
+          } catch (err) {
+            toast.error(
+              language === 'en'
+                ? `Could not verify payment: ${err instanceof Error ? err.message : String(err)}`
+                : `No se pudo verificar el pago: ${err instanceof Error ? err.message : String(err)}`,
+            );
+            return;
           }
 
           await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);

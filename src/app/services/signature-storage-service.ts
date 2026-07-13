@@ -6,11 +6,12 @@
  * -- Saved signature on user profile
  * ALTER TABLE public.users ADD COLUMN IF NOT EXISTS saved_signature_url text;
  *
- * -- Mobile quick-sign tokens
+ * -- Mobile quick-sign tokens (expires 20 min after creation)
  * CREATE TABLE IF NOT EXISTS public.mobile_signatures (
  *   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  *   token      text NOT NULL UNIQUE,
  *   sig_data   text,
+ *   expires_at timestamptz NOT NULL DEFAULT (now() + interval '20 minutes'),
  *   created_at timestamptz NOT NULL DEFAULT now()
  * );
  * ALTER TABLE public.mobile_signatures ENABLE ROW LEVEL SECURITY;
@@ -48,9 +49,12 @@ export async function clearSavedSignature(userId: string): Promise<void> {
 
 // ─── Mobile Quick-Sign ───────────────────────────────────────────────────────
 
+const MOBILE_SIGN_TOKEN_TTL_MS = 20 * 60 * 1000; // 20 minutes
+
 export async function createMobileSignToken(): Promise<string> {
   const token = crypto.randomUUID();
-  const { error } = await supabase.from('mobile_signatures').insert({ token });
+  const expiresAt = new Date(Date.now() + MOBILE_SIGN_TOKEN_TTL_MS).toISOString();
+  const { error } = await supabase.from('mobile_signatures').insert({ token, expires_at: expiresAt });
   if (error) throw new Error(`createMobileSignToken: ${error.message}`);
   return token;
 }
@@ -60,6 +64,7 @@ export async function pollMobileSignature(token: string): Promise<string | null>
     .from('mobile_signatures')
     .select('sig_data')
     .eq('token', token)
+    .gt('expires_at', new Date().toISOString())
     .single();
   if (error) {
     console.warn(`pollMobileSignature failed for token ${token}:`, error.message);
@@ -73,11 +78,12 @@ export async function submitMobileSignature(token: string, sigData: string): Pro
     .from('mobile_signatures')
     .update({ sig_data: sigData })
     .eq('token', token)
+    .gt('expires_at', new Date().toISOString())
     .select('id');
 
   if (error) throw new Error(`submitMobileSignature: ${error.message}`);
   if (!Array.isArray(data) || data.length === 0) {
-    throw new Error('submitMobileSignature: token not found or already expired');
+    throw new Error('submitMobileSignature: token not found, expired, or already used');
   }
 }
 

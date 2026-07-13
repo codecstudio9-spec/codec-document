@@ -17,7 +17,7 @@ export const PAYPAL_CONFIG = {
   // Cambia esto a 'live' cuando tengas tu cuenta Business real y quieras
   // recibir pagos reales en tu PayPal
   
-  mode: 'sandbox' as 'sandbox' | 'live',
+  mode: 'live' as 'sandbox' | 'live',
   
   // ────────────────────────────────────────────────────────────────────────
   // CREDENCIALES SANDBOX (Pruebas)
@@ -160,10 +160,6 @@ export const PAYPAL_SUBSCRIPTION_PLANS = {
 } as const;
 
 export type PlanKey = keyof typeof PAYPAL_SUBSCRIPTION_PLANS;
-
-// Admin master bypass code
-export const ADMIN_MASTER_CODE =
-  (import.meta.env.VITE_ADMIN_MASTER_CODE as string) || 'CODEC_ADMIN_2026';
 
 // ════════════════════════════════════════════════════════════════════════════
 // 📝 NOTAS IMPORTANTES

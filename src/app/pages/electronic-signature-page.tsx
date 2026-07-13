@@ -28,10 +28,9 @@ import {
   getDocumentSignatures, compilePdfWithSignatures,
 } from '../../lib/signatureService';
 import {
-  checkGeneratedDocLimit, incrementGeneratedDoc,
-  checkUploadedDocLimit, incrementUploadedDoc,
+  consumeGeneratedDocLimit,
+  consumeUploadedDocLimit,
 } from '../services/user-limits-service';
-import { checkDownloadAllowed } from '../services/download-gate-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
 type Step = 'upload' | 'creator-sign' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
@@ -444,10 +443,10 @@ export function ElectronicSignaturePage() {
       setError('Solo se permiten archivos PDF.'); return;
     }
     if (!bypassUsageCheck && !isAdmin) {
-      try {
-        const allowed = await checkDownloadAllowed(session?.user?.id ?? null);
-        if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
-      } catch { /* fail open */ }
+      const userId = session?.user?.id;
+      if (!userId) { setPendingFile(file); setPaywallContext('upload'); return; }
+      const { allowed } = await consumeUploadedDocLimit(userId, false);
+      if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
     }
     setError(''); setIsLoading(true); setLoadingMsg('Procesando documento…');
     try {
@@ -469,7 +468,6 @@ export function ElectronicSignaturePage() {
       const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
       const pdfUrl = await uploadPdfToStorage(docId, pdfBlob);
       await updateDocumentPdfUrl(docId, pdfUrl);
-      if (session?.user?.id) { try { await incrementUploadedDoc(session.user.id); } catch { /* non-fatal */ } }
       const ip = await getPublicIp();
       await insertAuditLog({ documentId: docId, action: 'document_uploaded', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: hash });
       toast.success('Documento cargado correctamente.');
@@ -574,11 +572,11 @@ export function ElectronicSignaturePage() {
     if (placements.length === 0) { setError('Coloca al menos una firma en el documento.'); return; }
     if (!pdfBytes || pdfBytes.length === 0) { setError('No hay PDF en memoria. Reinicia el flujo.'); return; }
 
-    if (!bypassUsageCheck && session?.user?.id && !isAdmin) {
-      try {
-        const docStatus = await checkGeneratedDocLimit(session.user.id, false);
-        if (!docStatus.allowed) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
-      } catch { /* fail open */ }
+    if (!bypassUsageCheck && !isAdmin) {
+      const userId = session?.user?.id;
+      if (!userId) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
+      const docStatus = await consumeGeneratedDocLimit(userId, false);
+      if (!docStatus.allowed) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
     }
     setError(''); setIsLoading(true); setStep('compiling'); setLoadingMsg('Guardando posiciones…');
     try {
@@ -596,7 +594,6 @@ export function ElectronicSignaturePage() {
       const signedUrl = await uploadPdfToStorage(documentId, finalBlob, 'signed.pdf');
       setSignedPdfUrl(signedUrl);
       await finalizeDocument(documentId, signedUrl);
-      if (session?.user?.id) { try { await incrementGeneratedDoc(session.user.id); } catch { /* non-fatal */ } }
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_compiled_and_certified', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: fileHash });
       toast.success('¡Documento certificado exitosamente!');

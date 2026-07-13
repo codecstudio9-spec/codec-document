@@ -218,10 +218,13 @@ const ADMIN_EMAILS_NORMALIZED = Array.from(
 );
 const UNLIMITED_PLAN_AMOUNT = 180;
 const UNLIMITED_PLAN_CODE = "CODEC_UNLIMITED_ANNUAL";
+// Kept in sync with PAYPAL_SUBSCRIPTION_PLANS in src/app/config/paypal.ts —
+// the frontend prices shown to the customer must match what this endpoint
+// verifies/grants, or a captured payment could be rejected or under-priced.
 const SUBSCRIPTION_PLANS = {
-  "pro-monthly": { amount: 39.99, days: 30, planCode: "CODEC_PRO_MONTHLY" },
-  "business-semiannual": { amount: 99.9, days: 180, planCode: "CODEC_BUSINESS_SEMIANNUAL" },
-  "ultimate-annual": { amount: 179.99, days: 365, planCode: "CODEC_ULTIMATE_ANNUAL" },
+  "pro-monthly": { amount: 79.99, days: 30, planCode: "CODEC_PRO_MONTHLY" },
+  "business-semiannual": { amount: 269.99, days: 180, planCode: "CODEC_BUSINESS_SEMIANNUAL" },
+  "ultimate-annual": { amount: 519.99, days: 365, planCode: "CODEC_ULTIMATE_ANNUAL" },
 };
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();

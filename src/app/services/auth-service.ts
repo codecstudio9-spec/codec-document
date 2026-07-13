@@ -60,14 +60,35 @@ const SUBSCRIPTION_FALLBACK: SubscriptionStatus = {
   planCode: 'free',
 };
 
-export async function fetchSubscriptionStatus(token: string): Promise<SubscriptionStatus> {
+/**
+ * Reads subscription status straight from public.users (RLS: auth.uid() = id),
+ * the same row the `paypal-verify` Edge Function writes to after confirming a
+ * real payment. This used to call a separate Express/SQLite backend
+ * (`/api/subscription/status`) that had its own disconnected auth/session
+ * model and never actually reflected a payment made through this app's live
+ * checkout — reading the Supabase row directly closes that gap.
+ */
+export async function fetchSubscriptionStatus(userId: string): Promise<SubscriptionStatus> {
+  if (!userId) return SUBSCRIPTION_FALLBACK;
   try {
-    const response = await fetch(`${API_BASE_URL}/subscription/status`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) return SUBSCRIPTION_FALLBACK;
-    const data = await safeJson<SubscriptionStatus>(response);
-    return data ?? SUBSCRIPTION_FALLBACK;
+    const { supabase } = await import('../../lib/supabase');
+    const { data, error } = await supabase
+      .from('users')
+      .select('email, plan_status, plan_type, plan_expires_at')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error || !data) return SUBSCRIPTION_FALLBACK;
+
+    const notExpired = !data.plan_expires_at || new Date(data.plan_expires_at as string) > new Date();
+    const active = data.plan_status === 'active' && notExpired;
+
+    return {
+      email: (data.email as string) ?? '',
+      unlimitedActive: active,
+      subscriptionActive: active,
+      annualPriceUsd: 180,
+      planCode: active ? String(data.plan_type ?? 'active') : 'free',
+    };
   } catch {
     return SUBSCRIPTION_FALLBACK;
   }

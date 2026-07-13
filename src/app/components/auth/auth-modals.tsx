@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
-import { Shield, Mail, Lock, Chrome, Sparkles, SendHorizonal, Loader, Check } from 'lucide-react';
+import { Shield, Mail, Lock, Chrome, SendHorizonal, Loader, Check } from 'lucide-react';
 
 type Props = {
   loginOpen: boolean;
@@ -27,7 +27,7 @@ function GlassLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegisterOpenChange }: Props) {
-  const { signIn, signUp, signInWithGoogle, signInWithMagicLink, signInDemo } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithMagicLink } = useAuth();
 
   const [tab, setTab] = useState<LoginTab>('magic');
   const [email, setEmail] = useState('');
@@ -95,12 +95,6 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
     } finally {
       setLoading(false);
     }
-  };
-
-  const onDemo = async () => {
-    await signInDemo();
-    toast.success('Modo demo activado');
-    close();
   };
 
   const isLogin = loginOpen;
@@ -224,10 +218,6 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
             Continuar con Google
           </button>
         )}
-        <button type="button" onClick={() => void onDemo()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-semibold text-white/40 transition hover:text-white/60">
-          <Sparkles className="size-3.5 text-amber-400" />
-          Entrar en modo demo
-        </button>
         <p className="text-center text-[11px] text-white/30">
           {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
           <button type="button" onClick={() => { isLogin ? onRegisterOpenChange(true) : onLoginOpenChange(true); close(); }} className="text-indigo-400 underline hover:text-indigo-300">

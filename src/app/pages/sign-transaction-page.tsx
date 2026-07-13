@@ -40,13 +40,16 @@ function buildSteps(cfg: SecurityConfig): Step[] {
 
 // ─── Supabase helpers ─────────────────────────────────────────────────────────
 async function fetchTx(id: string): Promise<SignTransaction | null> {
+  // Goes through a SECURITY DEFINER RPC (not a raw table SELECT) so that
+  // RLS can deny public listing of `sign_transactions` — which stores
+  // selfies and ID photos — while this by-id lookup still works for
+  // guests who hold a valid signing link. See
+  // supabase_lockdown_public_read_migration.sql.
   const { data, error } = await publicSupabase
-    .from('sign_transactions')
-    .select('*')
-    .eq('id', id)
-    .single();
+    .rpc('get_sign_transaction_public', { p_id: id })
+    .maybeSingle();
 
-  if (error) {
+  if (error || !data) {
     console.error('Error fetching sign_transaction:', error);
     return null;
   }
@@ -293,12 +296,17 @@ export default function SignTransactionPage() {
     if (recipientIp)       initialPayload.recipient_ip           = recipientIp;
 
     // ── Step 3: Execute UPDATE — complete transaction without waiting on storage.
+    // Guarded on the status we loaded (`tx.status`): if another concurrent
+    // submission (link opened twice) already changed it, this UPDATE matches
+    // zero rows instead of silently overwriting the first signer's completed work.
     setSubmitStatus('Guardando firma...');
     try {
-      const { error } = await publicSupabase
+      const { data: updatedRows, error } = await publicSupabase
         .from('sign_transactions')
         .update(initialPayload)
-        .eq('id', tx.id);
+        .eq('id', tx.id)
+        .eq('status', tx.status)
+        .select('id');
 
       if (error) {
         console.error('Error al guardar firma en sign_transactions:', error);
@@ -307,6 +315,15 @@ export default function SignTransactionPage() {
           `No se pudo guardar la firma: ${error.message}`,
           { description: `Code: ${error.code}`, duration: 8000 },
         );
+        return;
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        toast.error(
+          'Este documento ya fue firmado o modificado en otra sesión. Actualiza la página.',
+          { duration: 8000 },
+        );
+        setStep('already_signed');
         return;
       }
 

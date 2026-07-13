@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState, ReactNode } fr
 import { Session, User } from '@supabase/supabase-js';
 import { fetchMyPurchasedDocuments, fetchSubscriptionStatus } from '../services/auth-service';
 import { supabase } from '../../lib/supabase';
-import { ensureUserUsageRow } from '../services/usage-service';
 import { isAdminEmail } from '../utils/admin-access';
 
 type AuthUser = { id?: string; email: string; name?: string; picture?: string };
@@ -22,7 +21,6 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleToken: (idToken: string) => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
-  signInDemo: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
   refreshPurchasedDocuments: (tokenOverride?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,8 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [purchasedDocumentIds, setPurchasedDocumentIds] = useState<string[]>([]);
 
   const refreshSubscription = async () => {
-    if (!token) return;
-    const status = await fetchSubscriptionStatus(token);
+    const userId = session?.user?.id;
+    if (!userId) return;
+    const status = await fetchSubscriptionStatus(userId);
     setUnlimitedActive(Boolean(status.unlimitedActive));
     setSubscriptionActive(Boolean(status.subscriptionActive || status.unlimitedActive));
     setAnnualPriceUsd(status.annualPriceUsd || 180);
@@ -85,21 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signInDemo = async () => {
-    // Inicio de sesión temporal para pruebas locales sin proveedor OAuth.
-    setUser({
-      email: 'demo@codec.local',
-      name: 'Usuario Demo',
-      picture: undefined,
-    });
-    setToken('demo-token');
-    setSession(null);
-    setUnlimitedActive(true);
-    setSubscriptionActive(true);
-    setPurchasedDocumentIds([]);
-    localStorage.setItem('codec_demo_auth', 'true');
-  };
-
   const refreshPurchasedDocuments = async (tokenOverride?: string) => {
     const effectiveToken = tokenOverride || token;
     if (!effectiveToken) return;
@@ -110,18 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    const isDemo = localStorage.getItem('codec_demo_auth') === 'true';
-    if (isDemo) {
-      localStorage.removeItem('codec_demo_auth');
-      setUser(null);
-      setToken(null);
-      setSession(null);
-      setUnlimitedActive(false);
-      setSubscriptionActive(false);
-      setPurchasedDocumentIds([]);
-      return;
-    }
-
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUser(null);
@@ -163,34 +135,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
-    // Always check Supabase for a real session first.  A real session takes
-    // priority over the codec_demo_auth localStorage flag — this allows the
-    // admin (douglastabordasanchez@gmail.com) to log in normally even when the
-    // demo flag was left behind from a previous test session.
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        // Real session wins — purge any stale demo flag so the UI shows the
-        // correct user instead of "Usuario Demo demo@codec.local".
-        localStorage.removeItem('codec_demo_auth');
-        applySession(data.session);
-      } else if (localStorage.getItem('codec_demo_auth') === 'true') {
-        // No real session — honour the explicit demo mode flag.
-        setUser({ email: 'demo@codec.local', name: 'Usuario Demo', picture: undefined });
-        setToken('demo-token');
-        setSession(null);
-        setUnlimitedActive(true);
-        setSubscriptionActive(true);
-        setLoading(false);
-      } else {
-        applySession(null);
-      }
+      applySession(data.session);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      // If a real session arrives, always clear the demo flag
-      if (nextSession) localStorage.removeItem('codec_demo_auth');
       applySession(nextSession);
       // Auto-create user profile row on first login (Google OAuth or magic link)
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && nextSession?.user) {
@@ -216,8 +167,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             { onConflict: 'user_id' },
           );
         }
-        // Ensure user_usage row exists for document/signature quota tracking
-        ensureUserUsageRow(u.id);
         // Apply plan type selected in onboarding segmentation modal
         const pendingPlanType = localStorage.getItem('codec_pending_plan_type');
         if (pendingPlanType) {
@@ -261,7 +210,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithGoogle,
       signInWithGoogleToken,
       signInWithMagicLink,
-      signInDemo,
       refreshSubscription,
       refreshPurchasedDocuments,
       logout,

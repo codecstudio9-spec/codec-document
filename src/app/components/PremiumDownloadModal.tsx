@@ -5,13 +5,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import {
-  ADMIN_MASTER_CODE,
   PAYPAL_SUBSCRIPTION_PLANS,
   getDocumentPrice,
   PAYPAL_LEASE_SDK_CLIENT_ID,
   type PlanKey,
 } from '../config/paypal';
-import { activatePlan } from '../services/subscription-service';
+import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
+import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 
 // ── kept for backward compatibility with any existing import
 export const SINGLE_DOC_PRICE = 7.99;
@@ -40,9 +40,6 @@ function cleanupVaultSdk() {
   try { delete (window as Record<string, unknown>).paypal; } catch { /* noop */ }
   modalSdkPromise = null;
 }
-
-// ── valid promo codes → 100% discount ─────────────────────────────────────
-const VALID_PROMO_CODES = ['TESTZERO', 'CODEC2026', 'SEBASMANU2026'];
 
 // ── plan display metadata ──────────────────────────────────────────────────
 const PLAN_META: Record<PlanKey, {
@@ -134,9 +131,7 @@ export function PremiumDownloadModal({
   const [promoInput, setPromoInput]       = useState('');
   const [promoApplied, setPromoApplied]   = useState(false);
   const [promoError, setPromoError]       = useState('');
-  const [adminCode, setAdminCode]         = useState('');
-  const [adminError, setAdminError]       = useState('');
-  const [showAdminField, setShowAdminField] = useState(false);
+  const [promoLoading, setPromoLoading]   = useState(false);
   const [sdkError, setSdkError]           = useState(false);
   const [sdkLoading, setSdkLoading]       = useState(false);
 
@@ -151,6 +146,13 @@ export function PremiumDownloadModal({
 
   useBodyScrollLock(open);
 
+  // PayPal's SDK can lock body scroll while its card-fields overlay is
+  // expanded, without our code getting a lifecycle event to react to.
+  useEffect(() => {
+    if (!open) return;
+    return watchAndUnlockBodyScroll();
+  }, [open]);
+
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
@@ -159,9 +161,6 @@ export function PremiumDownloadModal({
       setPromoInput('');
       setPromoApplied(false);
       setPromoError('');
-      setAdminCode('');
-      setAdminError('');
-      setShowAdminField(false);
       setSdkError(false);
     }
   }, [open]);
@@ -225,22 +224,41 @@ export function PremiumDownloadModal({
             });
           buttonsConfig.onApprove = async (_: unknown, actions: PayPalActions) => {
             const order = await actions.order.capture();
-            onSuccess(order.id);
-            onOpenChange(false);
+            try {
+              // Server confirms with PayPal (real payment, correct amount)
+              // before the download gate is lifted — never trust capture()
+              // resolving in the browser alone.
+              await verifyPaypalOrder({ orderId: order.id, product: 'doc_single', documentId });
+              onSuccess(order.id);
+              onOpenChange(false);
+            } catch (err) {
+              console.error('[Modal PayPal] verification failed:', err);
+              setSdkError(true);
+            }
           };
         } else {
-          const subPlanKey = selectedPlan;
+          const planProductMap: Record<PlanKey, 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
+            monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
+          };
           buttonsConfig.createSubscription = (_: unknown, actions: PayPalActions) =>
             actions.subscription.create({ plan_id: plan.planId });
           buttonsConfig.onApprove = async (data: { subscriptionID?: string }, actions: PayPalActions) => {
             const subId = data.subscriptionID
               ?? (actions.subscription as unknown as { subscriptionID?: string }).subscriptionID
               ?? '';
-            if (user?.id) {
-              await activatePlan(user.id, subPlanKey, subId);
+            try {
+              // Server confirms the subscription is ACTIVE and its plan_id
+              // matches the requested tier, then activates it server-side.
+              await verifyPaypalOrder({
+                subscriptionId: subId,
+                product: planProductMap[selectedPlan],
+              });
+              onSuccess(`SUB-${subId}`);
+              onOpenChange(false);
+            } catch (err) {
+              console.error('[Modal PayPal] subscription verification failed:', err);
+              setSdkError(true);
             }
-            onSuccess(`SUB-${subId}`);
-            onOpenChange(false);
           };
         }
 
@@ -265,30 +283,26 @@ export function PremiumDownloadModal({
     return () => document.removeEventListener('keydown', h);
   }, [open, onOpenChange]);
 
-  // Promo code handlers
-  const handleApplyPromo = () => {
+  // Promo code redemption — validity, expiry, redemption cap and the actual
+  // grant all happen server-side (public.promo_codes + paypal-verify Edge
+  // Function). The old client-side array of valid codes was shipped in the
+  // JS bundle, so anyone could read it in devtools and redeem for free with
+  // no limit; this closes that.
+  const handleApplyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
-    if (VALID_PROMO_CODES.includes(code)) {
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      await redeemPromoCode(code);
       setPromoApplied(true);
-      setPromoError('');
-    } else {
-      setPromoError(language === 'en' ? 'Invalid promo code.' : 'Código inválido.');
-      setPromoApplied(false);
-    }
-  };
-
-  const handleFreeConfirm = () => {
-    onSuccess(`PROMO-${promoInput.trim().toUpperCase()}-${Date.now()}`);
-    onOpenChange(false);
-  };
-
-  // Admin code handler
-  const handleAdminUnlock = () => {
-    if (adminCode.trim() === ADMIN_MASTER_CODE) {
-      onSuccess('ADMIN-BYPASS');
+      onSuccess(`PROMO-${code}`);
       onOpenChange(false);
-    } else {
-      setAdminError(language === 'en' ? 'Invalid code.' : 'Código inválido.');
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid promo code.' : 'Código inválido.'));
+      setPromoApplied(false);
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -344,8 +358,8 @@ export function PremiumDownloadModal({
               <p className="mt-1 text-sm text-slate-500 max-w-md mx-auto">
                 {reason === '72h_limit'
                   ? t(
-                      'You used your 2 free downloads in the last 72 hours. Pay for this one or unlock unlimited access.',
-                      'Usaste tus 2 descargas gratuitas en las últimas 72 horas. Paga este documento o desbloquea acceso ilimitado.',
+                      'You used your 2 free documents today. Pay for this one or unlock unlimited access.',
+                      'Usaste tus 2 documentos gratuitos de hoy. Paga este documento o desbloquea acceso ilimitado.',
                     )
                   : documentName}
               </p>
@@ -448,19 +462,19 @@ export function PremiumDownloadModal({
                           <input
                             type="text"
                             value={promoInput}
-                            onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); setPromoApplied(false); }}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPromo(); }}
+                            onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') void handleApplyPromo(); }}
                             placeholder={t('Enter code', 'Ingresa el código')}
                             className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm uppercase tracking-wide outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            disabled={promoApplied}
+                            disabled={promoLoading}
                           />
                           <button
                             type="button"
-                            onClick={handleApplyPromo}
-                            disabled={promoApplied || !promoInput.trim()}
+                            onClick={() => void handleApplyPromo()}
+                            disabled={promoLoading || !promoInput.trim()}
                             className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-700 disabled:opacity-40"
                           >
-                            {promoApplied ? t('✓ Applied', '✓ Aplicado') : t('Apply', 'Aplicar')}
+                            {promoLoading ? t('Checking…', 'Verificando…') : t('Apply', 'Aplicar')}
                           </button>
                         </div>
                         {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
@@ -468,7 +482,7 @@ export function PremiumDownloadModal({
                           <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
                             <TicketPercent className="size-3.5 text-emerald-600" />
                             <span className="text-xs font-semibold text-emerald-700">
-                              {t('100% discount — Free download!', '100% descuento — ¡Descarga gratis!')}
+                              {t('100% discount applied!', '¡100% descuento aplicado!')}
                             </span>
                             <span className="ml-auto text-xs font-black text-emerald-700">$0.00</span>
                           </div>
@@ -476,38 +490,24 @@ export function PremiumDownloadModal({
                       </div>
 
                       {/* PayPal buttons — single */}
-                      {!promoApplied && (
-                        <div>
-                          {!isEmailValid && (
-                            <p className="text-xs text-slate-400 text-center py-2">
-                              {t('Enter a valid email to continue', 'Ingresa un correo válido para continuar')}
-                            </p>
-                          )}
-                          {isEmailValid && sdkLoading && (
-                            <div className="flex justify-center py-3">
-                              <div className="size-5 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
-                            </div>
-                          )}
-                          {isEmailValid && sdkError && (
-                            <p className="text-xs text-red-500 text-center py-2">
-                              {t('PayPal unavailable. Try again.', 'PayPal no disponible. Intenta de nuevo.')}
-                            </p>
-                          )}
-                          <div ref={paypalContainerRef} id="paypal-modal-single-container" />
-                        </div>
-                      )}
-
-                      {/* Free confirm when promo applied */}
-                      {promoApplied && (
-                        <button
-                          type="button"
-                          onClick={handleFreeConfirm}
-                          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 active:scale-[0.98]"
-                        >
-                          <Check className="size-4" />
-                          {t('Confirm Free Download', 'Confirmar Descarga Gratuita')}
-                        </button>
-                      )}
+                      <div>
+                        {!isEmailValid && (
+                          <p className="text-xs text-slate-400 text-center py-2">
+                            {t('Enter a valid email to continue', 'Ingresa un correo válido para continuar')}
+                          </p>
+                        )}
+                        {isEmailValid && sdkLoading && (
+                          <div className="flex justify-center py-3">
+                            <div className="size-5 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
+                          </div>
+                        )}
+                        {isEmailValid && sdkError && (
+                          <p className="text-xs text-red-500 text-center py-2">
+                            {t('PayPal unavailable. Try again.', 'PayPal no disponible. Intenta de nuevo.')}
+                          </p>
+                        )}
+                        <div ref={paypalContainerRef} id="paypal-modal-single-container" />
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -626,45 +626,6 @@ export function PremiumDownloadModal({
                 )}
               </AnimatePresence>
             </div>
-
-            {/* ── Admin / Partner bypass (collapsible) ─────────────────── */}
-            {!isAdmin && (
-              <div className="mt-5 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAdminField((v) => !v)}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition"
-                >
-                  <Lock className="size-3" />
-                  {t('Admin / Partner access', 'Acceso Admin / Partner')}
-                </button>
-                {showAdminField && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-2 flex gap-2"
-                  >
-                    <input
-                      type="text"
-                      value={adminCode}
-                      onChange={(e) => { setAdminCode(e.target.value); setAdminError(''); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleAdminUnlock(); }}
-                      placeholder={t('Enter master code', 'Ingresa el código maestro')}
-                      className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAdminUnlock}
-                      disabled={!adminCode.trim()}
-                      className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-700 disabled:opacity-40"
-                    >
-                      {t('Unlock', 'Desbloquear')}
-                    </button>
-                  </motion.div>
-                )}
-                {adminError && <p className="mt-1 text-xs text-red-500">{adminError}</p>}
-              </div>
-            )}
 
             {/* ── Trust strip ──────────────────────────────────────────── */}
             <div className="mt-4 flex items-center justify-center gap-1.5">

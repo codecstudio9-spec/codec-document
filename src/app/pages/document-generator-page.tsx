@@ -24,7 +24,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { createMobileSignToken, pollMobileSignature, deleteMobileSignToken } from '../services/signature-storage-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
-import { incrementSignTransaction } from '../services/user-limits-service';
+import { consumeSignTransactionLimit } from '../services/user-limits-service';
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
@@ -528,6 +528,20 @@ export function DocumentGeneratorPage() {
     }
 
     // Unilateral flows (fill_self, blank_send): insert immediately
+    if (!isAdmin && !unlimitedActive && !subscriptionActive) {
+      const userId = session?.user?.id;
+      const { allowed } = userId
+        ? await consumeSignTransactionLimit(userId, false)
+        : { allowed: false };
+      if (!allowed) {
+        toast.error(
+          language === 'en'
+            ? 'You reached today\'s free signature-request limit (2/day). Upgrade to send more.'
+            : 'Alcanzaste el límite gratuito de solicitudes de firma de hoy (2/día). Mejora tu plan para enviar más.',
+        );
+        return;
+      }
+    }
     try {
       const txId = await createSignTransaction({
         creator_id:      session?.user?.id ?? null,
@@ -539,7 +553,6 @@ export function DocumentGeneratorPage() {
       });
       const shareUrl = `${window.location.origin}/sign/${txId}`;
       setTxShareData({ txId, shareUrl, config });
-      if (session?.user?.id) void incrementSignTransaction(session.user.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('Error creating sign_transaction INSERT:', msg);
@@ -554,6 +567,20 @@ export function DocumentGeneratorPage() {
     setSenderSignModalOpen(false);
     if (!pendingSecConfig || !documentType || !intent) return;
 
+    if (!isAdmin && !unlimitedActive && !subscriptionActive) {
+      const userId = session?.user?.id;
+      const { allowed } = userId
+        ? await consumeSignTransactionLimit(userId, false)
+        : { allowed: false };
+      if (!allowed) {
+        toast.error(
+          language === 'en'
+            ? 'You reached today\'s free signature-request limit (2/day). Upgrade to send more.'
+            : 'Alcanzaste el límite gratuito de solicitudes de firma de hoy (2/día). Mejora tu plan para enviar más.',
+        );
+        return;
+      }
+    }
     try {
       const txId = await createSignTransaction({
         creator_id:       session?.user?.id ?? null,
@@ -567,7 +594,6 @@ export function DocumentGeneratorPage() {
       const shareUrl = `${window.location.origin}/sign/${txId}`;
       setTxShareData({ txId, shareUrl, config: pendingSecConfig });
       setPendingSecConfig(null);
-      if (session?.user?.id) void incrementSignTransaction(session.user.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('Error creating sign_transaction with sender signature:', msg);

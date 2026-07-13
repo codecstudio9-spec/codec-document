@@ -14,7 +14,7 @@ import {
   verifySigningTokenPublic,
   uploadSignatureImage,
   insertSignature,
-  updateSignerStatus,
+  tryCompleteSignerOnce,
   insertAuditLog,
   getPublicIp,
   dataUrlToBlob,
@@ -22,6 +22,7 @@ import {
 } from '../../lib/signatureService';
 import { publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
+import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -569,7 +570,16 @@ export function GuestSignPage() {
 
       const auditUserAgent = JSON.stringify({ ...browserMeta, geolocation: geoMeta });
 
-      // 4. Persist signature row and document evidence package
+      // 4. Claim the signer slot atomically — if another concurrent submission
+      // (the same signing link opened twice) already completed it, stop here
+      // instead of racing it to insert a duplicate signature / compiled PDF.
+      const claimed = await tryCompleteSignerOnce(tokenData.signerId, 'pending');
+      if (!claimed) {
+        toast.error('Este documento ya fue firmado en otra sesión. Actualiza la página.');
+        return;
+      }
+
+      // 5. Persist signature row and document evidence package
       await insertSignature({
         documentId:   tokenData.documentId,
         signerName:   guestName || 'Invitado',
@@ -578,8 +588,6 @@ export function GuestSignPage() {
         userAgent:    auditUserAgent,
         signatureUrl: sigUrl,
       });
-
-      try { await updateSignerStatus(tokenData.signerId, 'completed'); } catch { /* non-fatal */ }
 
       const currentPdfUrl = tokenData.signedPdfUrl || tokenData.originalPdfUrl;
       if (currentPdfUrl) {
@@ -633,7 +641,10 @@ export function GuestSignPage() {
             setPremiumModalOpen(true);
             throw new Error('PREMIUM_LIMIT');
           }
-          console.error('No se pudo actualizar el PDF acumulativo:', compileErr);
+          console.error('No se pudo generar el PDF firmado final:', compileErr);
+          // La firma cruda ya quedó persistida (insertSignature arriba), pero el
+          // documento certificado NO se generó: no se debe reportar éxito al firmante.
+          throw new Error('No se pudo generar el documento firmado. Tu firma quedó guardada; por favor vuelve a intentarlo o contacta soporte.');
         }
       }
 

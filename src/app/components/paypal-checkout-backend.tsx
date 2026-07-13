@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, XCircle, ShieldCheck } from 'lucide-react';
 import { PAYPAL_LEASE_SDK_CLIENT_ID } from '../config/paypal';
-import { isAdminEmail } from '../utils/admin-access';
+import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 
 interface PayPalCheckoutBackendProps {
   amount: number;
@@ -11,6 +11,8 @@ interface PayPalCheckoutBackendProps {
   documentContent?: string;
   customerEmail?: string;
   isEmailValid?: boolean;
+  /** Real admin flag derived from the authenticated Supabase session — never from a free-text email field. */
+  isAdmin?: boolean;
   onSuccess: (orderId: string) => void;
   onError: (error: any) => void;
   onAdminAccess?: () => void;
@@ -88,6 +90,11 @@ function PayPalButtonsCore({
   onSuccessRef.current = onSuccess;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+
+  // PayPal's SDK can lock body scroll while its card-fields overlay is
+  // expanded, without our code getting a lifecycle event to react to.
+  // Watch and strip that lock for as long as the checkout is mounted.
+  useEffect(() => watchAndUnlockBodyScroll(), []);
 
   // Synchronous pre-unmount cleanup — runs BEFORE React removes DOM nodes from the document.
   // Clearing the container here lets PayPal's MutationObserver process the removal while the
@@ -290,13 +297,12 @@ export function PayPalCheckoutBackend({
   documentId,
   customerEmail,
   isEmailValid,
+  isAdmin,
   onSuccess,
   onError,
   onAdminAccess,
   language,
 }: PayPalCheckoutBackendProps) {
-  const isAdmin = isAdminEmail(customerEmail);
-
   if (isAdmin) {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-3">

@@ -13,7 +13,7 @@ import { getDocumentTranslation } from '../data/document-translations';
 import { PayPalCheckoutBackend } from '../components/paypal-checkout-backend';
 import { useAuth } from '../contexts/auth-context';
 import { saveMyPurchasedDocument } from '../services/auth-service';
-import { isAdminEmail } from '../utils/admin-access';
+import { verifyPaypalOrder } from '../../lib/paypal-verify';
 
 const BUNDLE_PRICE = 12;
 const BUNDLE_BONUS_IDS = ['rental-application', 'move-in-checklist'];
@@ -51,6 +51,24 @@ export function CheckoutPage() {
   const handlePayPalSuccess = async (orderId: string) => {
     console.log('PayPal Order ID:', orderId);
     const isBundle = isEligibleForBundle && selectedPlan === 'bundle';
+
+    // Server confirms with PayPal (real payment, correct amount, not reused)
+    // before the paywall is lifted — never trust actions.order.capture()
+    // resolving in the browser alone.
+    try {
+      await verifyPaypalOrder({
+        orderId,
+        product: isBundle ? 'doc_bundle' : 'doc_single',
+        documentId: purchaseData.template.id,
+      });
+    } catch (err) {
+      toast.error(
+        language === 'es'
+          ? `No se pudo verificar el pago: ${err instanceof Error ? err.message : String(err)}`
+          : `Could not verify payment: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return;
+    }
 
     sessionStorage.setItem('isPurchased', 'true');
     sessionStorage.setItem('paypalOrderId', orderId);
@@ -218,6 +236,7 @@ export function CheckoutPage() {
                     documentContent={purchaseData.content}
                     customerEmail={email.trim()}
                     isEmailValid={isEmailValid}
+                    isAdmin={isAdmin}
                     onSuccess={handlePayPalSuccess}
                     onError={handlePayPalError}
                     onAdminAccess={handleAdminAccess}

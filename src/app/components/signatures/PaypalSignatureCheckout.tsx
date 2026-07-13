@@ -3,7 +3,7 @@ import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPayPalClientId } from '../../config/paypal';
-import { grantSingleCredit, activateMonthlyPlan } from '../../../lib/signatureService';
+import { verifyPaypalOrder } from '../../../lib/paypal-verify';
 
 interface PaypalSignatureCheckoutProps {
   userId: string;
@@ -54,11 +54,13 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
   const handleApprove = async (orderId: string) => {
     setProcessing(true);
     try {
-      if (selectedPlan === 'single') {
-        await grantSingleCredit(userId);
-      } else {
-        await activateMonthlyPlan(userId);
-      }
+      // Server verifies the order with PayPal's REST API (real payment,
+      // correct amount, not reused) and grants the credit/plan itself —
+      // this component no longer writes user_credits directly.
+      await verifyPaypalOrder({
+        orderId,
+        product: selectedPlan === 'single' ? 'sig_single' : 'sig_monthly',
+      });
       setSucceeded(true);
       toast.success('¡Pago confirmado! Ya puedes continuar con tu firma.');
       onSuccess(selectedPlan);
