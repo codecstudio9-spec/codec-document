@@ -4,197 +4,197 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://codecdocument.com/</loc>
+    <loc>https://codec-document.vercel.app/</loc>
     <lastmod>2026-03-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/"/>
   </url>
   
   <!-- Residential Lease Agreement -->
   <url>
-    <loc>https://codecdocument.com/generate/residential-lease</loc>
+    <loc>https://codec-document.vercel.app/generator/residential-lease</loc>
     <lastmod>2026-03-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/generate/residential-lease"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/generate/residential-lease"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/generator/residential-lease"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/generator/residential-lease"/>
   </url>
   
   <!-- Non-Disclosure Agreement (NDA) -->
   <url>
-    <loc>https://codecdocument.com/generate/nda</loc>
+    <loc>https://codec-document.vercel.app/generator/nda</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/generate/nda"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/generate/nda"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/generator/nda"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/generator/nda"/>
   </url>
   
   <!-- Independent Contractor Agreement -->
   <url>
-    <loc>https://codecdocument.com/generate/independent-contractor</loc>
+    <loc>https://codec-document.vercel.app/generator/independent-contractor</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/generate/independent-contractor"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/generate/independent-contractor"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/generator/independent-contractor"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/generator/independent-contractor"/>
   </url>
 
   <!-- Service Agreement -->
   <url>
-    <loc>https://codecdocument.com/generate/service-agreement</loc>
+    <loc>https://codec-document.vercel.app/generator/service-agreement</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/generate/service-agreement"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/generate/service-agreement"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/generator/service-agreement"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/generator/service-agreement"/>
   </url>
 
   <!-- Vehicle Bill of Sale -->
   <url>
-    <loc>https://codecdocument.com/generate/bill-of-sale-vehicle</loc>
+    <loc>https://codec-document.vercel.app/generator/bill-of-sale-vehicle</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/generate/bill-of-sale-vehicle"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/generate/bill-of-sale-vehicle"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/generator/bill-of-sale-vehicle"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/generator/bill-of-sale-vehicle"/>
   </url>
 
   <!-- Landing pages -->
   <url>
-    <loc>https://codecdocument.com/free-legal-documents</loc>
+    <loc>https://codec-document.vercel.app/free-legal-documents</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/free-legal-documents"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/free-legal-documents"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/free-legal-documents"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/free-legal-documents"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/electronic-signature</loc>
+    <loc>https://codec-document.vercel.app/electronic-signature</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/electronic-signature"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/electronic-signature"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/electronic-signature"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/electronic-signature"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/online-lease-agreement</loc>
+    <loc>https://codec-document.vercel.app/online-lease-agreement</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/online-lease-agreement"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/online-lease-agreement"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/online-lease-agreement"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/online-lease-agreement"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/nda-generator</loc>
+    <loc>https://codec-document.vercel.app/nda-generator</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/nda-generator"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/nda-generator"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/nda-generator"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/nda-generator"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/independent-contractor-agreement</loc>
+    <loc>https://codec-document.vercel.app/independent-contractor-agreement</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/independent-contractor-agreement"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/independent-contractor-agreement"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/independent-contractor-agreement"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/independent-contractor-agreement"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/vehicle-bill-of-sale</loc>
+    <loc>https://codec-document.vercel.app/vehicle-bill-of-sale</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/vehicle-bill-of-sale"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/vehicle-bill-of-sale"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/vehicle-bill-of-sale"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/vehicle-bill-of-sale"/>
   </url>
 
   <url>
-    <loc>https://codecdocument.com/promissory-note</loc>
+    <loc>https://codec-document.vercel.app/promissory-note</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://codecdocument.com/promissory-note"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://codecdocument.com/promissory-note"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codec-document.vercel.app/promissory-note"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codec-document.vercel.app/promissory-note"/>
   </url>
   
   <!-- State-specific pilot landing pages -->
   <url>
-    <loc>https://codecdocument.com/landing/residential-lease/texas</loc>
+    <loc>https://codec-document.vercel.app/landing/residential-lease/texas</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/residential-lease/florida</loc>
+    <loc>https://codec-document.vercel.app/landing/residential-lease/florida</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/nda/california</loc>
+    <loc>https://codec-document.vercel.app/landing/nda/california</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/nda/new-york</loc>
+    <loc>https://codec-document.vercel.app/landing/nda/new-york</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/independent-contractor/texas</loc>
+    <loc>https://codec-document.vercel.app/landing/independent-contractor/texas</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/independent-contractor/california</loc>
+    <loc>https://codec-document.vercel.app/landing/independent-contractor/california</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/service-agreement/florida</loc>
+    <loc>https://codec-document.vercel.app/landing/service-agreement/florida</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/service-agreement/texas</loc>
+    <loc>https://codec-document.vercel.app/landing/service-agreement/texas</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/promissory-note/california</loc>
+    <loc>https://codec-document.vercel.app/landing/promissory-note/california</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/promissory-note/florida</loc>
+    <loc>https://codec-document.vercel.app/landing/promissory-note/florida</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/bill-of-sale-vehicle/california</loc>
+    <loc>https://codec-document.vercel.app/landing/bill-of-sale-vehicle/california</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://codecdocument.com/landing/bill-of-sale-vehicle/texas</loc>
+    <loc>https://codec-document.vercel.app/landing/bill-of-sale-vehicle/texas</loc>
     <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>

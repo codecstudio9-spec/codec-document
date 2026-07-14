@@ -508,6 +508,30 @@ async function embedImageSafely(pdfDoc: any, bytes: Uint8Array | null): Promise<
   }
 }
 
+// 🛡️ FIX "Unknown font format" en Firma Digital Mutua: vercel.json reescribe
+// CUALQUIER ruta sin archivo estático real hacia /index.html con status 200
+// (rewrite de SPA). Cuando arialbd.ttf no existe en public/fonts (se borró en
+// una limpieza anterior), `fetch('/fonts/arialbd.ttf')` no da 404 — devuelve
+// el HTML de index.html con `.ok === true`, así que el chequeo `boldRes.ok`
+// no detecta el problema y esos bytes de HTML se pasan como si fueran una
+// fuente válida. fontkit truena con "Unknown font format" al intentar
+// interpretarlos en pdfDoc.embedFont(), y como esa llamada no tenía try/catch,
+// el error se propagaba hasta el flujo de guardado de la firma. Validamos la
+// cabecera binaria real (magic bytes) de cada fuente antes de aceptarla —
+// así una respuesta HTML nunca se confunde con un TTF/OTF válido, y el bundle
+// cae correctamente al camino ya existente de "sin bold real" (negrita falsa)
+// o "sin fuente custom" (Helvetica nativo) en vez de reventar.
+function isValidFontBytes(bytes: Uint8Array): boolean {
+  if (!bytes || bytes.length < 4) return false;
+  const sig = `${bytes[0]},${bytes[1]},${bytes[2]},${bytes[3]}`;
+  return (
+    sig === '0,1,0,0' || // TrueType (sfnt 1.0)
+    sig === '116,114,117,101' || // 'true'
+    sig === '116,116,99,102' || // 'ttcf' (TrueType collection)
+    sig === '79,84,84,79' // 'OTTO' (OpenType/CFF)
+  );
+}
+
 async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8Array } | null> {
   try {
     const [regularRes, boldRes] = await Promise.all([
@@ -518,7 +542,13 @@ async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8A
     if (!regularRes.ok) return null;
 
     const regularBytes = new Uint8Array(await regularRes.arrayBuffer());
-    const boldBytes = boldRes.ok ? new Uint8Array(await boldRes.arrayBuffer()) : undefined;
+    if (!isValidFontBytes(regularBytes)) return null;
+
+    let boldBytes: Uint8Array | undefined;
+    if (boldRes.ok) {
+      const candidate = new Uint8Array(await boldRes.arrayBuffer());
+      if (isValidFontBytes(candidate)) boldBytes = candidate;
+    }
     return { regular: regularBytes, bold: boldBytes };
   } catch {
     return null;

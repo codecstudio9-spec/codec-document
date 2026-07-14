@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
-  X, Crown, ShieldCheck, Download, Tag, TicketPercent, Check, Lock, Zap,
+  X, Crown, ShieldCheck, Download, Tag, TicketPercent, Check, Lock, Zap, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import {
@@ -123,7 +123,7 @@ export function PremiumDownloadModal({
   price,
   reason = 'always',
 }: Props) {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, signInWithGoogle } = useAuth();
 
   const [mode, setMode]                   = useState<'single' | 'subscription'>('single');
   const [selectedPlan, setSelectedPlan]   = useState<PlanKey>('annual');
@@ -592,18 +592,37 @@ export function PremiumDownloadModal({
                     {/* Subscription PayPal button area */}
                     <div className="pt-1">
                       {!user && (
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                          <Lock className="size-4 text-slate-400 mx-auto mb-1" />
-                          <p className="text-xs text-slate-500">
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+                          <Lock className="size-4 text-slate-400 mx-auto mb-1.5" />
+                          <p className="mb-3 text-xs text-slate-500">
                             {t('Please sign in to subscribe', 'Inicia sesión para suscribirte')}
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => void signInWithGoogle()}
+                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+                          >
+                            {t('Sign in with Google', 'Iniciar sesión con Google')}
+                            <ArrowRight className="size-3.5" />
+                          </button>
                         </div>
                       )}
                       {user && !planIsReady && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
-                          <span className="text-xs font-semibold text-amber-700">
-                            {t('Subscription plans — coming soon!', 'Planes de suscripción — ¡próximamente!')}
-                          </span>
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+                          <p className="mb-3 text-xs font-semibold text-amber-700">
+                            {t(
+                              'Recurring subscriptions are being finalized. Pay for this period now instead — same price, no auto-renewal.',
+                              'Las suscripciones recurrentes se están terminando de configurar. Paga este período ahora en su lugar — mismo precio, sin renovación automática.',
+                            )}
+                          </p>
+                          <a
+                            href="/#plan-ultimate"
+                            onClick={() => onOpenChange(false)}
+                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+                          >
+                            {t('View Plans & Pay', 'Ver Planes y Pagar')}
+                            <ArrowRight className="size-3.5" />
+                          </a>
                         </div>
                       )}
                       {user && planIsReady && (

@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import {
   Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
-  Copy, Check, Lock, FileText, Users, ChevronRight,
+  Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -1018,10 +1018,10 @@ export function ElectronicSignaturePage() {
             >
               <X className="size-4" />
             </button>
-            <div className="mb-3 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-2.5 text-center text-sm font-medium text-amber-300">
+            <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-2.5 text-center text-sm font-medium text-amber-300">
               {paywallContext === 'upload'
-                ? '📤 Límite diario alcanzado — 3 documentos gratuitos por día'
-                : '📄 Límite diario alcanzado — 2 documentos firmados por día'}
+                ? (<><Upload className="size-4 shrink-0" /> Límite diario alcanzado — 3 documentos gratuitos por día</>)
+                : (<><FileText className="size-4 shrink-0" /> Límite diario alcanzado — 2 documentos firmados por día</>)}
             </div>
             <PaypalSignatureCheckout
               userId={session.user.id}
