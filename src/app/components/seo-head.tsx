@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLanguage } from '../contexts/language-context';
+import { SITE_URL } from '../config/site';
 
 interface SEOHeadProps {
   title?: string;
@@ -12,7 +13,7 @@ interface SEOHeadProps {
   image?: string;
 }
 
-const DEFAULT_OG_IMAGE = 'https://codecdocument.com/og-image.png';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export function SEOHead({
   title,

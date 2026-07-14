@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function VehicleBillOfSaleLanding() {
   const title = 'Vehicle Bill of Sale | CodecDocument';
   const desc = 'Create a vehicle bill of sale with buyer and seller details, odometer disclosure, and secure e-signatures. Download an audit-ready PDF instantly.';
-  const canonicalUrl = 'https://codecdocument.com/vehicle-bill-of-sale';
+  const canonicalUrl = `${SITE_URL}/vehicle-bill-of-sale`;
 
   return (
     <div>

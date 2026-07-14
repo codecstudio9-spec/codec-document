@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function NdaGeneratorLanding() {
   const title = 'Free NDA Generator | CodecDocument';
   const desc = 'Generate NDAs tailored to your business and state. Sign securely online with identity verification and a full audit trail.';
-  const canonicalUrl = 'https://codecdocument.com/nda-generator';
+  const canonicalUrl = `${SITE_URL}/nda-generator`;
 
   return (
     <div>

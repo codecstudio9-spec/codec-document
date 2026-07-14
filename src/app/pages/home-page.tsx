@@ -14,6 +14,7 @@ import { US_STATES, STATE_NAMES_ES } from '../data/state-variations';
 import { getDocumentsForState, StateCode } from '../data/document-availability';
 import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
+import { SITE_URL } from '../config/site';
 
 export function HomePage() {
   const { t, language } = useLanguage();
@@ -53,7 +54,7 @@ export function HomePage() {
         keywords={language === 'en'
           ? 'legal documents, residential lease agreement, rental contract, lease template, legal forms USA, state-specific legal documents, business contracts, legal templates, lease agreement California, lease agreement Texas, lease agreement Florida, lease agreement New York, professional legal documents, instant download legal forms'
           : 'documentos legales, contrato de arrendamiento residencial, contrato de renta, plantilla de arrendamiento, formularios legales USA, documentos legales por estado, contratos comerciales, plantillas legales, contrato de arrendamiento California, contrato de arrendamiento Texas, contrato de arrendamiento Florida, documentos legales profesionales'}
-        canonicalUrl={typeof window !== 'undefined' ? window.location.origin : 'https://codecdocument.com'}
+        canonicalUrl={typeof window !== 'undefined' ? window.location.origin : SITE_URL}
       />
       <StructuredData />
       {/* Header */}

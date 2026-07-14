@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function FreeLegalDocumentsLanding() {
   const title = 'Free Legal Documents | CodecDocument';
   const desc = 'Create free legal documents online with state-specific templates, ESIGN-compliant signing, and identity verification. Start for free today.';
-  const canonicalUrl = 'https://codecdocument.com/free-legal-documents';
+  const canonicalUrl = `${SITE_URL}/free-legal-documents`;
 
   return (
     <div>

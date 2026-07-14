@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function IndependentContractorLanding() {
   const title = 'Independent Contractor Agreement | CodecDocument';
   const desc = 'Create independent contractor agreements quickly. Protect your freelance work with clear payment terms, scope, and secure online signatures.';
-  const canonicalUrl = 'https://codecdocument.com/independent-contractor-agreement';
+  const canonicalUrl = `${SITE_URL}/independent-contractor-agreement`;
 
   return (
     <div>

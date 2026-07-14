@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { SITE_URL } from '../config/site';
 
 export function StructuredData() {
   useEffect(() => {
@@ -7,8 +8,8 @@ export function StructuredData() {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Codec Document',
-      url: 'https://codecdocument.com',
-      logo: 'https://codecdocument.com/logo.png',
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.png`,
       description:
         'Free legal document generator and ESIGN Act compliant e-signature platform for the United States. Intelligent template editor for NDA, lease agreements, service contracts — no credit card required.',
       contactPoint: {
@@ -26,7 +27,7 @@ export function StructuredData() {
       name: 'Codec Document',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
-      url: 'https://codecdocument.com',
+      url: SITE_URL,
       description:
         'Create, edit, and e-sign professional legal documents online. Free intelligent template editor for NDA, residential lease agreements, service contracts, and more. ESIGN Act & UETA compliant.',
       offers: [
@@ -36,13 +37,13 @@ export function StructuredData() {
           price: '0',
           priceCurrency: 'USD',
           description:
-            '1 structured legal document every 72 hours + 1 free e-signature per day. Full access to intelligent template editor. No credit card required.',
+            '2 free legal documents and 2 free e-signatures per day. Full access to intelligent template editor. No credit card required.',
           eligibleRegion: { '@type': 'Country', name: 'United States' },
         },
         {
           '@type': 'Offer',
           name: 'Monthly Plan',
-          price: '39.99',
+          price: '79.99',
           priceCurrency: 'USD',
           description:
             'Unlimited legal documents, unlimited e-signatures, cloud workspace, priority support.',
@@ -70,7 +71,7 @@ export function StructuredData() {
         '@type': 'AggregateOffer',
         priceCurrency: 'USD',
         lowPrice: '0',
-        highPrice: '179.99',
+        highPrice: '519.99',
         offerCount: '4',
       },
       aggregateRating: {
@@ -85,10 +86,10 @@ export function StructuredData() {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: 'Codec Document',
-      url: 'https://codecdocument.com',
+      url: SITE_URL,
       potentialAction: {
         '@type': 'SearchAction',
-        target: 'https://codecdocument.com/?q={search_term_string}',
+        target: `${SITE_URL}/?q={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     };
@@ -155,7 +156,7 @@ export function StructuredData() {
           name: 'Is Codec Document free to use?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Yes. Codec Document offers a free plan with 1 structured legal document every 72 hours and 1 free digital e-signature per day — no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
+            text: 'Yes. Codec Document offers a free plan with 2 structured legal documents and 2 free digital e-signatures every day — no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
           },
         },
         {
@@ -163,7 +164,7 @@ export function StructuredData() {
           name: 'How does Codec Document compare to DocuSign or PandaDoc?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $39.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
+            text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $79.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
           },
         },
         {
@@ -187,7 +188,7 @@ export function StructuredData() {
           name: 'Can I preview the document before paying?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Absolutely. You can fill out the complete form and preview the entire document (with watermark) before any payment. Free users get 1 clean download every 72 hours; premium users get unlimited downloads with no watermarks.',
+            text: 'Absolutely. You can fill out the complete form and preview the entire document (with watermark) before any payment. Free users get 2 clean downloads every day; premium users get unlimited downloads with no watermarks.',
           },
         },
         {

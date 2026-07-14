@@ -26,6 +26,7 @@ import { consumeGeneratedDocLimit } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
+import { SITE_HOSTNAME } from '../config/site';
 
 function normalizeCorruptedText(input: string): string {
   if (!input) return input;
@@ -489,7 +490,7 @@ function renderCertificationPage(
 
   gap(10);
   line(`${lang === 'es' ? 'Generado' : 'Generated'}: ${new Date().toLocaleString()}`, 7.5, false, [120, 120, 140]);
-  line('Codec Document Platform — codecdocument.com', 7.5, false, [120, 120, 140]);
+  line(`Codec Document Platform — ${SITE_HOSTNAME}`, 7.5, false, [120, 120, 140]);
 }
 
 export function PreviewPage() {

@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function ElectronicSignatureLanding() {
   const title = 'Electronic Signature Platform | CodecDocument';
   const desc = 'ESIGN Act compliant electronic signatures with selfie identity verification, geolocation audit trail and secure online signing for NDAs, leases, service agreements and more.';
-  const canonicalUrl = 'https://codecdocument.com/electronic-signature';
+  const canonicalUrl = `${SITE_URL}/electronic-signature`;
 
   return (
     <div>

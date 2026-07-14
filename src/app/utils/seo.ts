@@ -1,6 +1,7 @@
 import { documentTemplates } from '../data/templates';
 import { getDocumentTranslation } from '../data/document-translations';
 import { US_STATES, STATE_NAMES_ES } from '../data/state-variations';
+import { SITE_URL } from '../config/site';
 
 const slugify = (value: string) =>
   String(value)
@@ -30,7 +31,7 @@ export const getTranslatedDocumentName = (documentType: string, language: 'en' |
 };
 
 export const getCanonicalUrl = (pathname: string) =>
-  `https://codecdocument.com${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+  `${SITE_URL}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
 
 export const buildLandingTitle = (documentName: string, state: string, language: 'en' | 'es' = 'en') =>
   language === 'es'

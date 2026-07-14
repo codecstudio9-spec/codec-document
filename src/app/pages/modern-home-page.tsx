@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/language-context';
 import { LanguageToggle } from '../components/language-toggle';
 import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
+import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
@@ -535,12 +536,12 @@ export function ModernHomePage() {
           ? 'Codec Document — Free Legal Documents & E-Signatures | ESIGN Act Compliant'
           : 'Codec Document — Documentos Legales Gratis y Firma Electrónica | Conforme ESIGN'}
         description={language === 'en'
-          ? 'Generate, customize, and e-sign legal documents for free. NDA, residential lease agreements, service contracts for all 50 US states. Free intelligent editor + 1 free e-signature/day. No credit card required. ESIGN Act & UETA compliant, SHA-256 audit trail.'
-          : 'Genera, personaliza y firma digitalmente documentos legales gratis. NDA, contratos de arrendamiento, acuerdos de servicios para los 50 estados de EE. UU. Editor inteligente gratuito + 1 firma gratis al día. Sin tarjeta de crédito. Conforme ESIGN y UETA.'}
+          ? 'Generate, customize, and e-sign legal documents for free. NDA, residential lease agreements, service contracts for all 50 US states. Free intelligent editor + 2 free e-signatures/day. No credit card required. ESIGN Act & UETA compliant, SHA-256 audit trail.'
+          : 'Genera, personaliza y firma digitalmente documentos legales gratis. NDA, contratos de arrendamiento, acuerdos de servicios para los 50 estados de EE. UU. Editor inteligente gratuito + 2 firmas gratis al día. Sin tarjeta de crédito. Conforme ESIGN y UETA.'}
         keywords={language === 'en'
           ? 'free legal documents online, free electronic signature, free NDA template, free lease agreement USA, free contract generator, esign act compliant, ueta compliant, digital signature free, legal document generator, online document signing, free business contract, independent contractor agreement free, free service agreement, document signing without credit card, pandadoc alternative free, docusign alternative free'
           : 'documentos legales gratis, firma electrónica gratis, plantilla NDA gratis, contrato arrendamiento gratis USA, generador contrato gratis, conforme esign act, firma digital gratis, generador documentos legales, firma documentos online gratis'}
-        canonicalUrl={typeof window !== 'undefined' ? window.location.origin : 'https://codecdocument.com'}
+        canonicalUrl={typeof window !== 'undefined' ? window.location.origin : SITE_URL}
       />
       <StructuredData />
 
@@ -1086,7 +1087,7 @@ export function ModernHomePage() {
                 {language === 'en' ? 'Still have questions?' : '¿Tienes más preguntas?'}
               </p>
               <a
-                href="mailto:support@codecdocument.com"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
               >
                 <Mail className="size-4" />

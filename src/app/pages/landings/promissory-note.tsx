@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function PromissoryNoteLanding() {
   const title = 'Promissory Note Generator | CodecDocument';
   const desc = 'Create promissory notes for personal or business loans with clear payment terms, interest schedules, and secure e-signatures.';
-  const canonicalUrl = 'https://codecdocument.com/promissory-note';
+  const canonicalUrl = `${SITE_URL}/promissory-note`;
 
   return (
     <div>

@@ -1,11 +1,12 @@
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import { Link } from 'react-router';
+import { SITE_URL } from '../../config/site';
 
 export default function OnlineLeaseAgreementLanding() {
   const title = 'Online Lease Agreement Generator | CodecDocument';
   const desc = 'Create state-specific residential lease agreements online. Fill forms, preview, sign electronically, and get identity verification with audit-ready PDFs.';
-  const canonicalUrl = 'https://codecdocument.com/online-lease-agreement';
+  const canonicalUrl = `${SITE_URL}/online-lease-agreement`;
 
   return (
     <div>

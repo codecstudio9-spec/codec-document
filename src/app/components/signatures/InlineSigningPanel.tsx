@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { SignatureModal } from './SignatureModal';
 import { createSignatureRequest, getSignatureRequestStatus } from '../../services/paypal-service';
 import type { DocumentBranding } from '../../types/document';
+import { SUPPORT_EMAIL } from '../../config/site';
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -201,7 +202,7 @@ export function InlineSigningPanel({
         documentId,
         documentName,
         documentContent,
-        buyerEmail: purchaserEmail || 'admin@codecdocument.com',
+        buyerEmail: purchaserEmail || SUPPORT_EMAIL,
         buyerName: signers[0]?.name || tr('Sender', 'Emisor'),
         signerEmail: signer.email.trim(),
         signerName: signer.name.trim(),
