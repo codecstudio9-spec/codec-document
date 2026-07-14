@@ -24,7 +24,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { createMobileSignToken, pollMobileSignature, deleteMobileSignToken } from '../services/signature-storage-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
-import { consumeSignTransactionLimit } from '../services/user-limits-service';
+import { consumeSignatureRequest72h, getNextSignatureRequestSlot } from '../services/user-limits-service';
+import { SignatureLimitDialog } from '../components/signatures/SignatureLimitDialog';
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
@@ -272,6 +273,10 @@ export function DocumentGeneratorPage() {
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [txShareData, setTxShareData]           = useState<{ txId: string; shareUrl: string; config: SecurityConfig } | null>(null);
   const [txLinkCopied, setTxLinkCopied]         = useState(false);
+  // 72h signature-request limit dialog — replaces the old plain toast.error
+  const [limitDialogOpen, setLimitDialogOpen]   = useState(false);
+  const [limitNextSlotAt, setLimitNextSlotAt]   = useState<Date | null>(null);
+  const [pendingLimitRetry, setPendingLimitRetry] = useState<(() => void) | null>(null);
   const [activeTx, setActiveTx]                 = useState<SignTransaction | null>(null);
   const [pendingSecConfig, setPendingSecConfig] = useState<SecurityConfig | null>(null);
   const [senderSignModalOpen, setSenderSignModalOpen] = useState(false);
@@ -550,80 +555,84 @@ export function DocumentGeneratorPage() {
     }
 
     // Unilateral flows (fill_self, blank_send): insert immediately
+    const doCreateUnilateral = async () => {
+      try {
+        const txId = await createSignTransaction({
+          creator_id:      session?.user?.id ?? null,
+          document_type:   documentType,
+          document_data:   intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
+          intent:          intent,
+          security_config: config,
+          status:          'pending_recipient',
+        });
+        const shareUrl = `${window.location.origin}/sign/${txId}`;
+        setTxShareData({ txId, shareUrl, config });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Error creating sign_transaction INSERT:', msg);
+        toast.error(
+          language === 'en' ? `Error creating transaction: ${msg}` : `Error al crear la transaccion: ${msg}`,
+          { duration: 7000 },
+        );
+      }
+    };
+
     if (!isAdmin && !unlimitedActive && !subscriptionActive) {
       const userId = session?.user?.id;
       const { allowed } = userId
-        ? await consumeSignTransactionLimit(userId, false)
+        ? await consumeSignatureRequest72h(userId, false)
         : { allowed: false };
       if (!allowed) {
-        toast.error(
-          language === 'en'
-            ? 'You reached today\'s free signature-request limit (2/day). Upgrade to send more.'
-            : 'Alcanzaste el límite gratuito de solicitudes de firma de hoy (2/día). Mejora tu plan para enviar más.',
-        );
+        setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
+        setPendingLimitRetry(() => doCreateUnilateral);
+        setLimitDialogOpen(true);
         return;
       }
     }
-    try {
-      const txId = await createSignTransaction({
-        creator_id:      session?.user?.id ?? null,
-        document_type:   documentType,
-        document_data:   intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
-        intent:          intent,
-        security_config: config,
-        status:          'pending_recipient',
-      });
-      const shareUrl = `${window.location.origin}/sign/${txId}`;
-      setTxShareData({ txId, shareUrl, config });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('Error creating sign_transaction INSERT:', msg);
-      toast.error(
-        language === 'en' ? `Error creating transaction: ${msg}` : `Error al crear la transaccion: ${msg}`,
-        { duration: 7000 },
-      );
-    }
+    await doCreateUnilateral();
   };
 
   const handleSenderSignatureAndCreate = async (senderSigDataUrl: string) => {
     setSenderSignModalOpen(false);
     if (!pendingSecConfig || !documentType || !intent) return;
 
+    const doCreateBilateral = async () => {
+      try {
+        const txId = await createSignTransaction({
+          creator_id:       session?.user?.id ?? null,
+          document_type:    documentType,
+          document_data:    intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
+          intent:           intent,
+          security_config:  pendingSecConfig,
+          status:           'sender_signed',
+          sender_signature: senderSigDataUrl,
+        });
+        const shareUrl = `${window.location.origin}/sign/${txId}`;
+        setTxShareData({ txId, shareUrl, config: pendingSecConfig });
+        setPendingSecConfig(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Error creating sign_transaction with sender signature:', msg);
+        toast.error(
+          language === 'en' ? `Error creating transaction: ${msg}` : `Error al crear la transaccion: ${msg}`,
+          { duration: 7000 },
+        );
+      }
+    };
+
     if (!isAdmin && !unlimitedActive && !subscriptionActive) {
       const userId = session?.user?.id;
       const { allowed } = userId
-        ? await consumeSignTransactionLimit(userId, false)
+        ? await consumeSignatureRequest72h(userId, false)
         : { allowed: false };
       if (!allowed) {
-        toast.error(
-          language === 'en'
-            ? 'You reached today\'s free signature-request limit (2/day). Upgrade to send more.'
-            : 'Alcanzaste el límite gratuito de solicitudes de firma de hoy (2/día). Mejora tu plan para enviar más.',
-        );
+        setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
+        setPendingLimitRetry(() => doCreateBilateral);
+        setLimitDialogOpen(true);
         return;
       }
     }
-    try {
-      const txId = await createSignTransaction({
-        creator_id:       session?.user?.id ?? null,
-        document_type:    documentType,
-        document_data:    intent === 'blank_send' ? { _blank: true } : (formData as Record<string, unknown>),
-        intent:           intent,
-        security_config:  pendingSecConfig,
-        status:           'sender_signed',
-        sender_signature: senderSigDataUrl,
-      });
-      const shareUrl = `${window.location.origin}/sign/${txId}`;
-      setTxShareData({ txId, shareUrl, config: pendingSecConfig });
-      setPendingSecConfig(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('Error creating sign_transaction with sender signature:', msg);
-      toast.error(
-        language === 'en' ? `Error creating transaction: ${msg}` : `Error al crear la transaccion: ${msg}`,
-        { duration: 7000 },
-      );
-    }
+    await doCreateBilateral();
   };
 
   const handleCopyTxLink = () => {
@@ -1035,6 +1044,15 @@ export function DocumentGeneratorPage() {
         language={language}
         onConfirm={handleSecurityConfirm}
         onCancel={() => setSecurityModalOpen(false)}
+      />
+
+      {/* ── Free signature-request limit (72h rolling window) ────────────── */}
+      <SignatureLimitDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        userId={session?.user?.id ?? ''}
+        nextSlotAt={limitNextSlotAt}
+        onUnlocked={() => pendingLimitRetry?.()}
       />
 
       {/* ── Transaction Share Screen ──────────────────────────────────── */}

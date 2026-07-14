@@ -24,6 +24,7 @@ export default function NdaGeneratorLanding() {
         color="#7c3aed"
         icon={ShieldCheck}
         previewLabel="NDA Preview"
+        backgroundImage="/imagen3.jpg"
         titleAccentEn="NDA" titleAccentEs="NDA"
         titleRestEn="Generator" titleRestEs="Generator"
         subtitleEn={desc} subtitleEs={desc}

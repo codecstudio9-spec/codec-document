@@ -24,6 +24,7 @@ export default function OnlineLeaseAgreementLanding() {
         color="#2563eb"
         icon={Home}
         previewLabel="Lease Agreement Preview"
+        backgroundImage="/imagen1.jpg"
         titleAccentEn="Online Lease" titleAccentEs="Online Lease"
         titleRestEn="Agreement Generator" titleRestEs="Agreement Generator"
         subtitleEn={desc} subtitleEs={desc}

@@ -24,6 +24,7 @@ export default function ElectronicSignatureLanding() {
         color="#2563eb"
         icon={PenLine}
         previewLabel="Signature Audit Preview"
+        backgroundImage="/imagen3.jpg"
         titleAccentEn="Electronic Signatures" titleAccentEs="Electronic Signatures"
         titleRestEn="— Create, Sign & Verify" titleRestEs="— Create, Sign & Verify"
         subtitleEn={desc} subtitleEs={desc}

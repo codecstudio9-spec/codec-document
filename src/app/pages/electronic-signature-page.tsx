@@ -4,6 +4,7 @@ import {
   Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
+  PenLine,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -747,7 +748,7 @@ export function ElectronicSignaturePage() {
                     disabled={!creatorName.trim()}
                     className="mt-5 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    ✍️ Trazar mi firma en el documento
+                    <PenLine className="mr-1.5 inline size-4" /> Trazar mi firma en el documento
                   </button>
 
                   {creatorSigDataUrl && (

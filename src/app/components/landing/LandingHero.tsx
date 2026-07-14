@@ -59,6 +59,7 @@ export function LandingHero({
   titleAccentEn, titleAccentEs, titleRestEn, titleRestEs,
   subtitleEn, subtitleEs, ctaLabelEn, ctaLabelEs,
   ctaHref, secondaryLabelEn, secondaryLabelEs, secondaryHref,
+  backgroundImage,
 }: {
   documentId: string;
   badge: string;
@@ -78,11 +79,19 @@ export function LandingHero({
   secondaryLabelEn?: string;
   secondaryLabelEs?: string;
   secondaryHref?: string;
+  /** Same photo assets as the Home hero (public/imagen*.jpg) — same dark
+   * overlay treatment, just a single static frame instead of a carousel. */
+  backgroundImage: string;
 }) {
   const { language } = useLanguage();
 
   return (
     <section className="relative overflow-hidden bg-slate-950 py-16 md:py-24">
+      {/* Background photo, same overlay gradient as the Home hero (modern-hero.tsx) */}
+      <div className="absolute inset-0">
+        <img src={backgroundImage} alt="" className="h-full w-full object-cover" loading="eager" draggable={false} />
+      </div>
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'linear-gradient(100deg, rgba(5,10,24,0.94) 0%, rgba(5,10,24,0.86) 38%, rgba(5,10,24,0.74) 62%, rgba(5,10,24,0.62) 100%)' }} />
       {/* Radial glow + grid, same treatment as Home's dark sections */}
       <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 60% at 20% 20%, ${color}22, transparent), radial-gradient(ellipse 60% 50% at 90% 80%, rgba(99,102,241,0.16), transparent)` }} />
       <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />

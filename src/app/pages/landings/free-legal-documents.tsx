@@ -66,6 +66,7 @@ export default function FreeLegalDocumentsLanding() {
         color="#4f46e5"
         icon={FileText}
         previewLabel="Legal Document Preview"
+        backgroundImage="/imagen4.jpg"
         titleAccentEn="Free" titleAccentEs="Free"
         titleRestEn="Legal Documents" titleRestEs="Legal Documents"
         subtitleEn={desc} subtitleEs={desc}

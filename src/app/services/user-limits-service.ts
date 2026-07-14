@@ -93,3 +93,41 @@ export async function getRemainingLimits(userId: string): Promise<{
   }
 }
 
+// ── Sign transaction (send-to-sign) requests — 72h rolling window ──────────
+// Business rule changed from "2 per calendar day" to "2 within any rolling
+// 72-hour window" — see supabase_signature_72h_migration.sql. Backed by an
+// event-log table (one row per request) counted with a sliding window,
+// which a simple reset-at-midnight counter can't represent.
+const SIGNATURE_REQUEST_LIMIT_72H = 2;
+
+export async function consumeSignatureRequest72h(userId: string, isPremium = false): Promise<LimitResult> {
+  if (isPremium) return { allowed: true, remaining: 999 };
+  if (!userId) return { allowed: false, remaining: 0 };
+
+  const { data, error } = await supabase.rpc('try_consume_signature_request_72h', {
+    p_user_id: userId,
+    p_limit: SIGNATURE_REQUEST_LIMIT_72H,
+  });
+
+  if (error) {
+    console.error('try_consume_signature_request_72h failed:', error);
+    return { allowed: false, remaining: 0 };
+  }
+  return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
+}
+
+/** When the next free slot opens up, for "try again in Xh" messaging. Null if a slot is free right now. */
+export async function getNextSignatureRequestSlot(userId: string): Promise<Date | null> {
+  if (!userId) return null;
+  try {
+    const { data, error } = await supabase.rpc('next_signature_request_slot', {
+      p_user_id: userId,
+      p_limit: SIGNATURE_REQUEST_LIMIT_72H,
+    });
+    if (error || !data) return null;
+    return new Date(data as string);
+  } catch {
+    return null;
+  }
+}
+

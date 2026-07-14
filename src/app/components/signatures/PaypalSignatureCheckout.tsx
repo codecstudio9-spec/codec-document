@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
-import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle } from 'lucide-react';
+import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
+import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle, RefreshCw, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPayPalClientId } from '../../config/paypal';
 import { verifyPaypalOrder } from '../../../lib/paypal-verify';
@@ -136,9 +136,9 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
 
       {/* Trust badges */}
       <div className="mb-5 flex flex-wrap justify-center gap-3 text-[11px] text-white/40">
-        <span>🔒 Pago 100% seguro</span>
-        <span>⚡ Acceso instantáneo</span>
-        <span>🛡️ SHA-256 certificado</span>
+        <span className="inline-flex items-center gap-1"><Lock className="size-3" /> Pago 100% seguro</span>
+        <span className="inline-flex items-center gap-1"><Zap className="size-3" /> Acceso instantáneo</span>
+        <span className="inline-flex items-center gap-1"><ShieldCheck className="size-3" /> SHA-256 certificado</span>
       </div>
 
       {/* PayPal button */}
@@ -150,38 +150,8 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
       ) : clientId ? (
         <PayPalScriptProvider
           options={{ clientId, currency: 'USD', intent: 'capture', components: 'buttons' }}
-          onError={() => toast.error('Error al cargar PayPal. Recarga la página.')}
         >
-          <PayPalButtons
-            key={selectedPlan} // force remount when plan changes
-            style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 48, tagline: false }}
-            forceReRender={[plan.price]}
-            createOrder={(_data, actions) =>
-              actions.order.create({
-                intent: 'CAPTURE',
-                purchase_units: [
-                  {
-                    description: `Codec Document · ${plan.label}`,
-                    amount: {
-                      currency_code: 'USD',
-                      value: plan.price.toFixed(2),
-                    },
-                  },
-                ],
-                application_context: {
-                  brand_name: 'Codec Document',
-                  shipping_preference: 'NO_SHIPPING',
-                  user_action: 'PAY_NOW',
-                },
-              })
-            }
-            onApprove={async (data, actions) => {
-              const order = await actions.order!.capture();
-              await handleApprove(order.id || data.orderID || '');
-            }}
-            onCancel={() => toast.info('Pago cancelado. Puedes intentarlo de nuevo.')}
-            onError={() => toast.error('Error con PayPal. Intenta de nuevo.')}
-          />
+          <PayPalButtonsArea plan={plan} selectedPlan={selectedPlan} onApprove={handleApprove} />
         </PayPalScriptProvider>
       ) : (
         <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-950/30 px-4 py-3 text-xs text-red-300">
@@ -190,5 +160,83 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Lives inside <PayPalScriptProvider> and reads the real script-load status
+ * via usePayPalScriptReducer(). The old code passed an `onError` prop
+ * directly to PayPalScriptProvider — that prop doesn't exist on this
+ * library's ScriptProviderProps (confirmed by tsc), so it silently did
+ * nothing. If the SDK script failed to load (ad-blocker, offline, slow
+ * mobile network), the button area just rendered blank with zero feedback
+ * — a dead end for the user. This shows a real loading/error state instead.
+ */
+function PayPalButtonsArea({
+  plan, selectedPlan, onApprove,
+}: {
+  plan: (typeof PLANS)[number];
+  selectedPlan: Plan;
+  onApprove: (orderId: string) => Promise<void>;
+}) {
+  const [{ isPending, isRejected }] = usePayPalScriptReducer();
+
+  if (isRejected) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-red-400/20 bg-red-950/30 px-4 py-4 text-center text-xs text-red-300">
+        <XCircle className="size-5" />
+        No se pudo cargar PayPal. Revisa tu conexión o desactiva bloqueadores de anuncios.
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20"
+        >
+          <RefreshCw className="size-3.5" />
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-4 text-sm text-white/70">
+        <Loader className="size-4 animate-spin" />
+        Cargando PayPal…
+      </div>
+    );
+  }
+
+  return (
+    <PayPalButtons
+      key={selectedPlan} // force remount when plan changes
+      style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 48, tagline: false }}
+      forceReRender={[plan.price]}
+      createOrder={(_data, actions) =>
+        actions.order.create({
+          intent: 'CAPTURE',
+          purchase_units: [
+            {
+              description: `Codec Document · ${plan.label}`,
+              amount: {
+                currency_code: 'USD',
+                value: plan.price.toFixed(2),
+              },
+            },
+          ],
+          application_context: {
+            brand_name: 'Codec Document',
+            shipping_preference: 'NO_SHIPPING',
+            user_action: 'PAY_NOW',
+          },
+        })
+      }
+      onApprove={async (data, actions) => {
+        const order = await actions.order!.capture();
+        await onApprove(order.id || data.orderID || '');
+      }}
+      onCancel={() => toast.info('Pago cancelado. Puedes intentarlo de nuevo.')}
+      onError={() => toast.error('Error con PayPal. Intenta de nuevo.')}
+    />
   );
 }

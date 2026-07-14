@@ -24,6 +24,7 @@ export default function VehicleBillOfSaleLanding() {
         color="#0891b2"
         icon={Car}
         previewLabel="Bill of Sale Preview"
+        backgroundImage="/imagen1.jpg"
         titleAccentEn="Vehicle Bill" titleAccentEs="Vehicle Bill"
         titleRestEn="of Sale" titleRestEs="of Sale"
         subtitleEn="Generate a vehicle bill of sale that records sale terms, odometer reading, and signatures. Use online signing and verification."

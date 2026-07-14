@@ -24,6 +24,7 @@ export default function PromissoryNoteLanding() {
         color="#d97706"
         icon={TrendingUp}
         previewLabel="Promissory Note Preview"
+        backgroundImage="/imagen2.jpg"
         titleAccentEn="Promissory Note" titleAccentEs="Promissory Note"
         titleRestEn="Generator" titleRestEs="Generator"
         subtitleEn={desc} subtitleEs={desc}

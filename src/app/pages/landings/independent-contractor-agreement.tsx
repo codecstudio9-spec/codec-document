@@ -24,6 +24,7 @@ export default function IndependentContractorLanding() {
         color="#059669"
         icon={Briefcase}
         previewLabel="Contractor Agreement Preview"
+        backgroundImage="/imagen4.jpg"
         titleAccentEn="Independent Contractor" titleAccentEs="Independent Contractor"
         titleRestEn="Agreement" titleRestEs="Agreement"
         subtitleEn={desc} subtitleEs={desc}
