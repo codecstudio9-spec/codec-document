@@ -98,13 +98,13 @@ export interface SignTransaction {
 type CreatePayload = Omit<SignTransaction, 'id' | 'created_at'>;
 
 export async function createSignTransaction(payload: CreatePayload): Promise<string> {
-  const { data, error } = await supabase
-    .from('sign_transactions')
-    .insert(payload)
-    .select('id')
-    .single();
+  // Goes through a SECURITY DEFINER RPC — an anonymous (not-logged-in)
+  // creator has creator_id = NULL, which never matches the "tx_select_own"
+  // RLS policy (auth.uid()::text = creator_id), so
+  // `.insert(...).select('id').single()` would fail to read the row back.
+  const { data, error } = await supabase.rpc('create_sign_transaction', { p_payload: payload });
   if (error) throw new Error(error.message);
-  return (data as any).id as string;
+  return data as string;
 }
 
 export async function getSignTransaction(id: string): Promise<SignTransaction | null> {

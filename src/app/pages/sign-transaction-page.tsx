@@ -302,18 +302,23 @@ export default function SignTransactionPage() {
     if (esignAccepted)     initialPayload.esign_consent_accepted = true;
     if (recipientIp)       initialPayload.recipient_ip           = recipientIp;
 
-    // ── Step 3: Execute UPDATE — complete transaction without waiting on storage.
-    // Guarded on the status we loaded (`tx.status`): if another concurrent
-    // submission (link opened twice) already changed it, this UPDATE matches
-    // zero rows instead of silently overwriting the first signer's completed work.
+    // ── Step 3: Complete the transaction via RPC — not waiting on storage.
+    // Goes through a SECURITY DEFINER RPC (not a raw UPDATE...select()) so
+    // the guard doesn't depend on the caller's SELECT permission: an
+    // anonymous recipient has no RLS SELECT access on sign_transactions
+    // (it stores selfies/ID photos), so `.update(...).select('id')` always
+    // returned zero rows for them — even when the UPDATE itself succeeded —
+    // which made this guard falsely report "already signed" on every
+    // legitimate first-time completion. The RPC checks the expected status
+    // and applies the update atomically server-side and returns a real
+    // boolean, regardless of the caller's read permissions.
     setSubmitStatus('Guardando firma...');
     try {
-      const { data: updatedRows, error } = await publicSupabase
-        .from('sign_transactions')
-        .update(initialPayload)
-        .eq('id', tx.id)
-        .eq('status', tx.status)
-        .select('id');
+      const { data: completed, error } = await publicSupabase.rpc('complete_sign_transaction', {
+        p_id: tx.id,
+        p_expected_status: tx.status,
+        p_payload: initialPayload,
+      });
 
       if (error) {
         console.error('Error al guardar firma en sign_transactions:', error);
@@ -325,7 +330,7 @@ export default function SignTransactionPage() {
         return;
       }
 
-      if (!updatedRows || updatedRows.length === 0) {
+      if (!completed) {
         toast.error(
           'Este documento ya fue firmado o modificado en otra sesión. Actualiza la página.',
           { duration: 8000 },
@@ -361,10 +366,10 @@ export default function SignTransactionPage() {
           }
 
           if (Object.keys(patchPayload).length > 0) {
-            await publicSupabase
-              .from('sign_transactions')
-              .update(patchPayload)
-              .eq('id', tx.id);
+            await publicSupabase.rpc('patch_sign_transaction_evidence', {
+              p_id: tx.id,
+              p_payload: patchPayload,
+            });
           }
         } catch (backgroundErr) {
           console.warn('Background evidence upload failed:', backgroundErr);

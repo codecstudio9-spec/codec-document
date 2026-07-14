@@ -185,13 +185,17 @@ export async function createSigner(params: {
   name: string;
   email: string;
 }): Promise<string> {
-  const { data, error } = await supabase
-    .from('signers')
-    .insert({ document_id: params.documentId, name: params.name, email: params.email, status: 'pending' })
-    .select('id')
-    .single();
+  // Goes through a SECURITY DEFINER RPC — `signers` has no SELECT policy at
+  // all (it's guest-signing PII), so `.insert(...).select('id').single()`
+  // always errored (zero rows readable back), breaking the "invite signer"
+  // step entirely.
+  const { data, error } = await supabase.rpc('create_signer', {
+    p_document_id: params.documentId,
+    p_name: params.name,
+    p_email: params.email,
+  });
   if (error) throw new Error(`createSigner: ${error.message}`);
-  return data.id as string;
+  return data as string;
 }
 
 export async function updateSignerStatus(signerId: string, status: string): Promise<void> {
@@ -205,16 +209,19 @@ export async function updateSignerStatus(signerId: string, status: string): Prom
  * if a concurrent request already completed it — e.g. the same signing link
  * opened twice — so the caller can stop before compiling a duplicate PDF
  * instead of silently racing another in-flight submission.
+ *
+ * Goes through a SECURITY DEFINER RPC (not a raw UPDATE...select()) because
+ * a guest signer has no RLS SELECT permission on `signers` — an
+ * UPDATE...select() would return zero rows even when the update succeeded,
+ * making this guard falsely report "already completed" every time.
  */
 export async function tryCompleteSignerOnce(signerId: string, fromStatus: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('signers')
-    .update({ status: 'completed' })
-    .eq('id', signerId)
-    .eq('status', fromStatus)
-    .select('id');
+  const { data, error } = await supabase.rpc('try_complete_signer_once', {
+    p_signer_id: signerId,
+    p_from_status: fromStatus,
+  });
   if (error) throw new Error(`tryCompleteSignerOnce: ${error.message}`);
-  return Boolean(data && data.length > 0);
+  return Boolean(data);
 }
 
 // ─── Signing Links ───────────────────────────────────────────────────────────
