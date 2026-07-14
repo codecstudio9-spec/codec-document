@@ -128,6 +128,10 @@ export default function SignTransactionPage() {
 
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Synchronous guard against double-submit (mobile touch+click double-fire,
+  // or a second tap landing before React re-renders the disabled button) —
+  // `disabled={submitting}` alone can't block a same-tick second invocation.
+  const submittingRef = useRef(false);
   const { user, isAdmin } = useAuth();
 
   // ── Load transaction on mount ──────────────────────────────────────────────
@@ -254,10 +258,13 @@ export default function SignTransactionPage() {
   // ── Final submit ───────────────────────────────────────────────────────────
   const handleFinalSubmit = async () => {
     if (!tx) return;
+    if (submittingRef.current) return; // blocks a same-tick double-tap/double-fire
+    submittingRef.current = true;
 
     // Guard: signature must exist and be a real data URL
     if (!signatureDataUrl || !signatureDataUrl.startsWith('data:')) {
       toast.error('La firma no es valida. Por favor dibuja tu firma antes de continuar.');
+      submittingRef.current = false;
       return;
     }
 
@@ -323,7 +330,8 @@ export default function SignTransactionPage() {
           'Este documento ya fue firmado o modificado en otra sesión. Actualiza la página.',
           { duration: 8000 },
         );
-        setStep('already_signed');
+        setSteps(['loading', 'already_signed']);
+        setStepIdx(1);
         return;
       }
 
@@ -370,6 +378,7 @@ export default function SignTransactionPage() {
     } finally {
       setSubmitting(false);
       setSubmitStatus('');
+      submittingRef.current = false;
     }
   };
 
