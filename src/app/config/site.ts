@@ -6,7 +6,7 @@
  * the environment) and every one of those updates together.
  */
 export const SITE_URL =
-  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, '') || 'https://codecdocument.com';
+  (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, '') || 'https://codec-document.vercel.app';
 
 export const SUPPORT_EMAIL =
   (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || 'support@codecdocument.com';

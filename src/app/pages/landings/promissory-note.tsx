@@ -1,7 +1,11 @@
+import { TrendingUp } from 'lucide-react';
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
-import { Link } from 'react-router';
 import { SITE_URL } from '../../config/site';
+import { LandingHeader } from '../../components/landing/LandingHeader';
+import { LandingFooter } from '../../components/landing/LandingFooter';
+import { LandingHero } from '../../components/landing/LandingHero';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
 
 export default function PromissoryNoteLanding() {
   const title = 'Promissory Note Generator | CodecDocument';
@@ -12,23 +16,38 @@ export default function PromissoryNoteLanding() {
     <div>
       <SEOHead title={title} description={desc} canonicalUrl={canonicalUrl} />
       <StructuredData />
-      <main className="max-w-4xl mx-auto py-16 px-6">
-        <h1 className="text-3xl font-bold">Promissory Note Generator</h1>
-        <p className="mt-4 text-lg text-slate-600">Generate legally-sound promissory notes and collect signatures online. Customize payment schedules and interest terms.</p>
-        <div className="mt-8">
-          <Link to="/generator/promissory-note" className="p-4 rounded-lg border hover:shadow">Create Promissory Note</Link>
-        </div>
-        <section className="mt-12 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <h2 className="text-2xl font-semibold">Loan agreements that protect both parties</h2>
-          <p className="mt-4 text-slate-700">Create a clear payment agreement for loans between individuals or business partners, with documentation that supports accountability and repayment clarity.</p>
-          <ul className="mt-4 list-disc pl-6 text-slate-700">
-            <li>Define borrower, lender, loan amount, and repayment terms.</li>
-            <li>Include interest rate, due date, and late fee provisions.</li>
-            <li>Collect electronic signatures with audit evidence.</li>
-            <li>Download a reliable PDF for your records.</li>
-          </ul>
-        </section>
-      </main>
+      <LandingHeader />
+
+      <LandingHero
+        documentId="promissory-note"
+        badge="FINANCE"
+        color="#d97706"
+        icon={TrendingUp}
+        previewLabel="Promissory Note Preview"
+        titleAccentEn="Promissory Note" titleAccentEs="Promissory Note"
+        titleRestEn="Generator" titleRestEs="Generator"
+        subtitleEn={desc} subtitleEs={desc}
+        ctaLabelEn="Create Promissory Note" ctaLabelEs="Create Promissory Note"
+      />
+
+      <IncludedCards
+        headingEn="Loan agreements that protect both parties" headingEs="Loan agreements that protect both parties"
+        bodyEn="Create a clear payment agreement for loans between individuals or business partners, with documentation that supports accountability and repayment clarity."
+        bodyEs="Create a clear payment agreement for loans between individuals or business partners, with documentation that supports accountability and repayment clarity."
+        color="#d97706"
+        items={[
+          { en: 'Define borrower, lender, loan amount, and repayment terms.', es: 'Define borrower, lender, loan amount, and repayment terms.' },
+          { en: 'Include interest rate, due date, and late fee provisions.', es: 'Include interest rate, due date, and late fee provisions.' },
+          { en: 'Collect electronic signatures with audit evidence.', es: 'Collect electronic signatures with audit evidence.' },
+          { en: 'Download a reliable PDF for your records.', es: 'Download a reliable PDF for your records.' },
+        ]}
+      />
+
+      <BenefitCards />
+      <HowItWorksTimeline />
+      <SocialProofBand />
+      <FAQAccordion items={DEFAULT_FAQ} />
+      <LandingFooter />
     </div>
   );
 }

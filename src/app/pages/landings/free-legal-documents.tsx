@@ -1,7 +1,53 @@
+import { motion } from 'motion/react';
+import { FileText, Home, Settings, DollarSign, ArrowRight } from 'lucide-react';
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
-import { Link } from 'react-router';
 import { SITE_URL } from '../../config/site';
+import { LandingHeader } from '../../components/landing/LandingHeader';
+import { LandingFooter } from '../../components/landing/LandingFooter';
+import { LandingHero } from '../../components/landing/LandingHero';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
+
+const QUICK_LINKS = [
+  { label: 'Create NDA', route: '/generator/nda', icon: FileText, color: '#7c3aed' },
+  { label: 'Create Lease Agreement', route: '/generator/residential-lease', icon: Home, color: '#2563eb' },
+  { label: 'Create Service Agreement', route: '/generator/service-agreement', icon: Settings, color: '#dc2626' },
+  { label: 'Create Promissory Note', route: '/generator/promissory-note', icon: DollarSign, color: '#d97706' },
+];
+
+function QuickLinksGrid() {
+  return (
+    <section className="relative bg-slate-950 pb-16 md:pb-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {QUICK_LINKS.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <motion.a
+                key={item.route}
+                href={item.route}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.4, delay: idx * 0.08 }}
+                className="group flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-white/20 hover:bg-white/8"
+              >
+                <div className="flex size-10 items-center justify-center rounded-xl" style={{ background: `${item.color}33`, border: `1px solid ${item.color}55` }}>
+                  <Icon className="size-4.5" style={{ color: item.color }} />
+                </div>
+                <p className="text-sm font-bold text-white">{item.label}</p>
+                <span className="flex items-center gap-1 text-xs font-semibold text-white/40 transition group-hover:text-white/70">
+                  {'Start now'}
+                  <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
+                </span>
+              </motion.a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function FreeLegalDocumentsLanding() {
   const title = 'Free Legal Documents | CodecDocument';
@@ -12,34 +58,40 @@ export default function FreeLegalDocumentsLanding() {
     <div>
       <SEOHead title={title} description={desc} canonicalUrl={canonicalUrl} />
       <StructuredData />
-      <main className="max-w-4xl mx-auto py-16 px-6">
-        <h1 className="text-3xl font-bold">Free Legal Documents</h1>
-        <p className="mt-4 text-lg text-slate-600">Create, sign, and verify legal documents online with CodecDocument. Use free templates for NDAs, lease agreements, service contracts, promissory notes, and vehicle bills of sale.</p>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link to="/generator/nda" className="p-4 rounded-lg border hover:shadow">Create NDA</Link>
-          <Link to="/generator/residential-lease" className="p-4 rounded-lg border hover:shadow">Create Lease Agreement</Link>
-          <Link to="/generator/service-agreement" className="p-4 rounded-lg border hover:shadow">Create Service Agreement</Link>
-          <Link to="/generator/promissory-note" className="p-4 rounded-lg border hover:shadow">Create Promissory Note</Link>
-        </div>
-        <section className="mt-12">
-          <h2 className="text-2xl font-semibold">Why CodecDocument?</h2>
-          <p className="mt-4 text-slate-700">Build legally structured documents fast, with state-specific language that improves reliability and reduces review time. Our platform combines free templates, audit-ready signing, and identity verification so you can launch with confidence.</p>
-          <ul className="mt-4 list-disc pl-6 text-slate-700">
-            <li>Free legal document templates for top business and personal agreements.</li>
-            <li>ESIGN Act compliant electronic signature and audit trail.</li>
-            <li>State-specific clauses for all 50 U.S. states.</li>
-            <li>Fast online delivery with no hidden fees.</li>
-          </ul>
-        </section>
-        <section className="mt-12 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <h2 className="text-2xl font-semibold">How it works</h2>
-          <ol className="mt-4 list-decimal pl-6 text-slate-700">
-            <li>Choose the document type you need.</li>
-            <li>Fill out the form with your details and state.</li>
-            <li>Preview the full contract and download or sign instantly.</li>
-          </ol>
-        </section>
-      </main>
+      <LandingHeader />
+
+      <LandingHero
+        documentId="nda"
+        badge="FREE"
+        color="#4f46e5"
+        icon={FileText}
+        previewLabel="Legal Document Preview"
+        titleAccentEn="Free" titleAccentEs="Free"
+        titleRestEn="Legal Documents" titleRestEs="Legal Documents"
+        subtitleEn={desc} subtitleEs={desc}
+        ctaLabelEn="Get Started Free" ctaLabelEs="Get Started Free"
+      />
+
+      <QuickLinksGrid />
+
+      <IncludedCards
+        headingEn="Why CodecDocument?" headingEs="Why CodecDocument?"
+        bodyEn="Build legally structured documents fast, with state-specific language that improves reliability and reduces review time. Our platform combines free templates, audit-ready signing, and identity verification so you can launch with confidence."
+        bodyEs="Build legally structured documents fast, with state-specific language that improves reliability and reduces review time. Our platform combines free templates, audit-ready signing, and identity verification so you can launch with confidence."
+        color="#4f46e5"
+        items={[
+          { en: 'Free legal document templates for top business and personal agreements.', es: 'Free legal document templates for top business and personal agreements.' },
+          { en: 'ESIGN Act compliant electronic signature and audit trail.', es: 'ESIGN Act compliant electronic signature and audit trail.' },
+          { en: 'State-specific clauses for all 50 U.S. states.', es: 'State-specific clauses for all 50 U.S. states.' },
+          { en: 'Fast online delivery with no hidden fees.', es: 'Fast online delivery with no hidden fees.' },
+        ]}
+      />
+
+      <BenefitCards />
+      <HowItWorksTimeline />
+      <SocialProofBand />
+      <FAQAccordion items={DEFAULT_FAQ} />
+      <LandingFooter />
     </div>
   );
 }
