@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo, useDeferredValue, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
 import { Button } from '../components/ui/button';
@@ -218,6 +218,8 @@ export function DocumentGeneratorPage() {
   const template = getTemplateById(documentType || '');
   const { t, language } = useLanguage();
   const { user, session, isAdmin, unlimitedActive, subscriptionActive } = useAuth();
+  const [searchParams] = useSearchParams();
+  const resumeTxId = searchParams.get('tx');
 
   // â"€â"€ Draft persistence â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
   // Key is per-document-type so different templates don't overwrite each other.
@@ -261,7 +263,11 @@ export function DocumentGeneratorPage() {
   const coSignerPollingRefs = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
   // ── Intent / Security modal flow ──────────────────────────────────────────
-  const [intentModalOpen,  setIntentModalOpen]  = useState(true);
+  // Skip the intent picker on load if we're resuming a previously-sent
+  // transaction (?tx=<id>) — there is otherwise no way to get back to the
+  // "waiting for signature" / download screen once this component unmounts
+  // (its state lives only in memory), e.g. after closing the tab.
+  const [intentModalOpen,  setIntentModalOpen]  = useState(!resumeTxId);
   const [intent,           setIntent]           = useState<SigningIntent | null>(null);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [txShareData, setTxShareData]           = useState<{ txId: string; shareUrl: string; config: SecurityConfig } | null>(null);
@@ -269,6 +275,22 @@ export function DocumentGeneratorPage() {
   const [activeTx, setActiveTx]                 = useState<SignTransaction | null>(null);
   const [pendingSecConfig, setPendingSecConfig] = useState<SecurityConfig | null>(null);
   const [senderSignModalOpen, setSenderSignModalOpen] = useState(false);
+
+  // ── Resume a previously-sent transaction from its id (?tx=<id>) ──────────
+  useEffect(() => {
+    if (!resumeTxId) return;
+    let cancelled = false;
+    getSignTransaction(resumeTxId).then((tx) => {
+      if (cancelled || !tx) return;
+      setActiveTx(tx);
+      setTxShareData({
+        txId: tx.id,
+        shareUrl: `${window.location.origin}/sign/${tx.id}`,
+        config: tx.security_config,
+      });
+    });
+    return () => { cancelled = true; };
+  }, [resumeTxId]);
   // ──────────────────────────────────────────────────────────────────────────
 
   const [branding, setBranding] = useState<DocumentBranding>({
@@ -1097,6 +1119,28 @@ export function DocumentGeneratorPage() {
                         <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                         {language === 'en' ? 'Email' : 'Correo'}
                       </a>
+                    </div>
+
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
+                      <p className="text-[11px] font-semibold text-indigo-700">
+                        {language === 'en'
+                          ? 'Bookmark this page (or copy the link below) to check back later — closing this tab loses this screen.'
+                          : 'Guarda esta página (o copia el link de abajo) para revisar más tarde — si cierras esta pestaña, se pierde esta pantalla.'}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="flex-1 truncate text-[11px] font-mono text-indigo-600">
+                          {`${window.location.origin}/generator/${documentType}?tx=${txShareData.txId}`}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/generator/${documentType}?tx=${txShareData.txId}`);
+                            toast.success(language === 'en' ? 'Link copied!' : '¡Link copiado!');
+                          }}
+                          className="shrink-0 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-indigo-700 transition-colors"
+                        >
+                          {language === 'en' ? 'Copy' : 'Copiar'}
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}
