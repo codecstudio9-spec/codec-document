@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle, RefreshCw, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPayPalClientId } from '../../config/paypal';
 import { verifyPaypalOrder } from '../../../lib/paypal-verify';
+import { watchAndUnlockBodyScroll } from '../../utils/paypal-scroll-fix';
 
 interface PaypalSignatureCheckoutProps {
   userId: string;
@@ -50,6 +51,10 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
 
   const clientId = getPayPalClientId();
   const plan = PLANS.find((p) => p.id === selectedPlan)!;
+
+  // PayPal's card-fields overlay can lock body scroll on its own, outside
+  // any lifecycle event this component gets — see paypal-scroll-fix.ts.
+  useEffect(() => watchAndUnlockBodyScroll(), []);
 
   const handleApprove = async (orderId: string) => {
     setProcessing(true);

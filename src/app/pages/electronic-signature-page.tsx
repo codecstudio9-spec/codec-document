@@ -1010,8 +1010,8 @@ export function ElectronicSignaturePage() {
 
       {/* ── Paywall overlay ────────────────────────────────────────────────────── */}
       {paywallContext !== null && !isDone && session?.user?.id && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8 backdrop-blur-sm sm:items-center">
+          <div className="relative my-auto max-h-[85vh] w-full max-w-md overflow-y-auto">
             <button
               type="button"
               onClick={() => { setPaywallContext(null); setPendingPlacements(null); setPendingFile(null); }}

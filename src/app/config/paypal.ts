@@ -84,8 +84,7 @@ const PAYPAL_HOSTED_BUTTON_ALIASES: Record<string, keyof typeof PAYPAL_HOSTED_BU
   promissorynote: 'promissory-note',
 };
 
-export const PAYPAL_LEASE_SDK_CLIENT_ID =
-  PAYPAL_CONFIG.live.clientId;
+export const PAYPAL_LEASE_SDK_CLIENT_ID = getPayPalClientId();
 
 export function getHostedButtonConfig(documentId: string) {
   const normalized = (documentId || '').trim().toLowerCase();
@@ -104,6 +103,17 @@ export function getHostedButtonConfig(documentId: string) {
 // HELPER PARA OBTENER EL CLIENT ID ACTUAL
 // ────────────────────────────────────────────────────────────────────────
 export function getPayPalClientId(): string {
+  // Vite only exposes env vars prefixed VITE_ to the client, and Vercel's
+  // production value is the source of truth for what's actually live —
+  // the hardcoded PAYPAL_CONFIG values below exist only as a local-dev
+  // fallback so the app still runs without a .env.local. A stale hardcoded
+  // ID here previously took priority over a correct env var, so screens
+  // that called this helper (signature checkout, download unlock) tried to
+  // load PayPal with the wrong client ID while pricing-section.tsx — which
+  // already read import.meta.env directly — worked fine.
+  const envClientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined)?.trim();
+  if (envClientId) return envClientId;
+
   if (PAYPAL_CONFIG.mode === 'sandbox') {
     return PAYPAL_CONFIG.sandbox.clientId;
   } else {

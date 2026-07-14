@@ -393,8 +393,8 @@ export function PricingSection() {
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/60 p-4 py-8 sm:items-center">
+          <div className="my-auto max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-lg font-bold text-slate-900">
                 {language === 'en' ? selectedProduct?.titleEn : selectedProduct?.titleEs}
