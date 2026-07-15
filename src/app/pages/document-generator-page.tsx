@@ -24,7 +24,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { createMobileSignToken, pollMobileSignature, deleteMobileSignToken } from '../services/signature-storage-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
-import { consumeSignatureRequest72h, getNextSignatureRequestSlot } from '../services/user-limits-service';
+import { consumeSignatureRequest72h, getNextSignatureRequestSlot, consumeAnonUsage72h } from '../services/user-limits-service';
 import { SignatureLimitDialog } from '../components/signatures/SignatureLimitDialog';
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
@@ -581,7 +581,7 @@ export function DocumentGeneratorPage() {
       const userId = session?.user?.id;
       const { allowed } = userId
         ? await consumeSignatureRequest72h(userId, false)
-        : { allowed: false };
+        : await consumeAnonUsage72h('signature');
       if (!allowed) {
         setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
         setPendingLimitRetry(() => doCreateUnilateral);
@@ -624,7 +624,7 @@ export function DocumentGeneratorPage() {
       const userId = session?.user?.id;
       const { allowed } = userId
         ? await consumeSignatureRequest72h(userId, false)
-        : { allowed: false };
+        : await consumeAnonUsage72h('signature');
       if (!allowed) {
         setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
         setPendingLimitRetry(() => doCreateBilateral);

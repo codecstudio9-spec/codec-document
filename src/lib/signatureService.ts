@@ -117,6 +117,28 @@ export async function uploadPdfToStorage(
   return data.publicUrl;
 }
 
+/**
+ * getPublicUrl() only actually works if the `documents-bucket` bucket is
+ * flagged "Public" in Supabase — a setting separate from the storage.objects
+ * RLS policy. If it's private (default when a bucket is created from the
+ * dashboard without explicitly checking "Public"), the "public" URL 400s for
+ * anyone without a session, even though the RLS policy
+ * (`public_read_documents_bucket`, unconditional SELECT for that bucket)
+ * would happily allow generating a signed URL instead. This lets guest PDF
+ * viewers recover from that case without needing to know which one it is.
+ */
+export async function getSignedUrlFallback(publicUrl: string, expiresInSeconds = 3600): Promise<string | null> {
+  const marker = `/object/public/${BUCKET}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  const path = publicUrl.slice(idx + marker.length).split('?')[0];
+  if (!path) return null;
+
+  const { data, error } = await publicSupabase.storage.from(BUCKET).createSignedUrl(path, expiresInSeconds);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
+
 export async function uploadSignatureImage(
   documentId: string,
   suffix: 'creator' | 'guest',
@@ -230,16 +252,42 @@ export async function tryCompleteSignerOnce(signerId: string, fromStatus: string
 export async function createSigningLink(params: {
   documentId: string;
   signerId: string;
+  guestName?: string;
+  guestEmail?: string;
 }): Promise<string> {
   const token = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
   const { error } = await supabase.from('signing_links').insert({
     document_id: params.documentId,
     signer_id:   params.signerId,
     token,
-    expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    expires_at: expiresAt,
   });
   if (error) throw new Error(`createSigningLink: ${error.message}`);
+
+  // Best-effort: also record the invitation in document_invitations (same
+  // token) so that table stays populated/auditable for the invite. The
+  // actual guest-read authorization still goes through verify_signing_link
+  // (signing_links + documents, already SECURITY DEFINER and proven safe) —
+  // this insert never blocks link creation if it fails.
+  try {
+    await supabase.rpc('record_document_invitation', {
+      p_document_id: params.documentId,
+      p_guest_email: params.guestEmail ?? '',
+      p_guest_name:  params.guestName ?? '',
+      p_token:       token,
+      p_expires_at:  expiresAt,
+    });
+  } catch { /* non-fatal — see supabase_guest_dashboard_anon_migration.sql */ }
+
   return token;
+}
+
+/** Best-effort: marks the invitation as signed once the guest completes signing. */
+export async function markDocumentInvitationSigned(token: string): Promise<void> {
+  try {
+    await publicSupabase.rpc('mark_document_invitation_signed', { p_token: token });
+  } catch { /* non-fatal */ }
 }
 
 export async function verifySigningTokenPublic(token: string): Promise<{

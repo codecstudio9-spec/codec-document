@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, Zap, ArrowRight } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '../ui/dialog';
 import { PaypalSignatureCheckout } from './PaypalSignatureCheckout';
+import { useAuth } from '../../contexts/auth-context';
 
 interface SignatureLimitDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function SignatureLimitDialog({
   open, onOpenChange, userId, nextSlotAt, onUnlocked,
 }: SignatureLimitDialogProps) {
   const [showCheckout, setShowCheckout] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   return (
     <Dialog
@@ -85,7 +87,7 @@ export function SignatureLimitDialog({
                 </button>
               </div>
             </>
-          ) : (
+          ) : userId ? (
             <PaypalSignatureCheckout
               userId={userId}
               onSuccess={() => {
@@ -93,6 +95,28 @@ export function SignatureLimitDialog({
                 onOpenChange(false);
               }}
             />
+          ) : (
+            // Anonymous: paypal-verify only grants credit when it can
+            // resolve a userId from the caller's JWT, so a payment flow
+            // here would take money without unlocking anything. Offer a
+            // free sign-in instead — same fix as the electronic-signature
+            // paywall overlay.
+            <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 text-center backdrop-blur-xl">
+              <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-1 ring-indigo-400/20">
+                <ShieldCheck className="size-6 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Inicia sesión para continuar</h3>
+              <p className="mt-1 text-sm text-white/50">
+                Ya usaste tus solicitudes de firma gratuitas como invitado. Crea una cuenta gratis (o inicia sesión) para seguir, o desbloquea más con un pago.
+              </p>
+              <button
+                type="button"
+                onClick={() => void signInWithGoogle()}
+                className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:from-blue-500 hover:to-indigo-500"
+              >
+                Continuar con Google
+              </button>
+            </div>
           )}
         </div>
       </DialogContent>

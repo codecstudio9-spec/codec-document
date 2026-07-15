@@ -31,6 +31,7 @@ import {
 import {
   consumeGeneratedDocLimit,
   consumeUploadedDocLimit,
+  consumeAnonUsage72h,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
@@ -236,7 +237,7 @@ function ShareHub({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function ElectronicSignaturePage() {
-  const { session, isAdmin } = useAuth();
+  const { session, isAdmin, signInWithGoogle } = useAuth();
 
   const [step, setStep] = useState<Step>('upload');
   const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
@@ -445,8 +446,9 @@ export function ElectronicSignaturePage() {
     }
     if (!bypassUsageCheck && !isAdmin) {
       const userId = session?.user?.id;
-      if (!userId) { setPendingFile(file); setPaywallContext('upload'); return; }
-      const { allowed } = await consumeUploadedDocLimit(userId, false);
+      const { allowed } = userId
+        ? await consumeUploadedDocLimit(userId, false)
+        : await consumeAnonUsage72h('document');
       if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
     }
     setError(''); setIsLoading(true); setLoadingMsg('Procesando documento…');
@@ -527,7 +529,7 @@ export function ElectronicSignaturePage() {
     setError(''); setIsLoading(true); setLoadingMsg('Generando enlace seguro…');
     try {
       const signerId = await createSigner({ documentId, name: guestName, email: guestEmail });
-      const token    = await createSigningLink({ documentId, signerId });
+      const token    = await createSigningLink({ documentId, signerId, guestName, guestEmail });
       setSigningToken(token);
       toast.success('Enlace generado. Compártelo con el firmante.');
     } catch (err) {
@@ -575,8 +577,9 @@ export function ElectronicSignaturePage() {
 
     if (!bypassUsageCheck && !isAdmin) {
       const userId = session?.user?.id;
-      if (!userId) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
-      const docStatus = await consumeGeneratedDocLimit(userId, false);
+      const docStatus = userId
+        ? await consumeGeneratedDocLimit(userId, false)
+        : await consumeAnonUsage72h('signature');
       if (!docStatus.allowed) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
     }
     setError(''); setIsLoading(true); setStep('compiling'); setLoadingMsg('Guardando posiciones…');
@@ -1009,7 +1012,11 @@ export function ElectronicSignaturePage() {
       </main>
 
       {/* ── Paywall overlay ────────────────────────────────────────────────────── */}
-      {paywallContext !== null && !isDone && session?.user?.id && (
+      {/* Renders regardless of auth state — it used to require
+          session?.user?.id, so an anonymous visitor who genuinely exhausted
+          their free 72h allowance (see consumeAnonUsage72h) would have
+          paywallContext set but see nothing happen at all when blocked. */}
+      {paywallContext !== null && !isDone && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8 backdrop-blur-sm sm:items-center">
           <div className="relative my-auto max-h-[85vh] w-full max-w-md overflow-y-auto">
             <button
@@ -1021,18 +1028,41 @@ export function ElectronicSignaturePage() {
             </button>
             <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-2.5 text-center text-sm font-medium text-amber-300">
               {paywallContext === 'upload'
-                ? (<><Upload className="size-4 shrink-0" /> Límite diario alcanzado — 3 documentos gratuitos por día</>)
-                : (<><FileText className="size-4 shrink-0" /> Límite diario alcanzado — 2 documentos firmados por día</>)}
+                ? (<><Upload className="size-4 shrink-0" /> Límite gratuito alcanzado — inténtalo de nuevo más tarde</>)
+                : (<><FileText className="size-4 shrink-0" /> Límite gratuito alcanzado — inténtalo de nuevo más tarde</>)}
             </div>
-            <PaypalSignatureCheckout
-              userId={session.user.id}
-              onSuccess={() => {
-                const ctx = paywallContext, pendingPos = pendingPlacements, pendingF = pendingFile;
-                setPaywallContext(null); setPendingPlacements(null); setPendingFile(null);
-                if (ctx === 'upload' && pendingF) void handleUploadPdf(pendingF, true);
-                if (ctx === 'doc'    && pendingPos) void handleConfirmPositions(pendingPos, true);
-              }}
-            />
+            {session?.user?.id ? (
+              <PaypalSignatureCheckout
+                userId={session.user.id}
+                onSuccess={() => {
+                  const ctx = paywallContext, pendingPos = pendingPlacements, pendingF = pendingFile;
+                  setPaywallContext(null); setPendingPlacements(null); setPendingFile(null);
+                  if (ctx === 'upload' && pendingF) void handleUploadPdf(pendingF, true);
+                  if (ctx === 'doc'    && pendingPos) void handleConfirmPositions(pendingPos, true);
+                }}
+              />
+            ) : (
+              // Anonymous + quota exhausted: the paid unlock requires a real
+              // account server-side (paypal-verify only grants credit when
+              // it can resolve a userId from the JWT), so offer a free sign-in
+              // instead of a payment flow that couldn't actually deliver.
+              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 text-center backdrop-blur-xl">
+                <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-1 ring-indigo-400/20">
+                  <ShieldCheck className="size-6 text-indigo-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Inicia sesión para continuar</h3>
+                <p className="mt-1 text-sm text-white/50">
+                  Ya usaste tus firmas gratuitas como invitado. Crea una cuenta gratis (o inicia sesión) para seguir firmando o desbloquear más con un pago.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void signInWithGoogle()}
+                  className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:from-blue-500 hover:to-indigo-500"
+                >
+                  Continuar con Google
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

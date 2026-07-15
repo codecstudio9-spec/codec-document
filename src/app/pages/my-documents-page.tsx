@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, FileText, Lock, Pencil, Download, ShieldCheck, Trash2, Check, X, Plus, HardDrive } from 'lucide-react';
+import { ArrowLeft, FileText, Lock, Pencil, Download, ShieldCheck, Trash2, Check, X, Plus, HardDrive, PenLine } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
-import { fetchUserDocuments, renameDocument, deleteDocumentRecord, type UserDocument } from '../services/documents-service';
+import {
+  fetchUserDocuments, renameDocument, deleteDocumentRecord, type UserDocument,
+  fetchAssociatedDocuments, type AssociatedDocument,
+} from '../services/documents-service';
 import { getTemplateById } from '../data/templates';
 
 export function MyDocumentsPage() {
@@ -13,6 +16,7 @@ export function MyDocumentsPage() {
   const isPremium = isAdmin || unlimitedActive || subscriptionActive;
 
   const [docs, setDocs] = useState<UserDocument[]>([]);
+  const [associatedDocs, setAssociatedDocs] = useState<AssociatedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -20,9 +24,11 @@ export function MyDocumentsPage() {
   useEffect(() => {
     const userId = session?.user?.id;
     if (!userId) { setLoading(false); return; }
-    fetchUserDocuments(userId)
-      .then(setDocs)
-      .catch(() => setDocs([]))
+    Promise.all([
+      fetchUserDocuments(userId).catch(() => []),
+      fetchAssociatedDocuments(userId).catch(() => []),
+    ])
+      .then(([userDocs, linked]) => { setDocs(userDocs); setAssociatedDocs(linked); })
       .finally(() => setLoading(false));
   }, [session?.user?.id]);
 
@@ -112,7 +118,7 @@ export function MyDocumentsPage() {
             <div className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500 mr-3" />
             {language === 'es' ? 'Cargando documentos…' : 'Loading documents…'}
           </div>
-        ) : docs.length === 0 ? (
+        ) : docs.length === 0 && associatedDocs.length === 0 ? (
           <div className="rounded-xl border bg-white p-10 text-center space-y-4">
             <FileText className="size-12 mx-auto text-slate-300" />
             <div>
@@ -213,6 +219,57 @@ export function MyDocumentsPage() {
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {/* ── Documents signed as a guest, associated to this profile ─────── */}
+        {associatedDocs.length > 0 && (
+          <div className="mt-10">
+            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-800">
+              <PenLine className="size-4 text-indigo-600" />
+              {language === 'es' ? 'Documentos que firmaste' : 'Documents you signed'}
+            </h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {associatedDocs.map((doc) => {
+                const isCompleted = doc.status === 'completed';
+                const fileUrl = doc.signed_pdf_url || doc.original_pdf_url;
+                const createdDate = new Date(doc.created_at).toLocaleDateString(
+                  language === 'es' ? 'es-US' : 'en-US',
+                  { year: 'numeric', month: 'short', day: 'numeric' },
+                );
+                return (
+                  <article key={doc.id} className="rounded-xl border bg-white p-4 space-y-3 shadow-sm">
+                    <h3 className="font-semibold text-slate-900 text-sm leading-tight break-words">
+                      {doc.name}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-medium ${isCompleted ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {isCompleted
+                          ? (language === 'es' ? 'Completado' : 'Completed')
+                          : (language === 'es' ? 'Pendiente' : 'Pending')}
+                      </span>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-xs text-slate-400">{createdDate}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      <ShieldCheck className="size-3" />
+                      E-SIGN &amp; UETA Compliant
+                    </div>
+                    {fileUrl && (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1 rounded-md bg-slate-900 text-white px-3 py-2 text-xs font-semibold"
+                      >
+                        <Download className="size-3" />
+                        {language === 'es' ? 'Ver PDF' : 'View PDF'}
+                      </a>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>

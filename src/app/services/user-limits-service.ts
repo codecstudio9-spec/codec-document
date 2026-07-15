@@ -20,6 +20,8 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import { getPublicIp } from '../../lib/signatureService';
+import { getDeviceId } from '../utils/device-id';
 
 const LIMIT_GENERATED         = 2;
 const LIMIT_UPLOADED          = 3;
@@ -123,6 +125,47 @@ export async function getNextSignatureRequestSlot(userId: string): Promise<Date 
     const { data, error } = await supabase.rpc('next_signature_request_slot', {
       p_user_id: userId,
       p_limit: SIGNATURE_REQUEST_LIMIT_72H,
+    });
+    if (error || !data) return null;
+    return new Date(data as string);
+  } catch {
+    return null;
+  }
+}
+
+// ── Anonymous (not logged in) usage — 72h rolling window, per device ───────
+// Previously, every gate in the app treated "no userId" as an instant hard
+// block ("if (!userId) { show paywall; return; }") with no quota check at
+// all — so a brand-new visitor on a brand-new phone hit the "limit reached"
+// message on their very first tap, having done nothing. This gives
+// anonymous visitors a real 2-actions/72h allowance, keyed by a device id
+// persisted in localStorage (see utils/device-id.ts) so a genuinely new
+// device always starts at zero. See supabase_guest_dashboard_anon_migration.sql.
+const ANON_USAGE_LIMIT_72H = 2;
+
+export async function consumeAnonUsage72h(action: 'document' | 'signature'): Promise<LimitResult> {
+  const deviceId = getDeviceId();
+  const ip = await getPublicIp().catch(() => 'unknown');
+
+  const { data, error } = await supabase.rpc('try_consume_anon_usage_72h', {
+    p_device_id: deviceId,
+    p_ip: ip,
+    p_action: action,
+    p_limit: ANON_USAGE_LIMIT_72H,
+  });
+
+  if (error) {
+    console.error('try_consume_anon_usage_72h failed:', error);
+    return { allowed: false, remaining: 0 }; // fail closed — see file header
+  }
+  return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
+}
+
+export async function getNextAnonUsageSlot(): Promise<Date | null> {
+  try {
+    const { data, error } = await supabase.rpc('next_anon_usage_slot', {
+      p_device_id: getDeviceId(),
+      p_limit: ANON_USAGE_LIMIT_72H,
     });
     if (error || !data) return null;
     return new Date(data as string);

@@ -19,8 +19,10 @@ import {
   getPublicIp,
   dataUrlToBlob,
   compilePdfWithSignatures,
+  getSignedUrlFallback,
+  markDocumentInvitationSigned,
 } from '../../lib/signatureService';
-import { publicSupabase } from '../../lib/supabase';
+import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
@@ -468,22 +470,46 @@ export function GuestSignPage() {
   useEffect(() => {
     const url = tokenData?.originalPdfUrl;
     if (!url) return;
+    let cancelled = false;
     setPdfLoading(true);
     setPdfError('');
 
-    pdfjsLib
-      .getDocument({ url, withCredentials: false })
-      .promise
-      .then((doc: any) => {
+    const load = async (src: string) => {
+      const doc: any = await pdfjsLib.getDocument({ url: src, withCredentials: false }).promise;
+      return doc;
+    };
+
+    (async () => {
+      try {
+        const doc = await load(url);
+        if (cancelled) return;
         setPdfDoc(doc);
         setPdfPageCount(doc.numPages);
-      })
-      .catch(() => {
-        setPdfError('No se pudo cargar la vista previa del documento.');
-        // Enable signing after a short delay even when PDF fails to load
-        setTimeout(() => setHasScrolledToEnd(true), 2000);
-      })
-      .finally(() => setPdfLoading(false));
+      } catch {
+        // getPublicUrl() only actually works if the bucket is flagged
+        // "Public" in Supabase — if it isn't, this "public" URL 400s for
+        // the guest even though nothing about the document itself is
+        // private to them. Retry via a signed URL, which works off the
+        // storage RLS policy instead of that bucket-level flag.
+        try {
+          const signedUrl = await getSignedUrlFallback(url);
+          if (!signedUrl) throw new Error('no signed url');
+          const doc = await load(signedUrl);
+          if (cancelled) return;
+          setPdfDoc(doc);
+          setPdfPageCount(doc.numPages);
+        } catch {
+          if (cancelled) return;
+          setPdfError('No se pudo cargar la vista previa del documento.');
+          // Enable signing after a short delay even when PDF fails to load
+          setTimeout(() => setHasScrolledToEnd(true), 2000);
+        }
+      } finally {
+        if (!cancelled) setPdfLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [tokenData?.originalPdfUrl]);
 
   // ─── Measure PDF container width (for pdfjs scale calculation) ────────────────
@@ -655,6 +681,25 @@ export function GuestSignPage() {
         userAgent:   auditUserAgent,
         hashSha256:  sha256Hash,
       }).catch(() => {});
+
+      if (signToken) void markDocumentInvitationSigned(signToken);
+
+      // Requirement: if the guest signing this link also happens to be
+      // logged in (in the SAME browser — publicSupabase never carries their
+      // session, so we check the real `supabase` client explicitly), save
+      // this document to their profile automatically. `documents` RLS grants
+      // this because associated_read_documents checks profile_documents.
+      try {
+        const { data: { session: guestSession } } = await supabase.auth.getSession();
+        const profileId = guestSession?.user?.id;
+        if (profileId) {
+          await supabase.from('profile_documents').insert({
+            profile_id:  profileId,
+            document_id: tokenData.documentId,
+            role:        'signer',
+          });
+        }
+      } catch { /* non-fatal — signing itself already succeeded */ }
 
       console.log('Firma registrada. Auditoria:', {
         ip,

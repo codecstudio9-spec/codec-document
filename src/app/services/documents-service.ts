@@ -60,3 +60,42 @@ export async function renameDocument(documentId: string, newName: string): Promi
 export async function deleteDocumentRecord(documentId: string): Promise<void> {
   await supabase.from('user_documents').delete().eq('id', documentId);
 }
+
+// ─── Documents associated via profile_documents (guest-signed docs) ───────
+// Separate from `user_documents` above: this is the *signature* flow's
+// `documents` table (original_pdf_url/signed_pdf_url — see
+// signatureService.ts), linked to a signer's profile after they sign a
+// document as a guest while logged in. Different shape, different table —
+// merged into the dashboard as its own section rather than forced into the
+// template-based UserDocument grid, which has no PDF url / no template_id.
+export interface AssociatedDocument {
+  id: string;
+  name: string;
+  status: string;
+  original_pdf_url: string | null;
+  signed_pdf_url: string | null;
+  created_at: string;
+  role: string;
+}
+
+export async function fetchAssociatedDocuments(userId: string): Promise<AssociatedDocument[]> {
+  const { data: links, error: linksError } = await supabase
+    .from('profile_documents')
+    .select('document_id, role, associated_at')
+    .eq('profile_id', userId)
+    .order('associated_at', { ascending: false });
+  if (linksError || !links || links.length === 0) return [];
+
+  const documentIds = links.map((l) => l.document_id as string);
+  const { data: docs, error: docsError } = await supabase
+    .from('documents')
+    .select('id, name, status, original_pdf_url, signed_pdf_url, created_at')
+    .in('id', documentIds);
+  if (docsError || !docs) return [];
+
+  const roleByDocId = new Map(links.map((l) => [l.document_id as string, l.role as string]));
+  return (docs as Array<Omit<AssociatedDocument, 'role'>>).map((d) => ({
+    ...d,
+    role: roleByDocId.get(d.id) ?? 'signer',
+  }));
+}
