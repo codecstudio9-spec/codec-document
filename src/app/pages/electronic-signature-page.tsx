@@ -32,6 +32,9 @@ import {
   consumeDocumentLimit72h,
   consumeSignatureRequest72h,
   consumeAnonUsage72h,
+  getNextDocumentSlot,
+  getNextSignatureRequestSlot,
+  getNextAnonUsageSlot,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
@@ -241,6 +244,7 @@ export function ElectronicSignaturePage() {
 
   const [step, setStep] = useState<Step>('upload');
   const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
+  const [paywallNextSlotAt, setPaywallNextSlotAt] = useState<Date | null>(null);
   const [pendingPlacements, setPendingPlacements] = useState<PlacedSignature[] | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('');
@@ -449,7 +453,10 @@ export function ElectronicSignaturePage() {
       const { allowed } = userId
         ? await consumeDocumentLimit72h(userId, false)
         : await consumeAnonUsage72h('document');
-      if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
+      if (!allowed) {
+        setPaywallNextSlotAt(userId ? await getNextDocumentSlot(userId) : await getNextAnonUsageSlot('document'));
+        setPendingFile(file); setPaywallContext('upload'); return;
+      }
     }
     setError(''); setIsLoading(true); setLoadingMsg('Procesando documento…');
     try {
@@ -584,7 +591,10 @@ export function ElectronicSignaturePage() {
       const docStatus = userId
         ? await consumeSignatureRequest72h(userId, false)
         : await consumeAnonUsage72h('signature');
-      if (!docStatus.allowed) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
+      if (!docStatus.allowed) {
+        setPaywallNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : await getNextAnonUsageSlot('signature'));
+        setPendingPlacements(placements); setPaywallContext('doc'); return;
+      }
     }
     setError(''); setIsLoading(true); setStep('compiling'); setLoadingMsg('Guardando posiciones…');
     try {
@@ -1030,14 +1040,27 @@ export function ElectronicSignaturePage() {
             >
               <X className="size-4" />
             </button>
-            <div className="mb-3 flex items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-2.5 text-center text-sm font-medium text-amber-300">
-              {paywallContext === 'upload'
-                ? (<><Upload className="size-4 shrink-0" /> Límite gratuito alcanzado — inténtalo de nuevo más tarde</>)
-                : (<><FileText className="size-4 shrink-0" /> Límite gratuito alcanzado — inténtalo de nuevo más tarde</>)}
+            <div className="mb-3 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-3 text-center">
+              <p className="flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
+                {paywallContext === 'upload'
+                  ? (<><Upload className="size-4 shrink-0" /> Límite gratuito de documentos alcanzado</>)
+                  : (<><FileText className="size-4 shrink-0" /> Límite gratuito de firmas alcanzado</>)}
+              </p>
+              <p className="mt-1 text-xs text-amber-200/70">
+                {(() => {
+                  const ms = paywallNextSlotAt ? paywallNextSlotAt.getTime() - Date.now() : 0;
+                  const hours = ms > 0 ? Math.ceil(ms / (60 * 60 * 1000)) : 0;
+                  const waitText = hours > 0
+                    ? `Vuelve a hacerlo gratis en ${hours <= 1 ? 'menos de 1 hora' : `${hours} horas`}, o`
+                    : 'Vuelve a intentarlo gratis en un momento, o';
+                  return `${waitText} paga solo por ${paywallContext === 'upload' ? 'este documento' : 'esta firma'} para continuar ahora.`;
+                })()}
+              </p>
             </div>
             {session?.user?.id ? (
               <PaypalSignatureCheckout
                 userId={session.user.id}
+                mode={paywallContext === 'upload' ? 'document' : 'signature'}
                 onSuccess={() => {
                   const ctx = paywallContext, pendingPos = pendingPlacements, pendingF = pendingFile;
                   setPaywallContext(null); setPendingPlacements(null); setPendingFile(null);

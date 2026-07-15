@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
 import { verifyPaypalOrder } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
-import { CheckCircle2, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 
 type Product = {
   hostedButtonId: string;
@@ -287,18 +287,27 @@ export function PricingSection() {
           <p className="mt-1 text-sm text-slate-400">{copy.subtitle2}</p>
         </div>
 
-        {/* Free tier callout */}
-        <div className="mb-8 mx-auto max-w-2xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-6 py-4 text-center">
-          <p className="text-sm font-bold text-emerald-300">
-            {language === 'en'
-              ? '✓ Free plan available — no credit card required'
-              : '✓ Plan gratuito disponible — sin tarjeta de crédito'}
-          </p>
-          <p className="mt-1 text-xs text-emerald-200/60">
-            {language === 'en'
-              ? '1 intelligent document + 1 free e-signature every 72h · Full template editor access'
-              : '1 documento inteligente + 1 firma gratuita cada 72h · Acceso completo al editor de plantillas'}
-          </p>
+        {/* Free tier callout — deliberately doesn't mention any number or
+            time window. The user only needs to know "it's free to try"
+            up front; the specific limit and what to do next (wait, or pay
+            just for that one document/signature) only matters once they
+            actually hit it — that message lives in the paywall itself. */}
+        <div className="mb-8 mx-auto flex max-w-2xl items-center gap-4 rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 to-emerald-400/5 px-6 py-5 text-left">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-400/30">
+            <Gift className="size-5 text-emerald-300" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-emerald-300">
+              {language === 'en'
+                ? 'Your first document or signature is on us'
+                : 'Tu primer documento o firma va por nuestra cuenta'}
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-200/60">
+              {language === 'en'
+                ? "We know how much this matters to you — try it free, no credit card required. Full template editor included."
+                : 'Sabemos lo importante que esto es para ti — pruébalo gratis, sin tarjeta de crédito. Editor de plantillas completo incluido.'}
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-6 items-stretch mt-6 sm:grid-cols-2 lg:grid-cols-3">

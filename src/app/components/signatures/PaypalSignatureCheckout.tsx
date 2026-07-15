@@ -9,11 +9,15 @@ import { watchAndUnlockBodyScroll } from '../../utils/paypal-scroll-fix';
 interface PaypalSignatureCheckoutProps {
   userId: string;
   onSuccess: (plan: 'single' | 'monthly') => void;
+  /** 'signature' (default) unlocks e-signature credits; 'document' unlocks
+   * one document / a document subscription — same component, different
+   * product so the user pays for exactly what was actually blocked. */
+  mode?: 'signature' | 'document';
 }
 
 type Plan = 'single' | 'monthly';
 
-const PLANS: Array<{
+const SIGNATURE_PLANS: Array<{
   id: Plan;
   price: number;
   label: string;
@@ -44,7 +48,30 @@ const PLANS: Array<{
   },
 ];
 
-export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCheckoutProps) {
+const DOCUMENT_PLANS: typeof SIGNATURE_PLANS = [
+  {
+    id: 'single',
+    price: 7,
+    label: 'Un Documento',
+    sublabel: 'Este documento, listo al instante',
+    icon: <Zap className="size-5" />,
+    color: 'from-blue-600 to-indigo-600',
+    glow: 'shadow-blue-500/30',
+  },
+  {
+    id: 'monthly',
+    price: 29.99,
+    label: 'Documentos Ilimitados',
+    sublabel: 'Plan Mensual completo — sin límites',
+    badge: 'Más Popular',
+    icon: <Infinity className="size-5" />,
+    color: 'from-emerald-600 to-teal-600',
+    glow: 'shadow-emerald-500/30',
+  },
+];
+
+export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' }: PaypalSignatureCheckoutProps) {
+  const PLANS = mode === 'document' ? DOCUMENT_PLANS : SIGNATURE_PLANS;
   const [selectedPlan, setSelectedPlan] = useState<Plan>('single');
   const [processing, setProcessing] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
@@ -62,12 +89,20 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
       // Server verifies the order with PayPal's REST API (real payment,
       // correct amount, not reused) and grants the credit/plan itself —
       // this component no longer writes user_credits directly.
+      const product = mode === 'document'
+        ? (selectedPlan === 'single' ? 'doc_single' : 'sub_monthly')
+        : (selectedPlan === 'single' ? 'sig_single' : 'sig_monthly');
       await verifyPaypalOrder({
         orderId,
-        product: selectedPlan === 'single' ? 'sig_single' : 'sig_monthly',
+        product,
+        // doc_single needs a documentId to price against — this checkout
+        // fires before the document exists in the DB (it's the gate that
+        // blocks creating it), so there's no real id yet. Any non-matching
+        // id falls back to the flat default document price server-side.
+        documentId: mode === 'document' ? 'generic-single-document' : undefined,
       });
       setSucceeded(true);
-      toast.success('¡Pago confirmado! Ya puedes continuar con tu firma.');
+      toast.success(mode === 'document' ? '¡Pago confirmado! Ya puedes continuar con tu documento.' : '¡Pago confirmado! Ya puedes continuar con tu firma.');
       onSuccess(selectedPlan);
     } catch (err) {
       toast.error(`Error al activar plan: ${err instanceof Error ? err.message : String(err)}`);
@@ -83,7 +118,9 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
         <div>
           <p className="text-lg font-bold text-white">¡Listo! Acceso desbloqueado</p>
           <p className="text-sm text-white/60">
-            {selectedPlan === 'monthly' ? 'Plan mensual activo por 30 días' : '1 crédito de firma disponible'}
+            {selectedPlan === 'monthly'
+              ? 'Plan mensual activo por 30 días'
+              : mode === 'document' ? '1 crédito de documento disponible' : '1 crédito de firma disponible'}
           </p>
         </div>
       </div>
@@ -180,7 +217,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess }: PaypalSignatureCh
 function PayPalButtonsArea({
   plan, selectedPlan, onApprove,
 }: {
-  plan: (typeof PLANS)[number];
+  plan: (typeof SIGNATURE_PLANS)[number];
   selectedPlan: Plan;
   onApprove: (orderId: string) => Promise<void>;
 }) {
