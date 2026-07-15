@@ -1,105 +1,37 @@
 /**
- * Daily usage limits — backed by the `user_limits` Supabase table and the
- * `try_consume_daily_limit` / `get_daily_limit_usage` RPCs (see
- * supabase_daily_limits_atomic_migration.sql).
+ * Free-tier usage limits — TWO fully independent counters, "Documentos" and
+ * "Firmas", each 2 uses per rolling 72-hour window measured from the action
+ * that hit the limit (not a calendar-day reset). Backed by event-log tables
+ * (one row per action) counted with a sliding window via SECURITY DEFINER
+ * RPCs — see supabase_unify_72h_limits_migration.sql.
  *
- * The check-and-increment happens atomically inside a single Postgres
- * transaction (row-locked with FOR UPDATE), so two concurrent requests for
- * the same user can never both slip through the limit — unlike a
- * read-count-in-JS-then-write pattern, which has a race window.
- *
- * Limits:
- *   Generated (AI creator)      → 2 / day
- *   Uploaded  (own PDF)         → 3 / day
- *   Sign transactions (send)    → 2 / day
+ * "Documento" only counts on a real, successful download/compile — never on
+ * filling out a form or passing through an identity-verification screen.
+ * "Firma" counts when a signature is actually placed/sent for signing.
+ * These two counters must stay independent: exhausting one must never
+ * affect the other.
  *
  * This is a real-money paywall gate, so on RPC failure we fail CLOSED
  * (deny) rather than open — a Supabase hiccup must not translate into
  * free, unmetered access. Supabase already backs auth for the whole app,
  * so if it's unreachable the user can't be doing anything else either.
+ *
+ * A logged-in user's quota is ALWAYS computed purely from their own userId
+ * against these tables — never from localStorage device ids or IP, which
+ * only apply to the separate, fully-anonymous path below. Mixing the two
+ * was the actual cause of "new account instantly blocked" reports: it
+ * wasn't a bad empty-result check (COUNT(*) already correctly returns 0,
+ * never NULL, for a user with no history), it was other code paths
+ * blocking before ever consulting a real per-user count at all.
  */
 
 import { supabase } from '../../lib/supabase';
 import { getPublicIp } from '../../lib/signatureService';
 import { getDeviceId } from '../utils/device-id';
 
-const LIMIT_GENERATED         = 2;
-const LIMIT_UPLOADED          = 3;
-const LIMIT_SIGN_TRANSACTIONS = 2;
-
 type LimitResult = { allowed: boolean; remaining: number };
 
-async function consume(
-  userId: string,
-  counter: 'generated' | 'uploaded' | 'signed',
-  limit: number,
-  isPremium: boolean,
-): Promise<LimitResult> {
-  if (isPremium) return { allowed: true, remaining: 999 };
-  if (!userId) return { allowed: false, remaining: 0 };
-
-  const { data, error } = await supabase.rpc('try_consume_daily_limit', {
-    p_user_id: userId,
-    p_counter: counter,
-    p_limit: limit,
-  });
-
-  if (error) {
-    console.error(`try_consume_daily_limit(${counter}) failed:`, error);
-    return { allowed: false, remaining: 0 }; // fail closed — see file header
-  }
-
-  return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
-}
-
-/** Atomically check-and-consume one "generated document" credit for today. */
-export function consumeGeneratedDocLimit(userId: string, isPremium = false): Promise<LimitResult> {
-  return consume(userId, 'generated', LIMIT_GENERATED, isPremium);
-}
-
-/** Atomically check-and-consume one "uploaded document" credit for today. */
-export function consumeUploadedDocLimit(userId: string, isPremium = false): Promise<LimitResult> {
-  return consume(userId, 'uploaded', LIMIT_UPLOADED, isPremium);
-}
-
-/** Atomically check-and-consume one "sign transaction" credit for today. */
-export function consumeSignTransactionLimit(userId: string, isPremium = false): Promise<LimitResult> {
-  return consume(userId, 'signed', LIMIT_SIGN_TRANSACTIONS, isPremium);
-}
-
-/** Read-only peek at today's remaining counts, for UI banners — never mutates state. */
-export async function getRemainingLimits(userId: string): Promise<{
-  generatedRemaining: number;
-  uploadedRemaining: number;
-  signedRemaining: number;
-}> {
-  const fallback = {
-    generatedRemaining: LIMIT_GENERATED,
-    uploadedRemaining: LIMIT_UPLOADED,
-    signedRemaining: LIMIT_SIGN_TRANSACTIONS,
-  };
-  if (!userId) return fallback;
-  try {
-    const { data, error } = await supabase
-      .rpc('get_daily_limit_usage', { p_user_id: userId })
-      .maybeSingle();
-    if (error || !data) return fallback;
-    const row = data as { generated_used: number; uploaded_used: number; signed_used: number };
-    return {
-      generatedRemaining: Math.max(0, LIMIT_GENERATED - (row.generated_used ?? 0)),
-      uploadedRemaining: Math.max(0, LIMIT_UPLOADED - (row.uploaded_used ?? 0)),
-      signedRemaining: Math.max(0, LIMIT_SIGN_TRANSACTIONS - (row.signed_used ?? 0)),
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-// ── Sign transaction (send-to-sign) requests — 72h rolling window ──────────
-// Business rule changed from "2 per calendar day" to "2 within any rolling
-// 72-hour window" — see supabase_signature_72h_migration.sql. Backed by an
-// event-log table (one row per request) counted with a sliding window,
-// which a simple reset-at-midnight counter can't represent.
+// ── Signatures — 72h rolling window ─────────────────────────────────────
 const SIGNATURE_REQUEST_LIMIT_72H = 2;
 
 export async function consumeSignatureRequest72h(userId: string, isPremium = false): Promise<LimitResult> {
@@ -125,6 +57,43 @@ export async function getNextSignatureRequestSlot(userId: string): Promise<Date 
     const { data, error } = await supabase.rpc('next_signature_request_slot', {
       p_user_id: userId,
       p_limit: SIGNATURE_REQUEST_LIMIT_72H,
+    });
+    if (error || !data) return null;
+    return new Date(data as string);
+  } catch {
+    return null;
+  }
+}
+
+// ── Documents — 72h rolling window ──────────────────────────────────────
+// Only ever call this at the point a document is actually, successfully
+// generated/downloaded — never earlier in the flow (form fill, identity
+// verification screens). If the user abandons before that point, nothing
+// should be consumed.
+const DOCUMENT_LIMIT_72H = 2;
+
+export async function consumeDocumentLimit72h(userId: string, isPremium = false): Promise<LimitResult> {
+  if (isPremium) return { allowed: true, remaining: 999 };
+  if (!userId) return { allowed: false, remaining: 0 };
+
+  const { data, error } = await supabase.rpc('try_consume_document_72h', {
+    p_user_id: userId,
+    p_limit: DOCUMENT_LIMIT_72H,
+  });
+
+  if (error) {
+    console.error('try_consume_document_72h failed:', error);
+    return { allowed: false, remaining: 0 };
+  }
+  return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
+}
+
+export async function getNextDocumentSlot(userId: string): Promise<Date | null> {
+  if (!userId) return null;
+  try {
+    const { data, error } = await supabase.rpc('next_document_slot', {
+      p_user_id: userId,
+      p_limit: DOCUMENT_LIMIT_72H,
     });
     if (error || !data) return null;
     return new Date(data as string);
@@ -161,10 +130,11 @@ export async function consumeAnonUsage72h(action: 'document' | 'signature'): Pro
   return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
 }
 
-export async function getNextAnonUsageSlot(): Promise<Date | null> {
+export async function getNextAnonUsageSlot(action: 'document' | 'signature'): Promise<Date | null> {
   try {
     const { data, error } = await supabase.rpc('next_anon_usage_slot', {
       p_device_id: getDeviceId(),
+      p_action: action,
       p_limit: ANON_USAGE_LIMIT_72H,
     });
     if (error || !data) return null;

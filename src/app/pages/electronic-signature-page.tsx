@@ -29,8 +29,8 @@ import {
   getDocumentSignatures, compilePdfWithSignatures,
 } from '../../lib/signatureService';
 import {
-  consumeGeneratedDocLimit,
-  consumeUploadedDocLimit,
+  consumeDocumentLimit72h,
+  consumeSignatureRequest72h,
   consumeAnonUsage72h,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
@@ -447,7 +447,7 @@ export function ElectronicSignaturePage() {
     if (!bypassUsageCheck && !isAdmin) {
       const userId = session?.user?.id;
       const { allowed } = userId
-        ? await consumeUploadedDocLimit(userId, false)
+        ? await consumeDocumentLimit72h(userId, false)
         : await consumeAnonUsage72h('document');
       if (!allowed) { setPendingFile(file); setPaywallContext('upload'); return; }
     }
@@ -575,10 +575,14 @@ export function ElectronicSignaturePage() {
     if (placements.length === 0) { setError('Coloca al menos una firma en el documento.'); return; }
     if (!pdfBytes || pdfBytes.length === 0) { setError('No hay PDF en memoria. Reinicia el flujo.'); return; }
 
+    // This is the creator placing/confirming their own signature on the
+    // document — a "Firma" action, not a "Documento" action. It used to
+    // consume the document counter here, which meant signing quietly ate
+    // into the wrong bucket instead of the two counters staying independent.
     if (!bypassUsageCheck && !isAdmin) {
       const userId = session?.user?.id;
       const docStatus = userId
-        ? await consumeGeneratedDocLimit(userId, false)
+        ? await consumeSignatureRequest72h(userId, false)
         : await consumeAnonUsage72h('signature');
       if (!docStatus.allowed) { setPendingPlacements(placements); setPaywallContext('doc'); return; }
     }

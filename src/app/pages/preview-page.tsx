@@ -22,7 +22,7 @@ import { getPurchaseUnlockStatus } from '../services/paypal-service';
 import { getSignatureAuditByOrder, getSignatureAuditsByOrder } from '../services/paypal-service';
 import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
-import { consumeGeneratedDocLimit } from '../services/user-limits-service';
+import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
@@ -779,10 +779,12 @@ export function PreviewPage() {
         return;
       }
 
-      // Gate: atomically check-and-consume today's free document quota (2/day)
+      // Gate: atomically check-and-consume the free document quota (2 / 72h,
+      // measured from the action that hit the limit). Only fires here, right
+      // before the real download — never earlier in the flow.
       if (!canDownloadFree) {
         const { allowed } = user.id
-          ? await consumeGeneratedDocLimit(user.id, false)
+          ? await consumeDocumentLimit72h(user.id, false)
           : { allowed: false };
         if (!allowed) {
           setPendingAction('download');

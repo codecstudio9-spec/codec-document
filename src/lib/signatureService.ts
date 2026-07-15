@@ -30,25 +30,20 @@ export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
 // ─── Documents ─────────────────────────────────────────────────────────────
 // Schema: id, user_id, original_pdf_url, signed_pdf_url, status, created_at, name, description
 
-async function checkUsageLimit(userId?: string | null): Promise<boolean> {
-  try {
-    const { data, error } = await supabase.rpc('check_user_usage_limit', {
-      p_user_id: userId || null,
-    });
-    if (error) return true;
-    return Boolean(data);
-  } catch {
-    return true;
-  }
-}
-
 export async function createDocumentRecord(params: {
   name: string;
   userId?: string | null;
 }): Promise<string> {
-  const usageAllowed = await checkUsageLimit(params.userId ?? null);
-  if (!usageAllowed) return '';
-
+  // The caller (electronic-signature-page.tsx's handleUploadPdf) already
+  // gates on consumeDocumentLimit72h / consumeAnonUsage72h before ever
+  // calling this. This used to run a SECOND, independent quota check here
+  // via an opaque RPC (check_user_usage_limit) not defined anywhere in this
+  // repo's SQL migrations — with unknown logic, on an unknown table, using
+  // a different rule (unclear if daily or 72h) than the one actually
+  // documented and tested. A silent bug in that hidden function was a real
+  // candidate for "brand-new account instantly blocked" reports: even after
+  // correctly passing the real gate, this second opaque gate could still
+  // return `false` and abort with an empty documentId. Removed.
   const { data, error } = await supabase
     .from('documents')
     .insert({
