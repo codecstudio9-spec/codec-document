@@ -25,18 +25,18 @@ const PLANS: Array<{
 }> = [
   {
     id: 'single',
-    price: 3,
+    price: 2.99,
     label: 'Una Firma',
-    sublabel: 'Válida para este documento',
+    sublabel: 'Certificado de auditoría + verificación de identidad',
     icon: <Zap className="size-5" />,
     color: 'from-blue-600 to-indigo-600',
     glow: 'shadow-blue-500/30',
   },
   {
     id: 'monthly',
-    price: 50,
-    label: 'Plan Mensual',
-    sublabel: 'Firmas ilimitadas por 30 días',
+    price: 19.99,
+    label: 'Firmas Ilimitadas',
+    sublabel: 'Firma por QR + auditoría, cada mes',
     badge: 'Más Popular',
     icon: <Infinity className="size-5" />,
     color: 'from-emerald-600 to-teal-600',

@@ -332,7 +332,7 @@ export const DEFAULT_FAQ: FaqItem[] = [
   {
     qEn: 'How does Codec Document compare to DocuSign or PandaDoc?',
     qEs: '¿Cómo se compara Codec Document con DocuSign o PandaDoc?',
-    aEn: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $79.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
-    aEs: 'Codec Document ofrece un editor inteligente de plantillas gratuito que construye dinámicamente documentos legales profesionales (NDA, arrendamientos, contratos) — no solo un cargador de PDFs planos. Obtienes generación de documentos gratis más firmas electrónicas conformes a ESIGN, todo sin tarjeta de crédito. Los planes premium comienzan en $79.99/mes para documentos ilimitados, espacio en la nube y firmas remotas ilimitadas.',
+    aEn: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
+    aEs: 'Codec Document ofrece un editor inteligente de plantillas gratuito que construye dinámicamente documentos legales profesionales (NDA, arrendamientos, contratos) — no solo un cargador de PDFs planos. Obtienes generación de documentos gratis más firmas electrónicas conformes a ESIGN, todo sin tarjeta de crédito. Los planes premium comienzan en $29.99/mes para documentos ilimitados, espacio en la nube y firmas remotas ilimitadas.',
   },
 ];

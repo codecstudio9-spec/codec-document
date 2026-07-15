@@ -145,11 +145,11 @@ export function ModernHomePage() {
     ? [
         {
           q: 'Is Codec Document free to use?',
-          a: 'Yes. You get 1 structured intelligent document every 72 hours and 1 free ESIGN-compliant digital signature per day — no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
+          a: 'Yes. You get 1 structured intelligent document and 1 free ESIGN-compliant digital signature every 72 hours — no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
         },
         {
           q: 'How does Codec Document compare to DocuSign or PandaDoc?',
-          a: 'Codec Document gives you a free intelligent template editor — not just a flat PDF signer. You build professional legal documents from scratch, customize every field, apply your logo, and e-sign with ESIGN Act compliance. Plus, our native selfie + ID biometric verification creates an embedded audit trail that traditional platforms charge extra for. Premium plans start at $79.99/month.'
+          a: 'Codec Document gives you a free intelligent template editor — not just a flat PDF signer. You build professional legal documents from scratch, customize every field, apply your logo, and e-sign with ESIGN Act compliance. Plus, our native selfie + ID biometric verification creates an embedded audit trail that traditional platforms charge extra for. Premium plans start at $29.99/month.'
         },
         {
           q: 'Are e-signatures legally valid in the USA?',
@@ -175,11 +175,11 @@ export function ModernHomePage() {
     : [
         {
           q: '¿Codec Document es gratis?',
-          a: 'Sí. Obtienes 1 documento inteligente estructurado cada 72 horas y 1 firma digital gratuita al día, sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs subidos, el editor de Codec Document construye NDAs, contratos de arrendamiento y acuerdos de servicios desde cero, de forma gratuita. Los planes premium desbloquean documentos ilimitados, QR de co-firmantes y verificación de identidad.'
+          a: 'Sí. Obtienes 1 documento inteligente estructurado y 1 firma digital gratuita cada 72 horas, sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs subidos, el editor de Codec Document construye NDAs, contratos de arrendamiento y acuerdos de servicios desde cero, de forma gratuita. Los planes premium desbloquean documentos ilimitados, QR de co-firmantes y verificación de identidad.'
         },
         {
           q: '¿Cómo se compara con DocuSign o PandaDoc?',
-          a: 'Codec Document ofrece un editor inteligente gratuito de plantillas legales, no solo un firmador de PDFs planos. Puedes construir documentos profesionales desde cero, personalizarlos, aplicar tu logo y firmarlos con conformidad ESIGN. Además, la verificación biométrica nativa con selfie + documento de identidad crea un bloque de auditoría embebido que las plataformas tradicionales cobran aparte. Planes premium desde $79.99/mes.'
+          a: 'Codec Document ofrece un editor inteligente gratuito de plantillas legales, no solo un firmador de PDFs planos. Puedes construir documentos profesionales desde cero, personalizarlos, aplicar tu logo y firmarlos con conformidad ESIGN. Además, la verificación biométrica nativa con selfie + documento de identidad crea un bloque de auditoría embebido que las plataformas tradicionales cobran aparte. Planes premium desde $29.99/mes.'
         },
         {
           q: '¿Las firmas electrónicas son legalmente válidas en EE. UU.?',

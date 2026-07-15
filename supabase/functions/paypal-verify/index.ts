@@ -53,12 +53,12 @@ const DOCUMENT_PRICES: Record<string, number> = {
 };
 const DEFAULT_DOC_PRICE = 7.0;
 const BUNDLE_PRICE = 12.0;
-const SIG_SINGLE_PRICE = 3.0;
-const SIG_MONTHLY_PRICE = 50.0;
+const SIG_SINGLE_PRICE = 2.99;
+const SIG_MONTHLY_PRICE = 19.99;
 const SUBSCRIPTION_PLANS: Record<string, { amount: number; days: number }> = {
-  sub_monthly: { amount: 79.99, days: 30 },
-  sub_semiannual: { amount: 269.99, days: 182 },
-  sub_annual: { amount: 519.99, days: 365 },
+  sub_monthly: { amount: 29.99, days: 30 },
+  sub_semiannual: { amount: 134.99, days: 182 },
+  sub_annual: { amount: 251.99, days: 365 },
 };
 
 type Product =

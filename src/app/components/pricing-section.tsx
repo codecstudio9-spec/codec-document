@@ -13,6 +13,8 @@ type Product = {
   price: string;
   titleEs: string;
   titleEn: string;
+  taglineEs: string;
+  taglineEn: string;
   descriptionEs: string[];
   descriptionEn: string[];
   featured?: boolean;
@@ -22,25 +24,37 @@ type Product = {
   savingsLabelEn: string;
 };
 
+// Same feature set across all 3 plans — only price/term differ.
+const SHARED_FEATURES_EN = [
+  'Access to all legal document templates',
+  'Electronic signatures included',
+  'Identity verification',
+  'Audit trail',
+  'QR remote signing',
+  'PDF generation and download',
+  'Cloud access',
+];
+const SHARED_FEATURES_ES = [
+  'Acceso a todas las plantillas de documentos legales',
+  'Firmas electrónicas incluidas',
+  'Verificación de identidad',
+  'Registro de auditoría',
+  'Firma remota por QR',
+  'Generación y descarga de PDF',
+  'Acceso en la nube',
+];
+
 const PRODUCTS: Product[] = [
   {
     hostedButtonId: '57ERMWNY3UGQ8',
     planId: 'monthly',
-    price: '$79.99',
+    price: '$29.99',
     titleEs: 'Plan Mensual',
     titleEn: 'Monthly Plan',
-    descriptionEs: [
-      'Acceso total a plantillas premium',
-      'Firmas remotas ilimitadas por QR',
-      'Verificación biométrica de identidad',
-      'Soporte prioritario',
-    ],
-    descriptionEn: [
-      'Full access to all premium templates',
-      'Unlimited remote QR signatures',
-      'Biometric identity verification',
-      'Priority support',
-    ],
+    taglineEs: 'Creación ilimitada de documentos',
+    taglineEn: 'Unlimited document creation',
+    descriptionEs: SHARED_FEATURES_ES,
+    descriptionEn: SHARED_FEATURES_EN,
     glow: 'rgba(59,130,246,0.45)',
     icon: 'sparkles',
     savingsLabelEs: 'Ideal para empezar hoy',
@@ -49,49 +63,33 @@ const PRODUCTS: Product[] = [
   {
     hostedButtonId: '6TN8ZW2A8CG24',
     planId: 'semiannual',
-    price: '$269.99',
+    price: '$134.99',
     titleEs: 'Plan 6 Meses',
     titleEn: '6-Month Plan',
-    descriptionEs: [
-      'Todo el plan mensual incluido',
-      'Ahorra vs. mensual',
-      'Ideal para equipos en crecimiento',
-      'Historial documental completo',
-    ],
-    descriptionEn: [
-      'Everything in Monthly included',
-      'Save vs. monthly billing',
-      'Great for growing teams',
-      'Complete document history',
-    ],
+    taglineEs: 'Ahorra 25% frente al plan mensual',
+    taglineEn: 'Save 25% compared to monthly billing',
+    descriptionEs: SHARED_FEATURES_ES,
+    descriptionEn: SHARED_FEATURES_EN,
     featured: true,
     glow: 'rgba(37,99,235,0.70)',
     icon: 'zap',
-    savingsLabelEs: 'MÁS POPULAR',
-    savingsLabelEn: 'MOST POPULAR',
+    savingsLabelEs: 'AHORRA 25%',
+    savingsLabelEn: 'SAVE 25%',
   },
   {
     hostedButtonId: 'VX6Q5YJ49S5JE',
     planId: 'annual',
-    price: '$519.99',
+    price: '$251.99',
     titleEs: 'Plan Anual',
     titleEn: 'Annual Plan',
-    descriptionEs: [
-      'Ahorro máximo anual',
-      'Experiencia legal premium completa',
-      'Workspace en la nube ilimitado',
-      'Ruta recomendada para uso continuo',
-    ],
-    descriptionEn: [
-      'Maximum annual savings',
-      'Complete premium legal experience',
-      'Unlimited cloud workspace',
-      'Recommended for continuous use',
-    ],
+    taglineEs: 'El mejor valor — ahorra 30%',
+    taglineEn: 'Best value — Save 30%',
+    descriptionEs: SHARED_FEATURES_ES,
+    descriptionEn: SHARED_FEATURES_EN,
     glow: 'rgba(245,158,11,0.60)',
     icon: 'shield',
-    savingsLabelEs: 'MEJOR VALOR',
-    savingsLabelEn: 'BEST VALUE',
+    savingsLabelEs: 'AHORRA 30%',
+    savingsLabelEn: 'SAVE 30%',
   },
 ];
 
@@ -298,8 +296,8 @@ export function PricingSection() {
           </p>
           <p className="mt-1 text-xs text-emerald-200/60">
             {language === 'en'
-              ? '1 intelligent document every 72h · 1 free e-signature per day · Full template editor access'
-              : '1 documento inteligente cada 72h · 1 firma gratuita por día · Acceso completo al editor de plantillas'}
+              ? '1 intelligent document + 1 free e-signature every 72h · Full template editor access'
+              : '1 documento inteligente + 1 firma gratuita cada 72h · Acceso completo al editor de plantillas'}
           </p>
         </div>
 
@@ -341,6 +339,9 @@ export function PricingSection() {
 
                 <h3 className="text-2xl font-bold text-white">{language === 'en' ? product.titleEn : product.titleEs}</h3>
                 <p className="mt-2 text-4xl font-extrabold text-white">{product.price}</p>
+                <p className="mt-1 text-sm font-medium text-blue-300">
+                  {language === 'en' ? product.taglineEn : product.taglineEs}
+                </p>
 
                 <ul className="mt-4 space-y-2 text-sm text-slate-200">
                   {(language === 'en' ? product.descriptionEn : product.descriptionEs).map((benefit) => (

@@ -139,7 +139,7 @@ export const DOCUMENT_PRICES: Record<string, number> = {
   'independent-contractor': 9.99,
   'service-agreement':      9.99,
 };
-export const STANDALONE_SIG_PRICE = 3.00;
+export const STANDALONE_SIG_PRICE = 2.99;
 export const DEFAULT_DOC_PRICE    = 7.00;
 
 export function getDocumentPrice(documentId: string): number {
@@ -151,21 +151,21 @@ export function getDocumentPrice(documentId: string): number {
 export const PAYPAL_SUBSCRIPTION_PLANS = {
   monthly: {
     planId:  (import.meta.env.VITE_PAYPAL_PLAN_MONTHLY    as string) || '',
-    price:   79.99,
+    price:   29.99,
     period:  '1 month'  as const,
     savings: null       as null,
   },
   semiannual: {
     planId:  (import.meta.env.VITE_PAYPAL_PLAN_SEMIANNUAL as string) || '',
-    price:   269.99,
+    price:   134.99,
     period:  '6 months' as const,
-    savings: 'Save 44%' as string | null,
+    savings: 'Save 25%' as string | null,
   },
   annual: {
     planId:  (import.meta.env.VITE_PAYPAL_PLAN_ANNUAL     as string) || '',
-    price:   519.99,
+    price:   251.99,
     period:  '1 year'   as const,
-    savings: 'Best Value' as string | null,
+    savings: 'Best value — Save 30%' as string | null,
   },
 } as const;
 

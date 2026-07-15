@@ -37,13 +37,13 @@ export function StructuredData() {
           price: '0',
           priceCurrency: 'USD',
           description:
-            '2 free legal documents and 2 free e-signatures per day. Full access to intelligent template editor. No credit card required.',
+            '2 free legal documents and 2 free e-signatures every 72 hours. Full access to intelligent template editor. No credit card required.',
           eligibleRegion: { '@type': 'Country', name: 'United States' },
         },
         {
           '@type': 'Offer',
           name: 'Monthly Plan',
-          price: '79.99',
+          price: '29.99',
           priceCurrency: 'USD',
           description:
             'Unlimited legal documents, unlimited e-signatures, cloud workspace, priority support.',
@@ -71,7 +71,7 @@ export function StructuredData() {
         '@type': 'AggregateOffer',
         priceCurrency: 'USD',
         lowPrice: '0',
-        highPrice: '519.99',
+        highPrice: '251.99',
         offerCount: '4',
       },
       aggregateRating: {
@@ -164,7 +164,7 @@ export function StructuredData() {
           name: 'How does Codec Document compare to DocuSign or PandaDoc?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $79.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
+            text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
           },
         },
         {
