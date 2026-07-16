@@ -476,20 +476,32 @@ export function GuestSignPage() {
 
   // ─── Load PDF with pdfjs when tokenData is ready ──────────────────────────────
   useEffect(() => {
-    const url = tokenData?.originalPdfUrl;
-    if (!url) return;
+    if (!tokenData) return;
+    const url = tokenData.originalPdfUrl;
     let cancelled = false;
     setPdfLoading(true);
     setPdfError('');
+
+    // This used to be `if (!url) return;` BEFORE any state was touched —
+    // for a real document whose row has no original_pdf_url (upload never
+    // finished, or it's genuinely null), that silently exited the whole
+    // effect with pdfLoading=false, pdfError='', pdfDoc=null. None of the
+    // three render branches below match that combination, so the viewer
+    // rendered nothing at all and never even attempted a network request
+    // — exactly "blank with zero console errors," because nothing async
+    // ever ran to log one. Now it's treated as a real failure instead.
+    if (!url || !url.trim()) {
+      console.error('guest-sign-page: tokenData.originalPdfUrl is empty — the documents row has no PDF URL to load. tokenData:', tokenData);
+      setPdfError('Este documento no tiene un archivo PDF asociado.');
+      setPdfLoading(false);
+      setTimeout(() => setHasScrolledToEnd(true), 2000);
+      return () => { cancelled = true; };
+    }
 
     const load = async (src: string) => {
       const doc: any = await pdfjsLib.getDocument({ url: src, withCredentials: false }).promise;
       return doc;
     };
-
-    if (!url.trim()) {
-      console.error('guest-sign-page: tokenData.originalPdfUrl is empty — the documents row has no PDF URL to load.');
-    }
 
     (async () => {
       try {
@@ -958,19 +970,33 @@ export function GuestSignPage() {
             )}
 
             {!pdfLoading && pdfError && (
-              <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <AlertCircle className="size-7 text-amber-400" />
                 <p className="text-sm text-slate-500">{pdfError}</p>
                 {tokenData.originalPdfUrl && (
-                  <a
-                    href={tokenData.originalPdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                  >
-                    <ExternalLink className="size-4" />
-                    Ver documento en nueva pestaña
-                  </a>
+                  <>
+                    {/* Last-resort bypass: the browser's own native PDF
+                        plugin renders inside an <iframe> via a completely
+                        different code path than pdfjs's fetch+canvas
+                        pipeline, so it can succeed even when that one
+                        fails. Not interactive for tap-to-place, but at
+                        least Ingrid can read the document — the "Continuar
+                        a Firmar" button below still unlocks either way. */}
+                    <iframe
+                      src={tokenData.originalPdfUrl}
+                      title="Vista previa del documento"
+                      className="h-[60vh] w-full rounded-xl border border-slate-200"
+                    />
+                    <a
+                      href={tokenData.originalPdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      <ExternalLink className="size-4" />
+                      Ver documento en nueva pestaña
+                    </a>
+                  </>
                 )}
               </div>
             )}
