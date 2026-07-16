@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { Search, FileText, Home, Briefcase, Building2, DollarSign, Globe, ArrowRight } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { documentTemplates, categories } from '../../data/templates';
+import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const CATEGORY_ICON: Record<string, typeof FileText> = {
   'Estate Planning & Personal': FileText,
@@ -90,7 +92,7 @@ function TemplatesContent() {
       {/* Template cards */}
       <div className="mt-4 space-y-3">
         {filtered.length === 0 ? (
-          <div className="rounded-2xl bg-white px-4 py-10 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+          <div className="bg-white px-4 py-10 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <Search className="mx-auto mb-2 size-6 text-slate-300" />
             <p className="text-sm font-semibold text-slate-500">Sin resultados</p>
           </div>
@@ -98,12 +100,13 @@ function TemplatesContent() {
           filtered.map((t) => {
             const Icon = CATEGORY_ICON[t.category] ?? FileText;
             return (
-              <button
+              <motion.button
                 key={t.id}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => navigate(`/generator/${t.id}`)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left transition active:scale-[0.98]"
-                style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
+                className="flex w-full items-center gap-3 bg-white p-4 text-left"
+                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
                   <Icon className="size-5 text-indigo-600" />
@@ -118,7 +121,7 @@ function TemplatesContent() {
                 >
                   <ArrowRight className="size-4 text-blue-600" />
                 </span>
-              </button>
+              </motion.button>
             );
           })
         )}

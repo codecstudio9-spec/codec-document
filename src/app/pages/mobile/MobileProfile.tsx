@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchUserPlanInfo, type UserPlanInfo } from '../../services/mobile-dashboard-service';
+import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const PLAN_LABEL: Record<string, string> = {
   monthly: 'Plan Mensual',
@@ -48,7 +50,7 @@ function ProfileContent() {
   if (!user) {
     return (
       <div>
-        <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+        <div className="px-4 pb-8 pt-6" style={{ background: BLUE_GRADIENT }}>
           <h1 className="text-xl font-black text-white">Perfil</h1>
         </div>
         <MobileSignInPrompt
@@ -65,7 +67,7 @@ function ProfileContent() {
       {/* Blue header block — avatar/name/email in white on the brand
           color, same treatment as Plantillas/Firmas, instead of a plain
           white card indistinguishable from the rest of the page. */}
-      <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+      <div className="px-4 pb-8 pt-6" style={{ background: BLUE_GRADIENT }}>
         <h1 className="mb-4 text-xl font-black text-white">Perfil</h1>
         <div className="flex items-center gap-3">
           {user?.picture ? (
@@ -86,10 +88,11 @@ function ProfileContent() {
       {/* Plan card — pulled up to overlap the header block for the
           "floating card" look Stripe/Revolut dashboards use. */}
       <div
-        className="-mt-5 rounded-2xl p-4"
+        className="-mt-5 p-4"
         style={{
-          background: isPremium ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' : '#FFFFFF',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+          background: isPremium ? DARK_GRADIENT : '#FFFFFF',
+          borderRadius: CARD_RADIUS,
+          boxShadow: isPremium ? '0 20px 40px rgba(15,23,42,0.22)' : CARD_SHADOW,
         }}
       >
         <div className="flex items-center justify-between">
@@ -110,14 +113,15 @@ function ProfileContent() {
           </p>
         )}
         {!isPremium && (
-          <button
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             type="button"
             onClick={() => navigate('/#plan-ultimate')}
-            className="mt-3 w-full rounded-xl py-2.5 text-xs font-bold text-white transition active:scale-[0.98]"
-            style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}
+            className="mt-3 w-full rounded-xl py-2.5 text-xs font-bold text-white"
+            style={{ background: BLUE_GRADIENT }}
           >
             Ver planes
-          </button>
+          </motion.button>
         )}
       </div>
 
@@ -128,32 +132,34 @@ function ProfileContent() {
           { icon: Settings, label: 'Ajustes', onClick: () => {} },
           { icon: Bell, label: 'Notificaciones', onClick: () => {} },
         ].map(({ icon: Icon, label, onClick }) => (
-          <button
+          <motion.button
             key={label}
+            whileTap={{ scale: 0.98 }}
             type="button"
             onClick={onClick}
-            className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left transition active:scale-[0.98]"
-            style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
+            className="flex w-full items-center gap-3 bg-white p-4 text-left"
+            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
           >
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
               <Icon className="size-4 text-slate-500" />
             </div>
             <span className="flex-1 text-sm font-semibold text-slate-800">{label}</span>
             <ChevronRight className="size-4 text-slate-300" />
-          </button>
+          </motion.button>
         ))}
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.98 }}
           type="button"
           onClick={() => void handleLogout()}
-          className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left transition active:scale-[0.98]"
-          style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
+          className="flex w-full items-center gap-3 bg-white p-4 text-left"
+          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
         >
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ background: '#FEF2F2' }}>
             <LogOut className="size-4" style={{ color: '#EF4444' }} />
           </div>
           <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>Cerrar sesión</span>
-        </button>
+        </motion.button>
       </div>
       </div>
     </div>

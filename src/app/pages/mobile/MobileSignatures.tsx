@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { PenLine, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchMySignTransactions } from '../../services/mobile-dashboard-service';
 import { isActiveTxStatus, type SignTransaction } from '../../services/sign-transaction-service';
+import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const DOC_TYPE_LABEL: Record<string, string> = {
   'residential-lease': 'Contrato de arrendamiento',
@@ -42,7 +44,7 @@ function SignaturesContent() {
   if (!user) {
     return (
       <div>
-        <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+        <div className="px-4 pb-8 pt-6" style={{ background: DARK_GRADIENT }}>
           <h1 className="text-xl font-black text-white">Firmas</h1>
           <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
         </div>
@@ -59,14 +61,14 @@ function SignaturesContent() {
     <div>
       {/* Dark header block — same mixed light/dark treatment as
           Plantillas (blue) and Perfil (blue), this one navy for variety. */}
-      <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+      <div className="px-4 pb-8 pt-6" style={{ background: DARK_GRADIENT }}>
         <h1 className="text-xl font-black text-white">Firmas</h1>
         <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
       </div>
 
       <div className="px-4">
       {/* Tabs — pulled up to overlap the header, floating-card look */}
-      <div className="-mt-5 flex gap-2 rounded-2xl bg-white p-1.5" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+      <div className="-mt-5 flex gap-2 bg-white p-1.5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
         <button
           type="button"
           onClick={() => setTab('pending')}
@@ -89,10 +91,10 @@ function SignaturesContent() {
       <div className="mt-4 space-y-2.5">
         {txs === null ? (
           [0, 1, 2].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-white" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }} />
+            <div key={i} className="h-20 animate-pulse bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }} />
           ))
         ) : list.length === 0 ? (
-          <div className="rounded-2xl bg-white px-4 py-10 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+          <div className="bg-white px-4 py-10 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             {tab === 'pending' ? (
               <>
                 <Clock className="mx-auto mb-2 size-7 text-slate-300" />
@@ -117,12 +119,13 @@ function SignaturesContent() {
             const isSigned = tx.status === 'completed';
             const label = DOC_TYPE_LABEL[tx.document_type] || tx.document_type;
             return (
-              <button
+              <motion.button
                 key={tx.id}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => navigate(`/sign/${tx.id}`)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left transition active:scale-[0.98]"
-                style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
+                className="flex w-full items-center gap-3 bg-white p-4 text-left"
+                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
                 <div
                   className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
@@ -142,7 +145,7 @@ function SignaturesContent() {
                 >
                   {isSigned ? 'Firmado' : 'Pendiente'}
                 </span>
-              </button>
+              </motion.button>
             );
           })
         )}
@@ -150,18 +153,19 @@ function SignaturesContent() {
       </div>
 
       {/* Floating action — start a new signature request */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.9 }}
         type="button"
         onClick={() => navigate('/app/templates')}
-        className="fixed flex items-center justify-center text-white transition active:scale-90"
+        className="fixed flex items-center justify-center text-white"
         style={{
           bottom: 96, right: 20, width: 56, height: 56, borderRadius: 18,
-          background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-          boxShadow: '0 10px 24px rgba(37,99,235,0.4)',
+          background: BLUE_GRADIENT,
+          boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
         }}
       >
         <PenLine className="size-5" />
-      </button>
+      </motion.button>
     </div>
   );
 }

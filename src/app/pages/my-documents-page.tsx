@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, FileText, Lock, Pencil, Download, ShieldCheck, Trash2, Check, X, Plus, HardDrive, PenLine } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { useIsMobile } from '../hooks/use-is-mobile';
 import {
   fetchUserDocuments, renameDocument, deleteDocumentRecord, type UserDocument,
   fetchAssociatedDocuments, type AssociatedDocument,
@@ -31,6 +32,15 @@ export function MyDocumentsPage() {
       .then(([userDocs, linked]) => { setDocs(userDocs); setAssociatedDocs(linked); })
       .finally(() => setLoading(false));
   }, [session?.user?.id]);
+
+  // This desktop document list has a direct equivalent in the mobile app
+  // shell (Documentos tab) — send mobile visitors there instead of the
+  // desktop layout, same redirect-not-adapt approach as "/" and "/dashboard".
+  const isMobile = useIsMobile();
+  useEffect(() => {
+    if (isMobile) navigate('/app/documents', { replace: true });
+  }, [isMobile, navigate]);
+  if (isMobile) return null;
 
   const startRename = (doc: UserDocument) => {
     setRenamingId(doc.id);

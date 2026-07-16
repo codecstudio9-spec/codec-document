@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { Plus, FileText, Download, Check, Clock, FileEdit } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
+import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 type UnifiedDoc = {
   id: string;
@@ -105,10 +107,10 @@ function DocumentsContent() {
       <div className="mt-4 space-y-2.5">
         {docs === null ? (
           [0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-white" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }} />
+            <div key={i} className="h-16 animate-pulse bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }} />
           ))
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl bg-white px-4 py-10 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+          <div className="bg-white px-4 py-10 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <FileText className="mx-auto mb-2 size-7 text-slate-300" />
             <p className="text-sm font-semibold text-slate-500">Nada por aquí todavía</p>
           </div>
@@ -121,10 +123,11 @@ function DocumentsContent() {
                 ? { color: '#6B7280', bg: '#F1F5F9', label: 'Borrador' }
                 : { color: '#F59E0B', bg: '#FFFBEB', label: 'Pendiente' };
             return (
-              <div
+              <motion.div
                 key={doc.id}
-                className="flex items-center gap-3 rounded-2xl bg-white p-4"
-                style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 bg-white p-4"
+                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
                   <FileText className="size-5 text-indigo-500" />
@@ -152,29 +155,30 @@ function DocumentsContent() {
                     <Download className="size-4 text-slate-500" />
                   </a>
                 )}
-              </div>
+              </motion.div>
             );
           })
         )}
       </div>
 
       {/* Floating create button */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.9 }}
         type="button"
         onClick={() => navigate('/app/templates')}
-        className="fixed flex items-center justify-center text-white transition active:scale-90"
+        className="fixed flex items-center justify-center text-white"
         style={{
           bottom: 96,
           right: 20,
           width: 56,
           height: 56,
           borderRadius: 18,
-          background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-          boxShadow: '0 10px 24px rgba(37,99,235,0.4)',
+          background: BLUE_GRADIENT,
+          boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
         }}
       >
         <Plus className="size-6" />
-      </button>
+      </motion.button>
     </div>
   );
 }

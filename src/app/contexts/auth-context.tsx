@@ -28,6 +28,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Where to send the browser after Google OAuth / magic-link completes —
+ * a mobile viewport belongs in the /app bottom-nav shell, not the desktop
+ * "/dashboard" document list. Read synchronously at click time (not a
+ * hook) since this only runs inside a plain async function. */
+function postLoginPath(): string {
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+  return isMobile ? '/app' : '/dashboard';
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -62,7 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        // Dynamic origin so this always targets whatever domain the app is
+        // running on (localhost in dev, the Vercel domain in prod) — this
+        // alone isn't enough for Supabase to honor it though: the exact
+        // origin must also be present in Supabase Dashboard → Auth → URL
+        // Configuration → Redirect URLs, or Supabase silently falls back
+        // to the configured Site URL instead of this value.
+        redirectTo: `${window.location.origin}${postLoginPath()}`,
       },
     });
     if (error) throw error;
@@ -79,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithMagicLink = async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      options: { emailRedirectTo: `${window.location.origin}${postLoginPath()}` },
     });
     if (error) throw error;
   };

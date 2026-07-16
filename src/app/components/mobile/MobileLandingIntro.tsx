@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { FileText, PenLine, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
 import { useMobileSignIn } from './MobileAppShell';
+import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const QUICK_CARDS = [
   { icon: FileText, labelEs: 'Documentos', labelEn: 'Documents', href: '/app/templates' },
@@ -23,7 +25,7 @@ export function MobileLandingIntro() {
   const openSignIn = useMobileSignIn();
 
   return (
-    <div className="px-4 pb-8 pt-6" style={{ background: '#F8FAFC' }}>
+    <div className="px-4 pb-8 pt-6">
       <div>
         <h1 className="text-2xl font-black leading-tight text-slate-900">
           {language === 'en' ? 'Legal documents, done right' : 'Documentos legales, bien hechos'}
@@ -42,46 +44,49 @@ export function MobileLandingIntro() {
       </div>
 
       <div className="mt-5 space-y-2.5">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           type="button"
           onClick={() => navigate('/app/templates')}
-          className="flex w-full items-center justify-center gap-2 text-white transition active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 text-white"
           style={{
-            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+            background: BLUE_GRADIENT,
             borderRadius: 16,
             height: 56,
             fontWeight: 700,
             fontSize: 15,
-            boxShadow: '0 10px 24px rgba(37,99,235,0.35)',
+            boxShadow: '0 14px 28px rgba(37,99,235,0.35)',
           }}
         >
           {language === 'en' ? 'Create document' : 'Crear documento'} <ArrowRight className="size-4" />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           type="button"
           onClick={() => navigate('/app/templates')}
-          className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 transition active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700"
           style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14 }}
         >
           {language === 'en' ? 'View templates' : 'Ver plantillas'}
-        </button>
+        </motion.button>
       </div>
 
       {/* Quick cards */}
       <div className="mt-6 grid grid-cols-2 gap-3">
         {QUICK_CARDS.map(({ icon: Icon, labelEs, labelEn, href }) => (
-          <button
+          <motion.button
             key={labelEs}
+            whileTap={{ scale: 0.97 }}
             type="button"
             onClick={() => navigate(href)}
-            className="flex flex-col items-start gap-2.5 rounded-2xl bg-white p-4 text-left transition active:scale-[0.97]"
-            style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
+            className="flex flex-col items-start gap-2.5 bg-white p-4 text-left"
+            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
           >
             <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-50">
               <Icon className="size-4.5 text-indigo-600" />
             </div>
             <span className="text-sm font-bold text-slate-900">{language === 'en' ? labelEn : labelEs}</span>
-          </button>
+          </motion.button>
         ))}
       </div>
 
