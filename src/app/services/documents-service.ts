@@ -71,26 +71,11 @@ export async function deleteDocumentRecord(documentId: string): Promise<void> {
 // Two sources, unioned:
 //  1. `documents.user_id` — set via DEFAULT auth.uid() at insert time, so
 //     this always finds documents this user directly created/uploaded.
-//     Works immediately, no extra setup.
-//  2. `profile_documents` — an OPTIONAL link table that guest-sign-page.tsx
-//     already tries to write to (so a signed-as-guest document also shows
-//     up here even when the signer isn't the document's `user_id`). It
-//     does not exist in the database yet (confirmed via a live query:
-//     PGRST205 "Could not find the table 'public.profile_documents'"), so
-//     until it's created this branch quietly contributes nothing — see the
-//     CREATE TABLE statement below. Run it once in Supabase SQL Editor to
-//     enable the guest-signed-elsewhere case; owned documents work already.
-//
-// CREATE TABLE IF NOT EXISTS public.profile_documents (
-//   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-//   profile_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-//   document_id   uuid NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
-//   role          text NOT NULL DEFAULT 'signer',
-//   associated_at timestamptz NOT NULL DEFAULT now()
-// );
-// ALTER TABLE public.profile_documents ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "profile_documents_own" ON public.profile_documents
-//   FOR ALL USING (auth.uid() = profile_id) WITH CHECK (auth.uid() = profile_id);
+//  2. `profile_documents` — a link table for "documents I signed as a
+//     guest on someone else's document" (signer isn't the row's
+//     `user_id`). Created, and `documents`' RLS tightened to match, by
+//     supabase_lockdown_documents_migration.sql (run once in Supabase
+//     SQL Editor) — see that file for the exact schema/policies.
 export interface AssociatedDocument {
   id: string;
   name: string;
