@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle, ChevronLeft, ChevronRight, Loader, MousePointerClick } from 'lucide-react';
-import { DraggableSignature } from './DraggableSignature';
+import { CheckCircle, Loader, MousePointerClick } from 'lucide-react';
+import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
 
 interface GuestSignaturePlacerProps {
@@ -18,77 +18,73 @@ interface GuestSignaturePlacerProps {
    * fallback: if pdfjs's own canvas render throws (a real-world risk on
    * some mobile browsers/webviews independent of network/CORS), an
    * <iframe> using the browser's native PDF viewer fills the same spot
-   * instead of a blank canvas. Tap-to-place, drag and resize keep working
-   * identically either way — they're computed from the container's
+   * instead of a blank canvas. Tap-to-place and drag keep working
+   * identically either way — they're computed from each page's own
    * bounding box, not from canvas pixels. */
   fallbackPdfUrl?: string;
 }
 
 const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
-const DEFAULT_W = 0.42;
-const DEFAULT_H = 0.16;
+const DEFAULT_W = 0.32;
+const DEFAULT_H = 0.09;
 
 /**
  * Adobe-Sign-style placement: the guest already drew/typed their
- * signature (via SignatureModal, before this mounts). Here they scroll
- * through the FULL document — every page, PC or mobile — tap wherever
- * they want to sign, and the signature appears right there. From then
- * on it behaves like any DraggableSignature: drag to reposition, drag
- * the corner handle to resize, and whatever is on screen when they hit
- * "Confirmar firma" is exactly what gets baked into the final PDF.
+ * signature (via SignatureModal, before this mounts). Every page of the
+ * document renders stacked in one continuous, near-full-height scroll —
+ * no "page 1 of 2" buttons to miss — they scroll through the whole thing
+ * like a real PDF viewer, tap wherever they want to sign, and just the
+ * signature image appears right there, draggable. Whatever's on screen
+ * when they hit "Confirmar firma" is exactly what gets baked into the
+ * final PDF.
  */
 export function GuestSignaturePlacer({
   pdfDoc, pageCount, signatureDataUrl, signerName, onConfirm, isLoading, fallbackPdfUrl,
 }: GuestSignaturePlacerProps) {
-  const [activePage, setActivePage] = useState(pageCount || 1);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [renderFailed, setRenderFailed] = useState(false);
-  const [placement, setPlacement]   = useState<PlacedSignature | null>(null);
+  const [placement, setPlacement] = useState<PlacedSignature | null>(null);
 
-  const canvasRef       = useRef<HTMLCanvasElement | null>(null);
-  const containerRef    = useRef<HTMLDivElement | null>(null);
-  const renderedPageRef = useRef(0);
-
-  // pageCount arrives as a prop, sometimes after this component's first
-  // render (e.g. if it mounts a beat before the parent's page-count state
-  // settles) — useState(pageCount) alone would freeze activePage at
-  // whatever pageCount was on that very first render, permanently, even
-  // once the real value shows up. Re-sync explicitly instead.
-  useEffect(() => {
-    if (pageCount > 0 && activePage === 0) setActivePage(pageCount);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageCount]);
+  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const renderedPagesRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     setRenderFailed(false);
-    if (!pdfDoc || activePage === 0 || pageCount === 0) return;
-    if (renderedPageRef.current === activePage) return;
-    const render = async () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      try {
-        const page = await pdfDoc.getPage(activePage);
-        const vp = page.getViewport({ scale: 1.8 });
-        canvas.width = vp.width;
-        canvas.height = vp.height;
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('canvas 2D context unavailable');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        renderedPageRef.current = activePage;
-      } catch (e) {
-        console.error(`GuestSignaturePlacer: page ${activePage} failed to render, falling back to iframe:`, e);
-        setRenderFailed(true);
-      } finally {
-        setPdfLoading(false);
-      }
-    };
-    void render();
-  }, [activePage, pageCount, pdfDoc]);
+    renderedPagesRef.current = new Set();
+    if (!pdfDoc || pageCount === 0) return;
 
-  const placeAt = (xFraction: number, yFraction: number) => {
+    let cancelled = false;
+    const renderAll = async () => {
+      for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+        if (cancelled) return;
+        const canvas = canvasRefs.current.get(pageNum);
+        if (!canvas) continue;
+        try {
+          const page = await pdfDoc.getPage(pageNum);
+          const vp = page.getViewport({ scale: 1.8 });
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('canvas 2D context unavailable');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          renderedPagesRef.current.add(pageNum);
+        } catch (e) {
+          console.error(`GuestSignaturePlacer: page ${pageNum} failed to render, falling back to iframe:`, e);
+          if (!cancelled) setRenderFailed(true);
+        }
+      }
+      if (!cancelled) setPdfLoading(false);
+    };
+    void renderAll();
+
+    return () => { cancelled = true; };
+  }, [pageCount, pdfDoc]);
+
+  const placeAt = (pageNum: number, xFraction: number, yFraction: number) => {
     setPlacement({
       id: `guest-${Date.now()}`,
       signerId: 'guest',
@@ -97,7 +93,7 @@ export function GuestSignaturePlacer({
       color: '#4f46e5',
       imageDataUrl: signatureDataUrl,
       storageUrl: '',
-      page: activePage,
+      page: pageNum,
       xFraction: clamp(DEFAULT_W / 2, 1 - DEFAULT_W / 2, xFraction),
       yFraction: clamp(DEFAULT_H / 2, 1 - DEFAULT_H / 2, yFraction),
       widthFraction: DEFAULT_W,
@@ -107,119 +103,92 @@ export function GuestSignaturePlacer({
     });
   };
 
-  // Tap-to-place: only fires when nothing is placed on this page yet —
-  // once it exists, taps on the page shouldn't relocate it (that's what
-  // dragging the handle bar is for) or every accidental tap would move it.
-  const handlePageTap = (e: React.PointerEvent<HTMLDivElement>) => {
+  // Tap-to-place: only fires when nothing is placed anywhere yet — once it
+  // exists, taps on a page shouldn't relocate it (that's what dragging is
+  // for) or every accidental tap would move it.
+  const handlePageTap = (pageNum: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (placement) return;
-    const rect = containerRef.current?.getBoundingClientRect();
+    const rect = pageContainerRefs.current.get(pageNum)?.getBoundingClientRect();
     if (!rect) return;
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    placeAt(x, y);
+    placeAt(pageNum, x, y);
   };
-
-  const visiblePlacement = placement?.page === activePage ? placement : null;
 
   return (
     <div className="space-y-3">
-      {/* Page nav — full document is browsable, not locked to one page */}
-      {pageCount > 1 && (
-        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-          <button
-            type="button"
-            onClick={() => setActivePage((p) => Math.max(1, p - 1))}
-            disabled={activePage <= 1}
-            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-40"
-          >
-            <ChevronLeft className="size-3.5" />Anterior
-          </button>
-          <span className="text-xs font-semibold text-slate-700">
-            Página <span className="text-indigo-600">{activePage}</span>{' '}
-            <span className="text-slate-400">de {pageCount}</span>
-            {placement && placement.page === activePage && (
-              <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                Firma aquí
-              </span>
-            )}
-          </span>
-          <button
-            type="button"
-            onClick={() => setActivePage((p) => Math.min(pageCount, p + 1))}
-            disabled={activePage >= pageCount}
-            className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-40"
-          >
-            Siguiente<ChevronRight className="size-3.5" />
-          </button>
-        </div>
-      )}
-
       {pdfLoading && (
         <div className="flex min-h-[400px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-500">
           <Loader className="size-5 animate-spin text-indigo-500" />
-          Cargando página {activePage}…
+          Cargando documento…
         </div>
       )}
 
-      <div className={`overflow-y-auto rounded-2xl ${pdfLoading ? 'h-0' : ''}`} style={{ maxHeight: '68vh' }}>
-        <div
-          ref={containerRef}
-          className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${pdfLoading ? 'invisible' : ''}`}
-          style={{ touchAction: placement ? 'pan-y' : 'none' }}
-          onPointerDown={handlePageTap}
-        >
-          {renderFailed && fallbackPdfUrl ? (
-            <iframe
-              src={fallbackPdfUrl}
-              title="Documento"
-              className="block h-[70vh] w-full border-0"
-            />
-          ) : (
-            <canvas ref={canvasRef} className="block w-full" />
-          )}
+      {/* Near-full-height continuous scroll — every page stacked, like a
+          real PDF viewer, instead of one page behind "Anterior/Siguiente"
+          buttons that are easy to miss on a phone. */}
+      <div className={`overflow-y-auto rounded-2xl ${pdfLoading ? 'h-0' : ''}`} style={{ maxHeight: '82vh' }}>
+        <div className="space-y-4">
+          {Array.from({ length: pageCount }, (_, i) => i + 1).map((pageNum) => {
+            const pagePlacement = placement?.page === pageNum ? placement : null;
+            return (
+              <div key={pageNum} className={pdfLoading ? 'invisible' : ''}>
+                {pageCount > 1 && (
+                  <p className="mb-1 text-center text-[11px] font-semibold text-slate-400">
+                    Página {pageNum} de {pageCount}
+                  </p>
+                )}
+                <div
+                  ref={(el) => { if (el) pageContainerRefs.current.set(pageNum, el); }}
+                  className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  style={{ touchAction: placement ? 'pan-y' : 'none' }}
+                  onPointerDown={handlePageTap(pageNum)}
+                >
+                  {renderFailed && fallbackPdfUrl ? (
+                    pageNum === 1 ? (
+                      <iframe src={fallbackPdfUrl} title="Documento" className="block h-[82vh] w-full border-0" />
+                    ) : null
+                  ) : (
+                    <canvas
+                      ref={(el) => { if (el) canvasRefs.current.set(pageNum, el); }}
+                      className="block w-full"
+                    />
+                  )}
 
-          {renderFailed && (
-            <div className="pointer-events-none absolute left-2 top-2 rounded-lg bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-800 shadow-sm">
-              Vista de respaldo — toca igual donde quieras firmar
-            </div>
-          )}
+                  {!pagePlacement && !placement && !pdfLoading && pageNum === 1 && (
+                    <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-6 sm:items-center sm:justify-center">
+                      <div className="relative">
+                        <span className="absolute -inset-1.5 animate-pulse rounded-xl bg-amber-400/50 blur-sm" />
+                        <div className="relative flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-400 px-4 py-2.5 text-slate-900 shadow-lg">
+                          <MousePointerClick className="size-4 shrink-0" />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide leading-none">Firme aquí</p>
+                            <p className="mt-0.5 text-[10px] font-medium leading-none text-slate-700">Toca donde quieras firmar</p>
+                          </div>
+                        </div>
+                        <div className="absolute -bottom-1.5 left-5 size-3 rotate-45 border-b-2 border-r-2 border-amber-500 bg-amber-400" />
+                      </div>
+                    </div>
+                  )}
 
-          {!visiblePlacement && !pdfLoading && (
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-6 sm:items-center sm:justify-center">
-              {/* Classic "sign here" tag — the same yellow flag convention
-                  Adobe Sign / DocuSign use to mark a signature field, with
-                  a pointer tail instead of a full-screen dashed overlay
-                  that blocks the page. Anchored bottom-right on mobile
-                  (where signatures conventionally go); centered as a
-                  general instruction on wider screens. */}
-              <div className="relative">
-                <span className="absolute -inset-1.5 animate-pulse rounded-xl bg-amber-400/50 blur-sm" />
-                <div className="relative flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-400 px-4 py-2.5 text-slate-900 shadow-lg">
-                  <MousePointerClick className="size-4 shrink-0" />
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wide leading-none">Firme aquí</p>
-                    <p className="mt-0.5 text-[10px] font-medium leading-none text-slate-700">Toca donde quieras firmar</p>
-                  </div>
+                  {pagePlacement && (
+                    <SimpleDraggableSignature
+                      sig={pagePlacement}
+                      getContainer={() => pageContainerRefs.current.get(pageNum) ?? null}
+                      onChange={(updates) => setPlacement((prev) => (prev ? { ...prev, ...updates } : prev))}
+                      onDelete={() => setPlacement(null)}
+                    />
+                  )}
                 </div>
-                <div className="absolute -bottom-1.5 left-5 size-3 rotate-45 border-b-2 border-r-2 border-amber-500 bg-amber-400" />
               </div>
-            </div>
-          )}
-
-          {visiblePlacement && (
-            <DraggableSignature
-              sig={visiblePlacement}
-              getContainer={() => containerRef.current}
-              onChange={(updates) => setPlacement((prev) => (prev ? { ...prev, ...updates } : prev))}
-              onDelete={() => setPlacement(null)}
-            />
-          )}
+            );
+          })}
         </div>
       </div>
 
       {placement && (
         <p className="text-center text-xs text-slate-500">
-          ¿No quedó donde querías? Arrástrala por la barra superior o bórrala y toca de nuevo.
+          ¿No quedó donde querías? Arrástrala, o toca la X para borrarla y volver a tocar donde quieras.
         </p>
       )}
 
