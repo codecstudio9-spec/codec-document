@@ -14,6 +14,14 @@ interface GuestSignaturePlacerProps {
   signerName: string;
   onConfirm: (placement: PlacedSignature) => void;
   isLoading?: boolean;
+  /** Same URL the outer read-only preview used. Purely a rendering
+   * fallback: if pdfjs's own canvas render throws (a real-world risk on
+   * some mobile browsers/webviews independent of network/CORS), an
+   * <iframe> using the browser's native PDF viewer fills the same spot
+   * instead of a blank canvas. Tap-to-place, drag and resize keep working
+   * identically either way — they're computed from the container's
+   * bounding box, not from canvas pixels. */
+  fallbackPdfUrl?: string;
 }
 
 const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
@@ -30,17 +38,29 @@ const DEFAULT_H = 0.16;
  * "Confirmar firma" is exactly what gets baked into the final PDF.
  */
 export function GuestSignaturePlacer({
-  pdfDoc, pageCount, signatureDataUrl, signerName, onConfirm, isLoading,
+  pdfDoc, pageCount, signatureDataUrl, signerName, onConfirm, isLoading, fallbackPdfUrl,
 }: GuestSignaturePlacerProps) {
-  const [activePage, setActivePage] = useState(pageCount);
+  const [activePage, setActivePage] = useState(pageCount || 1);
   const [pdfLoading, setPdfLoading] = useState(true);
+  const [renderFailed, setRenderFailed] = useState(false);
   const [placement, setPlacement]   = useState<PlacedSignature | null>(null);
 
   const canvasRef       = useRef<HTMLCanvasElement | null>(null);
   const containerRef    = useRef<HTMLDivElement | null>(null);
   const renderedPageRef = useRef(0);
 
+  // pageCount arrives as a prop, sometimes after this component's first
+  // render (e.g. if it mounts a beat before the parent's page-count state
+  // settles) — useState(pageCount) alone would freeze activePage at
+  // whatever pageCount was on that very first render, permanently, even
+  // once the real value shows up. Re-sync explicitly instead.
   useEffect(() => {
+    if (pageCount > 0 && activePage === 0) setActivePage(pageCount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageCount]);
+
+  useEffect(() => {
+    setRenderFailed(false);
     if (!pdfDoc || activePage === 0 || pageCount === 0) return;
     if (renderedPageRef.current === activePage) return;
     const render = async () => {
@@ -54,12 +74,13 @@ export function GuestSignaturePlacer({
         canvas.style.width = '100%';
         canvas.style.height = 'auto';
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) throw new Error('canvas 2D context unavailable');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         renderedPageRef.current = activePage;
       } catch (e) {
-        console.error(`Page ${activePage}:`, e);
+        console.error(`GuestSignaturePlacer: page ${activePage} failed to render, falling back to iframe:`, e);
+        setRenderFailed(true);
       } finally {
         setPdfLoading(false);
       }
@@ -147,14 +168,39 @@ export function GuestSignaturePlacer({
           style={{ touchAction: placement ? 'pan-y' : 'none' }}
           onPointerDown={handlePageTap}
         >
-          <canvas ref={canvasRef} className="block w-full" />
+          {renderFailed && fallbackPdfUrl ? (
+            <iframe
+              src={fallbackPdfUrl}
+              title="Documento"
+              className="block h-[70vh] w-full border-0"
+            />
+          ) : (
+            <canvas ref={canvasRef} className="block w-full" />
+          )}
+
+          {renderFailed && (
+            <div className="pointer-events-none absolute left-2 top-2 rounded-lg bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-800 shadow-sm">
+              Vista de respaldo — toca igual donde quieras firmar
+            </div>
+          )}
 
           {!visiblePlacement && !pdfLoading && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-              <div className="rounded-2xl border-2 border-dashed border-indigo-300/70 bg-indigo-50/70 px-5 py-4 text-center text-sm text-indigo-600 shadow-sm">
-                <MousePointerClick className="mx-auto mb-1.5 size-5" />
-                <p className="font-bold">Toca el documento donde quieras firmar</p>
-                <p className="text-xs text-indigo-500/80">Después podrás moverla o agrandarla</p>
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-6 sm:items-center sm:justify-center">
+              {/* Classic "sign here" tag — the same yellow flag convention
+                  Adobe Sign / DocuSign use to mark a signature field, with
+                  a pointer tail instead of a full-screen dashed overlay
+                  that blocks the page. Anchored bottom-right on mobile
+                  (where signatures conventionally go); centered as a
+                  general instruction on wider screens. */}
+              <div className="relative">
+                <div className="flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-400 px-4 py-2.5 text-slate-900 shadow-lg">
+                  <MousePointerClick className="size-4 shrink-0" />
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wide leading-none">Firme aquí</p>
+                    <p className="mt-0.5 text-[10px] font-medium leading-none text-slate-700">Toca donde quieras firmar</p>
+                  </div>
+                </div>
+                <div className="absolute -bottom-1.5 left-5 size-3 rotate-45 border-b-2 border-r-2 border-amber-500 bg-amber-400" />
               </div>
             </div>
           )}

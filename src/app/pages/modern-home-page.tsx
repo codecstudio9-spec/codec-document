@@ -235,7 +235,9 @@ export function ModernHomePage() {
               raw.toLowerCase().includes('unacceptable_audience') ||
               raw.toLowerCase().includes('unacceptable audience');
             const message = isAudienceErr
-              ? `Error de configuración Google: el Client ID en Supabase no coincide. Verifica Supabase > Auth > Providers > Google (ID: ${clientId?.slice(0, 20)}…)`
+              ? (language === 'en'
+                  ? 'Google sign-in is temporarily unavailable. Please try again shortly.'
+                  : 'El inicio de sesión con Google no está disponible en este momento. Intenta de nuevo en unos minutos.')
               : raw || (language === 'en' ? 'Google login failed' : 'Falló el login con Google');
             setGoogleError(message);
             toast.error(message);

@@ -437,7 +437,17 @@ export function ElectronicSignaturePage() {
       },
     ].filter(p => Boolean(p.imageDataUrl) || Boolean(p.storageUrl));
 
-    await handleConfirmPositions(placements);
+    // bypassUsageCheck=true: this fires automatically once the guest
+    // finishes their part (Realtime listener / 4s polling fallback above),
+    // merging both signatures into the final PDF. It is not a fresh
+    // voluntary "place my signature" action by the creator — they already
+    // used their turn earlier in handleCreatorSign — so it must never be
+    // gated behind the creator's own signature quota. Without this, a
+    // creator who had exhausted their unrelated quota would see the
+    // compile silently swallowed by the paywall check instead of actually
+    // stamping the document: the signer's status stayed "Pendiente" and
+    // nothing ever got baked into the PDF, with no visible error at all.
+    await handleConfirmPositions(placements, true);
   };
   doAutoCompileRef.current = doAutoCompile;
 
@@ -927,7 +937,7 @@ export function ElectronicSignaturePage() {
                       <Loader className="size-5 shrink-0 animate-spin text-amber-600" />
                       <div>
                         <p className="text-sm font-bold text-amber-800">Sincronización en tiempo real activa</p>
-                        <p className="text-xs text-amber-700">Respaldo automático cada 8 s · Realtime Supabase</p>
+                        <p className="text-xs text-amber-700">Verificación automática cada 4 s · Conexión segura con la base de datos</p>
                       </div>
                     </div>
 

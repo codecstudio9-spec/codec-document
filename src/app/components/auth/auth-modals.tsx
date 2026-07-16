@@ -49,7 +49,7 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
     } catch (e: any) {
       const msg = String(e?.message || '');
       if (msg.toLowerCase().includes('unsupported provider')) {
-        toast.error('Activa Google en Supabase > Authentication > Providers > Google');
+        toast.error('El inicio de sesión con Google no está disponible en este momento. Intenta de nuevo más tarde.');
         return;
       }
       toast.error(msg || 'No se pudo iniciar con Google');

@@ -387,6 +387,7 @@ export function GuestSignPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [pdfPageCount, setPdfPageCount] = useState(0);
+  const [workingPdfUrl, setWorkingPdfUrl] = useState('');
   const [pdfError, setPdfError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
@@ -509,6 +510,7 @@ export function GuestSignPage() {
         if (cancelled) return;
         setPdfDoc(doc);
         setPdfPageCount(doc.numPages);
+        setWorkingPdfUrl(url);
       } catch (directErr) {
         // getPublicUrl() only actually works if the bucket is flagged
         // "Public" in Supabase — if it isn't, this "public" URL 400s for
@@ -523,6 +525,7 @@ export function GuestSignPage() {
           if (cancelled) return;
           setPdfDoc(doc);
           setPdfPageCount(doc.numPages);
+          setWorkingPdfUrl(signedUrl);
         } catch (fallbackErr) {
           if (cancelled) return;
           console.error('guest-sign-page: signed-URL fallback also failed:', fallbackErr);
@@ -1161,6 +1164,7 @@ export function GuestSignPage() {
                 signatureDataUrl={guestSigDataUrl}
                 signerName={guestName || 'Invitado'}
                 isLoading={isSigning}
+                fallbackPdfUrl={workingPdfUrl || tokenData.originalPdfUrl}
                 onConfirm={(placement) => {
                   setShowPlacer(false);
                   void handleSubmitSignature(guestSigDataUrl, placement);
