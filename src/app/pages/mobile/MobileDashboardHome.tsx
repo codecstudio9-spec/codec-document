@@ -4,6 +4,7 @@ import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
+import { MobileLandingIntro } from '../../components/mobile/MobileLandingIntro';
 import { fetchDashboardStats, type DashboardStats } from '../../services/mobile-dashboard-service';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { toast } from 'sonner';
@@ -78,6 +79,21 @@ function DashboardContent() {
     toast.success('Foto capturada. Continúa desde "Subir documento".');
     navigate('/firma-electronica');
   };
+
+  // Signed-out visitor: this IS the mobile home screen for them too — a
+  // compact intro instead of personalized stats, but still inside the
+  // app shell (bottom nav visible, real view navigation, no marketing
+  // scroll page underneath).
+  if (!user) {
+    return (
+      <div>
+        <div className="flex items-center justify-between px-4 pt-5">
+          <Logo size="sm" href="" />
+        </div>
+        <MobileLandingIntro />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-5">

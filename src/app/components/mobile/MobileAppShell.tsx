@@ -1,19 +1,30 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Navigate } from 'react-router';
 import { useAuth } from '../../contexts/auth-context';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { MobileBottomNav } from './MobileBottomNav';
+import { OnboardingModal } from '../auth/OnboardingModal';
+
+const MobileSignInContext = createContext<() => void>(() => {});
+
+/** Lets any /app/* screen (or a component nested inside one) open the
+ * shared sign-in modal without each screen owning its own modal state. */
+export function useMobileSignIn() {
+  return useContext(MobileSignInContext);
+}
 
 /**
- * Layout for every /app/* screen: guards (must be on a real mobile
- * viewport, must be signed in — this whole shell is the "logged-in"
- * experience, the desktop site and the signed-out mobile landing are
- * untouched elsewhere), then renders the screen content with the fixed
- * bottom nav persisted underneath it.
+ * Layout for every /app/* screen — the primary mobile experience now,
+ * for signed-in AND anonymous visitors alike. Only a real mobile viewport
+ * is required; desktop always keeps the traditional landing at "/" (see
+ * modern-home-page.tsx). Each screen decides for itself how to present
+ * itself when there's no user (compact intro on the home screen, sign-in
+ * prompts on the screens that need real account data).
  */
 export function MobileAppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
+  const [signInOpen, setSignInOpen] = useState(false);
 
   if (loading) {
     return (
@@ -24,12 +35,14 @@ export function MobileAppShell({ children }: { children: ReactNode }) {
   }
 
   if (!isMobile) return <Navigate to="/" replace />;
-  if (!user) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen" style={{ background: '#F8FAFC' }}>
-      <div style={{ paddingBottom: 88 }}>{children}</div>
-      <MobileBottomNav />
-    </div>
+    <MobileSignInContext.Provider value={() => setSignInOpen(true)}>
+      <div className="min-h-screen" style={{ background: '#F8FAFC' }}>
+        <div style={{ paddingBottom: 88 }}>{children}</div>
+        <MobileBottomNav />
+      </div>
+      <OnboardingModal open={signInOpen} onOpenChange={setSignInOpen} />
+    </MobileSignInContext.Provider>
   );
 }

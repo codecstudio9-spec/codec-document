@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { PenLine, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
+import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchMySignTransactions } from '../../services/mobile-dashboard-service';
 import { isActiveTxStatus, type SignTransaction } from '../../services/sign-transaction-service';
 
@@ -37,6 +38,22 @@ function SignaturesContent() {
   const pending = (txs ?? []).filter((t) => isActiveTxStatus(t.status));
   const signed = (txs ?? []).filter((t) => t.status === 'completed');
   const list = tab === 'pending' ? pending : signed;
+
+  if (!user) {
+    return (
+      <div>
+        <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+          <h1 className="text-xl font-black text-white">Firmas</h1>
+          <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
+        </div>
+        <MobileSignInPrompt
+          icon={PenLine}
+          title="Inicia sesión para ver tus firmas"
+          description="Aquí verás las solicitudes de firma pendientes y ya firmadas de tu cuenta."
+        />
+      </div>
+    );
+  }
 
   return (
     <div>

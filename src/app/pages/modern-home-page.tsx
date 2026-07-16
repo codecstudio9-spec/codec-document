@@ -9,7 +9,6 @@ import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
 import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
-import { MobileLandingIntro } from '../components/mobile/MobileLandingIntro';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { PricingSection } from '../components/pricing-section';
@@ -70,13 +69,16 @@ export function ModernHomePage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Mobile app-shell: a signed-in visitor on a real mobile viewport gets
-  // the bottom-nav dashboard instead of the landing page — desktop and
-  // signed-out mobile visitors are completely unaffected by this.
+  // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
+  // not) gets the bottom-nav app shell instead of the long-scroll landing
+  // page — this traditional landing below stays desktop-only + a dedicated
+  // marketing/SEO surface, per the explicit "no more scroll-based landing
+  // on mobile" requirement. MobileAppShell/MobileDashboardHome handle the
+  // signed-out state themselves (compact intro instead of real stats).
   const isMobile = useIsMobile();
   useEffect(() => {
-    if (isMobile && user) navigate('/app', { replace: true });
-  }, [isMobile, user, navigate]);
+    if (isMobile) navigate('/app', { replace: true });
+  }, [isMobile, navigate]);
 
 
   const premiumTestimonials = [
@@ -541,6 +543,12 @@ export function ModernHomePage() {
     setSignatureMarker({ page: pageNumber, x: safeX, y: safeY });
   };
 
+  // Mobile visitors never see this page's body — they're redirected to
+  // /app by the effect above. Returning null here (instead of rendering
+  // the full landing then redirecting) avoids a flash of the desktop
+  // landing/hero on a phone before the redirect fires.
+  if (isMobile) return null;
+
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: 'smooth' }}>
       <SEOHead
@@ -849,15 +857,9 @@ export function ModernHomePage() {
         </AnimatePresence>
       </header>
 
-      {/* Hero Section — a signed-out mobile visitor gets the compact
-          card-based intro instead of the full-screen photo hero/slider;
-          the rest of the landing (including this hero) is unaffected on
-          desktop and still exists further down the page either way. */}
-      {isMobile && !user ? (
-        <MobileLandingIntro onOpenSignIn={() => setOnboardingOpen(true)} />
-      ) : isMobile ? null /* signed-in mobile — about to redirect to /app */ : (
-        <ModernHero />
-      )}
+      {/* This whole page is desktop-only now (mobile redirects to /app
+          above), so the hero always renders — no mobile branching left. */}
+      <ModernHero />
 
       <section id="documents-section">
         <DocumentBentoGrid documents={filteredDocuments} />
@@ -1272,13 +1274,8 @@ export function ModernHomePage() {
       </footer>
 
 
-      {/* ── Floating Action Buttons — desktop only. On mobile, a signed-in
-          visitor is redirected straight into the /app bottom-nav shell
-          (which has its own navigation), and a signed-out one gets the
-          full-width "Comenzar gratis" bar below instead — two floating
-          round buttons stacked on top of a full-width bar would be
-          visual clutter on a small screen. ─────────────────────────── */}
-      {!isMobile && (
+      {/* ── Floating Action Buttons — this page is desktop-only now, mobile
+          always redirects into the /app bottom-nav shell above. ────────── */}
       <div className="fixed bottom-6 right-4 z-50 flex flex-col items-end gap-3">
 
         {/* FAB 2: Browse templates */}
@@ -1321,38 +1318,6 @@ export function ModernHomePage() {
           </a>
         </motion.div>
       </div>
-      )}
-
-      {/* ── Mobile, signed-out only: fixed full-width "Comenzar gratis" bar.
-          A signed-in mobile visitor never sees this (redirected to /app
-          above) — this is specifically the entry point into the free tier
-          for a mobile visitor still on the landing page. ──────────────── */}
-      {isMobile && !user && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-50 px-4 pt-3"
-          style={{
-            paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-            background: 'linear-gradient(to top, rgba(2,6,23,0.98) 60%, rgba(2,6,23,0))',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setOnboardingOpen(true)}
-            className="flex w-full items-center justify-center gap-2 text-white transition active:scale-[0.98]"
-            style={{
-              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-              borderRadius: 16,
-              height: 56,
-              fontWeight: 700,
-              fontSize: 15,
-              boxShadow: '0 10px 24px rgba(37,99,235,0.45)',
-            }}
-          >
-            {language === 'en' ? 'Get started free' : 'Comenzar gratis'}
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
-      )}
 
       <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />
     </div>

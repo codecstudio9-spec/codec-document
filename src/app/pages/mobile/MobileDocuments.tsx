@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Plus, FileText, Download, Check, Clock, FileEdit } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
+import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 
 type UnifiedDoc = {
@@ -63,6 +64,19 @@ function DocumentsContent() {
     { key: 'signed', label: 'Firmados' },
     { key: 'pending', label: 'Pendientes' },
   ];
+
+  if (!user) {
+    return (
+      <div className="px-4 pt-5">
+        <h1 className="text-xl font-black text-slate-900">Documentos</h1>
+        <MobileSignInPrompt
+          icon={FileText}
+          title="Inicia sesión para ver tus documentos"
+          description="Tus borradores y documentos firmados aparecerán aquí una vez tengas una cuenta."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative px-4 pt-5">

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck } from 'lucide-react';
+import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
+import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchUserPlanInfo, type UserPlanInfo } from '../../services/mobile-dashboard-service';
 
 const PLAN_LABEL: Record<string, string> = {
@@ -43,6 +44,21 @@ function ProfileContent() {
     await logout();
     navigate('/', { replace: true });
   };
+
+  if (!user) {
+    return (
+      <div>
+        <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+          <h1 className="text-xl font-black text-white">Perfil</h1>
+        </div>
+        <MobileSignInPrompt
+          icon={UserIcon}
+          title="Inicia sesión para ver tu perfil"
+          description="Gestiona tu plan, tus notificaciones y tu cuenta desde aquí una vez inicies sesión."
+        />
+      </div>
+    );
+  }
 
   return (
     <div>

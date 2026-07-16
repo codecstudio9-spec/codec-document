@@ -1,32 +1,26 @@
+import { useNavigate } from 'react-router';
 import { FileText, PenLine, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
+import { useMobileSignIn } from './MobileAppShell';
 
 const QUICK_CARDS = [
-  { icon: FileText, labelEs: 'Documentos', labelEn: 'Documents', action: 'scroll' as const },
-  { icon: PenLine, labelEs: 'Firmas', labelEn: 'Signatures', action: 'firma' as const },
-  { icon: ShieldCheck, labelEs: 'Verificación', labelEn: 'Verification', action: 'scroll' as const },
-  { icon: Sparkles, labelEs: 'IA Legal', labelEn: 'Legal AI', action: 'scroll' as const },
+  { icon: FileText, labelEs: 'Documentos', labelEn: 'Documents', href: '/app/templates' },
+  { icon: PenLine, labelEs: 'Firmas', labelEn: 'Signatures', href: '/firma-electronica' },
+  { icon: ShieldCheck, labelEs: 'Verificación', labelEn: 'Verification', href: '/app/templates' },
+  { icon: Sparkles, labelEs: 'IA Legal', labelEn: 'Legal AI', href: '/app/templates' },
 ];
 
 /**
- * Replaces the full-screen hero/slider as the FIRST thing a signed-out
- * mobile visitor sees — the traditional landing (hero, comparison table,
- * pricing, testimonials, footer) still exists below it in the normal
- * scroll flow, nothing was deleted, this just stops leading with a giant
- * background photo on a small screen. Once signed in, this never renders
- * at all — the visitor is on /app instead (see MobileAppShell).
+ * The "Inicio" screen inside the /app shell for a signed-out mobile
+ * visitor — real navigation into other /app/* views (no scrollIntoView
+ * anywhere), so it behaves like a screen of the app rather than a section
+ * of a page. Once signed in, MobileDashboardHome swaps this out for the
+ * real dashboard entirely — this never renders alongside stats/greeting.
  */
-export function MobileLandingIntro({ onOpenSignIn }: { onOpenSignIn: () => void }) {
+export function MobileLandingIntro() {
   const { language } = useLanguage();
-
-  const scrollToDocuments = () => {
-    document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleCardClick = (action: 'scroll' | 'firma') => {
-    if (action === 'firma') { window.location.href = '/firma-electronica'; return; }
-    scrollToDocuments();
-  };
+  const navigate = useNavigate();
+  const openSignIn = useMobileSignIn();
 
   return (
     <div className="px-4 pb-8 pt-6" style={{ background: '#F8FAFC' }}>
@@ -50,7 +44,7 @@ export function MobileLandingIntro({ onOpenSignIn }: { onOpenSignIn: () => void 
       <div className="mt-5 space-y-2.5">
         <button
           type="button"
-          onClick={scrollToDocuments}
+          onClick={() => navigate('/app/templates')}
           className="flex w-full items-center justify-center gap-2 text-white transition active:scale-[0.98]"
           style={{
             background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
@@ -65,7 +59,7 @@ export function MobileLandingIntro({ onOpenSignIn }: { onOpenSignIn: () => void 
         </button>
         <button
           type="button"
-          onClick={scrollToDocuments}
+          onClick={() => navigate('/app/templates')}
           className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 transition active:scale-[0.98]"
           style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14 }}
         >
@@ -75,11 +69,11 @@ export function MobileLandingIntro({ onOpenSignIn }: { onOpenSignIn: () => void 
 
       {/* Quick cards */}
       <div className="mt-6 grid grid-cols-2 gap-3">
-        {QUICK_CARDS.map(({ icon: Icon, labelEs, labelEn, action }) => (
+        {QUICK_CARDS.map(({ icon: Icon, labelEs, labelEn, href }) => (
           <button
             key={labelEs}
             type="button"
-            onClick={() => handleCardClick(action)}
+            onClick={() => navigate(href)}
             className="flex flex-col items-start gap-2.5 rounded-2xl bg-white p-4 text-left transition active:scale-[0.97]"
             style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
           >
@@ -93,7 +87,7 @@ export function MobileLandingIntro({ onOpenSignIn }: { onOpenSignIn: () => void 
 
       <button
         type="button"
-        onClick={onOpenSignIn}
+        onClick={openSignIn}
         className="mt-5 w-full text-center text-xs font-semibold text-blue-600"
       >
         {language === 'en' ? 'Already have an account? Sign in' : '¿Ya tienes cuenta? Inicia sesión'}
