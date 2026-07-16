@@ -138,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(
         supaUser
           ? {
+              id: supaUser.id,
               email: supaUser.email || '',
               name:
                 (supaUser.user_metadata?.full_name as string | undefined) ||
