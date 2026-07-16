@@ -83,7 +83,7 @@ function DashboardHomeContent() {
         {[
           { icon: Plus, label: 'Crear Documento', onClick: () => navigate('/dashboard/templates'), primary: true },
           { icon: Send, label: 'Solicitar Firma', onClick: () => navigate('/dashboard/templates'), primary: false },
-          { icon: Upload, label: 'Subir PDF', onClick: () => navigate('/firma-electronica'), primary: false },
+          { icon: Upload, label: 'Firmar Documento', onClick: () => navigate('/firma-electronica'), primary: false },
           { icon: FolderOpen, label: 'Ver Plantillas', onClick: () => navigate('/dashboard/templates'), primary: false },
         ].map(({ icon: Icon, label, onClick, primary }) => (
           <motion.button

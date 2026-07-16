@@ -180,7 +180,7 @@ function DashboardContent() {
           className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700"
           style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14 }}
         >
-          <Upload className="size-4" /> Subir PDF
+          <Upload className="size-4" /> Firmar documento
         </motion.button>
 
         <motion.label

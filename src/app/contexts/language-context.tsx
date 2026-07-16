@@ -269,6 +269,32 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return 'en';
   });
 
+  // Real IP-based geolocation, once, on a visitor's very first load — a US
+  // client should land in English, a Colombian (or any other) visitor in
+  // Spanish, regardless of what their browser's own locale/Accept-Language
+  // says (a US-bought laptop with Windows still set to es-ES, a VPN, etc.).
+  // Only runs when there's no stored preference yet — once a language is
+  // saved (by this lookup or a manual toggle), that choice is respected on
+  // every later visit instead of re-querying the geo API each time.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem('codec_language')) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 4000);
+
+    fetch('https://ipwho.is/', { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data: { success?: boolean; country_code?: string }) => {
+        if (!data?.success) return;
+        setLanguage(data.country_code === 'US' ? 'en' : 'es');
+      })
+      .catch(() => { /* geo lookup unavailable — keep the browser-locale guess */ })
+      .finally(() => window.clearTimeout(timeout));
+
+    return () => { controller.abort(); window.clearTimeout(timeout); };
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('codec_language', language);
