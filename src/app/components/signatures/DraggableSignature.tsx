@@ -60,8 +60,8 @@ export function DraggableSignature({ sig, getContainer, onChange, onDelete }: Dr
     const dxF = (e.clientX - resize.current.startX) / rect.width;
     const dyF = (e.clientY - resize.current.startY) / rect.height;
     onChange({
-      widthFraction:  clamp(0.10, 0.65, resize.current.startWF + dxF),
-      heightFraction: clamp(0.08, 0.35, resize.current.startHF + dyF),
+      widthFraction:  clamp(0.10, 0.50, resize.current.startWF + dxF),
+      heightFraction: clamp(0.05, 0.22, resize.current.startHF + dyF),
     });
   };
 

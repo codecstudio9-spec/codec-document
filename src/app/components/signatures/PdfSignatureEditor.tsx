@@ -30,9 +30,11 @@ interface PdfSignatureEditorProps {
 
 const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
 
-// Wide and tall defaults so signatures are the protagonists of the page.
-const DEFAULT_W = 0.44;
-const DEFAULT_H = 0.30;
+// Proportional defaults — big enough to read clearly, small enough not to
+// dominate the page (a real ink signature is a few inches wide, not half
+// the sheet).
+const DEFAULT_W = 0.30;
+const DEFAULT_H = 0.11;
 
 // Two-column mirror positions (fractions of page width / height).
 // Signer 0 → left column (center at 25 %), signer 1 → right column (center at 75 %).

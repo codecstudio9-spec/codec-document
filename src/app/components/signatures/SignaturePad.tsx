@@ -3,7 +3,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Trash2, Check, X, Minus, Plus, Smartphone,
-  RefreshCw, RotateCcw, Copy, ShieldCheck, MessageCircle,
+  RefreshCw, RotateCcw, Copy, ShieldCheck, MessageCircle, Undo2, Redo2,
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import {
@@ -13,12 +13,53 @@ import {
   pollMobileSignature,
   deleteMobileSignToken,
 } from '../../services/signature-storage-service';
+import { getGuestSignature, saveGuestSignature } from '../../services/guest-signature-storage';
 
 interface SignaturePadProps {
   onConfirm: (dataUrl: string) => void;
   onCancel: () => void;
   signerName?: string;
   userId?: string;
+}
+
+type StrokeData = ReturnType<SignatureCanvas['toData']>;
+
+// Crops a drawn signature to the bounding box of its actual ink (plus a
+// small margin), discarding the empty transparent space around it. Without
+// this, a small signature drawn in a corner of the pad still occupies the
+// pad's full canvas size once embedded in the document — this is why
+// signatures looked "too big" even though the ink itself was reasonably
+// sized.
+function trimTransparentMargins(canvas: HTMLCanvasElement, marginPx = 14): string {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas.toDataURL('image/png');
+  const { width, height } = canvas;
+  if (width === 0 || height === 0) return canvas.toDataURL('image/png');
+  const { data } = ctx.getImageData(0, 0, width, height);
+  let minX = width, minY = height, maxX = 0, maxY = 0, found = false;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[(y * width + x) * 4 + 3] > 10) {
+        found = true;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (!found) return canvas.toDataURL('image/png');
+  minX = Math.max(0, minX - marginPx);
+  minY = Math.max(0, minY - marginPx);
+  maxX = Math.min(width, maxX + marginPx);
+  maxY = Math.min(height, maxY + marginPx);
+  const cropW = maxX - minX, cropH = maxY - minY;
+  const out = document.createElement('canvas');
+  out.width = cropW; out.height = cropH;
+  const octx = out.getContext('2d');
+  if (!octx) return canvas.toDataURL('image/png');
+  octx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+  return out.toDataURL('image/png');
 }
 
 const FONTS = [
@@ -56,6 +97,8 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const pollingRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const channelRef    = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const undoStack     = useRef<StrokeData[]>([]);
+  const redoStack     = useRef<StrokeData[]>([]);
 
   const [tab,           setTab]           = useState<Tab>('draw');
   const [savedView,     setSavedView]     = useState<SavedView>('saved');
@@ -70,6 +113,9 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
   // Tracks whether the user has drawn at least one stroke on the canvas
   const [isDrawn,   setIsDrawn]   = useState(false);
   const [drawError, setDrawError] = useState(false);
+  const [canUndo,   setCanUndo]   = useState(false);
+  const [canRedo,   setCanRedo]   = useState(false);
+  const [drawPreview, setDrawPreview] = useState('');
 
   // (no two-step confirm — clicking Confirmar Firma stamps immediately)
 
@@ -78,9 +124,14 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
   const [mobileReceived, setMobileReceived] = useState(false);
   const [mobileSignData, setMobileSignData] = useState('');
 
-  // ── Load saved signature ─────────────────────────────────────────────────
+  // ── Load saved signature (account, or this browser for guests) ──────────
   useEffect(() => {
-    if (!userId) { setSavedView('new'); return; }
+    if (!userId) {
+      const guestUrl = getGuestSignature();
+      if (guestUrl) { setSavedSigUrl(guestUrl); setSavedView('saved'); }
+      else setSavedView('new');
+      return;
+    }
     getSavedSignature(userId)
       .then((url) => {
         if (url) { setSavedSigUrl(url); setSavedView('saved'); }
@@ -115,7 +166,10 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
   // ── Auto-confirm when mobile signature arrives ───────────────────────────
   useEffect(() => {
     if (!mobileReceived || !mobileSignData) return;
-    if (saveForFuture && userId) void saveSavedSignature(userId, mobileSignData);
+    if (saveForFuture) {
+      if (userId) void saveSavedSignature(userId, mobileSignData);
+      else saveGuestSignature(mobileSignData);
+    }
     onConfirm(mobileSignData);
   // onConfirm identity is stable per parent; intentionally omit to avoid loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,6 +267,64 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
     setTab(next);
     setIsDrawn(false);
     setDrawError(false);
+    undoStack.current = [];
+    redoStack.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
+    setDrawPreview('');
+  };
+
+  // ── Draw tab: stroke history + live cropped preview ──────────────────────
+  const handleClearDraw = () => {
+    sigRef.current?.clear();
+    setIsDrawn(false);
+    setDrawError(false);
+    undoStack.current = [];
+    redoStack.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
+    setDrawPreview('');
+  };
+
+  const refreshDrawPreview = () => {
+    const pad = sigRef.current;
+    if (!pad || pad.isEmpty()) { setDrawPreview(''); return; }
+    setDrawPreview(trimTransparentMargins(pad.getCanvas()));
+  };
+
+  const handleStrokeBegin = () => {
+    undoStack.current.push(sigRef.current?.toData() ?? []);
+    redoStack.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+    setIsDrawn(true);
+    setDrawError(false);
+  };
+
+  const handleStrokeEnd = () => refreshDrawPreview();
+
+  const handleUndo = () => {
+    const pad = sigRef.current;
+    if (!pad || undoStack.current.length === 0) return;
+    const prev = undoStack.current.pop()!;
+    redoStack.current.push(pad.toData());
+    pad.fromData(prev);
+    setCanUndo(undoStack.current.length > 0);
+    setCanRedo(true);
+    setIsDrawn(prev.length > 0);
+    refreshDrawPreview();
+  };
+
+  const handleRedo = () => {
+    const pad = sigRef.current;
+    if (!pad || redoStack.current.length === 0) return;
+    const next = redoStack.current.pop()!;
+    undoStack.current.push(pad.toData());
+    pad.fromData(next);
+    setCanUndo(true);
+    setCanRedo(redoStack.current.length > 0);
+    setIsDrawn(next.length > 0);
+    refreshDrawPreview();
   };
 
   // ── Validate and stamp immediately — no confirmation dialog ──────────────
@@ -227,7 +339,7 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
         setTimeout(() => setDrawError(false), 1400);
         return;
       }
-      dataUrl = sigRef.current.getCanvas().toDataURL('image/png');
+      dataUrl = trimTransparentMargins(sigRef.current.getCanvas());
     } else if (tab === 'type' && typedSignature) {
       dataUrl = typedSignature;
     } else if (tab === 'upload' && uploadedImage) {
@@ -237,7 +349,10 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
     }
 
     if (!dataUrl) return;
-    if (saveForFuture && userId && dataUrl !== savedSigUrl) void saveSavedSignature(userId, dataUrl);
+    if (saveForFuture && dataUrl !== savedSigUrl) {
+      if (userId) void saveSavedSignature(userId, dataUrl);
+      else saveGuestSignature(dataUrl);
+    }
     onConfirm(dataUrl);
   };
 
@@ -314,7 +429,8 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
               backgroundColor="rgba(0,0,0,0)"
               minWidth={strokeWidth * 0.6}
               maxWidth={strokeWidth}
-              onBegin={() => { setIsDrawn(true); setDrawError(false); }}
+              onBegin={handleStrokeBegin}
+              onEnd={handleStrokeEnd}
               canvasProps={{
                 className: 'block w-full',
                 style: { touchAction: 'none', display: 'block', background: 'transparent', height: 220 },
@@ -332,13 +448,33 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
           {/* Controls row — 44px+ tap targets via padding, not just the
               visible icon size, so a thumb doesn't need pixel precision. */}
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => { sigRef.current?.clear(); setIsDrawn(false); setDrawError(false); }}
-              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 active:scale-95"
-            >
-              <Trash2 className="size-3.5" /> Borrar
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={handleClearDraw}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 active:scale-95"
+              >
+                <Trash2 className="size-3.5" /> Borrar
+              </button>
+              <button
+                type="button"
+                onClick={handleUndo}
+                disabled={!canUndo}
+                className="flex size-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                title="Deshacer"
+              >
+                <Undo2 className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleRedo}
+                disabled={!canRedo}
+                className="flex size-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                title="Rehacer"
+              >
+                <Redo2 className="size-3.5" />
+              </button>
+            </div>
             <div className="flex items-center gap-1 text-xs text-slate-400">
               <span className="mr-0.5">Grosor</span>
               <button
@@ -358,6 +494,20 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
               </button>
             </div>
           </div>
+
+          {/* Live preview of the cropped signature — shows exactly what
+              gets stamped on the document, since the auto-crop removes the
+              empty transparent margins around the ink. */}
+          {drawPreview && (
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-2">
+              <p className="mb-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                Vista previa
+              </p>
+              <div className="flex min-h-[44px] items-center justify-center rounded-lg bg-white px-3 py-1.5">
+                <img src={drawPreview} alt="Vista previa de la firma" className="max-h-10 max-w-full object-contain" />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -575,7 +725,7 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
       )}
 
       {/* ── Save for future ───────────────────────────────────────────────── */}
-      {userId && tab !== 'mobile' && (
+      {tab !== 'mobile' && (
         <label className="flex cursor-pointer items-center gap-1.5">
           <input
             type="checkbox"

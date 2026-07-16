@@ -699,13 +699,14 @@ export async function compilePdfWithSignatures(params: {
     const x = Math.max(0, Math.min(pw - sigW, rawX));
     const y = Math.max(0, Math.min(ph - sigH, rawY));
 
-    const PAD = 5, LABEL_H = 13, DATE_H = 10, ROLE_H = 9, NAME_H = 12, LINE_H = 13;
+    const PAD = 5, DATE_H = 10, ROLE_H = 9, NAME_H = 12, LINE_H = 13;
     const TEXT_ZONE = DATE_H + ROLE_H + NAME_H + LINE_H;
-    const IMG_ZONE  = Math.max(10, sigH - TEXT_ZONE - LABEL_H);
+    const IMG_ZONE  = Math.max(10, sigH - TEXT_ZONE);
 
-    page.drawRectangle({ x, y, width: sigW, height: sigH, color: rgb(0.982, 0.984, 0.996), borderColor: rgb(0.70, 0.74, 0.91), borderWidth: 0.5 });
-    page.drawRectangle({ x, y: y + sigH - 3, width: sigW, height: 3, color: rgb(0.35, 0.41, 0.91) });
-    drawBold(page, 'FIRMA DIGITAL', { x: x + PAD, y: y + TEXT_ZONE + IMG_ZONE + 2, size: 5.5, color: rgb(0.35, 0.41, 0.88) });
+    // No filled box behind the signature — DocuSign/Adobe Sign-style: just
+    // the (already-transparent) ink, the signing line, and the printed
+    // name/role/date underneath, sitting directly on the page like a real
+    // stamped signature instead of a card floating on top of the content.
 
     // Fit the signature image into its box preserving aspect ratio — drawing
     // it at the raw box dimensions stretches/squishes it whenever the canvas
@@ -772,8 +773,7 @@ export async function compilePdfWithSignatures(params: {
 
       const token = `CDX-${docPrefix.substring(0, 4)}-${docPrefix.substring(4, 8)}-${String(i + 1).padStart(2, '0')}`;
 
-      reportPage.drawRectangle({ x: blockX, y: blockBotY, width: COL_W, height: BLOCK_H, color: rgb(1, 1, 1), borderColor: rgb(0.86, 0.88, 0.94), borderWidth: 0.6 });
-      reportPage.drawLine({ start: { x: blockX, y: blockTopY }, end: { x: blockX + COL_W, y: blockTopY }, thickness: 2, color: rgb(0.35, 0.41, 0.91) });
+      reportPage.drawRectangle({ x: blockX, y: blockBotY, width: COL_W, height: BLOCK_H, color: rgb(1, 1, 1), borderColor: rgb(0.90, 0.91, 0.95), borderWidth: 0.4 });
 
       const textAreaTopY = blockTopY - IMG_AREA_H;
       const INNER_PAD = 14, maxImgW = COL_W - 2 * INNER_PAD, maxImgH = IMG_AREA_H - 24;

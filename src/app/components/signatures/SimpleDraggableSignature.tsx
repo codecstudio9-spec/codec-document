@@ -68,8 +68,8 @@ export function SimpleDraggableSignature({ sig, getContainer, onChange, onDelete
     const dxF = (e.clientX - resize.current.startX) / rect.width;
     const dyF = (e.clientY - resize.current.startY) / rect.height;
     onChange({
-      widthFraction: clamp(0.14, 0.6, resize.current.startWF + dxF),
-      heightFraction: clamp(0.05, 0.3, resize.current.startHF + dyF),
+      widthFraction: clamp(0.12, 0.50, resize.current.startWF + dxF),
+      heightFraction: clamp(0.04, 0.20, resize.current.startHF + dyF),
     });
   };
 
