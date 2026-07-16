@@ -1,31 +1,32 @@
 -- ============================================================
 -- CODEC DOCUMENT — Cierre de exposición pública de la tabla `documents`
--- Ejecutar una vez en Supabase Dashboard → SQL Editor
+-- Ejecutar en Supabase Dashboard → SQL Editor, UN PASO A LA VEZ (selecciona
+-- solo el bloque de un paso, dale "Run", confirma que no dio error, y
+-- recién ahí pasa al siguiente). Si algún paso da error, copia el mensaje
+-- de error exacto — con eso se corrige rápido, sin adivinar.
+--
+-- Está escrito para ser seguro de ejecutar varias veces (usa
+-- "IF EXISTS"/"IF NOT EXISTS" en todo), así que si ya corriste una
+-- versión anterior de este script y quedó a medias, simplemente vuelve
+-- a correr los 4 pasos completos desde el principio — no rompe nada.
 --
 -- PROBLEMA (confirmado en vivo, sin ninguna sesión, solo con la anon key):
 --   GET /rest/v1/documents?select=id,name,status,original_pdf_url,signed_pdf_url
 --   → devolvió filas reales: nombre, estado y URLs directas de descarga
 --     de PDFs originales y firmados de documentos de otras personas.
--- Causa: la política "Permitir lectura publica de documentos enlazados"
--- (SELECT → public) en la tabla `documents` no tiene ningún filtro por
--- dueño. Es el mismo problema que ya se cerró en signing_links/signers/
--- signatures/sign_transactions vía supabase_lockdown_public_read_migration.sql
--- — a esa tabla simplemente se le olvidó aplicar el mismo cierre.
---
--- El flujo de invitado (firmar por link, /sign/:token) YA NO necesita
--- lectura pública de `documents`: pasa por verify_signing_link(), una
--- función SECURITY DEFINER que ya existe y ya se usa en producción
--- (ver src/lib/signatureService.ts → verifySigningTokenPublic). Esta
--- migración solo cierra el acceso directo a la tabla que ya no hace
--- falta, sin tocar esa función ni el flujo de invitado.
+-- El flujo de invitado (firmar por link) no depende de esta tabla siendo
+-- pública: ya pasa por verify_signing_link(), una función SECURITY
+-- DEFINER que ya existe y funciona en producción.
 -- ============================================================
 
--- ── 1. Tabla que faltaba para "documentos que firmé como invitado en
---       un documento de otra persona" (ver documents-service.ts) ──────
+
+-- ─── PASO 1: tabla profile_documents ───────────────────────────────────
+-- (sin foreign keys — solo para evitar que un problema de constraint
+-- bloquee este paso; la relación ya la controla la aplicación)
 CREATE TABLE IF NOT EXISTS public.profile_documents (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  document_id   uuid NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
+  profile_id    uuid NOT NULL,
+  document_id   uuid NOT NULL,
   role          text NOT NULL DEFAULT 'signer',
   associated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -37,19 +38,25 @@ CREATE POLICY "profile_documents_own" ON public.profile_documents
   USING (auth.uid() = profile_id)
   WITH CHECK (auth.uid() = profile_id);
 
--- ── 2. Revocar las políticas actuales de `documents` (exactamente los
---       nombres reportados por el dashboard — DROP IF EXISTS no falla
---       si alguno ya no existe o el nombre difiere ligeramente) ──────
+
+-- ─── PASO 2: eliminar TODAS las políticas actuales de documents ───────
+-- (las viejas del dashboard + las nuevas, por si un intento anterior de
+-- este mismo script ya alcanzó a crear alguna — así este paso nunca
+-- falla por "ya existe")
 DROP POLICY IF EXISTS "Permitir insercion a usuarios autenticados"        ON public.documents;
 DROP POLICY IF EXISTS "Permitir lectura a usuarios autenticados"          ON public.documents;
 DROP POLICY IF EXISTS "Users can view own documents"                     ON public.documents;
 DROP POLICY IF EXISTS "UPDATE"                                           ON public.documents;
 DROP POLICY IF EXISTS "Permitir lectura publica de documentos enlazados" ON public.documents;
 DROP POLICY IF EXISTS "INSERT"                                           ON public.documents;
+DROP POLICY IF EXISTS "documents_select_own_or_linked"                  ON public.documents;
+DROP POLICY IF EXISTS "documents_insert"                                ON public.documents;
+DROP POLICY IF EXISTS "documents_update_pending"                        ON public.documents;
 
--- ── 3. SELECT: solo el dueño (o quien esté enlazado como firmante vía
---       profile_documents) puede leer sus propios documentos. El acceso
---       de invitado sigue funcionando igual, vía verify_signing_link(). ──
+
+-- ─── PASO 3: crear las 3 políticas correctas ───────────────────────────
+-- SELECT: solo el dueño, o quien esté enlazado como firmante vía
+-- profile_documents. El acceso de invitado sigue igual (verify_signing_link).
 CREATE POLICY "documents_select_own_or_linked" ON public.documents
   FOR SELECT TO authenticated
   USING (
@@ -60,25 +67,30 @@ CREATE POLICY "documents_select_own_or_linked" ON public.documents
     )
   );
 
--- ── 4. INSERT: un usuario autenticado solo puede crear documentos a su
---       propio nombre; una subida anónima (sin login, antes de firmar)
---       solo puede crear con user_id NULL — nunca puede hacerse pasar
---       por otro usuario real. Cubre createDocumentRecord() en
---       src/lib/signatureService.ts, que hoy inserta con user_id nulo
---       para invitados. ──────────────────────────────────────────────
+-- INSERT: un usuario autenticado solo puede crear documentos a su propio
+-- nombre; una subida anónima (antes de login) solo con user_id NULL —
+-- nunca puede hacerse pasar por otro usuario real.
 CREATE POLICY "documents_insert" ON public.documents
   FOR INSERT TO anon, authenticated
   WITH CHECK (user_id IS NULL OR user_id = auth.uid());
 
--- ── 5. UPDATE: el flujo de invitado (guest-sign-page.tsx) actualiza
---       signed_pdf_url + status conociendo el id exacto del documento
---       (el token ya se verificó antes vía RPC). Se restringe a
---       documentos todavía "pending" para que un documento ya completado
---       no pueda ser modificado de nuevo por un anónimo. Las escrituras
---       del dueño autenticado (updateDocumentPdfUrl / finalizeDocument)
---       ya pasan por sus propias RPC SECURITY DEFINER y no dependen de
---       esta política. ──────────────────────────────────────────────
+-- UPDATE: el flujo de invitado (guest-sign-page.tsx) actualiza
+-- signed_pdf_url + status conociendo el id exacto del documento (el
+-- token ya se verificó antes vía RPC). Restringido a documentos aún
+-- "pending" para que uno ya completado no se pueda volver a modificar.
 CREATE POLICY "documents_update_pending" ON public.documents
   FOR UPDATE TO anon, authenticated
   USING (status = 'pending')
   WITH CHECK (true);
+
+
+-- ─── PASO 4: verificación — debe mostrar exactamente 3 filas ──────────
+select
+  policyname    as policy_name,
+  cmd           as command,
+  roles::text   as roles,
+  qual          as using_expression,
+  with_check    as with_check_expression
+from pg_policies
+where schemaname = 'public' and tablename = 'documents'
+order by cmd, policyname;
