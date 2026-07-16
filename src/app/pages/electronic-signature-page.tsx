@@ -541,6 +541,26 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  // Not every document needs a second signer — the creator can certify it
+  // solo. handleCreatorSign already embedded and saved their signature
+  // (signedPdfUrl/documentId are set by the time this is reachable, since
+  // it's only offered from the invite-guest step); this just marks the
+  // document as completed instead of waiting on an invitation nobody sends.
+  const handleSignAloneOnly = async () => {
+    setIsLoading(true); setLoadingMsg('Finalizando documento…');
+    try {
+      await finalizeDocument(documentId, signedPdfUrl);
+      const ip = await getPublicIp();
+      await insertAuditLog({ documentId, action: 'document_completed_solo', ipAddress: ip, userAgent: navigator.userAgent });
+      toast.success('¡Documento certificado! No necesitas ningún invitado.');
+      setStep('done');
+    } catch (err) {
+      toast.error(`No se pudo finalizar el documento: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsLoading(false); setLoadingMsg('');
+    }
+  };
+
   const handleGenerateLink = async () => {
     if (!guestName.trim() || !guestEmail.trim()) { setError('Ingresa el nombre y correo del invitado.'); return; }
     setError(''); setIsLoading(true); setLoadingMsg('Generando enlace seguro…');
@@ -886,8 +906,26 @@ export function ElectronicSignaturePage() {
                       disabled={!guestName.trim() || !guestEmail.trim() || isLoading}
                       className="mt-5 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      🔗 Generar enlace único de firma
+                      <Send className="mr-2 inline size-4" />
+                      Generar enlace único de firma
                     </button>
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-xs font-medium text-slate-400">o</span>
+                      <div className="h-px flex-1 bg-slate-200" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleSignAloneOnly()}
+                      disabled={isLoading}
+                      className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Solo yo firmo — sin invitar a nadie
+                    </button>
+                    <p className="mt-2 text-center text-xs text-slate-400">
+                      El documento quedará certificado únicamente con tu firma.
+                    </p>
                   </>
                 ) : (
                   /* Sub-estado: hub de distribución */

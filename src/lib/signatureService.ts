@@ -57,37 +57,49 @@ export async function createDocumentRecord(params: {
   return data.id as string;
 }
 
+// These three go through SECURITY DEFINER RPCs (update_document_pdf_url /
+// update_document_signed_pdf_url / finalize_document), not a raw
+// `.update(...).eq('id', documentId)` — a plain client-side UPDATE that
+// matches zero rows under RLS returns success with no error at all
+// (PostgREST doesn't treat "0 rows affected" as a failure), so a silent
+// RLS mismatch used to leave original_pdf_url/signed_pdf_url stuck at
+// NULL forever with nothing in the console to explain why. Each RPC
+// returns a real boolean via ROW_COUNT so a failed write is now a real,
+// catchable error instead of invisible data loss.
 export async function updateDocumentPdfUrl(
   documentId: string,
   originalPdfUrl: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('documents')
-    .update({ original_pdf_url: originalPdfUrl })
-    .eq('id', documentId);
+  const { data, error } = await supabase.rpc('update_document_pdf_url', {
+    p_document_id: documentId,
+    p_original_pdf_url: originalPdfUrl,
+  });
   if (error) throw new Error(`updateDocumentPdfUrl: ${error.message}`);
+  if (!data) throw new Error('updateDocumentPdfUrl: no matching document row was updated (0 rows affected)');
 }
 
 export async function updateDocumentSignedPdfUrl(
   documentId: string,
   signedPdfUrl: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('documents')
-    .update({ signed_pdf_url: signedPdfUrl })
-    .eq('id', documentId);
+  const { data, error } = await supabase.rpc('update_document_signed_pdf_url', {
+    p_document_id: documentId,
+    p_signed_pdf_url: signedPdfUrl,
+  });
   if (error) throw new Error(`updateDocumentSignedPdfUrl: ${error.message}`);
+  if (!data) throw new Error('updateDocumentSignedPdfUrl: no matching document row was updated (0 rows affected)');
 }
 
 export async function finalizeDocument(
   documentId: string,
   signedPdfUrl: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('documents')
-    .update({ signed_pdf_url: signedPdfUrl, status: 'completed' })
-    .eq('id', documentId);
+  const { data, error } = await supabase.rpc('finalize_document', {
+    p_document_id: documentId,
+    p_signed_pdf_url: signedPdfUrl,
+  });
   if (error) throw new Error(`finalizeDocument: ${error.message}`);
+  if (!data) throw new Error('finalizeDocument: no matching document row was updated (0 rows affected)');
 }
 
 // ─── Storage ────────────────────────────────────────────────────────────────
