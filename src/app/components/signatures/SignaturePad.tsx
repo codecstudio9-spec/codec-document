@@ -3,7 +3,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Trash2, Check, X, Minus, Plus, Smartphone,
-  RefreshCw, RotateCcw, Copy, ShieldCheck,
+  RefreshCw, RotateCcw, Copy, ShieldCheck, MessageCircle,
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import {
@@ -40,10 +40,10 @@ function TabBtn({
       type="button"
       onClick={onClick}
       className={[
-        'flex-1 pb-2 pt-0.5 text-[11px] font-semibold transition-all',
+        'min-h-11 flex-1 border-b-2 pb-2 pt-2 text-xs font-semibold transition-all active:scale-[0.97]',
         active
-          ? 'border-b-2 border-blue-600 text-blue-600'
-          : 'border-b-2 border-transparent text-slate-400 hover:text-slate-600',
+          ? 'border-blue-600 text-blue-600'
+          : 'border-transparent text-slate-400 hover:text-slate-600',
       ].join(' ')}
     >
       {label}
@@ -329,31 +329,32 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
             </p>
           )}
 
-          {/* Controls row */}
-          <div className="flex items-center justify-between px-0.5">
+          {/* Controls row — 44px+ tap targets via padding, not just the
+              visible icon size, so a thumb doesn't need pixel precision. */}
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => { sigRef.current?.clear(); setIsDrawn(false); setDrawError(false); }}
-              className="flex items-center gap-1 text-[11px] text-slate-400 transition hover:text-slate-700"
+              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 active:scale-95"
             >
-              <Trash2 className="size-3" /> Borrar
+              <Trash2 className="size-3.5" /> Borrar
             </button>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span>Grosor</span>
+            <div className="flex items-center gap-1 text-xs text-slate-400">
+              <span className="mr-0.5">Grosor</span>
               <button
                 type="button"
                 onClick={() => setStrokeWidth((w) => Math.max(1, w - 0.5))}
-                className="flex size-4 items-center justify-center rounded transition hover:text-slate-700"
+                className="flex size-11 items-center justify-center rounded-lg transition hover:bg-slate-50 hover:text-slate-700 active:scale-90"
               >
-                <Minus className="size-3" />
+                <Minus className="size-3.5" />
               </button>
               <span className="w-5 text-center">{strokeWidth.toFixed(1)}</span>
               <button
                 type="button"
                 onClick={() => setStrokeWidth((w) => Math.min(6, w + 0.5))}
-                className="flex size-4 items-center justify-center rounded transition hover:text-slate-700"
+                className="flex size-11 items-center justify-center rounded-lg transition hover:bg-slate-50 hover:text-slate-700 active:scale-90"
               >
-                <Plus className="size-3" />
+                <Plus className="size-3.5" />
               </button>
             </div>
           </div>
@@ -486,7 +487,7 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 py-2 text-[12px] font-bold text-emerald-700 transition hover:bg-emerald-100"
               >
-                💬 Enviar link por WhatsApp
+                <MessageCircle className="size-3.5" /> Enviar link por WhatsApp
               </a>
 
               {/* Link copy row */}
@@ -502,7 +503,7 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
                     linkCopied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                   }`}
                 >
-                  {linkCopied ? '✓ Copiado' : <Copy className="size-3" />}
+                  {linkCopied ? (<><Check className="size-3" /> Copiado</>) : <Copy className="size-3" />}
                 </button>
               </div>
 
@@ -586,14 +587,16 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
         </label>
       )}
 
-      {/* ── Action row: Cancelar | Confirmar Firma ────────────────────────── */}
+      {/* ── Action row: Cancelar | Confirmar Firma ──────────────────────────
+          min-h-12 (48px) on every screen size — the accessibility-standard
+          minimum touch target, not just a desktop-comfortable click area. */}
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
+          className="flex min-h-12 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-[0.97]"
         >
-          <X className="size-3.5" /> Cancelar
+          <X className="size-4" /> Cancelar
         </button>
 
         <button
@@ -605,9 +608,9 @@ export function SignaturePad({ onConfirm, onCancel, signerName = '', userId }: S
             (tab === 'type'   && !typedSignature) ||
             (tab === 'upload' && !uploadedImage)
           }
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-[12px] font-bold text-white transition hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40"
+          className="flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-sm font-bold text-white transition hover:bg-blue-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
         >
-          <Check className="size-3.5" /> Confirmar Firma
+          <Check className="size-4" /> Confirmar Firma
         </button>
       </div>
     </div>

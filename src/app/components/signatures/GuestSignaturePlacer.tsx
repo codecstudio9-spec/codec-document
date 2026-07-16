@@ -193,7 +193,8 @@ export function GuestSignaturePlacer({
                   (where signatures conventionally go); centered as a
                   general instruction on wider screens. */}
               <div className="relative">
-                <div className="flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-400 px-4 py-2.5 text-slate-900 shadow-lg">
+                <span className="absolute -inset-1.5 animate-pulse rounded-xl bg-amber-400/50 blur-sm" />
+                <div className="relative flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-400 px-4 py-2.5 text-slate-900 shadow-lg">
                   <MousePointerClick className="size-4 shrink-0" />
                   <div>
                     <p className="text-xs font-black uppercase tracking-wide leading-none">Firme aquí</p>

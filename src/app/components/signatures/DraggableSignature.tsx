@@ -209,27 +209,36 @@ export function DraggableSignature({ sig, getContainer, onChange, onDelete }: Dr
         {/* Always visible (not hover-gated) — :hover doesn't exist on touch
             devices, so a phone user would never be able to see or reach
             this at all under the old group-hover:opacity-100 pattern. */}
+        {/* Visible circle stays compact for looks; the actual tap target
+            (this wrapper) is 48px — the accessibility-standard minimum —
+            via padding, so it's forgiving of imprecise thumbs without
+            looking oversized on a small signature chip. */}
         <div
           ref={resizeHandleRef}
-          className="absolute -bottom-2.5 -right-2.5 flex size-7 cursor-se-resize items-center justify-center rounded-full border-2 border-white shadow-md"
-          style={{ backgroundColor: sig.color, touchAction: 'none' }}
+          className="absolute -bottom-4 -right-4 flex size-12 cursor-se-resize items-center justify-center"
+          style={{ touchAction: 'none' }}
           title="Redimensionar"
           onPointerDown={onResizePointerDown}
           onPointerMove={onResizePointerMove}
           onPointerUp={onResizePointerUp}
         >
-          <CornerRightDown className="size-3.5 text-white" />
+          <div
+            className="flex size-8 items-center justify-center rounded-full border-2 border-white shadow-md"
+            style={{ backgroundColor: sig.color }}
+          >
+            <CornerRightDown className="size-4 text-white" />
+          </div>
         </div>
 
         {/* ── Delete button — always visible for the same reason ─────────────── */}
         <button
           type="button"
-          className="absolute -right-3 -top-3 flex size-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-red-600"
+          className="absolute -right-4 -top-4 flex size-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-red-600 active:scale-90"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           onPointerDown={(e) => e.stopPropagation()}
           title="Eliminar"
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-4" />
         </button>
       </div>
     </div>

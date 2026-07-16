@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '../../contexts/auth-context';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ShieldCheck } from 'lucide-react';
+import { X, ShieldCheck, Lock } from 'lucide-react';
 import { SignaturePad } from './SignaturePad';
 
 interface SignatureModalProps {
@@ -197,9 +197,13 @@ export function SignatureModal({
                   color: '#94a3b8',
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4,
                 }}
               >
-                ✓ E-SIGN Act · UETA · SHA-256 Encrypted · Tamper-Evident
+                <Lock size={10} /> E-SIGN Act · UETA · SHA-256 Encrypted · Tamper-Evident
               </p>
             </div>
           </motion.div>

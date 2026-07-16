@@ -402,6 +402,20 @@ export function GuestSignPage() {
   const [showSignPad, setShowSignPad] = useState(false);
   const bottomMarkerRef = useRef<HTMLDivElement>(null);
 
+  // Decided in JS (matchMedia), not CSS-only show/hide — the mobile and
+  // desktop branches render genuinely different layouts around the same
+  // PDF container/ref, so having both mounted at once (as plain
+  // `md:hidden` / `hidden md:block` would do) would fight over the same
+  // ref and double up the pdfjs canvas rendering work for nothing.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   // Adobe-style two-step signing: SignatureModal only captures WHAT the
   // signature looks like (draw/type/upload/QR); once confirmed, the guest
   // still has to choose WHERE it goes on the document — see
@@ -882,6 +896,262 @@ export function GuestSignPage() {
   }
 
   // ─── Main signing UI ───────────────────────────────────────────────────────────
+  // Mobile gets a genuinely different, full-screen 2-step layout (native-app
+  // style: review the whole document, then a single clear "next" action) —
+  // not just the desktop card stack squeezed into a narrow column. Decided
+  // in JS (isMobile, matchMedia) rather than mounting both and hiding one
+  // with CSS, so there's only ever one pdfContainerRef / one set of pdfjs
+  // canvases doing work at a time.
+  if (isMobile) {
+    return (
+      <div className="flex flex-col bg-slate-50 text-slate-900" style={{ height: '100dvh' }}>
+        {/* ── Minimal top bar — no legal subtitle, no "Solo lectura" pill,
+            nothing that isn't essential to know where you are ────────── */}
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-white px-4 py-3">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
+            <ShieldCheck className="size-4 text-white" />
+          </div>
+          <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{tokenData.documentName}</p>
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+            <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+            Pendiente
+          </span>
+        </div>
+
+        {/* ── Compact signer info — a thin row, not a card that eats the
+            screen. Collapses out of the way once both fields are filled. */}
+        {(!guestName.trim() || !guestEmail.trim()) && (
+          <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="Tu nombre"
+                className="min-w-0 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+              <input
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="Tu correo"
+                type="email"
+                className="min-w-0 rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── Document — full-bleed, native pinch-to-zoom (no touch-action
+            override here on purpose, so the browser's own zoom just works) */}
+        <div ref={pdfContainerRef} className="flex-1 overflow-auto bg-slate-200/60">
+          {pdfLoading && (
+            <div className="flex h-full min-h-[50vh] items-center justify-center gap-2 text-slate-400">
+              <Loader className="size-5 animate-spin" />
+              <span className="text-sm">Cargando documento…</span>
+            </div>
+          )}
+
+          {!pdfLoading && pdfError && (
+            <div className="flex flex-col items-center gap-3 p-4 text-center">
+              <AlertCircle className="size-7 text-amber-400" />
+              <p className="text-sm text-slate-500">{pdfError}</p>
+              {tokenData.originalPdfUrl && (
+                <>
+                  <iframe
+                    src={tokenData.originalPdfUrl}
+                    title="Vista previa del documento"
+                    className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white"
+                  />
+                  <a
+                    href={tokenData.originalPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700"
+                  >
+                    <ExternalLink className="size-4" />
+                    Ver documento en nueva pestaña
+                  </a>
+                </>
+              )}
+            </div>
+          )}
+
+          {!pdfLoading && !pdfError && pdfDoc && containerWidth > 0 && (
+            <div className="divide-y divide-slate-100 bg-white">
+              {Array.from({ length: pdfPageCount }, (_, i) => (
+                <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} width={containerWidth} />
+              ))}
+            </div>
+          )}
+
+          <div ref={bottomMarkerRef} className="h-1" />
+        </div>
+
+        {/* ── Big floating action — 56px tall, thumb-width, safe-area aware
+            so it never sits under the home-indicator on notched phones ── */}
+        <div
+          className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3"
+          style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+        >
+          <button
+            type="button"
+            disabled={!hasScrolledToEnd}
+            onClick={() => {
+              const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
+              if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ minHeight: 56 }}
+          >
+            {hasScrolledToEnd
+              ? (<>Siguiente: Firmar documento <ArrowRight className="size-5" /></>)
+              : 'Desliza para leer el documento'}
+          </button>
+        </div>
+
+        {/* ── Shared overlays (identity gate, sign pad, placer, progress,
+            premium modal) — identical to desktop, they're already
+            full-screen overlays with their own z-index. ─────────────── */}
+        {showIdGate && (
+          <IdentityGate
+            documentId={tokenData.documentId}
+            requirements={requirements}
+            idFrontDataUrl={idFrontDataUrl}
+            idBackDataUrl={idBackDataUrl}
+            selfieDataUrl={selfieDataUrl}
+            idFrontReady={idFrontReady}
+            idBackReady={idBackReady}
+            selfieReady={selfieReady}
+            uploadingIdFront={uploadingIdFront}
+            uploadingIdBack={uploadingIdBack}
+            uploadingSelfie={uploadingSelfie}
+            onIdFrontSelect={async (file) => {
+              setUploadingIdFront(true);
+              try {
+                const dataUrl = await fileToDataUrl(file);
+                const normalized = await normalizeIdEvidence(dataUrl);
+                setIdFrontDataUrl(normalized);
+                try {
+                  const { error } = await publicSupabase.storage
+                    .from('documents-bucket')
+                    .upload(`validations/${tokenData.documentId}/id_front.jpg`, file, { upsert: true, contentType: file.type });
+                  if (error) throw error;
+                } catch { /* non-fatal — data URL serves as proof */ }
+                setIdFrontReady(true);
+                toast.success('Frente del documento registrado.');
+              } catch { toast.error('No se pudo procesar la imagen.'); }
+              finally { setUploadingIdFront(false); }
+            }}
+            onIdBackSelect={async (file) => {
+              setUploadingIdBack(true);
+              try {
+                const dataUrl = await fileToDataUrl(file);
+                const normalized = await normalizeIdEvidence(dataUrl);
+                setIdBackDataUrl(normalized);
+                try {
+                  const { error } = await publicSupabase.storage
+                    .from('documents-bucket')
+                    .upload(`validations/${tokenData.documentId}/id_back.jpg`, file, { upsert: true, contentType: file.type });
+                  if (error) throw error;
+                } catch { /* non-fatal */ }
+                setIdBackReady(true);
+                toast.success('Reverso del documento registrado.');
+              } catch { toast.error('No se pudo procesar la imagen.'); }
+              finally { setUploadingIdBack(false); }
+            }}
+            onSelfieSelect={async (file) => {
+              setUploadingSelfie(true);
+              try {
+                const dataUrl = await fileToDataUrl(file);
+                const normalized = await normalizeSelfieEvidence(dataUrl);
+                setSelfieDataUrl(normalized);
+                try {
+                  const { error } = await publicSupabase.storage
+                    .from('documents-bucket')
+                    .upload(`validations/${tokenData.documentId}/selfie.jpg`, file, { upsert: true, contentType: file.type });
+                  if (error) throw error;
+                } catch { /* non-fatal */ }
+                setSelfieReady(true);
+                toast.success('Selfie biométrica registrada.');
+              } catch { toast.error('No se pudo procesar la imagen.'); }
+              finally { setUploadingSelfie(false); }
+            }}
+            onContinue={() => { setShowIdGate(false); setShowSignPad(true); }}
+            onBack={() => setShowIdGate(false)}
+          />
+        )}
+
+        <SignatureModal
+          open={showSignPad}
+          onOpenChange={setShowSignPad}
+          onConfirm={(dataUrl) => {
+            setShowSignPad(false);
+            if (!pdfDoc) { void handleSubmitSignature(dataUrl); return; }
+            setGuestSigDataUrl(dataUrl);
+            setShowPlacer(true);
+          }}
+          signerName={guestName}
+          title="Firma el documento"
+          subtitle={tokenData.documentName}
+        />
+
+        {showPlacer && pdfDoc && (
+          <div className="fixed inset-0 z-[9997] flex flex-col bg-white">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => { setShowPlacer(false); setShowSignPad(true); }}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Atrás
+              </button>
+              <p className="text-sm font-bold text-slate-900">Coloca tu firma</p>
+              <span className="w-16" />
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="mx-auto w-full max-w-2xl">
+                <GuestSignaturePlacer
+                  pdfDoc={pdfDoc}
+                  pageCount={pdfPageCount}
+                  signatureDataUrl={guestSigDataUrl}
+                  signerName={guestName || 'Invitado'}
+                  isLoading={isSigning}
+                  fallbackPdfUrl={workingPdfUrl || tokenData.originalPdfUrl}
+                  onConfirm={(placement) => {
+                    setShowPlacer(false);
+                    void handleSubmitSignature(guestSigDataUrl, placement);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSigning && (
+          <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-2xl">
+              <Loader className="size-7 animate-spin text-indigo-500" />
+              <p className="text-sm font-semibold text-slate-700">Registrando firma…</p>
+            </div>
+          </div>
+        )}
+
+        <PremiumDownloadModal
+          open={premiumModalOpen}
+          onOpenChange={setPremiumModalOpen}
+          documentName={tokenData.documentName}
+          documentId={tokenData.documentId}
+          onSuccess={() => {
+            setPremiumModalOpen(false);
+            toast.success('Acceso Premium activado. Puedes volver a intentarlo.');
+          }}
+          language="es"
+          price={7.99}
+          reason="72h_limit"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-28 text-slate-900">
 
@@ -950,7 +1220,10 @@ export function GuestSignPage() {
         {/* ── PDF viewer (pdfjs canvas renderer, no iframe) ─────────────────── */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
-            <span className="text-xs font-semibold text-slate-700">📄 {tokenData.documentName}</span>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <FileText className="size-3.5 text-slate-400" />
+              {tokenData.documentName}
+            </span>
             {tokenData.originalPdfUrl && (
               <a
                 href={tokenData.originalPdfUrl}
@@ -1041,9 +1314,11 @@ export function GuestSignPage() {
             const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
             if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
           }}
-          className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {hasScrolledToEnd ? '✍️ Continuar a Firmar' : '⬇️ Desliza para leer el documento'}
+          {hasScrolledToEnd
+            ? (<>Continuar a Firmar <ArrowRight className="size-4" /></>)
+            : 'Desliza para leer el documento'}
         </button>
       </div>
 
