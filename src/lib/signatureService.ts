@@ -63,19 +63,27 @@ export async function createDocumentRecord(params: {
 // matches zero rows under RLS returns success with no error at all
 // (PostgREST doesn't treat "0 rows affected" as a failure), so a silent
 // RLS mismatch used to leave original_pdf_url/signed_pdf_url stuck at
-// NULL forever with nothing in the console to explain why. Each RPC
-// returns a real boolean via ROW_COUNT so a failed write is now a real,
-// catchable error instead of invisible data loss.
+// NULL forever with nothing in the console to explain why.
+//
+// update_document_pdf_url's live definition (recreated 2026-07-16,
+// see supabase_FIX_document_url_updates.sql history) differs from the
+// other two: its 2nd param is named p_pdf_url (not p_original_pdf_url),
+// it writes original_pdf_url, and on success it RETURNS JSONB — the
+// full updated row — instead of a boolean; on no matching row it RAISEs
+// an exception instead of returning false, so that failure already
+// surfaces through `error` below, not through a falsy `data` check.
 export async function updateDocumentPdfUrl(
   documentId: string,
   originalPdfUrl: string,
 ): Promise<void> {
   const { data, error } = await supabase.rpc('update_document_pdf_url', {
     p_document_id: documentId,
-    p_original_pdf_url: originalPdfUrl,
+    p_pdf_url: originalPdfUrl,
   });
   if (error) throw new Error(`updateDocumentPdfUrl: ${error.message}`);
-  if (!data) throw new Error('updateDocumentPdfUrl: no matching document row was updated (0 rows affected)');
+  if (!data || !(data as { id?: string }).id) {
+    throw new Error('updateDocumentPdfUrl: unexpected response — no updated row returned');
+  }
 }
 
 export async function updateDocumentSignedPdfUrl(
