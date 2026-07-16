@@ -10,13 +10,21 @@ import { fetchMySignTransactions } from '../../services/mobile-dashboard-service
 import { isActiveTxStatus, stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-const DOC_TYPE_LABEL: Record<string, string> = {
+const DOC_TYPE_LABEL_ES: Record<string, string> = {
   'residential-lease': 'Contrato de arrendamiento',
   'bill-of-sale-vehicle': 'Compraventa de vehículo',
   'promissory-note': 'Pagaré',
   nda: 'Acuerdo de confidencialidad',
   'independent-contractor': 'Contrato de servicios',
   'service-agreement': 'Contrato de servicios',
+};
+const DOC_TYPE_LABEL_EN: Record<string, string> = {
+  'residential-lease': 'Residential lease',
+  'bill-of-sale-vehicle': 'Vehicle bill of sale',
+  'promissory-note': 'Promissory note',
+  nda: 'Non-disclosure agreement',
+  'independent-contractor': 'Service agreement',
+  'service-agreement': 'Service agreement',
 };
 
 type Tab = 'pending' | 'signed' | 'rejected';
@@ -45,11 +53,12 @@ function SignaturesContent() {
   const signed = (txs ?? []).filter((t) => t.status === 'completed');
   const rejected = (txs ?? []).filter((t) => t.status === 'cancelled' || t.status === 'expired');
   const list = tab === 'pending' ? pending : tab === 'signed' ? signed : rejected;
+  const docTypeLabel = language === 'en' ? DOC_TYPE_LABEL_EN : DOC_TYPE_LABEL_ES;
 
   const TABS: Array<{ key: Tab; label: string; count: number }> = [
-    { key: 'pending', label: 'Pendientes', count: pending.length },
-    { key: 'signed', label: 'Firmadas', count: signed.length },
-    { key: 'rejected', label: 'Rechazadas', count: rejected.length },
+    { key: 'pending', label: language === 'en' ? 'Pending' : 'Pendientes', count: pending.length },
+    { key: 'signed', label: language === 'en' ? 'Signed' : 'Firmadas', count: signed.length },
+    { key: 'rejected', label: language === 'en' ? 'Rejected' : 'Rechazadas', count: rejected.length },
   ];
 
   const openTx = (tx: SignTransaction) => {
@@ -65,13 +74,13 @@ function SignaturesContent() {
   const copyLink = (e: React.MouseEvent, tx: SignTransaction) => {
     e.stopPropagation();
     navigator.clipboard.writeText(`${window.location.origin}/sign/${tx.id}`).then(() => {
-      toast.success('Enlace de firma copiado');
+      toast.success(language === 'en' ? 'Signing link copied' : 'Enlace de firma copiado');
     });
   };
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-black text-slate-900">Firmas</h1>
+      <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Signatures' : 'Firmas'}</h1>
 
       <div className="mt-5 flex gap-2">
         {TABS.map((t) => (
@@ -95,18 +104,18 @@ function SignaturesContent() {
             {tab === 'pending' ? <Clock className="mx-auto mb-2 size-8 text-slate-300" />
               : tab === 'signed' ? <CheckCircle2 className="mx-auto mb-2 size-8 text-slate-300" />
               : <XCircle className="mx-auto mb-2 size-8 text-slate-300" />}
-            <p className="text-sm font-semibold text-slate-500">Nada por aquí todavía</p>
+            <p className="text-sm font-semibold text-slate-500">{language === 'en' ? 'Nothing here yet' : 'Nada por aquí todavía'}</p>
           </div>
         ) : (
           list.map((tx) => {
             const isSigned = tx.status === 'completed';
             const isRejected = tx.status === 'cancelled' || tx.status === 'expired';
-            const label = DOC_TYPE_LABEL[tx.document_type] || tx.document_type;
+            const label = docTypeLabel[tx.document_type] || tx.document_type;
             const style = isSigned
-              ? { color: '#10B981', bg: '#ECFDF5', text: 'Firmado' }
+              ? { color: '#10B981', bg: '#ECFDF5', text: language === 'en' ? 'Signed' : 'Firmado' }
               : isRejected
-                ? { color: '#EF4444', bg: '#FEF2F2', text: 'Rechazado' }
-                : { color: '#F59E0B', bg: '#FFFBEB', text: 'Pendiente' };
+                ? { color: '#EF4444', bg: '#FEF2F2', text: language === 'en' ? 'Rejected' : 'Rechazado' }
+                : { color: '#F59E0B', bg: '#FFFBEB', text: language === 'en' ? 'Pending' : 'Pendiente' };
             return (
               <motion.button
                 key={tx.id}
@@ -122,7 +131,7 @@ function SignaturesContent() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{label}</p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    {new Date(tx.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })}
                   </p>
                 </div>
                 {tab === 'pending' ? (
@@ -132,7 +141,7 @@ function SignaturesContent() {
                     className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
                     style={{ color: style.color, background: style.bg }}
                   >
-                    <Copy className="size-3" /> Copiar
+                    <Copy className="size-3" /> {language === 'en' ? 'Copy' : 'Copiar'}
                   </button>
                 ) : (
                   <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: style.color, background: style.bg }}>

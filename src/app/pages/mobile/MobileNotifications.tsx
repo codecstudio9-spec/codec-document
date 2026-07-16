@@ -10,13 +10,21 @@ import { fetchMySignTransactions } from '../../services/mobile-dashboard-service
 import { markTransactionViewed, markAllTransactionsViewed, stashSignedTransactionForDownload, type SignTransaction } from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT } from '../../styles/mobile-theme';
 
-const DOC_TYPE_LABEL: Record<string, string> = {
+const DOC_TYPE_LABEL_ES: Record<string, string> = {
   'residential-lease': 'Contrato de arrendamiento',
   'bill-of-sale-vehicle': 'Compraventa de vehículo',
   'promissory-note': 'Pagaré',
   nda: 'Acuerdo de confidencialidad',
   'independent-contractor': 'Contrato de servicios',
   'service-agreement': 'Contrato de servicios',
+};
+const DOC_TYPE_LABEL_EN: Record<string, string> = {
+  'residential-lease': 'Residential lease',
+  'bill-of-sale-vehicle': 'Vehicle bill of sale',
+  'promissory-note': 'Promissory note',
+  nda: 'Non-disclosure agreement',
+  'independent-contractor': 'Service agreement',
+  'service-agreement': 'Service agreement',
 };
 
 export function MobileNotifications() {
@@ -42,18 +50,19 @@ function NotificationsContent() {
     return (
       <div>
         <div className="px-4 pb-8 pt-6" style={{ background: DARK_GRADIENT }}>
-          <h1 className="text-xl font-black text-white">Notificaciones</h1>
+          <h1 className="text-xl font-black text-white">{language === 'en' ? 'Notifications' : 'Notificaciones'}</h1>
         </div>
         <MobileSignInPrompt
           icon={BellOff}
-          title="Inicia sesión para ver tus notificaciones"
-          description="Aquí verás cuándo alguien firma un documento que le enviaste."
+          title={language === 'en' ? 'Sign in to see your notifications' : 'Inicia sesión para ver tus notificaciones'}
+          description={language === 'en' ? "Here you'll see when someone signs a document you sent." : 'Aquí verás cuándo alguien firma un documento que le enviaste.'}
         />
       </div>
     );
   }
 
   const unread = (txs ?? []).filter((t) => t.status === 'completed' && !t.viewed_at);
+  const docTypeLabel = language === 'en' ? DOC_TYPE_LABEL_EN : DOC_TYPE_LABEL_ES;
 
   const openOne = (tx: SignTransaction) => {
     void markTransactionViewed(tx.id);
@@ -76,8 +85,8 @@ function NotificationsContent() {
             <ArrowLeft className="size-4 text-white" />
           </motion.button>
           <div>
-            <h1 className="text-xl font-black text-white">Notificaciones</h1>
-            <p className="mt-0.5 text-xs text-white/40">Documentos que firmaron y aún no has abierto</p>
+            <h1 className="text-xl font-black text-white">{language === 'en' ? 'Notifications' : 'Notificaciones'}</h1>
+            <p className="mt-0.5 text-xs text-white/40">{language === 'en' ? "Documents that were signed and you haven't opened yet" : 'Documentos que firmaron y aún no has abierto'}</p>
           </div>
         </div>
       </div>
@@ -90,7 +99,7 @@ function NotificationsContent() {
             onClick={() => void markAll()}
             className="mb-3 flex w-full items-center justify-center gap-2 py-2.5 text-xs font-bold text-blue-600"
           >
-            <CheckCheck className="size-3.5" /> Marcar todas como leídas
+            <CheckCheck className="size-3.5" /> {language === 'en' ? 'Mark all as read' : 'Marcar todas como leídas'}
           </motion.button>
         )}
 
@@ -103,8 +112,8 @@ function NotificationsContent() {
         ) : unread.length === 0 ? (
           <div className="bg-white px-4 py-10 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <BellOff className="mx-auto mb-2 size-7 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-500">No tienes notificaciones nuevas</p>
-            <p className="mt-0.5 text-xs text-slate-400">Aquí aparecerán los documentos en cuanto alguien los firme</p>
+            <p className="text-sm font-semibold text-slate-500">{language === 'en' ? "You don't have any new notifications" : 'No tienes notificaciones nuevas'}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{language === 'en' ? "Documents will appear here as soon as someone signs them" : 'Aquí aparecerán los documentos en cuanto alguien los firme'}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -122,10 +131,10 @@ function NotificationsContent() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">
-                    {DOC_TYPE_LABEL[tx.document_type] || tx.document_type} — firmado
+                    {docTypeLabel[tx.document_type] || tx.document_type} — {language === 'en' ? 'signed' : 'firmado'}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {tx.signed_at ? new Date(tx.signed_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                    {tx.signed_at ? new Date(tx.signed_at).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                   </p>
                 </div>
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: '#2563EB' }} />

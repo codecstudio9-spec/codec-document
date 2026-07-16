@@ -9,13 +9,21 @@ import { fetchMySignTransactions } from '../../services/mobile-dashboard-service
 import { markTransactionViewed, markAllTransactionsViewed, stashSignedTransactionForDownload, type SignTransaction } from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-const DOC_TYPE_LABEL: Record<string, string> = {
+const DOC_TYPE_LABEL_ES: Record<string, string> = {
   'residential-lease': 'Contrato de arrendamiento',
   'bill-of-sale-vehicle': 'Compraventa de vehículo',
   'promissory-note': 'Pagaré',
   nda: 'Acuerdo de confidencialidad',
   'independent-contractor': 'Contrato de servicios',
   'service-agreement': 'Contrato de servicios',
+};
+const DOC_TYPE_LABEL_EN: Record<string, string> = {
+  'residential-lease': 'Residential lease',
+  'bill-of-sale-vehicle': 'Vehicle bill of sale',
+  'promissory-note': 'Promissory note',
+  nda: 'Non-disclosure agreement',
+  'independent-contractor': 'Service agreement',
+  'service-agreement': 'Service agreement',
 };
 
 export function DesktopNotifications() {
@@ -38,6 +46,7 @@ function NotificationsContent() {
   }, [user?.id]);
 
   const unread = (txs ?? []).filter((t) => t.status === 'completed' && !t.viewed_at);
+  const docTypeLabel = language === 'en' ? DOC_TYPE_LABEL_EN : DOC_TYPE_LABEL_ES;
 
   const openOne = (tx: SignTransaction) => {
     void markTransactionViewed(tx.id);
@@ -55,14 +64,14 @@ function NotificationsContent() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-slate-900">Notificaciones</h1>
+        <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Notifications' : 'Notificaciones'}</h1>
         {unread.length > 0 && (
           <button type="button" onClick={() => void markAll()} className="flex items-center gap-1.5 text-xs font-bold text-blue-600">
-            <CheckCheck className="size-3.5" /> Marcar todas como leídas
+            <CheckCheck className="size-3.5" /> {language === 'en' ? 'Mark all as read' : 'Marcar todas como leídas'}
           </button>
         )}
       </div>
-      <p className="mt-1 text-sm text-slate-400">Documentos que firmaron y aún no has abierto</p>
+      <p className="mt-1 text-sm text-slate-400">{language === 'en' ? "Documents that were signed and you haven't opened yet" : 'Documentos que firmaron y aún no has abierto'}</p>
 
       <div className="mt-6 space-y-3">
         {txs === null ? (
@@ -70,7 +79,7 @@ function NotificationsContent() {
         ) : unread.length === 0 ? (
           <div className="bg-white px-6 py-16 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <BellOff className="mx-auto mb-2 size-8 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-500">No tienes notificaciones nuevas</p>
+            <p className="text-sm font-semibold text-slate-500">{language === 'en' ? "You don't have any new notifications" : 'No tienes notificaciones nuevas'}</p>
           </div>
         ) : (
           unread.map((tx) => (
@@ -86,9 +95,9 @@ function NotificationsContent() {
                 <PenLine className="size-5" style={{ color: '#10B981' }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-slate-900">{DOC_TYPE_LABEL[tx.document_type] || tx.document_type} — firmado</p>
+                <p className="truncate text-sm font-bold text-slate-900">{docTypeLabel[tx.document_type] || tx.document_type} — {language === 'en' ? 'signed' : 'firmado'}</p>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  {tx.signed_at ? new Date(tx.signed_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                  {tx.signed_at ? new Date(tx.signed_at).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                 </p>
               </div>
               <span className="size-2.5 shrink-0 rounded-full" style={{ background: '#2563EB' }} />

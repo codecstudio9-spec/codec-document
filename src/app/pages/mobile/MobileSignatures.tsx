@@ -11,13 +11,21 @@ import { fetchMySignTransactions } from '../../services/mobile-dashboard-service
 import { isActiveTxStatus, stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
-const DOC_TYPE_LABEL: Record<string, string> = {
+const DOC_TYPE_LABEL_ES: Record<string, string> = {
   'residential-lease': 'Contrato de arrendamiento',
   'bill-of-sale-vehicle': 'Compraventa de vehículo',
   'promissory-note': 'Pagaré',
   nda: 'Acuerdo de confidencialidad',
   'independent-contractor': 'Contrato de servicios',
   'service-agreement': 'Contrato de servicios',
+};
+const DOC_TYPE_LABEL_EN: Record<string, string> = {
+  'residential-lease': 'Residential lease',
+  'bill-of-sale-vehicle': 'Vehicle bill of sale',
+  'promissory-note': 'Promissory note',
+  nda: 'Non-disclosure agreement',
+  'independent-contractor': 'Service agreement',
+  'service-agreement': 'Service agreement',
 };
 
 export function MobileSignatures() {
@@ -43,18 +51,19 @@ function SignaturesContent() {
   const pending = (txs ?? []).filter((t) => isActiveTxStatus(t.status));
   const signed = (txs ?? []).filter((t) => t.status === 'completed');
   const list = tab === 'pending' ? pending : signed;
+  const docTypeLabel = language === 'en' ? DOC_TYPE_LABEL_EN : DOC_TYPE_LABEL_ES;
 
   if (!user) {
     return (
       <div>
         <div className="px-4 pb-8 pt-6" style={{ background: DARK_GRADIENT }}>
-          <h1 className="text-xl font-black text-white">Firmas</h1>
-          <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
+          <h1 className="text-xl font-black text-white">{language === 'en' ? 'Signatures' : 'Firmas'}</h1>
+          <p className="mt-0.5 text-xs text-white/40">{language === 'en' ? 'Documents sent for signature' : 'Documentos enviados a firmar'}</p>
         </div>
         <MobileSignInPrompt
           icon={PenLine}
-          title="Inicia sesión para ver tus firmas"
-          description="Aquí verás las solicitudes de firma pendientes y ya firmadas de tu cuenta."
+          title={language === 'en' ? 'Sign in to see your signatures' : 'Inicia sesión para ver tus firmas'}
+          description={language === 'en' ? "Here you'll see your pending and signed requests." : 'Aquí verás las solicitudes de firma pendientes y ya firmadas de tu cuenta.'}
         />
       </div>
     );
@@ -65,8 +74,8 @@ function SignaturesContent() {
       {/* Dark header block — same mixed light/dark treatment as
           Plantillas (blue) and Perfil (blue), this one navy for variety. */}
       <div className="px-4 pb-8 pt-6" style={{ background: DARK_GRADIENT }}>
-        <h1 className="text-xl font-black text-white">Firmas</h1>
-        <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
+        <h1 className="text-xl font-black text-white">{language === 'en' ? 'Signatures' : 'Firmas'}</h1>
+        <p className="mt-0.5 text-xs text-white/40">{language === 'en' ? 'Documents sent for signature' : 'Documentos enviados a firmar'}</p>
       </div>
 
       <div className="px-4">
@@ -78,7 +87,7 @@ function SignaturesContent() {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
           style={tab === 'pending' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
         >
-          Pendientes {txs !== null && pending.length > 0 && <span className="text-xs opacity-80">({pending.length})</span>}
+          {language === 'en' ? 'Pending' : 'Pendientes'} {txs !== null && pending.length > 0 && <span className="text-xs opacity-80">({pending.length})</span>}
         </button>
         <button
           type="button"
@@ -86,7 +95,7 @@ function SignaturesContent() {
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
           style={tab === 'signed' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
         >
-          Firmados {txs !== null && signed.length > 0 && <span className="text-xs opacity-80">({signed.length})</span>}
+          {language === 'en' ? 'Signed' : 'Firmados'} {txs !== null && signed.length > 0 && <span className="text-xs opacity-80">({signed.length})</span>}
         </button>
       </div>
 
@@ -104,8 +113,8 @@ function SignaturesContent() {
           <PenLine className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">Firmar un documento</p>
-          <p className="mt-0.5 text-xs text-blue-100">Sube un PDF y fírmalo tú, o envíalo a firmar</p>
+          <p className="text-sm font-bold">{language === 'en' ? 'Sign a document' : 'Firmar un documento'}</p>
+          <p className="mt-0.5 text-xs text-blue-100">{language === 'en' ? 'Upload a PDF and sign it yourself, or send it out for signature' : 'Sube un PDF y fírmalo tú, o envíalo a firmar'}</p>
         </div>
       </motion.button>
 
@@ -120,12 +129,12 @@ function SignaturesContent() {
             {tab === 'pending' ? (
               <>
                 <Clock className="mx-auto mb-2 size-7 text-slate-300" />
-                <p className="text-sm font-semibold text-slate-500">No tienes firmas pendientes</p>
+                <p className="text-sm font-semibold text-slate-500">{language === 'en' ? "You don't have any pending signatures" : 'No tienes firmas pendientes'}</p>
               </>
             ) : (
               <>
                 <CheckCircle2 className="mx-auto mb-2 size-7 text-slate-300" />
-                <p className="text-sm font-semibold text-slate-500">Aún no tienes documentos firmados</p>
+                <p className="text-sm font-semibold text-slate-500">{language === 'en' ? "You don't have any signed documents yet" : 'Aún no tienes documentos firmados'}</p>
               </>
             )}
             <button
@@ -133,13 +142,13 @@ function SignaturesContent() {
               onClick={() => navigate('/app/templates')}
               className="mt-3 text-xs font-bold text-blue-600"
             >
-              Crear un documento para firmar →
+              {language === 'en' ? 'Create a document to sign →' : 'Crear un documento para firmar →'}
             </button>
           </div>
         ) : (
           list.map((tx) => {
             const isSigned = tx.status === 'completed';
-            const label = DOC_TYPE_LABEL[tx.document_type] || tx.document_type;
+            const label = docTypeLabel[tx.document_type] || tx.document_type;
             const handleTap = () => {
               if (isSigned) {
                 // The recipient's signature only ever gets stamped onto the
@@ -184,7 +193,9 @@ function SignaturesContent() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{label}</p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {isSigned ? 'Firmado' : 'Enviado'} el {new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    {language === 'en'
+                      ? `${isSigned ? 'Signed' : 'Sent'} on ${new Date(tx.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
+                      : `${isSigned ? 'Firmado' : 'Enviado'} el ${new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`}
                   </p>
                 </div>
                 {isSigned ? (
@@ -192,7 +203,7 @@ function SignaturesContent() {
                     className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
                     style={{ color: '#10B981', background: '#ECFDF5' }}
                   >
-                    Firmado
+                    {language === 'en' ? 'Signed' : 'Firmado'}
                   </span>
                 ) : (
                   <motion.span
@@ -202,7 +213,7 @@ function SignaturesContent() {
                     className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
                     style={{ color: '#F59E0B', background: '#FFFBEB' }}
                   >
-                    <Copy className="size-3" /> Pendiente
+                    <Copy className="size-3" /> {language === 'en' ? 'Pending' : 'Pendiente'}
                   </motion.span>
                 )}
               </motion.button>

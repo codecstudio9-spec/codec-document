@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
 import { MobileLandingIntro } from '../../components/mobile/MobileLandingIntro';
@@ -11,8 +12,13 @@ import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type A
 import { toast } from 'sonner';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-function greeting(): string {
+function greeting(language: 'en' | 'es'): string {
   const h = new Date().getHours();
+  if (language === 'en') {
+    if (h < 12) return 'Good morning';
+    if (h < 19) return 'Good afternoon';
+    return 'Good evening';
+  }
   if (h < 12) return 'Buenos días';
   if (h < 19) return 'Buenas tardes';
   return 'Buenas noches';
@@ -20,10 +26,10 @@ function greeting(): string {
 
 type RecentItem = { id: string; name: string; status: string; date: string; href: string };
 
-function statusLabel(status: string): { text: string; color: string; bg: string } {
-  if (status === 'completed') return { text: 'Firmado', color: '#10B981', bg: '#ECFDF5' };
-  if (!status || status === 'pending' || status === 'draft') return { text: 'Borrador', color: '#F59E0B', bg: '#FFFBEB' };
-  return { text: 'Pendiente', color: '#F59E0B', bg: '#FFFBEB' };
+function statusLabel(status: string, language: 'en' | 'es'): { text: string; color: string; bg: string } {
+  if (status === 'completed') return { text: language === 'en' ? 'Signed' : 'Firmado', color: '#10B981', bg: '#ECFDF5' };
+  if (!status || status === 'pending' || status === 'draft') return { text: language === 'en' ? 'Draft' : 'Borrador', color: '#F59E0B', bg: '#FFFBEB' };
+  return { text: language === 'en' ? 'Pending' : 'Pendiente', color: '#F59E0B', bg: '#FFFBEB' };
 }
 
 function StatColumn({ value, label }: { value: number | null; label: string }) {
@@ -49,12 +55,13 @@ export function MobileDashboardHome() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recent, setRecent] = useState<RecentItem[] | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const firstName = (user?.name || user?.email || 'ahí').split(' ')[0].split('@')[0];
+  const firstName = (user?.name || user?.email || (language === 'en' ? 'there' : 'ahí')).split(' ')[0].split('@')[0];
 
   useEffect(() => {
     if (!user?.id) return;
@@ -77,7 +84,7 @@ function DashboardContent() {
 
   const handleScan = (file?: File | null) => {
     if (!file) return;
-    toast.success('Foto capturada. Continúa desde "Subir documento".');
+    toast.success(language === 'en' ? 'Photo captured. Continue from "Upload document".' : 'Foto capturada. Continúa desde "Subir documento".');
     navigate('/firma-electronica');
   };
 
@@ -89,7 +96,7 @@ function DashboardContent() {
     return (
       <div>
         <div className="flex items-center justify-between px-4 pt-5">
-          <Logo size="sm" tagline="Legal · Firmas · Verificación" href="" />
+          <Logo size="sm" tagline={language === 'en' ? 'Legal · Signatures · Verification' : 'Legal · Firmas · Verificación'} href="" />
         </div>
         <MobileLandingIntro />
       </div>
@@ -100,7 +107,7 @@ function DashboardContent() {
     <div className="px-4 pt-5">
       {/* Header — Part 4: wordmark + tagline + more breathing room */}
       <div className="flex items-center justify-between">
-        <Logo size="sm" tagline="Legal · Firmas · Verificación" href="" />
+        <Logo size="sm" tagline={language === 'en' ? 'Legal · Signatures · Verification' : 'Legal · Firmas · Verificación'} href="" />
         <div className="flex items-center gap-2">
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -127,7 +134,7 @@ function DashboardContent() {
             style={{ boxShadow: CARD_SHADOW }}
           >
             {user?.picture ? (
-              <img src={user.picture} alt={user.name || 'Perfil'} className="size-full object-cover" referrerPolicy="no-referrer" />
+              <img src={user.picture} alt={user.name || 'Profile'} className="size-full object-cover" referrerPolicy="no-referrer" />
             ) : (
               <span className="text-sm font-black text-slate-400">{(user?.name || user?.email || '?').charAt(0).toUpperCase()}</span>
             )}
@@ -136,8 +143,10 @@ function DashboardContent() {
       </div>
 
       <div className="mt-6">
-        <h1 className="text-xl font-black" style={{ color: '#111827' }}>Hola {firstName} 👋</h1>
-        <p className="mt-0.5 text-sm text-slate-500">{greeting()}</p>
+        <h1 className="text-xl font-black" style={{ color: '#111827' }}>
+          {language === 'en' ? `Hi ${firstName}` : `Hola ${firstName}`} 👋
+        </h1>
+        <p className="mt-0.5 text-sm text-slate-500">{greeting(language)}</p>
       </div>
 
       {/* Stats — dark highlighted panel (Revolut/Stripe-style summary
@@ -147,11 +156,11 @@ function DashboardContent() {
         className="mt-5 flex gap-3 px-2 py-5"
         style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: '0 20px 40px rgba(15,23,42,0.22)' }}
       >
-        <StatColumn value={stats?.documentsCreated ?? null} label="Documentos" />
+        <StatColumn value={stats?.documentsCreated ?? null} label={language === 'en' ? 'Documents' : 'Documentos'} />
         <div className="w-px bg-white/10" />
-        <StatColumn value={stats?.pending ?? null} label="Pendientes" />
+        <StatColumn value={stats?.pending ?? null} label={language === 'en' ? 'Pending' : 'Pendientes'} />
         <div className="w-px bg-white/10" />
-        <StatColumn value={stats?.signed ?? null} label="Firmados" />
+        <StatColumn value={stats?.signed ?? null} label={language === 'en' ? 'Signed' : 'Firmados'} />
       </div>
 
       {/* Quick actions */}
@@ -170,7 +179,7 @@ function DashboardContent() {
             boxShadow: '0 14px 28px rgba(37,99,235,0.35)',
           }}
         >
-          <Plus className="size-5" /> Crear documento
+          <Plus className="size-5" /> {language === 'en' ? 'Create document' : 'Crear documento'}
         </motion.button>
 
         <motion.button
@@ -180,7 +189,7 @@ function DashboardContent() {
           className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700"
           style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14 }}
         >
-          <Upload className="size-4" /> Firmar documento
+          <Upload className="size-4" /> {language === 'en' ? 'Sign a document' : 'Firmar documento'}
         </motion.button>
 
         <motion.label
@@ -191,7 +200,7 @@ function DashboardContent() {
             border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857',
           }}
         >
-          <Camera className="size-4" /> Escanear documento
+          <Camera className="size-4" /> {language === 'en' ? 'Scan document' : 'Escanear documento'}
           <input
             type="file"
             accept="image/*"
@@ -205,9 +214,9 @@ function DashboardContent() {
       {/* Recent documents */}
       <div className="mt-7">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-900">Documentos recientes</h2>
+          <h2 className="text-sm font-bold text-slate-900">{language === 'en' ? 'Recent documents' : 'Documentos recientes'}</h2>
           <button type="button" onClick={() => navigate('/app/documents')} className="flex items-center gap-1 text-xs font-semibold text-blue-600">
-            Ver todos <ArrowRight className="size-3" />
+            {language === 'en' ? 'View all' : 'Ver todos'} <ArrowRight className="size-3" />
           </button>
         </div>
 
@@ -220,13 +229,13 @@ function DashboardContent() {
         ) : recent.length === 0 ? (
           <div className="bg-white px-4 py-8 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <FileText className="mx-auto mb-2 size-7 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-600">Aún no tienes documentos</p>
-            <p className="mt-0.5 text-xs text-slate-400">Crea el primero desde arriba</p>
+            <p className="text-sm font-semibold text-slate-600">{language === 'en' ? "You don't have any documents yet" : 'Aún no tienes documentos'}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{language === 'en' ? 'Create your first one above' : 'Crea el primero desde arriba'}</p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {recent.map((doc) => {
-              const s = statusLabel(doc.status);
+              const s = statusLabel(doc.status, language);
               const openDoc = () => {
                 if (!doc.href) return;
                 if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
@@ -248,7 +257,7 @@ function DashboardContent() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{doc.name}</p>
                     <p className="text-xs text-slate-400">
-                      {s.text} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {s.text} · {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <span

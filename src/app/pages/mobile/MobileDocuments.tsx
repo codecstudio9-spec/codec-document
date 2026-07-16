@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
+import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import {
@@ -39,6 +40,7 @@ export function MobileDocuments() {
 
 function DocumentsContent() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
@@ -71,9 +73,9 @@ function DocumentsContent() {
       if (doc.kind === 'own') await deleteDocumentRecord(doc.id);
       else await deleteAssociatedDocument(doc.id);
       setDocs((prev) => prev?.filter((d) => d.id !== doc.id) ?? prev);
-      toast.success('Documento eliminado');
+      toast.success(language === 'en' ? 'Document deleted' : 'Documento eliminado');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el documento');
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not delete the document' : 'No se pudo eliminar el documento'));
     } finally {
       setDeletingId(null);
       setConfirmingId(null);
@@ -83,20 +85,20 @@ function DocumentsContent() {
   const filtered = (docs ?? []).filter((d) => filter === 'all' || classify(d.status) === filter);
 
   const FILTERS: Array<{ key: Filter; label: string }> = [
-    { key: 'all', label: 'Todos' },
-    { key: 'draft', label: 'Borradores' },
-    { key: 'signed', label: 'Firmados' },
-    { key: 'pending', label: 'Pendientes' },
+    { key: 'all', label: language === 'en' ? 'All' : 'Todos' },
+    { key: 'draft', label: language === 'en' ? 'Drafts' : 'Borradores' },
+    { key: 'signed', label: language === 'en' ? 'Signed' : 'Firmados' },
+    { key: 'pending', label: language === 'en' ? 'Pending' : 'Pendientes' },
   ];
 
   if (!user) {
     return (
       <div className="px-4 pt-5">
-        <h1 className="text-xl font-black text-slate-900">Documentos</h1>
+        <h1 className="text-xl font-black text-slate-900">{language === 'en' ? 'Documents' : 'Documentos'}</h1>
         <MobileSignInPrompt
           icon={FileText}
-          title="Inicia sesión para ver tus documentos"
-          description="Tus borradores y documentos firmados aparecerán aquí una vez tengas una cuenta."
+          title={language === 'en' ? 'Sign in to see your documents' : 'Inicia sesión para ver tus documentos'}
+          description={language === 'en' ? 'Your drafts and signed documents will show up here once you have an account.' : 'Tus borradores y documentos firmados aparecerán aquí una vez tengas una cuenta.'}
         />
       </div>
     );
@@ -104,7 +106,7 @@ function DocumentsContent() {
 
   return (
     <div className="relative px-4 pt-5">
-      <h1 className="text-xl font-black text-slate-900">Documentos</h1>
+      <h1 className="text-xl font-black text-slate-900">{language === 'en' ? 'Documents' : 'Documentos'}</h1>
 
       {/* Filters */}
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -134,7 +136,7 @@ function DocumentsContent() {
         ) : filtered.length === 0 ? (
           <div className="bg-white px-4 py-10 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <FileText className="mx-auto mb-2 size-7 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-500">Nada por aquí todavía</p>
+            <p className="text-sm font-semibold text-slate-500">{language === 'en' ? 'Nothing here yet' : 'Nada por aquí todavía'}</p>
           </div>
         ) : (
           filtered.map((doc) => {
@@ -147,14 +149,14 @@ function DocumentsContent() {
                 >
                   <Trash2 className="size-5 shrink-0 text-red-500" />
                   <p className="min-w-0 flex-1 truncate text-sm font-semibold text-red-700">
-                    ¿Eliminar "{doc.name}"? No se puede deshacer.
+                    {language === 'en' ? `Delete "${doc.name}"? This can't be undone.` : `¿Eliminar "${doc.name}"? No se puede deshacer.`}
                   </p>
                   <button
                     type="button"
                     onClick={() => setConfirmingId(null)}
                     className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600"
                   >
-                    Cancelar
+                    {language === 'en' ? 'Cancel' : 'Cancelar'}
                   </button>
                   <button
                     type="button"
@@ -162,7 +164,7 @@ function DocumentsContent() {
                     onClick={() => void handleDelete(doc)}
                     className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
                   >
-                    {deletingId === doc.id ? '...' : 'Eliminar'}
+                    {deletingId === doc.id ? '...' : (language === 'en' ? 'Delete' : 'Eliminar')}
                   </button>
                 </div>
               );
@@ -170,10 +172,10 @@ function DocumentsContent() {
 
             const c = classify(doc.status);
             const style = c === 'signed'
-              ? { color: '#10B981', bg: '#ECFDF5', label: 'Firmado' }
+              ? { color: '#10B981', bg: '#ECFDF5', label: language === 'en' ? 'Signed' : 'Firmado' }
               : c === 'draft'
-                ? { color: '#6B7280', bg: '#F1F5F9', label: 'Borrador' }
-                : { color: '#F59E0B', bg: '#FFFBEB', label: 'Pendiente' };
+                ? { color: '#6B7280', bg: '#F1F5F9', label: language === 'en' ? 'Draft' : 'Borrador' }
+                : { color: '#F59E0B', bg: '#FFFBEB', label: language === 'en' ? 'Pending' : 'Pendiente' };
             const openDoc = () => {
               if (!doc.href) return;
               if (doc.href.startsWith('http')) {
@@ -196,7 +198,7 @@ function DocumentsContent() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
                     <p className="mt-0.5 text-xs text-slate-400">
-                      {style.label} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {style.label} · {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>

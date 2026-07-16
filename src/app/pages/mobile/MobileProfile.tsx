@@ -3,19 +3,20 @@ import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { PlansModal } from '../../components/PlansModal';
 import { fetchUserPlanInfo, fetchUnreadSignedCount, type UserPlanInfo } from '../../services/mobile-dashboard-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
-const PLAN_LABEL: Record<string, string> = {
-  monthly: 'Plan Mensual',
-  semiannual: 'Plan 6 Meses',
-  annual: 'Plan Anual',
-  sub_monthly: 'Plan Mensual',
-  sub_semiannual: 'Plan 6 Meses',
-  sub_annual: 'Plan Anual',
+const PLAN_LABEL_ES: Record<string, string> = {
+  monthly: 'Plan Mensual', semiannual: 'Plan 6 Meses', annual: 'Plan Anual',
+  sub_monthly: 'Plan Mensual', sub_semiannual: 'Plan 6 Meses', sub_annual: 'Plan Anual',
+};
+const PLAN_LABEL_EN: Record<string, string> = {
+  monthly: 'Monthly Plan', semiannual: '6-Month Plan', annual: 'Annual Plan',
+  sub_monthly: 'Monthly Plan', sub_semiannual: '6-Month Plan', sub_annual: 'Annual Plan',
 };
 
 export function MobileProfile() {
@@ -28,6 +29,7 @@ export function MobileProfile() {
 
 function ProfileContent() {
   const { user, isAdmin, unlimitedActive, subscriptionActive, logout } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<UserPlanInfo | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -40,11 +42,12 @@ function ProfileContent() {
   }, [user?.id]);
 
   const isPremium = isAdmin || unlimitedActive || subscriptionActive;
+  const planLabels = language === 'en' ? PLAN_LABEL_EN : PLAN_LABEL_ES;
   const planLabel = isAdmin
-    ? 'Administrador'
+    ? (language === 'en' ? 'Administrator' : 'Administrador')
     : plan?.planType
-      ? (PLAN_LABEL[plan.planType] ?? plan.planType)
-      : 'Plan gratuito';
+      ? (planLabels[plan.planType] ?? plan.planType)
+      : (language === 'en' ? 'Free plan' : 'Plan gratuito');
 
   const handleLogout = async () => {
     await logout();
@@ -55,12 +58,12 @@ function ProfileContent() {
     return (
       <div>
         <div className="px-4 pb-8 pt-6" style={{ background: BLUE_GRADIENT }}>
-          <h1 className="text-xl font-black text-white">Perfil</h1>
+          <h1 className="text-xl font-black text-white">{language === 'en' ? 'Profile' : 'Perfil'}</h1>
         </div>
         <MobileSignInPrompt
           icon={UserIcon}
-          title="Inicia sesión para ver tu perfil"
-          description="Gestiona tu plan, tus notificaciones y tu cuenta desde aquí una vez inicies sesión."
+          title={language === 'en' ? 'Sign in to see your profile' : 'Inicia sesión para ver tu perfil'}
+          description={language === 'en' ? 'Manage your plan, notifications and account here once you sign in.' : 'Gestiona tu plan, tus notificaciones y tu cuenta desde aquí una vez inicies sesión.'}
         />
       </div>
     );
@@ -72,17 +75,17 @@ function ProfileContent() {
           color, same treatment as Plantillas/Firmas, instead of a plain
           white card indistinguishable from the rest of the page. */}
       <div className="px-4 pb-8 pt-6" style={{ background: BLUE_GRADIENT }}>
-        <h1 className="mb-4 text-xl font-black text-white">Perfil</h1>
+        <h1 className="mb-4 text-xl font-black text-white">{language === 'en' ? 'Profile' : 'Perfil'}</h1>
         <div className="flex items-center gap-3">
           {user?.picture ? (
-            <img src={user.picture} alt={user.name || 'Perfil'} referrerPolicy="no-referrer" className="size-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" />
+            <img src={user.picture} alt={user.name || 'Profile'} referrerPolicy="no-referrer" className="size-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" />
           ) : (
             <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-lg font-black text-white ring-2 ring-white/30">
               {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-bold text-white">{user?.name || 'Usuario'}</p>
+            <p className="truncate text-base font-bold text-white">{user?.name || (language === 'en' ? 'User' : 'Usuario')}</p>
             <p className="truncate text-xs text-blue-100">{user?.email}</p>
           </div>
         </div>
@@ -108,12 +111,12 @@ function ProfileContent() {
             className="rounded-full px-2.5 py-1 text-[10px] font-bold"
             style={isPremium ? { color: '#10B981', background: 'rgba(16,185,129,0.15)' } : { color: '#F59E0B', background: '#FFFBEB' }}
           >
-            {isPremium ? 'Activo' : 'Gratuito'}
+            {isPremium ? (language === 'en' ? 'Active' : 'Activo') : (language === 'en' ? 'Free' : 'Gratuito')}
           </span>
         </div>
         {plan?.planExpiresAt && (
           <p className="mt-2 text-xs" style={{ color: isPremium ? 'rgba(255,255,255,0.5)' : '#94A3B8' }}>
-            Renueva el {new Date(plan.planExpiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {language === 'en' ? 'Renews on' : 'Renueva el'} {new Date(plan.planExpiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         )}
         {!isPremium && (
@@ -124,7 +127,7 @@ function ProfileContent() {
             className="mt-3 w-full rounded-xl py-2.5 text-xs font-bold text-white"
             style={{ background: BLUE_GRADIENT }}
           >
-            Ver planes
+            {language === 'en' ? 'View plans' : 'Ver planes'}
           </motion.button>
         )}
       </div>
@@ -132,9 +135,9 @@ function ProfileContent() {
       {/* Options */}
       <div className="mt-5 space-y-2.5">
         {[
-          { icon: FileText, label: 'Uso de documentos', badge: 0, onClick: () => navigate('/app/documents') },
-          { icon: Settings, label: 'Ajustes', badge: 0, onClick: () => navigate('/app/profile/settings') },
-          { icon: Bell, label: 'Notificaciones', badge: unreadCount, onClick: () => navigate('/app/profile/notifications') },
+          { icon: FileText, label: language === 'en' ? 'Document usage' : 'Uso de documentos', badge: 0, onClick: () => navigate('/app/documents') },
+          { icon: Settings, label: language === 'en' ? 'Settings' : 'Ajustes', badge: 0, onClick: () => navigate('/app/profile/settings') },
+          { icon: Bell, label: language === 'en' ? 'Notifications' : 'Notificaciones', badge: unreadCount, onClick: () => navigate('/app/profile/notifications') },
         ].map(({ icon: Icon, label, badge, onClick }) => (
           <motion.button
             key={label}
@@ -170,7 +173,7 @@ function ProfileContent() {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl" style={{ background: '#FEF2F2' }}>
             <LogOut className="size-4" style={{ color: '#EF4444' }} />
           </div>
-          <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>Cerrar sesión</span>
+          <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>{language === 'en' ? 'Sign out' : 'Cerrar sesión'}</span>
         </motion.button>
       </div>
       </div>

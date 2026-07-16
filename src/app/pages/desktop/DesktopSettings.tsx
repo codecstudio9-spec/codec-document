@@ -26,19 +26,19 @@ function SettingsContent() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-black text-slate-900">Configuración</h1>
+      <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Settings' : 'Configuración'}</h1>
 
       <div className="mt-6 space-y-6">
-        {/* Preferencias */}
+        {/* Preferences */}
         <div>
-          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">Preferencias</p>
+          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">{language === 'en' ? 'Preferences' : 'Preferencias'}</p>
           <div className="bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50">
                   <Globe className="size-4 text-slate-500" />
                 </div>
-                <span className="text-sm font-semibold text-slate-800">Idioma</span>
+                <span className="text-sm font-semibold text-slate-800">{language === 'en' ? 'Language' : 'Idioma'}</span>
               </div>
               <div className="flex gap-1.5 rounded-full bg-slate-50 p-1">
                 <button
@@ -62,9 +62,9 @@ function SettingsContent() {
           </div>
         </div>
 
-        {/* Notificaciones */}
+        {/* Notifications */}
         <div>
-          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">Notificaciones</p>
+          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">{language === 'en' ? 'Notifications' : 'Notificaciones'}</p>
           <button
             type="button"
             onClick={() => navigate('/dashboard/notifications')}
@@ -74,14 +74,14 @@ function SettingsContent() {
             <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50">
               <Bell className="size-4 text-slate-500" />
             </div>
-            <span className="flex-1 text-sm font-semibold text-slate-800">Ver documentos firmados sin leer</span>
+            <span className="flex-1 text-sm font-semibold text-slate-800">{language === 'en' ? 'View unread signed documents' : 'Ver documentos firmados sin leer'}</span>
             <ChevronRight className="size-4 text-slate-300" />
           </button>
         </div>
 
-        {/* Seguridad y soporte */}
+        {/* Security & support */}
         <div>
-          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">Seguridad y soporte</p>
+          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">{language === 'en' ? 'Security & support' : 'Seguridad y soporte'}</p>
           <div className="space-y-2.5">
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
@@ -90,19 +90,19 @@ function SettingsContent() {
             >
               <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><Mail className="size-4 text-slate-500" /></div>
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-slate-800">Contactar soporte</span>
+                <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'Contact support' : 'Contactar soporte'}</span>
                 <span className="block text-xs text-slate-400">{SUPPORT_EMAIL}</span>
               </div>
               <ChevronRight className="size-4 text-slate-300" />
             </a>
             <Link to="/privacy" className="flex items-center gap-3 bg-white p-5 text-left" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
               <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><ShieldCheck className="size-4 text-slate-500" /></div>
-              <span className="flex-1 text-sm font-semibold text-slate-800">Política de privacidad</span>
+              <span className="flex-1 text-sm font-semibold text-slate-800">{language === 'en' ? 'Privacy policy' : 'Política de privacidad'}</span>
               <ChevronRight className="size-4 text-slate-300" />
             </Link>
             <Link to="/terms" className="flex items-center gap-3 bg-white p-5 text-left" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
               <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><FileText className="size-4 text-slate-500" /></div>
-              <span className="flex-1 text-sm font-semibold text-slate-800">Términos de servicio</span>
+              <span className="flex-1 text-sm font-semibold text-slate-800">{language === 'en' ? 'Terms of service' : 'Términos de servicio'}</span>
               <ChevronRight className="size-4 text-slate-300" />
             </Link>
             <button
@@ -112,7 +112,7 @@ function SettingsContent() {
               style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
             >
               <div className="flex size-9 items-center justify-center rounded-xl" style={{ background: '#FEF2F2' }}><LogOut className="size-4" style={{ color: '#EF4444' }} /></div>
-              <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>Cerrar sesión</span>
+              <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>{language === 'en' ? 'Sign out' : 'Cerrar sesión'}</span>
             </button>
           </div>
         </div>

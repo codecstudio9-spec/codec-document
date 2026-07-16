@@ -2,15 +2,16 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: Home },
-  { to: '/dashboard/documents', label: 'Mis Documentos', icon: FileText },
-  { to: '/dashboard/signatures', label: 'Firmas', icon: PenLine },
-  { to: '/dashboard/templates', label: 'Plantillas', icon: LayoutTemplate },
-  { to: '/dashboard/ai', label: 'AI Assistant', icon: Sparkles },
-  { to: '/dashboard/settings', label: 'Configuración', icon: Settings },
+  { to: '/dashboard', labelEs: 'Dashboard', labelEn: 'Dashboard', icon: Home },
+  { to: '/dashboard/documents', labelEs: 'Mis Documentos', labelEn: 'My Documents', icon: FileText },
+  { to: '/dashboard/signatures', labelEs: 'Firmas', labelEn: 'Signatures', icon: PenLine },
+  { to: '/dashboard/templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: LayoutTemplate },
+  { to: '/dashboard/ai', labelEs: 'Asistente IA', labelEn: 'AI Assistant', icon: Sparkles },
+  { to: '/dashboard/settings', labelEs: 'Configuración', labelEn: 'Settings', icon: Settings },
 ] as const;
 
 /** Fixed 280px sidebar for the /dashboard/* private app — the desktop
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
 export function DesktopSidebar() {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -31,11 +33,12 @@ export function DesktopSidebar() {
       style={{ width: 280, backdropFilter: 'blur(12px)' }}
     >
       <div className="px-6 pb-5 pt-7">
-        <Logo size="md" tagline="Legal Document Platform" href="" />
+        <Logo size="md" tagline={language === 'en' ? 'Legal Document Platform' : 'Plataforma de Documentos Legales'} href="" />
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ to, labelEs, labelEn, icon: Icon }) => {
+          const label = language === 'en' ? labelEn : labelEs;
           const active = to === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(to);
           return (
             <Link key={to} to={to} className="relative block">
@@ -64,7 +67,7 @@ export function DesktopSidebar() {
           ) : (
             <User className="size-4.5 shrink-0" />
           )}
-          <span className="truncate">{user?.name || 'Mi cuenta'}</span>
+          <span className="truncate">{user?.name || (language === 'en' ? 'My account' : 'Mi cuenta')}</span>
         </Link>
         <button
           type="button"
@@ -72,7 +75,7 @@ export function DesktopSidebar() {
           className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-red-500 transition hover:bg-red-50"
         >
           <LogOut className="size-4.5 shrink-0" />
-          Cerrar sesión
+          {language === 'en' ? 'Sign out' : 'Cerrar sesión'}
         </button>
       </div>
     </aside>

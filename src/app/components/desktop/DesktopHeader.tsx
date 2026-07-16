@@ -3,10 +3,16 @@ import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { useLanguage } from '../../contexts/language-context';
 import { fetchUnreadSignedCount } from '../../services/mobile-dashboard-service';
 
-function greeting(): string {
+function greeting(language: 'en' | 'es'): string {
   const h = new Date().getHours();
+  if (language === 'en') {
+    if (h < 12) return 'Good morning';
+    if (h < 19) return 'Good afternoon';
+    return 'Good evening';
+  }
   if (h < 12) return 'Buenos días';
   if (h < 19) return 'Buenas tardes';
   return 'Buenas noches';
@@ -18,6 +24,7 @@ function greeting(): string {
  * already built for the mobile bell. */
 export function DesktopHeader() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const firstName = (user?.name || user?.email || '').split(' ')[0].split('@')[0];
@@ -30,7 +37,9 @@ export function DesktopHeader() {
   return (
     <header className="flex h-20 items-center justify-between border-b border-slate-200/70 bg-white/70 px-8" style={{ backdropFilter: 'blur(12px)' }}>
       <div>
-        <p className="text-lg font-black text-slate-900">{greeting()}, {firstName || 'bienvenido'}</p>
+        <p className="text-lg font-black text-slate-900">
+          {greeting(language)}, {firstName || (language === 'en' ? 'welcome' : 'bienvenido')}
+        </p>
         <p className="text-xs text-slate-400">Codec Document</p>
       </div>
 

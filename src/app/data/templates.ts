@@ -683,9 +683,6 @@ Attorney for Party B                      Date
 
 LEGAL DISCLAIMER: Prenuptial agreements are complex legal documents with significant implications for property rights, support obligations, and estate planning. The enforceability of prenuptial agreements varies by state and depends on factors including full financial disclosure, voluntariness, independent legal representation, and fairness. This template does not constitute legal advice and may not be enforceable in your jurisdiction without proper legal review. Both parties MUST seek independent legal counsel before signing a prenuptial agreement. Failure to have separate attorneys may render the agreement unenforceable. Consult with experienced family law attorneys in your state to ensure the agreement is valid, enforceable, and protects your interests. Some provisions (such as child support) cannot be waived by prenuptial agreement.`
   },
-
-  // Real Estate & Property - SUPER PROFESSIONAL RESIDENTIAL LEASE
-  residentialLeaseTemplate,
 ];
 
 export function getTemplateById(id: string): DocumentTemplate | undefined {

@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'react-router';
 import { motion } from 'motion/react';
 import { Home, FileText, PenLine, FolderOpen, User } from 'lucide-react';
+import { useLanguage } from '../../contexts/language-context';
 import { GLASS_SURFACE } from '../../styles/mobile-theme';
 
 const TABS = [
-  { to: '/app', label: 'Inicio', icon: Home },
-  { to: '/app/templates', label: 'Plantillas', icon: FileText },
-  { to: '/app/signatures', label: 'Firmas', icon: PenLine },
-  { to: '/app/documents', label: 'Documentos', icon: FolderOpen },
-  { to: '/app/profile', label: 'Perfil', icon: User },
+  { to: '/app', labelEs: 'Inicio', labelEn: 'Home', icon: Home },
+  { to: '/app/templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: FileText },
+  { to: '/app/signatures', labelEs: 'Firmas', labelEn: 'Signatures', icon: PenLine },
+  { to: '/app/documents', labelEs: 'Documentos', labelEn: 'Documents', icon: FolderOpen },
+  { to: '/app/profile', labelEs: 'Perfil', labelEn: 'Profile', icon: User },
 ] as const;
 
 /**
@@ -18,6 +19,7 @@ const TABS = [
  */
 export function MobileBottomNav() {
   const { pathname } = useLocation();
+  const { language } = useLanguage();
 
   return (
     <nav
@@ -31,7 +33,8 @@ export function MobileBottomNav() {
         boxShadow: '0 -16px 40px rgba(15,23,42,0.10)',
       }}
     >
-      {TABS.map(({ to, label, icon: Icon }) => {
+      {TABS.map(({ to, labelEs, labelEn, icon: Icon }) => {
+        const label = language === 'en' ? labelEn : labelEs;
         const active = to === '/app' ? pathname === '/app' : pathname.startsWith(to);
         return (
           <Link key={to} to={to} className="relative flex flex-1 flex-col items-center justify-center gap-1">

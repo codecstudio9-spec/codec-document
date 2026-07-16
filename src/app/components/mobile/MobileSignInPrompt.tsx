@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useMobileSignIn } from './MobileAppShell';
+import { useLanguage } from '../../contexts/language-context';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 /** Empty-state shown in place of real data on /app/* screens that need an
@@ -17,6 +18,7 @@ export function MobileSignInPrompt({
   description: string;
 }) {
   const openSignIn = useMobileSignIn();
+  const { language } = useLanguage();
 
   return (
     <div className="px-4 pt-8">
@@ -42,7 +44,7 @@ export function MobileSignInPrompt({
             boxShadow: '0 10px 24px rgba(37,99,235,0.35)',
           }}
         >
-          <LogIn className="size-4" /> Iniciar sesión
+          <LogIn className="size-4" /> {language === 'en' ? 'Sign in' : 'Iniciar sesión'}
         </motion.button>
       </div>
     </div>

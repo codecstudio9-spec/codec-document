@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Search, FileText, Home, Briefcase, Building2, DollarSign, Globe, ArrowRight } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
+import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates, categories } from '../../data/templates';
+import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const CATEGORY_ICON: Record<string, typeof FileText> = {
@@ -25,6 +27,7 @@ export function DesktopTemplates() {
 
 function TemplatesContent() {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -39,7 +42,7 @@ function TemplatesContent() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-black text-slate-900">Plantillas</h1>
+      <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Templates' : 'Plantillas'}</h1>
 
       <div className="mt-5 flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -47,7 +50,7 @@ function TemplatesContent() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar plantillas..."
+            placeholder={language === 'en' ? 'Search templates...' : 'Buscar plantillas...'}
             className="w-full rounded-2xl bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none"
             style={{ boxShadow: CARD_SHADOW }}
           />
@@ -59,7 +62,7 @@ function TemplatesContent() {
             className="rounded-full px-4 py-2 text-xs font-bold transition"
             style={activeCategory === null ? { background: '#2563EB', color: '#fff' } : { background: '#fff', color: '#374151', boxShadow: CARD_SHADOW }}
           >
-            Todas
+            {language === 'en' ? 'All' : 'Todas'}
           </button>
           {categories.map((cat) => (
             <button
@@ -79,11 +82,13 @@ function TemplatesContent() {
         {filtered.length === 0 ? (
           <div className="col-span-3 bg-white px-6 py-16 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <Search className="mx-auto mb-2 size-7 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-500">Sin resultados</p>
+            <p className="text-sm font-semibold text-slate-500">{language === 'en' ? 'No results' : 'Sin resultados'}</p>
           </div>
         ) : (
           filtered.map((t) => {
             const Icon = CATEGORY_ICON[t.category] ?? FileText;
+            const name = getDocumentTranslation(t.id, 'name', language) || t.name;
+            const description = getDocumentTranslation(t.id, 'desc', language) || t.description;
             return (
               <motion.div
                 key={t.id}
@@ -95,8 +100,8 @@ function TemplatesContent() {
                   <Icon className="size-5 text-indigo-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{t.description}</p>
+                  <p className="text-sm font-bold text-slate-900">{name}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{description}</p>
                 </div>
                 <button
                   type="button"
@@ -104,7 +109,7 @@ function TemplatesContent() {
                   className="mt-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white"
                   style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}
                 >
-                  Usar plantilla <ArrowRight className="size-3.5" />
+                  {language === 'en' ? 'Use template' : 'Usar plantilla'} <ArrowRight className="size-3.5" />
                 </button>
               </motion.div>
             );
