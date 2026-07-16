@@ -32,9 +32,14 @@ export const CARD_RADIUS = 24;
 export const CARD_SHADOW = '0 20px 40px rgba(15,23,42,0.08)';
 
 /** Frosted-glass surface — reserved for the top header and bottom nav
- * only, per design spec (not the whole app). */
+ * only, per design spec (not the whole app). High opacity on purpose:
+ * on Android WebViews with weak/no backdrop-filter support, a low-opacity
+ * background alone (without the blur actually rendering) reads as a
+ * washed-out smudge instead of glass — this stays visually solid even
+ * when the blur silently no-ops, and still gets the glass edge where
+ * blur *is* supported. */
 export const GLASS_SURFACE: CSSProperties = {
-  background: 'rgba(255,255,255,0.72)',
+  background: 'rgba(255,255,255,0.97)',
   backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)',
 };

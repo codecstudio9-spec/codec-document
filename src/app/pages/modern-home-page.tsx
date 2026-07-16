@@ -80,6 +80,14 @@ export function ModernHomePage() {
     if (isMobile) navigate('/app', { replace: true });
   }, [isMobile, navigate]);
 
+  // Mundo 1 (marketing, public) vs Mundo 2 (product, private): a signed-in
+  // desktop visitor should never see this landing either — straight into
+  // the real dashboard, same as mobile above. Anonymous desktop visitors
+  // are completely unaffected, landing stays exactly as-is for SEO/marketing.
+  useEffect(() => {
+    if (!isMobile && user) navigate('/dashboard', { replace: true });
+  }, [isMobile, user, navigate]);
+
 
   const premiumTestimonials = [
     {

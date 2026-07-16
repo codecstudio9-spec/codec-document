@@ -13,6 +13,7 @@ export interface DashboardStats {
   documentsCreated: number;
   pending: number;
   signed: number;
+  templatesUsed: number;
 }
 
 /** sign_transactions the CURRENT user created (creator_id = own id) — no
@@ -44,8 +45,9 @@ export async function fetchUnreadSignedCount(userId: string): Promise<number> {
 }
 
 export async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
-  const [userDocsRes, docsRes, txs] = await Promise.all([
+  const [userDocsRes, templateRowsRes, docsRes, txs] = await Promise.all([
     supabase.from('user_documents').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('user_documents').select('template_id').eq('user_id', userId),
     supabase.from('documents').select('id, status', { count: 'exact' }).eq('user_id', userId),
     fetchMySignTransactions(userId),
   ]);
@@ -60,10 +62,14 @@ export async function fetchDashboardStats(userId: string): Promise<DashboardStat
   const txSigned = txs.filter((t) => t.status === 'completed').length;
   const docsSigned = docsRows.filter((d) => d.status === 'completed').length;
 
+  const templateRows = (templateRowsRes.data as Array<{ template_id: string }>) ?? [];
+  const templatesUsed = new Set(templateRows.map((r) => r.template_id)).size;
+
   return {
     documentsCreated: userDocsCount + docsCount + txs.length,
     pending: txPending + docsPending,
     signed: txSigned + docsSigned,
+    templatesUsed,
   };
 }
 
@@ -71,6 +77,7 @@ export interface UserPlanInfo {
   planStatus: string | null;
   planType: string | null;
   planExpiresAt: string | null;
+  createdAt: string | null;
 }
 
 /** auth-context.tsx deliberately translates these into unlimitedActive/
@@ -81,13 +88,14 @@ export interface UserPlanInfo {
 export async function fetchUserPlanInfo(userId: string): Promise<UserPlanInfo> {
   const { data, error } = await supabase
     .from('users')
-    .select('plan_status, plan_type, plan_expires_at')
+    .select('plan_status, plan_type, plan_expires_at, created_at')
     .eq('id', userId)
     .maybeSingle();
-  if (error || !data) return { planStatus: null, planType: null, planExpiresAt: null };
+  if (error || !data) return { planStatus: null, planType: null, planExpiresAt: null, createdAt: null };
   return {
     planStatus: (data as any).plan_status ?? null,
     planType: (data as any).plan_type ?? null,
     planExpiresAt: (data as any).plan_expires_at ?? null,
+    createdAt: (data as any).created_at ?? null,
   };
 }

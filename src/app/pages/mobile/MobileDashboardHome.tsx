@@ -58,7 +58,7 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!user?.id) return;
-    fetchDashboardStats(user.id).then(setStats).catch(() => setStats({ documentsCreated: 0, pending: 0, signed: 0 }));
+    fetchDashboardStats(user.id).then(setStats).catch(() => setStats({ documentsCreated: 0, pending: 0, signed: 0, templatesUsed: 0 }));
     fetchUnreadSignedCount(user.id).then(setUnreadCount).catch(() => setUnreadCount(0));
 
     Promise.all([

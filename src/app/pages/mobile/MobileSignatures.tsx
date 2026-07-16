@@ -90,6 +90,25 @@ function SignaturesContent() {
         </button>
       </div>
 
+      {/* "Solo firmar" — distinct from creating a template-based document
+          below: this is for a PDF you already have, that you (and/or
+          someone else) just need to sign, no form-filling involved. */}
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        type="button"
+        onClick={() => navigate('/firma-electronica')}
+        className="mt-4 flex w-full items-center gap-3 p-4 text-left text-white"
+        style={{ borderRadius: CARD_RADIUS, background: BLUE_GRADIENT, boxShadow: '0 14px 28px rgba(37,99,235,0.30)' }}
+      >
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+          <PenLine className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Firmar un documento</p>
+          <p className="mt-0.5 text-xs text-blue-100">Sube un PDF y fírmalo tú, o envíalo a firmar</p>
+        </div>
+      </motion.button>
+
       {/* List */}
       <div className="mt-4 space-y-2.5">
         {txs === null ? (

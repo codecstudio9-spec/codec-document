@@ -29,6 +29,14 @@ import { MobileDocuments } from "./pages/mobile/MobileDocuments";
 import { MobileProfile } from "./pages/mobile/MobileProfile";
 import { MobileNotifications } from "./pages/mobile/MobileNotifications";
 import { MobileSettings } from "./pages/mobile/MobileSettings";
+import { DesktopDashboardHome } from "./pages/desktop/DesktopDashboardHome";
+import { DesktopDocuments } from "./pages/desktop/DesktopDocuments";
+import { DesktopSignatures } from "./pages/desktop/DesktopSignatures";
+import { DesktopTemplates } from "./pages/desktop/DesktopTemplates";
+import { DesktopProfile } from "./pages/desktop/DesktopProfile";
+import { DesktopSettings } from "./pages/desktop/DesktopSettings";
+import { DesktopNotifications } from "./pages/desktop/DesktopNotifications";
+import { DesktopAI } from "./pages/desktop/DesktopAI";
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -109,8 +117,42 @@ export const router = createBrowserRouter([
     Component: ProtectedMyDocumentsPage,
   },
   {
+    // Private desktop app (Mundo 2) — DesktopAppShell itself redirects to
+    // "/app" on a mobile viewport and to "/" if there's no session, so
+    // these paths never render anything for an anonymous or mobile visitor.
+    // The public landing at "/" is untouched (Mundo 1) — see
+    // modern-home-page.tsx's isDesktopAuthed redirect for the other half
+    // of this separation.
     path: "/dashboard",
-    Component: ProtectedMyDocumentsPage,
+    Component: DesktopDashboardHome,
+  },
+  {
+    path: "/dashboard/documents",
+    Component: DesktopDocuments,
+  },
+  {
+    path: "/dashboard/signatures",
+    Component: DesktopSignatures,
+  },
+  {
+    path: "/dashboard/templates",
+    Component: DesktopTemplates,
+  },
+  {
+    path: "/dashboard/profile",
+    Component: DesktopProfile,
+  },
+  {
+    path: "/dashboard/settings",
+    Component: DesktopSettings,
+  },
+  {
+    path: "/dashboard/notifications",
+    Component: DesktopNotifications,
+  },
+  {
+    path: "/dashboard/ai",
+    Component: DesktopAI,
   },
   {
     // Mobile-only app shell (bottom-nav dashboard) — MobileAppShell itself
