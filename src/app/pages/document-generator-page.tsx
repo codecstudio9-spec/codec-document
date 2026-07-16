@@ -28,24 +28,9 @@ import { consumeSignatureRequest72h, getNextSignatureRequestSlot, consumeAnonUsa
 import { SignatureLimitDialog } from '../components/signatures/SignatureLimitDialog';
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
-import { createSignTransaction, subscribeToTransaction, getSignTransaction, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
+import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 
 type FlowStep = 'form' | 'sign' | 'verify';
-
-function parseIdEvidencePayload(value?: string): { front?: string; back?: string } {
-  if (!value) return {};
-  const trimmed = value.trim();
-  if (!trimmed.startsWith('{')) return { front: value };
-  try {
-    const parsed = JSON.parse(trimmed) as { front?: string; back?: string; idFront?: string; idBack?: string };
-    return {
-      front: parsed.front || parsed.idFront || undefined,
-      back: parsed.back || parsed.idBack || undefined,
-    };
-  } catch {
-    return { front: value };
-  }
-}
 
 interface CoSigner {
   id: string;
@@ -645,55 +630,9 @@ export function DocumentGeneratorPage() {
 
   const handleDownloadSignedDoc = () => {
     if (!activeTx) return;
+    stashSignedTransactionForDownload(activeTx, language);
     try {
-      sessionStorage.setItem('documentData', JSON.stringify(activeTx.document_data));
       sessionStorage.setItem('documentBranding', JSON.stringify(branding));
-      sessionStorage.setItem('documentType', activeTx.document_type);
-
-      // Recipient signature → coSigners slot
-      if (activeTx.recipient_signature) {
-        const recipientAsSigner = [{
-          id: 'recipient',
-          name: language === 'en' ? 'Recipient' : 'Destinatario',
-          role: language === 'en' ? 'Signer' : 'Firmante',
-          token: '',
-          sigDataUrl: activeTx.recipient_signature,
-          placement: null,
-        }];
-        sessionStorage.setItem('coSigners', JSON.stringify(recipientAsSigner));
-      }
-
-      // Sender's own pre-signature → owner slot in preview-page
-      if (activeTx.sender_signature) {
-        sessionStorage.setItem('userSignatureDataUrl', activeTx.sender_signature);
-      } else {
-        sessionStorage.removeItem('userSignatureDataUrl');
-      }
-
-      // Evidence photos → passed to PDF generator for the audit page
-      if (activeTx.recipient_selfie) {
-        sessionStorage.setItem('identitySelfie', activeTx.recipient_selfie);
-      } else {
-        sessionStorage.removeItem('identitySelfie');
-      }
-      if (activeTx.recipient_id_photo) {
-        const parsedId = parseIdEvidencePayload(activeTx.recipient_id_photo);
-        if (parsedId.front) {
-          sessionStorage.setItem('identityIdDocFront', parsedId.front);
-          sessionStorage.setItem('identityIdDoc', parsedId.front);
-        } else {
-          sessionStorage.removeItem('identityIdDocFront');
-          sessionStorage.removeItem('identityIdDoc');
-        }
-        if (parsedId.back) sessionStorage.setItem('identityIdDocBack', parsedId.back);
-        else sessionStorage.removeItem('identityIdDocBack');
-      } else {
-        sessionStorage.removeItem('identityIdDocFront');
-        sessionStorage.removeItem('identityIdDocBack');
-        sessionStorage.removeItem('identityIdDoc');
-      }
-
-      sessionStorage.setItem('isPurchased', 'true');
     } catch { /* sessionStorage quota */ }
     navigate(`/preview/${activeTx.document_type}`);
   };

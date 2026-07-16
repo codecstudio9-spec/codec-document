@@ -122,11 +122,22 @@ function DocumentsContent() {
               : c === 'draft'
                 ? { color: '#6B7280', bg: '#F1F5F9', label: 'Borrador' }
                 : { color: '#F59E0B', bg: '#FFFBEB', label: 'Pendiente' };
+            const openDoc = () => {
+              if (!doc.href) return;
+              if (doc.href.startsWith('http')) {
+                window.open(doc.href, '_blank', 'noopener,noreferrer');
+              } else {
+                navigate(doc.href);
+              }
+            };
             return (
-              <motion.div
+              <motion.button
                 key={doc.id}
+                type="button"
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-3 bg-white p-4"
+                onClick={openDoc}
+                disabled={!doc.href}
+                className="flex w-full items-center gap-3 bg-white p-4 text-left disabled:opacity-70"
                 style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
@@ -146,16 +157,11 @@ function DocumentsContent() {
                       : <Clock className="size-3.5" style={{ color: style.color }} />}
                 </span>
                 {doc.href && (
-                  <a
-                    href={doc.href}
-                    target={doc.href.startsWith('http') ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50"
-                  >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
                     <Download className="size-4 text-slate-500" />
-                  </a>
+                  </span>
                 )}
-              </motion.div>
+              </motion.button>
             );
           })
         )}

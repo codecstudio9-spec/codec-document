@@ -140,3 +140,85 @@ export function subscribeToTransaction(
 
   return () => { supabase.removeChannel(channel); };
 }
+
+export function parseIdEvidencePayload(value?: string): { front?: string; back?: string } {
+  if (!value) return {};
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{')) return { front: value };
+  try {
+    const parsed = JSON.parse(trimmed) as { front?: string; back?: string; idFront?: string; idBack?: string };
+    return {
+      front: parsed.front || parsed.idFront || undefined,
+      back: parsed.back || parsed.idBack || undefined,
+    };
+  } catch {
+    return { front: value };
+  }
+}
+
+/**
+ * Stashes a completed transaction's data into sessionStorage in the exact
+ * shape preview-page.tsx reads to compile the final PDF (recipient
+ * signature included) — the caller navigates to `/preview/${tx.document_type}`
+ * right after calling this. This is the ONLY place the recipient's
+ * signature actually gets stamped onto the document.
+ *
+ * Extracted out of document-generator-page.tsx's handleDownloadSignedDoc
+ * (which only worked if the sender was still on that exact page, with a
+ * live realtime subscription, at the moment the recipient finished
+ * signing) so the Firmas tab can reuse the same, already-working
+ * compilation step for a transaction that completed after the sender
+ * left — the common case, since nothing else notifies them it happened.
+ */
+export function stashSignedTransactionForDownload(tx: SignTransaction, language: 'en' | 'es'): void {
+  try {
+    sessionStorage.setItem('documentData', JSON.stringify(tx.document_data));
+    sessionStorage.setItem('documentType', tx.document_type);
+    sessionStorage.removeItem('documentBranding');
+
+    if (tx.recipient_signature) {
+      const recipientAsSigner = [{
+        id: 'recipient',
+        name: language === 'en' ? 'Recipient' : 'Destinatario',
+        role: language === 'en' ? 'Signer' : 'Firmante',
+        token: '',
+        sigDataUrl: tx.recipient_signature,
+        placement: null,
+      }];
+      sessionStorage.setItem('coSigners', JSON.stringify(recipientAsSigner));
+    } else {
+      sessionStorage.removeItem('coSigners');
+    }
+
+    if (tx.sender_signature) {
+      sessionStorage.setItem('userSignatureDataUrl', tx.sender_signature);
+    } else {
+      sessionStorage.removeItem('userSignatureDataUrl');
+    }
+
+    if (tx.recipient_selfie) {
+      sessionStorage.setItem('identitySelfie', tx.recipient_selfie);
+    } else {
+      sessionStorage.removeItem('identitySelfie');
+    }
+
+    if (tx.recipient_id_photo) {
+      const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
+      if (parsedId.front) {
+        sessionStorage.setItem('identityIdDocFront', parsedId.front);
+        sessionStorage.setItem('identityIdDoc', parsedId.front);
+      } else {
+        sessionStorage.removeItem('identityIdDocFront');
+        sessionStorage.removeItem('identityIdDoc');
+      }
+      if (parsedId.back) sessionStorage.setItem('identityIdDocBack', parsedId.back);
+      else sessionStorage.removeItem('identityIdDocBack');
+    } else {
+      sessionStorage.removeItem('identityIdDocFront');
+      sessionStorage.removeItem('identityIdDocBack');
+      sessionStorage.removeItem('identityIdDoc');
+    }
+
+    sessionStorage.setItem('isPurchased', 'true');
+  } catch { /* sessionStorage quota */ }
+}

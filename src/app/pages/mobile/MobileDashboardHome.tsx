@@ -18,7 +18,7 @@ function greeting(): string {
   return 'Buenas noches';
 }
 
-type RecentItem = { id: string; name: string; status: string; date: string };
+type RecentItem = { id: string; name: string; status: string; date: string; href: string };
 
 function statusLabel(status: string): { text: string; color: string; bg: string } {
   if (status === 'completed') return { text: 'Firmado', color: '#10B981', bg: '#ECFDF5' };
@@ -64,8 +64,8 @@ function DashboardContent() {
       fetchAssociatedDocuments(user.id).catch(() => [] as AssociatedDocument[]),
     ]).then(([own, associated]) => {
       const combined: RecentItem[] = [
-        ...own.map((d) => ({ id: d.id, name: d.document_name, status: 'draft', date: d.created_at })),
-        ...associated.map((d) => ({ id: d.id, name: d.name, status: d.status, date: d.created_at })),
+        ...own.map((d) => ({ id: d.id, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}` })),
+        ...associated.map((d) => ({ id: d.id, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url || '' })),
       ]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
@@ -201,11 +201,19 @@ function DashboardContent() {
           <div className="space-y-2.5">
             {recent.map((doc) => {
               const s = statusLabel(doc.status);
+              const openDoc = () => {
+                if (!doc.href) return;
+                if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
+                else navigate(doc.href);
+              };
               return (
-                <motion.div
+                <motion.button
                   key={doc.id}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 bg-white px-4 py-3"
+                  onClick={openDoc}
+                  disabled={!doc.href}
+                  className="flex w-full items-center gap-3 bg-white px-4 py-3 text-left disabled:opacity-70"
                   style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
                 >
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
@@ -225,7 +233,7 @@ function DashboardContent() {
                       ? <Check className="size-3.5" style={{ color: s.color }} />
                       : <Clock className="size-3.5" style={{ color: s.color }} />}
                   </span>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
