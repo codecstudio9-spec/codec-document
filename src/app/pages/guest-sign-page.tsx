@@ -487,27 +487,33 @@ export function GuestSignPage() {
       return doc;
     };
 
+    if (!url.trim()) {
+      console.error('guest-sign-page: tokenData.originalPdfUrl is empty — the documents row has no PDF URL to load.');
+    }
+
     (async () => {
       try {
         const doc = await load(url);
         if (cancelled) return;
         setPdfDoc(doc);
         setPdfPageCount(doc.numPages);
-      } catch {
+      } catch (directErr) {
         // getPublicUrl() only actually works if the bucket is flagged
         // "Public" in Supabase — if it isn't, this "public" URL 400s for
         // the guest even though nothing about the document itself is
         // private to them. Retry via a signed URL, which works off the
         // storage RLS policy instead of that bucket-level flag.
+        console.error('guest-sign-page: direct PDF URL failed to load, trying signed-URL fallback. URL:', url, 'error:', directErr);
         try {
           const signedUrl = await getSignedUrlFallback(url);
-          if (!signedUrl) throw new Error('no signed url');
+          if (!signedUrl) throw new Error('getSignedUrlFallback returned null — see its own console.error above for why');
           const doc = await load(signedUrl);
           if (cancelled) return;
           setPdfDoc(doc);
           setPdfPageCount(doc.numPages);
-        } catch {
+        } catch (fallbackErr) {
           if (cancelled) return;
+          console.error('guest-sign-page: signed-URL fallback also failed:', fallbackErr);
           setPdfError('No se pudo cargar la vista previa del documento.');
           // Enable signing after a short delay even when PDF fails to load
           setTimeout(() => setHasScrolledToEnd(true), 2000);

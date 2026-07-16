@@ -934,6 +934,17 @@ export function PreviewPage() {
       await triggerDownload(blob, fileName);
     }
 
+    // Save to the user's profile ("Mis documentos") now that the download
+    // genuinely succeeded — saveDocumentRecord existed and was imported
+    // but was never actually called anywhere, so nothing a logged-in user
+    // generated ever showed up in /my-documents. Best-effort: a save
+    // failure here shouldn't undo the successful download the user just got.
+    if (user.id) {
+      saveDocumentRecord(user.id, template.id, template.name || template.id).catch((err) => {
+        console.error('saveDocumentRecord failed:', err);
+      });
+    }
+
     toast.success(t('preview.documentDownloaded'));
   } catch (error) {
     console.error('Preview download failed:', error);

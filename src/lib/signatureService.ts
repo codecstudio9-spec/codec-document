@@ -123,14 +123,23 @@ export async function uploadPdfToStorage(
  * viewers recover from that case without needing to know which one it is.
  */
 export async function getSignedUrlFallback(publicUrl: string, expiresInSeconds = 3600): Promise<string | null> {
-  const marker = `/object/public/${BUCKET}/`;
-  const idx = publicUrl.indexOf(marker);
-  if (idx === -1) return null;
-  const path = publicUrl.slice(idx + marker.length).split('?')[0];
-  if (!path) return null;
+  // Parse the bucket name out of the URL itself instead of assuming it's
+  // BUCKET ('documents-bucket') — a stored original_pdf_url may have been
+  // written under a differently-named bucket at some point, and hardcoding
+  // the wrong one here would make this fallback silently no-op exactly
+  // when it's needed most.
+  const match = publicUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/([^?]+)/);
+  if (!match) {
+    console.error('getSignedUrlFallback: could not parse bucket/path from URL:', publicUrl);
+    return null;
+  }
+  const [, bucket, path] = match;
 
-  const { data, error } = await publicSupabase.storage.from(BUCKET).createSignedUrl(path, expiresInSeconds);
-  if (error || !data?.signedUrl) return null;
+  const { data, error } = await publicSupabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  if (error || !data?.signedUrl) {
+    console.error(`getSignedUrlFallback: createSignedUrl failed for bucket "${bucket}", path "${path}":`, error);
+    return null;
+  }
   return data.signedUrl;
 }
 
