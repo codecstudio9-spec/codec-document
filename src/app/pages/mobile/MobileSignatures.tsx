@@ -1,0 +1,129 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { PenLine, Clock, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../contexts/auth-context';
+import { MobileAppShell } from '../../components/mobile/MobileAppShell';
+import { fetchMySignTransactions } from '../../services/mobile-dashboard-service';
+import { isActiveTxStatus, type SignTransaction } from '../../services/sign-transaction-service';
+
+const DOC_TYPE_LABEL: Record<string, string> = {
+  'residential-lease': 'Contrato de arrendamiento',
+  'bill-of-sale-vehicle': 'Compraventa de vehículo',
+  'promissory-note': 'Pagaré',
+  nda: 'Acuerdo de confidencialidad',
+  'independent-contractor': 'Contrato de servicios',
+  'service-agreement': 'Contrato de servicios',
+};
+
+export function MobileSignatures() {
+  return (
+    <MobileAppShell>
+      <SignaturesContent />
+    </MobileAppShell>
+  );
+}
+
+function SignaturesContent() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<'pending' | 'signed'>('pending');
+  const [txs, setTxs] = useState<SignTransaction[] | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMySignTransactions(user.id).then(setTxs).catch(() => setTxs([]));
+  }, [user?.id]);
+
+  const pending = (txs ?? []).filter((t) => isActiveTxStatus(t.status));
+  const signed = (txs ?? []).filter((t) => t.status === 'completed');
+  const list = tab === 'pending' ? pending : signed;
+
+  return (
+    <div className="px-4 pt-5">
+      <h1 className="text-xl font-black text-slate-900">Firmas</h1>
+
+      {/* Tabs */}
+      <div className="mt-4 flex gap-2 rounded-2xl bg-white p-1.5" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+        <button
+          type="button"
+          onClick={() => setTab('pending')}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
+          style={tab === 'pending' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
+        >
+          Pendientes {txs !== null && pending.length > 0 && <span className="text-xs opacity-80">({pending.length})</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('signed')}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
+          style={tab === 'signed' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
+        >
+          Firmados {txs !== null && signed.length > 0 && <span className="text-xs opacity-80">({signed.length})</span>}
+        </button>
+      </div>
+
+      {/* List */}
+      <div className="mt-4 space-y-2.5">
+        {txs === null ? (
+          [0, 1, 2].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-white" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }} />
+          ))
+        ) : list.length === 0 ? (
+          <div className="rounded-2xl bg-white px-4 py-10 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+            {tab === 'pending' ? (
+              <>
+                <Clock className="mx-auto mb-2 size-7 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-500">No tienes firmas pendientes</p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mx-auto mb-2 size-7 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-500">Aún no tienes documentos firmados</p>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/app/templates')}
+              className="mt-3 text-xs font-bold text-blue-600"
+            >
+              Crear un documento para firmar →
+            </button>
+          </div>
+        ) : (
+          list.map((tx) => {
+            const isSigned = tx.status === 'completed';
+            const label = DOC_TYPE_LABEL[tx.document_type] || tx.document_type;
+            return (
+              <button
+                key={tx.id}
+                type="button"
+                onClick={() => navigate(`/sign/${tx.id}`)}
+                className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 text-left transition active:scale-[0.98]"
+                style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
+              >
+                <div
+                  className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
+                  style={{ background: isSigned ? '#ECFDF5' : '#FFFBEB' }}
+                >
+                  <PenLine className="size-5" style={{ color: isSigned ? '#10B981' : '#F59E0B' }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-slate-900">{label}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Enviado el {new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+                <span
+                  className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                  style={isSigned ? { color: '#10B981', background: '#ECFDF5' } : { color: '#F59E0B', background: '#FFFBEB' }}
+                >
+                  {isSigned ? 'Firmado' : 'Pendiente'}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

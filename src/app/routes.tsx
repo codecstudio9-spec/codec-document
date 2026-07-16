@@ -22,6 +22,11 @@ import VehicleBillOfSaleLanding from "./pages/landings/billing-vehicle-bill-of-s
 import PromissoryNoteLanding from "./pages/landings/promissory-note";
 import StateDocumentLanding from './pages/landings/state-document';
 import { ProtectedRoute } from "./components/auth/protected-route";
+import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
+import { MobileTemplates } from "./pages/mobile/MobileTemplates";
+import { MobileSignatures } from "./pages/mobile/MobileSignatures";
+import { MobileDocuments } from "./pages/mobile/MobileDocuments";
+import { MobileProfile } from "./pages/mobile/MobileProfile";
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -104,6 +109,30 @@ export const router = createBrowserRouter([
   {
     path: "/dashboard",
     Component: ProtectedMyDocumentsPage,
+  },
+  {
+    // Mobile-only app shell (bottom-nav dashboard) — MobileAppShell itself
+    // redirects to "/" if not on a real mobile viewport or not signed in,
+    // so these paths never render anything different from the desktop
+    // site when hit from a desktop browser.
+    path: "/app",
+    Component: MobileDashboardHome,
+  },
+  {
+    path: "/app/templates",
+    Component: MobileTemplates,
+  },
+  {
+    path: "/app/signatures",
+    Component: MobileSignatures,
+  },
+  {
+    path: "/app/documents",
+    Component: MobileDocuments,
+  },
+  {
+    path: "/app/profile",
+    Component: MobileProfile,
   },
   {
     path: "/preview/success",
