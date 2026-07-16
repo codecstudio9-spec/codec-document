@@ -39,11 +39,17 @@ function SignaturesContent() {
   const list = tab === 'pending' ? pending : signed;
 
   return (
-    <div className="px-4 pt-5">
-      <h1 className="text-xl font-black text-slate-900">Firmas</h1>
+    <div>
+      {/* Dark header block — same mixed light/dark treatment as
+          Plantillas (blue) and Perfil (blue), this one navy for variety. */}
+      <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+        <h1 className="text-xl font-black text-white">Firmas</h1>
+        <p className="mt-0.5 text-xs text-white/40">Documentos enviados a firmar</p>
+      </div>
 
-      {/* Tabs */}
-      <div className="mt-4 flex gap-2 rounded-2xl bg-white p-1.5" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+      <div className="px-4">
+      {/* Tabs — pulled up to overlap the header, floating-card look */}
+      <div className="-mt-5 flex gap-2 rounded-2xl bg-white p-1.5" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
         <button
           type="button"
           onClick={() => setTab('pending')}
@@ -124,6 +130,21 @@ function SignaturesContent() {
           })
         )}
       </div>
+      </div>
+
+      {/* Floating action — start a new signature request */}
+      <button
+        type="button"
+        onClick={() => navigate('/app/templates')}
+        className="fixed flex items-center justify-center text-white transition active:scale-90"
+        style={{
+          bottom: 96, right: 20, width: 56, height: 56, borderRadius: 18,
+          background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+          boxShadow: '0 10px 24px rgba(37,99,235,0.4)',
+        }}
+      >
+        <PenLine className="size-5" />
+      </button>
     </div>
   );
 }

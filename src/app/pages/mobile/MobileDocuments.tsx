@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Plus, FileText, Download } from 'lucide-react';
+import { Plus, FileText, Download, Check, Clock, FileEdit } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
@@ -118,11 +118,15 @@ function DocumentsContent() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
                   <p className="mt-0.5 text-xs text-slate-400">
-                    {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {style.label} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ color: style.color, background: style.bg }}>
-                  {style.label}
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>
+                  {c === 'signed'
+                    ? <Check className="size-3.5" style={{ color: style.color }} />
+                    : c === 'draft'
+                      ? <FileEdit className="size-3.5" style={{ color: style.color }} />
+                      : <Clock className="size-3.5" style={{ color: style.color }} />}
                 </span>
                 {doc.href && (
                   <a

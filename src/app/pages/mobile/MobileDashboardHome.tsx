@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight } from 'lucide-react';
+import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
@@ -123,29 +123,31 @@ function DashboardContent() {
           <Plus className="size-5" /> Crear documento
         </button>
 
-        <div className="flex gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate('/firma-electronica')}
-            className="flex flex-1 items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 transition active:scale-[0.98]"
-            style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 13.5 }}
-          >
-            <Upload className="size-4" /> Subir PDF
-          </button>
-          <label
-            className="flex flex-1 cursor-pointer items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 transition active:scale-[0.98]"
-            style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 13.5 }}
-          >
-            <Camera className="size-4" /> Escanear
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="sr-only"
-              onChange={(e) => handleScan(e.target.files?.[0])}
-            />
-          </label>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/firma-electronica')}
+          className="flex w-full items-center justify-center gap-2 border border-slate-200 bg-white text-slate-700 transition active:scale-[0.98]"
+          style={{ borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14 }}
+        >
+          <Upload className="size-4" /> Subir PDF
+        </button>
+
+        <label
+          className="flex w-full cursor-pointer items-center justify-center gap-2 transition active:scale-[0.98]"
+          style={{
+            borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14,
+            border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857',
+          }}
+        >
+          <Camera className="size-4" /> Escanear documento
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={(e) => handleScan(e.target.files?.[0])}
+          />
+        </label>
       </div>
 
       {/* Recent documents */}
@@ -185,14 +187,16 @@ function DashboardContent() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{doc.name}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      {s.text} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <span
-                    className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
-                    style={{ color: s.color, background: s.bg }}
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: s.bg }}
                   >
-                    {s.text}
+                    {doc.status === 'completed'
+                      ? <Check className="size-3.5" style={{ color: s.color }} />
+                      : <Clock className="size-3.5" style={{ color: s.color }} />}
                   </span>
                 </div>
               );

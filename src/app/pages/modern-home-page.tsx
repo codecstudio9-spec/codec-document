@@ -9,6 +9,7 @@ import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
 import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
+import { MobileLandingIntro } from '../components/mobile/MobileLandingIntro';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { PricingSection } from '../components/pricing-section';
@@ -848,8 +849,15 @@ export function ModernHomePage() {
         </AnimatePresence>
       </header>
 
-      {/* Hero Section */}
-      <ModernHero />
+      {/* Hero Section — a signed-out mobile visitor gets the compact
+          card-based intro instead of the full-screen photo hero/slider;
+          the rest of the landing (including this hero) is unaffected on
+          desktop and still exists further down the page either way. */}
+      {isMobile && !user ? (
+        <MobileLandingIntro onOpenSignIn={() => setOnboardingOpen(true)} />
+      ) : isMobile ? null /* signed-in mobile — about to redirect to /app */ : (
+        <ModernHero />
+      )}
 
       <section id="documents-section">
         <DocumentBentoGrid documents={filteredDocuments} />

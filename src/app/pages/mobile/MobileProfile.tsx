@@ -45,27 +45,32 @@ function ProfileContent() {
   };
 
   return (
-    <div className="px-4 pt-5">
-      <h1 className="text-xl font-black text-slate-900">Perfil</h1>
-
-      {/* User card */}
-      <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white p-4" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
-        {user?.picture ? (
-          <img src={user.picture} alt={user.name || 'Perfil'} className="size-14 shrink-0 rounded-2xl object-cover" />
-        ) : (
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-black text-white">
-            {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
+    <div>
+      {/* Blue header block — avatar/name/email in white on the brand
+          color, same treatment as Plantillas/Firmas, instead of a plain
+          white card indistinguishable from the rest of the page. */}
+      <div className="px-4 pb-8 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+        <h1 className="mb-4 text-xl font-black text-white">Perfil</h1>
+        <div className="flex items-center gap-3">
+          {user?.picture ? (
+            <img src={user.picture} alt={user.name || 'Perfil'} className="size-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" />
+          ) : (
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-lg font-black text-white ring-2 ring-white/30">
+              {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-bold text-white">{user?.name || 'Usuario'}</p>
+            <p className="truncate text-xs text-blue-100">{user?.email}</p>
           </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-bold text-slate-900">{user?.name || 'Usuario'}</p>
-          <p className="truncate text-xs text-slate-400">{user?.email}</p>
         </div>
       </div>
 
-      {/* Plan card */}
+      <div className="px-4">
+      {/* Plan card — pulled up to overlap the header block for the
+          "floating card" look Stripe/Revolut dashboards use. */}
       <div
-        className="mt-3 rounded-2xl p-4"
+        className="-mt-5 rounded-2xl p-4"
         style={{
           background: isPremium ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' : '#FFFFFF',
           boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
@@ -133,6 +138,7 @@ function ProfileContent() {
           </div>
           <span className="flex-1 text-sm font-semibold" style={{ color: '#EF4444' }}>Cerrar sesión</span>
         </button>
+      </div>
       </div>
     </div>
   );

@@ -36,22 +36,28 @@ function TemplatesContent() {
   }, [query, activeCategory]);
 
   return (
-    <div className="px-4 pt-5">
-      <h1 className="text-xl font-black text-slate-900">Plantillas</h1>
+    <div>
+      {/* Blue header block — title, subtitle, search all live on the
+          brand color, matching Firmas/Perfil's dark/blue-block treatment
+          so the whole shell isn't just white-on-white. */}
+      <div className="px-4 pb-5 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
+        <h1 className="text-xl font-black text-white">Plantillas</h1>
+        <p className="mt-0.5 text-xs text-blue-100">Elige una plantilla para empezar</p>
 
-      {/* Search */}
-      <div className="relative mt-4">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar plantillas..."
-          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        />
+        <div className="relative mt-4">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar plantillas..."
+            className="w-full rounded-2xl bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none"
+          />
+        </div>
       </div>
 
+      <div className="px-4 pt-4">
       {/* Category chips */}
-      <div className="mt-3.5 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         <button
           type="button"
           onClick={() => setActiveCategory(null)}
@@ -116,6 +122,7 @@ function TemplatesContent() {
             );
           })
         )}
+      </div>
       </div>
     </div>
   );
