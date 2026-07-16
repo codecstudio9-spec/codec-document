@@ -105,8 +105,8 @@ export function DraggableSignature({ sig, getContainer, onChange, onDelete }: Dr
             )}
           </span>
 
-          {/* Controls on hover */}
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          {/* Controls — always visible, see resize/delete note above */}
+          <div className="flex items-center gap-0.5">
             <button
               type="button"
               title={sig.showLabel ? 'Ocultar texto' : 'Agregar texto'}
@@ -206,27 +206,30 @@ export function DraggableSignature({ sig, getContainer, onChange, onDelete }: Dr
         )}
 
         {/* ── Resize handle ─────────────────────────────────────────────────── */}
+        {/* Always visible (not hover-gated) — :hover doesn't exist on touch
+            devices, so a phone user would never be able to see or reach
+            this at all under the old group-hover:opacity-100 pattern. */}
         <div
           ref={resizeHandleRef}
-          className="absolute -bottom-2.5 -right-2.5 flex size-6 cursor-se-resize items-center justify-center rounded-full border-2 border-white shadow-md opacity-0 transition-opacity group-hover:opacity-100"
-          style={{ backgroundColor: sig.color }}
+          className="absolute -bottom-2.5 -right-2.5 flex size-7 cursor-se-resize items-center justify-center rounded-full border-2 border-white shadow-md"
+          style={{ backgroundColor: sig.color, touchAction: 'none' }}
           title="Redimensionar"
           onPointerDown={onResizePointerDown}
           onPointerMove={onResizePointerMove}
           onPointerUp={onResizePointerUp}
         >
-          <CornerRightDown className="size-3 text-white" />
+          <CornerRightDown className="size-3.5 text-white" />
         </div>
 
-        {/* ── Delete button (mobile always visible) ─────────────────────────── */}
+        {/* ── Delete button — always visible for the same reason ─────────────── */}
         <button
           type="button"
-          className="absolute -right-3 -top-3 flex size-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-600"
+          className="absolute -right-3 -top-3 flex size-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-red-600"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           onPointerDown={(e) => e.stopPropagation()}
           title="Eliminar"
         >
-          <Trash2 className="size-3" />
+          <Trash2 className="size-3.5" />
         </button>
       </div>
     </div>

@@ -6,6 +6,8 @@ import {
   IdCard, Camera, Upload, Lock,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { GuestSignaturePlacer } from '../components/signatures/GuestSignaturePlacer';
+import type { PlacedSignature } from '../components/signatures/types';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { toast } from 'sonner';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -399,7 +401,13 @@ export function GuestSignPage() {
   const [showSignPad, setShowSignPad] = useState(false);
   const bottomMarkerRef = useRef<HTMLDivElement>(null);
 
-  // (canvas state managed by SignatureModal / SignaturePad internally)
+  // Adobe-style two-step signing: SignatureModal only captures WHAT the
+  // signature looks like (draw/type/upload/QR); once confirmed, the guest
+  // still has to choose WHERE it goes on the document — see
+  // GuestSignaturePlacer below. guestSigDataUrl holds the drawn signature
+  // between those two steps.
+  const [guestSigDataUrl, setGuestSigDataUrl] = useState('');
+  const [showPlacer, setShowPlacer] = useState(false);
 
   // ── Identity validation gate — requirements come from URL query params ────────
   // The creator embeds ?req_id=1&req_selfie=1 in the signing link.
@@ -537,8 +545,9 @@ export function GuestSignPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasScrolledToEnd, pdfDoc]);
 
-  // ─── Submit guest signature — receives dataUrl from SignatureModal ────────────
-  const handleSubmitSignature = async (dataUrl: string) => {
+  // ─── Submit guest signature — dataUrl from SignatureModal, placement from
+  // GuestSignaturePlacer (where the guest actually tapped/dragged it to). ──
+  const handleSubmitSignature = async (dataUrl: string, placement?: PlacedSignature) => {
     if (!tokenData) return;
     setIsSigning(true);
     try {
@@ -618,7 +627,13 @@ export function GuestSignPage() {
       const currentPdfUrl = tokenData.signedPdfUrl || tokenData.originalPdfUrl;
       if (currentPdfUrl) {
         try {
-          const pdfResponse = await fetch(currentPdfUrl);
+          let pdfResponse = await fetch(currentPdfUrl);
+          if (!pdfResponse.ok) {
+            // Same "public" bucket-flag issue the read-only preview already
+            // works around — see getSignedUrlFallback in signatureService.ts.
+            const signedUrl = await getSignedUrlFallback(currentPdfUrl);
+            if (signedUrl) pdfResponse = await fetch(signedUrl);
+          }
           const pdfBlob = await pdfResponse.blob();
           const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
           const finalBytes = await compilePdfWithSignatures({
@@ -627,11 +642,14 @@ export function GuestSignPage() {
               imageUrl: dataUrl,
               signerName: guestName || 'Invitado',
               signerRole: getSignerRoleLabel(inferDocumentTypeHint(tokenData.documentName), 1, 'es'),
-              page: 1,
-              xFraction: 0.74,
-              yFraction: 0.84,
-              widthFraction: 0.42,
-              heightFraction: 0.24,
+              // Falls back to the old fixed spot only if this somehow got
+              // called without a placement — GuestSignaturePlacer always
+              // provides one in the real flow below.
+              page: placement?.page ?? 1,
+              xFraction: placement?.xFraction ?? 0.74,
+              yFraction: placement?.yFraction ?? 0.84,
+              widthFraction: placement?.widthFraction ?? 0.42,
+              heightFraction: placement?.heightFraction ?? 0.24,
             }],
             documentId: tokenData.documentId,
             fileHash: sha256Hash,
@@ -1066,14 +1084,60 @@ export function GuestSignPage() {
       )}
 
       {/* ── Signature modal — centered popup with backdrop blur, Draw/Texto/Imagen/QR tabs */}
+      {/* Step 1: capture WHAT the signature looks like. Confirming opens the
+          placer below instead of submitting immediately — the guest still
+          has to choose WHERE it goes. */}
       <SignatureModal
         open={showSignPad}
         onOpenChange={setShowSignPad}
-        onConfirm={(dataUrl) => void handleSubmitSignature(dataUrl)}
+        onConfirm={(dataUrl) => {
+          setShowSignPad(false);
+          // If the PDF preview never loaded (network hiccup, unusual PDF),
+          // there's no page to tap on — fall back to submitting directly
+          // with the default spot rather than opening a placer with
+          // nothing to show, which would strand the guest.
+          if (!pdfDoc) { void handleSubmitSignature(dataUrl); return; }
+          setGuestSigDataUrl(dataUrl);
+          setShowPlacer(true);
+        }}
         signerName={guestName}
         title="Firma el documento"
         subtitle={tokenData.documentName}
       />
+
+      {/* Step 2: Adobe-style tap-to-place — choose WHERE on the document,
+          drag to reposition, resize with the corner handle, browse every
+          page. Whatever's on screen when confirmed is what gets baked in. */}
+      {showPlacer && pdfDoc && (
+        <div className="fixed inset-0 z-[9997] flex flex-col bg-white">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => { setShowPlacer(false); setShowSignPad(true); }}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Atrás
+            </button>
+            <p className="text-sm font-bold text-slate-900">Coloca tu firma</p>
+            <span className="w-16" />
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="mx-auto w-full max-w-2xl">
+              <GuestSignaturePlacer
+                pdfDoc={pdfDoc}
+                pageCount={pdfPageCount}
+                signatureDataUrl={guestSigDataUrl}
+                signerName={guestName || 'Invitado'}
+                isLoading={isSigning}
+                onConfirm={(placement) => {
+                  setShowPlacer(false);
+                  void handleSubmitSignature(guestSigDataUrl, placement);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Signing progress overlay (shown after modal closes while upload runs) */}
       {isSigning && (
