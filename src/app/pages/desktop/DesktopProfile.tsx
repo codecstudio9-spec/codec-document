@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { Crown, ShieldCheck, Mail, Calendar, KeyRound } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
+import { PlansModal } from '../../components/PlansModal';
 import { fetchUserPlanInfo, type UserPlanInfo } from '../../services/mobile-dashboard-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
@@ -21,8 +21,8 @@ export function DesktopProfile() {
 
 function ProfileContent() {
   const { user, session, isAdmin, unlimitedActive, subscriptionActive } = useAuth();
-  const navigate = useNavigate();
   const [plan, setPlan] = useState<UserPlanInfo | null>(null);
+  const [plansOpen, setPlansOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -96,7 +96,7 @@ function ProfileContent() {
           {!isPremium && (
             <button
               type="button"
-              onClick={() => navigate('/#plan-ultimate')}
+              onClick={() => setPlansOpen(true)}
               className="mt-4 w-full rounded-xl py-2.5 text-xs font-bold text-white"
               style={{ background: BLUE_GRADIENT }}
             >
@@ -105,6 +105,8 @@ function ProfileContent() {
           )}
         </div>
       </div>
+
+      <PlansModal open={plansOpen} onClose={() => setPlansOpen(false)} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, Use
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
+import { PlansModal } from '../../components/PlansModal';
 import { fetchUserPlanInfo, fetchUnreadSignedCount, type UserPlanInfo } from '../../services/mobile-dashboard-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
@@ -30,6 +31,7 @@ function ProfileContent() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<UserPlanInfo | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [plansOpen, setPlansOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -118,7 +120,7 @@ function ProfileContent() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             type="button"
-            onClick={() => navigate('/#plan-ultimate')}
+            onClick={() => setPlansOpen(true)}
             className="mt-3 w-full rounded-xl py-2.5 text-xs font-bold text-white"
             style={{ background: BLUE_GRADIENT }}
           >
@@ -172,6 +174,8 @@ function ProfileContent() {
         </motion.button>
       </div>
       </div>
+
+      <PlansModal open={plansOpen} onClose={() => setPlansOpen(false)} />
     </div>
   );
 }
