@@ -37,6 +37,7 @@ import { DesktopProfile } from "./pages/desktop/DesktopProfile";
 import { DesktopSettings } from "./pages/desktop/DesktopSettings";
 import { DesktopNotifications } from "./pages/desktop/DesktopNotifications";
 import { DesktopAI } from "./pages/desktop/DesktopAI";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -58,63 +59,78 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: ModernHomePage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/free-legal-documents",
     Component: FreeLegalDocumentsLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/electronic-signature",
     Component: ElectronicSignatureLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/online-lease-agreement",
     Component: OnlineLeaseAgreementLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/nda-generator",
     Component: NdaGeneratorLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/independent-contractor-agreement",
     Component: IndependentContractorLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/vehicle-bill-of-sale",
     Component: VehicleBillOfSaleLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/promissory-note",
     Component: PromissoryNoteLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/landing/:documentType/:stateSlug",
     Component: StateDocumentLanding,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",
     Component: DocumentGeneratorPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/preview/:documentType",
     Component: PreviewPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/checkout",
     Component: CheckoutPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/firma-electronica",
     Component: ProtectedSignaturePage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/signatures",
     Component: ProtectedSignaturePage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/my-documents",
     Component: ProtectedMyDocumentsPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // Private desktop app (Mundo 2) — DesktopAppShell itself redirects to
@@ -125,34 +141,42 @@ export const router = createBrowserRouter([
     // of this separation.
     path: "/dashboard",
     Component: DesktopDashboardHome,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/documents",
     Component: DesktopDocuments,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/signatures",
     Component: DesktopSignatures,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/templates",
     Component: DesktopTemplates,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/profile",
     Component: DesktopProfile,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/settings",
     Component: DesktopSettings,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/notifications",
     Component: DesktopNotifications,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/dashboard/ai",
     Component: DesktopAI,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // Mobile-only app shell (bottom-nav dashboard) — MobileAppShell itself
@@ -161,64 +185,79 @@ export const router = createBrowserRouter([
     // site when hit from a desktop browser.
     path: "/app",
     Component: MobileDashboardHome,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/templates",
     Component: MobileTemplates,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/signatures",
     Component: MobileSignatures,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/documents",
     Component: MobileDocuments,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/profile",
     Component: MobileProfile,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/profile/notifications",
     Component: MobileNotifications,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/app/profile/settings",
     Component: MobileSettings,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/preview/success",
     Component: PaymentSuccessPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // Legacy PDF-based guest signing (QR invitations from co-signer flow)
     path: "/guest-sign/:token",
     Component: GuestSignPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // New transaction-based signing page (share link from IntentModal flow)
     path: "/sign/:transactionId",
     Component: SignTransactionPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     // Lightweight mobile signing page — opened via QR from SignaturePad
     path: "/quick-sign/:token",
     Component: QuickSignPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/terms",
     Component: TermsOfServicePage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/privacy",
     Component: PrivacyPolicyPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/refund-policy",
     Component: RefundPolicyPage,
+    errorElement: <RouteErrorBoundary />,
   },
   {
     path: "*",
     Component: NotFoundPage,
+    errorElement: <RouteErrorBoundary />,
   },
 ]);

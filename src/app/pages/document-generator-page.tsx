@@ -625,7 +625,7 @@ export function DocumentGeneratorPage() {
     navigator.clipboard.writeText(txShareData.shareUrl).then(() => {
       setTxLinkCopied(true);
       setTimeout(() => setTxLinkCopied(false), 2200);
-    });
+    }).catch(() => {});
   };
 
   const handleDownloadSignedDoc = () => {
