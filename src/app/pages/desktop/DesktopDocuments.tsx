@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, Download, Check, Clock, FileEdit, ArrowUpDown } from 'lucide-react';
+import { Search, FileText, Download, Check, Clock, FileEdit, ArrowUpDown, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
-import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
+import {
+  fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
+  type UserDocument, type AssociatedDocument,
+} from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-type UnifiedDoc = { id: string; name: string; status: string; date: string; href: string | null };
+type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
 type SortMode = 'newest' | 'oldest' | 'name';
 
@@ -32,6 +36,8 @@ function DocumentsContent() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -40,12 +46,27 @@ function DocumentsContent() {
       fetchAssociatedDocuments(user.id).catch(() => [] as AssociatedDocument[]),
     ]).then(([own, associated]) => {
       const unified: UnifiedDoc[] = [
-        ...own.map((d) => ({ id: d.id, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}` })),
-        ...associated.map((d) => ({ id: d.id, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url })),
+        ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}` })),
+        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url })),
       ];
       setDocs(unified);
     });
   }, [user?.id]);
+
+  const handleDelete = async (doc: UnifiedDoc) => {
+    setDeletingId(doc.id);
+    try {
+      if (doc.kind === 'own') await deleteDocumentRecord(doc.id);
+      else await deleteAssociatedDocument(doc.id);
+      setDocs((prev) => prev?.filter((d) => d.id !== doc.id) ?? prev);
+      toast.success('Documento eliminado');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el documento');
+    } finally {
+      setDeletingId(null);
+      setConfirmingId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     let rows = (docs ?? []).filter((d) => filter === 'all' || classify(d.status) === filter);
@@ -117,6 +138,34 @@ function DocumentsContent() {
           </div>
         ) : (
           filtered.map((doc) => {
+            if (confirmingId === doc.id) {
+              return (
+                <div
+                  key={doc.id}
+                  className="flex flex-col justify-between gap-3 p-5"
+                  style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW, background: '#FEF2F2' }}
+                >
+                  <div className="flex items-start gap-2">
+                    <Trash2 className="size-5 shrink-0 text-red-500" />
+                    <p className="text-sm font-semibold text-red-700">¿Eliminar "{doc.name}"? No se puede deshacer.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setConfirmingId(null)} className="flex-1 rounded-xl bg-white py-2 text-xs font-bold text-slate-600">
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingId === doc.id}
+                      onClick={() => void handleDelete(doc)}
+                      className="flex-1 rounded-xl bg-red-600 py-2 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      {deletingId === doc.id ? '...' : 'Eliminar'}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
             const c = classify(doc.status);
             const style = c === 'signed'
               ? { color: '#10B981', bg: '#ECFDF5', label: 'Firmado' }
@@ -124,35 +173,46 @@ function DocumentsContent() {
                 ? { color: '#6B7280', bg: '#F1F5F9', label: 'Borrador' }
                 : { color: '#F59E0B', bg: '#FFFBEB', label: 'Pendiente' };
             return (
-              <motion.button
+              <motion.div
                 key={doc.id}
                 whileHover={{ y: -2 }}
-                type="button"
-                onClick={() => {
-                  if (!doc.href) return;
-                  if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
-                  else navigate(doc.href);
-                }}
-                className="flex flex-col items-start gap-3 bg-white p-5 text-left"
+                className="group relative flex flex-col items-start gap-3 bg-white p-5 text-left"
                 style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
-                <div className="flex w-full items-start justify-between">
-                  <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-50">
-                    <FileText className="size-5 text-indigo-500" />
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(doc.id)}
+                  className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-xl bg-slate-50 opacity-0 transition group-hover:opacity-100"
+                >
+                  <Trash2 className="size-4 text-slate-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!doc.href) return;
+                    if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
+                    else navigate(doc.href);
+                  }}
+                  className="flex w-full flex-col items-start gap-3 text-left"
+                >
+                  <div className="flex w-full items-start justify-between">
+                    <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-50">
+                      <FileText className="size-5 text-indigo-500" />
+                    </div>
+                    {doc.href && <Download className="size-4 text-slate-300" />}
                   </div>
-                  {doc.href && <Download className="size-4 text-slate-300" />}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ color: style.color, background: style.bg }}>
-                  {c === 'signed' ? <Check className="size-3" /> : c === 'draft' ? <FileEdit className="size-3" /> : <Clock className="size-3" />}
-                  {style.label}
-                </span>
-              </motion.button>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ color: style.color, background: style.bg }}>
+                    {c === 'signed' ? <Check className="size-3" /> : c === 'draft' ? <FileEdit className="size-3" /> : <Clock className="size-3" />}
+                    {style.label}
+                  </span>
+                </button>
+              </motion.div>
             );
           })
         )}

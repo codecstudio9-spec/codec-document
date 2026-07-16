@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Plus, FileText, Download, Check, Clock, FileEdit } from 'lucide-react';
+import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
-import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
+import {
+  fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
+  type UserDocument, type AssociatedDocument,
+} from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 type UnifiedDoc = {
   id: string;
+  kind: 'own' | 'associated';
   name: string;
   status: string;
   date: string;
@@ -37,6 +42,8 @@ function DocumentsContent() {
   const navigate = useNavigate();
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -46,17 +53,32 @@ function DocumentsContent() {
     ]).then(([own, associated]) => {
       const unified: UnifiedDoc[] = [
         ...own.map((d) => ({
-          id: d.id, name: d.document_name, status: 'draft', date: d.created_at,
+          id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at,
           href: `/preview/${d.template_id}`,
         })),
         ...associated.map((d) => ({
-          id: d.id, name: d.name, status: d.status, date: d.created_at,
+          id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at,
           href: d.signed_pdf_url || d.original_pdf_url,
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setDocs(unified);
     });
   }, [user?.id]);
+
+  const handleDelete = async (doc: UnifiedDoc) => {
+    setDeletingId(doc.id);
+    try {
+      if (doc.kind === 'own') await deleteDocumentRecord(doc.id);
+      else await deleteAssociatedDocument(doc.id);
+      setDocs((prev) => prev?.filter((d) => d.id !== doc.id) ?? prev);
+      toast.success('Documento eliminado');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el documento');
+    } finally {
+      setDeletingId(null);
+      setConfirmingId(null);
+    }
+  };
 
   const filtered = (docs ?? []).filter((d) => filter === 'all' || classify(d.status) === filter);
 
@@ -116,6 +138,36 @@ function DocumentsContent() {
           </div>
         ) : (
           filtered.map((doc) => {
+            if (confirmingId === doc.id) {
+              return (
+                <div
+                  key={doc.id}
+                  className="flex items-center gap-3 p-4"
+                  style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW, background: '#FEF2F2' }}
+                >
+                  <Trash2 className="size-5 shrink-0 text-red-500" />
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-red-700">
+                    ¿Eliminar "{doc.name}"? No se puede deshacer.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingId(null)}
+                    className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingId === doc.id}
+                    onClick={() => void handleDelete(doc)}
+                    className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {deletingId === doc.id ? '...' : 'Eliminar'}
+                  </button>
+                </div>
+              );
+            }
+
             const c = classify(doc.status);
             const style = c === 'signed'
               ? { color: '#10B981', bg: '#ECFDF5', label: 'Firmado' }
@@ -131,37 +183,43 @@ function DocumentsContent() {
               }
             };
             return (
-              <motion.button
+              <motion.div
                 key={doc.id}
-                type="button"
-                whileTap={{ scale: 0.98 }}
-                onClick={openDoc}
-                disabled={!doc.href}
-                className="flex w-full items-center gap-3 bg-white p-4 text-left disabled:opacity-70"
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center gap-2 bg-white p-4"
                 style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
-                  <FileText className="size-5 text-indigo-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {style.label} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>
-                  {c === 'signed'
-                    ? <Check className="size-3.5" style={{ color: style.color }} />
-                    : c === 'draft'
-                      ? <FileEdit className="size-3.5" style={{ color: style.color }} />
-                      : <Clock className="size-3.5" style={{ color: style.color }} />}
-                </span>
-                {doc.href && (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
-                    <Download className="size-4 text-slate-500" />
+                <button type="button" onClick={openDoc} disabled={!doc.href} className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-70">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
+                    <FileText className="size-5 text-indigo-500" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {style.label} · {new Date(doc.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>
+                    {c === 'signed'
+                      ? <Check className="size-3.5" style={{ color: style.color }} />
+                      : c === 'draft'
+                        ? <FileEdit className="size-3.5" style={{ color: style.color }} />
+                        : <Clock className="size-3.5" style={{ color: style.color }} />}
                   </span>
-                )}
-              </motion.button>
+                  {doc.href && (
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
+                      <Download className="size-4 text-slate-500" />
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(doc.id)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
+                >
+                  <Trash2 className="size-4 text-slate-400" />
+                </button>
+              </motion.div>
             );
           })
         )}

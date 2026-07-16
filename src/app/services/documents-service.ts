@@ -114,3 +114,31 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 }
+
+/**
+ * Deletes a `documents` row AND its actual files in Storage — unlike
+ * deleteDocumentRecord() above (user_documents, which never stores a real
+ * file), this is the one that actually frees up space: original.pdf,
+ * signed.pdf, and both signature images if they exist. Storage removal is
+ * best-effort per path (a signer.png that was never created 404s, which
+ * is fine — nothing to clean up); the DB row delete is what's protected
+ * by RLS (documents_delete_own — see supabase_add_document_delete_migration.sql)
+ * and is what actually determines success, so it runs last, after the
+ * storage cleanup, and its result is what this function reports.
+ */
+export async function deleteAssociatedDocument(documentId: string): Promise<void> {
+  const paths = [
+    `documents/${documentId}/original.pdf`,
+    `documents/${documentId}/signed.pdf`,
+    `signatures/${documentId}_creator.png`,
+    `signatures/${documentId}_guest.png`,
+  ];
+  await supabase.storage.from('documents-bucket').remove(paths).catch(() => {});
+
+  const { error, count } = await supabase
+    .from('documents')
+    .delete({ count: 'exact' })
+    .eq('id', documentId);
+  if (error) throw new Error(`deleteAssociatedDocument: ${error.message}`);
+  if (!count) throw new Error('deleteAssociatedDocument: no matching document was deleted (not found, or not yours)');
+}
