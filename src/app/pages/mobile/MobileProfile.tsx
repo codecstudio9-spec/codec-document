@@ -5,7 +5,7 @@ import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, Use
 import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
-import { fetchUserPlanInfo, type UserPlanInfo } from '../../services/mobile-dashboard-service';
+import { fetchUserPlanInfo, fetchUnreadSignedCount, type UserPlanInfo } from '../../services/mobile-dashboard-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const PLAN_LABEL: Record<string, string> = {
@@ -29,10 +29,12 @@ function ProfileContent() {
   const { user, isAdmin, unlimitedActive, subscriptionActive, logout } = useAuth();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<UserPlanInfo | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
     fetchUserPlanInfo(user.id).then(setPlan).catch(() => setPlan(null));
+    fetchUnreadSignedCount(user.id).then(setUnreadCount).catch(() => setUnreadCount(0));
   }, [user?.id]);
 
   const isPremium = isAdmin || unlimitedActive || subscriptionActive;
@@ -71,7 +73,7 @@ function ProfileContent() {
         <h1 className="mb-4 text-xl font-black text-white">Perfil</h1>
         <div className="flex items-center gap-3">
           {user?.picture ? (
-            <img src={user.picture} alt={user.name || 'Perfil'} className="size-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" />
+            <img src={user.picture} alt={user.name || 'Perfil'} referrerPolicy="no-referrer" className="size-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/30" />
           ) : (
             <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-lg font-black text-white ring-2 ring-white/30">
               {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
@@ -128,10 +130,10 @@ function ProfileContent() {
       {/* Options */}
       <div className="mt-5 space-y-2.5">
         {[
-          { icon: FileText, label: 'Uso de documentos', onClick: () => navigate('/app/documents') },
-          { icon: Settings, label: 'Ajustes', onClick: () => {} },
-          { icon: Bell, label: 'Notificaciones', onClick: () => {} },
-        ].map(({ icon: Icon, label, onClick }) => (
+          { icon: FileText, label: 'Uso de documentos', badge: 0, onClick: () => navigate('/app/documents') },
+          { icon: Settings, label: 'Ajustes', badge: 0, onClick: () => navigate('/app/profile/settings') },
+          { icon: Bell, label: 'Notificaciones', badge: unreadCount, onClick: () => navigate('/app/profile/notifications') },
+        ].map(({ icon: Icon, label, badge, onClick }) => (
           <motion.button
             key={label}
             whileTap={{ scale: 0.98 }}
@@ -140,8 +142,16 @@ function ProfileContent() {
             className="flex w-full items-center gap-3 bg-white p-4 text-left"
             style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
           >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
+            <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
               <Icon className="size-4 text-slate-500" />
+              {badge > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 flex min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                  style={{ height: 16, background: '#EF4444' }}
+                >
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
             </div>
             <span className="flex-1 text-sm font-semibold text-slate-800">{label}</span>
             <ChevronRight className="size-4 text-slate-300" />

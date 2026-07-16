@@ -27,6 +27,8 @@ import { MobileTemplates } from "./pages/mobile/MobileTemplates";
 import { MobileSignatures } from "./pages/mobile/MobileSignatures";
 import { MobileDocuments } from "./pages/mobile/MobileDocuments";
 import { MobileProfile } from "./pages/mobile/MobileProfile";
+import { MobileNotifications } from "./pages/mobile/MobileNotifications";
+import { MobileSettings } from "./pages/mobile/MobileSettings";
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -133,6 +135,14 @@ export const router = createBrowserRouter([
   {
     path: "/app/profile",
     Component: MobileProfile,
+  },
+  {
+    path: "/app/profile/notifications",
+    Component: MobileNotifications,
+  },
+  {
+    path: "/app/profile/settings",
+    Component: MobileSettings,
   },
   {
     path: "/preview/success",

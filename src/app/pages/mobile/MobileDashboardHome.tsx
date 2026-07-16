@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
 import { MobileLandingIntro } from '../../components/mobile/MobileLandingIntro';
-import { fetchDashboardStats, type DashboardStats } from '../../services/mobile-dashboard-service';
+import { fetchDashboardStats, fetchUnreadSignedCount, type DashboardStats } from '../../services/mobile-dashboard-service';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { toast } from 'sonner';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
@@ -52,12 +52,14 @@ function DashboardContent() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recent, setRecent] = useState<RecentItem[] | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const firstName = (user?.name || user?.email || 'ahí').split(' ')[0].split('@')[0];
 
   useEffect(() => {
     if (!user?.id) return;
     fetchDashboardStats(user.id).then(setStats).catch(() => setStats({ documentsCreated: 0, pending: 0, signed: 0 }));
+    fetchUnreadSignedCount(user.id).then(setUnreadCount).catch(() => setUnreadCount(0));
 
     Promise.all([
       fetchUserDocuments(user.id).catch(() => [] as UserDocument[]),
@@ -99,14 +101,38 @@ function DashboardContent() {
       {/* Header — Part 4: wordmark + tagline + more breathing room */}
       <div className="flex items-center justify-between">
         <Logo size="sm" tagline="Legal · Firmas · Verificación" href="" />
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          type="button"
-          className="relative flex size-10 items-center justify-center rounded-2xl bg-white"
-          style={{ boxShadow: CARD_SHADOW }}
-        >
-          <Bell className="size-4.5 text-slate-500" />
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            type="button"
+            onClick={() => navigate('/app/profile/notifications')}
+            className="relative flex size-10 items-center justify-center rounded-2xl bg-white"
+            style={{ boxShadow: CARD_SHADOW }}
+          >
+            <Bell className="size-4.5 text-slate-500" />
+            {unreadCount > 0 && (
+              <span
+                className="absolute -right-1 -top-1 flex min-w-[17px] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white ring-2 ring-white"
+                style={{ height: 17, background: '#EF4444' }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            type="button"
+            onClick={() => navigate('/app/profile')}
+            className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white"
+            style={{ boxShadow: CARD_SHADOW }}
+          >
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name || 'Perfil'} className="size-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="text-sm font-black text-slate-400">{(user?.name || user?.email || '?').charAt(0).toUpperCase()}</span>
+            )}
+          </motion.button>
+        </div>
       </div>
 
       <div className="mt-6">

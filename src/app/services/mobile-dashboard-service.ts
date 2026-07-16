@@ -28,6 +28,21 @@ export async function fetchMySignTransactions(userId: string): Promise<SignTrans
   return (data as SignTransaction[]) ?? [];
 }
 
+/** Real, honest definition of "unread notification": a document you sent
+ * that has since been signed (status completed), which you haven't opened
+ * from the Firmas tab yet (viewed_at IS NULL — set by markTransactionViewed
+ * the first time you tap into it). No invented number, no fake badge. */
+export async function fetchUnreadSignedCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('sign_transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('creator_id', userId)
+    .eq('status', 'completed')
+    .is('viewed_at', null);
+  if (error) return 0;
+  return count ?? 0;
+}
+
 export async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
   const [userDocsRes, docsRes, txs] = await Promise.all([
     supabase.from('user_documents').select('id', { count: 'exact', head: true }).eq('user_id', userId),

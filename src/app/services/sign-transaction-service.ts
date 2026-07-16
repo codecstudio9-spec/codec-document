@@ -93,6 +93,7 @@ export interface SignTransaction {
   esign_consent_accepted?: boolean;
   sender_signature?:      string;
   signed_at?:             string;
+  viewed_at?:             string | null;
   created_at:             string;
 }
 
@@ -117,6 +118,24 @@ export async function getSignTransaction(id: string): Promise<SignTransaction | 
     .maybeSingle();
   if (error || !data) return null;
   return data as SignTransaction;
+}
+
+/** Marks a signed transaction as "seen" by its creator — the only signal
+ * the unread-notifications badge uses. Called the moment the sender opens
+ * a completed transaction from the Firmas/Notificaciones list. Uses the
+ * regular (authenticated) client directly: tx_update's RLS policy is
+ * already permissive for UPDATE, and there's nothing to read back. */
+export async function markTransactionViewed(id: string): Promise<void> {
+  await supabase.from('sign_transactions').update({ viewed_at: new Date().toISOString() }).eq('id', id);
+}
+
+export async function markAllTransactionsViewed(userId: string): Promise<void> {
+  await supabase
+    .from('sign_transactions')
+    .update({ viewed_at: new Date().toISOString() })
+    .eq('creator_id', userId)
+    .eq('status', 'completed')
+    .is('viewed_at', null);
 }
 
 export async function updateSignTransaction(

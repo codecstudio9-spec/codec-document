@@ -8,7 +8,7 @@ import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { fetchMySignTransactions } from '../../services/mobile-dashboard-service';
-import { isActiveTxStatus, stashSignedTransactionForDownload, type SignTransaction } from '../../services/sign-transaction-service';
+import { isActiveTxStatus, stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const DOC_TYPE_LABEL: Record<string, string> = {
@@ -128,6 +128,7 @@ function SignaturesContent() {
                 // it happens, so this is the actual "open it and see the
                 // signed result" entry point, not /sign/:id (that page is
                 // the recipient's own signing flow).
+                if (!tx.viewed_at) void markTransactionViewed(tx.id);
                 stashSignedTransactionForDownload(tx, language);
                 navigate(`/preview/${tx.document_type}`);
                 return;
