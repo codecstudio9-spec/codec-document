@@ -15,9 +15,14 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 import {
   ShieldCheck, Camera, CreditCard, PenLine, CheckCircle2,
-  Loader, AlertCircle, FileText, ChevronRight, X, Upload,
+  Loader, AlertCircle, FileText, ChevronRight, X, Upload, Move,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { SignaturePlacementChip } from '../components/signatures/SignaturePlacementChip';
+import { DocumentPreview } from '../components/document-preview';
+import { getTemplateById } from '../data/templates';
+import { getStateSpecificTemplate } from '../data/state-variations';
+import type { DocumentData } from '../types/document';
 import { useAuth } from '../contexts/auth-context';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
@@ -25,7 +30,7 @@ import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Step = 'loading' | 'esign' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
+type Step = 'loading' | 'esign' | 'selfie' | 'id' | 'sign' | 'place' | 'done' | 'error' | 'already_signed';
 
 // ─── Step builder ─────────────────────────────────────────────────────────────
 function buildSteps(cfg: SecurityConfig): Step[] {
@@ -34,6 +39,7 @@ function buildSteps(cfg: SecurityConfig): Step[] {
   if (cfg.requireSelfie)       steps.push('selfie');
   if (cfg.requireIdPhoto)      steps.push('id');
   steps.push('sign');
+  steps.push('place');
   steps.push('done');
   return steps;
 }
@@ -125,6 +131,12 @@ export default function SignTransactionPage() {
   const [cameraError,   setCameraError]   = useState('');
   const [submitting,    setSubmitting]    = useState(false);
   const [submitStatus,  setSubmitStatus]  = useState('');
+
+  // Adobe/DocuSign-style placement — where the signature lands in the
+  // final document. Defaults near the bottom, then the recipient can drag
+  // it wherever they want on the actual rendered document before sending.
+  const [placement, setPlacement] = useState({ x: 50, y: 80 });
+  const placementContainerRef = useRef<HTMLDivElement>(null);
 
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -289,6 +301,7 @@ export default function SignTransactionPage() {
     const initialPayload: Record<string, unknown> = {
       status:              'completed',
       recipient_signature: signatureDataUrl,   // always present (validated above)
+      recipient_signature_placement: placement,
       signed_at:           new Date().toISOString(),
     };
     if (selfieDataUrl) {
@@ -728,41 +741,24 @@ export default function SignTransactionPage() {
                   <img src={signatureDataUrl} alt="Tu firma" className="max-h-24 object-contain" />
                 </div>
 
-                {/* Submit status */}
-                {submitting && submitStatus && (
-                  <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5 text-sm text-blue-700">
-                    <Loader className="size-4 animate-spin shrink-0" />
-                    <span>{submitStatus}</span>
-                  </div>
-                )}
-
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setSignatureDataUrl(''); setSigModalOpen(true); }}
-                    disabled={submitting}
-                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                    className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     Cambiar firma
                   </button>
                   <button
-                    onClick={handleFinalSubmit}
-                    disabled={submitting}
-                    className="flex-[2] rounded-xl py-3 text-sm font-bold text-white disabled:opacity-60 flex items-center justify-center gap-2 active:translate-y-0.5 transition-all"
+                    onClick={advance}
+                    className="flex-[2] rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 active:translate-y-0.5 transition-all"
                     style={{
                       background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 38%,#1d4ed8 68%,#1e3a8a 100%)',
                       boxShadow: '0 3px 0 #1e3a8a,0 5px 14px rgba(29,78,216,0.55)',
                     }}
                   >
-                    {submitting
-                      ? <><Loader className="size-4 animate-spin" /> Enviando...</>
-                      : <><Upload className="size-4" /> Confirmar y Enviar Firma</>
-                    }
+                    <Move className="size-4" /> Elegir dónde va la firma
                   </button>
                 </div>
-
-                <p className="text-center text-xs text-slate-400">
-                  Al confirmar, tu firma se almacenara de forma segura en los servidores de Codec Document.
-                </p>
               </div>
             ) : (
               <button
@@ -778,13 +774,86 @@ export default function SignTransactionPage() {
             )}
           </div>
         )}
+
+        {/* ── Placement Step — Adobe/DocuSign-style drag-to-place ── */}
+        {currentStep === 'place' && tx && (() => {
+          const templateDef = getTemplateById(tx.document_type);
+          const rawTemplate = templateDef?.template ?? '';
+          const docData = tx.document_data as unknown as DocumentData;
+          const stateVal = String(docData?.state ?? '');
+          const renderedTemplate = stateVal
+            ? getStateSpecificTemplate(rawTemplate, tx.document_type, stateVal, 'es')
+            : rawTemplate;
+          return (
+            <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm space-y-4">
+              <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
+                <Move className="size-5 text-blue-600 shrink-0" />
+                Coloca tu firma en el documento
+              </h2>
+              <p className="text-sm text-slate-500">
+                Arrastra tu firma hasta el lugar exacto del documento donde quieres que quede — como en Adobe o DocuSign.
+              </p>
+
+              <div
+                ref={placementContainerRef}
+                className="relative max-h-[50vh] overflow-y-auto rounded-xl border border-slate-200 bg-white"
+              >
+                <div className="px-4 py-3">
+                  <DocumentPreview template={renderedTemplate} data={docData} />
+                </div>
+                <SignaturePlacementChip
+                  dataUrl={signatureDataUrl}
+                  x={placement.x}
+                  y={placement.y}
+                  containerRef={placementContainerRef}
+                  onChange={setPlacement}
+                />
+              </div>
+
+              {submitting && submitStatus && (
+                <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5 text-sm text-blue-700">
+                  <Loader className="size-4 animate-spin shrink-0" />
+                  <span>{submitStatus}</span>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStepIdx(i => i - 1)}
+                  disabled={submitting}
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                >
+                  Atrás
+                </button>
+                <button
+                  onClick={handleFinalSubmit}
+                  disabled={submitting}
+                  className="flex-[2] rounded-xl py-3 text-sm font-bold text-white disabled:opacity-60 flex items-center justify-center gap-2 active:translate-y-0.5 transition-all"
+                  style={{
+                    background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 38%,#1d4ed8 68%,#1e3a8a 100%)',
+                    boxShadow: '0 3px 0 #1e3a8a,0 5px 14px rgba(29,78,216,0.55)',
+                  }}
+                >
+                  {submitting
+                    ? <><Loader className="size-4 animate-spin" /> Enviando...</>
+                    : <><Upload className="size-4" /> Confirmar y Enviar Firma</>
+                  }
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-slate-400">
+                Al confirmar, tu firma se almacenara de forma segura en los servidores de Codec Document.
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Signature pad modal */}
       {sigModalOpen && (
         <SignatureModal
           open={sigModalOpen}
-          onClose={() => setSigModalOpen(false)}
+          onOpenChange={setSigModalOpen}
           onConfirm={(url) => { setSignatureDataUrl(url); setSigModalOpen(false); }}
         />
       )}

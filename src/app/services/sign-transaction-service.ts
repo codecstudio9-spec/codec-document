@@ -86,6 +86,7 @@ export interface SignTransaction {
   security_config:        SecurityConfig;
   status:                 TxStatus;
   recipient_signature?:   string;
+  recipient_signature_placement?: { x: number; y: number } | null;
   recipient_selfie?:      string;
   recipient_id_photo?:    string;
   recipient_ip?:          string;
@@ -183,7 +184,7 @@ export function stashSignedTransactionForDownload(tx: SignTransaction, language:
         role: language === 'en' ? 'Signer' : 'Firmante',
         token: '',
         sigDataUrl: tx.recipient_signature,
-        placement: null,
+        placement: tx.recipient_signature_placement ?? null,
       }];
       sessionStorage.setItem('coSigners', JSON.stringify(recipientAsSigner));
     } else {

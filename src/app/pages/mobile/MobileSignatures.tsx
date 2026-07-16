@@ -132,6 +132,13 @@ function SignaturesContent() {
                 navigate(`/preview/${tx.document_type}`);
                 return;
               }
+              // Open the document exactly as the recipient would see it —
+              // lets the sender preview it and copy/share the link from
+              // there (Copy button below is a shortcut for "just the link").
+              navigate(`/sign/${tx.id}`);
+            };
+            const handleCopyLink = (e: React.MouseEvent) => {
+              e.stopPropagation();
               const link = `${window.location.origin}/sign/${tx.id}`;
               navigator.clipboard.writeText(link).then(() => {
                 toast.success(language === 'en' ? 'Signing link copied' : 'Enlace de firma copiado');
@@ -158,7 +165,6 @@ function SignaturesContent() {
                   <p className="truncate text-sm font-bold text-slate-900">{label}</p>
                   <p className="mt-0.5 text-xs text-slate-400">
                     {isSigned ? 'Firmado' : 'Enviado'} el {new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                    {!isSigned && ' · toca para copiar el enlace'}
                   </p>
                 </div>
                 {isSigned ? (
@@ -169,12 +175,15 @@ function SignaturesContent() {
                     Firmado
                   </span>
                 ) : (
-                  <span
+                  <motion.span
+                    whileTap={{ scale: 0.9 }}
+                    role="button"
+                    onClick={handleCopyLink}
                     className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
                     style={{ color: '#F59E0B', background: '#FFFBEB' }}
                   >
                     <Copy className="size-3" /> Pendiente
-                  </span>
+                  </motion.span>
                 )}
               </motion.button>
             );
