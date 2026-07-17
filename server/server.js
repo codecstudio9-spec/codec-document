@@ -29,9 +29,15 @@ const APP_URL =
   process.env.FRONTEND_URL ||
   "http://localhost:5174";
 
+// Production domain hardcoded here (not just via APP_URL/FRONTEND_URL) so a
+// stale env var on whatever host runs this server can't silently CORS-block
+// every request from the live site — this list is the actual safety net,
+// APP_URL/env vars are an additive convenience on top of it.
 const CORS_ORIGINS = Array.from(
   new Set([
     APP_URL,
+    "https://www.codecdocument.com",
+    "https://codecdocument.com",
     "http://localhost:5174",
     "http://localhost:5173",
     "http://localhost:3000",

@@ -37,7 +37,15 @@ export function DesktopAppShell({ children }: { children: ReactNode }) {
 
       <DesktopSidebar />
 
-      <div className="relative z-10" style={{ marginLeft: 280 }}>
+      {/* No z-index here on purpose: pairing `relative` with an explicit
+          z-index creates a new stacking context, which caps every
+          descendant — including fixed full-screen modals like PlansModal
+          that set z-[9998] — at that context's rank. That trapped modals
+          UNDER the sidebar (z-20) even though the modal's own z-index was
+          far higher, because the comparison happened one level up. This
+          div still paints above the two z-0 glow backgrounds below by
+          plain DOM order, so no z-index is needed here at all. */}
+      <div className="relative" style={{ marginLeft: 280 }}>
         <DesktopHeader />
         <main className="px-8 py-8">{children}</main>
       </div>
