@@ -38,7 +38,7 @@ import {
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 
-type Step = 'upload' | 'creator-sign' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
+type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
 
 // ── Computed wizard step ───────────────────────────────────────────────────────
 function toWizardStep(step: Step): 1 | 2 | 3 | 4 {
@@ -500,6 +500,14 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  // Only captures WHAT the signature looks like (SignatureModal) and saves
+  // it — WHERE it goes on the document used to be hardcoded here
+  // (xFraction 0.25/yFraction 0.84/44%×30%), which is exactly why the main
+  // signer could never actually position their own signature: this
+  // function stamped a fixed spot immediately and moved on. Placement now
+  // happens in the 'position-creator' step right after this, using the
+  // same interactive PdfSignatureEditor the (previously orphaned) manual
+  // "position" step already had — see handleCreatorPlacementConfirm below.
   const handleCreatorSign = async (dataUrl: string) => {
     if (!dataUrl) return;
     setIsLoading(true); setLoadingMsg('Guardando tu firma…');
@@ -511,17 +519,38 @@ export function ElectronicSignaturePage() {
       const sigHash = await sha256Hex(await blob.arrayBuffer());
       const ip = await getPublicIp();
       await insertSignature({ documentId, signerName: creatorName || 'Firmante 1', signerEmail: creatorEmail || '', ip, userAgent: navigator.userAgent, signatureUrl: sigUrl });
+      setStep('position-creator');
+    } catch (err) {
+      setError(`Error al guardar la firma: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error('No se pudo guardar la firma.');
+    } finally {
+      setIsLoading(false); setLoadingMsg('');
+    }
+  };
+
+  // Compiles + uploads + saves the PDF with the creator's signature at
+  // wherever they actually dragged/resized it in the editor — a partial
+  // save (updateDocumentSignedPdfUrl, not finalizeDocument/status
+  // 'completed'), since the second signer hasn't signed yet.
+  const handleCreatorPlacementConfirm = async (placements: PlacedSignature[]) => {
+    if (placements.length === 0) { setError('Coloca tu firma en el documento.'); return; }
+    if (!pdfBytes || pdfBytes.length === 0) { setError('No hay PDF en memoria. Reinicia el flujo.'); return; }
+    setIsLoading(true); setLoadingMsg('Compilando PDF…');
+    try {
+      const placement = placements[0];
+      await insertSignaturePositions(documentId, [{
+        x: placement.xFraction, y: placement.yFraction,
+        width: placement.widthFraction, height: placement.heightFraction, page: placement.page,
+      }]);
       const partialBytes = await compilePdfWithSignatures({
-        pdfBytes: pdfBytes!,
+        pdfBytes,
         signatures: [{
-          imageUrl: dataUrl,
+          imageUrl: placement.imageDataUrl, storageUrl: placement.storageUrl,
           signerName: creatorName || 'Firmante 1',
           signerRole: getSignerRoleLabel(resolvedDocumentType, 0, 'es'),
-          page: pdfPageCountRef.current || 1,
-          xFraction: 0.25,
-          yFraction: 0.84,
-          widthFraction: 0.44,
-          heightFraction: 0.30,
+          page: placement.page,
+          xFraction: placement.xFraction, yFraction: placement.yFraction,
+          widthFraction: placement.widthFraction, heightFraction: placement.heightFraction,
         }],
         documentId,
         fileHash,
@@ -530,7 +559,8 @@ export function ElectronicSignaturePage() {
       const partialSignedUrl = await uploadPdfToStorage(documentId, partialBlob, 'signed.pdf');
       setSignedPdfUrl(partialSignedUrl);
       await updateDocumentSignedPdfUrl(documentId, partialSignedUrl);
-      await insertAuditLog({ documentId, action: 'creator_signed', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: sigHash });
+      const ip = await getPublicIp();
+      await insertAuditLog({ documentId, action: 'creator_signed', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: fileHash });
       toast.success('Firma registrada correctamente.');
       setStep('invite-guest');
     } catch (err) {
@@ -863,6 +893,27 @@ export function ElectronicSignaturePage() {
                 ]}
               />
             </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              Coloca tu firma — el documento real, interactivo: arrastra,
+              mueve y redimensiona, en vez del punto fijo que se estampaba
+              antes sin dejar elegir dónde.
+              ══════════════════════════════════════════════════════════════ */}
+          {step === 'position-creator' && pdfBytes && pdfBytes.length > 0 && (
+            <>
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Paso 1 · Firma</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Coloca tu firma en el documento</h2>
+                <p className="mt-1 text-sm text-slate-600">Arrastra, mueve y redimensiona tu firma hasta que quede donde corresponde.</p>
+              </div>
+              <PdfSignatureEditor
+                pdfBytes={pdfBytes}
+                signers={editorSigners.slice(0, 1)}
+                onConfirm={(placements) => void handleCreatorPlacementConfirm(placements)}
+                isLoading={isLoading}
+              />
+            </>
           )}
 
           {/* ══════════════════════════════════════════════════════════════

@@ -156,6 +156,117 @@ function IdentityGate({
   const idBackInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Real camera capture — the file inputs above (with a bare `capture`
+  // attribute) only trigger the native camera on some mobile browsers and
+  // silently fall back to a plain file picker everywhere else (always on
+  // desktop). getUserMedia gives an actual live camera preview + shutter
+  // button regardless of device, matching what was asked: "debe activar la
+  // cámara para que tome la foto", not open a file browser. The hidden file
+  // inputs stay wired as a manual fallback (camera permission denied, no
+  // camera available, etc.) via the small "Subir un archivo" links below.
+  type CameraTarget = 'selfie' | 'id-front' | 'id-back';
+  const [activeCamera, setActiveCamera] = useState<CameraTarget | null>(null);
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    if (!activeCamera || !streamRef.current || !videoRef.current) return;
+    videoRef.current.srcObject = streamRef.current;
+    videoRef.current.play().catch(() => {});
+  }, [activeCamera]);
+
+  useEffect(() => () => { streamRef.current?.getTracks().forEach((t) => t.stop()); }, []);
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setActiveCamera(null);
+  };
+
+  const startCamera = async (target: CameraTarget) => {
+    setCameraError('');
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: target === 'selfie'
+          ? { facingMode: 'user', width: { ideal: 1920, max: 3840 }, height: { ideal: 1080, max: 2160 } }
+          : { facingMode: { ideal: 'environment' }, width: { ideal: 1920, max: 3840 }, height: { ideal: 1080, max: 2160 } },
+      });
+      streamRef.current = stream;
+      setActiveCamera(target);
+    } catch {
+      setCameraError('No se pudo acceder a la cámara. Revisa los permisos del navegador o sube un archivo.');
+    }
+  };
+
+  const capturePhoto = async () => {
+    const video = videoRef.current;
+    if (!video || !activeCamera) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1920;
+    canvas.height = video.videoHeight || 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    if (activeCamera === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const target = activeCamera;
+    stopCamera();
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `${target}.jpg`, { type: 'image/jpeg' });
+      if (target === 'selfie') void onSelfieSelect(file);
+      else if (target === 'id-front') void onIdFrontSelect(file);
+      else void onIdBackSelect(file);
+    }, 'image/jpeg', 0.9);
+  };
+
+  function CameraCapture({ target, label }: { target: CameraTarget; label: string }) {
+    const isActive = activeCamera === target;
+    return (
+      <div className="space-y-2">
+        {isActive ? (
+          <div className="overflow-hidden rounded-2xl border-2 border-indigo-300 bg-black">
+            <div className="relative aspect-[4/3] w-full">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`h-full w-full object-cover ${target === 'selfie' ? '[transform:scaleX(-1)]' : ''}`}
+              />
+            </div>
+            <div className="flex gap-2 bg-black/80 p-2.5">
+              <button
+                type="button"
+                onClick={() => void capturePhoto()}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-sm font-bold text-slate-900"
+              >
+                <Camera className="size-4" /> Capturar
+              </button>
+              <button type="button" onClick={stopCamera} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm text-white">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void startCamera(target)}
+            className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50"
+          >
+            <Camera className="size-6 text-indigo-400" />
+            <span className="text-xs font-semibold text-indigo-600">{label}</span>
+            <span className="text-[10px] text-slate-400">Activa la cámara para tomar la foto</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
 
@@ -210,29 +321,23 @@ function IdentityGate({
                     <img src={idFrontDataUrl} alt="ID front" className="w-full max-h-48 object-contain bg-white" />
                     <button
                       type="button"
-                      onClick={() => idFrontInputRef.current?.click()}
+                      onClick={() => void startCamera('id-front')}
                       className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
                     >
                       Cambiar frente
                     </button>
                   </div>
+                ) : uploadingIdFront ? (
+                  <div className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center">
+                    <Loader className="size-6 animate-spin text-indigo-400" />
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={uploadingIdFront}
-                    onClick={() => idFrontInputRef.current?.click()}
-                    className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50 disabled:opacity-50"
-                  >
-                    {uploadingIdFront ? (
-                      <Loader className="size-6 animate-spin text-indigo-400" />
-                    ) : (
-                      <>
-                        <Upload className="size-6 text-indigo-400" />
-                        <span className="text-xs font-semibold text-indigo-600">Subir frente del documento</span>
-                        <span className="text-[10px] text-slate-400">JPG, PNG, HEIC · Máx 10 MB</span>
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <CameraCapture target="id-front" label="Tomar foto del frente" />
+                    <button type="button" onClick={() => idFrontInputRef.current?.click()} className="mt-1.5 w-full text-center text-[11px] font-medium text-slate-400 underline">
+                      O sube un archivo
+                    </button>
+                  </>
                 )}
               </div>
 
@@ -242,32 +347,27 @@ function IdentityGate({
                     <img src={idBackDataUrl} alt="ID back" className="w-full max-h-48 object-contain bg-white" />
                     <button
                       type="button"
-                      onClick={() => idBackInputRef.current?.click()}
+                      onClick={() => void startCamera('id-back')}
                       className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
                     >
                       Cambiar reverso
                     </button>
                   </div>
+                ) : uploadingIdBack ? (
+                  <div className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center">
+                    <Loader className="size-6 animate-spin text-indigo-400" />
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={uploadingIdBack}
-                    onClick={() => idBackInputRef.current?.click()}
-                    className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 py-8 text-center transition hover:bg-indigo-50 disabled:opacity-50"
-                  >
-                    {uploadingIdBack ? (
-                      <Loader className="size-6 animate-spin text-indigo-400" />
-                    ) : (
-                      <>
-                        <Upload className="size-6 text-indigo-400" />
-                        <span className="text-xs font-semibold text-indigo-600">Subir reverso del documento</span>
-                        <span className="text-[10px] text-slate-400">JPG, PNG, HEIC · Máx 10 MB</span>
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <CameraCapture target="id-back" label="Tomar foto del reverso" />
+                    <button type="button" onClick={() => idBackInputRef.current?.click()} className="mt-1.5 w-full text-center text-[11px] font-medium text-slate-400 underline">
+                      O sube un archivo
+                    </button>
+                  </>
                 )}
               </div>
             </div>
+            {cameraError && <p className="mt-2 text-center text-[11px] font-semibold text-red-500">{cameraError}</p>}
 
             <input
               ref={idFrontInputRef}
@@ -306,29 +406,23 @@ function IdentityGate({
                 <img src={selfieDataUrl} alt="Selfie" className="w-full max-h-48 object-contain bg-white" />
                 <button
                   type="button"
-                  onClick={() => selfieInputRef.current?.click()}
+                  onClick={() => void startCamera('selfie')}
                   className="absolute bottom-2 right-2 rounded-lg bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
                 >
                   Cambiar
                 </button>
               </div>
+            ) : uploadingSelfie ? (
+              <div className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-purple-200 bg-purple-50/40 py-8 text-center">
+                <Loader className="size-6 animate-spin text-purple-400" />
+              </div>
             ) : (
-              <button
-                type="button"
-                disabled={uploadingSelfie}
-                onClick={() => selfieInputRef.current?.click()}
-                className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-purple-200 bg-purple-50/40 py-8 text-center transition hover:bg-purple-50 disabled:opacity-50"
-              >
-                {uploadingSelfie ? (
-                  <Loader className="size-6 animate-spin text-purple-400" />
-                ) : (
-                  <>
-                    <Camera className="size-6 text-purple-400" />
-                    <span className="text-xs font-semibold text-purple-600">Toca para tomar selfie</span>
-                    <span className="text-[10px] text-slate-400">Usa la cámara frontal · JPG, PNG</span>
-                  </>
-                )}
-              </button>
+              <>
+                <CameraCapture target="selfie" label="Tomar selfie" />
+                <button type="button" onClick={() => selfieInputRef.current?.click()} className="mt-1.5 w-full text-center text-[11px] font-medium text-slate-400 underline">
+                  O sube un archivo
+                </button>
+              </>
             )}
 
             <input
@@ -494,7 +588,7 @@ export function GuestSignPage() {
   // ─── Load PDF with pdfjs when tokenData is ready ──────────────────────────────
   useEffect(() => {
     if (!tokenData) return;
-    const url = tokenData.originalPdfUrl;
+    const url = (tokenData.signedPdfUrl || tokenData.originalPdfUrl);
     let cancelled = false;
     setPdfLoading(true);
     setPdfError('');
@@ -955,15 +1049,15 @@ export function GuestSignPage() {
             <div className="flex flex-col items-center gap-3 p-4 text-center">
               <AlertCircle className="size-7 text-amber-400" />
               <p className="text-sm text-slate-500">{pdfError}</p>
-              {tokenData.originalPdfUrl && (
+              {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
                 <>
                   <iframe
-                    src={tokenData.originalPdfUrl}
+                    src={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                     title="Vista previa del documento"
                     className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white"
                   />
                   <a
-                    href={tokenData.originalPdfUrl}
+                    href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700"
@@ -1116,7 +1210,7 @@ export function GuestSignPage() {
                   signatureDataUrl={guestSigDataUrl}
                   signerName={guestName || 'Invitado'}
                   isLoading={isSigning}
-                  fallbackPdfUrl={workingPdfUrl || tokenData.originalPdfUrl}
+                  fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                   onConfirm={(placement) => {
                     setShowPlacer(false);
                     void handleSubmitSignature(guestSigDataUrl, placement);
@@ -1225,9 +1319,9 @@ export function GuestSignPage() {
               <FileText className="size-3.5 text-slate-400" />
               {tokenData.documentName}
             </span>
-            {tokenData.originalPdfUrl && (
+            {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
               <a
-                href={tokenData.originalPdfUrl}
+                href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 transition hover:underline"
@@ -1250,7 +1344,7 @@ export function GuestSignPage() {
               <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <AlertCircle className="size-7 text-amber-400" />
                 <p className="text-sm text-slate-500">{pdfError}</p>
-                {tokenData.originalPdfUrl && (
+                {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
                   <>
                     {/* Last-resort bypass: the browser's own native PDF
                         plugin renders inside an <iframe> via a completely
@@ -1260,12 +1354,12 @@ export function GuestSignPage() {
                         least Ingrid can read the document — the "Continuar
                         a Firmar" button below still unlocks either way. */}
                     <iframe
-                      src={tokenData.originalPdfUrl}
+                      src={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                       title="Vista previa del documento"
                       className="h-[60vh] w-full rounded-xl border border-slate-200"
                     />
                     <a
-                      href={tokenData.originalPdfUrl}
+                      href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
@@ -1440,7 +1534,7 @@ export function GuestSignPage() {
                 signatureDataUrl={guestSigDataUrl}
                 signerName={guestName || 'Invitado'}
                 isLoading={isSigning}
-                fallbackPdfUrl={workingPdfUrl || tokenData.originalPdfUrl}
+                fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                 onConfirm={(placement) => {
                   setShowPlacer(false);
                   void handleSubmitSignature(guestSigDataUrl, placement);
