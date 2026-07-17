@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, PenLine, Clock, LayoutTemplate, Plus, Send, Upload, FolderOpen, Check, ArrowRight } from 'lucide-react';
+import { FileText, PenLine, Clock, LayoutTemplate, Plus, Send, Upload, FolderOpen, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
@@ -111,6 +111,38 @@ function DashboardHomeContent() {
           </motion.button>
         ))}
       </div>
+
+      {/* Custom templates promo — /my-templates (upload your own PDF,
+          click to place fillable fields) is a completely different
+          feature from "Plantillas"/"Ver Plantillas" above (the built-in
+          NDA/lease/etc. gallery) — easy to miss since it used to only
+          live one click deep inside Settings. */}
+      <motion.button
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.99 }}
+        type="button"
+        onClick={() => navigate('/my-templates')}
+        className="mt-5 flex w-full items-center gap-5 p-6 text-left"
+        style={{ borderRadius: CARD_RADIUS, background: 'linear-gradient(120deg,#312e81,#1e1b4b 60%,#111827)', boxShadow: '0 20px 40px rgba(30,27,75,0.28)' }}
+      >
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+          <FolderOpen className="size-6 text-indigo-200" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-base font-black text-white">{language === 'en' ? 'Upload your own document templates' : 'Sube tus propias plantillas de documentos'}</p>
+            <span className="flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-200">
+              <Sparkles className="size-2.5" /> {language === 'en' ? 'New' : 'Nuevo'}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-white/50">
+            {language === 'en'
+              ? 'Upload any PDF once, click to mark the fillable fields and signature spot, and reuse it forever with your own branding.'
+              : 'Sube cualquier PDF una vez, marca con clics los campos y la firma, y reúsalo para siempre con tu marca.'}
+          </p>
+        </div>
+        <ArrowRight className="size-5 shrink-0 text-white/40" />
+      </motion.button>
 
       {/* Recent activity */}
       <div className="mt-8">

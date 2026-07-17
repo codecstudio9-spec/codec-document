@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
@@ -51,15 +51,33 @@ export function DesktopHeader() {
           className="relative flex size-11 items-center justify-center rounded-2xl bg-white"
           style={{ boxShadow: '0 10px 30px rgba(15,23,42,0.06)' }}
         >
-          <Bell className="size-4.5 text-slate-500" />
-          {unreadCount > 0 && (
-            <span
-              className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-white"
-              style={{ height: 18, background: '#EF4444' }}
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
+          <motion.div
+            animate={unreadCount > 0 ? { rotate: [0, -14, 11, -8, 5, -2, 0] } : { rotate: 0 }}
+            transition={unreadCount > 0 ? { duration: 0.7, repeat: Infinity, repeatDelay: 3.5, ease: 'easeInOut' } : undefined}
+          >
+            <Bell className="size-4.5 text-slate-500" />
+          </motion.div>
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.span
+                key={unreadCount}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-white"
+                style={{ height: 18, background: '#EF4444' }}
+              >
+                <motion.span
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: '#EF4444' }}
+                  animate={{ scale: [1, 1.9], opacity: [0.55, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
+                />
+                <span className="relative">{unreadCount > 9 ? '9+' : unreadCount}</span>
+              </motion.span>
+            )}
+          </AnimatePresence>
         </motion.button>
 
         <button

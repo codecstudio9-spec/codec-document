@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut, BarChart3 } from 'lucide-react';
+import { Home, FileText, PenLine, LayoutTemplate, FolderOpen, Sparkles, Settings, User, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/dashboard/documents', labelEs: 'Mis Documentos', labelEn: 'My Documents', icon: FileText },
   { to: '/dashboard/signatures', labelEs: 'Firmas', labelEn: 'Signatures', icon: PenLine },
   { to: '/dashboard/templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: LayoutTemplate },
+  { to: '/my-templates', labelEs: 'Mis Plantillas', labelEn: 'My Templates', icon: FolderOpen },
   { to: '/dashboard/ai', labelEs: 'Asistente IA', labelEn: 'AI Assistant', icon: Sparkles },
   { to: '/dashboard/settings', labelEs: 'Configuración', labelEn: 'Settings', icon: Settings },
 ] as const;
