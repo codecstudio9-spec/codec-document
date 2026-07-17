@@ -30,6 +30,7 @@ import { MobileDocuments } from "./pages/mobile/MobileDocuments";
 import { MobileProfile } from "./pages/mobile/MobileProfile";
 import { MobileNotifications } from "./pages/mobile/MobileNotifications";
 import { MobileSettings } from "./pages/mobile/MobileSettings";
+import { MobileAdminAnalytics } from "./pages/mobile/MobileAdminAnalytics";
 import { DesktopDashboardHome } from "./pages/desktop/DesktopDashboardHome";
 import { DesktopDocuments } from "./pages/desktop/DesktopDocuments";
 import { DesktopSignatures } from "./pages/desktop/DesktopSignatures";
@@ -53,6 +54,14 @@ function ProtectedAdminAnalyticsPage() {
   return (
     <AdminRoute>
       <DesktopAdminAnalytics />
+    </AdminRoute>
+  );
+}
+
+function ProtectedMobileAdminAnalyticsPage() {
+  return (
+    <AdminRoute>
+      <MobileAdminAnalytics />
     </AdminRoute>
   );
 }
@@ -231,6 +240,12 @@ export const router = createBrowserRouter([
   {
     path: "/app/profile/settings",
     Component: MobileSettings,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Admin-only — AdminRoute bounces non-admins back to /app.
+    path: "/app/admin/analytics",
+    Component: ProtectedMobileAdminAnalyticsPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

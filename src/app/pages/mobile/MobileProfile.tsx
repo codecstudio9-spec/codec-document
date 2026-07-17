@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { FileText, Settings, Bell, LogOut, ChevronRight, Crown, ShieldCheck, User as UserIcon, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
@@ -135,6 +135,7 @@ function ProfileContent() {
       {/* Options */}
       <div className="mt-5 space-y-2.5">
         {[
+          ...(isAdmin ? [{ icon: BarChart3, label: 'Analytics', badge: 0, onClick: () => navigate('/app/admin/analytics') }] : []),
           { icon: FileText, label: language === 'en' ? 'Document usage' : 'Uso de documentos', badge: 0, onClick: () => navigate('/app/documents') },
           { icon: Settings, label: language === 'en' ? 'Settings' : 'Ajustes', badge: 0, onClick: () => navigate('/app/profile/settings') },
           { icon: Bell, label: language === 'en' ? 'Notifications' : 'Notificaciones', badge: unreadCount, onClick: () => navigate('/app/profile/notifications') },
