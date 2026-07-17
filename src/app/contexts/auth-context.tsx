@@ -174,14 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
           { onConflict: 'id', ignoreDuplicates: true },
         );
-        // Grant admin plan in DB so server-side checks also pass
+        // Grant admin plan in DB so server-side checks also pass. Plan
+        // status lives on `users.plan_type`/`plan_status`/`plan_expires_at`
+        // (read by auth-service.ts/mobile-dashboard-service.ts) — that's
+        // the only table this actually needs to touch. This used to also
+        // upsert into `user_credits` with a `credits`/`plan` payload, but
+        // that table's real columns are `user_id`/`credits_remaining`/
+        // `updated_at` — every one of those upserts was silently failing
+        // with "column user_credits.credits does not exist" on every
+        // single sign-in (fire-and-forget `void` call, no `.catch()`, so
+        // the rejection was never surfaced anywhere). Removed rather than
+        // "fixed" to match the schema, since nothing reads user_credits
+        // back for plan/credit gating anymore — it was dead weight.
         if (isAdminEmail(u.email)) {
           void supabase.from('users').update({ plan_type: 'admin' }).eq('id', u.id);
-          // Use 'monthly' — safe value that passes DB CHECK constraints; credits: 9999 = unlimited
-          void supabase.from('user_credits').upsert(
-            { user_id: u.id, credits: 9999, plan: 'monthly' },
-            { onConflict: 'user_id' },
-          );
         }
         // Apply plan type selected in onboarding segmentation modal
         const pendingPlanType = localStorage.getItem('codec_pending_plan_type');
@@ -189,11 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           void supabase.from('users').update({ plan_type: pendingPlanType }).eq('id', u.id);
           localStorage.removeItem('codec_pending_plan_type');
         }
-        // Ensure user_credits row exists (0 credits, free plan)
-        void supabase.from('user_credits').upsert(
-          { user_id: u.id, credits: 0, plan: 'free' },
-          { onConflict: 'user_id', ignoreDuplicates: true },
-        );
       }
     });
 
