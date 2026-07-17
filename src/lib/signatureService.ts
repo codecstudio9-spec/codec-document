@@ -541,7 +541,10 @@ function isValidFontBytes(bytes: Uint8Array): boolean {
   );
 }
 
-async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8Array } | null> {
+// Exported so template-service.ts (custom templates — a separate,
+// modular feature) can reuse the exact same accent-safe font loading
+// instead of duplicating the mojibake-prevention logic above.
+export async function loadPdfFontBundle(): Promise<{ regular: Uint8Array; bold?: Uint8Array } | null> {
   try {
     const [regularRes, boldRes] = await Promise.all([
       fetch('/fonts/arial.ttf'),

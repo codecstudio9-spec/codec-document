@@ -30,6 +30,31 @@ import {
 import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
+import { getDocumentBranding, type UserBranding } from '../services/branding-service';
+import { X } from 'lucide-react';
+
+const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
+
+/** Purely visual, purely additive — the document owner's optional
+ * logo/header/footer on the guest-facing signing page. Off by default
+ * (use_global_branding starts false), and the guest can dismiss it for
+ * this session even when it's on, per the explicit requirement that this
+ * never be forced on the signer. */
+function GuestBrandingBanner({ branding, onDismiss }: { branding: UserBranding; onDismiss: () => void }) {
+  if (!branding.useGlobalBranding) return null;
+  if (!branding.companyLogoUrl && !branding.headerText) return null;
+  return (
+    <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-white px-4 py-2">
+      {branding.companyLogoUrl && (
+        <img src={branding.companyLogoUrl} alt="" className="shrink-0 object-contain" style={{ height: LOGO_HEIGHT[branding.logoSize] }} />
+      )}
+      {branding.headerText && <p className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-600">{branding.headerText}</p>}
+      <button type="button" onClick={onDismiss} className="ml-auto shrink-0 text-slate-300 hover:text-slate-500" title="Ocultar">
+        <X className="size-3.5" />
+      </button>
+    </div>
+  );
+}
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -480,6 +505,12 @@ export function GuestSignPage() {
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [tokenError, setTokenError] = useState('');
 
+  // ── White-label branding (optional, off by default) ───────────────────────
+  // Purely additive/visual — never touches the signing or compile logic
+  // above, so there's no way this can affect an already-working document.
+  const [branding, setBranding] = useState<UserBranding | null>(null);
+  const [brandingDismissed, setBrandingDismissed] = useState(false);
+
   // ── PDF ──────────────────────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pdfDoc, setPdfDoc] = useState<any>(null);
@@ -565,6 +596,7 @@ export function GuestSignPage() {
           return;
         }
         setTokenData(data);
+        getDocumentBranding(data.documentId).then(setBranding).catch(() => {});
 
         // Audit log is fire-and-forget
         getPublicIp()
@@ -1043,6 +1075,9 @@ export function GuestSignPage() {
   if (isMobile) {
     return (
       <div className="flex flex-col bg-slate-50 text-slate-900" style={{ height: '100dvh' }}>
+        {branding && !brandingDismissed && (
+          <GuestBrandingBanner branding={branding} onDismiss={() => setBrandingDismissed(true)} />
+        )}
         {/* ── Minimal top bar — no legal subtitle, no "Solo lectura" pill,
             nothing that isn't essential to know where you are ────────── */}
         <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-200 bg-white px-4 py-3">
@@ -1292,6 +1327,9 @@ export function GuestSignPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-28 text-slate-900">
+      {branding && !brandingDismissed && (
+        <GuestBrandingBanner branding={branding} onDismiss={() => setBrandingDismissed(true)} />
+      )}
 
       {/* ── Header ───────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 shadow-sm backdrop-blur-lg">

@@ -12,6 +12,10 @@ import { GuestSignPage } from "./pages/guest-sign-page";
 import { QuickSignPage } from "./pages/quick-sign-page";
 import SignTransactionPage from "./pages/sign-transaction-page";
 import { MyDocumentsPage } from "./pages/my-documents-page";
+import { MyTemplatesPage } from "./pages/my-templates-page";
+import { MyTemplateEditorPage } from "./pages/my-template-editor-page";
+import { MyTemplateFillPage } from "./pages/my-template-fill-page";
+import { MyBrandingPage } from "./pages/my-branding-page";
 import { ElectronicSignaturePage } from "./pages/electronic-signature-page";
 import FreeLegalDocumentsLanding from "./pages/landings/free-legal-documents";
 import ElectronicSignatureLanding from "./pages/landings/electronic-signature";
@@ -130,6 +134,38 @@ function ProtectedMyDocumentsPage() {
   return (
     <ProtectedRoute>
       <MyDocumentsPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyTemplatesPage() {
+  return (
+    <ProtectedRoute>
+      <MyTemplatesPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyTemplateEditorPage() {
+  return (
+    <ProtectedRoute>
+      <MyTemplateEditorPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyTemplateFillPage() {
+  return (
+    <ProtectedRoute>
+      <MyTemplateFillPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyBrandingPage() {
+  return (
+    <ProtectedRoute>
+      <MyBrandingPage />
     </ProtectedRoute>
   );
 }
@@ -341,6 +377,29 @@ export const router = createBrowserRouter([
   {
     path: "/my-documents",
     Component: ProtectedMyDocumentsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Custom templates — separate from the built-in template gallery at
+    // /dashboard/templates and /app/templates: the client's own uploaded
+    // documents with click-placed fillable fields, not our pre-made ones.
+    path: "/my-templates",
+    Component: ProtectedMyTemplatesPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-templates/new",
+    Component: ProtectedMyTemplateEditorPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-templates/:id/fill",
+    Component: ProtectedMyTemplateFillPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-branding",
+    Component: ProtectedMyBrandingPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router';
-import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut } from 'lucide-react';
+import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
@@ -59,6 +59,39 @@ function SettingsContent() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Custom templates & branding */}
+        <div>
+          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">{language === 'en' ? 'Your business' : 'Tu negocio'}</p>
+          <div className="space-y-2.5">
+            <button
+              type="button"
+              onClick={() => navigate('/my-templates')}
+              className="flex w-full items-center gap-3 bg-white p-5 text-left"
+              style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+            >
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><LayoutTemplate className="size-4 text-slate-500" /></div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'My templates' : 'Mis plantillas'}</span>
+                <span className="block text-xs text-slate-400">{language === 'en' ? 'Upload your own documents with fillable fields' : 'Sube tus propios documentos con campos llenables'}</span>
+              </div>
+              <ChevronRight className="size-4 text-slate-300" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/my-branding')}
+              className="flex w-full items-center gap-3 bg-white p-5 text-left"
+              style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+            >
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><Palette className="size-4 text-slate-500" /></div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'Company branding' : 'Marca de tu empresa'}</span>
+                <span className="block text-xs text-slate-400">{language === 'en' ? 'Logo, header/footer text and watermark' : 'Logo, texto de encabezado/pie y marca de agua'}</span>
+              </div>
+              <ChevronRight className="size-4 text-slate-300" />
+            </button>
           </div>
         </div>
 
