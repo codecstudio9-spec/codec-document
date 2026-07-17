@@ -3,13 +3,13 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
-import { Users, Globe2, MapPin, Radio, Loader, Monitor, UserPlus, Repeat } from 'lucide-react';
+import { Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
-  fetchVisitorCounts, fetchTopCountries, fetchTopCities, fetchTrafficSources,
-  fetchVisitorDailySeries, fetchRecentVisitors, fetchDeviceBreakdown, fetchNewVsReturning,
-  type VisitorCounts, type NewVsReturning,
+  fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
+  fetchRecentVisitors, topCountriesFromLocations,
+  type AnalyticsSummary,
 } from '../../services/analytics-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
@@ -44,28 +44,26 @@ function AdminAnalyticsContent() {
   const { language } = useLanguage();
   const [range, setRange] = useState<RangeDays>(7);
 
-  const [counts, setCounts] = useState<VisitorCounts | null>(null);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [series, setSeries] = useState<Array<{ day: string; visitors: number }> | null>(null);
   const [sources, setSources] = useState<Array<{ source: string; visitors: number }> | null>(null);
-  const [countries, setCountries] = useState<Array<{ country: string; visitors: number }> | null>(null);
-  const [cities, setCities] = useState<Array<{ city: string; country: string | null; visitors: number }> | null>(null);
+  const [locations, setLocations] = useState<Array<{ city: string; country: string; visitors: number }> | null>(null);
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof fetchRecentVisitors>> | null>(null);
-  const [devices, setDevices] = useState<Array<{ deviceType: string; visitors: number }> | null>(null);
-  const [newVsReturning, setNewVsReturning] = useState<NewVsReturning | null>(null);
 
   useEffect(() => {
-    fetchVisitorCounts().then(setCounts).catch(() => setCounts({ today: 0, thisWeek: 0, thisMonth: 0, total: 0 }));
-    fetchRecentVisitors(20).then(setRecent).catch(() => setRecent([]));
+    fetchAnalyticsSummary().then(setSummary).catch(() => setSummary({
+      totalVisitors: 0, visitorsToday: 0, visitorsThisWeek: 0, visitorsThisMonth: 0,
+      newVisitorsPct: 0, returningVisitorsPct: 0,
+    }));
+    fetchRecentVisitors().then(setRecent).catch(() => setRecent([]));
+    // All-time — the underlying RPCs don't take a date range.
+    fetchTrafficSources().then(setSources).catch(() => setSources([]));
+    fetchLocationSummary().then(setLocations).catch(() => setLocations([]));
   }, []);
 
   useEffect(() => {
-    setSeries(null); setSources(null); setCountries(null); setCities(null); setDevices(null); setNewVsReturning(null);
-    fetchVisitorDailySeries(range).then(setSeries).catch(() => setSeries([]));
-    fetchTrafficSources(range).then(setSources).catch(() => setSources([]));
-    fetchTopCountries(range, 8).then(setCountries).catch(() => setCountries([]));
-    fetchTopCities(range, 8).then(setCities).catch(() => setCities([]));
-    fetchDeviceBreakdown(range).then(setDevices).catch(() => setDevices([]));
-    fetchNewVsReturning(range).then(setNewVsReturning).catch(() => setNewVsReturning({ newVisitors: 0, returningVisitors: 0 }));
+    setSeries(null);
+    fetchVisitorsTrend(range).then(setSeries).catch(() => setSeries([]));
   }, [range]);
 
   const RANGE_OPTIONS: Array<{ key: RangeDays; label: string }> = [
@@ -82,6 +80,9 @@ function AdminAnalyticsContent() {
     })),
     [series, language],
   );
+
+  const topCountries = useMemo(() => topCountriesFromLocations(locations ?? []).slice(0, 8), [locations]);
+  const topCities = useMemo(() => (locations ?? []).slice().sort((a, b) => b.visitors - a.visitors).slice(0, 8), [locations]);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -109,10 +110,10 @@ function AdminAnalyticsContent() {
 
       {/* KPIs — always today/week/month/total, independent of the range filter */}
       <div className="mt-6 grid grid-cols-4 gap-5">
-        <KpiCard icon={Users} value={counts?.today ?? null} label={language === 'en' ? 'Visitors today' : 'Visitantes hoy'} accent="#2563EB" />
-        <KpiCard icon={Users} value={counts?.thisWeek ?? null} label={language === 'en' ? 'Visitors this week' : 'Visitantes esta semana'} accent="#10B981" />
-        <KpiCard icon={Users} value={counts?.thisMonth ?? null} label={language === 'en' ? 'Visitors this month' : 'Visitantes este mes'} accent="#F59E0B" />
-        <KpiCard icon={Users} value={counts?.total ?? null} label={language === 'en' ? 'Total visitors' : 'Visitantes totales'} accent="#7C3AED" />
+        <KpiCard icon={Users} value={summary?.visitorsToday ?? null} label={language === 'en' ? 'Visitors today' : 'Visitantes hoy'} accent="#2563EB" />
+        <KpiCard icon={Users} value={summary?.visitorsThisWeek ?? null} label={language === 'en' ? 'Visitors this week' : 'Visitantes esta semana'} accent="#10B981" />
+        <KpiCard icon={Users} value={summary?.visitorsThisMonth ?? null} label={language === 'en' ? 'Visitors this month' : 'Visitantes este mes'} accent="#F59E0B" />
+        <KpiCard icon={Users} value={summary?.totalVisitors ?? null} label={language === 'en' ? 'Total visitors' : 'Visitantes totales'} accent="#7C3AED" />
       </div>
 
       {/* Visitor trend */}
@@ -138,7 +139,7 @@ function AdminAnalyticsContent() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-5">
-        {/* Traffic sources */}
+        {/* Traffic sources (all-time) */}
         <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-2">
             <Radio className="size-4 text-slate-400" />
@@ -172,20 +173,20 @@ function AdminAnalyticsContent() {
           )}
         </div>
 
-        {/* Top countries */}
+        {/* Top countries (all-time) */}
         <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-2">
             <Globe2 className="size-4 text-slate-400" />
             <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Top countries' : 'Top países'}</h2>
           </div>
           <div className="mt-4 h-56">
-            {!countries || countries.length === 0 ? (
+            {!locations || topCountries.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                {countries === null ? <Loader className="size-4 animate-spin" /> : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
+                {locations === null ? <Loader className="size-4 animate-spin" /> : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={countries} layout="vertical" margin={{ left: 8 }}>
+                <BarChart data={topCountries} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <YAxis type="category" dataKey="country" width={90} tick={{ fontSize: 11, fill: '#334155' }} axisLine={false} tickLine={false} />
@@ -198,40 +199,8 @@ function AdminAnalyticsContent() {
         </div>
       </div>
 
-      {/* Device breakdown + new vs. returning */}
+      {/* New vs. returning + top cities */}
       <div className="mt-6 grid grid-cols-2 gap-5">
-        <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <div className="flex items-center gap-2">
-            <Monitor className="size-4 text-slate-400" />
-            <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Devices' : 'Dispositivos'}</h2>
-          </div>
-          <div className="mt-4 space-y-2">
-            {!devices || devices.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-400">
-                {devices === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
-              </p>
-            ) : (
-              (() => {
-                const total = devices.reduce((sum, d) => sum + d.visitors, 0) || 1;
-                return devices.map((d, i) => (
-                  <div key={d.deviceType}>
-                    <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-700">{d.deviceType}</span>
-                      <span className="font-bold text-slate-400">{d.visitors}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${(d.visitors / total) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }}
-                      />
-                    </div>
-                  </div>
-                ));
-              })()
-            )}
-          </div>
-        </div>
-
         <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'New vs. returning' : 'Nuevos vs. recurrentes'}</h2>
           <div className="mt-4 grid grid-cols-2 gap-4">
@@ -239,10 +208,10 @@ function AdminAnalyticsContent() {
               <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50">
                 <UserPlus className="size-4 text-blue-600" />
               </div>
-              {newVsReturning === null ? (
-                <div className="mt-3 h-7 w-12 animate-pulse rounded-lg bg-slate-200" />
+              {summary === null ? (
+                <div className="mt-3 h-7 w-16 animate-pulse rounded-lg bg-slate-200" />
               ) : (
-                <p className="mt-3 text-2xl font-black text-slate-900">{newVsReturning.newVisitors.toLocaleString()}</p>
+                <p className="mt-3 text-2xl font-black text-slate-900">{summary.newVisitorsPct.toFixed(0)}%</p>
               )}
               <p className="mt-0.5 text-xs font-medium text-slate-400">{language === 'en' ? 'New' : 'Nuevos'}</p>
             </div>
@@ -250,31 +219,28 @@ function AdminAnalyticsContent() {
               <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50">
                 <Repeat className="size-4 text-emerald-600" />
               </div>
-              {newVsReturning === null ? (
-                <div className="mt-3 h-7 w-12 animate-pulse rounded-lg bg-slate-200" />
+              {summary === null ? (
+                <div className="mt-3 h-7 w-16 animate-pulse rounded-lg bg-slate-200" />
               ) : (
-                <p className="mt-3 text-2xl font-black text-slate-900">{newVsReturning.returningVisitors.toLocaleString()}</p>
+                <p className="mt-3 text-2xl font-black text-slate-900">{summary.returningVisitorsPct.toFixed(0)}%</p>
               )}
               <p className="mt-0.5 text-xs font-medium text-slate-400">{language === 'en' ? 'Returning' : 'Recurrentes'}</p>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Top cities + recent visitors */}
-      <div className="mt-6 grid grid-cols-2 gap-5">
         <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-2">
             <MapPin className="size-4 text-slate-400" />
             <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Top cities' : 'Top ciudades'}</h2>
           </div>
           <div className="mt-4 space-y-2">
-            {!cities || cities.length === 0 ? (
+            {!locations || topCities.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-400">
-                {cities === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
+                {locations === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
               </p>
             ) : (
-              cities.map((c, i) => (
+              topCities.map((c, i) => (
                 <div key={`${c.city}-${i}`} className="flex items-center justify-between rounded-xl bg-slate-50 px-3.5 py-2.5">
                   <span className="text-sm font-semibold text-slate-700">{c.city}{c.country ? `, ${c.country}` : ''}</span>
                   <span className="text-xs font-bold text-slate-400">{c.visitors}</span>
@@ -283,42 +249,38 @@ function AdminAnalyticsContent() {
             )}
           </div>
         </div>
+      </div>
 
-        <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Recent visitors' : 'Visitantes recientes'}</h2>
-          <div className="mt-4 max-h-64 space-y-2 overflow-y-auto">
-            {!recent || recent.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-400">
-                {recent === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No visitors yet' : 'Aún no hay visitantes')}
-              </p>
-            ) : (
-              recent.map((v) => (
-                <div key={v.sessionId} className="flex items-center justify-between rounded-xl bg-slate-50 px-3.5 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-slate-700">
-                      {[v.city, v.country].filter(Boolean).join(', ') || (language === 'en' ? 'Unknown location' : 'Ubicación desconocida')}
-                    </p>
-                    <p className="truncate text-[11px] text-slate-400">
-                      {v.source} · {[v.deviceType, v.browser].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                      style={v.isRegistered ? { color: '#10B981', background: '#ECFDF5' } : { color: '#94A3B8', background: '#F1F5F9' }}
-                    >
-                      {v.isRegistered ? (language === 'en' ? 'Registered' : 'Registrado') : (language === 'en' ? 'Anonymous' : 'Anónimo')}
-                    </span>
-                    {v.isNewVisitor !== null && (
-                      <span className="text-[10px] font-medium text-slate-400">
-                        {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Returning' : 'Recurrente')}
-                      </span>
-                    )}
-                  </div>
+      {/* Recent visitors */}
+      <div className="mt-6 bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+        <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Recent visitors' : 'Visitantes recientes'}</h2>
+        <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+          {!recent || recent.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-400">
+              {recent === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No visitors yet' : 'Aún no hay visitantes')}
+            </p>
+          ) : (
+            recent.map((v) => (
+              <div key={v.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3.5 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-bold text-slate-700">
+                    {[v.city, v.country].filter(Boolean).join(', ') || (language === 'en' ? 'Unknown location' : 'Ubicación desconocida')}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-400">
+                    {v.source} · {[v.device, v.browser].filter(Boolean).join(' · ')} · {v.landingPage}
+                  </p>
                 </div>
-              ))
-            )}
-          </div>
+                {v.isNewVisitor !== null && (
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={v.isNewVisitor ? { color: '#2563EB', background: '#EFF6FF' } : { color: '#10B981', background: '#ECFDF5' }}
+                  >
+                    {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Returning' : 'Recurrente')}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
