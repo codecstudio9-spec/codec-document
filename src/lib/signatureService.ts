@@ -549,14 +549,34 @@ export async function compilePdfWithSignatures(params: {
   documentId: string;
   fileHash: string;
   evidence?: EvidenceReportPayload;
+  /** The FULL signer roster for the "INFORME DE FIRMAS" report page —
+   * independent from `signatures` above, which is only the NEW ink being
+   * stamped inline on this pass. Every prior signer's ink is already
+   * flattened into the incoming pdfBytes as pixels (re-stamping it would
+   * double it up), but the report page still needs to list everyone, or
+   * the second signer's compile call would otherwise append a SECOND,
+   * separate report page — each showing only one signer, and each
+   * generating the same "-01" audit token (the token is derived from the
+   * signer's position in this array), which is worse than redundant: it's
+   * two different people certified under one colliding token. Defaults to
+   * `signatures` so single-signer callers (the creator's own compile, with
+   * nobody signed yet) don't need to pass anything extra. */
+  reportSigners?: Array<Pick<SignatureToEmbed, 'imageUrl' | 'storageUrl' | 'signerName' | 'signerRole'>>;
 }): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const { default: fontkit } = await import('@pdf-lib/fontkit');
+
+  const reportSigners = params.reportSigners ?? params.signatures;
 
   // Phase 0: pre-load ALL images in parallel before touching the PDF
   const resolvedImages = await Promise.all(
     params.signatures.map((sig) => resolveImageBytes(sig)),
   );
+  // Separate resolution for the report roster — may reference signers (and
+  // therefore image URLs) that aren't in `signatures` at all this pass.
+  const resolvedReportImages = reportSigners === params.signatures
+    ? resolvedImages
+    : await Promise.all(reportSigners.map((sig) => resolveImageBytes(sig as SignatureToEmbed)));
 
   const pdfDoc  = await PDFDocument.load(params.pdfBytes.slice(0));
   pdfDoc.registerFontkit(fontkit);
@@ -649,7 +669,7 @@ export async function compilePdfWithSignatures(params: {
   }
 
   // Phase 2: certification report page (mirror grid + legal compliance)
-  if (params.signatures.length > 0) {
+  if (reportSigners.length > 0) {
     const PAGE_W = 595.28, PAGE_H = 841.89;
     const MARGIN = 36, COL_GAP = 18;
     const COL_W  = (PAGE_W - 2 * MARGIN - COL_GAP) / 2;
@@ -677,9 +697,9 @@ export async function compilePdfWithSignatures(params: {
     const contentStartY = PAGE_H - HEADER_H - 22;
     const docPrefix     = params.documentId.replace(/-/g, '').toUpperCase().substring(0, 8);
 
-    for (let i = 0; i < params.signatures.length; i++) {
-      const sig       = params.signatures[i];
-      const imgBytes  = resolvedImages[i];
+    for (let i = 0; i < reportSigners.length; i++) {
+      const sig       = reportSigners[i];
+      const imgBytes  = resolvedReportImages[i];
       const col       = i % 2;
       const row       = Math.floor(i / 2);
       const blockX    = MARGIN + col * (COL_W + COL_GAP);

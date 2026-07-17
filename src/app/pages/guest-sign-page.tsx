@@ -25,6 +25,7 @@ import {
   getSignedUrlFallback,
   markDocumentInvitationSigned,
   finalizeDocument,
+  getDocumentSignatures,
 } from '../../lib/signatureService';
 import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
@@ -755,6 +756,40 @@ export function GuestSignPage() {
         signatureUrl: sigUrl,
       });
 
+      // The creator's ink is already flattened as pixels into
+      // tokenData.signedPdfUrl — compilePdfWithSignatures only needs to
+      // stamp the NEW guest signature inline. But the audit/certification
+      // report page is a different story: without this, every compile call
+      // (creator's, then this one) unconditionally appends its OWN report
+      // page listing only ITS signer, so the final PDF ends up with two
+      // separate "INFORME DE FIRMAS" pages — one per signer — and both
+      // tokens end in "-01" (each page's token is derived from its local
+      // array index, which is always 0 for a single-signer call). Fetching
+      // every real signature row for this document (creator's + the one
+      // just inserted above) gives compilePdfWithSignatures the full
+      // roster, so it renders ONE unified report page with a distinct
+      // token per signer instead.
+      const docTypeHint = inferDocumentTypeHint(tokenData.documentName);
+      let reportSigners: Array<{ imageUrl: string; storageUrl: string; signerName: string; signerRole: string }> = [{
+        imageUrl: dataUrl,
+        storageUrl: sigUrl,
+        signerName: guestName || 'Invitado',
+        signerRole: getSignerRoleLabel(docTypeHint, 1, 'es'),
+      }];
+      try {
+        const allSignatures = await getDocumentSignatures(tokenData.documentId);
+        if (allSignatures.length > 0) {
+          reportSigners = allSignatures.map((s, idx) => ({
+            imageUrl: s.signature_url,
+            storageUrl: s.signature_url,
+            signerName: s.signer_name || (idx === 0 ? 'Firmante' : 'Invitado'),
+            signerRole: getSignerRoleLabel(docTypeHint, idx, 'es'),
+          }));
+        }
+      } catch (e) {
+        console.error('No se pudo obtener el roster completo de firmantes, se certifica solo la firma del invitado:', e);
+      }
+
       const currentPdfUrl = tokenData.signedPdfUrl || tokenData.originalPdfUrl;
       if (currentPdfUrl) {
         try {
@@ -772,7 +807,7 @@ export function GuestSignPage() {
             signatures: [{
               imageUrl: dataUrl,
               signerName: guestName || 'Invitado',
-              signerRole: getSignerRoleLabel(inferDocumentTypeHint(tokenData.documentName), 1, 'es'),
+              signerRole: getSignerRoleLabel(docTypeHint, 1, 'es'),
               // Falls back to the old fixed spot only if this somehow got
               // called without a placement — GuestSignaturePlacer always
               // provides one in the real flow below.
@@ -782,6 +817,7 @@ export function GuestSignPage() {
               widthFraction: placement?.widthFraction ?? 0.42,
               heightFraction: placement?.heightFraction ?? 0.24,
             }],
+            reportSigners,
             documentId: tokenData.documentId,
             fileHash: sha256Hash,
             evidence: {
