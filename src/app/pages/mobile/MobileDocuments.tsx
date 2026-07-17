@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2 } from 'lucide-react';
+import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
+import { DocumentEditModal } from '../../components/DocumentEditModal';
 import {
   fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
+  updateUserDocumentDetails, updateAssociatedDocumentDetails,
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
@@ -20,6 +22,7 @@ type UnifiedDoc = {
   status: string;
   date: string;
   href: string | null;
+  color: string | null;
 };
 
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
@@ -46,6 +49,8 @@ function DocumentsContent() {
   const [filter, setFilter] = useState<Filter>('all');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingDoc, setEditingDoc] = useState<UnifiedDoc | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -56,16 +61,32 @@ function DocumentsContent() {
       const unified: UnifiedDoc[] = [
         ...own.map((d) => ({
           id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at,
-          href: `/preview/${d.template_id}`,
+          href: `/preview/${d.template_id}`, color: d.color,
         })),
         ...associated.map((d) => ({
           id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at,
-          href: d.signed_pdf_url || d.original_pdf_url,
+          href: d.signed_pdf_url || d.original_pdf_url, color: d.color,
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setDocs(unified);
     });
   }, [user?.id]);
+
+  const handleSaveEdit = async (name: string, color: string | null) => {
+    if (!editingDoc) return;
+    setSavingEdit(true);
+    try {
+      if (editingDoc.kind === 'own') await updateUserDocumentDetails(editingDoc.id, name, color);
+      else await updateAssociatedDocumentDetails(editingDoc.id, name, color);
+      setDocs((prev) => prev?.map((d) => (d.id === editingDoc.id ? { ...d, name, color } : d)) ?? prev);
+      toast.success(language === 'en' ? 'Document updated' : 'Documento actualizado');
+      setEditingDoc(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not update the document' : 'No se pudo actualizar el documento'));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleDelete = async (doc: UnifiedDoc) => {
     setDeletingId(doc.id);
@@ -189,11 +210,11 @@ function DocumentsContent() {
                 key={doc.id}
                 whileTap={{ scale: 0.99 }}
                 className="flex items-center gap-2 bg-white p-4"
-                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW, borderLeft: doc.color ? `4px solid ${doc.color}` : undefined }}
               >
                 <button type="button" onClick={openDoc} disabled={!doc.href} className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-70">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
-                    <FileText className="size-5 text-indigo-500" />
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50" style={doc.color ? { background: `${doc.color}1a` } : undefined}>
+                    <FileText className="size-5 text-indigo-500" style={doc.color ? { color: doc.color } : undefined} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
@@ -213,6 +234,13 @@ function DocumentsContent() {
                       <Download className="size-4 text-slate-500" />
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingDoc(doc)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
+                >
+                  <Pencil className="size-4 text-slate-400" />
                 </button>
                 <button
                   type="button"
@@ -245,6 +273,15 @@ function DocumentsContent() {
       >
         <Plus className="size-6" />
       </motion.button>
+
+      <DocumentEditModal
+        open={editingDoc !== null}
+        initialName={editingDoc?.name ?? ''}
+        initialColor={editingDoc?.color ?? null}
+        isSaving={savingEdit}
+        onClose={() => setEditingDoc(null)}
+        onSave={(name, color) => void handleSaveEdit(name, color)}
+      />
     </div>
   );
 }

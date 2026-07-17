@@ -49,7 +49,8 @@ export function MyDocumentsPage() {
 
   const commitRename = async (id: string) => {
     if (!renameValue.trim()) return;
-    await renameDocument(id, renameValue);
+    const current = docs.find((d) => d.id === id);
+    await renameDocument(id, renameValue, current?.color ?? null);
     setDocs((prev) => prev.map((d) => d.id === id ? { ...d, document_name: renameValue.trim() } : d));
     setRenamingId(null);
   };

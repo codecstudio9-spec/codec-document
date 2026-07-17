@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, Download, Check, Clock, FileEdit, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Search, FileText, Download, Check, Clock, FileEdit, ArrowUpDown, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
+import { DocumentEditModal } from '../../components/DocumentEditModal';
 import {
   fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
+  updateUserDocumentDetails, updateAssociatedDocumentDetails,
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null };
+type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null; color: string | null };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
 type SortMode = 'newest' | 'oldest' | 'name';
 
@@ -40,6 +42,8 @@ function DocumentsContent() {
   const [sort, setSort] = useState<SortMode>('newest');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingDoc, setEditingDoc] = useState<UnifiedDoc | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -48,12 +52,28 @@ function DocumentsContent() {
       fetchAssociatedDocuments(user.id).catch(() => [] as AssociatedDocument[]),
     ]).then(([own, associated]) => {
       const unified: UnifiedDoc[] = [
-        ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}` })),
-        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url })),
+        ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}`, color: d.color })),
+        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url, color: d.color })),
       ];
       setDocs(unified);
     });
   }, [user?.id]);
+
+  const handleSaveEdit = async (name: string, color: string | null) => {
+    if (!editingDoc) return;
+    setSavingEdit(true);
+    try {
+      if (editingDoc.kind === 'own') await updateUserDocumentDetails(editingDoc.id, name, color);
+      else await updateAssociatedDocumentDetails(editingDoc.id, name, color);
+      setDocs((prev) => prev?.map((d) => (d.id === editingDoc.id ? { ...d, name, color } : d)) ?? prev);
+      toast.success(language === 'en' ? 'Document updated' : 'Documento actualizado');
+      setEditingDoc(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not update the document' : 'No se pudo actualizar el documento'));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleDelete = async (doc: UnifiedDoc) => {
     setDeletingId(doc.id);
@@ -187,15 +207,24 @@ function DocumentsContent() {
                 key={doc.id}
                 whileHover={{ y: -2 }}
                 className="group relative flex flex-col items-start gap-3 bg-white p-5 text-left"
-                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW, borderLeft: doc.color ? `4px solid ${doc.color}` : undefined }}
               >
-                <button
-                  type="button"
-                  onClick={() => setConfirmingId(doc.id)}
-                  className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-xl bg-slate-50 opacity-0 transition group-hover:opacity-100"
-                >
-                  <Trash2 className="size-4 text-slate-400" />
-                </button>
+                <div className="absolute right-3 top-3 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingDoc(doc)}
+                    className="flex size-8 items-center justify-center rounded-xl bg-slate-50"
+                  >
+                    <Pencil className="size-4 text-slate-400" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingId(doc.id)}
+                    className="flex size-8 items-center justify-center rounded-xl bg-slate-50"
+                  >
+                    <Trash2 className="size-4 text-slate-400" />
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -206,8 +235,8 @@ function DocumentsContent() {
                   className="flex w-full flex-col items-start gap-3 text-left"
                 >
                   <div className="flex w-full items-start justify-between">
-                    <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-50">
-                      <FileText className="size-5 text-indigo-500" />
+                    <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-50" style={doc.color ? { background: `${doc.color}1a` } : undefined}>
+                      <FileText className="size-5 text-indigo-500" style={doc.color ? { color: doc.color } : undefined} />
                     </div>
                     {doc.href && <Download className="size-4 text-slate-300" />}
                   </div>
@@ -227,6 +256,15 @@ function DocumentsContent() {
           })
         )}
       </div>
+
+      <DocumentEditModal
+        open={editingDoc !== null}
+        initialName={editingDoc?.name ?? ''}
+        initialColor={editingDoc?.color ?? null}
+        isSaving={savingEdit}
+        onClose={() => setEditingDoc(null)}
+        onSave={(name, color) => void handleSaveEdit(name, color)}
+      />
     </div>
   );
 }

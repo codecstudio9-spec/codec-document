@@ -25,7 +25,16 @@ export interface UserDocument {
   document_name: string;
   created_at: string;
   updated_at: string;
+  color: string | null;
 }
+
+/** Fixed accent-color palette — a free-text color field invites
+ * inconsistent/ugly values; a small closed set keeps every document card
+ * looking intentional regardless of what the user picks. */
+export const DOCUMENT_COLORS = [
+  '#2563EB', '#7C3AED', '#DB2777', '#DC2626',
+  '#EA580C', '#D97706', '#16A34A', '#0891B2',
+] as const;
 
 export async function saveDocumentRecord(
   userId: string,
@@ -50,11 +59,43 @@ export async function fetchUserDocuments(userId: string): Promise<UserDocument[]
   return (data as UserDocument[]) ?? [];
 }
 
-export async function renameDocument(documentId: string, newName: string): Promise<void> {
-  await supabase
-    .from('user_documents')
-    .update({ document_name: newName.trim(), updated_at: new Date().toISOString() })
-    .eq('id', documentId);
+// Goes through a SECURITY DEFINER RPC (update_user_document_details) — a
+// raw `.update()` matching 0 rows (wrong owner, or no UPDATE policy)
+// reports success with no error, so a silent RLS mismatch could leave a
+// rename looking like it worked when it never touched the row. See
+// supabase_add_document_name_color_migration.sql.
+export async function renameDocument(documentId: string, newName: string, color: string | null = null): Promise<void> {
+  await updateUserDocumentDetails(documentId, newName, color);
+}
+
+// `name`/`color` are the FULL desired state, not a partial patch — pass
+// the current value for whichever one isn't changing.
+export async function updateUserDocumentDetails(
+  documentId: string,
+  name: string,
+  color: string | null,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('update_user_document_details', {
+    p_document_id: documentId,
+    p_name: name,
+    p_color: color,
+  });
+  if (error) throw new Error(`updateUserDocumentDetails: ${error.message}`);
+  if (!data) throw new Error('updateUserDocumentDetails: document not found, or not yours');
+}
+
+export async function updateAssociatedDocumentDetails(
+  documentId: string,
+  name: string,
+  color: string | null,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('update_document_details', {
+    p_document_id: documentId,
+    p_name: name,
+    p_color: color,
+  });
+  if (error) throw new Error(`updateAssociatedDocumentDetails: ${error.message}`);
+  if (!data) throw new Error('updateAssociatedDocumentDetails: document not found, or not yours');
 }
 
 export async function deleteDocumentRecord(documentId: string): Promise<void> {
@@ -84,9 +125,10 @@ export interface AssociatedDocument {
   signed_pdf_url: string | null;
   created_at: string;
   role: string;
+  color: string | null;
 }
 
-const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at';
+const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at, color';
 
 export async function fetchAssociatedDocuments(userId: string): Promise<AssociatedDocument[]> {
   const [ownedRes, linksRes] = await Promise.all([
