@@ -238,6 +238,35 @@ function ShareHub({
   );
 }
 
+/** Replaces whatever step the creator happens to be looking at (Enviar or
+ * Esperando — the second signer can finish while either is on screen) the
+ * moment the second signature is detected. One unmistakable state — a big
+ * green check, plain language, one button — instead of a silent
+ * auto-redirect a distracted or non-technical user could easily miss and
+ * then wonder "did it actually work?". They stay in control: nothing
+ * moves until they press Continuar. */
+function GuestCompletedBanner({ guestName, onContinue }: { guestName: string; onContinue: () => void }) {
+  return (
+    <div className="mt-5 flex flex-col items-center gap-4 rounded-3xl border-2 border-emerald-300 bg-emerald-50 p-8 text-center">
+      <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-200">
+        <CheckCircle2 className="size-9 text-white" />
+      </div>
+      <div>
+        <p className="text-lg font-black text-emerald-900">¡{guestName || 'El invitado'} ya firmó!</p>
+        <p className="mt-1 text-sm text-emerald-700">El documento quedó certificado con ambas firmas. Ya puedes continuar.</p>
+      </div>
+      <button
+        type="button"
+        onClick={onContinue}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-200/70 transition hover:scale-[1.01]"
+      >
+        Continuar
+        <ChevronRight className="size-5" />
+      </button>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function ElectronicSignaturePage() {
   const { session, isAdmin, signInWithGoogle } = useAuth();
@@ -305,13 +334,6 @@ export function ElectronicSignaturePage() {
       }
     })();
   }, [guestSigUrl]);
-
-  // ── Auto-transition to done on completed status ────────────────────────────
-  useEffect(() => {
-    if (documentStatus !== 'completed') return;
-    const t = setTimeout(() => setStep('done'), 1200);
-    return () => clearTimeout(t);
-  }, [documentStatus]);
 
   // ── Realtime + polling fallback (await-guest) ──────────────────────────────
   // This used to ALSO re-compile the final PDF from scratch on the
@@ -899,6 +921,8 @@ export function ElectronicSignaturePage() {
                       El documento quedará certificado únicamente con tu firma.
                     </p>
                   </>
+                ) : documentStatus === 'completed' ? (
+                  <GuestCompletedBanner guestName={guestName} onContinue={() => setStep('done')} />
                 ) : (
                   /* Sub-estado: hub de distribución */
                   <ShareHub
@@ -933,21 +957,15 @@ export function ElectronicSignaturePage() {
                 <h2 className="mt-1 text-xl font-bold text-slate-900">Monitoreando firma de {guestName || 'invitado'}</h2>
 
                 {documentStatus === 'completed' ? (
-                  <div className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
-                    <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
-                    <div>
-                      <p className="text-sm font-bold text-emerald-800">¡Documento completado!</p>
-                      <p className="text-xs text-emerald-700">Redirigiendo a descarga…</p>
-                    </div>
-                  </div>
+                  <GuestCompletedBanner guestName={guestName} onContinue={() => setStep('done')} />
                 ) : (
                   <div className="mt-5 space-y-4">
                     {/* Live status indicator */}
                     <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                       <Loader className="size-5 shrink-0 animate-spin text-amber-600" />
                       <div>
-                        <p className="text-sm font-bold text-amber-800">Sincronización en tiempo real activa</p>
-                        <p className="text-xs text-amber-700">Verificación automática cada 4 s · Conexión segura con la base de datos</p>
+                        <p className="text-sm font-bold text-amber-800">Esperando a que {guestName || 'el invitado'} firme</p>
+                        <p className="text-xs text-amber-700">Te avisaremos aquí mismo apenas firme — no necesitas hacer nada más.</p>
                       </div>
                     </div>
 
@@ -978,7 +996,7 @@ export function ElectronicSignaturePage() {
                         className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-50"
                       >
                         <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Verificar
+                        ¿Ya firmó? Verificar
                       </button>
                     </div>
 
