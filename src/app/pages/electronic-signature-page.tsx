@@ -291,6 +291,11 @@ export function ElectronicSignaturePage() {
   const [creatorSigDataUrl, setCreatorSigDataUrl] = useState('');
   const [creatorSigUrl, setCreatorSigUrl]     = useState('');
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
+  // Kept so handleSignAloneOnly can re-compile WITH the certification page
+  // (it was deliberately left out of the partial compile below — see the
+  // includeCertificationPage comment) instead of just re-finalizing that
+  // page-less partial blob as if it were the real final document.
+  const [creatorPlacement, setCreatorPlacement] = useState<PlacedSignature | null>(null);
 
   // ── Guest ──────────────────────────────────────────────────────────────────
   const [guestName, setGuestName]           = useState('');
@@ -482,6 +487,7 @@ export function ElectronicSignaturePage() {
     setIsLoading(true); setLoadingMsg('Compilando PDF…');
     try {
       const placement = placements[0];
+      setCreatorPlacement(placement);
       await insertSignaturePositions(documentId, [{
         x: placement.xFraction, y: placement.yFraction,
         width: placement.widthFraction, height: placement.heightFraction, page: placement.page,
@@ -498,6 +504,12 @@ export function ElectronicSignaturePage() {
         }],
         documentId,
         fileHash,
+        // This is a PARTIAL save — the second signer hasn't signed yet —
+        // so no certification report page here. Otherwise the guest's
+        // later compile adds its own unified report page on top of this
+        // one, and the final PDF ends up with two: an orphaned one
+        // showing only the creator, then the real one with both signers.
+        includeCertificationPage: false,
       });
       const partialBlob = new Blob([partialBytes], { type: 'application/pdf' });
       // Timestamped, not the fixed 'signed.pdf' — confirmed live that a
@@ -523,14 +535,36 @@ export function ElectronicSignaturePage() {
   };
 
   // Not every document needs a second signer — the creator can certify it
-  // solo. handleCreatorSign already embedded and saved their signature
-  // (signedPdfUrl/documentId are set by the time this is reachable, since
-  // it's only offered from the invite-guest step); this just marks the
-  // document as completed instead of waiting on an invitation nobody sends.
+  // solo. The earlier partial compile (handleCreatorPlacementConfirm)
+  // deliberately skipped the certification page since a second signer was
+  // still expected — going solo means that expectation changed, so this
+  // re-compiles from the original pdfBytes with the certification page
+  // included this time, instead of just finalizing the page-less partial
+  // blob as if it were already the real final document.
   const handleSignAloneOnly = async () => {
+    if (!creatorPlacement || !pdfBytes || pdfBytes.length === 0) {
+      toast.error('No se pudo finalizar: falta la posición de tu firma. Reinicia el flujo.');
+      return;
+    }
     setIsLoading(true); setLoadingMsg('Finalizando documento…');
     try {
-      await finalizeDocument(documentId, signedPdfUrl);
+      const finalBytes = await compilePdfWithSignatures({
+        pdfBytes,
+        signatures: [{
+          imageUrl: creatorPlacement.imageDataUrl, storageUrl: creatorPlacement.storageUrl,
+          signerName: creatorName || 'Firmante 1',
+          signerRole: getSignerRoleLabel(resolvedDocumentType, 0, 'es'),
+          page: creatorPlacement.page,
+          xFraction: creatorPlacement.xFraction, yFraction: creatorPlacement.yFraction,
+          widthFraction: creatorPlacement.widthFraction, heightFraction: creatorPlacement.heightFraction,
+        }],
+        documentId,
+        fileHash,
+      });
+      const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
+      const finalUrl = await uploadPdfToStorage(documentId, finalBlob, `signed-${Date.now()}.pdf`);
+      setSignedPdfUrl(finalUrl);
+      await finalizeDocument(documentId, finalUrl);
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_completed_solo', ipAddress: ip, userAgent: navigator.userAgent });
       toast.success('¡Documento certificado! No necesitas ningún invitado.');
@@ -630,7 +664,7 @@ export function ElectronicSignaturePage() {
 
   const handleReset = () => {
     setStep('upload'); setPdfBytes(null); setFileName(''); setDocumentId(''); setFileHash('');
-    setCreatorName(''); setCreatorEmail(''); setCreatorSigDataUrl(''); setCreatorSigUrl('');
+    setCreatorName(''); setCreatorEmail(''); setCreatorSigDataUrl(''); setCreatorSigUrl(''); setCreatorPlacement(null);
     setGuestName(''); setGuestEmail(''); setGuestSigDataUrl(''); setGuestSigUrl('');
     setSigningToken(''); setSignedPdfUrl(''); setDocumentStatus('pending');
     setRequireIdPhoto(false); setRequireSelfie(false);

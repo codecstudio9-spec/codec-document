@@ -583,11 +583,22 @@ export async function compilePdfWithSignatures(params: {
    * `signatures` so single-signer callers (the creator's own compile, with
    * nobody signed yet) don't need to pass anything extra. */
   reportSigners?: Array<Pick<SignatureToEmbed, 'imageUrl' | 'storageUrl' | 'signerName' | 'signerRole'>>;
+  /** Set to `false` for a PARTIAL compile (the creator saving their own
+   * signature before anyone else has signed) — skips the "INFORME DE
+   * FIRMAS" report page entirely. Without this, that first partial compile
+   * always added its own report page (1 signer), and once a later signer's
+   * compile pass added its own unified report page on top, the final PDF
+   * ended up with two of them back to back — the first showing only the
+   * creator, confirmed live in a real compiled document. A certification
+   * page only makes sense once the document is actually done; defaults to
+   * `true` so the final/single-signer-only compile still gets one. */
+  includeCertificationPage?: boolean;
 }): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const { default: fontkit } = await import('@pdf-lib/fontkit');
 
   const reportSigners = params.reportSigners ?? params.signatures;
+  const includeCertificationPage = params.includeCertificationPage !== false;
 
   // Phase 0: pre-load ALL images in parallel before touching the PDF
   const resolvedImages = await Promise.all(
@@ -690,7 +701,7 @@ export async function compilePdfWithSignatures(params: {
   }
 
   // Phase 2: certification report page (mirror grid + legal compliance)
-  if (reportSigners.length > 0) {
+  if (includeCertificationPage && reportSigners.length > 0) {
     const PAGE_W = 595.28, PAGE_H = 841.89;
     const MARGIN = 36, COL_GAP = 18;
     const COL_W  = (PAGE_W - 2 * MARGIN - COL_GAP) / 2;
