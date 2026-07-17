@@ -478,7 +478,14 @@ export function ElectronicSignaturePage() {
         fileHash,
       });
       const partialBlob = new Blob([partialBytes], { type: 'application/pdf' });
-      const partialSignedUrl = await uploadPdfToStorage(documentId, partialBlob, 'signed.pdf');
+      // Timestamped, not the fixed 'signed.pdf' — confirmed live that a
+      // retry (or the manual "position" fallback re-uploading afterward)
+      // hitting the SAME existing object 403s with "new row violates row-
+      // level security policy": storage RLS here only reliably grants
+      // INSERT, not UPDATE, even for the authenticated owner. A fresh path
+      // is always a first-time INSERT. See guest-sign-page.tsx for the
+      // same fix on the guest's side.
+      const partialSignedUrl = await uploadPdfToStorage(documentId, partialBlob, `signed-${Date.now()}.pdf`);
       setSignedPdfUrl(partialSignedUrl);
       await updateDocumentSignedPdfUrl(documentId, partialSignedUrl);
       const ip = await getPublicIp();
@@ -581,7 +588,9 @@ export function ElectronicSignaturePage() {
       const finalBytes = await compilePdfWithSignatures({ pdfBytes: pdfBytes!, signatures, documentId, fileHash });
       setLoadingMsg('Subiendo PDF certificado…');
       const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
-      const signedUrl = await uploadPdfToStorage(documentId, finalBlob, 'signed.pdf');
+      // Timestamped — see the identical fix (and the confirmed live RLS
+      // error) a few lines up in handleCreatorPlacementConfirm.
+      const signedUrl = await uploadPdfToStorage(documentId, finalBlob, `signed-${Date.now()}.pdf`);
       setSignedPdfUrl(signedUrl);
       await finalizeDocument(documentId, signedUrl);
       const ip = await getPublicIp();
