@@ -158,9 +158,14 @@ export function trackVisitorSession(): void {
         country_code: geo.country_code,
         city: geo.city,
         region: geo.region,
-        referrer_source: source,
+        // Column names match what actually exists live in Supabase
+        // (traffic_source/path_visited), not my original design
+        // (referrer_source/landing_page) — the table was created by a
+        // different tool than my migration file. See
+        // supabase_finalize_analytics_and_admin_role.sql for the full story.
+        traffic_source: source,
         referrer_host: host,
-        landing_page: window.location.pathname,
+        path_visited: window.location.pathname,
         language: navigator.language ?? null,
         device_type: deviceType,
         browser,
