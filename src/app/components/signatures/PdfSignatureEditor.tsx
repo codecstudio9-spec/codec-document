@@ -52,6 +52,38 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
   const mainContainerRef = useRef<HTMLDivElement | null>(null);
   const thumbCanvasRefs  = useRef<(HTMLCanvasElement | null)[]>([]);
   const renderedPageRef  = useRef<number>(0);
+  // Real width/height ratio of each signer's ink (trimmed of transparent
+  // margins upstream), keyed by signer id — so a placement box starts out
+  // shaped like the actual signature instead of a generic wide rectangle
+  // that pads or visually squashes it.
+  const imgAspectRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    signers.forEach((signer) => {
+      if (!signer.imageDataUrl || imgAspectRef.current.has(signer.id)) return;
+      const img = new Image();
+      img.onload = () => {
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          imgAspectRef.current.set(signer.id, img.naturalWidth / img.naturalHeight);
+        }
+      };
+      img.src = signer.imageDataUrl;
+    });
+  }, [signers]);
+
+  // Page-fraction boxes aren't square pixels — matching the box to the
+  // image's real w/h ratio also needs the page's own on-screen aspect
+  // ratio, not just the raw image ratio. Page dimensions are uniform
+  // across virtually every real-world PDF, so whichever page happens to be
+  // rendered in mainContainerRef at call time is a safe stand-in even if
+  // it isn't the exact target page yet (e.g. mid auto-place, before the
+  // page-switch state commits).
+  const heightFractionFor = useCallback((signerId: string, widthFraction: number) => {
+    const rect = mainContainerRef.current?.getBoundingClientRect();
+    const pageAspect = rect && rect.height > 0 ? rect.width / rect.height : 1;
+    const imgAspect = imgAspectRef.current.get(signerId) ?? DEFAULT_W / DEFAULT_H;
+    return clamp(0.05, 0.22, (widthFraction / imgAspect) * pageAspect);
+  }, []);
 
   // ─── Phase 1: Load PDF ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -160,11 +192,21 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
   }, [signers]);
 
   // ─── Placement helpers ────────────────────────────────────────────────────────
+  // A signer can only ever have ONE placement at a time — replace, never
+  // append. Appending let a signer accumulate a stale placement (e.g. the
+  // auto "Colocar en espejo" spot on the last page) alongside a new manual
+  // one on a different page; onConfirm only ever reads placements[0], so
+  // whichever one happened to land first in the array — not the one the
+  // user actually dragged into place — is what got compiled into the final
+  // PDF. That's the exact bug reported: signature shows on the wrong page,
+  // at the untouched default position, while the page the user really
+  // placed it on stays empty.
   const addPlacement = useCallback(
     (signer: EditorSigner, page: number, xFraction = 0.5, yFraction = 0.3) => {
       const id = `${signer.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const heightFraction = heightFractionFor(signer.id, DEFAULT_W);
       setPlacements((prev) => [
-        ...prev,
+        ...prev.filter((p) => p.signerId !== signer.id),
         {
           id,
           signerId:     signer.id,
@@ -177,13 +219,13 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           xFraction,
           yFraction,
           widthFraction:  DEFAULT_W,
-          heightFraction: DEFAULT_H,
+          heightFraction,
           labelText:  signer.name,
           showLabel:  true,
         },
       ]);
     },
-    [],
+    [heightFractionFor],
   );
 
   const updatePlacement = useCallback(
@@ -208,6 +250,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
     const newPlacements: PlacedSignature[] = signers.slice(0, 4).map((signer, idx) => {
       const col = idx % 2;             // 0 = left, 1 = right
       const row = Math.floor(idx / 2); // 0 = first row, 1 = second row
+      const heightFraction = heightFractionFor(signer.id, DEFAULT_W);
       return {
         id: `${signer.id}-auto-${Date.now()}-${idx}`,
         signerId:     signer.id,
@@ -218,15 +261,15 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
         storageUrl:   signer.storageUrl,
         page: lastPage,
         xFraction:      COL_X[col],
-        yFraction:      row === 0 ? AUTO_Y : Math.max(DEFAULT_H / 2, AUTO_Y - DEFAULT_H - 0.03),
+        yFraction:      row === 0 ? AUTO_Y : Math.max(heightFraction / 2, AUTO_Y - heightFraction - 0.03),
         widthFraction:  DEFAULT_W,
-        heightFraction: DEFAULT_H,
+        heightFraction,
         labelText:  signer.name,
         showLabel:  true,
       };
     });
     setPlacements(newPlacements);
-  }, [signers, pageCount]);
+  }, [signers, pageCount, heightFractionFor]);
 
   // ─── Drop handler ─────────────────────────────────────────────────────────────
   const handlePageDrop = (e: React.DragEvent<HTMLDivElement>) => {

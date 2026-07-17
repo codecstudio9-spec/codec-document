@@ -48,6 +48,23 @@ export function GuestSignaturePlacer({
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const renderedPagesRef = useRef<Set<number>>(new Set());
+  // Real width/height of the drawn ink (SignaturePad already trims
+  // transparent margins, so this is the actual stroke's proportions, not
+  // the canvas it was drawn on) — used so the placement box starts out
+  // shaped like the signature instead of a generic wide rectangle that
+  // pads/squashes it.
+  const imgAspectRef = useRef(DEFAULT_W / DEFAULT_H);
+
+  useEffect(() => {
+    if (!signatureDataUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        imgAspectRef.current = img.naturalWidth / img.naturalHeight;
+      }
+    };
+    img.src = signatureDataUrl;
+  }, [signatureDataUrl]);
 
   useEffect(() => {
     setRenderFailed(false);
@@ -85,6 +102,14 @@ export function GuestSignaturePlacer({
   }, [pageCount, pdfDoc]);
 
   const placeAt = (pageNum: number, xFraction: number, yFraction: number) => {
+    // Page-fraction boxes aren't square pixels — widthFraction/heightFraction
+    // are relative to the page's own width/height, so matching the box to
+    // the image's real w/h ratio also needs the page's own on-screen aspect
+    // ratio (its rendered container), not just the raw image ratio.
+    const rect = pageContainerRefs.current.get(pageNum)?.getBoundingClientRect();
+    const pageAspect = rect && rect.height > 0 ? rect.width / rect.height : 1;
+    const heightFraction = clamp(0.04, 0.20, (DEFAULT_W / imgAspectRef.current) * pageAspect);
+
     setPlacement({
       id: `guest-${Date.now()}`,
       signerId: 'guest',
@@ -95,9 +120,9 @@ export function GuestSignaturePlacer({
       storageUrl: '',
       page: pageNum,
       xFraction: clamp(DEFAULT_W / 2, 1 - DEFAULT_W / 2, xFraction),
-      yFraction: clamp(DEFAULT_H / 2, 1 - DEFAULT_H / 2, yFraction),
+      yFraction: clamp(heightFraction / 2, 1 - heightFraction / 2, yFraction),
       widthFraction: DEFAULT_W,
-      heightFraction: DEFAULT_H,
+      heightFraction,
       labelText: signerName,
       showLabel: true,
     });
