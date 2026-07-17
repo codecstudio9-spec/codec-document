@@ -15,6 +15,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import {
   verifySigningTokenPublic,
   uploadSignatureImage,
+  uploadPdfToStorage,
   insertSignature,
   tryCompleteSignerOnce,
   insertAuditLog,
@@ -23,6 +24,7 @@ import {
   compilePdfWithSignatures,
   getSignedUrlFallback,
   markDocumentInvitationSigned,
+  finalizeDocument,
 } from '../../lib/signatureService';
 import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
@@ -701,20 +703,19 @@ export function GuestSignPage() {
             },
           });
           const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
-          const storagePath = `documents/${tokenData.documentId}/signed.pdf`;
-          const { error: uploadError } = await publicSupabase.storage
-            .from('documents-bucket')
-            .upload(storagePath, finalBlob, { contentType: 'application/pdf', upsert: true });
-          if (uploadError) throw uploadError;
-          const { data: urlData } = publicSupabase.storage.from('documents-bucket').getPublicUrl(storagePath);
-          const signedPdfUrl = urlData?.publicUrl || '';
-          if (signedPdfUrl) {
-            const { error: dbError } = await publicSupabase
-              .from('documents')
-              .update({ signed_pdf_url: signedPdfUrl, status: 'completed' })
-              .eq('id', tokenData.documentId);
-            if (dbError) throw dbError;
-          }
+          // Goes through the same SECURITY DEFINER RPC the creator's own
+          // signing step uses (finalize_document — sets signed_pdf_url AND
+          // status='completed' together), instead of a raw
+          // `publicSupabase.from('documents').update(...)`. That raw update
+          // has no RLS policy granting anon UPDATE on `documents` at all, so
+          // it either errored outright or (per PostgREST's "0 rows matched"
+          // behavior) silently did nothing — the guest saw a failure (or the
+          // document quietly never left status 'pending'), and the second
+          // signature never actually made it back into the document the
+          // creator sees. finalize_document is already confirmed anon-
+          // callable (supabase_FIX_signed_pdf_functions.sql).
+          const signedPdfUrl = await uploadPdfToStorage(tokenData.documentId, finalBlob, 'signed.pdf');
+          await finalizeDocument(tokenData.documentId, signedPdfUrl);
         } catch (compileErr) {
           if (isPremiumLimitError(compileErr)) {
             setPremiumModalOpen(true);
