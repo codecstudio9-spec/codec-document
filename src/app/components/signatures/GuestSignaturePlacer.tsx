@@ -201,7 +201,7 @@ export function GuestSignaturePlacer({
         {isLoading ? (
           <><Loader className="size-5 animate-spin" />Guardando tu firma…</>
         ) : (
-          <><CheckCircle className="size-5" />Confirmar firma en este lugar</>
+          <><CheckCircle className="size-5" />Firmar</>
         )}
       </button>
     </div>

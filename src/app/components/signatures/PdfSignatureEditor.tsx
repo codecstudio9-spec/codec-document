@@ -384,7 +384,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           {isLoading ? (
             <><Loader className="size-4 animate-spin" />Compilando…</>
           ) : (
-            <><CheckCircle className="size-4" />Confirmar y certificar</>
+            <><CheckCircle className="size-4" />Firmar</>
           )}
         </button>
       </aside>
