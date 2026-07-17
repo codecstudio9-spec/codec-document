@@ -3,13 +3,13 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
-import { Users, Globe2, MapPin, Radio, Loader } from 'lucide-react';
+import { Users, Globe2, MapPin, Radio, Loader, Monitor, UserPlus, Repeat } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
   fetchVisitorCounts, fetchTopCountries, fetchTopCities, fetchTrafficSources,
-  fetchVisitorDailySeries, fetchRecentVisitors,
-  type VisitorCounts,
+  fetchVisitorDailySeries, fetchRecentVisitors, fetchDeviceBreakdown, fetchNewVsReturning,
+  type VisitorCounts, type NewVsReturning,
 } from '../../services/analytics-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
@@ -50,6 +50,8 @@ function AdminAnalyticsContent() {
   const [countries, setCountries] = useState<Array<{ country: string; visitors: number }> | null>(null);
   const [cities, setCities] = useState<Array<{ city: string; country: string | null; visitors: number }> | null>(null);
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof fetchRecentVisitors>> | null>(null);
+  const [devices, setDevices] = useState<Array<{ deviceType: string; visitors: number }> | null>(null);
+  const [newVsReturning, setNewVsReturning] = useState<NewVsReturning | null>(null);
 
   useEffect(() => {
     fetchVisitorCounts().then(setCounts).catch(() => setCounts({ today: 0, thisWeek: 0, thisMonth: 0, total: 0 }));
@@ -57,11 +59,13 @@ function AdminAnalyticsContent() {
   }, []);
 
   useEffect(() => {
-    setSeries(null); setSources(null); setCountries(null); setCities(null);
+    setSeries(null); setSources(null); setCountries(null); setCities(null); setDevices(null); setNewVsReturning(null);
     fetchVisitorDailySeries(range).then(setSeries).catch(() => setSeries([]));
     fetchTrafficSources(range).then(setSources).catch(() => setSources([]));
     fetchTopCountries(range, 8).then(setCountries).catch(() => setCountries([]));
     fetchTopCities(range, 8).then(setCities).catch(() => setCities([]));
+    fetchDeviceBreakdown(range).then(setDevices).catch(() => setDevices([]));
+    fetchNewVsReturning(range).then(setNewVsReturning).catch(() => setNewVsReturning({ newVisitors: 0, returningVisitors: 0 }));
   }, [range]);
 
   const RANGE_OPTIONS: Array<{ key: RangeDays; label: string }> = [
@@ -194,6 +198,69 @@ function AdminAnalyticsContent() {
         </div>
       </div>
 
+      {/* Device breakdown + new vs. returning */}
+      <div className="mt-6 grid grid-cols-2 gap-5">
+        <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+          <div className="flex items-center gap-2">
+            <Monitor className="size-4 text-slate-400" />
+            <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Devices' : 'Dispositivos'}</h2>
+          </div>
+          <div className="mt-4 space-y-2">
+            {!devices || devices.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-400">
+                {devices === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No data yet' : 'Aún sin datos')}
+              </p>
+            ) : (
+              (() => {
+                const total = devices.reduce((sum, d) => sum + d.visitors, 0) || 1;
+                return devices.map((d, i) => (
+                  <div key={d.deviceType}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700">{d.deviceType}</span>
+                      <span className="font-bold text-slate-400">{d.visitors}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${(d.visitors / total) * 100}%`, background: PIE_COLORS[i % PIE_COLORS.length] }}
+                      />
+                    </div>
+                  </div>
+                ));
+              })()
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+          <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'New vs. returning' : 'Nuevos vs. recurrentes'}</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50">
+                <UserPlus className="size-4 text-blue-600" />
+              </div>
+              {newVsReturning === null ? (
+                <div className="mt-3 h-7 w-12 animate-pulse rounded-lg bg-slate-200" />
+              ) : (
+                <p className="mt-3 text-2xl font-black text-slate-900">{newVsReturning.newVisitors.toLocaleString()}</p>
+              )}
+              <p className="mt-0.5 text-xs font-medium text-slate-400">{language === 'en' ? 'New' : 'Nuevos'}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50">
+                <Repeat className="size-4 text-emerald-600" />
+              </div>
+              {newVsReturning === null ? (
+                <div className="mt-3 h-7 w-12 animate-pulse rounded-lg bg-slate-200" />
+              ) : (
+                <p className="mt-3 text-2xl font-black text-slate-900">{newVsReturning.returningVisitors.toLocaleString()}</p>
+              )}
+              <p className="mt-0.5 text-xs font-medium text-slate-400">{language === 'en' ? 'Returning' : 'Recurrentes'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Top cities + recent visitors */}
       <div className="mt-6 grid grid-cols-2 gap-5">
         <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
@@ -231,14 +298,23 @@ function AdminAnalyticsContent() {
                     <p className="truncate text-xs font-bold text-slate-700">
                       {[v.city, v.country].filter(Boolean).join(', ') || (language === 'en' ? 'Unknown location' : 'Ubicación desconocida')}
                     </p>
-                    <p className="text-[11px] text-slate-400">{v.source} · {v.landingPage}</p>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {v.source} · {[v.deviceType, v.browser].filter(Boolean).join(' · ')}
+                    </p>
                   </div>
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={v.isRegistered ? { color: '#10B981', background: '#ECFDF5' } : { color: '#94A3B8', background: '#F1F5F9' }}
-                  >
-                    {v.isRegistered ? (language === 'en' ? 'Registered' : 'Registrado') : (language === 'en' ? 'Anonymous' : 'Anónimo')}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={v.isRegistered ? { color: '#10B981', background: '#ECFDF5' } : { color: '#94A3B8', background: '#F1F5F9' }}
+                    >
+                      {v.isRegistered ? (language === 'en' ? 'Registered' : 'Registrado') : (language === 'en' ? 'Anonymous' : 'Anónimo')}
+                    </span>
+                    {v.isNewVisitor !== null && (
+                      <span className="text-[10px] font-medium text-slate-400">
+                        {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Returning' : 'Recurrente')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))
             )}

@@ -10,6 +10,7 @@ import { supabase, publicSupabase } from '../../lib/supabase';
 
 const SESSION_KEY = 'codec_analytics_session';
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min of inactivity = new "visit"
+const VISITOR_KEY = 'codec_analytics_visitor';
 
 function randomId(): string {
   return typeof crypto?.randomUUID === 'function'
@@ -35,6 +36,40 @@ function getOrCreateSessionId(): { id: string; isNew: boolean } {
   const id = randomId();
   try { window.localStorage.setItem(SESSION_KEY, JSON.stringify({ id, lastSeen: Date.now() })); } catch { /* noop */ }
   return { id, isNew: true };
+}
+
+/** Separate from the 30-min session id — this one never expires, so it can
+ * tell "brand new person" apart from "same person, new session" (a
+ * returning visitor gets a fresh session_id every visit, but keeps the
+ * same visitor_id forever on that browser). */
+function getOrCreateVisitorId(): { id: string; isNew: boolean } {
+  try {
+    const existing = window.localStorage.getItem(VISITOR_KEY);
+    if (existing) return { id: existing, isNew: false };
+  } catch { /* localStorage unavailable */ }
+
+  const id = randomId();
+  try { window.localStorage.setItem(VISITOR_KEY, id); } catch { /* noop */ }
+  return { id, isNew: true };
+}
+
+/** Coarse device/browser detection from the user agent — enough to answer
+ * "quiénes son los que me visitan" (mobile vs desktop, which browser),
+ * not meant to be exhaustive. */
+function parseDeviceAndBrowser(ua: string): { deviceType: string; browser: string } {
+  const isTablet = /iPad|Tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua));
+  const isMobile = !isTablet && /Mobi|iPhone|Android/i.test(ua);
+  const deviceType = isTablet ? 'Tablet' : isMobile ? 'Móvil' : 'Escritorio';
+
+  let browser = 'Otro';
+  if (/Edg\//.test(ua)) browser = 'Edge';
+  else if (/OPR\//.test(ua) || /Opera/.test(ua)) browser = 'Opera';
+  else if (/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
+  else if (/CriOS\//.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//.test(ua)) browser = 'Firefox';
+  else if (/Safari\//.test(ua) && /Version\//.test(ua)) browser = 'Safari';
+
+  return { deviceType, browser };
 }
 
 /** Classifies document.referrer + UTM params into the buckets requested:
@@ -102,10 +137,13 @@ export function trackVisitorSession(): void {
   const { id: sessionId, isNew } = getOrCreateSessionId();
   if (!isNew) return;
 
+  const { id: visitorId, isNew: isNewVisitor } = getOrCreateVisitorId();
+
   void (async () => {
     try {
       const geo = await resolveGeo();
       const { source, host } = classifyReferrerSource(document.referrer, window.location.search);
+      const { deviceType, browser } = parseDeviceAndBrowser(navigator.userAgent ?? '');
       let userId: string | null = null;
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -114,6 +152,7 @@ export function trackVisitorSession(): void {
 
       await publicSupabase.from('analytics_visitors').insert({
         session_id: sessionId,
+        visitor_id: visitorId,
         user_id: userId,
         country: geo.country,
         country_code: geo.country_code,
@@ -123,6 +162,9 @@ export function trackVisitorSession(): void {
         referrer_host: host,
         landing_page: window.location.pathname,
         language: navigator.language ?? null,
+        device_type: deviceType,
+        browser,
+        is_new_visitor: isNewVisitor,
       });
     } catch { /* tracking must never break the real user experience */ }
   })();
@@ -173,12 +215,28 @@ export async function fetchVisitorDailySeries(days: number): Promise<Array<{ day
 
 export async function fetchRecentVisitors(limit = 50): Promise<Array<{
   sessionId: string; country: string | null; city: string | null; source: string;
-  landingPage: string | null; isRegistered: boolean; createdAt: string;
+  landingPage: string | null; isRegistered: boolean; deviceType: string | null;
+  browser: string | null; isNewVisitor: boolean | null; createdAt: string;
 }>> {
   const { data, error } = await supabase.rpc('admin_recent_visitors', { p_limit: limit });
   if (error || !data) return [];
   return (data as any[]).map((r) => ({
     sessionId: r.session_id, country: r.country, city: r.city, source: r.referrer_source,
-    landingPage: r.landing_page, isRegistered: Boolean(r.is_registered), createdAt: r.created_at,
+    landingPage: r.landing_page, isRegistered: Boolean(r.is_registered),
+    deviceType: r.device_type, browser: r.browser, isNewVisitor: r.is_new_visitor, createdAt: r.created_at,
   }));
+}
+
+export async function fetchDeviceBreakdown(days: number): Promise<Array<{ deviceType: string; visitors: number }>> {
+  const { data, error } = await supabase.rpc('admin_device_breakdown', { p_since: sinceIso(days) });
+  if (error || !data) return [];
+  return (data as any[]).map((r) => ({ deviceType: r.device_type, visitors: Number(r.visitors) }));
+}
+
+export interface NewVsReturning { newVisitors: number; returningVisitors: number }
+
+export async function fetchNewVsReturning(days: number): Promise<NewVsReturning> {
+  const { data, error } = await supabase.rpc('admin_new_vs_returning', { p_since: sinceIso(days) });
+  const row = !error && Array.isArray(data) ? data[0] : null;
+  return { newVisitors: Number(row?.new_visitors ?? 0), returningVisitors: Number(row?.returning_visitors ?? 0) };
 }
