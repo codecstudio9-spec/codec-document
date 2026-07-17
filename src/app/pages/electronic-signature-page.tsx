@@ -1152,14 +1152,14 @@ export function ElectronicSignaturePage() {
                   const waitText = hours > 0
                     ? `Vuelve a hacerlo gratis en ${hours <= 1 ? 'menos de 1 hora' : `${hours} horas`}, o`
                     : 'Vuelve a intentarlo gratis en un momento, o';
-                  return `${waitText} paga solo por ${paywallContext === 'upload' ? 'este documento' : 'esta firma'} para continuar ahora.`;
+                  return `${waitText} paga solo por esta firma para continuar ahora.`;
                 })()}
               </p>
             </div>
             {session?.user?.id ? (
               <PaypalSignatureCheckout
                 userId={session.user.id}
-                mode={paywallContext === 'upload' ? 'document' : 'signature'}
+                mode="signature"
                 onSuccess={() => {
                   const ctx = paywallContext, pendingPos = pendingPlacements, pendingF = pendingFile;
                   setPaywallContext(null); setPendingPlacements(null); setPendingFile(null);
