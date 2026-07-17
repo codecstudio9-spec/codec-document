@@ -1,15 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
-import type { DocType } from '../../data/doctype-state-seo-content';
-
-const STATES = [
-  { slug: 'california', en: 'California', es: 'California' },
-  { slug: 'texas', en: 'Texas', es: 'Texas' },
-  { slug: 'florida', en: 'Florida', es: 'Florida' },
-  { slug: 'new-york', en: 'New York', es: 'Nueva York' },
-  { slug: 'illinois', en: 'Illinois', es: 'Illinois' },
-  { slug: 'pennsylvania', en: 'Pennsylvania', es: 'Pensilvania' },
-];
+import { STATES, type DocType } from '../../data/doctype-state-seo-content';
 
 /** Links a document-type landing page (nda-generator.tsx,
  * online-lease-agreement.tsx) down into its 6 state-specific variants —
@@ -33,7 +24,7 @@ export function StateQuickLinks({ docType, labelEn, labelEs }: {
                 href={`/${docType}-${s.slug}`}
                 className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
               >
-                {language === 'en' ? s.en : s.es}
+                {language === 'en' ? s.name : s.nameEs}
                 <ArrowRight className="size-3.5" />
               </a>
             ))}

@@ -27,6 +27,12 @@ import FloridaLegalDocuments from './pages/landings/florida-legal-documents';
 import NewYorkLegalDocuments from './pages/landings/new-york-legal-documents';
 import IllinoisLegalDocuments from './pages/landings/illinois-legal-documents';
 import PennsylvaniaLegalDocuments from './pages/landings/pennsylvania-legal-documents';
+import OhioLegalDocuments from './pages/landings/ohio-legal-documents';
+import GeorgiaLegalDocuments from './pages/landings/georgia-legal-documents';
+import NorthCarolinaLegalDocuments from './pages/landings/north-carolina-legal-documents';
+import MichiganLegalDocuments from './pages/landings/michigan-legal-documents';
+import NewJerseyLegalDocuments from './pages/landings/new-jersey-legal-documents';
+import VirginiaLegalDocuments from './pages/landings/virginia-legal-documents';
 import NdaCalifornia from './pages/landings/nda-california';
 import NdaTexas from './pages/landings/nda-texas';
 import NdaFlorida from './pages/landings/nda-florida';
@@ -63,6 +69,42 @@ import VehicleBillOfSaleFlorida from './pages/landings/vehicle-bill-of-sale-flor
 import VehicleBillOfSaleNewYork from './pages/landings/vehicle-bill-of-sale-new-york';
 import VehicleBillOfSaleIllinois from './pages/landings/vehicle-bill-of-sale-illinois';
 import VehicleBillOfSalePennsylvania from './pages/landings/vehicle-bill-of-sale-pennsylvania';
+import NdaOhio from './pages/landings/nda-ohio';
+import NdaGeorgia from './pages/landings/nda-georgia';
+import NdaNorthCarolina from './pages/landings/nda-north-carolina';
+import NdaMichigan from './pages/landings/nda-michigan';
+import NdaNewJersey from './pages/landings/nda-new-jersey';
+import NdaVirginia from './pages/landings/nda-virginia';
+import LeaseAgreementOhio from './pages/landings/lease-agreement-ohio';
+import LeaseAgreementGeorgia from './pages/landings/lease-agreement-georgia';
+import LeaseAgreementNorthCarolina from './pages/landings/lease-agreement-north-carolina';
+import LeaseAgreementMichigan from './pages/landings/lease-agreement-michigan';
+import LeaseAgreementNewJersey from './pages/landings/lease-agreement-new-jersey';
+import LeaseAgreementVirginia from './pages/landings/lease-agreement-virginia';
+import IndependentContractorOhio from './pages/landings/independent-contractor-ohio';
+import IndependentContractorGeorgia from './pages/landings/independent-contractor-georgia';
+import IndependentContractorNorthCarolina from './pages/landings/independent-contractor-north-carolina';
+import IndependentContractorMichigan from './pages/landings/independent-contractor-michigan';
+import IndependentContractorNewJersey from './pages/landings/independent-contractor-new-jersey';
+import IndependentContractorVirginia from './pages/landings/independent-contractor-virginia';
+import ServiceAgreementOhio from './pages/landings/service-agreement-ohio';
+import ServiceAgreementGeorgia from './pages/landings/service-agreement-georgia';
+import ServiceAgreementNorthCarolina from './pages/landings/service-agreement-north-carolina';
+import ServiceAgreementMichigan from './pages/landings/service-agreement-michigan';
+import ServiceAgreementNewJersey from './pages/landings/service-agreement-new-jersey';
+import ServiceAgreementVirginia from './pages/landings/service-agreement-virginia';
+import PromissoryNoteOhio from './pages/landings/promissory-note-ohio';
+import PromissoryNoteGeorgia from './pages/landings/promissory-note-georgia';
+import PromissoryNoteNorthCarolina from './pages/landings/promissory-note-north-carolina';
+import PromissoryNoteMichigan from './pages/landings/promissory-note-michigan';
+import PromissoryNoteNewJersey from './pages/landings/promissory-note-new-jersey';
+import PromissoryNoteVirginia from './pages/landings/promissory-note-virginia';
+import VehicleBillOfSaleOhio from './pages/landings/vehicle-bill-of-sale-ohio';
+import VehicleBillOfSaleGeorgia from './pages/landings/vehicle-bill-of-sale-georgia';
+import VehicleBillOfSaleNorthCarolina from './pages/landings/vehicle-bill-of-sale-north-carolina';
+import VehicleBillOfSaleMichigan from './pages/landings/vehicle-bill-of-sale-michigan';
+import VehicleBillOfSaleNewJersey from './pages/landings/vehicle-bill-of-sale-new-jersey';
+import VehicleBillOfSaleVirginia from './pages/landings/vehicle-bill-of-sale-virginia';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -192,6 +234,12 @@ export const router = createBrowserRouter([
     Component: PennsylvaniaLegalDocuments,
     errorElement: <RouteErrorBoundary />,
   },
+  { path: "/legal-documents-ohio", Component: OhioLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-georgia", Component: GeorgiaLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-north-carolina", Component: NorthCarolinaLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-michigan", Component: MichiganLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-new-jersey", Component: NewJerseyLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-virginia", Component: VirginiaLegalDocuments, errorElement: <RouteErrorBoundary /> },
   { path: "/nda-california", Component: NdaCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/nda-texas", Component: NdaTexas, errorElement: <RouteErrorBoundary /> },
   { path: "/nda-florida", Component: NdaFlorida, errorElement: <RouteErrorBoundary /> },
@@ -228,6 +276,42 @@ export const router = createBrowserRouter([
   { path: "/vehicle-bill-of-sale-new-york", Component: VehicleBillOfSaleNewYork, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-illinois", Component: VehicleBillOfSaleIllinois, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-pennsylvania", Component: VehicleBillOfSalePennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-ohio", Component: NdaOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-georgia", Component: NdaGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-north-carolina", Component: NdaNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-michigan", Component: NdaMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-new-jersey", Component: NdaNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-virginia", Component: NdaVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-ohio", Component: LeaseAgreementOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-georgia", Component: LeaseAgreementGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-north-carolina", Component: LeaseAgreementNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-michigan", Component: LeaseAgreementMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-new-jersey", Component: LeaseAgreementNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-virginia", Component: LeaseAgreementVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-ohio", Component: IndependentContractorOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-georgia", Component: IndependentContractorGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-north-carolina", Component: IndependentContractorNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-michigan", Component: IndependentContractorMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-new-jersey", Component: IndependentContractorNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-virginia", Component: IndependentContractorVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-ohio", Component: ServiceAgreementOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-georgia", Component: ServiceAgreementGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-north-carolina", Component: ServiceAgreementNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-michigan", Component: ServiceAgreementMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-new-jersey", Component: ServiceAgreementNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-virginia", Component: ServiceAgreementVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-ohio", Component: PromissoryNoteOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-georgia", Component: PromissoryNoteGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-north-carolina", Component: PromissoryNoteNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-michigan", Component: PromissoryNoteMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-new-jersey", Component: PromissoryNoteNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-virginia", Component: PromissoryNoteVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-ohio", Component: VehicleBillOfSaleOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-georgia", Component: VehicleBillOfSaleGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-north-carolina", Component: VehicleBillOfSaleNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-michigan", Component: VehicleBillOfSaleMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-new-jersey", Component: VehicleBillOfSaleNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-virginia", Component: VehicleBillOfSaleVirginia, errorElement: <RouteErrorBoundary /> },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",

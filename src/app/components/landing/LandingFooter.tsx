@@ -1,5 +1,6 @@
 import { Shield, BadgeCheck, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
+import { STATES } from '../../data/doctype-state-seo-content';
 
 /**
  * Same visual language as the Home page footer (dark, pre-footer CTA strip,
@@ -116,16 +117,9 @@ export function LandingFooter() {
               crawlable from every landing page, not just the sitemap. */}
           <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-500">
             <span className="font-semibold text-slate-600">{language === 'en' ? 'Popular states:' : 'Estados populares:'}</span>
-            {[
-              { slug: 'california', en: 'California', es: 'California' },
-              { slug: 'texas', en: 'Texas', es: 'Texas' },
-              { slug: 'florida', en: 'Florida', es: 'Florida' },
-              { slug: 'new-york', en: 'New York', es: 'Nueva York' },
-              { slug: 'illinois', en: 'Illinois', es: 'Illinois' },
-              { slug: 'pennsylvania', en: 'Pennsylvania', es: 'Pensilvania' },
-            ].map((s, i, arr) => (
+            {STATES.map((s, i, arr) => (
               <span key={s.slug}>
-                <a href={`/legal-documents-${s.slug}`} className="transition hover:text-white">{language === 'en' ? s.en : s.es}</a>
+                <a href={`/legal-documents-${s.slug}`} className="transition hover:text-white">{language === 'en' ? s.name : s.nameEs}</a>
                 {i < arr.length - 1 && <span className="text-slate-700">,</span>}
               </span>
             ))}

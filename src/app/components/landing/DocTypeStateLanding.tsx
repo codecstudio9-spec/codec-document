@@ -7,7 +7,7 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
-import type { DocType, DocTypeState } from '../../data/doctype-state-seo-content';
+import { STATES, type DocType, type DocTypeState } from '../../data/doctype-state-seo-content';
 
 const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
   nda: FileSignature,
@@ -16,16 +16,6 @@ const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
   'service-agreement': Handshake,
   'promissory-note': TrendingUp,
   'vehicle-bill-of-sale': Car,
-};
-
-const STATE_SLUGS = ['california', 'texas', 'florida', 'new-york', 'illinois', 'pennsylvania'];
-const STATE_NAMES: Record<string, { en: string; es: string }> = {
-  california: { en: 'California', es: 'California' },
-  texas: { en: 'Texas', es: 'Texas' },
-  florida: { en: 'Florida', es: 'Florida' },
-  'new-york': { en: 'New York', es: 'Nueva York' },
-  illinois: { en: 'Illinois', es: 'Illinois' },
-  pennsylvania: { en: 'Pennsylvania', es: 'Pensilvania' },
 };
 
 /** Cross-links to the same document type in the other 5 states — the
@@ -37,7 +27,7 @@ function OtherStatesLinks({ current, docType, labelEn, labelEs }: {
   current: string; docType: DocType; labelEn: string; labelEs: string;
 }) {
   const { language } = useLanguage();
-  const others = STATE_SLUGS.filter((s) => s !== current);
+  const others = STATES.filter((s) => s.slug !== current);
   return (
     <section className="relative border-t border-slate-100 bg-white py-14">
       <div className="container mx-auto px-4">
@@ -46,13 +36,13 @@ function OtherStatesLinks({ current, docType, labelEn, labelEs }: {
             {language === 'en' ? `${labelEn} rules in other states` : `Reglas de ${labelEs} en otros estados`}
           </h3>
           <div className="flex flex-wrap items-center justify-center gap-2.5">
-            {others.map((slug) => (
+            {others.map((s) => (
               <a
-                key={slug}
-                href={`/${docType}-${slug}`}
+                key={s.slug}
+                href={`/${docType}-${s.slug}`}
                 className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
               >
-                {language === 'en' ? STATE_NAMES[slug].en : STATE_NAMES[slug].es}
+                {language === 'en' ? s.name : s.nameEs}
                 <ArrowRight className="size-3.5" />
               </a>
             ))}

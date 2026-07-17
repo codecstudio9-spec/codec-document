@@ -9,6 +9,38 @@ import { LandingHero } from './LandingHero';
 import { StateLawHighlights } from './StateLawHighlights';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
 import type { StateSeoConfig } from '../../data/state-seo-content';
+import { STATES } from '../../data/doctype-state-seo-content';
+
+/** Cross-links to the other state hub pages — completes the cluster so a
+ * visitor comparing states, or Google crawling the cluster, can move
+ * between every state hub without going back through the sitemap. */
+function OtherStateHubs({ current }: { current: string }) {
+  const { language } = useLanguage();
+  const others = STATES.filter((s) => s.slug !== current);
+  return (
+    <section className="relative border-t border-slate-100 bg-white py-14">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-4xl text-center">
+          <h3 className="mb-5 text-lg font-bold text-slate-900">
+            {language === 'en' ? 'Other states' : 'Otros estados'}
+          </h3>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            {others.map((s) => (
+              <a
+                key={s.slug}
+                href={`/legal-documents-${s.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                {language === 'en' ? s.name : s.nameEs}
+                <ArrowRight className="size-3.5" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /** Links down into the doc-type × state pages for this state — the state
  * hub is the entry point, these are where a visitor with a specific
@@ -113,6 +145,7 @@ export function StateLegalDocumentsLanding({ state }: { state: StateSeoConfig })
       <HowItWorksTimeline />
       <SocialProofBand />
       <FAQAccordion items={[stateFaq, ...DEFAULT_FAQ]} />
+      <OtherStateHubs current={state.slug} />
       <LandingFooter />
     </div>
   );
