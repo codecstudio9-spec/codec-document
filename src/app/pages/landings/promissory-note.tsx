@@ -6,6 +6,7 @@ import { LandingHeader } from '../../components/landing/LandingHeader';
 import { LandingFooter } from '../../components/landing/LandingFooter';
 import { LandingHero } from '../../components/landing/LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
+import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function PromissoryNoteLanding() {
   const title = 'Promissory Note Generator | CodecDocument';
@@ -48,6 +49,7 @@ export default function PromissoryNoteLanding() {
       <HowItWorksTimeline />
       <SocialProofBand />
       <FAQAccordion items={DEFAULT_FAQ} />
+      <StateQuickLinks docType="promissory-note" labelEn="Promissory Note" labelEs="Pagaré" />
       <LandingFooter />
     </div>
   );

@@ -39,6 +39,30 @@ import LeaseAgreementFlorida from './pages/landings/lease-agreement-florida';
 import LeaseAgreementNewYork from './pages/landings/lease-agreement-new-york';
 import LeaseAgreementIllinois from './pages/landings/lease-agreement-illinois';
 import LeaseAgreementPennsylvania from './pages/landings/lease-agreement-pennsylvania';
+import IndependentContractorCalifornia from './pages/landings/independent-contractor-california';
+import IndependentContractorTexas from './pages/landings/independent-contractor-texas';
+import IndependentContractorFlorida from './pages/landings/independent-contractor-florida';
+import IndependentContractorNewYork from './pages/landings/independent-contractor-new-york';
+import IndependentContractorIllinois from './pages/landings/independent-contractor-illinois';
+import IndependentContractorPennsylvania from './pages/landings/independent-contractor-pennsylvania';
+import ServiceAgreementCalifornia from './pages/landings/service-agreement-california';
+import ServiceAgreementTexas from './pages/landings/service-agreement-texas';
+import ServiceAgreementFlorida from './pages/landings/service-agreement-florida';
+import ServiceAgreementNewYork from './pages/landings/service-agreement-new-york';
+import ServiceAgreementIllinois from './pages/landings/service-agreement-illinois';
+import ServiceAgreementPennsylvania from './pages/landings/service-agreement-pennsylvania';
+import PromissoryNoteCalifornia from './pages/landings/promissory-note-california';
+import PromissoryNoteTexas from './pages/landings/promissory-note-texas';
+import PromissoryNoteFlorida from './pages/landings/promissory-note-florida';
+import PromissoryNoteNewYork from './pages/landings/promissory-note-new-york';
+import PromissoryNoteIllinois from './pages/landings/promissory-note-illinois';
+import PromissoryNotePennsylvania from './pages/landings/promissory-note-pennsylvania';
+import VehicleBillOfSaleCalifornia from './pages/landings/vehicle-bill-of-sale-california';
+import VehicleBillOfSaleTexas from './pages/landings/vehicle-bill-of-sale-texas';
+import VehicleBillOfSaleFlorida from './pages/landings/vehicle-bill-of-sale-florida';
+import VehicleBillOfSaleNewYork from './pages/landings/vehicle-bill-of-sale-new-york';
+import VehicleBillOfSaleIllinois from './pages/landings/vehicle-bill-of-sale-illinois';
+import VehicleBillOfSalePennsylvania from './pages/landings/vehicle-bill-of-sale-pennsylvania';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -180,6 +204,30 @@ export const router = createBrowserRouter([
   { path: "/lease-agreement-new-york", Component: LeaseAgreementNewYork, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-illinois", Component: LeaseAgreementIllinois, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-pennsylvania", Component: LeaseAgreementPennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-california", Component: IndependentContractorCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-texas", Component: IndependentContractorTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-florida", Component: IndependentContractorFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-new-york", Component: IndependentContractorNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-illinois", Component: IndependentContractorIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-pennsylvania", Component: IndependentContractorPennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-california", Component: ServiceAgreementCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-texas", Component: ServiceAgreementTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-florida", Component: ServiceAgreementFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-new-york", Component: ServiceAgreementNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-illinois", Component: ServiceAgreementIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-pennsylvania", Component: ServiceAgreementPennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-california", Component: PromissoryNoteCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-texas", Component: PromissoryNoteTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-florida", Component: PromissoryNoteFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-new-york", Component: PromissoryNoteNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-illinois", Component: PromissoryNoteIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-pennsylvania", Component: PromissoryNotePennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-california", Component: VehicleBillOfSaleCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-texas", Component: VehicleBillOfSaleTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-florida", Component: VehicleBillOfSaleFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-new-york", Component: VehicleBillOfSaleNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-illinois", Component: VehicleBillOfSaleIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-pennsylvania", Component: VehicleBillOfSalePennsylvania, errorElement: <RouteErrorBoundary /> },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",

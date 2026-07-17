@@ -1,4 +1,4 @@
-import { MapPin, FileSignature, Home, ArrowRight } from 'lucide-react';
+import { MapPin, FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, ArrowRight } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
@@ -18,6 +18,10 @@ function DocTypeLinks({ state }: { state: StateSeoConfig }) {
   const links = [
     { href: `/nda-${state.slug}`, icon: FileSignature, en: 'NDA', es: 'NDA' },
     { href: `/lease-agreement-${state.slug}`, icon: Home, en: 'Lease Agreement', es: 'Contrato de Arrendamiento' },
+    { href: `/independent-contractor-${state.slug}`, icon: Briefcase, en: 'Independent Contractor', es: 'Contratista Independiente' },
+    { href: `/service-agreement-${state.slug}`, icon: Handshake, en: 'Service Agreement', es: 'Acuerdo de Servicio' },
+    { href: `/promissory-note-${state.slug}`, icon: TrendingUp, en: 'Promissory Note', es: 'Pagaré' },
+    { href: `/vehicle-bill-of-sale-${state.slug}`, icon: Car, en: 'Vehicle Bill of Sale', es: 'Compraventa de Vehículo' },
   ];
   return (
     <section className="relative bg-white py-14">

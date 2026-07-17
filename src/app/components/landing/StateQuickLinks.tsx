@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
+import type { DocType } from '../../data/doctype-state-seo-content';
 
 const STATES = [
   { slug: 'california', en: 'California', es: 'California' },
@@ -15,7 +16,7 @@ const STATES = [
  * completes the hub-and-spoke: document-type page ↔ state hub page ↔
  * document-type-in-state page, all cross-linked. */
 export function StateQuickLinks({ docType, labelEn, labelEs }: {
-  docType: 'nda' | 'lease-agreement'; labelEn: string; labelEs: string;
+  docType: DocType; labelEn: string; labelEs: string;
 }) {
   const { language } = useLanguage();
   return (

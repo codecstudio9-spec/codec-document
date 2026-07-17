@@ -1,4 +1,4 @@
-import { FileSignature, Home, ArrowRight } from 'lucide-react';
+import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, ArrowRight, type LucideIcon } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
@@ -7,7 +7,16 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
-import type { DocTypeState } from '../../data/doctype-state-seo-content';
+import type { DocType, DocTypeState } from '../../data/doctype-state-seo-content';
+
+const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
+  nda: FileSignature,
+  'lease-agreement': Home,
+  'independent-contractor': Briefcase,
+  'service-agreement': Handshake,
+  'promissory-note': TrendingUp,
+  'vehicle-bill-of-sale': Car,
+};
 
 const STATE_SLUGS = ['california', 'texas', 'florida', 'new-york', 'illinois', 'pennsylvania'];
 const STATE_NAMES: Record<string, { en: string; es: string }> = {
@@ -25,7 +34,7 @@ const STATE_NAMES: Record<string, { en: string; es: string }> = {
  * re-searching. Real internal links also help search engines discover
  * and rank the whole cluster together. */
 function OtherStatesLinks({ current, docType, labelEn, labelEs }: {
-  current: string; docType: 'nda' | 'lease-agreement'; labelEn: string; labelEs: string;
+  current: string; docType: DocType; labelEn: string; labelEs: string;
 }) {
   const { language } = useLanguage();
   const others = STATE_SLUGS.filter((s) => s !== current);
@@ -56,7 +65,6 @@ function OtherStatesLinks({ current, docType, labelEn, labelEs }: {
 
 export function DocTypeStateLanding({ data }: { data: DocTypeState }) {
   const { language } = useLanguage();
-  const isNda = data.docType === 'nda';
   const docLabel = language === 'en' ? data.docTypeLabelEn : data.docTypeLabelEs;
   const stateLabel = language === 'en' ? data.stateName : data.stateNameEs;
 
@@ -76,10 +84,10 @@ export function DocTypeStateLanding({ data }: { data: DocTypeState }) {
       <LandingHeader />
 
       <LandingHero
-        documentId={data.docType === 'nda' ? 'nda' : 'residential-lease'}
+        documentId={data.generatorPath.replace('/generator/', '')}
         badge={`${data.docTypeLabelEn.toUpperCase()} · ${data.stateAbbr}`}
         color="#2563eb"
-        icon={isNda ? FileSignature : Home}
+        icon={DOC_TYPE_ICONS[data.docType]}
         previewLabel={`${data.docTypeLabelEn} Preview`}
         backgroundImage="/imagen4.jpg"
         titleAccentEn={`${data.docTypeLabelEn} for ${data.stateName}`} titleAccentEs={`${data.docTypeLabelEs} para ${data.stateNameEs}`}

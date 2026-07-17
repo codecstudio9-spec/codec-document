@@ -6,6 +6,7 @@ import { LandingHeader } from '../../components/landing/LandingHeader';
 import { LandingFooter } from '../../components/landing/LandingFooter';
 import { LandingHero } from '../../components/landing/LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
+import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function VehicleBillOfSaleLanding() {
   const title = 'Vehicle Bill of Sale | CodecDocument';
@@ -49,6 +50,7 @@ export default function VehicleBillOfSaleLanding() {
       <HowItWorksTimeline />
       <SocialProofBand />
       <FAQAccordion items={DEFAULT_FAQ} />
+      <StateQuickLinks docType="vehicle-bill-of-sale" labelEn="Vehicle Bill of Sale" labelEs="Contrato de Compraventa de Vehículo" />
       <LandingFooter />
     </div>
   );
