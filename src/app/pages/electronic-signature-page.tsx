@@ -328,7 +328,13 @@ export function ElectronicSignaturePage() {
   // now only ever WATCHES for the guest's own flow to reach status
   // 'completed' — it never tries to compile anything itself.
   useEffect(() => {
-    if (step !== 'await-guest' || !documentId) return;
+    // Starts watching as soon as a signing link exists — not only once the
+    // creator has clicked through to the "Esperando" step. Otherwise a
+    // creator who stays on "Enviar" (sharing the link/QR, the natural
+    // place to linger right after generating it) never sees the automatic
+    // update at all: they'd have to know to click "Monitorear firma en
+    // tiempo real" or "Verificar" first, which isn't obvious.
+    if (!documentId || !signingToken || step === 'done') return;
 
     const applyIfCompleted = (status?: string, signedUrl?: string | null) => {
       if (status !== 'completed') return;
@@ -365,7 +371,7 @@ export function ElectronicSignaturePage() {
       void supabase.removeChannel(channel);
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
-  }, [step, documentId]);
+  }, [step, documentId, signingToken]);
 
   // ── Step handlers ─────────────────────────────────────────────────────────
 
