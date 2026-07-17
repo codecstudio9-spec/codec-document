@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, PenLine, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
+import { FileText, PenLine, ShieldCheck, Sparkles, ArrowRight, FolderOpen } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
 import { useMobileSignIn } from './MobileAppShell';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
@@ -89,6 +89,26 @@ export function MobileLandingIntro() {
           </motion.button>
         ))}
       </div>
+
+      {/* Custom templates promo — my-templates is behind ProtectedRoute,
+          so a signed-out tap opens the sign-in sheet directly instead of
+          silently bouncing back to this same screen. */}
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        type="button"
+        onClick={openSignIn}
+        className="mt-3 flex w-full items-center gap-3 p-4 text-left"
+        style={{ borderRadius: CARD_RADIUS, background: 'linear-gradient(135deg,#312e81,#1e1b4b)' }}
+      >
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+          <FolderOpen className="size-5 text-indigo-200" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white">{language === 'en' ? 'Upload your own templates' : 'Sube tus propias plantillas'}</p>
+          <p className="mt-0.5 text-xs text-white/50">{language === 'en' ? 'Mark the fields once, reuse forever' : 'Marca los campos una vez, reúsalo siempre'}</p>
+        </div>
+        <ArrowRight className="size-4 shrink-0 text-white/40" />
+      </motion.button>
 
       <button
         type="button"

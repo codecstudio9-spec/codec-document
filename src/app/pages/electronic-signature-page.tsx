@@ -37,6 +37,7 @@ import {
   getNextAnonUsageSlot,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
+import { markVisitorActivity } from '../services/analytics-service';
 
 type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
 
@@ -440,6 +441,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId: docId, action: 'document_uploaded', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: hash });
       toast.success('Documento cargado correctamente.');
+      markVisitorActivity('document');
       setStep('creator-sign');
     } catch (err) {
       setError(`Error al procesar el documento: ${err instanceof Error ? err.message : String(err)}`);
@@ -568,6 +570,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_completed_solo', ipAddress: ip, userAgent: navigator.userAgent });
       toast.success('¡Documento certificado! No necesitas ningún invitado.');
+      markVisitorActivity('signature');
       setStep('done');
     } catch (err) {
       toast.error(`No se pudo finalizar el documento: ${err instanceof Error ? err.message : String(err)}`);
@@ -652,6 +655,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_compiled_and_certified', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: fileHash });
       toast.success('¡Documento certificado exitosamente!');
+      markVisitorActivity('signature');
       setStep('done');
     } catch (err) {
       setError(`Error al compilar el PDF: ${err instanceof Error ? err.message : String(err)}`);

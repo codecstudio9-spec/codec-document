@@ -31,6 +31,7 @@ import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
+import { markVisitorActivity } from '../services/analytics-service';
 import { X } from 'lucide-react';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
@@ -932,6 +933,7 @@ export function GuestSignPage() {
       });
 
       toast.success('Firma registrada y documento actualizado correctamente.');
+      markVisitorActivity('signature');
       setDone(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

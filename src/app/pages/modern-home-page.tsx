@@ -988,6 +988,53 @@ export function ModernHomePage() {
         </div>
       </section>
 
+      {/* Custom templates promo — drives signed-in AND anonymous visitors
+          toward /my-templates; unauthenticated clicks open the same
+          onboarding modal the header's "Get Started Free" button uses,
+          instead of a silent bounce back to "/" via ProtectedRoute. */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-blue-950 py-16 md:py-24">
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 80% 20%, rgba(99,102,241,0.25), transparent)' }} />
+        <div className="container relative mx-auto px-4">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur md:flex-row md:gap-14 md:p-14">
+            <div className="flex-1">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
+                {language === 'en' ? 'For your business' : 'Para tu negocio'}
+              </span>
+              <h2 className="text-3xl font-black text-white md:text-4xl">
+                {language === 'en' ? 'Upload your own templates' : 'Sube tus propias plantillas'}
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-300">
+                {language === 'en'
+                  ? 'Upload any document once, click to mark where the fillable fields and signature go, and reuse it forever — every time you fill it in, your logo, header and footer come with it automatically.'
+                  : 'Sube tu propio documento una vez, marca con clics dónde van los campos y la firma, y reúsalo para siempre — cada vez que lo llenes, tu logo, encabezado y pie de página quedan puestos automáticamente.'}
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  language === 'en' ? 'Upload a PDF and mark the fields yourself, no guesswork' : 'Sube un PDF y marca los campos tú mismo, sin adivinar',
+                  language === 'en' ? 'Fill it in as many times as you need — it stays saved' : 'Llénalo las veces que necesites — queda guardado',
+                  language === 'en' ? 'Your logo, colors and branding, automatically' : 'Tu logo, colores y marca, de forma automática',
+                ].map((line) => (
+                  <li key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => (user ? navigate('/my-templates') : setOnboardingOpen(true))}
+                className="group mt-8 inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(99,102,241,0.55)]"
+              >
+                {language === 'en' ? 'Create my first template' : 'Crear mi primera plantilla'}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+            <div className="flex size-40 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/20 to-blue-500/10 md:size-52">
+              <FolderOpen className="size-20 text-indigo-300 md:size-24" strokeWidth={1.5} />
+            </div>
+          </div>
+        </div>
+      </section>
 
       <PricingSection />
 

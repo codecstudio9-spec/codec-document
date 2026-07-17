@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock } from 'lucide-react';
+import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
@@ -210,6 +210,24 @@ function DashboardContent() {
           />
         </motion.label>
       </div>
+
+      {/* Custom templates promo */}
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        type="button"
+        onClick={() => navigate('/my-templates')}
+        className="mt-4 flex w-full items-center gap-3 p-4 text-left"
+        style={{ borderRadius: CARD_RADIUS, background: 'linear-gradient(135deg,#312e81,#1e1b4b)' }}
+      >
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+          <FolderOpen className="size-5 text-indigo-200" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white">{language === 'en' ? 'Upload your own templates' : 'Sube tus propias plantillas'}</p>
+          <p className="mt-0.5 text-xs text-white/50">{language === 'en' ? 'Mark the fields once, reuse forever' : 'Marca los campos una vez, reúsalo siempre'}</p>
+        </div>
+        <ArrowRight className="size-4 shrink-0 text-white/40" />
+      </motion.button>
 
       {/* Recent documents */}
       <div className="mt-7">

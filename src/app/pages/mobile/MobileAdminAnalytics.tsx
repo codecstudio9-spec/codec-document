@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import {
   ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Tooltip,
 } from 'recharts';
-import { ArrowLeft, Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat } from 'lucide-react';
+import { ArrowLeft, Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat, FileText, PenLine, ChevronDown } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
@@ -29,6 +29,7 @@ function AnalyticsContent() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [range, setRange] = useState<RangeDays>(7);
+  const [showAllRecent, setShowAllRecent] = useState(false);
 
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [series, setSeries] = useState<Array<{ day: string; visitors: number }> | null>(null);
@@ -241,13 +242,19 @@ function AnalyticsContent() {
         {/* Recent visitors */}
         <div className="bg-white p-4 pb-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Recent visitors' : 'Visitantes recientes'}</h2>
+          {recent && recent.length > 0 && (
+            <div className="mt-2 flex items-center gap-3 text-[10px] font-semibold text-slate-400">
+              <span className="flex items-center gap-1"><FileText className="size-3 text-blue-500" />{recent.filter((v) => v.generatedDocument).length} {language === 'en' ? 'docs' : 'documentos'}</span>
+              <span className="flex items-center gap-1"><PenLine className="size-3 text-emerald-500" />{recent.filter((v) => v.completedSignature).length} {language === 'en' ? 'signed' : 'firmas'}</span>
+            </div>
+          )}
           <div className="mt-3 space-y-1.5">
             {!recent || recent.length === 0 ? (
               <p className="py-4 text-center text-xs text-slate-400">
                 {recent === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No visitors yet' : 'Aún no hay visitantes')}
               </p>
             ) : (
-              recent.map((v) => (
+              (showAllRecent ? recent : recent.slice(0, 6)).map((v) => (
                 <div key={v.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold text-slate-700">
@@ -255,18 +262,40 @@ function AnalyticsContent() {
                     </p>
                     <p className="truncate text-[10px] text-slate-400">{v.source} · {[v.device, v.browser].filter(Boolean).join(' · ')}</p>
                   </div>
-                  {v.isNewVisitor !== null && (
-                    <span
-                      className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                      style={v.isNewVisitor ? { color: '#2563EB', background: '#EFF6FF' } : { color: '#10B981', background: '#ECFDF5' }}
-                    >
-                      {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Return' : 'Recur.')}
-                    </span>
-                  )}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {v.generatedDocument && (
+                      <span className="flex items-center justify-center rounded-full bg-blue-50 p-1">
+                        <FileText className="size-2.5 text-blue-600" />
+                      </span>
+                    )}
+                    {v.completedSignature && (
+                      <span className="flex items-center justify-center rounded-full bg-emerald-50 p-1">
+                        <PenLine className="size-2.5 text-emerald-600" />
+                      </span>
+                    )}
+                    {v.isNewVisitor !== null && (
+                      <span
+                        className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
+                        style={v.isNewVisitor ? { color: '#2563EB', background: '#EFF6FF' } : { color: '#10B981', background: '#ECFDF5' }}
+                      >
+                        {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Return' : 'Recur.')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))
             )}
           </div>
+          {recent && recent.length > 6 && (
+            <button
+              type="button"
+              onClick={() => setShowAllRecent((s) => !s)}
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-slate-500"
+            >
+              {showAllRecent ? (language === 'en' ? 'Show less' : 'Mostrar menos') : `${language === 'en' ? 'Show all' : 'Mostrar todos'} (${recent.length})`}
+              <ChevronDown className={`size-3.5 transition-transform ${showAllRecent ? 'rotate-180' : ''}`} />
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -24,6 +24,7 @@ import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
+import { markVisitorActivity } from '../services/analytics-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 import { SITE_HOSTNAME } from '../config/site';
@@ -945,6 +946,7 @@ export function PreviewPage() {
       });
     }
 
+    markVisitorActivity('document');
     toast.success(t('preview.documentDownloaded'));
   } catch (error) {
     console.error('Preview download failed:', error);

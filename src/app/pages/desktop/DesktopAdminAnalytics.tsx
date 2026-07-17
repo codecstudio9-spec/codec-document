@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
-import { Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat } from 'lucide-react';
+import { Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat, FileText, PenLine, ChevronDown } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
@@ -43,6 +43,7 @@ export function DesktopAdminAnalytics() {
 function AdminAnalyticsContent() {
   const { language } = useLanguage();
   const [range, setRange] = useState<RangeDays>(7);
+  const [showAllRecent, setShowAllRecent] = useState(false);
 
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [series, setSeries] = useState<Array<{ day: string; visitors: number }> | null>(null);
@@ -253,14 +254,22 @@ function AdminAnalyticsContent() {
 
       {/* Recent visitors */}
       <div className="mt-6 bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-        <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Recent visitors' : 'Visitantes recientes'}</h2>
-        <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-slate-900">{language === 'en' ? 'Recent visitors' : 'Visitantes recientes'}</h2>
+          {recent && recent.length > 0 && (
+            <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-400">
+              <span className="flex items-center gap-1"><FileText className="size-3 text-blue-500" />{recent.filter((v) => v.generatedDocument).length} {language === 'en' ? 'generated a doc' : 'generaron doc.'}</span>
+              <span className="flex items-center gap-1"><PenLine className="size-3 text-emerald-500" />{recent.filter((v) => v.completedSignature).length} {language === 'en' ? 'signed' : 'firmaron'}</span>
+            </div>
+          )}
+        </div>
+        <div className="mt-4 space-y-2">
           {!recent || recent.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-400">
               {recent === null ? (language === 'en' ? 'Loading…' : 'Cargando…') : (language === 'en' ? 'No visitors yet' : 'Aún no hay visitantes')}
             </p>
           ) : (
-            recent.map((v) => (
+            (showAllRecent ? recent : recent.slice(0, 8)).map((v) => (
               <div key={v.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3.5 py-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold text-slate-700">
@@ -270,18 +279,40 @@ function AdminAnalyticsContent() {
                     {v.source} · {[v.device, v.browser].filter(Boolean).join(' · ')} · {v.landingPage}
                   </p>
                 </div>
-                {v.isNewVisitor !== null && (
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={v.isNewVisitor ? { color: '#2563EB', background: '#EFF6FF' } : { color: '#10B981', background: '#ECFDF5' }}
-                  >
-                    {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Returning' : 'Recurrente')}
-                  </span>
-                )}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {v.generatedDocument && (
+                    <span className="flex items-center justify-center rounded-full bg-blue-50 p-1" title={language === 'en' ? 'Generated a document' : 'Generó un documento'}>
+                      <FileText className="size-3 text-blue-600" />
+                    </span>
+                  )}
+                  {v.completedSignature && (
+                    <span className="flex items-center justify-center rounded-full bg-emerald-50 p-1" title={language === 'en' ? 'Completed a signature' : 'Completó una firma'}>
+                      <PenLine className="size-3 text-emerald-600" />
+                    </span>
+                  )}
+                  {v.isNewVisitor !== null && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={v.isNewVisitor ? { color: '#2563EB', background: '#EFF6FF' } : { color: '#10B981', background: '#ECFDF5' }}
+                    >
+                      {v.isNewVisitor ? (language === 'en' ? 'New' : 'Nuevo') : (language === 'en' ? 'Returning' : 'Recurrente')}
+                    </span>
+                  )}
+                </div>
               </div>
             ))
           )}
         </div>
+        {recent && recent.length > 8 && (
+          <button
+            type="button"
+            onClick={() => setShowAllRecent((s) => !s)}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold text-slate-500 hover:bg-slate-50"
+          >
+            {showAllRecent ? (language === 'en' ? 'Show less' : 'Mostrar menos') : `${language === 'en' ? 'Show all' : 'Mostrar todos'} (${recent.length})`}
+            <ChevronDown className={`size-3.5 transition-transform ${showAllRecent ? 'rotate-180' : ''}`} />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { SignatureModal } from '../components/signatures/SignatureModal';
-import { getTemplate, generateFilledDocument, type CustomTemplate, type PlacedField } from '../services/template-service';
+import { getTemplate, generateFilledDocument, saveFilledDocument, type CustomTemplate, type PlacedField } from '../services/template-service';
+import { markVisitorActivity } from '../services/analytics-service';
 
 export function MyTemplateFillPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +42,13 @@ export function MyTemplateFillPage() {
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       toast.success(language === 'en' ? 'Document generated!' : '¡Documento generado!');
+      markVisitorActivity('document');
+      // Best-effort — a save failure must never block the download the
+      // user already has in hand via resultUrl above.
+      if (user?.id) {
+        saveFilledDocument({ userId: user.id, templateName: template.name, templateFileUrl: template.fileUrl, pdfBytes: bytes })
+          .catch(() => toast.error(language === 'en' ? 'Downloaded, but could not save it to your dashboard.' : 'Se descargó, pero no se pudo guardar en tu panel.'));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate the document.' : 'No se pudo generar el documento.'));
     } finally {

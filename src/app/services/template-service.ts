@@ -94,6 +94,38 @@ export async function uploadTemplateFile(userId: string, blob: Blob): Promise<st
   return data.publicUrl;
 }
 
+/**
+ * Persists a filled-template result into the SAME `documents` table the
+ * signature flow uses (id, user_id, name, status, original_pdf_url,
+ * signed_pdf_url, created_at — see signatureService.ts), not a new table.
+ * That's what makes it show up in the dashboard for free, via the
+ * existing fetchAssociatedDocuments()/DesktopDocuments/MobileDocuments
+ * code — including the already-built 30-day expiry chip — with zero
+ * changes to any of that. Filled documents have nothing left to sign (the
+ * template's own signature/initials fields are already baked in), so they
+ * go straight in as `status: 'completed'`, exactly like a finished
+ * signature-flow document would.
+ */
+export async function saveFilledDocument(params: {
+  userId: string; templateName: string; templateFileUrl: string; pdfBytes: Uint8Array;
+}): Promise<void> {
+  const path = `documents/custom-templates/${params.userId}/filled-${Date.now()}.pdf`;
+  const blob = new Blob([params.pdfBytes], { type: 'application/pdf' });
+  const { error: uploadError } = await supabase.storage.from('documents-bucket').upload(path, blob, { contentType: 'application/pdf', upsert: false });
+  if (uploadError) throw new Error(`saveFilledDocument: ${uploadError.message}`);
+  const { data: urlData } = supabase.storage.from('documents-bucket').getPublicUrl(path);
+  if (!urlData?.publicUrl) throw new Error('saveFilledDocument: could not retrieve public URL');
+
+  const { error: insertError } = await supabase.from('documents').insert({
+    user_id: params.userId,
+    name: params.templateName,
+    status: 'completed',
+    original_pdf_url: params.templateFileUrl,
+    signed_pdf_url: urlData.publicUrl,
+  });
+  if (insertError) throw new Error(`saveFilledDocument: ${insertError.message}`);
+}
+
 // ─── Fill-in generation ─────────────────────────────────────────────────────
 // Deliberately separate from signatureService.ts's compilePdfWithSignatures
 // — different shape entirely (arbitrary labeled fields, not a signer

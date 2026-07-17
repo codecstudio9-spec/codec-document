@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/auth-context';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
+import { markVisitorActivity } from '../services/analytics-service';
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -354,6 +355,7 @@ export default function SignTransactionPage() {
       }
 
       console.log('Firma guardada exitosamente. Transaction:', tx.id, '| payload keys:', Object.keys(initialPayload));
+      markVisitorActivity('signature');
       advance();
 
       void (async () => {

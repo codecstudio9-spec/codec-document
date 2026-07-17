@@ -171,6 +171,26 @@ export function trackVisitorSession(): void {
   })();
 }
 
+/**
+ * Fire-and-forget — flips one boolean on the CURRENT session's
+ * analytics_visitors row (generated_document / completed_signature),
+ * via a SECURITY DEFINER RPC since analytics_visitors has no client-side
+ * UPDATE policy (INSERT-only, same reasoning as trackVisitorSession
+ * above). Never awaited by callers — a tracking failure must never block
+ * the real action (document generated / signature completed) it's
+ * describing. Safe to call from anonymous flows (guest signing) too: the
+ * RPC is granted to anon.
+ */
+export function markVisitorActivity(kind: 'document' | 'signature'): void {
+  if (typeof window === 'undefined') return;
+  const { id: sessionId } = getOrCreateSessionId();
+  void (async () => {
+    try {
+      await publicSupabase.rpc('mark_visitor_activity', { p_session_id: sessionId, p_event: kind });
+    } catch { /* tracking must never break the real flow */ }
+  })();
+}
+
 // ─── Admin reads (SECURITY DEFINER RPCs — return nothing for non-admins) ──
 
 export interface AnalyticsSummary {
@@ -233,6 +253,7 @@ export async function fetchRecentVisitors(): Promise<Array<{
   id: string; country: string | null; city: string | null; source: string;
   landingPage: string | null; device: string | null; browser: string | null;
   isNewVisitor: boolean | null; createdAt: string;
+  generatedDocument: boolean; completedSignature: boolean;
 }>> {
   const { data, error } = await supabase.rpc('get_recent_visitors');
   if (error || !data) return [];
@@ -240,5 +261,11 @@ export async function fetchRecentVisitors(): Promise<Array<{
     id: r.id, country: r.country, city: r.city, source: r.referrer_source,
     landingPage: r.landing_page, device: r.device, browser: r.browser ?? null,
     isNewVisitor: r.is_new_visitor, createdAt: r.created_at,
+    // Both default to false until supabase_analytics_activity_migration.sql
+    // is run AND get_recent_visitors is updated to return them — see that
+    // file's header comment. Never crashes in the meantime, just shows
+    // no badges.
+    generatedDocument: Boolean(r.generated_document),
+    completedSignature: Boolean(r.completed_signature),
   }));
 }
