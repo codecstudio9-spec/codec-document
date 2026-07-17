@@ -6,6 +6,7 @@ import { LandingHeader } from '../../components/landing/LandingHeader';
 import { LandingFooter } from '../../components/landing/LandingFooter';
 import { LandingHero } from '../../components/landing/LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
+import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function OnlineLeaseAgreementLanding() {
   const title = 'Online Lease Agreement Generator | CodecDocument';
@@ -48,6 +49,7 @@ export default function OnlineLeaseAgreementLanding() {
       <HowItWorksTimeline />
       <SocialProofBand />
       <FAQAccordion items={DEFAULT_FAQ} />
+      <StateQuickLinks docType="lease-agreement" labelEn="Lease Agreement" labelEs="Contrato de Arrendamiento" />
       <LandingFooter />
     </div>
   );

@@ -1,13 +1,49 @@
-import { MapPin } from 'lucide-react';
+import { MapPin, FileSignature, Home, ArrowRight } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
+import { useLanguage } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { StateLawHighlights } from './StateLawHighlights';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
 import type { StateSeoConfig } from '../../data/state-seo-content';
+
+/** Links down into the doc-type × state pages for this state — the state
+ * hub is the entry point, these are where a visitor with a specific
+ * document in mind actually converts. */
+function DocTypeLinks({ state }: { state: StateSeoConfig }) {
+  const { language } = useLanguage();
+  const links = [
+    { href: `/nda-${state.slug}`, icon: FileSignature, en: 'NDA', es: 'NDA' },
+    { href: `/lease-agreement-${state.slug}`, icon: Home, en: 'Lease Agreement', es: 'Contrato de Arrendamiento' },
+  ];
+  return (
+    <section className="relative bg-white py-14">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-3xl text-center">
+          <h3 className="mb-5 text-lg font-bold text-slate-900">
+            {language === 'en' ? `${state.name} document templates` : `Plantillas de documentos de ${state.nameEs}`}
+          </h3>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {links.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+              >
+                <l.icon className="size-4 text-indigo-500" />
+                {language === 'en' ? l.en : l.es}
+                <ArrowRight className="size-3.5" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /** One shared template, instantiated once per state (see
  * src/app/pages/landings/state-*.tsx) — same premium dark-hero design
@@ -67,6 +103,7 @@ export function StateLegalDocumentsLanding({ state }: { state: StateSeoConfig })
       />
 
       <StateLawHighlights stateName={state.name} stateNameEs={state.nameEs} highlights={state.highlights} />
+      <DocTypeLinks state={state} />
 
       <BenefitCards />
       <HowItWorksTimeline />

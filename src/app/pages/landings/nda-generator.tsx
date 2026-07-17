@@ -6,6 +6,7 @@ import { LandingHeader } from '../../components/landing/LandingHeader';
 import { LandingFooter } from '../../components/landing/LandingFooter';
 import { LandingHero } from '../../components/landing/LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
+import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function NdaGeneratorLanding() {
   const title = 'Free NDA Generator | CodecDocument';
@@ -48,6 +49,7 @@ export default function NdaGeneratorLanding() {
       <HowItWorksTimeline />
       <SocialProofBand />
       <FAQAccordion items={DEFAULT_FAQ} />
+      <StateQuickLinks docType="nda" labelEn="NDA" labelEs="NDA" />
       <LandingFooter />
     </div>
   );

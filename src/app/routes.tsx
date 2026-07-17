@@ -27,6 +27,18 @@ import FloridaLegalDocuments from './pages/landings/florida-legal-documents';
 import NewYorkLegalDocuments from './pages/landings/new-york-legal-documents';
 import IllinoisLegalDocuments from './pages/landings/illinois-legal-documents';
 import PennsylvaniaLegalDocuments from './pages/landings/pennsylvania-legal-documents';
+import NdaCalifornia from './pages/landings/nda-california';
+import NdaTexas from './pages/landings/nda-texas';
+import NdaFlorida from './pages/landings/nda-florida';
+import NdaNewYork from './pages/landings/nda-new-york';
+import NdaIllinois from './pages/landings/nda-illinois';
+import NdaPennsylvania from './pages/landings/nda-pennsylvania';
+import LeaseAgreementCalifornia from './pages/landings/lease-agreement-california';
+import LeaseAgreementTexas from './pages/landings/lease-agreement-texas';
+import LeaseAgreementFlorida from './pages/landings/lease-agreement-florida';
+import LeaseAgreementNewYork from './pages/landings/lease-agreement-new-york';
+import LeaseAgreementIllinois from './pages/landings/lease-agreement-illinois';
+import LeaseAgreementPennsylvania from './pages/landings/lease-agreement-pennsylvania';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -156,6 +168,18 @@ export const router = createBrowserRouter([
     Component: PennsylvaniaLegalDocuments,
     errorElement: <RouteErrorBoundary />,
   },
+  { path: "/nda-california", Component: NdaCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-texas", Component: NdaTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-florida", Component: NdaFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-new-york", Component: NdaNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-illinois", Component: NdaIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-pennsylvania", Component: NdaPennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-california", Component: LeaseAgreementCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-texas", Component: LeaseAgreementTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-florida", Component: LeaseAgreementFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-new-york", Component: LeaseAgreementNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-illinois", Component: LeaseAgreementIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-pennsylvania", Component: LeaseAgreementPennsylvania, errorElement: <RouteErrorBoundary /> },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",
