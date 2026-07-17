@@ -125,11 +125,21 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
  * by RLS (documents_delete_own — see supabase_add_document_delete_migration.sql)
  * and is what actually determines success, so it runs last, after the
  * storage cleanup, and its result is what this function reports.
+ *
+ * The guest-signing flow (guest-sign-page.tsx) writes its final compiled
+ * PDF under a timestamped name (`signed-<ts>.pdf`), not the fixed
+ * `signed.pdf` the creator's own flow uses — anon storage RLS on this
+ * bucket only grants INSERT, never UPDATE/DELETE, so a guest overwriting
+ * the creator's already-existing `signed.pdf` 403s (confirmed live).
+ * A fixed-name guess here would miss that file, so the `documents/`
+ * folder is listed and every real object under it is removed instead of
+ * guessing two hardcoded names.
  */
 export async function deleteAssociatedDocument(documentId: string): Promise<void> {
+  const folder = `documents/${documentId}`;
+  const { data: listed } = await supabase.storage.from('documents-bucket').list(folder).catch(() => ({ data: null }));
   const paths = [
-    `documents/${documentId}/original.pdf`,
-    `documents/${documentId}/signed.pdf`,
+    ...(listed ?? []).map((f) => `${folder}/${f.name}`),
     `signatures/${documentId}_creator.png`,
     `signatures/${documentId}_guest.png`,
   ];

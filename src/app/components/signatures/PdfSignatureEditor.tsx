@@ -4,7 +4,7 @@ import {
   CheckCircle, ChevronLeft, ChevronRight, Loader,
   PlusCircle, FileSignature, LayoutTemplate, ImageOff,
 } from 'lucide-react';
-import { DraggableSignature } from './DraggableSignature';
+import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -457,7 +457,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
 
             {/* Signature overlays */}
             {activePlacements.map((placement) => (
-              <DraggableSignature
+              <SimpleDraggableSignature
                 key={placement.id}
                 sig={placement}
                 getContainer={() => mainContainerRef.current}

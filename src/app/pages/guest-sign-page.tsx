@@ -808,7 +808,14 @@ export function GuestSignPage() {
           // signature never actually made it back into the document the
           // creator sees. finalize_document is already confirmed anon-
           // callable (supabase_FIX_signed_pdf_functions.sql).
-          const signedPdfUrl = await uploadPdfToStorage(tokenData.documentId, finalBlob, 'signed.pdf');
+          // Timestamped filename, not the fixed 'signed.pdf' the creator's
+          // own flow uses — confirmed live that anon storage RLS on this
+          // bucket only grants INSERT, never UPDATE: a guest (always
+          // anonymous here) overwriting the creator's already-existing
+          // signed.pdf 403s with "new row violates row-level security
+          // policy", which is exactly the silent failure this was causing.
+          // A fresh path is always a first-time INSERT, which anon can do.
+          const signedPdfUrl = await uploadPdfToStorage(tokenData.documentId, finalBlob, `signed-${Date.now()}.pdf`);
           await finalizeDocument(tokenData.documentId, signedPdfUrl);
         } catch (compileErr) {
           if (isPremiumLimitError(compileErr)) {
