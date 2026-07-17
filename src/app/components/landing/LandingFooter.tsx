@@ -112,6 +112,25 @@ export function LandingFooter() {
             </div>
           </div>
 
+          {/* Popular states — internal links so the state SEO pages are
+              crawlable from every landing page, not just the sitemap. */}
+          <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-500">
+            <span className="font-semibold text-slate-600">{language === 'en' ? 'Popular states:' : 'Estados populares:'}</span>
+            {[
+              { slug: 'california', en: 'California', es: 'California' },
+              { slug: 'texas', en: 'Texas', es: 'Texas' },
+              { slug: 'florida', en: 'Florida', es: 'Florida' },
+              { slug: 'new-york', en: 'New York', es: 'Nueva York' },
+              { slug: 'illinois', en: 'Illinois', es: 'Illinois' },
+              { slug: 'pennsylvania', en: 'Pennsylvania', es: 'Pensilvania' },
+            ].map((s, i, arr) => (
+              <span key={s.slug}>
+                <a href={`/legal-documents-${s.slug}`} className="transition hover:text-white">{language === 'en' ? s.en : s.es}</a>
+                {i < arr.length - 1 && <span className="text-slate-700">,</span>}
+              </span>
+            ))}
+          </div>
+
           <div className="flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row">
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} Codec Document. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}

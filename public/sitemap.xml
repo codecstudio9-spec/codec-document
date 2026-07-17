@@ -125,7 +125,57 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/promissory-note"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/promissory-note"/>
   </url>
-  
+
+  <!-- State hub landing pages (top 6 states by population/legal search volume) -->
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-california</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-texas</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-texas"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-texas"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-florida</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-florida"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-florida"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-new-york</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-new-york"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-new-york"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-illinois</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-illinois"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-illinois"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/legal-documents-pennsylvania</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/legal-documents-pennsylvania"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/legal-documents-pennsylvania"/>
+  </url>
+
   <!-- State-specific pilot landing pages -->
   <url>
     <loc>https://www.codecdocument.com/landing/residential-lease/texas</loc>

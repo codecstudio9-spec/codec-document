@@ -21,6 +21,12 @@ import IndependentContractorLanding from "./pages/landings/independent-contracto
 import VehicleBillOfSaleLanding from "./pages/landings/billing-vehicle-bill-of-sale";
 import PromissoryNoteLanding from "./pages/landings/promissory-note";
 import StateDocumentLanding from './pages/landings/state-document';
+import CaliforniaLegalDocuments from './pages/landings/california-legal-documents';
+import TexasLegalDocuments from './pages/landings/texas-legal-documents';
+import FloridaLegalDocuments from './pages/landings/florida-legal-documents';
+import NewYorkLegalDocuments from './pages/landings/new-york-legal-documents';
+import IllinoisLegalDocuments from './pages/landings/illinois-legal-documents';
+import PennsylvaniaLegalDocuments from './pages/landings/pennsylvania-legal-documents';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -118,6 +124,36 @@ export const router = createBrowserRouter([
   {
     path: "/landing/:documentType/:stateSlug",
     Component: StateDocumentLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-california",
+    Component: CaliforniaLegalDocuments,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-texas",
+    Component: TexasLegalDocuments,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-florida",
+    Component: FloridaLegalDocuments,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-new-york",
+    Component: NewYorkLegalDocuments,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-illinois",
+    Component: IllinoisLegalDocuments,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/legal-documents-pennsylvania",
+    Component: PennsylvaniaLegalDocuments,
     errorElement: <RouteErrorBoundary />,
   },
   {
