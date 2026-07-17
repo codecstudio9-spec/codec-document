@@ -9,7 +9,7 @@ import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAc
 import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function IndependentContractorLanding() {
-  const title = 'Independent Contractor Agreement | CodecDocument';
+  const title = 'Free Independent Contractor Agreement Template | CodecDocument';
   const desc = 'Create independent contractor agreements quickly. Protect your freelance work with clear payment terms, scope, and secure online signatures.';
   const canonicalUrl = `${SITE_URL}/independent-contractor-agreement`;
 

@@ -9,7 +9,7 @@ import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAc
 import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function OnlineLeaseAgreementLanding() {
-  const title = 'Online Lease Agreement Generator | CodecDocument';
+  const title = 'Free Online Lease Agreement Generator | CodecDocument';
   const desc = 'Create state-specific residential lease agreements online. Fill forms, preview, sign electronically, and get identity verification with audit-ready PDFs.';
   const canonicalUrl = `${SITE_URL}/online-lease-agreement`;
 

@@ -9,7 +9,7 @@ import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAc
 import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function PromissoryNoteLanding() {
-  const title = 'Promissory Note Generator | CodecDocument';
+  const title = 'Free Promissory Note Generator | CodecDocument';
   const desc = 'Create promissory notes for personal or business loans with clear payment terms, interest schedules, and secure e-signatures.';
   const canonicalUrl = `${SITE_URL}/promissory-note`;
 

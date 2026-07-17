@@ -8,7 +8,7 @@ import { LandingHero } from '../../components/landing/LandingHero';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from '../../components/landing/LandingSections';
 
 export default function ElectronicSignatureLanding() {
-  const title = 'Electronic Signature Platform | CodecDocument';
+  const title = 'Free Electronic Signature Platform | CodecDocument';
   const desc = 'ESIGN Act compliant electronic signatures with selfie identity verification, geolocation audit trail and secure online signing for NDAs, leases, service agreements and more.';
   const canonicalUrl = `${SITE_URL}/electronic-signature`;
 

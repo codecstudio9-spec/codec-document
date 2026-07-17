@@ -9,7 +9,7 @@ import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAc
 import { StateQuickLinks } from '../../components/landing/StateQuickLinks';
 
 export default function VehicleBillOfSaleLanding() {
-  const title = 'Vehicle Bill of Sale | CodecDocument';
+  const title = 'Free Vehicle Bill of Sale Template | CodecDocument';
   const desc = 'Create a vehicle bill of sale with buyer and seller details, odometer disclosure, and secure e-signatures. Download an audit-ready PDF instantly.';
   const canonicalUrl = `${SITE_URL}/vehicle-bill-of-sale`;
 

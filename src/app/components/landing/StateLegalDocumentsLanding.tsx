@@ -89,7 +89,7 @@ function DocTypeLinks({ state }: { state: StateSeoConfig }) {
  * keep these from being thin, near-duplicate "doorway pages" across the 6
  * states — everything else reuses the same proven sections/copy. */
 export function StateLegalDocumentsLanding({ state }: { state: StateSeoConfig }) {
-  const title = `Legal Documents & E-Signatures in ${state.name} | CodecDocument`;
+  const title = `Free Legal Documents & E-Signatures in ${state.name} | CodecDocument`;
   const desc = `Create legally-vetted documents and ESIGN Act compliant e-signatures for ${state.name}. Free NDA, lease agreement, and contract templates with ${state.name}-specific clauses, identity verification, and audit trail.`;
   const canonicalUrl = `${SITE_URL}/legal-documents-${state.slug}`;
 
