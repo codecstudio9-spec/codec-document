@@ -31,7 +31,46 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.mark_visitor_activity(text, text) TO anon, authenticated;
 
--- Verificacion rapida: deben existir las 2 columnas.
+-- Replaces the REAL live get_recent_visitors (confirmed via
+-- pg_get_functiondef against production on 2026-07-17) so it also
+-- returns the 2 new columns. Same name + same single `days_limit
+-- integer DEFAULT 7` param as the live version, so CREATE OR REPLACE
+-- genuinely replaces it in place -- it does not create a second,
+-- unreachable overload. No access-control logic existed inside the
+-- original body (the admin gate is client-side only, via AdminRoute),
+-- so none is added here either -- this is a byte-for-byte match of the
+-- original plus the 2 extra columns, nothing else changed.
+CREATE OR REPLACE FUNCTION public.get_recent_visitors(days_limit integer DEFAULT 7)
+ RETURNS TABLE(id uuid, country text, city text, referrer_source text, landing_page text, device text, is_new_visitor boolean, created_at timestamp with time zone, generated_document boolean, completed_signature boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT
+        v.id,
+        v.country,
+        v.city,
+        v.referrer_source,
+        v.landing_page,
+        v.device,
+        v.is_new_visitor,
+        v.created_at,
+        v.generated_document,
+        v.completed_signature
+    FROM
+        public.analytics_visitors v
+    WHERE
+        v.created_at >= (NOW() - (days_limit || ' days')::INTERVAL)
+    ORDER BY
+        v.created_at DESC;
+END;
+$function$;
+
+-- Verificacion rapida: deben existir las 2 columnas Y la funcion debe
+-- devolver 10 columnas (antes devolvia 8).
 SELECT column_name FROM information_schema.columns
 WHERE table_schema = 'public' AND table_name = 'analytics_visitors'
   AND column_name IN ('generated_document', 'completed_signature');
+
+SELECT * FROM public.get_recent_visitors(7) LIMIT 3;
