@@ -26,7 +26,7 @@ import {
   createDocumentRecord, updateDocumentPdfUrl, updateDocumentSignedPdfUrl, uploadPdfToStorage,
   uploadSignatureImage, insertSignature, createSigner, createSigningLink,
   insertSignaturePositions, finalizeDocument, insertAuditLog,
-  getDocumentSignatures, compilePdfWithSignatures,
+  getDocumentStatus, compilePdfWithSignatures,
 } from '../../lib/signatureService';
 import {
   consumeDocumentLimit72h,
@@ -275,9 +275,6 @@ export function ElectronicSignaturePage() {
   const [requireIdPhoto, setRequireIdPhoto] = useState(false);
   const [requireSelfie, setRequireSelfie]   = useState(false);
 
-  // ── PDF page count ─────────────────────────────────────────────────────────
-  const [pdfPageCount, setPdfPageCount] = useState(1);
-
   // ── UI ─────────────────────────────────────────────────────────────────────
   const [isLoading, setIsLoading]     = useState(false);
   const [loadingMsg, setLoadingMsg]   = useState('');
@@ -286,32 +283,12 @@ export function ElectronicSignaturePage() {
   const [documentStatus, setDocumentStatus] = useState<string>('pending');
   const [linkCopied, setLinkCopied]   = useState(false);
 
-  const pollingRef       = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pdfPageCountRef  = useRef(1);
-  const doAutoCompileRef = useRef<((guestDataUrl: string, guestStorageUrl: string) => Promise<void>) | null>(null);
-
-  pdfPageCountRef.current = pdfPageCount;
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Global cleanup ─────────────────────────────────────────────────────────
   useEffect(() => () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
   }, []);
-
-  // ── Detect page count ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!pdfBytes || pdfBytes.length === 0) return;
-    void (async () => {
-      try {
-        const { PDFDocument } = await import('pdf-lib');
-        const doc = await PDFDocument.load(pdfBytes.slice(0));
-        const count = doc.getPageCount();
-        setPdfPageCount(count);
-        pdfPageCountRef.current = count;
-      } catch {
-        setPdfPageCount(1);
-      }
-    })();
-  }, [pdfBytes]);
 
   // ── Convert guest storage URL → data URL (CORS-safe for pdf-lib) ──────────
   useEffect(() => {
@@ -337,48 +314,31 @@ export function ElectronicSignaturePage() {
   }, [documentStatus]);
 
   // ── Realtime + polling fallback (await-guest) ──────────────────────────────
+  // This used to ALSO re-compile the final PDF from scratch on the
+  // creator's own browser the moment it saw the guest's `signatures` row
+  // appear (a "PRIMARY" INSERT listener calling doAutoCompile below). That
+  // was a real bug: guest-sign-page.tsx already compiles, uploads, and
+  // calls finalizeDocument itself as one atomic sequence on the guest's
+  // side. Having the creator's browser race to do the exact same job
+  // independently — using the ORIGINAL pdfBytes, the old two-report-page
+  // compile call (no reportSigners), and a fixed 'signed.pdf' path — meant
+  // whichever attempt finished LAST silently overwrote the other's result,
+  // and if the creator's tab happened to be open, it was pure wasted work
+  // at best and a source of inconsistent/broken final PDFs at worst. This
+  // now only ever WATCHES for the guest's own flow to reach status
+  // 'completed' — it never tries to compile anything itself.
   useEffect(() => {
     if (step !== 'await-guest' || !documentId) return;
 
-    let compiled = false; // guard: compile only once per session
-
-    const compileGuest = async (storageUrl: string) => {
-      if (compiled) return;
-      compiled = true;
+    const applyIfCompleted = (status?: string, signedUrl?: string | null) => {
+      if (status !== 'completed') return;
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-
-      let dataUrl = storageUrl;
-      try {
-        const res  = await fetch(storageUrl);
-        const blob = await res.blob();
-        dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(String(e.target?.result ?? storageUrl));
-          reader.readAsDataURL(blob);
-        });
-      } catch { /* use storage URL as-is */ }
-
-      setGuestSigUrl(storageUrl);
-      setGuestSigDataUrl(dataUrl);
-      toast.success('¡El invitado ha firmado! Compilando documento…');
-      if (doAutoCompileRef.current) void doAutoCompileRef.current(dataUrl, storageUrl);
+      if (signedUrl) setSignedPdfUrl(signedUrl);
+      setDocumentStatus('completed');
     };
 
-    // PRIMARY: listen for new signature rows (fires the moment guest signs)
     const channel = supabase
-      .channel(`sig-watch-${documentId}`)
-      .on('postgres_changes', {
-        event:  'INSERT',
-        schema: 'public',
-        table:  'signatures',
-        filter: `document_id=eq.${documentId}`,
-      }, (payload) => {
-        const row = payload.new as { signer_email?: string; signature_url?: string };
-        // Skip creator's own signature row
-        if (!row.signature_url || row.signer_email === creatorEmail) return;
-        void compileGuest(row.signature_url);
-      })
-      // SECONDARY: listen for document status → 'completed' (fires after compile)
+      .channel(`doc-watch-${documentId}`)
       .on('postgres_changes', {
         event:  'UPDATE',
         schema: 'public',
@@ -386,70 +346,26 @@ export function ElectronicSignaturePage() {
         filter: `id=eq.${documentId}`,
       }, (payload) => {
         const updated = payload.new as { status?: string; signed_pdf_url?: string };
-        if (updated.status === 'completed') {
-          if (updated.signed_pdf_url) setSignedPdfUrl(updated.signed_pdf_url);
-          setDocumentStatus('completed');
-        }
+        applyIfCompleted(updated.status, updated.signed_pdf_url);
       })
       .subscribe();
 
     // FALLBACK: polling every 4 s in case Realtime is not enabled on the table
-    const checkGuestSig = async () => {
-      if (compiled) return;
+    const checkStatus = async () => {
       try {
-        const sigs = await getDocumentSignatures(documentId);
-        const guestSig = sigs.find((s) => s.signer_email !== creatorEmail && s.signature_url);
-        if (guestSig?.signature_url) void compileGuest(guestSig.signature_url);
+        const doc = await getDocumentStatus(documentId);
+        if (doc) applyIfCompleted(doc.status, doc.signedPdfUrl);
       } catch { /* silently ignore network errors */ }
     };
 
-    void checkGuestSig(); // immediate check on mount
-    pollingRef.current = setInterval(() => { void checkGuestSig(); }, 4000);
+    void checkStatus(); // immediate check on mount
+    pollingRef.current = setInterval(() => { void checkStatus(); }, 4000);
 
     return () => {
       void supabase.removeChannel(channel);
       if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, documentId]);
-
-  // ── Auto-compile (left=creator, right=guest) ───────────────────────────────
-  const doAutoCompile = async (guestDataUrl: string, guestStorageUrl: string) => {
-    const W = 0.44, H = 0.30, Y = 0.84;
-    const creatorRole = getSignerRoleLabel(resolvedDocumentType, 0, 'es');
-    const guestRole = getSignerRoleLabel(resolvedDocumentType, 1, 'es');
-    const placements: PlacedSignature[] = [
-      {
-        id: `creator-auto-${Date.now()}`, signerId: 'creator',
-        signerName: creatorName || 'Firmante 1', signerRole: creatorRole, color: '#3B82F6',
-        imageDataUrl: creatorSigDataUrl, storageUrl: creatorSigUrl,
-        page: pdfPageCountRef.current,
-        xFraction: 0.25, yFraction: Y, widthFraction: W, heightFraction: H,
-        labelText: creatorName || 'Firmante 1', showLabel: true,
-      },
-      {
-        id: `guest-auto-${Date.now() + 1}`, signerId: 'guest',
-        signerName: guestName || 'Firmante 2', signerRole: guestRole, color: '#F59E0B',
-        imageDataUrl: guestDataUrl, storageUrl: guestStorageUrl,
-        page: pdfPageCountRef.current,
-        xFraction: 0.75, yFraction: Y, widthFraction: W, heightFraction: H,
-        labelText: guestName || 'Firmante 2', showLabel: true,
-      },
-    ].filter(p => Boolean(p.imageDataUrl) || Boolean(p.storageUrl));
-
-    // bypassUsageCheck=true: this fires automatically once the guest
-    // finishes their part (Realtime listener / 4s polling fallback above),
-    // merging both signatures into the final PDF. It is not a fresh
-    // voluntary "place my signature" action by the creator — they already
-    // used their turn earlier in handleCreatorSign — so it must never be
-    // gated behind the creator's own signature quota. Without this, a
-    // creator who had exhausted their unrelated quota would see the
-    // compile silently swallowed by the paywall check instead of actually
-    // stamping the document: the signer's status stayed "Pendiente" and
-    // nothing ever got baked into the PDF, with no visible error at all.
-    await handleConfirmPositions(placements, true);
-  };
-  doAutoCompileRef.current = doAutoCompile;
 
   // ── Step handlers ─────────────────────────────────────────────────────────
 
@@ -607,33 +523,23 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  // Just re-checks documents.status — the actual compile/upload/finalize
+  // already happened (or is happening) on the guest's own browser via
+  // guest-sign-page.tsx; this never re-compiles itself (see the effect
+  // above for why that used to be a real bug).
   const handleManualCheck = async () => {
     if (!documentId) return;
     setIsLoading(true);
     try {
-      const sigs = await getDocumentSignatures(documentId);
-      if (sigs.length >= 2) {
-        const guestSig = sigs.find((s) => s.signer_email !== creatorEmail);
-        if (guestSig?.signature_url) {
-          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-          let guestDataUrl = guestSig.signature_url;
-          try {
-            const res  = await fetch(guestSig.signature_url);
-            const blob = await res.blob();
-            guestDataUrl = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = (e) => resolve(String(e.target?.result ?? guestSig.signature_url));
-              reader.readAsDataURL(blob);
-            });
-          } catch { /* use storage URL */ }
-          setGuestSigUrl(guestSig.signature_url);
-          setGuestSigDataUrl(guestDataUrl);
-          toast.success('¡El invitado ha firmado! Compilando…');
-          await doAutoCompile(guestDataUrl, guestSig.signature_url);
-          return;
-        }
+      const doc = await getDocumentStatus(documentId);
+      if (doc?.status === 'completed') {
+        if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+        if (doc.signedPdfUrl) setSignedPdfUrl(doc.signedPdfUrl);
+        setDocumentStatus('completed');
+        toast.success('¡El invitado ya firmó! Documento certificado.');
+      } else {
+        toast.info('El invitado aún no ha firmado.');
       }
-      toast.info('El invitado aún no ha firmado.');
     } catch { toast.error('Error al verificar.'); }
     finally { setIsLoading(false); }
   };

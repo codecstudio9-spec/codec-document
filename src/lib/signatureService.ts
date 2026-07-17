@@ -57,6 +57,27 @@ export async function createDocumentRecord(params: {
   return data.id as string;
 }
 
+/**
+ * Reads the current status/signed_pdf_url for a document the caller owns.
+ * A plain `.select()` (not an RPC) is fine here — unlike the guest/anon
+ * cases elsewhere in this file, the creator is authenticated and the
+ * existing owner-based RLS SELECT policy on `documents` already grants
+ * this (the same policy `fetchAssociatedDocuments` in documents-service.ts
+ * already relies on).
+ */
+export async function getDocumentStatus(
+  documentId: string,
+): Promise<{ status: string; signedPdfUrl: string | null } | null> {
+  const { data, error } = await supabase
+    .from('documents')
+    .select('status, signed_pdf_url')
+    .eq('id', documentId)
+    .maybeSingle();
+  if (error) throw new Error(`getDocumentStatus: ${error.message}`);
+  if (!data) return null;
+  return { status: data.status as string, signedPdfUrl: (data.signed_pdf_url as string | null) ?? null };
+}
+
 // These three go through SECURITY DEFINER RPCs (update_document_pdf_url /
 // update_document_signed_pdf_url / finalize_document), not a raw
 // `.update(...).eq('id', documentId)` — a plain client-side UPDATE that
