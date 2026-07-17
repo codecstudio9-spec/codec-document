@@ -10,7 +10,7 @@ import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { DocumentEditModal } from '../../components/DocumentEditModal';
 import {
   fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
-  updateUserDocumentDetails, updateAssociatedDocumentDetails,
+  updateUserDocumentDetails, updateAssociatedDocumentDetails, getSignedDocumentExpiry,
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
@@ -23,6 +23,7 @@ type UnifiedDoc = {
   date: string;
   href: string | null;
   color: string | null;
+  daysLeft: number | null;
 };
 
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
@@ -61,11 +62,11 @@ function DocumentsContent() {
       const unified: UnifiedDoc[] = [
         ...own.map((d) => ({
           id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at,
-          href: `/preview/${d.template_id}`, color: d.color,
+          href: `/preview/${d.template_id}`, color: d.color, daysLeft: null,
         })),
         ...associated.map((d) => ({
           id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at,
-          href: d.signed_pdf_url || d.original_pdf_url, color: d.color,
+          href: d.signed_pdf_url || d.original_pdf_url, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null,
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setDocs(unified);
@@ -220,6 +221,9 @@ function DocumentsContent() {
                     <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
                     <p className="mt-0.5 text-xs text-slate-400">
                       {style.label} · {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {doc.daysLeft !== null && (
+                        <> · {language === 'en' ? `expires in ${doc.daysLeft}d` : `vence en ${doc.daysLeft}d`}</>
+                      )}
                     </p>
                   </div>
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>

@@ -9,12 +9,12 @@ import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { DocumentEditModal } from '../../components/DocumentEditModal';
 import {
   fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
-  updateUserDocumentDetails, updateAssociatedDocumentDetails,
+  updateUserDocumentDetails, updateAssociatedDocumentDetails, getSignedDocumentExpiry,
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null; color: string | null };
+type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null; color: string | null; daysLeft: number | null };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
 type SortMode = 'newest' | 'oldest' | 'name';
 
@@ -52,8 +52,8 @@ function DocumentsContent() {
       fetchAssociatedDocuments(user.id).catch(() => [] as AssociatedDocument[]),
     ]).then(([own, associated]) => {
       const unified: UnifiedDoc[] = [
-        ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}`, color: d.color })),
-        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url, color: d.color })),
+        ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}`, color: d.color, daysLeft: null })),
+        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null })),
       ];
       setDocs(unified);
     });
@@ -250,6 +250,13 @@ function DocumentsContent() {
                     {c === 'signed' ? <Check className="size-3" /> : c === 'draft' ? <FileEdit className="size-3" /> : <Clock className="size-3" />}
                     {style.label}
                   </span>
+                  {doc.daysLeft !== null && (
+                    <p className="mt-1 text-[10px] text-slate-400">
+                      {language === 'en'
+                        ? `Expires in ${doc.daysLeft} day${doc.daysLeft === 1 ? '' : 's'}`
+                        : `Vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`}
+                    </p>
+                  )}
                 </button>
               </motion.div>
             );

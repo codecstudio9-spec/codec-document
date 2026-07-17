@@ -130,6 +130,23 @@ export interface AssociatedDocument {
 
 const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at, color';
 
+// Signed documents are kept for 30 days from creation, then dropped from
+// the dashboard list — long enough to download/share, short enough that
+// the list doesn't accumulate old paperwork forever. Only applies to
+// completed (signed) documents; drafts and pending ones never expire this
+// way. This only hides them from THIS list — the row/files aren't
+// deleted, so the audit trail and the original signing link still work.
+const SIGNED_DOCUMENT_TTL_DAYS = 30;
+
+export function getSignedDocumentExpiry(doc: { status: string; created_at: string }): { expiresAt: Date; daysLeft: number; expired: boolean } | null {
+  if (doc.status !== 'completed') return null;
+  const created = new Date(doc.created_at).getTime();
+  if (Number.isNaN(created)) return null;
+  const expiresAt = new Date(created + SIGNED_DOCUMENT_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  return { expiresAt, daysLeft, expired: daysLeft <= 0 };
+}
+
 export async function fetchAssociatedDocuments(userId: string): Promise<AssociatedDocument[]> {
   const [ownedRes, linksRes] = await Promise.all([
     supabase.from('documents').select(DOC_COLUMNS).eq('user_id', userId),
@@ -152,9 +169,9 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
     }
   }
 
-  return Array.from(merged.values()).sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  return Array.from(merged.values())
+    .filter((d) => !getSignedDocumentExpiry(d)?.expired)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 /**
