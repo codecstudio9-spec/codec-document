@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut } from 'lucide-react';
+import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
@@ -14,13 +14,18 @@ const NAV_ITEMS = [
   { to: '/dashboard/settings', labelEs: 'Configuración', labelEn: 'Settings', icon: Settings },
 ] as const;
 
+const ADMIN_NAV_ITEM = {
+  to: '/dashboard/admin/analytics', labelEs: 'Analytics', labelEn: 'Analytics', icon: BarChart3,
+} as const;
+
 /** Fixed 280px sidebar for the /dashboard/* private app — the desktop
  * counterpart to MobileBottomNav, same active-tab-by-pathname logic. */
 export function DesktopSidebar() {
   const { pathname } = useLocation();
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
 
   const handleLogout = async () => {
     await logout();
@@ -37,7 +42,7 @@ export function DesktopSidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map(({ to, labelEs, labelEn, icon: Icon }) => {
+        {navItems.map(({ to, labelEs, labelEn, icon: Icon }) => {
           const label = language === 'en' ? labelEn : labelEs;
           const active = to === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(to);
           return (

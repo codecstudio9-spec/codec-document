@@ -29,6 +29,7 @@ export interface SubscriptionStatus {
   annualPriceUsd: number;
   planCode: string;
   isAdmin?: boolean;
+  role?: string;
 }
 
 export interface UserPurchasedDocument {
@@ -72,11 +73,24 @@ export async function fetchSubscriptionStatus(userId: string): Promise<Subscript
   if (!userId) return SUBSCRIPTION_FALLBACK;
   try {
     const { supabase } = await import('../../lib/supabase');
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('users')
-      .select('email, plan_status, plan_type, plan_expires_at')
+      .select('email, plan_status, plan_type, plan_expires_at, role')
       .eq('id', userId)
       .maybeSingle();
+    // `role` was added by supabase_add_admin_role_migration.sql — until that
+    // migration actually runs on the live project, selecting a column that
+    // doesn't exist yet fails the WHOLE query (PostgREST has no partial
+    // select), which would silently break subscription status for every
+    // signed-in user, not just admin checks. Retry without it so the rest
+    // of the app keeps working during that gap.
+    if (error) {
+      ({ data, error } = await supabase
+        .from('users')
+        .select('email, plan_status, plan_type, plan_expires_at')
+        .eq('id', userId)
+        .maybeSingle());
+    }
     if (error || !data) return SUBSCRIPTION_FALLBACK;
 
     const notExpired = !data.plan_expires_at || new Date(data.plan_expires_at as string) > new Date();
@@ -88,6 +102,7 @@ export async function fetchSubscriptionStatus(userId: string): Promise<Subscript
       subscriptionActive: active,
       annualPriceUsd: 180,
       planCode: active ? String(data.plan_type ?? 'active') : 'free',
+      role: (data as { role?: string }).role,
     };
   } catch {
     return SUBSCRIPTION_FALLBACK;

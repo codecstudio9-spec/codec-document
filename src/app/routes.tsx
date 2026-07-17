@@ -22,6 +22,7 @@ import VehicleBillOfSaleLanding from "./pages/landings/billing-vehicle-bill-of-s
 import PromissoryNoteLanding from "./pages/landings/promissory-note";
 import StateDocumentLanding from './pages/landings/state-document';
 import { ProtectedRoute } from "./components/auth/protected-route";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
 import { MobileTemplates } from "./pages/mobile/MobileTemplates";
 import { MobileSignatures } from "./pages/mobile/MobileSignatures";
@@ -37,6 +38,7 @@ import { DesktopProfile } from "./pages/desktop/DesktopProfile";
 import { DesktopSettings } from "./pages/desktop/DesktopSettings";
 import { DesktopNotifications } from "./pages/desktop/DesktopNotifications";
 import { DesktopAI } from "./pages/desktop/DesktopAI";
+import { DesktopAdminAnalytics } from "./pages/desktop/DesktopAdminAnalytics";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 
 function ProtectedMyDocumentsPage() {
@@ -44,6 +46,14 @@ function ProtectedMyDocumentsPage() {
     <ProtectedRoute>
       <MyDocumentsPage />
     </ProtectedRoute>
+  );
+}
+
+function ProtectedAdminAnalyticsPage() {
+  return (
+    <AdminRoute>
+      <DesktopAdminAnalytics />
+    </AdminRoute>
   );
 }
 
@@ -176,6 +186,12 @@ export const router = createBrowserRouter([
   {
     path: "/dashboard/ai",
     Component: DesktopAI,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Admin-only — AdminRoute bounces non-admins back to /dashboard.
+    path: "/dashboard/admin/analytics",
+    Component: ProtectedAdminAnalyticsPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

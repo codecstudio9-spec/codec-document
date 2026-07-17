@@ -55,6 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnlimitedActive(Boolean(status.unlimitedActive));
     setSubscriptionActive(Boolean(status.subscriptionActive || status.unlimitedActive));
     setAnnualPriceUsd(status.annualPriceUsd || 180);
+    // Combine with (never regress) the email-based check already applied at
+    // session load — the DB `role` column lets future admins be added
+    // without a code deploy, but the hardcoded email stays as a permanent
+    // fallback (same defense-in-depth already used by admin-access.ts).
+    if (status.role === 'admin') setIsAdmin(true);
   };
 
   const signIn = async (email: string, password: string) => {
