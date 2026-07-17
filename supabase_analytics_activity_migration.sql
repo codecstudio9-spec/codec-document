@@ -40,6 +40,14 @@ GRANT EXECUTE ON FUNCTION public.mark_visitor_activity(text, text) TO anon, auth
 -- original body (the admin gate is client-side only, via AdminRoute),
 -- so none is added here either -- this is a byte-for-byte match of the
 -- original plus the 2 extra columns, nothing else changed.
+--
+-- Postgres refuses to CREATE OR REPLACE a function when its RETURNS
+-- TABLE row shape changes (error 42P13) -- it has to be dropped first.
+-- Safe here specifically because the DROP and the CREATE below run in
+-- the same script, back to back, so there's no real window where the
+-- function is missing.
+DROP FUNCTION IF EXISTS public.get_recent_visitors(integer);
+
 CREATE OR REPLACE FUNCTION public.get_recent_visitors(days_limit integer DEFAULT 7)
  RETURNS TABLE(id uuid, country text, city text, referrer_source text, landing_page text, device text, is_new_visitor boolean, created_at timestamp with time zone, generated_document boolean, completed_signature boolean)
  LANGUAGE plpgsql
