@@ -7,7 +7,8 @@ export type PaypalProduct =
   | 'sig_monthly'
   | 'sub_monthly'
   | 'sub_semiannual'
-  | 'sub_annual';
+  | 'sub_annual'
+  | 'full_access';
 
 /**
  * Calls the `paypal-verify` Supabase Edge Function, which confirms the

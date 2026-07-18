@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
-import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle, RefreshCw, Lock } from 'lucide-react';
+import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle, RefreshCw, Lock, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPayPalClientId } from '../../config/paypal';
-import { verifyPaypalOrder } from '../../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode } from '../../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../../utils/paypal-scroll-fix';
 
 interface PaypalSignatureCheckoutProps {
@@ -75,6 +75,14 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
   const [selectedPlan, setSelectedPlan] = useState<Plan>('single');
   const [processing, setProcessing] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
+  // Promo code — this checkout used to have NO way to enter one at all
+  // (only PremiumDownloadModal.tsx did), even though redemption was
+  // already fully built server-side (public.promo_codes + the
+  // paypal-verify Edge Function). Same UI pattern as that modal.
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
 
   const clientId = getPayPalClientId();
   const plan = PLANS.find((p) => p.id === selectedPlan)!;
@@ -108,6 +116,23 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
       toast.error(`Error al activar plan: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      await redeemPromoCode(code);
+      setSucceeded(true);
+      toast.success('¡Código aplicado! Acceso desbloqueado.');
+      onSuccess(selectedPlan);
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Código inválido.');
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -174,6 +199,48 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
             )}
           </button>
         ))}
+      </div>
+
+      {/* Promo code */}
+      <div className="mb-5">
+        {!promoOpen ? (
+          <button
+            type="button"
+            onClick={() => setPromoOpen(true)}
+            className="mx-auto flex items-center gap-1.5 text-xs font-semibold text-white/40 transition hover:text-white/70"
+          >
+            <Tag className="size-3" />
+            ¿Tienes un código de descuento?
+          </button>
+        ) : (
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-white/50">
+              <Tag className="size-3" />
+              Código de descuento
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleApplyPromo(); }}
+                placeholder="Ingresa el código"
+                autoFocus
+                className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm uppercase tracking-wide text-white outline-none placeholder:text-white/30 focus:border-indigo-400"
+                disabled={promoLoading}
+              />
+              <button
+                type="button"
+                onClick={() => void handleApplyPromo()}
+                disabled={promoLoading || !promoInput.trim()}
+                className="rounded-xl bg-white/15 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/25 disabled:opacity-40"
+              >
+                {promoLoading ? 'Verificando…' : 'Aplicar'}
+              </button>
+            </div>
+            {promoError && <p className="mt-1.5 text-xs text-red-400">{promoError}</p>}
+          </div>
+        )}
       </div>
 
       {/* Trust badges */}

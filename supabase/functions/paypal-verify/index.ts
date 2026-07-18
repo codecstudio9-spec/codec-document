@@ -68,7 +68,8 @@ type Product =
   | 'sig_monthly'
   | 'sub_monthly'
   | 'sub_semiannual'
-  | 'sub_annual';
+  | 'sub_annual'
+  | 'full_access';
 
 interface RequestBody {
   orderId?: string;        // Orders API — doc_single / doc_bundle / sig_single / sig_monthly
@@ -173,6 +174,26 @@ async function grantProduct(admin: any, product: Product, userId: string | null,
     } else {
       await admin.from('user_credits').insert({ user_id: userId, credits: 0, plan: 'monthly', plan_expires_at: expiresAt });
     }
+  } else if (product === 'full_access' && userId) {
+    // Admin-granted coupon (FULL_ACCESS) — activates BOTH the document
+    // plan and unlimited signatures at once, for ~10 years, from any
+    // account. Reuses the exact same fields every real paid plan uses
+    // (plan_status/plan_type/plan_expires_at on users, plan/plan_expires_at
+    // on user_credits), so nothing else in the app has to special-case
+    // this — a full_access grant looks exactly like a real annual +
+    // sig_monthly subscription to every other check in the codebase.
+    const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString();
+    await admin.from('users').update({
+      plan_status: 'active',
+      plan_type: 'annual',
+      plan_expires_at: expiresAt,
+    }).eq('id', userId);
+    const { data: existingCredits } = await admin.from('user_credits').select('id').eq('user_id', userId).maybeSingle();
+    if (existingCredits) {
+      await admin.from('user_credits').update({ plan: 'monthly', plan_expires_at: expiresAt, updated_at: new Date().toISOString() }).eq('user_id', userId);
+    } else {
+      await admin.from('user_credits').insert({ user_id: userId, credits: 0, plan: 'monthly', plan_expires_at: expiresAt });
+    }
   } else if (product.startsWith('sub_') && userId) {
     const plan = SUBSCRIPTION_PLANS[product];
     const expiresAt = new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString();
@@ -247,9 +268,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      const grantedProduct = (promo.product as Product) ?? 'doc_single';
+      // Best-effort real client IP for the audit record — same header
+      // chain reverse proxies/CDNs conventionally set; never blocks
+      // redemption if absent.
+      const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || req.headers.get('x-real-ip')
+        || null;
+
       const { error: redemptionError } = await admin
         .from('promo_redemptions')
-        .insert({ code, user_id: userId });
+        .insert({ code, user_id: userId, ip_address: ipAddress, product: grantedProduct });
       if (redemptionError) {
         // Unique(code, user_id) violation → already redeemed by this user.
         return new Response(JSON.stringify({ error: 'You already redeemed this promo code' }), {
@@ -258,7 +287,6 @@ Deno.serve(async (req) => {
       }
       await admin.from('promo_codes').update({ redemption_count: promo.redemption_count + 1 }).eq('code', code);
 
-      const grantedProduct = (promo.product as Product) ?? 'doc_single';
       await grantProduct(admin, grantedProduct, userId);
 
       return new Response(

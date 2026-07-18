@@ -3,9 +3,9 @@ import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
-import { verifyPaypalOrder } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
-import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag } from 'lucide-react';
 
 type Product = {
   hostedButtonId: string;
@@ -151,6 +151,13 @@ export function PricingSection() {
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [checkoutReady, setCheckoutReady] = useState(false);
+  // Promo code — same server-side redemption already used by
+  // PremiumDownloadModal.tsx / PaypalSignatureCheckout.tsx, this modal was
+  // just missing the field to enter one at all.
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
   const API_BASE_URL = import.meta.env.VITE_PAYPAL_API_URL || '/api';
   const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string ?? '';
 
@@ -264,6 +271,23 @@ export function PricingSection() {
   const closeModal = () => {
     setModalOpen(false);
     restoreBodyScroll();
+  };
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      await redeemPromoCode(code);
+      await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);
+      toast.success(language === 'en' ? 'Promo code applied — plan activated!' : '¡Código aplicado — plan activado!');
+      closeModal();
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleContinueToPay = () => {
@@ -440,6 +464,49 @@ export function PricingSection() {
                 )}
               </div>
             </div>
+            {/* Promo code */}
+            {!isAdmin && (
+              <div className="mb-3">
+                {!promoOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setPromoOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700"
+                  >
+                    <Tag className="size-3" />
+                    {language === 'en' ? 'Have a promo code?' : '¿Tienes un código de descuento?'}
+                  </button>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Tag className="size-3" />
+                      {language === 'en' ? 'Promo code' : 'Código de descuento'}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') void handleApplyPromo(); }}
+                        placeholder={language === 'en' ? 'Enter code' : 'Ingresa el código'}
+                        className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase tracking-wide outline-none focus:border-indigo-400"
+                        disabled={promoLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleApplyPromo()}
+                        disabled={promoLoading || !promoInput.trim()}
+                        className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-700 disabled:opacity-40"
+                      >
+                        {promoLoading ? (language === 'en' ? 'Checking…' : 'Verificando…') : (language === 'en' ? 'Apply' : 'Aplicar')}
+                      </button>
+                    </div>
+                    {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Trust badge above PayPal buttons */}
             {checkoutReady && !isAdmin && (
               <div className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
