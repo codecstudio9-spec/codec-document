@@ -135,12 +135,14 @@ const STEPS = [
   },
 ];
 
-export function HowItWorksTimeline({ lastStepDescEn, lastStepDescEs }: {
+export function HowItWorksTimeline({ lastStepDescEn, lastStepDescEs, headingEn, headingEs }: {
   /** Overrides just the last step's description — the default claims
    * "court-admissible in all 50 states", which is only accurate for the
    * US pages. LatAm pages pass their own jurisdiction-appropriate line. */
   lastStepDescEn?: string;
   lastStepDescEs?: string;
+  headingEn?: string;
+  headingEs?: string;
 } = {}) {
   const { language } = useLanguage();
   const steps = lastStepDescEn || lastStepDescEs
@@ -158,7 +160,7 @@ export function HowItWorksTimeline({ lastStepDescEn, lastStepDescEs }: {
               {language === 'en' ? 'Simple Process' : 'Proceso Simple'}
             </span>
             <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
-              {language === 'en' ? 'Ready in 4 Steps' : 'Listo en 4 Pasos'}
+              {language === 'en' ? (headingEn ?? 'Ready in 4 Steps') : (headingEs ?? 'Listo en 4 Pasos')}
             </h2>
           </div>
 

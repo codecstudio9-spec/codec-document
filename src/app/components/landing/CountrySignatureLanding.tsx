@@ -90,15 +90,15 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
 
       <LandingHero
         documentId="residential-lease"
-        badge={`${country.flag} ${country.code} · FIRMA ELECTRÓNICA`}
+        badge={`${country.flag} ${country.code} · ${country.lawBadgeEs}`}
         color="#2563eb"
         icon={PenLine}
         previewLabel={language === 'en' ? `${country.name} Signature Audit Preview` : `Vista Previa de Firma — ${country.nameEs}`}
         backgroundImage="/imagen3.jpg"
-        titleAccentEn="Electronic Signature" titleAccentEs="Firma Electrónica"
-        titleRestEn={`in ${country.name}`} titleRestEs={`en ${country.nameEs}`}
+        titleAccentEn="Sign, Personalize & Certify" titleAccentEs="Firma, Personaliza y Certifica"
+        titleRestEn="Your Documents Online" titleRestEs="tus Documentos en Línea"
         subtitleEn={desc} subtitleEs={desc}
-        ctaLabelEn="Sign a Document" ctaLabelEs="Firmar un Documento"
+        ctaLabelEn="Start Free Now" ctaLabelEs="Empieza Gratis Ahora"
         ctaHref="/firma-electronica"
         secondaryLabelEn="See Pricing" secondaryLabelEs="Ver Precios"
         secondaryHref="/#plan-ultimate"
@@ -106,7 +106,7 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
       />
 
       <IncludedCards
-        headingEn={`Built for ${country.name}`} headingEs={`Hecho para ${country.nameEs}`}
+        headingEn="Sign PDF documents online for free" headingEs="Firma documentos PDF online gratis"
         bodyEn={`Every signature is legally valid under ${country.lawBadgeEn}, backed by real identity verification and a cryptographic audit trail — not just a drawn signature on a screen.`}
         bodyEs={`Cada firma tiene validez jurídica bajo la ${country.lawBadgeEs}, respaldada por verificación de identidad real y una pista de auditoría criptográfica — no solo un trazo en la pantalla.`}
         color="#2563eb"
@@ -114,7 +114,7 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
           { en: `Signatures legally valid under ${country.lawBadgeEn}.`, es: `Firmas con validez jurídica bajo la ${country.lawBadgeEs}.` },
           { en: 'Selfie + ID capture embedded directly in the PDF audit page.', es: 'Captura de selfie + identificación incrustada directamente en la página de auditoría del PDF.' },
           { en: 'SHA-256 cryptographic hash audit trail for every signed agreement.', es: 'Pista de auditoría con hash criptográfico SHA-256 para cada acuerdo firmado.' },
-          { en: 'Same free plan and premium plans available across the whole platform.', es: 'El mismo plan gratuito y los mismos planes premium disponibles en toda la plataforma.' },
+          { en: 'Free plan: no credit card, a free document every 72 hours.', es: 'Plan gratuito: sin tarjeta de crédito, un documento gratis cada 72 horas.' },
         ]}
       />
 
@@ -129,6 +129,7 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
         ]}
       />
       <HowItWorksTimeline
+        headingEn="How to sign a document online" headingEs="Cómo firmar un documento online"
         lastStepDescEn={`Receive a clean, watermark-free PDF with SHA-256 audit trail — admissible as evidence under ${country.lawBadgeEn}.`}
         lastStepDescEs={`Recibe un PDF limpio con pista de auditoría SHA-256 — admisible como prueba bajo la ${country.lawBadgeEs}.`}
       />

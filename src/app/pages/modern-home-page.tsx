@@ -9,8 +9,10 @@ import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
 import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
+import { LatamHero } from '../components/latam-hero';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
+import { detectSignerCountryCode } from '../../lib/geo';
 import { PricingSection } from '../components/pricing-section';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
@@ -68,6 +70,19 @@ export function ModernHomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Geolocation-aware hero: US (or undetected) visitors keep the exact
+  // existing experience (US templates front and center); a visitor
+  // detected outside the US instead sees the 4 universal actions
+  // (upload/sign/personalize/certify) as the lead, with the US template
+  // grid still present further down under its own labeled section
+  // rather than removed — plenty of LatAm users still need a US lease
+  // or NDA (property/business in the US), just not as the default.
+  const [visitorIsLatam, setVisitorIsLatam] = useState(false);
+  useEffect(() => {
+    detectSignerCountryCode().then((code) => {
+      if (code && code !== 'US') setVisitorIsLatam(true);
+    }).catch(() => {});
+  }, []);
 
   // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
   // not) gets the bottom-nav app shell instead of the long-scroll landing
@@ -867,9 +882,24 @@ export function ModernHomePage() {
 
       {/* This whole page is desktop-only now (mobile redirects to /app
           above), so the hero always renders — no mobile branching left. */}
-      <ModernHero />
+      {visitorIsLatam ? <LatamHero /> : <ModernHero />}
 
       <section id="documents-section">
+        {visitorIsLatam && (
+          <div className="bg-slate-50 pt-14 text-center">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+              {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
+            </span>
+            <h2 className="mx-auto max-w-xl px-4 text-2xl font-black text-slate-900 md:text-3xl">
+              {language === 'en' ? 'Legal Documents for the United States' : 'Documentos Legales para Estados Unidos'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg px-4 text-sm text-slate-500">
+              {language === 'en'
+                ? 'State-specific templates for NDAs, leases, contracts and more — for property or business you have in the US.'
+                : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más — para propiedades o negocios que tengas en EE. UU.'}
+            </p>
+          </div>
+        )}
         <DocumentBentoGrid documents={filteredDocuments} />
       </section>
 

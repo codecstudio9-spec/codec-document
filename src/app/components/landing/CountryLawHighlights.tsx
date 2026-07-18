@@ -30,7 +30,7 @@ export function CountryLawHighlights({ countryName, countryNameEs, highlights }:
               {language === 'en' ? 'Legal Framework' : 'Marco Legal'}
             </span>
             <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-              {language === 'en' ? `What ${countryName} law says` : `Lo que dice la ley en ${countryNameEs}`}
+              {language === 'en' ? `Legal validity in ${countryName}` : `Validez legal en ${countryNameEs}`}
             </h2>
           </motion.div>
 
