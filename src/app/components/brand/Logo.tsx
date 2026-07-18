@@ -27,7 +27,7 @@ export function Logo({ tagline, size = 'md', dark = false, href = '/' }: LogoPro
         <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
       </div>
       <div className="min-w-0">
-        <span className={`block ${wordmarkSize} font-black tracking-tight ${textColor}`}>
+        <span translate="no" className={`notranslate block ${wordmarkSize} font-black tracking-tight ${textColor}`}>
           Codec <span className={accentColor}>Document</span>
         </span>
         {tagline && (

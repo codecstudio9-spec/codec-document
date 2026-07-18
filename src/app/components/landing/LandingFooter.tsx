@@ -52,7 +52,7 @@ export function LandingFooter() {
                 <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[0_0_16px_rgba(99,102,241,0.4)]">
                   <Shield className="size-5 text-white" />
                 </div>
-                <span className="text-base font-black text-white">
+                <span translate="no" className="notranslate text-base font-black text-white">
                   Codec <span className="text-indigo-400">Document</span>
                 </span>
               </div>
@@ -146,10 +146,10 @@ export function LandingFooter() {
 
           <div className="flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row">
             <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} Codec Document. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
+              © {new Date().getFullYear()} <span translate="no" className="notranslate">Codec Document</span>. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
               {' · '}
               <a href="https://www.codecstudio.online/" target="_blank" rel="noopener noreferrer" className="transition hover:text-white">
-                {language === 'en' ? 'Designed by Codec Studio' : 'Diseñado por Codec Studio'}
+                {language === 'en' ? 'Designed by' : 'Diseñado por'} <span translate="no" className="notranslate">Codec Studio</span>
               </a>
             </p>
             <div className="flex items-center gap-4 text-xs text-slate-500">

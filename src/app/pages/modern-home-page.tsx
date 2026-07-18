@@ -9,8 +9,10 @@ import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
 import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
+import { LatamHero } from '../components/latam-hero';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
+import { detectSignerCountryCode } from '../../lib/geo';
 import { PricingSection } from '../components/pricing-section';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
@@ -68,6 +70,17 @@ export function ModernHomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Geolocation-aware home: a visitor detected outside the US sees the
+  // LatAm hero (4 universal actions, same moving-card/background style
+  // as ModernHero) and the US document-template grid is hidden entirely
+  // — confirmed explicitly with the user (see conversation). US or
+  // undetected visitors keep the exact original experience.
+  const [visitorIsLatam, setVisitorIsLatam] = useState(false);
+  useEffect(() => {
+    detectSignerCountryCode().then((code) => {
+      if (code && code !== 'US') setVisitorIsLatam(true);
+    }).catch(() => {});
+  }, []);
 
   // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
   // not) gets the bottom-nav app shell instead of the long-scroll landing
@@ -595,7 +608,7 @@ export function ModernHomePage() {
                 <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
               </div>
               <div>
-                <span className="block text-base font-black tracking-tight text-white">
+                <span translate="no" className="notranslate block text-base font-black tracking-tight text-white">
                   Codec <span className="text-indigo-400">Document</span>
                 </span>
                 <span className="block text-[10px] font-medium text-white/35 leading-none">
@@ -867,9 +880,32 @@ export function ModernHomePage() {
 
       {/* This whole page is desktop-only now (mobile redirects to /app
           above), so the hero always renders — no mobile branching left. */}
-      <ModernHero />
+      {visitorIsLatam ? <LatamHero /> : <ModernHero />}
 
+      {/* US document templates — not the DEFAULT/lead for a visitor
+          detected outside the US (that's the LatamHero above), but kept
+          under their own clearly labeled section rather than fully
+          removed — the user's own closing note on this ask was explicit:
+          "no ocultes completamente las plantillas de EE. UU. ... mejor
+          muéstralas dentro de una sección llamada 'Documentos Legales
+          para Estados Unidos'". This is also what the LatamHero's own
+          "Documentos para EE. UU." button scrolls down to. */}
       <section id="documents-section">
+        {visitorIsLatam && (
+          <div className="bg-slate-50 pt-14 text-center">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+              {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
+            </span>
+            <h2 className="mx-auto max-w-xl px-4 text-2xl font-black text-slate-900 md:text-3xl">
+              {language === 'en' ? 'Legal Documents for the United States' : 'Documentos Legales para Estados Unidos'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg px-4 text-sm text-slate-500">
+              {language === 'en'
+                ? 'State-specific templates for NDAs, leases, contracts and more — for property or business you have in the US.'
+                : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más — para propiedades o negocios que tengas en EE. UU.'}
+            </p>
+          </div>
+        )}
         <DocumentBentoGrid documents={filteredDocuments} />
       </section>
 
@@ -1218,7 +1254,7 @@ export function ModernHomePage() {
                   <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[0_0_16px_rgba(99,102,241,0.4)]">
                     <Shield className="size-5 text-white" />
                   </div>
-                  <span className="text-base font-black text-white">
+                  <span translate="no" className="notranslate text-base font-black text-white">
                     Codec <span className="text-indigo-400">Document</span>
                   </span>
                 </div>
@@ -1309,13 +1345,13 @@ export function ModernHomePage() {
             {/* Bottom strip */}
             <div className="flex flex-col items-center gap-3 border-t border-white/8 pt-8 text-center text-xs sm:flex-row sm:justify-between">
               <p className="text-slate-600">
-                © {new Date().getFullYear()} Codec Document.{' '}
+                © {new Date().getFullYear()} <span translate="no" className="notranslate">Codec Document</span>.{' '}
                 {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
               </p>
               <p className="text-slate-600">
                 {language === 'en' ? 'Made with' : 'Hecho con'} ❤️ {language === 'en' ? 'by' : 'por'}{' '}
                 <a href="https://codecstudio.online/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
-                  Codec Studio
+                  <span translate="no" className="notranslate">Codec Studio</span>
                 </a>
               </p>
               <p className="max-w-xs text-slate-700">

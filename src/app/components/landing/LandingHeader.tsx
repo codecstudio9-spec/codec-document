@@ -48,7 +48,7 @@ export function LandingHeader() {
               <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
             </div>
             <div>
-              <span className="block text-base font-black tracking-tight text-white">
+              <span translate="no" className="notranslate block text-base font-black tracking-tight text-white">
                 Codec <span className="text-indigo-400">Document</span>
               </span>
               <span className="block text-[10px] font-medium text-white/35 leading-none">

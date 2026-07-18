@@ -40,7 +40,7 @@ export function DesktopHeader() {
         <p className="text-lg font-black text-slate-900">
           {greeting(language)}, {firstName || (language === 'en' ? 'welcome' : 'bienvenido')}
         </p>
-        <p className="text-xs text-slate-400">Codec Document</p>
+        <p translate="no" className="notranslate text-xs text-slate-400">Codec Document</p>
       </div>
 
       <div className="flex items-center gap-3">
