@@ -132,6 +132,16 @@ import FirmaElectronicaParaFreelancers from './pages/landings/firma-electronica-
 import FirmaElectronicaParaConstructores from './pages/landings/firma-electronica-para-constructores';
 import FirmaElectronicaParaContadores from './pages/landings/firma-electronica-para-contadores';
 import FirmaElectronicaParaConsultores from './pages/landings/firma-electronica-para-consultores';
+// Fase 6 -- ciudad San Jose, California (mismo contenido legal real de
+// California, solo el <title>/meta de Google nombra la ciudad -- ver
+// city-seo-content.ts).
+import SanJoseCalifornia from './pages/landings/san-jose-california';
+import NdaSanJoseCalifornia from './pages/landings/nda-san-jose-california';
+import LeaseAgreementSanJoseCalifornia from './pages/landings/lease-agreement-san-jose-california';
+import IndependentContractorSanJoseCalifornia from './pages/landings/independent-contractor-san-jose-california';
+import ServiceAgreementSanJoseCalifornia from './pages/landings/service-agreement-san-jose-california';
+import PromissoryNoteSanJoseCalifornia from './pages/landings/promissory-note-san-jose-california';
+import VehicleBillOfSaleSanJoseCalifornia from './pages/landings/vehicle-bill-of-sale-san-jose-california';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -369,6 +379,14 @@ export const router = createBrowserRouter([
     Component: FirmaElectronicaParaConsultores,
     errorElement: <RouteErrorBoundary />,
   },
+  // Fase 6 -- San Jose, California (ciudad)
+  { path: "/san-jose-california", Component: SanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-san-jose-california", Component: NdaSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-san-jose-california", Component: LeaseAgreementSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-san-jose-california", Component: IndependentContractorSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-san-jose-california", Component: ServiceAgreementSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-san-jose-california", Component: PromissoryNoteSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-san-jose-california", Component: VehicleBillOfSaleSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   {
     path: "/independent-contractor-agreement",
     Component: IndependentContractorLanding,
