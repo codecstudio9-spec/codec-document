@@ -1,6 +1,7 @@
 import { Shield, BadgeCheck, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
 import { STATES } from '../../data/doctype-state-seo-content';
+import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
 
 /**
  * Same visual language as the Home page footer (dark, pre-footer CTA strip,
@@ -125,9 +126,31 @@ export function LandingFooter() {
             ))}
           </div>
 
+          {/* LatAm country flags — quick navigation to each country's
+              e-signature page, kept at the bottom of every landing page
+              (not competing with the hero) so it reads as a footer nav
+              element, same spirit as "Popular states" above. */}
+          <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+            <span className="font-semibold text-slate-600">{language === 'en' ? 'Also in Latin America:' : 'También en Latinoamérica:'}</span>
+            {LATAM_COUNTRIES.map((c) => (
+              <a
+                key={c.slug}
+                href={`/firma-electronica-${c.slug}`}
+                className="inline-flex items-center gap-1 transition hover:text-white"
+              >
+                <span>{c.flag}</span>
+                {language === 'en' ? c.name : c.nameEs}
+              </a>
+            ))}
+          </div>
+
           <div className="flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row">
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} Codec Document. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
+              {' · '}
+              <a href="https://www.codecstudio.online/" target="_blank" rel="noopener noreferrer" className="transition hover:text-white">
+                {language === 'en' ? 'Designed by Codec Studio' : 'Diseñado por Codec Studio'}
+              </a>
             </p>
             <div className="flex items-center gap-4 text-xs text-slate-500">
               <a href="/terms" className="transition hover:text-white">{language === 'en' ? 'Terms' : 'Términos'}</a>

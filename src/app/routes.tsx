@@ -122,6 +122,14 @@ import FirmarDocumentosOnlineGratis from './pages/landings/firmar-documentos-onl
 import DocumentosLegalesGratis from './pages/landings/documentos-legales-gratis';
 import CrearDocumentosOnlineGratis from './pages/landings/crear-documentos-online-gratis';
 import CertificarDocumentosOnline from './pages/landings/certificar-documentos-online';
+import FirmaElectronicaParaAbogados from './pages/landings/firma-electronica-para-abogados';
+import FirmaElectronicaParaInmobiliarias from './pages/landings/firma-electronica-para-inmobiliarias';
+import FirmaElectronicaParaEmpresas from './pages/landings/firma-electronica-para-empresas';
+import FirmaElectronicaParaRecursosHumanos from './pages/landings/firma-electronica-para-recursos-humanos';
+import FirmaElectronicaParaFreelancers from './pages/landings/firma-electronica-para-freelancers';
+import FirmaElectronicaParaConstructores from './pages/landings/firma-electronica-para-constructores';
+import FirmaElectronicaParaContadores from './pages/landings/firma-electronica-para-contadores';
+import FirmaElectronicaParaConsultores from './pages/landings/firma-electronica-para-consultores';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -300,6 +308,47 @@ export const router = createBrowserRouter([
   {
     path: "/certificar-documentos-online",
     Component: CertificarDocumentosOnline,
+    errorElement: <RouteErrorBoundary />,
+  },
+  // Fase 4 -- SEO por profesion (8 paginas, ver profession-seo-content.ts).
+  {
+    path: "/firma-electronica-para-abogados",
+    Component: FirmaElectronicaParaAbogados,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-inmobiliarias",
+    Component: FirmaElectronicaParaInmobiliarias,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-empresas",
+    Component: FirmaElectronicaParaEmpresas,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-recursos-humanos",
+    Component: FirmaElectronicaParaRecursosHumanos,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-freelancers",
+    Component: FirmaElectronicaParaFreelancers,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-constructores",
+    Component: FirmaElectronicaParaConstructores,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-contadores",
+    Component: FirmaElectronicaParaContadores,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-para-consultores",
+    Component: FirmaElectronicaParaConsultores,
     errorElement: <RouteErrorBoundary />,
   },
   {
