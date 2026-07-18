@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router';
-import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette, Building2 } from 'lucide-react';
+import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette, Building2, Contact } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
@@ -102,6 +102,19 @@ function SettingsContent() {
               <div className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'Company workspace' : 'Empresa'}</span>
                 <span className="block text-xs text-slate-400">{language === 'en' ? 'Team, roles and corporate account' : 'Equipo, roles y cuenta corporativa'}</span>
+              </div>
+              <ChevronRight className="size-4 text-slate-300" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/my-contacts')}
+              className="flex w-full items-center gap-3 bg-white p-5 text-left"
+              style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+            >
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><Contact className="size-4 text-slate-500" /></div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'Contacts' : 'Contactos'}</span>
+                <span className="block text-xs text-slate-400">{language === 'en' ? 'Everyone who has signed or received a document' : 'Quiénes han firmado o recibido tus documentos'}</span>
               </div>
               <ChevronRight className="size-4 text-slate-300" />
             </button>

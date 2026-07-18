@@ -1,16 +1,128 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook, Contact } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
   addCompanyMember, removeCompanyMember, COMPANY_ROLE_LABELS,
-  type MyCompany, type CompanyDomainMatch, type CompanyRole,
+  listApiKeys, generateApiKey, revokeApiKey,
+  listWebhooks, createWebhook, deleteWebhook, WEBHOOK_EVENT_TYPES,
+  type MyCompany, type CompanyDomainMatch, type CompanyRole, type ApiKey, type GeneratedApiKey, type Webhook,
 } from '../services/company-service';
 
 const ROLE_ICONS: Record<CompanyRole, typeof Crown> = { owner: Crown, admin: ShieldCheck, manager: Briefcase, user: UserIcon };
+
+/** Owner/admin only — generate/revoke API keys. The full plaintext key
+ * only ever exists in `justGenerated`, right after creation; it's never
+ * fetchable again afterwards (only the DB's hash survives), same as
+ * Stripe/GitHub API keys. */
+function ApiKeysSection({ language }: { language: 'en' | 'es' }) {
+  const [keys, setKeys] = useState<ApiKey[] | null>(null);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [justGenerated, setJustGenerated] = useState<GeneratedApiKey | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const load = () => { listApiKeys().then(setKeys).catch(() => setKeys([])); };
+  useEffect(() => { load(); }, []);
+
+  const handleGenerate = async () => {
+    if (!newKeyName.trim()) return;
+    setGenerating(true);
+    try {
+      const created = await generateApiKey(newKeyName.trim());
+      setJustGenerated(created);
+      setNewKeyName('');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not create the key.' : 'No se pudo crear la clave.'));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleRevoke = async (id: string) => {
+    try {
+      await revokeApiKey(id);
+      toast.success(language === 'en' ? 'Key revoked.' : 'Clave revocada.');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not revoke the key.' : 'No se pudo revocar la clave.'));
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!justGenerated) return;
+    await navigator.clipboard.writeText(justGenerated.api_key);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-800">
+        <Key className="size-4 text-slate-400" />
+        {language === 'en' ? 'API Keys' : 'Claves de API'}
+      </p>
+      <p className="mb-4 text-xs text-slate-400">
+        {language === 'en' ? 'Integrate CodecDocument with your own systems — base URL /api/v1.' : 'Integra CodecDocument con tus propios sistemas — URL base /api/v1.'}
+      </p>
+
+      {justGenerated && (
+        <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+          <p className="mb-1.5 text-xs font-bold text-amber-800">
+            {language === 'en' ? 'Copy this key now — you won\'t be able to see it again.' : 'Copia esta clave ahora — no podrás volver a verla.'}
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded-lg bg-white px-3 py-2 text-xs text-slate-700">{justGenerated.api_key}</code>
+            <button type="button" onClick={() => void handleCopy()} className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white">
+              {copied ? <CheckCheck className="size-3.5" /> : <Copy className="size-3.5" />}
+              {copied ? (language === 'en' ? 'Copied' : 'Copiado') : (language === 'en' ? 'Copy' : 'Copiar')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {(keys ?? []).filter((k) => !k.revoked_at).map((k) => (
+          <div key={k.id} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5">
+            <Key className="size-4 shrink-0 text-slate-400" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-700">{k.name}</p>
+              <p className="truncate text-[11px] text-slate-400">{k.key_prefix}…</p>
+            </div>
+            <button type="button" onClick={() => void handleRevoke(k.id)} className="shrink-0 text-xs font-semibold text-red-500 hover:text-red-700">
+              {language === 'en' ? 'Revoke' : 'Revocar'}
+            </button>
+          </div>
+        ))}
+        {keys && keys.filter((k) => !k.revoked_at).length === 0 && (
+          <p className="py-2 text-center text-xs text-slate-400">{language === 'en' ? 'No active keys yet.' : 'Aún no tienes claves activas.'}</p>
+        )}
+      </div>
+
+      <div className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
+        <input
+          value={newKeyName}
+          onChange={(e) => setNewKeyName(e.target.value)}
+          placeholder={language === 'en' ? 'Key name (e.g. "Production")' : 'Nombre de la clave (ej. "Producción")'}
+          className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+        />
+        <button
+          type="button"
+          disabled={generating || !newKeyName.trim()}
+          onClick={() => void handleGenerate()}
+          className="flex items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+        >
+          {generating ? <Loader className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {language === 'en' ? 'Generate' : 'Generar'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** The Business plan's price/feature list lives ONLY here — never on the
  * main pricing page — per explicit instruction: company pricing stays
@@ -38,6 +150,111 @@ function BusinessPlanReveal({ language }: { language: 'en' | 'es' }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** Owner/admin only — register webhook URLs + which events fire them.
+ * Live HTTP delivery is a separate increment (see the migration file's
+ * footer) — this registers the subscription and starts logging matching
+ * events into webhook_events immediately, ready for the dispatcher. */
+function WebhooksSection({ language }: { language: 'en' | 'es' }) {
+  const [hooks, setHooks] = useState<Webhook[] | null>(null);
+  const [url, setUrl] = useState('');
+  const [events, setEvents] = useState<string[]>(['document.completed', 'signature.completed']);
+  const [creating, setCreating] = useState(false);
+
+  const load = () => { listWebhooks().then(setHooks).catch(() => setHooks([])); };
+  useEffect(() => { load(); }, []);
+
+  const toggleEvent = (evt: string) => {
+    setEvents((prev) => prev.includes(evt) ? prev.filter((e) => e !== evt) : [...prev, evt]);
+  };
+
+  const handleCreate = async () => {
+    if (!url.trim().startsWith('https://')) {
+      toast.error(language === 'en' ? 'URL must start with https://' : 'La URL debe empezar con https://');
+      return;
+    }
+    setCreating(true);
+    try {
+      await createWebhook(url.trim(), events);
+      toast.success(language === 'en' ? 'Webhook added.' : 'Webhook agregado.');
+      setUrl('');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not add the webhook.' : 'No se pudo agregar el webhook.'));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteWebhook(id);
+      toast.success(language === 'en' ? 'Webhook removed.' : 'Webhook eliminado.');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not remove it.' : 'No se pudo eliminar.'));
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-800">
+        <WebhookIcon className="size-4 text-slate-400" /> Webhooks
+      </p>
+      <p className="mb-4 text-xs text-slate-400">
+        {language === 'en' ? 'Get notified on your own systems when a document or signature event happens.' : 'Recibe avisos en tus propios sistemas cuando ocurre un evento de documento o firma.'}
+      </p>
+
+      <div className="space-y-2">
+        {(hooks ?? []).map((w) => (
+          <div key={w.id} className="rounded-xl bg-slate-50 px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{w.url}</span>
+              <button type="button" onClick={() => void handleDelete(w.id)} className="shrink-0 text-slate-300 hover:text-red-500">
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-400">{w.events.join(', ')}</p>
+          </div>
+        ))}
+        {hooks && hooks.length === 0 && (
+          <p className="py-2 text-center text-xs text-slate-400">{language === 'en' ? 'No webhooks yet.' : 'Aún no tienes webhooks.'}</p>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://tuempresa.com/webhook"
+          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+        />
+        <div className="flex flex-wrap gap-1.5">
+          {WEBHOOK_EVENT_TYPES.map((evt) => (
+            <button
+              key={evt}
+              type="button"
+              onClick={() => toggleEvent(evt)}
+              className="rounded-full px-3 py-1.5 text-[11px] font-bold transition"
+              style={events.includes(evt) ? { background: '#4338CA', color: '#fff' } : { background: '#F1F5F9', color: '#64748B' }}
+            >
+              {evt}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          disabled={creating || !url.trim()}
+          onClick={() => void handleCreate()}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+        >
+          {creating ? <Loader className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {language === 'en' ? 'Add webhook' : 'Agregar webhook'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -242,16 +459,14 @@ export function MyCompanyPage() {
               )}
             </div>
 
-            {/* API / CRM / Webhooks — coming next, shown here so it stays
-                out of the main pricing page as requested */}
+            {/* API keys + Webhooks — owner/admin only, shown here so
+                pricing/features stay out of the main pricing page */}
+            {canManage && <ApiKeysSection language={language} />}
+            {canManage && <WebhooksSection language={language} />}
+
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6">
-              <p className="mb-3 text-sm font-bold text-slate-800">{language === 'en' ? 'Included in your Business plan' : 'Incluido en tu Plan Empresarial'}</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500"><Globe2 className="size-4 text-indigo-400" /> {language === 'en' ? 'Public API' : 'API Pública'}</div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500"><Webhook className="size-4 text-indigo-400" /> Webhooks</div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-500"><Contact className="size-4 text-indigo-400" /> {language === 'en' ? 'Basic CRM' : 'CRM Básico'}</div>
-              </div>
-              <p className="mt-3 text-xs text-slate-400">{language === 'en' ? 'Rolling out soon.' : 'Próximamente.'}</p>
+              <p className="mb-3 text-sm font-bold text-slate-800">{language === 'en' ? 'Also included in your Business plan' : 'También incluido en tu Plan Empresarial'}</p>
+              <Link to="/my-contacts" className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600"><Contact className="size-4 text-indigo-400" /> {language === 'en' ? 'Basic CRM' : 'CRM Básico'}</Link>
             </div>
           </div>
         ) : domainMatch ? (

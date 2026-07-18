@@ -85,6 +85,67 @@ export async function removeCompanyMember(userId: string): Promise<void> {
   rpcError('removeCompanyMember', error);
 }
 
+// ─── API Keys (Fase 2) ──────────────────────────────────────────────────────
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  revoked_at: string | null;
+}
+
+export interface GeneratedApiKey extends ApiKey {
+  api_key: string; // full plaintext — only ever present right after generation
+}
+
+export async function listApiKeys(): Promise<ApiKey[]> {
+  const { data, error } = await supabase.rpc('list_api_keys');
+  if (error || !data) return [];
+  return data as ApiKey[];
+}
+
+export async function generateApiKey(name: string): Promise<GeneratedApiKey> {
+  const { data, error } = await supabase.rpc('generate_api_key', { p_name: name });
+  rpcError('generateApiKey', error);
+  return data as GeneratedApiKey;
+}
+
+export async function revokeApiKey(keyId: string): Promise<void> {
+  const { error } = await supabase.rpc('revoke_api_key', { p_key_id: keyId });
+  rpcError('revokeApiKey', error);
+}
+
+// ─── Webhooks (Fase 3 — registro + log de eventos; el despachador HTTP
+// en vivo es un incremento aparte, ver el pie de
+// supabase_add_webhooks_migration.sql) ──────────────────────────────────────
+
+export interface Webhook {
+  id: string;
+  url: string;
+  events: string[];
+  active: boolean;
+  created_at: string;
+}
+
+export const WEBHOOK_EVENT_TYPES = ['document.created', 'document.completed', 'signature.sent', 'signature.completed'] as const;
+
+export async function listWebhooks(): Promise<Webhook[]> {
+  const { data, error } = await supabase.rpc('list_webhooks');
+  if (error || !data) return [];
+  return data as Webhook[];
+}
+
+export async function createWebhook(url: string, events: string[]): Promise<void> {
+  const { error } = await supabase.rpc('create_webhook', { p_url: url, p_events: events });
+  rpcError('createWebhook', error);
+}
+
+export async function deleteWebhook(webhookId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_webhook', { p_webhook_id: webhookId });
+  rpcError('deleteWebhook', error);
+}
+
 export const COMPANY_ROLE_LABELS: Record<CompanyRole, { en: string; es: string }> = {
   owner: { en: 'Owner', es: 'Propietario' },
   admin: { en: 'Admin', es: 'Administrador' },
