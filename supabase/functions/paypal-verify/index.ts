@@ -411,7 +411,7 @@ Deno.serve(async (req) => {
     // ── Idempotency: this orderId/subscriptionId can only ever be consumed once ──
     const { error: ledgerError } = await admin
       .from('paypal_processed_orders')
-      .insert({ order_id: ledgerId, product, user_id: userId, amount_usd: paid.amount });
+      .insert({ order_id: ledgerId, product, user_id: userId, amount_usd: paid.amount, document_id: documentId ?? null });
     if (ledgerError) {
       // Unique violation → already granted before, refuse to grant twice.
       return new Response(JSON.stringify({ error: 'This payment was already processed' }), {

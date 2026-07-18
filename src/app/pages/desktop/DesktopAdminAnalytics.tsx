@@ -11,6 +11,7 @@ import {
   fetchRecentVisitors, topCountriesFromLocations, SOURCE_LABELS,
   type AnalyticsSummary,
 } from '../../services/analytics-service';
+import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -42,6 +43,7 @@ export function DesktopAdminAnalytics() {
 
 function AdminAnalyticsContent() {
   const { language } = useLanguage();
+  const [tab, setTab] = useState<'visitantes' | 'comercial'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -94,21 +96,41 @@ function AdminAnalyticsContent() {
             {language === 'en' ? 'Who visits Codec Document, and where they come from' : 'Quién visita Codec Document y de dónde vienen'}
           </p>
         </div>
-        <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
-          {RANGE_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setRange(opt.key)}
-              className="rounded-full px-3.5 py-1.5 text-xs font-bold transition"
-              style={range === opt.key ? { background: '#2563EB', color: '#fff' } : { color: '#64748B' }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {tab === 'visitantes' && (
+          <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setRange(opt.key)}
+                className="rounded-full px-3.5 py-1.5 text-xs font-bold transition"
+                style={range === opt.key ? { background: '#2563EB', color: '#fff' } : { color: '#64748B' }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Comercial / Leads & Ventas — solo admin, ver AdminRoute en routes.tsx */}
+      <div className="mt-4 flex gap-1.5 rounded-full bg-white p-1 w-fit" style={{ boxShadow: CARD_SHADOW }}>
+        {(['comercial', 'visitantes'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className="rounded-full px-4 py-2 text-xs font-bold transition"
+            style={tab === t ? { background: '#4338CA', color: '#fff' } : { color: '#64748B' }}
+          >
+            {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial') : (language === 'en' ? 'Visitors' : 'Visitantes')}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'comercial' && <div className="mt-6"><BusinessIntelligenceTab language={language} /></div>}
+
+      {tab === 'visitantes' && <>
       {/* KPIs — always today/week/month/total, independent of the range filter */}
       <div className="mt-6 grid grid-cols-4 gap-5">
         <KpiCard icon={Users} value={summary?.visitorsToday ?? null} label={language === 'en' ? 'Visitors today' : 'Visitantes hoy'} accent="#2563EB" />
@@ -322,6 +344,7 @@ function AdminAnalyticsContent() {
           </button>
         )}
       </div>
+      </>}
     </div>
   );
 }

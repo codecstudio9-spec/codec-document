@@ -26,7 +26,7 @@ import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
-import { markVisitorActivity } from '../services/analytics-service';
+import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } from '../services/analytics-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 import { SITE_HOSTNAME } from '../config/site';
@@ -527,6 +527,13 @@ export function PreviewPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
+    // Business Intelligence funnel — reaching this page at all is the
+    // "previsualizó" step, independent of whether they go on to pay.
+    markVisitorFunnelStep('previewed');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     const checkPersistentPurchase = async () => {
       const orderId = sessionStorage.getItem('paypalOrderId');
       if (!orderId) return;
@@ -955,6 +962,7 @@ export function PreviewPage() {
     }
 
     markVisitorActivity('document', 'document-generator');
+    if (documentType) markVisitorDocumentType(documentType);
     toast.success(t('preview.documentDownloaded'));
   } catch (error) {
     console.error('Preview download failed:', error);

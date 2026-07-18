@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
+import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
 import { LanguageToggle } from '../components/language-toggle';
@@ -42,6 +43,7 @@ export function ModernHomePage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { user, token, signInWithGoogleToken, logout } = useAuth();
+  const [enterpriseModalOpen, setEnterpriseModalOpen] = useState(false);
   const [filteredDocuments] = useState(documentTemplates);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showDocumentsMenu, setShowDocumentsMenu] = useState(false);
@@ -1071,6 +1073,32 @@ export function ModernHomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Enterprise Solutions — small, premium, deliberately not a full
+          form on the page itself; opens a modal on click ─────────────── */}
+      <section className="bg-slate-950 px-4 py-14 md:py-20">
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/60 to-slate-900/60 p-8 text-center shadow-2xl md:p-12">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-indigo-500/15">
+            <Building2 className="size-6 text-indigo-300" />
+          </div>
+          <h2 className="text-2xl font-black text-white md:text-3xl">
+            {language === 'en' ? 'Enterprise Solutions' : 'Soluciones para Empresas'}
+          </h2>
+          <p className="max-w-lg text-sm text-slate-300 md:text-base">
+            {language === 'en'
+              ? 'Automate documents, e-signatures and corporate workflows from a single platform.'
+              : 'Automatiza documentos, firmas electrónicas y flujos corporativos desde una sola plataforma.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => setEnterpriseModalOpen(true)}
+            className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5"
+          >
+            {language === 'en' ? 'Talk to a specialist' : 'Hablar con un especialista'}
+          </button>
+        </div>
+      </section>
+      <EnterpriseLeadModal open={enterpriseModalOpen} onOpenChange={setEnterpriseModalOpen} />
 
       <PricingSection />
 

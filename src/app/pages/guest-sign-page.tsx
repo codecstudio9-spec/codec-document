@@ -31,7 +31,7 @@ import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
-import { markVisitorActivity } from '../services/analytics-service';
+import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
@@ -545,6 +545,11 @@ export function GuestSignPage() {
     const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
+  }, []);
+  useEffect(() => {
+    // Business Intelligence funnel — the invitee opening this link at all
+    // counts as "firma iniciada", independent of whether they complete it.
+    markVisitorFunnelStep('signature_started');
   }, []);
 
   // Adobe-style two-step signing: SignatureModal only captures WHAT the

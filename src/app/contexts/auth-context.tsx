@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { fetchMyPurchasedDocuments, fetchSubscriptionStatus } from '../services/auth-service';
 import { supabase } from '../../lib/supabase';
 import { isAdminEmail } from '../utils/admin-access';
+import { markVisitorFunnelStep } from '../services/analytics-service';
 
 type AuthUser = { id?: string; email: string; name?: string; picture?: string };
 
@@ -178,7 +179,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             avatar_url: (u.user_metadata?.avatar_url as string | undefined) ?? null,
           },
           { onConflict: 'id', ignoreDuplicates: true },
-        );
+        )
+          // With ignoreDuplicates, a row only comes back on a genuine first
+          // insert (a pre-existing id is silently skipped, no row returned)
+          // — that's how the Business Intelligence funnel tells a real
+          // signup apart from every ordinary login re-firing SIGNED_IN.
+          .select('id')
+          .then(({ data }) => {
+            if (data && data.length > 0) markVisitorFunnelStep('registered');
+          });
         // Grant admin plan in DB so server-side checks also pass. Plan
         // status lives on `users.plan_type`/`plan_status`/`plan_expires_at`
         // (read by auth-service.ts/mobile-dashboard-service.ts) — that's

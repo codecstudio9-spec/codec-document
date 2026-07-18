@@ -37,7 +37,7 @@ import {
   getNextAnonUsageSlot,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
-import { markVisitorActivity } from '../services/analytics-service';
+import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 
@@ -282,6 +282,11 @@ export function ElectronicSignaturePage() {
   const [jurisdiction, setJurisdiction] = useState(DEFAULT_JURISDICTION);
   useEffect(() => {
     detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
+  }, []);
+  useEffect(() => {
+    // Business Intelligence funnel — entering this flow at all counts as
+    // "firma iniciada", independent of whether it's ever completed.
+    markVisitorFunnelStep('signature_started');
   }, []);
   const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
   const [paywallNextSlotAt, setPaywallNextSlotAt] = useState<Date | null>(null);

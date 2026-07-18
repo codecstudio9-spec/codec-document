@@ -272,6 +272,94 @@ export function topCountriesFromLocations(
     .sort((a, b) => b.visitors - a.visitors);
 }
 
+/** Fire-and-forget — tags the CURRENT session's row with which specific
+ * document type (nda, residential-lease, etc.) was generated, so the admin
+ * "Documentos más generados" table can group by real document identity
+ * instead of just the generic ActivitySource category. Safe to call
+ * alongside markVisitorActivity('document', 'document-generator'). */
+export function markVisitorDocumentType(documentType: string): void {
+  if (typeof window === 'undefined') return;
+  const { id: sessionId } = getOrCreateSessionId();
+  void (async () => {
+    try {
+      await publicSupabase.rpc('mark_visitor_document_type', { p_session_id: sessionId, p_document_type: documentType });
+    } catch { /* tracking must never break the real flow */ }
+  })();
+}
+
+export type FunnelStep = 'registered' | 'previewed' | 'signature_started';
+
+/** Fire-and-forget — flips one boolean on the current session's row for the
+ * Business Intelligence conversion funnel (visitó → se registró → generó →
+ * previsualizó → compró). 'registered' should only be called on a genuine
+ * first-time signup, never on every login. */
+export function markVisitorFunnelStep(step: FunnelStep): void {
+  if (typeof window === 'undefined') return;
+  const { id: sessionId } = getOrCreateSessionId();
+  void (async () => {
+    try {
+      await publicSupabase.rpc('mark_visitor_funnel_step', { p_session_id: sessionId, p_step: step });
+    } catch { /* tracking must never break the real flow */ }
+  })();
+}
+
+// ─── Business Intelligence (admin-only reads — SECURITY DEFINER RPCs that
+// raise if the caller isn't the admin account) ──────────────────────────
+
+export interface SalesSummary {
+  salesToday: number; countToday: number;
+  salesMonth: number; countMonth: number;
+}
+
+export async function fetchSalesSummary(): Promise<SalesSummary> {
+  const { data, error } = await supabase.rpc('get_sales_summary');
+  const row = !error && Array.isArray(data) ? data[0] : null;
+  return {
+    salesToday: Number(row?.sales_today ?? 0),
+    countToday: Number(row?.count_today ?? 0),
+    salesMonth: Number(row?.sales_month ?? 0),
+    countMonth: Number(row?.count_month ?? 0),
+  };
+}
+
+export async function fetchTopDocuments(): Promise<Array<{ documentType: string; generatedCount: number; paidCount: number }>> {
+  const { data, error } = await supabase.rpc('get_top_documents');
+  if (error || !data) return [];
+  return (data as any[]).map((r) => ({
+    documentType: r.document_type,
+    generatedCount: Number(r.generated_count),
+    paidCount: Number(r.paid_count),
+  }));
+}
+
+export interface ConversionFunnel {
+  visited: number; registered: number; generated: number; previewed: number; purchased: number;
+}
+
+export async function fetchConversionFunnel(daysLimit: number): Promise<ConversionFunnel> {
+  const { data, error } = await supabase.rpc('get_conversion_funnel', { days_limit: daysLimit });
+  const row = !error && Array.isArray(data) ? data[0] : null;
+  return {
+    visited: Number(row?.visited ?? 0),
+    registered: Number(row?.registered ?? 0),
+    generated: Number(row?.generated ?? 0),
+    previewed: Number(row?.previewed ?? 0),
+    purchased: Number(row?.purchased ?? 0),
+  };
+}
+
+export async function fetchSignatureStats(daysLimit: number): Promise<{ started: number; completed: number }> {
+  const { data, error } = await supabase.rpc('get_signature_stats', { days_limit: daysLimit });
+  const row = !error && Array.isArray(data) ? data[0] : null;
+  return { started: Number(row?.started ?? 0), completed: Number(row?.completed ?? 0) };
+}
+
+export async function fetchTopPages(): Promise<Array<{ landingPage: string; visits: number; conversions: number }>> {
+  const { data, error } = await supabase.rpc('get_top_pages');
+  if (error || !data) return [];
+  return (data as any[]).map((r) => ({ landingPage: r.landing_page, visits: Number(r.visits), conversions: Number(r.conversions) }));
+}
+
 export async function fetchRecentVisitors(): Promise<Array<{
   id: string; country: string | null; city: string | null; source: string;
   landingPage: string | null; device: string | null; browser: string | null;
