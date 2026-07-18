@@ -115,6 +115,13 @@ import FirmaElectronicaChile from './pages/landings/firma-electronica-chile';
 import FirmaElectronicaPeru from './pages/landings/firma-electronica-peru';
 import FirmaElectronicaArgentina from './pages/landings/firma-electronica-argentina';
 import FirmaElectronicaEcuador from './pages/landings/firma-electronica-ecuador';
+import FirmaElectronicaGratis from './pages/landings/firma-electronica-gratis';
+import FirmarPdfGratis from './pages/landings/firmar-pdf-gratis';
+import FirmaDigitalGratis from './pages/landings/firma-digital-gratis';
+import FirmarDocumentosOnlineGratis from './pages/landings/firmar-documentos-online-gratis';
+import DocumentosLegalesGratis from './pages/landings/documentos-legales-gratis';
+import CrearDocumentosOnlineGratis from './pages/landings/crear-documentos-online-gratis';
+import CertificarDocumentosOnline from './pages/landings/certificar-documentos-online';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -256,6 +263,43 @@ export const router = createBrowserRouter([
   {
     path: "/firma-electronica-ecuador",
     Component: FirmaElectronicaEcuador,
+    errorElement: <RouteErrorBoundary />,
+  },
+  // Fase 3 -- SEO "gratis" (7 paginas, cada una con un angulo distinto,
+  // ver free-feature-seo-content.ts).
+  {
+    path: "/firma-electronica-gratis",
+    Component: FirmaElectronicaGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firmar-pdf-gratis",
+    Component: FirmarPdfGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-digital-gratis",
+    Component: FirmaDigitalGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firmar-documentos-online-gratis",
+    Component: FirmarDocumentosOnlineGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/documentos-legales-gratis",
+    Component: DocumentosLegalesGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/crear-documentos-online-gratis",
+    Component: CrearDocumentosOnlineGratis,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/certificar-documentos-online",
+    Component: CertificarDocumentosOnline,
     errorElement: <RouteErrorBoundary />,
   },
   {
