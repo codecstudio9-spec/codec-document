@@ -23,6 +23,8 @@ import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { markVisitorActivity } from '../services/analytics-service';
+import { detectSignerCountryCode } from '../../lib/geo';
+import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { toast } from 'sonner';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -129,6 +131,13 @@ export default function SignTransactionPage() {
   const [idBackDataUrl,    setIdBackDataUrl]     = useState('');
   const [idCaptureSide,    setIdCaptureSide]     = useState<'front' | 'back'>('front');
   const [esignAccepted,    setEsignAccepted]     = useState(false);
+  // Resolved once on mount from the signer's real IP, so the consent
+  // screen cites the law that actually governs THIS signer instead of
+  // always showing the US E-SIGN Act regardless of where they are.
+  const [jurisdiction,     setJurisdiction]      = useState(DEFAULT_JURISDICTION);
+  useEffect(() => {
+    detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
+  }, []);
 
   const [sigModalOpen,  setSigModalOpen]  = useState(false);
   const [cameraActive,  setCameraActive]  = useState(false);
@@ -484,7 +493,7 @@ export default function SignTransactionPage() {
         </div>
         {tx?.security_config?.requireEsignConsent && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-            ESIGN
+            {jurisdiction.badgeEs}
           </span>
         )}
       </div>
@@ -511,15 +520,10 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <ShieldCheck className="size-5 text-blue-600 shrink-0" />
-              Consentimiento de Firma Electronica (ESIGN Act)
+              {jurisdiction.consentTitleEs}
             </h2>
             <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600 leading-relaxed max-h-44 overflow-y-auto">
-              Conforme a la Ley de Firmas Electronicas en el Comercio Global y Nacional (ESIGN Act,
-              15 U.S.C. SS 7001) y la Ley Uniforme de Transacciones Electronicas (UETA), usted da su
-              consentimiento expreso para usar firmas electronicas en este documento legal. Su firma
-              electronica tiene exactamente la misma validez juridica que una firma manuscrita en papel.
-              Tiene derecho a solicitar una copia impresa de este documento en cualquier momento.
-              Puede revocar este consentimiento antes de firmar sin ningun costo.
+              {jurisdiction.consentBodyEs}
             </div>
             <label className="flex items-start gap-3 cursor-pointer group">
               <input

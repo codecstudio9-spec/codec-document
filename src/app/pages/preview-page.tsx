@@ -17,6 +17,8 @@ import { getDocumentTranslation } from '../data/document-translations';
 import { spanishTemplates } from '../data/templates-es';
 import { getStateSpecificTemplate, STATE_NAMES_ES } from '../data/state-variations';
 import { PDFGenerator } from '../services/pdf-generator';
+import { detectSignerCountryCode } from '../../lib/geo';
+import { resolveJurisdiction } from '../data/signature-jurisdictions';
 import { enrichDocumentDataWithDates } from '../utils/document-dates';
 import { getPurchaseUnlockStatus } from '../services/paypal-service';
 import { getSignatureAuditByOrder, getSignatureAuditsByOrder } from '../services/paypal-service';
@@ -909,6 +911,11 @@ export function PreviewPage() {
         : undefined;
 
       try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
+      // Real-time detection of whoever is generating THIS export — covers
+      // the common case (the document owner signing/downloading their own
+      // document); enrichedAudit.country (a real recipient's geo, when a
+      // paid-order audit record exists) is used as a secondary signal.
+      const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || enrichedAudit?.country || null);
       const blob = await PDFGenerator.generateBlob({
         content:      exportContent,
         title:        getDocumentTranslation(template.id, 'name', exportLanguage),
@@ -918,6 +925,7 @@ export function PreviewPage() {
         showWatermark: false,
         branding:     documentBranding,
         auditLog:     enrichedAudit,
+        jurisdiction,
         signatures:   fallbackSigs,
         leftSig:  placedSignatures.find(s => s.id === 'owner')
           ? { dataUrl: placedSignatures.find(s => s.id === 'owner')!.dataUrl, name: placedSignatures.find(s => s.id === 'owner')!.name }

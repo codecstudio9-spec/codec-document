@@ -32,6 +32,8 @@ import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
 import { markVisitorActivity } from '../services/analytics-service';
+import { detectSignerCountryCode } from '../../lib/geo';
+import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
@@ -574,6 +576,13 @@ export function GuestSignPage() {
   // ── Completion ────────────────────────────────────────────────────────────────
   const [isSigning, setIsSigning] = useState(false);
   const [done, setDone] = useState(false);
+  // Resolved once, early (right when the signing token is verified), from
+  // the guest's real IP — used for the pre-signing legal notice, the
+  // "done" screen badges, AND passed into compilePdfWithSignatures, so
+  // every piece of legal text this guest sees (and what's permanently
+  // printed inside the signed PDF) cites the SAME jurisdiction instead
+  // of always defaulting to US E-SIGN Act / UETA.
+  const [jurisdiction, setJurisdiction] = useState(DEFAULT_JURISDICTION);
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
 
   const isPremiumLimitError = (err: unknown) => {
@@ -598,6 +607,7 @@ export function GuestSignPage() {
         }
         setTokenData(data);
         getDocumentBranding(data.documentId).then(setBranding).catch(() => {});
+        detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
 
         // Audit log is fire-and-forget
         getPublicIp()
@@ -837,6 +847,7 @@ export function GuestSignPage() {
           const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
           const finalBytes = await compilePdfWithSignatures({
             pdfBytes,
+            jurisdiction,
             signatures: [{
               imageUrl: dataUrl,
               signerName: guestName || 'Invitado',
@@ -1007,7 +1018,7 @@ export function GuestSignPage() {
 
           <div className="mb-8 flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white/40">
             <ShieldCheck className="size-3.5 text-emerald-400" />
-            <span>ESIGN Act · UETA · SHA-256 · {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span>{jurisdiction.badgeEs} · SHA-256 · {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
 
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl shadow-black/40 backdrop-blur-xl">
@@ -1029,7 +1040,7 @@ export function GuestSignPage() {
             <div className="space-y-2.5 px-6 py-4">
               {[
                 { icon: FileText, text: 'Editor inteligente — NDAs, contratos, arrendamientos' },
-                { icon: PenLine, text: '1 firma electrónica gratis por día (ESIGN / UETA)' },
+                { icon: PenLine, text: `1 firma electrónica gratis por día (${jurisdiction.badgeEs})` },
                 { icon: ShieldCheck, text: 'Auditoría SHA-256 con validez legal' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3">
@@ -1475,7 +1486,7 @@ export function GuestSignPage() {
           <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-indigo-500" />
           <p>
             Al firmar se registrarán tu IP, navegador y timestamp como metadatos de auditoría
-            legal inmutables (ESIGN Act · UETA · SHA-256).
+            legal inmutables ({jurisdiction.badgeEs} · SHA-256).
           </p>
         </div>
 

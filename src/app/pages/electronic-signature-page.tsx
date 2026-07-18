@@ -38,6 +38,8 @@ import {
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { markVisitorActivity } from '../services/analytics-service';
+import { detectSignerCountryCode } from '../../lib/geo';
+import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 
 type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
 
@@ -273,6 +275,14 @@ export function ElectronicSignaturePage() {
   const { session, isAdmin, signInWithGoogle } = useAuth();
 
   const [step, setStep] = useState<Step>('upload');
+  // Resolved once on mount from the creator's real IP — reused for the
+  // certification page (see handleSignAloneOnly/handleConfirmPositions)
+  // and the small footer badge below, so both cite the same jurisdiction
+  // instead of always defaulting to US E-SIGN Act / UETA.
+  const [jurisdiction, setJurisdiction] = useState(DEFAULT_JURISDICTION);
+  useEffect(() => {
+    detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
+  }, []);
   const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
   const [paywallNextSlotAt, setPaywallNextSlotAt] = useState<Date | null>(null);
   const [pendingPlacements, setPendingPlacements] = useState<PlacedSignature[] | null>(null);
@@ -562,6 +572,7 @@ export function ElectronicSignaturePage() {
         }],
         documentId,
         fileHash,
+        jurisdiction,
       });
       const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
       const finalUrl = await uploadPdfToStorage(documentId, finalBlob, `signed-${Date.now()}.pdf`);
@@ -644,7 +655,7 @@ export function ElectronicSignaturePage() {
         page: p.page, xFraction: p.xFraction, yFraction: p.yFraction,
         widthFraction: p.widthFraction, heightFraction: p.heightFraction,
       }));
-      const finalBytes = await compilePdfWithSignatures({ pdfBytes: pdfBytes!, signatures, documentId, fileHash });
+      const finalBytes = await compilePdfWithSignatures({ pdfBytes: pdfBytes!, signatures, documentId, fileHash, jurisdiction });
       setLoadingMsg('Subiendo PDF certificado…');
       const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
       // Timestamped — see the identical fix (and the confirmed live RLS
@@ -709,7 +720,7 @@ export function ElectronicSignaturePage() {
                   <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
                     Firma Digital Mutua
                   </h1>
-                  <p className="text-xs text-slate-500">Powered by Codec Studio · E-SIGN &amp; UETA</p>
+                  <p className="text-xs text-slate-500">Powered by Codec Studio · {jurisdiction.badgeEs}</p>
                 </div>
               </div>
               <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">

@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { DocumentBranding } from '../types/document';
+import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signature-jurisdictions';
 
 interface PDFGeneratorOptions {
   content: string;
@@ -54,6 +55,12 @@ interface PDFGeneratorOptions {
   identityIdDoc?: string;
   identityIdDocFront?: string;
   identityIdDocBack?: string;
+  /** Which country's e-signature law to cite on the certification/identity
+   * pages — defaults to the US (E-SIGN Act & UETA), the text that was
+   * always hardcoded here before. Pass a detected jurisdiction (see
+   * lib/geo.ts + data/signature-jurisdictions.ts) for a signer outside
+   * the US. */
+  jurisdiction?: SignatureJurisdiction;
 }
 
 /**
@@ -72,6 +79,7 @@ export class PDFGenerator {
   private topReservedSpace: number = 0;
   private unicodeFontReady: Promise<void> | null = null;
   private language: 'en' | 'es' = 'en';
+  private jurisdiction: SignatureJurisdiction = DEFAULT_JURISDICTION;
 
   private static getAuditLocale(language: 'en' | 'es'): string {
     return language === 'es' ? 'es-ES' : 'en-US';
@@ -1020,7 +1028,7 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(6);
       this.doc.setTextColor(37, 99, 235);
-      this.safeText('Legally Compliant E-SIGN & UETA', this.pageWidth / 2, footerY + 2, { align: 'center' });
+      this.safeText(`Legally Compliant ${this.jurisdiction.badgeEn}`, this.pageWidth / 2, footerY + 2, { align: 'center' });
 
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(6);
@@ -1220,12 +1228,12 @@ export class PDFGenerator {
     this.setFontForLang('normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(191, 219, 254);
-    this.safeText('Codec Document — E-SIGN Act & UETA Compliant Digital Identity Record', PW / 2, 15.2, { align: 'center' });
+    this.safeText(`Codec Document — ${this.jurisdiction.badgeEn} Compliant Digital Identity Record`, PW / 2, 15.2, { align: 'center' });
 
     this.currentY = 28;
 
     // Disclaimer
-    const disclaimer = 'The following biometric images and metadata were captured by the signer at the exact moment of executing this electronic signature. This record constitutes legally admissible evidence of signer identity under the federal E-SIGN Act (15 U.S.C. § 7001) and UETA.';
+    const disclaimer = this.jurisdiction.identityDisclaimerEn;
     this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(71, 85, 105);
@@ -1307,7 +1315,7 @@ export class PDFGenerator {
       ['Verification Date',    now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
       ['Verification Time',    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })],
       ['Verification Method',  'Biometric + Government ID + Digital Signature'],
-      ['Compliance Framework', 'E-SIGN Act (15 U.S.C. § 7001) · UETA · ISO/IEC 27001'],
+      ['Compliance Framework', this.jurisdiction.complianceFrameworkEn],
       ['Signature Algorithm',  'SHA-256 Cryptographic Hash'],
       ['Legal Status',         'VALID — Legally Binding Electronic Signature'],
     ];
@@ -1422,7 +1430,7 @@ export class PDFGenerator {
       `${language === 'es' ? 'Ciudad' : 'City'}: ${audit.city || '-'}`,
       `${language === 'es' ? 'Dispositivo del Firmante Invitado' : 'Guest User Agent'}: ${audit.guestUserAgent || '-'}`,
       `${language === 'es' ? 'Método de Firma' : 'Signature Method'}: ${audit.signatureMethod || (language === 'es' ? 'Dispositivo Móvil' : 'Mobile Device')}`,
-      `Status: ${audit.legalStatus || 'Documento Validado bajo E-SIGN Act'}`,
+      `Status: ${audit.legalStatus || `Documento Validado bajo ${this.jurisdiction.badgeEs}`}`,
     ];
 
     rows.forEach((r) => {
@@ -1710,7 +1718,7 @@ export class PDFGenerator {
     this.doc.rect(LEGAL_X, LEGAL_Y, 2.5, LEGAL_H, 'F');
 
     // E-SIGN badge (top-right corner)
-    const badgeLabel = 'E-SIGN & UETA';
+    const badgeLabel = language === 'es' ? this.jurisdiction.badgeEs : this.jurisdiction.badgeEn;
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(5.5);
     const badgeLW = this.safeGetTextWidth(badgeLabel) + 8;
@@ -1732,12 +1740,10 @@ export class PDFGenerator {
     this.doc.setFont('helvetica', 'bold');
     this.doc.setFontSize(7);
     this.doc.setTextColor(18, 24, 70);
-    this.safeText('U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE', LEGAL_X + 8, LEGAL_Y + 9);
+    this.safeText(language === 'es' ? this.jurisdiction.certTitleEs : this.jurisdiction.certTitleEn, LEGAL_X + 8, LEGAL_Y + 9);
 
     // Legal body (wrapped)
-    const legalBody = language === 'es'
-      ? 'Este documento fue firmado y certificado electronicamente segun la Ley Federal E-SIGN (15 U.S.C. Ch. 96) y la UETA. Las firmas criptograficas, marcas de tiempo y registros de auditoria de red garantizan la autenticidad e irrefutabilidad de las partes firmantes.'
-      : 'This document is electronically signed and certified under the Federal E-SIGN Act (15 U.S.C. Ch. 96) and the UETA. The cryptographic signatures, timestamps, and network audit logs herein guarantee the authenticity, intent, and non-repudiation of the signing parties.';
+    const legalBody = language === 'es' ? this.jurisdiction.certBodyEs : this.jurisdiction.certBodyEn;
     this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(5.5);
     this.doc.setTextColor(60, 70, 110);
@@ -1899,7 +1905,7 @@ export class PDFGenerator {
     const idLabel = language === 'es' ? 'VERIFICACIÓN DE IDENTIDAD' : 'IDENTITY VERIFICATION';
     safeText(idLabel, leftX + 4.5, this.currentY + 4);
     // E-SIGN badge
-    const badgeText = 'E-SIGN · UETA';
+    const badgeText = language === 'es' ? this.jurisdiction.badgeEs : this.jurisdiction.badgeEn;
     const badgeW = safeGetTextWidth(badgeText) + 5;
     this.doc.setFillColor(37, 99, 235);
     this.doc.roundedRect(leftX + this.maxWidth - badgeW, this.currentY, badgeW, 5.5, 0.8, 0.8, 'F');
@@ -2049,6 +2055,7 @@ export class PDFGenerator {
     const opts = { ...options, signatures: resolvedSigs };
 
     const generator = new PDFGenerator(opts.title);
+    generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     await generator.ensureUnicodeFont();
     // set generator language so addText and other helpers can prefer Unicode font when needed
     generator.language = opts.language ?? 'en';
@@ -2131,6 +2138,7 @@ export class PDFGenerator {
     const opts = { ...options, signatures: resolvedSigs };
 
     const generator = new PDFGenerator(opts.title);
+    generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 

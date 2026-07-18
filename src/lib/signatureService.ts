@@ -1,4 +1,5 @@
 import { supabase, publicSupabase } from './supabase';
+import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../app/data/signature-jurisdictions';
 
 export async function getPublicIp(): Promise<string> {
   try {
@@ -596,12 +597,20 @@ export async function compilePdfWithSignatures(params: {
    * page only makes sense once the document is actually done; defaults to
    * `true` so the final/single-signer-only compile still gets one. */
   includeCertificationPage?: boolean;
+  /** Which country's e-signature law to cite on the certification page —
+   * defaults to the US (E-SIGN Act & UETA), the same text that was
+   * always hardcoded here before. Pass a detected jurisdiction (see
+   * lib/geo.ts + data/signature-jurisdictions.ts) for a signer outside
+   * the US so the certificate cites the law that actually governs their
+   * signature instead of a US statute that doesn't apply to them. */
+  jurisdiction?: SignatureJurisdiction;
 }): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const { default: fontkit } = await import('@pdf-lib/fontkit');
 
   const reportSigners = params.reportSigners ?? params.signatures;
   const includeCertificationPage = params.includeCertificationPage !== false;
+  const jurisdiction = params.jurisdiction ?? DEFAULT_JURISDICTION;
 
   // Phase 0: pre-load ALL images in parallel before touching the PDF
   const resolvedImages = await Promise.all(
@@ -798,7 +807,7 @@ export async function compilePdfWithSignatures(params: {
     const TX = LX + 12;
 
     // E-SIGN badge
-    const badgeLabel = 'E-SIGN & UETA Compliant';
+    const badgeLabel = `${jurisdiction.badgeEn} Compliant`;
     const badgeSz    = 6;
     const BW = fontBold.widthOfTextAtSize(badgeLabel, badgeSz) + 14, BH = 14;
     const BX = LX + LW - BW - 6, BY = LY + LEGAL_H - BH - 6;
@@ -808,11 +817,11 @@ export async function compilePdfWithSignatures(params: {
     reportPage.drawText(securedLabel, { x: BX + (BW - fontReg.widthOfTextAtSize(securedLabel, 5.5)) / 2, y: BY - 7, size: 5.5, font: fontReg, color: rgb(0.50, 0.54, 0.66) });
 
     // Compliance title
-    const compTitle = 'U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE';
+    const compTitle = jurisdiction.certTitleEn;
     drawBold(reportPage, compTitle, { x: TX, y: LY + LEGAL_H - 14, size: 7.5, color: rgb(0.10, 0.14, 0.38) });
 
     // Legal body (word-wrapped)
-    const legalBody  = 'This document is electronically signed and certified under the provisions of the Federal E-SIGN Act (15 U.S.C. Ch. 96) and the Uniform Electronic Transactions Act (UETA). The captured cryptographic signatures, timestamps, and network audit logs herein guarantee the authenticity, intent, and non-repudiation of the signing parties.';
+    const legalBody  = jurisdiction.certBodyEn;
     const lBodyMaxW  = LW - 24 - BW - 10;
     let lBodyLine = '', lBodyY = LY + LEGAL_H - 27;
     for (const w of legalBody.split(' ')) {
