@@ -11,6 +11,27 @@ export type PaypalProduct =
   | 'full_access';
 
 /**
+ * When the Edge Function responds with a non-2xx status, supabase-js
+ * wraps it in a FunctionsHttpError whose `.message` is a generic,
+ * unhelpful "Edge Function returned a non-2xx status code" — the REAL
+ * reason (e.g. "Invalid or inactive promo code") is JSON in the
+ * response body, reachable via `error.context` (the raw Response
+ * object). Without this, every rejected promo code or failed payment
+ * showed that generic technical string instead of an actionable
+ * message — confirmed live via a real user screenshot.
+ */
+async function extractEdgeFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const context = (error as { context?: Response })?.context;
+  if (context && typeof context.json === 'function') {
+    try {
+      const body = await context.clone().json();
+      if (body?.error) return String(body.error);
+    } catch { /* body wasn't JSON — fall through to the generic message */ }
+  }
+  return (error as { message?: string })?.message || fallback;
+}
+
+/**
  * Calls the `paypal-verify` Supabase Edge Function, which confirms the
  * order with PayPal's REST API (real payment, correct amount, not reused)
  * and performs the actual grant (credit / plan) server-side before
@@ -28,7 +49,7 @@ export async function verifyPaypalOrder(params: {
     body: params,
   });
   if (error) {
-    throw new Error(error.message || 'No se pudo verificar el pago con PayPal.');
+    throw new Error(await extractEdgeFunctionErrorMessage(error, 'No se pudo verificar el pago con PayPal.'));
   }
   if (!data?.verified) {
     throw new Error(data?.error || 'El pago no pudo ser verificado.');
@@ -47,7 +68,7 @@ export async function redeemPromoCode(promoCode: string): Promise<{ verified: tr
     body: { promoCode },
   });
   if (error) {
-    throw new Error(error.message || 'No se pudo validar el código promocional.');
+    throw new Error(await extractEdgeFunctionErrorMessage(error, 'No se pudo validar el código promocional.'));
   }
   if (!data?.verified) {
     throw new Error(data?.error || 'Código promocional inválido.');
