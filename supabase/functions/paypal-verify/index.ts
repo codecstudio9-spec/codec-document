@@ -60,6 +60,13 @@ const SUBSCRIPTION_PLANS: Record<string, { amount: number; days: number }> = {
   sub_semiannual: { amount: 134.99, days: 182 },
   sub_annual: { amount: 251.99, days: 365 },
 };
+// Plan Empresarial -- vendido unicamente desde /my-company (owner/admin),
+// nunca en la pagina de precios principal. Pago unico por periodo (Orders
+// API), igual que sub_monthly/annual -- no requiere Billing Plan de PayPal.
+const COMPANY_PLANS: Record<string, { amount: number; days: number }> = {
+  company_monthly: { amount: 99.99, days: 30 },
+  company_annual: { amount: 999.99, days: 365 },
+};
 
 type Product =
   | 'doc_single'
@@ -69,7 +76,9 @@ type Product =
   | 'sub_monthly'
   | 'sub_semiannual'
   | 'sub_annual'
-  | 'full_access';
+  | 'full_access'
+  | 'company_monthly'
+  | 'company_annual';
 
 interface RequestBody {
   orderId?: string;        // Orders API — doc_single / doc_bundle / sig_single / sig_monthly
@@ -101,6 +110,9 @@ function expectedAmountFor(product: Product, documentId?: string): number | null
     case 'sub_semiannual':
     case 'sub_annual':
       return SUBSCRIPTION_PLANS[product].amount;
+    case 'company_monthly':
+    case 'company_annual':
+      return COMPANY_PLANS[product].amount;
     default:
       return null;
   }
@@ -194,6 +206,26 @@ async function grantProduct(admin: any, product: Product, userId: string | null,
     } else {
       await admin.from('user_credits').insert({ user_id: userId, credits: 0, plan: 'monthly', plan_expires_at: expiresAt });
     }
+  } else if ((product === 'company_monthly' || product === 'company_annual') && userId) {
+    // Only the caller's own company can be upgraded, and only if they're
+    // owner/admin there -- mirrors the UI gate (canManage) in
+    // my-company-page.tsx, enforced again here since this endpoint is the
+    // only place that actually writes plan_active_until.
+    const { data: membership } = await admin
+      .from('company_members')
+      .select('company_id, role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
+      throw new Error('Only a company owner or admin can activate the Business plan');
+    }
+    const plan = COMPANY_PLANS[product];
+    const expiresAt = new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString();
+    await admin.from('companies').update({
+      plan_active_until: expiresAt,
+      plan_billing_cycle: product === 'company_monthly' ? 'monthly' : 'annual',
+      updated_at: new Date().toISOString(),
+    }).eq('id', membership.company_id);
   } else if (product.startsWith('sub_') && userId) {
     const plan = SUBSCRIPTION_PLANS[product];
     const expiresAt = new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString();
@@ -323,7 +355,8 @@ Deno.serve(async (req) => {
       userId = userData?.user?.id ?? null;
     }
 
-    const needsUser = product === 'sig_single' || product === 'sig_monthly' || isSubProduct;
+    const isCompanyProduct = product === 'company_monthly' || product === 'company_annual';
+    const needsUser = product === 'sig_single' || product === 'sig_monthly' || isSubProduct || isCompanyProduct;
     if (needsUser && !userId) {
       return new Response(JSON.stringify({ error: 'Authentication required for this product' }), {
         status: 401, headers: corsHeaders(origin),

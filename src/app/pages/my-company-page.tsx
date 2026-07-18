@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw } from 'lucide-react';
+import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { getPayPalClientId } from '../config/paypal';
+import { verifyPaypalOrder } from '../../lib/paypal-verify';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
   addCompanyMember, removeCompanyMember, COMPANY_ROLE_LABELS,
   listApiKeys, generateApiKey, revokeApiKey,
   listWebhooks, createWebhook, deleteWebhook, WEBHOOK_EVENT_TYPES,
-  type MyCompany, type CompanyDomainMatch, type CompanyRole, type ApiKey, type GeneratedApiKey, type Webhook,
+  type MyCompany, type CompanyDomainMatch, type CompanyRole, type Company, type ApiKey, type GeneratedApiKey, type Webhook,
 } from '../services/company-service';
 
 const ROLE_ICONS: Record<CompanyRole, typeof Crown> = { owner: Crown, admin: ShieldCheck, manager: Briefcase, user: UserIcon };
@@ -259,6 +262,170 @@ function WebhooksSection({ language }: { language: 'en' | 'es' }) {
   );
 }
 
+type BillingCycle = 'monthly' | 'annual';
+
+const COMPANY_PLAN_PRICES: Record<BillingCycle, { price: number; product: 'company_monthly' | 'company_annual' }> = {
+  monthly: { price: 99.99, product: 'company_monthly' },
+  annual: { price: 999.99, product: 'company_annual' },
+};
+
+/** Lives inside <PayPalScriptProvider> — same split as PaypalSignatureCheckout.tsx
+ * (reads real SDK load status via usePayPalScriptReducer instead of a nonexistent
+ * onError prop on the provider itself). */
+function CompanyBillingButtons({ cycle, onApprove }: { cycle: BillingCycle; onApprove: (orderId: string) => Promise<void> }) {
+  const [{ isPending, isRejected }] = usePayPalScriptReducer();
+  const plan = COMPANY_PLAN_PRICES[cycle];
+
+  if (isRejected) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center text-xs text-red-600">
+        <XCircle className="size-5" />
+        No se pudo cargar PayPal. Revisa tu conexión o desactiva bloqueadores de anuncios.
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-700 shadow-sm"
+        >
+          <RefreshCw className="size-3.5" />
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-500">
+        <Loader className="size-4 animate-spin" />
+        Cargando PayPal…
+      </div>
+    );
+  }
+
+  return (
+    <PayPalButtons
+      key={cycle} // force remount when the billing cycle changes
+      style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 45, tagline: false }}
+      forceReRender={[plan.price]}
+      createOrder={(_data, actions) =>
+        actions.order.create({
+          intent: 'CAPTURE',
+          purchase_units: [
+            {
+              description: `Codec Document · Plan Empresarial (${cycle === 'annual' ? 'Anual' : 'Mensual'})`,
+              amount: { currency_code: 'USD', value: plan.price.toFixed(2) },
+            },
+          ],
+          application_context: {
+            brand_name: 'Codec Document',
+            shipping_preference: 'NO_SHIPPING',
+            user_action: 'PAY_NOW',
+          },
+        })
+      }
+      onApprove={async (data, actions) => {
+        const order = await actions.order!.capture();
+        await onApprove(order.id || data.orderID || '');
+      }}
+      onCancel={() => toast.info('Pago cancelado. Puedes intentarlo de nuevo.')}
+      onError={() => toast.error('Error con PayPal. Intenta de nuevo.')}
+    />
+  );
+}
+
+/** Owner/admin only — activates or renews the Business plan by charging
+ * $99.99/mes or $999.99/año to the platform's own PayPal account (same
+ * PAYPAL_CLIENT_ID used everywhere else). The paypal-verify Edge Function
+ * re-verifies the payment with PayPal's REST API and is the only place
+ * that actually writes companies.plan_active_until — this component never
+ * marks the company as paid on its own. */
+function CompanyBillingSection({ company, language, onRenewed }: { company: Company; language: 'en' | 'es'; onRenewed: () => void }) {
+  const [cycle, setCycle] = useState<BillingCycle>(company.plan_billing_cycle ?? 'monthly');
+  const [processing, setProcessing] = useState(false);
+  const clientId = getPayPalClientId();
+
+  const isActive = company.plan_active_until ? new Date(company.plan_active_until) > new Date() : false;
+
+  const handleApprove = async (orderId: string) => {
+    setProcessing(true);
+    try {
+      await verifyPaypalOrder({ orderId, product: COMPANY_PLAN_PRICES[cycle].product });
+      toast.success(language === 'en' ? 'Business plan activated!' : '¡Plan Empresarial activado!');
+      onRenewed();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Payment could not be verified.' : 'No se pudo verificar el pago.'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6">
+      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-800">
+        <CreditCard className="size-4 text-indigo-500" />
+        {language === 'en' ? 'Business Plan billing' : 'Facturación del Plan Empresarial'}
+      </p>
+
+      {isActive ? (
+        <div className="my-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-800">
+            <Check className="size-4" />
+            {language === 'en' ? 'Active' : 'Activo'} · {company.plan_billing_cycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}
+          </p>
+          <p className="mt-1 text-xs text-emerald-700">
+            {language === 'en' ? 'Valid until ' : 'Vigente hasta el '}
+            {new Date(company.plan_active_until!).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+      ) : (
+        <p className="mb-3 mt-1 text-xs text-slate-500">
+          {language === 'en'
+            ? 'No active payment yet — activate below to keep full access to the Business plan.'
+            : 'Aún no hay un pago activo — actívalo abajo para mantener el acceso completo al Plan Empresarial.'}
+        </p>
+      )}
+
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setCycle('monthly')}
+          className={`rounded-2xl border p-3 text-left transition ${cycle === 'monthly' ? 'border-indigo-400 bg-white ring-2 ring-indigo-200' : 'border-slate-200 bg-white/60'}`}
+        >
+          <p className="text-[11px] font-bold text-slate-500">{language === 'en' ? 'Monthly' : 'Mensual'}</p>
+          <p className="text-lg font-black text-slate-900">$99.99</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setCycle('annual')}
+          className={`relative rounded-2xl border p-3 text-left transition ${cycle === 'annual' ? 'border-indigo-400 bg-white ring-2 ring-indigo-200' : 'border-slate-200 bg-white/60'}`}
+        >
+          <span className="absolute -top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold text-white">
+            {language === 'en' ? '2 months free' : '2 meses gratis'}
+          </span>
+          <p className="text-[11px] font-bold text-slate-500">{language === 'en' ? 'Annual' : 'Anual'}</p>
+          <p className="text-lg font-black text-slate-900">$999.99</p>
+        </button>
+      </div>
+
+      {processing ? (
+        <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-600">
+          <Loader className="size-4 animate-spin" />
+          {language === 'en' ? 'Activating your plan…' : 'Activando tu plan…'}
+        </div>
+      ) : clientId ? (
+        <PayPalScriptProvider options={{ clientId, currency: 'USD', intent: 'capture', components: 'buttons' }}>
+          <CompanyBillingButtons cycle={cycle} onApprove={handleApprove} />
+        </PayPalScriptProvider>
+      ) : (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+          <XCircle className="size-4 shrink-0" />
+          PayPal no configurado. Agrega VITE_PAYPAL_CLIENT_ID al .env.local
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MyCompanyPage() {
   const { user } = useAuth();
   const { language } = useLanguage();
@@ -396,6 +563,9 @@ export function MyCompanyPage() {
                 </span>
               </div>
             </div>
+
+            {/* Billing — owner/admin only */}
+            {canManage && <CompanyBillingSection company={myCompany.company} language={language} onRenewed={load} />}
 
             {/* Members */}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

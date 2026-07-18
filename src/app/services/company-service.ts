@@ -17,6 +17,8 @@ export interface Company {
   logo_url: string | null;
   owner_user_id: string;
   subscription_plan: string;
+  plan_active_until: string | null;
+  plan_billing_cycle: 'monthly' | 'annual' | null;
   created_at: string;
   updated_at: string;
 }

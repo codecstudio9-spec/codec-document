@@ -8,7 +8,9 @@ export type PaypalProduct =
   | 'sub_monthly'
   | 'sub_semiannual'
   | 'sub_annual'
-  | 'full_access';
+  | 'full_access'
+  | 'company_monthly'
+  | 'company_annual';
 
 /**
  * When the Edge Function responds with a non-2xx status, supabase-js
