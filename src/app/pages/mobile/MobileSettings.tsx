@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Globe, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette } from 'lucide-react';
+import { ArrowLeft, Globe, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette, Building2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
@@ -98,6 +98,16 @@ function SettingsContent() {
             >
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50"><Palette className="size-4 text-slate-500" /></div>
               <span className="flex-1 text-sm font-semibold text-slate-800">{language === 'en' ? 'Company branding' : 'Marca de tu empresa'}</span>
+              <ChevronRight className="size-4 text-slate-300" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/my-company')}
+              className="flex w-full items-center gap-3 bg-white p-4 text-left"
+              style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+            >
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50"><Building2 className="size-4 text-slate-500" /></div>
+              <span className="flex-1 text-sm font-semibold text-slate-800">{language === 'en' ? 'Company workspace' : 'Empresa'}</span>
               <ChevronRight className="size-4 text-slate-300" />
             </button>
           </div>

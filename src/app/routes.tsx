@@ -16,6 +16,7 @@ import { MyTemplatesPage } from "./pages/my-templates-page";
 import { MyTemplateEditorPage } from "./pages/my-template-editor-page";
 import { MyTemplateFillPage } from "./pages/my-template-fill-page";
 import { MyBrandingPage } from "./pages/my-branding-page";
+import { MyCompanyPage } from "./pages/my-company-page";
 import { ElectronicSignaturePage } from "./pages/electronic-signature-page";
 import FreeLegalDocumentsLanding from "./pages/landings/free-legal-documents";
 import ElectronicSignatureLanding from "./pages/landings/electronic-signature";
@@ -187,6 +188,14 @@ function ProtectedMyBrandingPage() {
   return (
     <ProtectedRoute>
       <MyBrandingPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyCompanyPage() {
+  return (
+    <ProtectedRoute>
+      <MyCompanyPage />
     </ProtectedRoute>
   );
 }
@@ -531,6 +540,11 @@ export const router = createBrowserRouter([
   {
     path: "/my-branding",
     Component: ProtectedMyBrandingPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-company",
+    Component: ProtectedMyCompanyPage,
     errorElement: <RouteErrorBoundary />,
   },
   {
