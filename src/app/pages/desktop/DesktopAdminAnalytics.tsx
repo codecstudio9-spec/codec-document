@@ -8,7 +8,7 @@ import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
   fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
-  fetchRecentVisitors, topCountriesFromLocations,
+  fetchRecentVisitors, topCountriesFromLocations, SOURCE_LABELS,
   type AnalyticsSummary,
 } from '../../services/analytics-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
@@ -281,13 +281,21 @@ function AdminAnalyticsContent() {
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {v.generatedDocument && (
-                    <span className="flex items-center justify-center rounded-full bg-blue-50 p-1" title={language === 'en' ? 'Generated a document' : 'Generó un documento'}>
-                      <FileText className="size-3 text-blue-600" />
+                    <span
+                      className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700"
+                      title={v.documentSource ? SOURCE_LABELS[v.documentSource]?.[language] : undefined}
+                    >
+                      <FileText className="size-3" />
+                      {v.documentSource ? SOURCE_LABELS[v.documentSource]?.[language] : (language === 'en' ? 'Document' : 'Documento')}
                     </span>
                   )}
                   {v.completedSignature && (
-                    <span className="flex items-center justify-center rounded-full bg-emerald-50 p-1" title={language === 'en' ? 'Completed a signature' : 'Completó una firma'}>
-                      <PenLine className="size-3 text-emerald-600" />
+                    <span
+                      className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
+                      title={v.signatureSource ? SOURCE_LABELS[v.signatureSource]?.[language] : undefined}
+                    >
+                      <PenLine className="size-3" />
+                      {v.signatureSource ? SOURCE_LABELS[v.signatureSource]?.[language] : (language === 'en' ? 'Signature' : 'Firma')}
                     </span>
                   )}
                   {v.isNewVisitor !== null && (

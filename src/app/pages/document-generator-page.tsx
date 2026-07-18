@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useMemo, useDeferredValue, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
+import { motion, AnimatePresence } from 'motion/react';
 import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
 import { Button } from '../components/ui/button';
@@ -29,6 +30,7 @@ import { SignatureLimitDialog } from '../components/signatures/SignatureLimitDia
 import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
+import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
 
 type FlowStep = 'form' | 'sign' | 'verify';
 
@@ -291,6 +293,53 @@ export function DocumentGeneratorPage() {
     headerText: '',
     footerText: '',
   });
+  // Collapsed by default — "Personalizar Diseño" used to always take up
+  // a big always-expanded card even for people who never touch it.
+  const [designOpen, setDesignOpen] = useState(false);
+  const brandingPrefilledRef = useRef(false);
+
+  // Pre-fill ONLY from the user's saved /my-branding profile, and only
+  // ONCE per mount, right when the drawer is first opened — never again
+  // after that, and never written back to the saved profile from here.
+  // This is the one-directional flow that keeps the two screens from
+  // "cruzándose": Settings supplies defaults, this form is a per-document
+  // override that only this document (this session) ever sees.
+  useEffect(() => {
+    const userId = user?.id;
+    if (!designOpen || brandingPrefilledRef.current || !userId) return;
+    brandingPrefilledRef.current = true;
+    void (async () => {
+      try {
+        const saved = await getUserBranding(userId);
+        const hasIdentity = saved.companyLegalName || saved.companyAddressLine1 || saved.companyEIN
+          || saved.companyPhone || saved.companyEmail || saved.companyWebsite || saved.headerText || saved.footerText;
+        if (!hasIdentity && !(saved.enableLogoInDocs && saved.companyLogoUrl)) return;
+        const logoDataUrl = saved.enableLogoInDocs && saved.companyLogoUrl
+          ? await logoUrlToDataUrl(saved.companyLogoUrl)
+          : null;
+        setBranding((prev) => ({
+          ...prev,
+          enableLogo: logoDataUrl ? true : prev.enableLogo,
+          logoDataUrl: logoDataUrl || prev.logoDataUrl,
+          logoPosition: saved.logoPosition,
+          headerText: prev.headerText || saved.headerText || '',
+          footerText: prev.footerText || saved.footerText || '',
+          companyLegalName: saved.companyLegalName || undefined,
+          companyAddressLine1: saved.companyAddressLine1 || undefined,
+          companyAddressLine2: saved.companyAddressLine2 || undefined,
+          companyCity: saved.companyCity || undefined,
+          companyState: saved.companyState || undefined,
+          companyZip: saved.companyZip || undefined,
+          companyCountry: saved.companyCountry || undefined,
+          companyEIN: saved.companyEIN || undefined,
+          companyPhone: saved.companyPhone || undefined,
+          companyEmail: saved.companyEmail || undefined,
+          companyWebsite: saved.companyWebsite || undefined,
+        }));
+        toast.success(language === 'en' ? 'Loaded your saved branding — edit freely for this document.' : 'Se cargó tu marca guardada — edítala libremente para este documento.');
+      } catch { /* pre-fill is a convenience, never a requirement */ }
+    })();
+  }, [designOpen, user?.id, language]);
 
   // Stop all co-signer polling on unmount
   useEffect(() => {
@@ -1895,16 +1944,39 @@ export function DocumentGeneratorPage() {
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-base">{language === 'en' ? 'Customize Design' : 'Personalizar Diseño'}</CardTitle>
-                  <CardDescription>
+              <Card className="md:col-span-2 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setDesignOpen((v) => !v)}
+                  className="flex w-full items-center justify-between gap-3 p-6 text-left"
+                >
+                  <div>
+                    <CardTitle className="text-base">{language === 'en' ? 'Customize Design' : 'Personalizar Diseño'}</CardTitle>
+                    <CardDescription>
+                      {language === 'en'
+                        ? 'Optional — logo, header, footer and business identity for a premium export'
+                        : 'Opcional — logo, encabezado, pie e identidad empresarial para una exportación premium'}
+                    </CardDescription>
+                  </div>
+                  <motion.div animate={{ rotate: designOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
+                    <ChevronDown className="size-5 text-slate-400" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {designOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-0">
+                  <p className="text-xs text-slate-400 md:col-span-2 -mt-2 mb-1">
                     {language === 'en'
-                      ? 'Set logo, header and footer for premium export'
-                      : 'Configura logo, encabezado y pie para exportación premium'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ? <>Loaded from your saved branding — edit freely for this document only. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Edit my saved branding →</Link></>
+                      : <>Se cargó desde tu marca guardada — edítala libremente solo para este documento. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Editar mi marca guardada →</Link></>}
+                  </p>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="flex items-center gap-2">
                       <input
@@ -2040,6 +2112,9 @@ export function DocumentGeneratorPage() {
                     <Input id="companyWebsite" value={branding.companyWebsite || ''} onChange={(e) => setBranding((prev) => ({ ...prev, companyWebsite: e.target.value }))} placeholder="https://" />
                   </div>
                 </CardContent>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </Card>
             </div>
 

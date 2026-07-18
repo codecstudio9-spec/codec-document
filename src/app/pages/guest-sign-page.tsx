@@ -933,7 +933,7 @@ export function GuestSignPage() {
       });
 
       toast.success('Firma registrada y documento actualizado correctamente.');
-      markVisitorActivity('signature');
+      markVisitorActivity('signature', 'guest-signature');
       setDone(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

@@ -7,17 +7,41 @@ export interface UserBranding {
   footerText: string | null;
   useWatermark: boolean;
   useGlobalBranding: boolean;
+  // Legal-document PDF export identity block (document-generator-page.tsx's
+  // "Personalizar Diseño" drawer reads these as ITS defaults on first
+  // load only — editing a single document never writes back here, so a
+  // one-off tweak for one document can never silently change this saved
+  // profile, and vice versa).
+  enableLogoInDocs: boolean;
+  logoPosition: 'left' | 'right';
+  companyLegalName: string | null;
+  companyAddressLine1: string | null;
+  companyAddressLine2: string | null;
+  companyCity: string | null;
+  companyState: string | null;
+  companyZip: string | null;
+  companyCountry: string | null;
+  companyEIN: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  companyWebsite: string | null;
 }
 
 const EMPTY_BRANDING: UserBranding = {
   companyLogoUrl: null, logoSize: 'medium', headerText: null, footerText: null,
   useWatermark: false, useGlobalBranding: false,
+  enableLogoInDocs: false, logoPosition: 'left',
+  companyLegalName: null, companyAddressLine1: null, companyAddressLine2: null,
+  companyCity: null, companyState: null, companyZip: null, companyCountry: null,
+  companyEIN: null, companyPhone: null, companyEmail: null, companyWebsite: null,
 };
+
+const BRANDING_COLUMNS = 'company_logo_url, logo_size, header_text, footer_text, use_watermark, use_global_branding, enable_logo_in_docs, logo_position, company_legal_name, company_address_line1, company_address_line2, company_city, company_state, company_zip, company_country, company_ein, company_phone, company_email, company_website';
 
 export async function getUserBranding(userId: string): Promise<UserBranding> {
   const { data, error } = await supabase
     .from('users')
-    .select('company_logo_url, logo_size, header_text, footer_text, use_watermark, use_global_branding')
+    .select(BRANDING_COLUMNS)
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return EMPTY_BRANDING;
@@ -28,6 +52,19 @@ export async function getUserBranding(userId: string): Promise<UserBranding> {
     footerText: data.footer_text ?? null,
     useWatermark: Boolean(data.use_watermark),
     useGlobalBranding: Boolean(data.use_global_branding),
+    enableLogoInDocs: Boolean(data.enable_logo_in_docs),
+    logoPosition: (data.logo_position as UserBranding['logoPosition']) ?? 'left',
+    companyLegalName: data.company_legal_name ?? null,
+    companyAddressLine1: data.company_address_line1 ?? null,
+    companyAddressLine2: data.company_address_line2 ?? null,
+    companyCity: data.company_city ?? null,
+    companyState: data.company_state ?? null,
+    companyZip: data.company_zip ?? null,
+    companyCountry: data.company_country ?? null,
+    companyEIN: data.company_ein ?? null,
+    companyPhone: data.company_phone ?? null,
+    companyEmail: data.company_email ?? null,
+    companyWebsite: data.company_website ?? null,
   };
 }
 
@@ -42,6 +79,7 @@ export async function getDocumentBranding(documentId: string): Promise<UserBrand
     footer_text: string | null; use_watermark: boolean | null; use_global_branding: boolean | null;
   };
   return {
+    ...EMPTY_BRANDING,
     companyLogoUrl: row.company_logo_url ?? null,
     logoSize: (row.logo_size as UserBranding['logoSize']) ?? 'medium',
     headerText: row.header_text ?? null,
@@ -63,9 +101,45 @@ export async function updateUserBranding(branding: UserBranding): Promise<void> 
     p_footer_text: branding.footerText,
     p_use_watermark: branding.useWatermark,
     p_use_global_branding: branding.useGlobalBranding,
+    p_enable_logo_in_docs: branding.enableLogoInDocs,
+    p_logo_position: branding.logoPosition,
+    p_company_legal_name: branding.companyLegalName,
+    p_company_address_line1: branding.companyAddressLine1,
+    p_company_address_line2: branding.companyAddressLine2,
+    p_company_city: branding.companyCity,
+    p_company_state: branding.companyState,
+    p_company_zip: branding.companyZip,
+    p_company_country: branding.companyCountry,
+    p_company_ein: branding.companyEIN,
+    p_company_phone: branding.companyPhone,
+    p_company_email: branding.companyEmail,
+    p_company_website: branding.companyWebsite,
   });
   if (error) throw new Error(`updateUserBranding: ${error.message}`);
   if (!data) throw new Error('updateUserBranding: not saved (not signed in?)');
+}
+
+/** document-generator-page.tsx's PDF header (renderPdfHeader in
+ * preview-page.tsx) needs an actual base64 data URL to embed via
+ * jsPDF's addImage — a bare hosted URL doesn't work there. Used only to
+ * pre-fill the "Personalizar Diseño" drawer's local logoDataUrl from the
+ * saved companyLogoUrl on first load; never persisted anywhere itself.
+ * Returns null on any failure (CORS, network) so a broken fetch just
+ * means "no logo pre-filled", never a crash. */
+export async function logoUrlToDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** Timestamped path, never a fixed one — the same anon/authenticated

@@ -171,22 +171,45 @@ export function trackVisitorSession(): void {
   })();
 }
 
+/** Which feature/page produced the document or signature — shown next to
+ * the activity badges in the admin analytics panel so "generó un
+ * documento" answers *where*, not just *that*. Extend this list (and the
+ * matching case in SOURCE_LABELS) whenever a new generation/signing flow
+ * is wired to markVisitorActivity. */
+export type ActivitySource =
+  | 'document-generator'        // preview-page.tsx — the legal-doc form generator
+  | 'electronic-signature-upload' // electronic-signature-page.tsx — creator uploads their own PDF
+  | 'custom-template-fill'      // my-template-fill-page.tsx — client's own uploaded template
+  | 'creator-signature'         // electronic-signature-page.tsx — creator places/signs (solo or dual)
+  | 'guest-signature'           // guest-sign-page.tsx — invited signer completes
+  | 'template-signature';       // sign-transaction-page.tsx — built-in template (NDA/lease/etc.) flow
+
+export const SOURCE_LABELS: Record<ActivitySource, { en: string; es: string }> = {
+  'document-generator': { en: 'Document generator', es: 'Generador de documentos' },
+  'electronic-signature-upload': { en: 'E-signature (own upload)', es: 'Firma electrónica (subida propia)' },
+  'custom-template-fill': { en: 'My Templates', es: 'Mis Plantillas' },
+  'creator-signature': { en: 'E-signature (creator)', es: 'Firma electrónica (creador)' },
+  'guest-signature': { en: 'E-signature (guest)', es: 'Firma electrónica (invitado)' },
+  'template-signature': { en: 'Template signing', es: 'Firma por plantilla' },
+};
+
 /**
- * Fire-and-forget — flips one boolean on the CURRENT session's
- * analytics_visitors row (generated_document / completed_signature),
- * via a SECURITY DEFINER RPC since analytics_visitors has no client-side
- * UPDATE policy (INSERT-only, same reasoning as trackVisitorSession
- * above). Never awaited by callers — a tracking failure must never block
- * the real action (document generated / signature completed) it's
- * describing. Safe to call from anonymous flows (guest signing) too: the
- * RPC is granted to anon.
+ * Fire-and-forget — flips one boolean AND records the source page/feature
+ * on the CURRENT session's analytics_visitors row (generated_document +
+ * generated_document_source, or completed_signature +
+ * completed_signature_source), via a SECURITY DEFINER RPC since
+ * analytics_visitors has no client-side UPDATE policy (INSERT-only, same
+ * reasoning as trackVisitorSession above). Never awaited by callers — a
+ * tracking failure must never block the real action (document generated /
+ * signature completed) it's describing. Safe to call from anonymous flows
+ * (guest signing) too: the RPC is granted to anon.
  */
-export function markVisitorActivity(kind: 'document' | 'signature'): void {
+export function markVisitorActivity(kind: 'document' | 'signature', source: ActivitySource): void {
   if (typeof window === 'undefined') return;
   const { id: sessionId } = getOrCreateSessionId();
   void (async () => {
     try {
-      await publicSupabase.rpc('mark_visitor_activity', { p_session_id: sessionId, p_event: kind });
+      await publicSupabase.rpc('mark_visitor_activity', { p_session_id: sessionId, p_event: kind, p_source: source });
     } catch { /* tracking must never break the real flow */ }
   })();
 }
@@ -254,6 +277,7 @@ export async function fetchRecentVisitors(): Promise<Array<{
   landingPage: string | null; device: string | null; browser: string | null;
   isNewVisitor: boolean | null; createdAt: string;
   generatedDocument: boolean; completedSignature: boolean;
+  documentSource: ActivitySource | null; signatureSource: ActivitySource | null;
 }>> {
   const { data, error } = await supabase.rpc('get_recent_visitors');
   if (error || !data) return [];
@@ -261,11 +285,13 @@ export async function fetchRecentVisitors(): Promise<Array<{
     id: r.id, country: r.country, city: r.city, source: r.referrer_source,
     landingPage: r.landing_page, device: r.device, browser: r.browser ?? null,
     isNewVisitor: r.is_new_visitor, createdAt: r.created_at,
-    // Both default to false until supabase_analytics_activity_migration.sql
-    // is run AND get_recent_visitors is updated to return them — see that
-    // file's header comment. Never crashes in the meantime, just shows
-    // no badges.
+    // All four default to false/null until
+    // supabase_analytics_activity_migration.sql is run AND
+    // get_recent_visitors is updated to return them — see that file's
+    // header comment. Never crashes in the meantime, just shows no badges.
     generatedDocument: Boolean(r.generated_document),
     completedSignature: Boolean(r.completed_signature),
+    documentSource: (r.generated_document_source as ActivitySource | null) ?? null,
+    signatureSource: (r.completed_signature_source as ActivitySource | null) ?? null,
   }));
 }

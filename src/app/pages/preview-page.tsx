@@ -946,7 +946,7 @@ export function PreviewPage() {
       });
     }
 
-    markVisitorActivity('document');
+    markVisitorActivity('document', 'document-generator');
     toast.success(t('preview.documentDownloaded'));
   } catch (error) {
     console.error('Preview download failed:', error);

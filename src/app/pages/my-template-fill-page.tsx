@@ -42,7 +42,7 @@ export function MyTemplateFillPage() {
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       toast.success(language === 'en' ? 'Document generated!' : '¡Documento generado!');
-      markVisitorActivity('document');
+      markVisitorActivity('document', 'custom-template-fill');
       // Best-effort — a save failure must never block the download the
       // user already has in hand via resultUrl above.
       if (user?.id) {

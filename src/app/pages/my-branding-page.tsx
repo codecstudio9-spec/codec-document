@@ -9,6 +9,10 @@ import { getUserBranding, updateUserBranding, uploadLogo, type UserBranding } fr
 const EMPTY: UserBranding = {
   companyLogoUrl: null, logoSize: 'medium', headerText: null, footerText: null,
   useWatermark: false, useGlobalBranding: false,
+  enableLogoInDocs: false, logoPosition: 'left',
+  companyLegalName: null, companyAddressLine1: null, companyAddressLine2: null,
+  companyCity: null, companyState: null, companyZip: null, companyCountry: null,
+  companyEIN: null, companyPhone: null, companyEmail: null, companyWebsite: null,
 };
 
 export function MyBrandingPage() {
@@ -173,6 +177,99 @@ export function MyBrandingPage() {
                 >
                   <span className="absolute top-1 size-5 rounded-full bg-white shadow transition-all" style={{ left: branding.useWatermark ? 24 : 4 }} />
                 </button>
+              </div>
+            </div>
+
+            {/* Legal-document PDF identity — read by document-generator-page.tsx's
+                "Personalizar Diseño" drawer as ITS starting point only, once,
+                when it first opens for a document. Editing that drawer for a
+                single document never writes back here — this profile only
+                changes when saved from this page. */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{language === 'en' ? 'Include logo in generated documents' : 'Incluir logo en documentos generados'}</p>
+                  <p className="text-xs text-slate-400">{language === 'en' ? 'Applies to the legal-document generator (NDA, lease, etc.)' : 'Aplica al generador de documentos legales (NDA, arrendamiento, etc.)'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBranding((b) => ({ ...b, enableLogoInDocs: !b.enableLogoInDocs }))}
+                  className="relative h-7 w-12 shrink-0 rounded-full transition"
+                  style={{ background: branding.enableLogoInDocs ? '#2563EB' : '#E2E8F0' }}
+                >
+                  <span className="absolute top-1 size-5 rounded-full bg-white shadow transition-all" style={{ left: branding.enableLogoInDocs ? 24 : 4 }} />
+                </button>
+              </div>
+              <div className="mt-3 border-t border-slate-100 pt-4">
+                <p className="mb-1.5 text-xs font-semibold text-slate-700">{language === 'en' ? 'Logo position' : 'Posición del logo'}</p>
+                <div className="flex gap-1.5 rounded-full bg-slate-50 p-1">
+                  {(['left', 'right'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setBranding((b) => ({ ...b, logoPosition: p }))}
+                      className="flex-1 rounded-full px-3 py-1.5 text-xs font-bold transition"
+                      style={branding.logoPosition === p ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
+                    >
+                      {p === 'left' ? (language === 'en' ? 'Left' : 'Izquierda') : (language === 'en' ? 'Right' : 'Derecha')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="mb-1 text-sm font-bold text-slate-800">{language === 'en' ? 'Business Identity (USA-ready)' : 'Identidad Empresarial (estilo USA)'}</p>
+              <p className="mb-4 text-xs text-slate-400">
+                {language === 'en'
+                  ? 'Appears in the header block of generated legal documents for a premium, professional look.'
+                  : 'Aparece en el bloque superior de los documentos legales generados, para un look profesional premium.'}
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Legal business name' : 'Nombre legal de la empresa'}</label>
+                  <input value={branding.companyLegalName ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyLegalName: e.target.value }))} placeholder={language === 'en' ? 'e.g. Taborda Sanchez Legal Group LLC' : 'Ej: Taborda Sanchez Legal Group LLC'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Address line 1' : 'Dirección línea 1'}</label>
+                  <input value={branding.companyAddressLine1 ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyAddressLine1: e.target.value }))} placeholder={language === 'en' ? 'Street and number' : 'Calle y número'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Address line 2 (optional)' : 'Dirección línea 2 (opcional)'}</label>
+                  <input value={branding.companyAddressLine2 ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyAddressLine2: e.target.value }))} placeholder={language === 'en' ? 'Suite, floor, unit, etc.' : 'Suite, piso, oficina, etc.'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'City' : 'Ciudad'}</label>
+                  <input value={branding.companyCity ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyCity: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'State' : 'Estado'}</label>
+                  <input value={branding.companyState ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyState: e.target.value }))} placeholder={language === 'en' ? 'e.g. FL' : 'Ej: FL'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'ZIP code' : 'Código ZIP'}</label>
+                  <input value={branding.companyZip ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyZip: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Country' : 'País'}</label>
+                  <input value={branding.companyCountry ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyCountry: e.target.value }))} placeholder={language === 'en' ? 'United States' : 'Estados Unidos'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'EIN / Tax ID' : 'EIN / Identificación fiscal'}</label>
+                  <input value={branding.companyEIN ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyEIN: e.target.value }))} placeholder="XX-XXXXXXX" className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Business phone' : 'Teléfono empresarial'}</label>
+                  <input value={branding.companyPhone ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyPhone: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Business email' : 'Correo empresarial'}</label>
+                  <input value={branding.companyEmail ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyEmail: e.target.value }))} type="email" className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Website' : 'Sitio web'}</label>
+                  <input value={branding.companyWebsite ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyWebsite: e.target.value }))} placeholder="https://" className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                </div>
               </div>
             </div>
 

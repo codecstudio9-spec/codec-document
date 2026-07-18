@@ -441,7 +441,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId: docId, action: 'document_uploaded', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: hash });
       toast.success('Documento cargado correctamente.');
-      markVisitorActivity('document');
+      markVisitorActivity('document', 'electronic-signature-upload');
       setStep('creator-sign');
     } catch (err) {
       setError(`Error al procesar el documento: ${err instanceof Error ? err.message : String(err)}`);
@@ -570,7 +570,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_completed_solo', ipAddress: ip, userAgent: navigator.userAgent });
       toast.success('¡Documento certificado! No necesitas ningún invitado.');
-      markVisitorActivity('signature');
+      markVisitorActivity('signature', 'creator-signature');
       setStep('done');
     } catch (err) {
       toast.error(`No se pudo finalizar el documento: ${err instanceof Error ? err.message : String(err)}`);
@@ -655,7 +655,7 @@ export function ElectronicSignaturePage() {
       const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_compiled_and_certified', ipAddress: ip, userAgent: navigator.userAgent, hashSha256: fileHash });
       toast.success('¡Documento certificado exitosamente!');
-      markVisitorActivity('signature');
+      markVisitorActivity('signature', 'creator-signature');
       setStep('done');
     } catch (err) {
       setError(`Error al compilar el PDF: ${err instanceof Error ? err.message : String(err)}`);

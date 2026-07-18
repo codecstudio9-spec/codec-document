@@ -355,7 +355,7 @@ export default function SignTransactionPage() {
       }
 
       console.log('Firma guardada exitosamente. Transaction:', tx.id, '| payload keys:', Object.keys(initialPayload));
-      markVisitorActivity('signature');
+      markVisitorActivity('signature', 'template-signature');
       advance();
 
       void (async () => {

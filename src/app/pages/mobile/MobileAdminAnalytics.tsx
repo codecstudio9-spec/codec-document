@@ -9,7 +9,7 @@ import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import {
   fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
-  fetchRecentVisitors, topCountriesFromLocations,
+  fetchRecentVisitors, topCountriesFromLocations, SOURCE_LABELS,
   type AnalyticsSummary,
 } from '../../services/analytics-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT } from '../../styles/mobile-theme';
@@ -261,6 +261,14 @@ function AnalyticsContent() {
                       {[v.city, v.country].filter(Boolean).join(', ') || (language === 'en' ? 'Unknown' : 'Desconocido')}
                     </p>
                     <p className="truncate text-[10px] text-slate-400">{v.source} · {[v.device, v.browser].filter(Boolean).join(' · ')}</p>
+                    {(v.documentSource || v.signatureSource) && (
+                      <p className="truncate text-[10px] font-semibold text-indigo-500">
+                        {[
+                          v.documentSource ? SOURCE_LABELS[v.documentSource]?.[language] : null,
+                          v.signatureSource ? SOURCE_LABELS[v.signatureSource]?.[language] : null,
+                        ].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     {v.generatedDocument && (
