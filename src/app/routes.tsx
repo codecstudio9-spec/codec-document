@@ -109,6 +109,12 @@ import VehicleBillOfSaleNorthCarolina from './pages/landings/vehicle-bill-of-sal
 import VehicleBillOfSaleMichigan from './pages/landings/vehicle-bill-of-sale-michigan';
 import VehicleBillOfSaleNewJersey from './pages/landings/vehicle-bill-of-sale-new-jersey';
 import VehicleBillOfSaleVirginia from './pages/landings/vehicle-bill-of-sale-virginia';
+import FirmaElectronicaColombia from './pages/landings/firma-electronica-colombia';
+import FirmaElectronicaMexico from './pages/landings/firma-electronica-mexico';
+import FirmaElectronicaChile from './pages/landings/firma-electronica-chile';
+import FirmaElectronicaPeru from './pages/landings/firma-electronica-peru';
+import FirmaElectronicaArgentina from './pages/landings/firma-electronica-argentina';
+import FirmaElectronicaEcuador from './pages/landings/firma-electronica-ecuador';
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { MobileDashboardHome } from "./pages/mobile/MobileDashboardHome";
@@ -218,6 +224,38 @@ export const router = createBrowserRouter([
   {
     path: "/nda-generator",
     Component: NdaGeneratorLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  // LatAm e-signature expansion — same product/pricing, country-specific
+  // legal-compliance copy (see CountrySignatureLanding.tsx).
+  {
+    path: "/firma-electronica-colombia",
+    Component: FirmaElectronicaColombia,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-mexico",
+    Component: FirmaElectronicaMexico,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-chile",
+    Component: FirmaElectronicaChile,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-peru",
+    Component: FirmaElectronicaPeru,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-argentina",
+    Component: FirmaElectronicaArgentina,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/firma-electronica-ecuador",
+    Component: FirmaElectronicaEcuador,
     errorElement: <RouteErrorBoundary />,
   },
   {

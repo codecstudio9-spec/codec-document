@@ -135,8 +135,19 @@ const STEPS = [
   },
 ];
 
-export function HowItWorksTimeline() {
+export function HowItWorksTimeline({ lastStepDescEn, lastStepDescEs }: {
+  /** Overrides just the last step's description — the default claims
+   * "court-admissible in all 50 states", which is only accurate for the
+   * US pages. LatAm pages pass their own jurisdiction-appropriate line. */
+  lastStepDescEn?: string;
+  lastStepDescEs?: string;
+} = {}) {
   const { language } = useLanguage();
+  const steps = lastStepDescEn || lastStepDescEs
+    ? STEPS.map((s, i) => i === STEPS.length - 1
+      ? { ...s, descEn: lastStepDescEn ?? s.descEn, descEs: lastStepDescEs ?? s.descEs }
+      : s)
+    : STEPS;
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40 py-16 md:py-24">
       <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -152,7 +163,7 @@ export function HowItWorksTimeline() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 md:gap-6">
-            {STEPS.map((s, idx) => {
+            {steps.map((s, idx) => {
               const StepIcon = s.icon;
               return (
                 <motion.div
@@ -187,9 +198,15 @@ export function HowItWorksTimeline() {
 }
 
 // ── Social proof — no invented numbers or client names, per instruction ──
-export function SocialProofBand() {
+export function SocialProofBand({ complianceItems, taglineEn, taglineEs }: {
+  /** Defaults to the US-specific ESIGN/UETA chips — override for pages
+   * targeting a different jurisdiction (e.g. the LatAm country pages). */
+  complianceItems?: string[];
+  taglineEn?: string;
+  taglineEs?: string;
+} = {}) {
   const { language } = useLanguage();
-  const compliance = [
+  const compliance = complianceItems ?? [
     'ESIGN Act Compliant', 'UETA Compliant', 'SHA-256 Audit Trail', 'SSL / TLS Encrypted',
   ];
   return (
@@ -210,8 +227,8 @@ export function SocialProofBand() {
           </div>
           <p className="text-lg font-semibold leading-relaxed text-white/80 sm:text-xl">
             {language === 'en'
-              ? 'Used by freelancers, landlords, agencies and small businesses across the United States.'
-              : 'Usado por freelancers, propietarios, agencias y pequeños negocios en todo Estados Unidos.'}
+              ? (taglineEn ?? 'Used by freelancers, landlords, agencies and small businesses across the United States.')
+              : (taglineEs ?? 'Usado por freelancers, propietarios, agencias y pequeños negocios en todo Estados Unidos.')}
           </p>
         </motion.div>
 

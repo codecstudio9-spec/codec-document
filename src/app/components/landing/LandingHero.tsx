@@ -59,7 +59,7 @@ export function LandingHero({
   titleAccentEn, titleAccentEs, titleRestEn, titleRestEs,
   subtitleEn, subtitleEs, ctaLabelEn, ctaLabelEs,
   ctaHref, secondaryLabelEn, secondaryLabelEs, secondaryHref,
-  backgroundImage,
+  backgroundImage, trustBadges,
 }: {
   documentId: string;
   badge: string;
@@ -82,6 +82,10 @@ export function LandingHero({
   /** Same photo assets as the Home hero (public/imagen*.jpg) — same dark
    * overlay treatment, just a single static frame instead of a carousel. */
   backgroundImage: string;
+  /** Defaults to the US-specific ESIGN/UETA chips below — override for
+   * pages targeting a jurisdiction where those don't apply (e.g. the
+   * LatAm country pages, which pass their own local-law chips instead). */
+  trustBadges?: Array<{ en: string; es: string }>;
 }) {
   const { language } = useLanguage();
 
@@ -121,7 +125,7 @@ export function LandingHero({
 
             {/* Trust badges */}
             <div className="mb-8 flex flex-wrap gap-2">
-              {TRUST_BADGES.map((chip) => (
+              {(trustBadges ?? TRUST_BADGES).map((chip) => (
                 <span key={chip.en} className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300 backdrop-blur-sm">
                   ✓ {language === 'en' ? chip.en : chip.es}
                 </span>
