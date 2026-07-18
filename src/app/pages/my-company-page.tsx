@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw, Tag } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getPayPalClientId } from '../config/paypal';
-import { verifyPaypalOrder } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
   addCompanyMember, removeCompanyMember, COMPANY_ROLE_LABELS,
@@ -127,18 +127,22 @@ function ApiKeysSection({ language }: { language: 'en' | 'es' }) {
   );
 }
 
+/** Shared by BusinessPlanReveal (pre-company teaser) and CompanyBillingSection
+ * (real checkout, post-company) so the feature list never drifts between the two. */
+const BUSINESS_PLAN_FEATURES: Array<{ en: string; es: string }> = [
+  { en: 'Corporate workspace with multiple users', es: 'Workspace empresarial con múltiples usuarios' },
+  { en: 'Roles & permissions (owner/admin/manager/member)', es: 'Roles y permisos (propietario/admin/gerente/miembro)' },
+  { en: 'Corporate domain detection', es: 'Detección de dominio corporativo' },
+  { en: 'Basic CRM of signers and contacts', es: 'CRM básico de firmantes y contactos' },
+  { en: 'Public API access', es: 'Acceso a la API pública' },
+  { en: 'Webhooks for your own systems', es: 'Webhooks para tus propios sistemas' },
+];
+
 /** The Business plan's price/feature list lives ONLY here — never on the
  * main pricing page — per explicit instruction: company pricing stays
  * hidden until the person themselves clicks into "Empresa". */
 function BusinessPlanReveal({ language }: { language: 'en' | 'es' }) {
-  const features = [
-    { en: 'Corporate workspace with multiple users', es: 'Workspace empresarial con múltiples usuarios' },
-    { en: 'Roles & permissions (owner/admin/manager/member)', es: 'Roles y permisos (propietario/admin/gerente/miembro)' },
-    { en: 'Corporate domain detection', es: 'Detección de dominio corporativo' },
-    { en: 'Basic CRM of signers and contacts', es: 'CRM básico de firmantes y contactos' },
-    { en: 'Public API access', es: 'Acceso a la API pública' },
-    { en: 'Webhooks for your own systems', es: 'Webhooks para tus propios sistemas' },
-  ];
+  const features = BUSINESS_PLAN_FEATURES;
   return (
     <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6">
       <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
@@ -340,14 +344,17 @@ function CompanyBillingButtons({ cycle, onApprove }: { cycle: BillingCycle; onAp
  * that actually writes companies.plan_active_until — this component never
  * marks the company as paid on its own. */
 function CompanyBillingSection({ company, language, onRenewed }: { company: Company; language: 'en' | 'es'; onRenewed: () => void }) {
-  const [cycle, setCycle] = useState<BillingCycle>(company.plan_billing_cycle ?? 'monthly');
-  const [processing, setProcessing] = useState(false);
+  const [processing, setProcessing] = useState<BillingCycle | null>(null);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
   const clientId = getPayPalClientId();
 
   const isActive = company.plan_active_until ? new Date(company.plan_active_until) > new Date() : false;
 
-  const handleApprove = async (orderId: string) => {
-    setProcessing(true);
+  const handleApprove = async (cycle: BillingCycle, orderId: string) => {
+    setProcessing(cycle);
     try {
       await verifyPaypalOrder({ orderId, product: COMPANY_PLAN_PRICES[cycle].product });
       toast.success(language === 'en' ? 'Business plan activated!' : '¡Plan Empresarial activado!');
@@ -355,73 +362,144 @@ function CompanyBillingSection({ company, language, onRenewed }: { company: Comp
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Payment could not be verified.' : 'No se pudo verificar el pago.'));
     } finally {
-      setProcessing(false);
+      setProcessing(null);
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      await redeemPromoCode(code);
+      toast.success(language === 'en' ? 'Code applied — Business plan activated!' : '¡Código aplicado — Plan Empresarial activado!');
+      setPromoInput('');
+      onRenewed();
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
+    } finally {
+      setPromoLoading(false);
     }
   };
 
   return (
-    <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6">
-      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-800">
-        <CreditCard className="size-4 text-indigo-500" />
-        {language === 'en' ? 'Business Plan billing' : 'Facturación del Plan Empresarial'}
+    <div className="rounded-3xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-6 shadow-sm">
+      <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+        <Sparkles className="size-3" /> {language === 'en' ? 'Business Plan' : 'Plan Empresarial'}
+      </span>
+      <p className="flex items-center gap-2 text-lg font-black text-slate-900">
+        <CreditCard className="size-5 text-indigo-500" />
+        {language === 'en' ? 'Activate your subscription' : 'Activa tu suscripción'}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        {language === 'en'
+          ? 'Charges the platform\'s own PayPal account directly — no third-party processor.'
+          : 'Cobra directamente a la cuenta de PayPal de la plataforma — sin intermediarios.'}
       </p>
 
-      {isActive ? (
-        <div className="my-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4">
-          <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-800">
-            <Check className="size-4" />
-            {language === 'en' ? 'Active' : 'Activo'} · {company.plan_billing_cycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}
-          </p>
-          <p className="mt-1 text-xs text-emerald-700">
-            {language === 'en' ? 'Valid until ' : 'Vigente hasta el '}
+      {isActive && (
+        <div className="my-4 flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3">
+          <Check className="size-4 shrink-0 text-emerald-600" />
+          <p className="text-xs font-bold text-emerald-800">
+            {language === 'en' ? 'Active' : 'Activo'} ({company.plan_billing_cycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}) —{' '}
+            {language === 'en' ? 'valid until ' : 'vigente hasta el '}
             {new Date(company.plan_active_until!).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-      ) : (
-        <p className="mb-3 mt-1 text-xs text-slate-500">
-          {language === 'en'
-            ? 'No active payment yet — activate below to keep full access to the Business plan.'
-            : 'Aún no hay un pago activo — actívalo abajo para mantener el acceso completo al Plan Empresarial.'}
-        </p>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setCycle('monthly')}
-          className={`rounded-2xl border p-3 text-left transition ${cycle === 'monthly' ? 'border-indigo-400 bg-white ring-2 ring-indigo-200' : 'border-slate-200 bg-white/60'}`}
-        >
-          <p className="text-[11px] font-bold text-slate-500">{language === 'en' ? 'Monthly' : 'Mensual'}</p>
-          <p className="text-lg font-black text-slate-900">$99.99</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setCycle('annual')}
-          className={`relative rounded-2xl border p-3 text-left transition ${cycle === 'annual' ? 'border-indigo-400 bg-white ring-2 ring-indigo-200' : 'border-slate-200 bg-white/60'}`}
-        >
-          <span className="absolute -top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold text-white">
-            {language === 'en' ? '2 months free' : '2 meses gratis'}
-          </span>
-          <p className="text-[11px] font-bold text-slate-500">{language === 'en' ? 'Annual' : 'Anual'}</p>
-          <p className="text-lg font-black text-slate-900">$999.99</p>
-        </button>
-      </div>
-
-      {processing ? (
-        <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-600">
-          <Loader className="size-4 animate-spin" />
-          {language === 'en' ? 'Activating your plan…' : 'Activando tu plan…'}
-        </div>
-      ) : clientId ? (
+      {clientId ? (
         <PayPalScriptProvider options={{ clientId, currency: 'USD', intent: 'capture', components: 'buttons' }}>
-          <CompanyBillingButtons cycle={cycle} onApprove={handleApprove} />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {(['monthly', 'annual'] as BillingCycle[]).map((planCycle) => (
+              <div
+                key={planCycle}
+                className={`relative flex flex-col rounded-2xl border-2 p-5 ${planCycle === 'annual' ? 'border-indigo-400 bg-white shadow-md' : 'border-slate-200 bg-white/80'}`}
+              >
+                {planCycle === 'annual' && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold text-white shadow">
+                    {language === 'en' ? '2 months free' : '2 meses gratis'}
+                  </span>
+                )}
+                <p className="text-xs font-bold uppercase tracking-wide text-indigo-500">
+                  {planCycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}
+                </p>
+                <p className="mt-1 text-3xl font-black text-slate-900">
+                  ${COMPANY_PLAN_PRICES[planCycle].price.toFixed(2)}
+                  <span className="text-sm font-semibold text-slate-400">/{planCycle === 'annual' ? (language === 'en' ? 'yr' : 'año') : (language === 'en' ? 'mo' : 'mes')}</span>
+                </p>
+                <ul className="my-3 space-y-1.5">
+                  {BUSINESS_PLAN_FEATURES.slice(0, 3).map((f) => (
+                    <li key={f.en} className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                      <Check className="mt-0.5 size-3 shrink-0 text-indigo-500" />
+                      {language === 'en' ? f.en : f.es}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto pt-2">
+                  {processing === planCycle ? (
+                    <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 py-3 text-xs text-slate-500">
+                      <Loader className="size-3.5 animate-spin" />
+                      {language === 'en' ? 'Activating…' : 'Activando…'}
+                    </div>
+                  ) : (
+                    <CompanyBillingButtons cycle={planCycle} onApprove={(orderId) => handleApprove(planCycle, orderId)} />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </PayPalScriptProvider>
       ) : (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
           <XCircle className="size-4 shrink-0" />
           PayPal no configurado. Agrega VITE_PAYPAL_CLIENT_ID al .env.local
         </div>
       )}
+
+      {/* Discount / free-access code — same redemption path as every other
+          product in the platform (public.promo_codes + paypal-verify). */}
+      <div className="mt-5 border-t border-indigo-100 pt-4">
+        {!promoOpen ? (
+          <button
+            type="button"
+            onClick={() => setPromoOpen(true)}
+            className="mx-auto flex items-center gap-1.5 text-xs font-semibold text-indigo-500 transition hover:text-indigo-700"
+          >
+            <Tag className="size-3.5" />
+            {language === 'en' ? 'Have a discount code?' : '¿Tienes un código de descuento?'}
+          </button>
+        ) : (
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+              <Tag className="size-3.5" />
+              {language === 'en' ? 'Discount code' : 'Código de descuento'}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleApplyPromo(); }}
+                placeholder={language === 'en' ? 'Enter code' : 'Ingresa el código'}
+                autoFocus
+                disabled={promoLoading}
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm uppercase tracking-wide text-slate-700 outline-none focus:border-indigo-400"
+              />
+              <button
+                type="button"
+                onClick={() => void handleApplyPromo()}
+                disabled={promoLoading || !promoInput.trim()}
+                className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40"
+              >
+                {promoLoading ? (language === 'en' ? 'Checking…' : 'Verificando…') : (language === 'en' ? 'Apply' : 'Aplicar')}
+              </button>
+            </div>
+            {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
