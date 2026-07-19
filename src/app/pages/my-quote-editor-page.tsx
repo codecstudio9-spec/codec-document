@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
-  ChevronDown, ChevronUp, Eye,
+  ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw,
 } from 'lucide-react';
+import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { SITE_URL } from '../config/site';
+import { getPayPalClientId } from '../config/paypal';
+import { verifyPaypalOrder } from '../../lib/paypal-verify';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { getUserBranding } from '../services/branding-service';
 import {
@@ -20,6 +23,55 @@ import { generateQuotePdf } from '../services/quote-pdf-generator';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
 } from '../../lib/signatureService';
+
+const QUOTE_SINGLE_PRICE = 6.99;
+
+/** Inline PayPal button for the $6.99 single-quote unlock — same split
+ * as CompanyBillingButtons (my-company-page.tsx): lives inside
+ * <PayPalScriptProvider> and reads real SDK load status via
+ * usePayPalScriptReducer instead of a nonexistent onError prop on the
+ * provider itself. */
+function QuotePaywallButtons({ onApprove }: { onApprove: (orderId: string) => Promise<void> }) {
+  const [{ isPending, isRejected }] = usePayPalScriptReducer();
+
+  if (isRejected) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center text-xs text-red-600">
+        <XCircle className="size-5" />
+        No se pudo cargar PayPal. Revisa tu conexión o desactiva bloqueadores de anuncios.
+        <button type="button" onClick={() => window.location.reload()} className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-700 shadow-sm">
+          <RefreshCw className="size-3.5" /> Reintentar
+        </button>
+      </div>
+    );
+  }
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-500">
+        <Loader className="size-4 animate-spin" /> Cargando PayPal…
+      </div>
+    );
+  }
+
+  return (
+    <PayPalButtons
+      style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 45, tagline: false }}
+      createOrder={(_data, actions) =>
+        actions.order.create({
+          intent: 'CAPTURE',
+          purchase_units: [{ description: 'Codec Document · Cotización Individual', amount: { currency_code: 'USD', value: QUOTE_SINGLE_PRICE.toFixed(2) } }],
+          application_context: { brand_name: 'Codec Document', shipping_preference: 'NO_SHIPPING', user_action: 'PAY_NOW' },
+        })
+      }
+      onApprove={async (data, actions) => {
+        const order = await actions.order!.capture();
+        await onApprove(order.id || data.orderID || '');
+      }}
+      onCancel={() => toast.info('Pago cancelado. Puedes intentarlo de nuevo.')}
+      onError={() => toast.error('Error con PayPal. Intenta de nuevo.')}
+    />
+  );
+}
 
 const EMPTY_ITEM: QuoteLineItem = { description: '', quantity: 1, unit: '', unit_price: 0, discount_pct: 0, tax_pct: 0 };
 
@@ -59,6 +111,9 @@ export function MyQuoteEditorPage() {
   const [saving, setSaving] = useState(false);
   const [requestingSignature, setRequestingSignature] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [payingForQuote, setPayingForQuote] = useState(false);
+  const [nextFreeSlot, setNextFreeSlot] = useState<Date | null>(null);
   const [quoteId, setQuoteId] = useState<string | null>(id ?? null);
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [quoteType, setQuoteType] = useState<QuoteType>('quote');
@@ -134,6 +189,33 @@ export function MyQuoteEditorPage() {
     template,
   });
 
+  /** Actually inserts the quote row — called either directly (free slot
+   * available) or after a successful $6.99 PayPal capture. */
+  const finalizeNewQuote = async (): Promise<string> => {
+    const newId = await createQuote(buildQuoteInput(), items);
+    setQuoteId(newId);
+    setQuotaExceeded(false);
+    navigate(`/my-quotes/${newId}`, { replace: true });
+    toast.success(language === 'en' ? 'Quote created.' : 'Cotización creada.');
+    return newId;
+  };
+
+  /** PayPal onApprove for the $6.99 single-quote unlock — verifies server-side
+   * (paypal-verify, product 'quote_single') exactly like every other payment
+   * in this app, then creates the quote the free-tier gate had just blocked. */
+  const handlePaidQuoteApprove = async (orderId: string) => {
+    setPayingForQuote(true);
+    try {
+      await verifyPaypalOrder({ orderId, product: 'quote_single' });
+      await finalizeNewQuote();
+      toast.success(language === 'en' ? 'Payment confirmed — quote created!' : '¡Pago confirmado — cotización creada!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Payment could not be verified.' : 'No se pudo verificar el pago.'));
+    } finally {
+      setPayingForQuote(false);
+    }
+  };
+
   const handleSave = async (): Promise<string | null> => {
     if (!clientName.trim()) {
       toast.error(language === 'en' ? 'Client name is required.' : 'El nombre del cliente es obligatorio.');
@@ -154,25 +236,13 @@ export function MyQuoteEditorPage() {
       if (!isPremium && user?.id) {
         const { allowed } = await consumeQuoteLimit72h(user.id, false);
         if (!allowed) {
-          const nextSlot = await getNextQuoteSlot(user.id);
-          const when = nextSlot
-            ? nextSlot.toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', hour: 'numeric', minute: '2-digit' })
-            : null;
-          toast.error(
-            language === 'en'
-              ? `You've used your 2 free quotes for this 72h window.${when ? ` Next free slot: ${when}.` : ''} Upgrade to the $29.99/mo plan for unlimited quotes.`
-              : `Ya usaste tus 2 cotizaciones gratis de esta ventana de 72h.${when ? ` Próximo cupo libre: ${when}.` : ''} Mejora al plan de $29.99/mes para cotizaciones ilimitadas.`,
-            { duration: 8000 },
-          );
+          setQuotaExceeded(true);
+          getNextQuoteSlot(user.id).then(setNextFreeSlot).catch(() => {});
           return null;
         }
       }
 
-      const newId = await createQuote(buildQuoteInput(), items);
-      setQuoteId(newId);
-      navigate(`/my-quotes/${newId}`, { replace: true });
-      toast.success(language === 'en' ? 'Quote created.' : 'Cotización creada.');
-      return newId;
+      return await finalizeNewQuote();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not save the quote.' : 'No se pudo guardar la cotización.'));
       return null;
@@ -449,6 +519,40 @@ export function MyQuoteEditorPage() {
             {language === 'en' ? 'Request signature' : 'Solicitar firma'}
           </button>
         </div>
+
+        {quotaExceeded && (
+          <div className="mt-4 rounded-3xl border-2 border-amber-200 bg-amber-50 p-6">
+            <p className="mb-1 flex items-center gap-2 text-sm font-bold text-amber-900">
+              <CreditCard className="size-4" />
+              {language === 'en' ? 'Free quotes used for this 72h window' : 'Cotizaciones gratis usadas en esta ventana de 72h'}
+            </p>
+            <p className="mb-4 text-xs text-amber-700">
+              {nextFreeSlot
+                ? (language === 'en'
+                  ? `Next free slot: ${nextFreeSlot.toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}. Or unlock this quote right now for $${QUOTE_SINGLE_PRICE.toFixed(2)}, or subscribe to the $29.99/mo plan for unlimited quotes.`
+                  : `Próximo cupo libre: ${nextFreeSlot.toLocaleString('es-ES', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}. O desbloquea esta cotización ahora mismo por $${QUOTE_SINGLE_PRICE.toFixed(2)}, o mejora al plan de $29.99/mes para cotizaciones ilimitadas.`)
+                : (language === 'en'
+                  ? `Unlock this quote right now for $${QUOTE_SINGLE_PRICE.toFixed(2)}, or subscribe to the $29.99/mo plan for unlimited quotes.`
+                  : `Desbloquea esta cotización ahora mismo por $${QUOTE_SINGLE_PRICE.toFixed(2)}, o mejora al plan de $29.99/mes para cotizaciones ilimitadas.`)}
+            </p>
+
+            {payingForQuote ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-600">
+                <Loader className="size-4 animate-spin" />
+                {language === 'en' ? 'Confirming payment…' : 'Confirmando pago…'}
+              </div>
+            ) : getPayPalClientId() ? (
+              <PayPalScriptProvider options={{ clientId: getPayPalClientId(), currency: 'USD', intent: 'capture', components: 'buttons' }}>
+                <QuotePaywallButtons onApprove={handlePaidQuoteApprove} />
+              </PayPalScriptProvider>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+                <XCircle className="size-4 shrink-0" />
+                PayPal no configurado.
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
