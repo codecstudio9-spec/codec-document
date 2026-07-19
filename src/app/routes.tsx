@@ -149,6 +149,18 @@ const IndependentContractorSanJoseCalifornia = lazy(() => import("./pages/landin
 const ServiceAgreementSanJoseCalifornia = lazy(() => import("./pages/landings/service-agreement-san-jose-california"));
 const PromissoryNoteSanJoseCalifornia = lazy(() => import("./pages/landings/promissory-note-san-jose-california"));
 const VehicleBillOfSaleSanJoseCalifornia = lazy(() => import("./pages/landings/vehicle-bill-of-sale-san-jose-california"));
+// Smart Quotes -- 10 paginas SEO (5 EEUU en ingles, 5 LatAm en espanol,
+// ver quote-seo-content.ts).
+const QuoteGeneratorLanding = lazy(() => import("./pages/landings/quote-generator"));
+const ProposalGeneratorLanding = lazy(() => import("./pages/landings/proposal-generator"));
+const BusinessEstimateGeneratorLanding = lazy(() => import("./pages/landings/business-estimate-generator"));
+const ProfessionalQuoteTemplateLanding = lazy(() => import("./pages/landings/professional-quote-template"));
+const CommercialProposalGeneratorLanding = lazy(() => import("./pages/landings/commercial-proposal-generator"));
+const CotizadorOnlineLanding = lazy(() => import("./pages/landings/cotizador-online"));
+const CrearCotizacionLanding = lazy(() => import("./pages/landings/crear-cotizacion"));
+const PropuestaComercialLanding = lazy(() => import("./pages/landings/propuesta-comercial"));
+const GeneradorDeCotizacionesLanding = lazy(() => import("./pages/landings/generador-de-cotizaciones"));
+const CotizacionProfesionalLanding = lazy(() => import("./pages/landings/cotizacion-profesional"));
 const MobileDashboardHome = lazy(() => import("./pages/mobile/MobileDashboardHome").then((m) => ({ default: m.MobileDashboardHome })));
 const MobileTemplates = lazy(() => import("./pages/mobile/MobileTemplates").then((m) => ({ default: m.MobileTemplates })));
 const MobileSignatures = lazy(() => import("./pages/mobile/MobileSignatures").then((m) => ({ default: m.MobileSignatures })));
@@ -410,6 +422,17 @@ export const router = createBrowserRouter([
   { path: "/service-agreement-san-jose-california", Component: ServiceAgreementSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/promissory-note-san-jose-california", Component: PromissoryNoteSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-san-jose-california", Component: VehicleBillOfSaleSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  // Smart Quotes -- SEO
+  { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/business-estimate-generator", Component: BusinessEstimateGeneratorLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/professional-quote-template", Component: ProfessionalQuoteTemplateLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/commercial-proposal-generator", Component: CommercialProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/cotizador-online", Component: CotizadorOnlineLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/crear-cotizacion", Component: CrearCotizacionLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/propuesta-comercial", Component: PropuestaComercialLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/generador-de-cotizaciones", Component: GeneradorDeCotizacionesLanding, errorElement: <RouteErrorBoundary /> },
+  { path: "/cotizacion-profesional", Component: CotizacionProfesionalLanding, errorElement: <RouteErrorBoundary /> },
   {
     path: "/independent-contractor-agreement",
     Component: IndependentContractorLanding,
