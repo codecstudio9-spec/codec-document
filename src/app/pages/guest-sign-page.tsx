@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ShieldCheck, Loader, AlertCircle, CheckCircle2,
   FileText, PenLine, Sparkles, ArrowRight, ArrowLeft, ExternalLink,
-  IdCard, Camera, Upload, Lock,
+  IdCard, Camera, Upload, Lock, Maximize2,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { PdfViewerModal } from '../components/signatures/PdfViewerModal';
 import { GuestSignaturePlacer } from '../components/signatures/GuestSignaturePlacer';
 import type { PlacedSignature } from '../components/signatures/types';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
@@ -519,6 +520,7 @@ export function GuestSignPage() {
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [pdfPageCount, setPdfPageCount] = useState(0);
   const [workingPdfUrl, setWorkingPdfUrl] = useState('');
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfError, setPdfError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
@@ -1167,7 +1169,15 @@ export function GuestSignPage() {
           )}
 
           {!pdfLoading && !pdfError && pdfDoc && containerWidth > 0 && (
-            <div className="divide-y divide-slate-100 bg-white">
+            <div className="relative divide-y divide-slate-100 bg-white">
+              <button
+                type="button"
+                onClick={() => setPdfViewerOpen(true)}
+                className="sticky top-2 z-10 ml-auto flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                style={{ marginRight: 10 }}
+              >
+                <Maximize2 className="size-3" /> Ver documento completo
+              </button>
               {Array.from({ length: pdfPageCount }, (_, i) => (
                 <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} width={containerWidth} />
               ))}
@@ -1472,7 +1482,15 @@ export function GuestSignPage() {
             )}
 
             {!pdfLoading && !pdfError && pdfDoc && containerWidth > 0 && (
-              <div className="divide-y divide-slate-100">
+              <div className="relative divide-y divide-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setPdfViewerOpen(true)}
+                  className="sticky top-2 z-10 ml-auto flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                  style={{ marginRight: 10 }}
+                >
+                  <Maximize2 className="size-3" /> Ver documento completo
+                </button>
                 {Array.from({ length: pdfPageCount }, (_, i) => (
                   <PdfPage
                     key={i + 1}
@@ -1669,6 +1687,13 @@ export function GuestSignPage() {
           reason="72h_limit"
         />
       )}
+
+      <PdfViewerModal
+        open={pdfViewerOpen}
+        onOpenChange={setPdfViewerOpen}
+        pdfDoc={pdfDoc}
+        title={tokenData?.documentName}
+      />
     </div>
   );
 }

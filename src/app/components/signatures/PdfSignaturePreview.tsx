@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { CheckCircle2, FileText, PenLine, Clock, User } from 'lucide-react';
+import { CheckCircle2, FileText, PenLine, Clock, User, Maximize2 } from 'lucide-react';
 import { getSignerRoleLabel } from '../../utils/signer-roles';
+import { PdfViewerModal } from './PdfViewerModal';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -155,6 +156,7 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
   const renderedRef = useRef<Uint8Array | null>(null);
   const [loading, setLoading] = useState(true);
   const [ready, setReady]     = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     if (!pdfBytes) return;
@@ -233,13 +235,23 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
       </div>
 
       {/* ── PDF last-page canvas ────────────────────────────────────────────── */}
-      <div className="relative border-b border-slate-100 bg-slate-50">
+      <div
+        className={`relative border-b border-slate-100 bg-slate-50 ${ready ? 'cursor-zoom-in' : ''}`}
+        onClick={() => ready && setViewerOpen(true)}
+        role={ready ? 'button' : undefined}
+        title={ready ? 'Ver documento completo' : undefined}
+      >
         {loading && (
           <div className="flex h-44 items-center justify-center">
             <p className="text-xs text-slate-400">Cargando documento…</p>
           </div>
         )}
         <canvas ref={canvasRef} className={`block w-full ${loading ? 'invisible h-0' : ''}`} />
+        {ready && (
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
+            <Maximize2 className="size-3" /> Ver completo
+          </div>
+        )}
         {ready && (
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center pb-1.5"
@@ -317,6 +329,8 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
           </span>
         </div>
       </div>
+
+      <PdfViewerModal open={viewerOpen} onOpenChange={setViewerOpen} pdfBytes={pdfBytes} title="Vista previa del documento" />
     </div>
   );
 }
