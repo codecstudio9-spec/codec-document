@@ -102,6 +102,41 @@ export async function getNextDocumentSlot(userId: string): Promise<Date | null> 
   }
 }
 
+// ── Smart Quotes — 72h rolling window, independent from documents/signatures ──
+// Only ever call this at the point a NEW quote is actually created — never
+// on saving edits to an existing draft, same reasoning as documents above.
+const QUOTE_LIMIT_72H = 2;
+
+export async function consumeQuoteLimit72h(userId: string, isPremium = false): Promise<LimitResult> {
+  if (isPremium) return { allowed: true, remaining: 999 };
+  if (!userId) return { allowed: false, remaining: 0 };
+
+  const { data, error } = await supabase.rpc('try_consume_quote_72h', {
+    p_user_id: userId,
+    p_limit: QUOTE_LIMIT_72H,
+  });
+
+  if (error) {
+    console.error('try_consume_quote_72h failed:', error);
+    return { allowed: false, remaining: 0 };
+  }
+  return { allowed: Boolean(data), remaining: Boolean(data) ? 1 : 0 };
+}
+
+export async function getNextQuoteSlot(userId: string): Promise<Date | null> {
+  if (!userId) return null;
+  try {
+    const { data, error } = await supabase.rpc('next_quote_slot', {
+      p_user_id: userId,
+      p_limit: QUOTE_LIMIT_72H,
+    });
+    if (error || !data) return null;
+    return new Date(data as string);
+  } catch {
+    return null;
+  }
+}
+
 // ── Anonymous (not logged in) usage — 72h rolling window, per device ───────
 // Previously, every gate in the app treated "no userId" as an instant hard
 // block ("if (!userId) { show paywall; return; }") with no quota check at

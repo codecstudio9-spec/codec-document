@@ -15,6 +15,7 @@ import {
   computeQuoteTotals, computeLineItemTotal, getQuoteDocumentTitle,
   type QuoteLineItem, type ProposalBlocks, type QuoteType,
 } from '../services/quotes-service';
+import { consumeQuoteLimit72h, getNextQuoteSlot } from '../services/user-limits-service';
 import { generateQuotePdf } from '../services/quote-pdf-generator';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
@@ -49,7 +50,7 @@ const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600';
 
 export function MyQuoteEditorPage() {
   const { id } = useParams<{ id?: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin, unlimitedActive, subscriptionActive } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -145,6 +146,28 @@ export function MyQuoteEditorPage() {
         toast.success(language === 'en' ? 'Quote saved.' : 'Cotización guardada.');
         return quoteId;
       }
+
+      // Free-tier gate: 2 NEW quotes / 72h, same independent-counter pattern
+      // as documents and signatures — only consumed when a quote is
+      // genuinely created, never on later edits to the same draft.
+      const isPremium = Boolean(isAdmin || unlimitedActive || subscriptionActive);
+      if (!isPremium && user?.id) {
+        const { allowed } = await consumeQuoteLimit72h(user.id, false);
+        if (!allowed) {
+          const nextSlot = await getNextQuoteSlot(user.id);
+          const when = nextSlot
+            ? nextSlot.toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+            : null;
+          toast.error(
+            language === 'en'
+              ? `You've used your 2 free quotes for this 72h window.${when ? ` Next free slot: ${when}.` : ''} Upgrade to the $29.99/mo plan for unlimited quotes.`
+              : `Ya usaste tus 2 cotizaciones gratis de esta ventana de 72h.${when ? ` Próximo cupo libre: ${when}.` : ''} Mejora al plan de $29.99/mes para cotizaciones ilimitadas.`,
+            { duration: 8000 },
+          );
+          return null;
+        }
+      }
+
       const newId = await createQuote(buildQuoteInput(), items);
       setQuoteId(newId);
       navigate(`/my-quotes/${newId}`, { replace: true });
