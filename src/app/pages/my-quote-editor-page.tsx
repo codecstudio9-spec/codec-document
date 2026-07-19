@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -21,6 +21,15 @@ import {
 } from '../../lib/signatureService';
 
 const EMPTY_ITEM: QuoteLineItem = { description: '', quantity: 1, unit: '', unit_price: 0, discount_pct: 0, tax_pct: 0 };
+
+type QuoteTemplate = 'corporate' | 'modern' | 'executive' | 'minimal';
+
+const TEMPLATES: Array<{ id: QuoteTemplate; es: string; en: string; descEs: string; descEn: string; swatch: string }> = [
+  { id: 'corporate', es: 'Corporate', en: 'Corporate', descEs: 'Barra de color, clásico', descEn: 'Color bar, classic', swatch: '#4338CA' },
+  { id: 'modern', es: 'Modern', en: 'Modern', descEs: 'Panel de color, audaz', descEn: 'Color panel, bold', swatch: '#2563EB' },
+  { id: 'executive', es: 'Executive', en: 'Executive', descEs: 'Serif centrado, formal', descEn: 'Centered serif, formal', swatch: '#334155' },
+  { id: 'minimal', es: 'Minimal', en: 'Minimal', descEs: 'Blanco y negro, limpio', descEn: 'Black & white, clean', swatch: '#0F172A' },
+];
 
 const BLOCK_KEYS: Array<{ key: keyof ProposalBlocks; es: string; en: string }> = [
   { key: 'intro', es: 'Introducción', en: 'Introduction' },
@@ -48,9 +57,11 @@ export function MyQuoteEditorPage() {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [requestingSignature, setRequestingSignature] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [quoteId, setQuoteId] = useState<string | null>(id ?? null);
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [quoteType, setQuoteType] = useState<QuoteType>('quote');
+  const [template, setTemplate] = useState<QuoteTemplate>('corporate');
 
   const [clientName, setClientName] = useState('');
   const [clientCompany, setClientCompany] = useState('');
@@ -82,6 +93,7 @@ export function MyQuoteEditorPage() {
       setQuoteId(quote.id);
       setCountryCode(quote.country);
       setQuoteType(quote.quote_type);
+      setTemplate((quote.template as QuoteTemplate) || 'corporate');
       setClientName(quote.client_name); setClientCompany(quote.client_company ?? '');
       setClientPosition(quote.client_position ?? ''); setClientEmail(quote.client_email ?? '');
       setClientPhone(quote.client_phone ?? ''); setClientAddress(quote.client_address ?? '');
@@ -118,6 +130,7 @@ export function MyQuoteEditorPage() {
     project_name: projectName, executive_summary: executiveSummary, project_objective: projectObjective,
     project_scope: projectScope, proposal_blocks: blocks,
     subtotal: totals.subtotal, discount_total: totals.discountTotal, tax_total: totals.taxTotal, total: totals.total,
+    template,
   });
 
   const handleSave = async (): Promise<string | null> => {
@@ -142,6 +155,46 @@ export function MyQuoteEditorPage() {
       return null;
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** Client-side only — generates the PDF with the currently selected
+   * template and opens it in a new tab. No save, no upload, so switching
+   * templates to compare them costs nothing. */
+  const handlePreview = async () => {
+    if (!clientName.trim()) {
+      toast.error(language === 'en' ? 'Add a client name to preview.' : 'Agrega un nombre de cliente para previsualizar.');
+      return;
+    }
+    setPreviewing(true);
+    try {
+      const branding = user?.id ? await getUserBranding(user.id) : null;
+      const draftQuote = {
+        id: quoteId ?? 'preview', user_id: user?.id ?? '', quote_number: 'PREVIEW',
+        status: 'draft' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        pdf_url: null, signed: false, signature_transaction_id: null,
+        ...buildQuoteInput(),
+      };
+      const pdfBytes = await generateQuotePdf(
+        draftQuote as Parameters<typeof generateQuotePdf>[0], items,
+        branding ? {
+          company_logo_url: branding.companyLogoUrl, company_legal_name: branding.companyLegalName,
+          company_address_line1: branding.companyAddressLine1, company_address_line2: branding.companyAddressLine2,
+          company_city: branding.companyCity, company_state: branding.companyState, company_country: branding.companyCountry,
+          company_phone: branding.companyPhone, company_email: branding.companyEmail, company_website: branding.companyWebsite,
+          brand_color_primary: branding.brandColorPrimary, brand_color_secondary: branding.brandColorSecondary, brand_font: branding.brandFont,
+          bank_name: branding.bankName, bank_account: branding.bankAccount, payment_ach: branding.paymentAch,
+          payment_zelle: branding.paymentZelle, payment_nequi: branding.paymentNequi, payment_daviplata: branding.paymentDaviplata,
+          payment_paypal: branding.paymentPaypal,
+        } : null,
+        documentTitle,
+      );
+      const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
+      window.open(blobUrl, '_blank');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate preview.' : 'No se pudo generar la vista previa.'));
+    } finally {
+      setPreviewing(false);
     }
   };
 
@@ -236,8 +289,36 @@ export function MyQuoteEditorPage() {
           </div>
         )}
 
-        {/* Client data */}
+        {/* Template picker */}
         <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'PDF Template' : 'Plantilla del PDF'}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTemplate(t.id)}
+                className={`rounded-2xl border-2 p-3 text-left transition ${template === t.id ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-white'}`}
+              >
+                <div className="mb-2 h-10 w-full rounded-lg" style={{ background: t.swatch }} />
+                <p className="text-xs font-bold text-slate-800">{language === 'en' ? t.en : t.es}</p>
+                <p className="text-[10px] text-slate-400">{language === 'en' ? t.descEn : t.descEs}</p>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={previewing}
+            onClick={() => void handlePreview()}
+            className="mt-4 flex items-center gap-1.5 text-xs font-bold text-indigo-600 disabled:opacity-50"
+          >
+            {previewing ? <Loader className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
+            {language === 'en' ? 'Preview this template' : 'Previsualizar esta plantilla'}
+          </button>
+        </div>
+
+        {/* Client data */}
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Client' : 'Datos del Cliente'}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div><label className={labelClass}>{language === 'en' ? 'Name *' : 'Nombre *'}</label><input value={clientName} onChange={(e) => setClientName(e.target.value)} className={inputClass} /></div>
