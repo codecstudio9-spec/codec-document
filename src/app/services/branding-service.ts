@@ -25,6 +25,19 @@ export interface UserBranding {
   companyPhone: string | null;
   companyEmail: string | null;
   companyWebsite: string | null;
+  // Identidad visual + datos bancarios -- usados por el generador de PDF
+  // de Smart Quotes (cotizaciones), reutilizando este mismo perfil de
+  // marca en vez de un /my-company-branding paralelo.
+  brandColorPrimary: string | null;
+  brandColorSecondary: string | null;
+  brandFont: string | null;
+  bankName: string | null;
+  bankAccount: string | null;
+  paymentAch: string | null;
+  paymentZelle: string | null;
+  paymentNequi: string | null;
+  paymentDaviplata: string | null;
+  paymentPaypal: string | null;
 }
 
 const EMPTY_BRANDING: UserBranding = {
@@ -34,9 +47,12 @@ const EMPTY_BRANDING: UserBranding = {
   companyLegalName: null, companyAddressLine1: null, companyAddressLine2: null,
   companyCity: null, companyState: null, companyZip: null, companyCountry: null,
   companyEIN: null, companyPhone: null, companyEmail: null, companyWebsite: null,
+  brandColorPrimary: null, brandColorSecondary: null, brandFont: null,
+  bankName: null, bankAccount: null, paymentAch: null, paymentZelle: null,
+  paymentNequi: null, paymentDaviplata: null, paymentPaypal: null,
 };
 
-const BRANDING_COLUMNS = 'company_logo_url, logo_size, header_text, footer_text, use_watermark, use_global_branding, enable_logo_in_docs, logo_position, company_legal_name, company_address_line1, company_address_line2, company_city, company_state, company_zip, company_country, company_ein, company_phone, company_email, company_website';
+const BRANDING_COLUMNS = 'company_logo_url, logo_size, header_text, footer_text, use_watermark, use_global_branding, enable_logo_in_docs, logo_position, company_legal_name, company_address_line1, company_address_line2, company_city, company_state, company_zip, company_country, company_ein, company_phone, company_email, company_website, brand_color_primary, brand_color_secondary, brand_font, bank_name, bank_account, payment_ach, payment_zelle, payment_nequi, payment_daviplata, payment_paypal';
 
 export async function getUserBranding(userId: string): Promise<UserBranding> {
   const { data, error } = await supabase
@@ -65,6 +81,16 @@ export async function getUserBranding(userId: string): Promise<UserBranding> {
     companyPhone: data.company_phone ?? null,
     companyEmail: data.company_email ?? null,
     companyWebsite: data.company_website ?? null,
+    brandColorPrimary: data.brand_color_primary ?? null,
+    brandColorSecondary: data.brand_color_secondary ?? null,
+    brandFont: data.brand_font ?? null,
+    bankName: data.bank_name ?? null,
+    bankAccount: data.bank_account ?? null,
+    paymentAch: data.payment_ach ?? null,
+    paymentZelle: data.payment_zelle ?? null,
+    paymentNequi: data.payment_nequi ?? null,
+    paymentDaviplata: data.payment_daviplata ?? null,
+    paymentPaypal: data.payment_paypal ?? null,
   };
 }
 
@@ -114,6 +140,16 @@ export async function updateUserBranding(branding: UserBranding): Promise<void> 
     p_company_phone: branding.companyPhone,
     p_company_email: branding.companyEmail,
     p_company_website: branding.companyWebsite,
+    p_brand_color_primary: branding.brandColorPrimary,
+    p_brand_color_secondary: branding.brandColorSecondary,
+    p_brand_font: branding.brandFont,
+    p_bank_name: branding.bankName,
+    p_bank_account: branding.bankAccount,
+    p_payment_ach: branding.paymentAch,
+    p_payment_zelle: branding.paymentZelle,
+    p_payment_nequi: branding.paymentNequi,
+    p_payment_daviplata: branding.paymentDaviplata,
+    p_payment_paypal: branding.paymentPaypal,
   });
   if (error) throw new Error(`updateUserBranding: ${error.message}`);
   if (!data) throw new Error('updateUserBranding: not saved (not signed in?)');

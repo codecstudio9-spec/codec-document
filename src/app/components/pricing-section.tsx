@@ -27,6 +27,7 @@ type Product = {
 // Same feature set across all 3 plans — only price/term differ.
 const SHARED_FEATURES_EN = [
   'Access to all legal document templates',
+  'Unlimited Smart Quotes',
   'Electronic signatures included',
   'Identity verification',
   'Audit trail',
@@ -36,6 +37,7 @@ const SHARED_FEATURES_EN = [
 ];
 const SHARED_FEATURES_ES = [
   'Acceso a todas las plantillas de documentos legales',
+  'Cotizaciones Inteligentes ilimitadas',
   'Firmas electrónicas incluidas',
   'Verificación de identidad',
   'Registro de auditoría',

@@ -55,6 +55,10 @@ const DEFAULT_DOC_PRICE = 7.0;
 const BUNDLE_PRICE = 12.0;
 const SIG_SINGLE_PRICE = 2.99;
 const SIG_MONTHLY_PRICE = 19.99;
+// Smart Quotes -- pago individual; el ilimitado ya viene incluido en
+// sub_monthly/semiannual/annual (el plan de documentos existente), sin
+// plan nuevo, tal como se pidio explicitamente.
+const QUOTE_SINGLE_PRICE = 6.99;
 const SUBSCRIPTION_PLANS: Record<string, { amount: number; days: number }> = {
   sub_monthly: { amount: 29.99, days: 30 },
   sub_semiannual: { amount: 134.99, days: 182 },
@@ -78,7 +82,8 @@ type Product =
   | 'sub_annual'
   | 'full_access'
   | 'company_monthly'
-  | 'company_annual';
+  | 'company_annual'
+  | 'quote_single';
 
 interface RequestBody {
   orderId?: string;        // Orders API — doc_single / doc_bundle / sig_single / sig_monthly
@@ -113,6 +118,8 @@ function expectedAmountFor(product: Product, documentId?: string): number | null
     case 'company_monthly':
     case 'company_annual':
       return COMPANY_PLANS[product].amount;
+    case 'quote_single':
+      return QUOTE_SINGLE_PRICE;
     default:
       return null;
   }
@@ -356,7 +363,7 @@ Deno.serve(async (req) => {
     }
 
     const isCompanyProduct = product === 'company_monthly' || product === 'company_annual';
-    const needsUser = product === 'sig_single' || product === 'sig_monthly' || isSubProduct || isCompanyProduct;
+    const needsUser = product === 'sig_single' || product === 'sig_monthly' || isSubProduct || isCompanyProduct || product === 'quote_single';
     if (needsUser && !userId) {
       return new Response(JSON.stringify({ error: 'Authentication required for this product' }), {
         status: 401, headers: corsHeaders(origin),

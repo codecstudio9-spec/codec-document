@@ -26,6 +26,8 @@ const MyTemplateFillPage = lazy(() => import("./pages/my-template-fill-page").th
 const MyBrandingPage = lazy(() => import("./pages/my-branding-page").then((m) => ({ default: m.MyBrandingPage })));
 const MyCompanyPage = lazy(() => import("./pages/my-company-page").then((m) => ({ default: m.MyCompanyPage })));
 const MyContactsPage = lazy(() => import("./pages/my-contacts-page").then((m) => ({ default: m.MyContactsPage })));
+const MyQuotesPage = lazy(() => import("./pages/my-quotes-page").then((m) => ({ default: m.MyQuotesPage })));
+const MyQuoteEditorPage = lazy(() => import("./pages/my-quote-editor-page").then((m) => ({ default: m.MyQuoteEditorPage })));
 const ElectronicSignaturePage = lazy(() => import("./pages/electronic-signature-page").then((m) => ({ default: m.ElectronicSignaturePage })));
 const FreeLegalDocumentsLanding = lazy(() => import("./pages/landings/free-legal-documents"));
 const ElectronicSignatureLanding = lazy(() => import("./pages/landings/electronic-signature"));
@@ -220,6 +222,22 @@ function ProtectedMyContactsPage() {
   return (
     <ProtectedRoute>
       <MyContactsPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyQuotesPage() {
+  return (
+    <ProtectedRoute>
+      <MyQuotesPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyQuoteEditorPage() {
+  return (
+    <ProtectedRoute>
+      <MyQuoteEditorPage />
     </ProtectedRoute>
   );
 }
@@ -582,6 +600,21 @@ export const router = createBrowserRouter([
   {
     path: "/my-contacts",
     Component: ProtectedMyContactsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-quotes",
+    Component: ProtectedMyQuotesPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-quotes/new",
+    Component: ProtectedMyQuoteEditorPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-quotes/:id",
+    Component: ProtectedMyQuoteEditorPage,
     errorElement: <RouteErrorBoundary />,
   },
   {
