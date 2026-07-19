@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import {
-  listMyQuotes, deleteQuote, createQuote, getQuotesSummary, getQuoteDocumentTitle,
+  listMyQuotes, deleteQuote, createQuote, getMyQuoteFull, getQuotesSummary, getQuoteDocumentTitle,
   type Quote, type QuoteStatus,
 } from '../services/quotes-service';
 
@@ -48,6 +48,11 @@ export function MyQuotesPage() {
   const handleDuplicate = async (q: Quote) => {
     setDuplicating(q.id);
     try {
+      // listMyQuotes() (the `quotes` table alone) never carries line items —
+      // those live in quote_line_items, only returned by getMyQuoteFull().
+      // Duplicating from `q` directly silently dropped every product/service
+      // row; fetch the full record first so the copy actually matches.
+      const full = await getMyQuoteFull(q.id);
       const newId = await createQuote({
         country: q.country ?? undefined, language: q.language, quote_type: q.quote_type,
         client_name: q.client_name, client_company: q.client_company ?? undefined,
@@ -57,7 +62,7 @@ export function MyQuotesPage() {
         project_objective: q.project_objective ?? undefined, project_scope: q.project_scope ?? undefined,
         proposal_blocks: q.proposal_blocks, subtotal: q.subtotal, discount_total: q.discount_total,
         tax_total: q.tax_total, total: q.total,
-      }, []);
+      }, full?.items ?? []);
       toast.success(language === 'en' ? 'Quote duplicated.' : 'Cotización duplicada.');
       navigate(`/my-quotes/${newId}`);
     } catch (err) {
