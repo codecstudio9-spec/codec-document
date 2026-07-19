@@ -212,6 +212,16 @@ export async function recordQuoteView(id: string, country: string | null, city: 
  * generic e-signature engine, not a quote-specific page), which only
  * knows a documentId. This resolves "is this document actually a quote,
  * and which one" so guest-sign-page.tsx can call recordQuoteView(). */
+/** Guest-side rejection — the client has no session, only a valid signing
+ * token (hence a documentId, resolved to a quoteId via
+ * getQuoteIdByDocument first). Only flips status while still
+ * 'sent'/'viewed' — server-side, can't un-accept an already-signed quote. */
+export async function rejectQuotePublic(quoteId: string): Promise<boolean> {
+  const { data, error } = await publicSupabase.rpc('reject_quote_public', { p_quote_id: quoteId });
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
 export async function getQuoteIdByDocument(documentId: string): Promise<string | null> {
   try {
     const { data, error } = await publicSupabase.rpc('get_quote_id_by_document', { p_document_id: documentId });

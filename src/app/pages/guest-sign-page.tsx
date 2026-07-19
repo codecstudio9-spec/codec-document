@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ShieldCheck, Loader, AlertCircle, CheckCircle2,
   FileText, PenLine, Sparkles, ArrowRight, ArrowLeft, ExternalLink,
-  IdCard, Camera, Upload, Lock, Maximize2,
+  IdCard, Camera, Upload, Lock, Maximize2, XCircle,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { PdfViewerModal } from '../components/signatures/PdfViewerModal';
@@ -33,7 +33,7 @@ import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
-import { getQuoteIdByDocument, recordQuoteView } from '../services/quotes-service';
+import { getQuoteIdByDocument, recordQuoteView, rejectQuotePublic } from '../services/quotes-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
@@ -522,6 +522,10 @@ export function GuestSignPage() {
   const [pdfPageCount, setPdfPageCount] = useState(0);
   const [workingPdfUrl, setWorkingPdfUrl] = useState('');
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [linkedQuoteId, setLinkedQuoteId] = useState<string | null>(null);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [quoteRejected, setQuoteRejected] = useState(false);
   const [pdfError, setPdfError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
@@ -623,6 +627,7 @@ export function GuestSignPage() {
         // throws) if it isn't one.
         getQuoteIdByDocument(data.documentId).then((quoteId) => {
           if (!quoteId) return;
+          setLinkedQuoteId(quoteId);
           detectSignerCountryCode().then((country) => {
             const device = /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
             void recordQuoteView(quoteId, country, null, device);
@@ -739,6 +744,26 @@ export function GuestSignPage() {
   // Re-run when pdfDoc loads so the DOM is settled
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasScrolledToEnd, pdfDoc]);
+
+  // ─── Reject a quote — only ever shown when linkedQuoteId is set (this
+  // document is a Smart Quote, not a regular legal document/NDA/etc.). ──
+  const handleRejectQuote = async () => {
+    if (!linkedQuoteId) return;
+    setRejecting(true);
+    try {
+      const ok = await rejectQuotePublic(linkedQuoteId);
+      if (ok) {
+        setQuoteRejected(true);
+      } else {
+        toast.error('Esta cotización ya fue firmada o rechazada — no se puede cambiar.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo rechazar la cotización.');
+    } finally {
+      setRejecting(false);
+      setShowRejectConfirm(false);
+    }
+  };
 
   // ─── Submit guest signature — dataUrl from SignatureModal, placement from
   // GuestSignaturePlacer (where the guest actually tapped/dragged it to). ──
@@ -1011,6 +1036,31 @@ export function GuestSignPage() {
     );
   }
 
+  // ─── Quote rejected screen — only reachable if linkedQuoteId was set
+  // (this document is a Smart Quote) and the client explicitly rejected it. ──
+  if (quoteRejected) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-slate-950 to-slate-900 px-4 text-center">
+        <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-500/20 ring-1 ring-slate-400/20">
+          <XCircle className="size-8 text-slate-300" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-white">Cotización rechazada</h2>
+          <p className="mt-2 max-w-sm text-sm text-white/50">
+            Le avisamos a quien te la envió. Si cambias de opinión, pídele que te comparta el link de nuevo.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+        >
+          Volver al inicio
+        </button>
+      </div>
+    );
+  }
+
   // ─── Success screen ────────────────────────────────────────────────────────────
   if (done) {
     return (
@@ -1123,6 +1173,24 @@ export function GuestSignPage() {
             Pendiente
           </span>
         </div>
+
+        {linkedQuoteId && (
+          <div className="shrink-0 border-b border-slate-100 bg-white px-4 py-2">
+            {!showRejectConfirm ? (
+              <button type="button" onClick={() => setShowRejectConfirm(true)} className="text-[11px] font-semibold text-slate-400 underline decoration-dotted hover:text-red-500">
+                ¿No te interesa esta propuesta? Rechazar
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="text-slate-500">¿Seguro que quieres rechazarla?</span>
+                <button type="button" disabled={rejecting} onClick={() => void handleRejectQuote()} className="flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 font-bold text-white disabled:opacity-50">
+                  {rejecting ? <Loader className="size-3 animate-spin" /> : null} Sí, rechazar
+                </button>
+                <button type="button" onClick={() => setShowRejectConfirm(false)} className="font-semibold text-slate-400 hover:text-slate-600">Cancelar</button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Compact signer info — a thin row, not a card that eats the
             screen. Collapses out of the way once both fields are filled. */}
@@ -1406,6 +1474,24 @@ export function GuestSignPage() {
               Solo lectura
             </span>
           </div>
+
+          {linkedQuoteId && (
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              {!showRejectConfirm ? (
+                <button type="button" onClick={() => setShowRejectConfirm(true)} className="text-xs font-semibold text-slate-400 underline decoration-dotted hover:text-red-500">
+                  ¿No te interesa esta propuesta? Rechazar
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-500">¿Seguro que quieres rechazarla?</span>
+                  <button type="button" disabled={rejecting} onClick={() => void handleRejectQuote()} className="flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 font-bold text-white disabled:opacity-50">
+                    {rejecting ? <Loader className="size-3 animate-spin" /> : null} Sí, rechazar
+                  </button>
+                  <button type="button" onClick={() => setShowRejectConfirm(false)} className="font-semibold text-slate-400 hover:text-slate-600">Cancelar</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Guest info form ───────────────────────────────────────────────── */}
