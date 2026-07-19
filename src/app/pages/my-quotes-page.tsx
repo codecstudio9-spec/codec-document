@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   ArrowLeft, Plus, FileText, Loader, Download, Copy, Send, Trash2,
-  DollarSign, TrendingUp,
+  DollarSign, TrendingUp, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import {
   listMyQuotes, deleteQuote, createQuote, getMyQuoteFull, getQuotesSummary, getQuoteDocumentTitle,
+  getQuoteViewStats, formatRelativeTime,
   type Quote, type QuoteStatus,
 } from '../services/quotes-service';
+
+type ViewStats = Awaited<ReturnType<typeof getQuoteViewStats>>;
 
 const STATUS_LABELS: Record<QuoteStatus, { es: string; en: string; color: string }> = {
   draft: { es: 'Borrador', en: 'Draft', color: '#94A3B8' },
@@ -28,9 +31,21 @@ export function MyQuotesPage() {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof getQuotesSummary>> | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [viewStatsByQuote, setViewStatsByQuote] = useState<Record<string, ViewStats>>({});
 
   const load = () => {
-    listMyQuotes().then(setQuotes).catch(() => setQuotes([]));
+    listMyQuotes().then((qs) => {
+      setQuotes(qs);
+      // "El cliente abrió la propuesta hace 2 horas" at a glance, per row —
+      // only meaningful once a quote has actually been sent.
+      const sentQuotes = qs.filter((q) => q.status !== 'draft');
+      Promise.all(sentQuotes.map((q) => getQuoteViewStats(q.id).then((stats) => [q.id, stats] as const).catch(() => null)))
+        .then((results) => {
+          const map: Record<string, ViewStats> = {};
+          for (const r of results) { if (r) map[r[0]] = r[1]; }
+          setViewStatsByQuote(map);
+        });
+    }).catch(() => setQuotes([]));
     getQuotesSummary().then(setSummary).catch(() => {});
   };
   useEffect(() => { if (user) load(); }, [user]);
@@ -155,6 +170,14 @@ export function MyQuotesPage() {
                   <p className="truncate text-xs text-slate-400">
                     {getQuoteDocumentTitle(q.country, q.quote_type, q.language)} · {q.quote_number} · {new Date(q.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
+                  {viewStatsByQuote[q.id] && viewStatsByQuote[q.id].viewCount > 0 && viewStatsByQuote[q.id].lastViewedAt && (
+                    <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-indigo-500">
+                      <Eye className="size-3" />
+                      {language === 'en'
+                        ? `Opened ${formatRelativeTime(viewStatsByQuote[q.id].lastViewedAt as string, 'en')}${viewStatsByQuote[q.id].viewCount > 1 ? ` (${viewStatsByQuote[q.id].viewCount}×)` : ''}`
+                        : `Abierta ${formatRelativeTime(viewStatsByQuote[q.id].lastViewedAt as string, 'es')}${viewStatsByQuote[q.id].viewCount > 1 ? ` (${viewStatsByQuote[q.id].viewCount}×)` : ''}`}
+                    </p>
+                  )}
                 </div>
                 <p className="shrink-0 text-sm font-black text-slate-700">${q.total.toFixed(2)}</p>
                 <div className="flex shrink-0 items-center gap-1">

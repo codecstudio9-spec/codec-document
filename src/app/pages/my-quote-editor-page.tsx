@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
-  ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw,
+  ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw, Activity, Globe2, PenLine,
 } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
@@ -15,8 +15,8 @@ import { detectSignerCountryCode } from '../../lib/geo';
 import { getUserBranding } from '../services/branding-service';
 import {
   createQuote, updateQuote, getMyQuoteFull, setQuotePdfAndStatus, linkQuoteSignature,
-  computeQuoteTotals, computeLineItemTotal, getQuoteDocumentTitle,
-  type QuoteLineItem, type ProposalBlocks, type QuoteType,
+  computeQuoteTotals, computeLineItemTotal, getQuoteDocumentTitle, getQuoteViewStats, formatRelativeTime,
+  type QuoteLineItem, type ProposalBlocks, type QuoteType, type QuoteStatus,
 } from '../services/quotes-service';
 import { consumeQuoteLimit72h, getNextQuoteSlot } from '../services/user-limits-service';
 import { generateQuotePdf } from '../services/quote-pdf-generator';
@@ -114,6 +114,9 @@ export function MyQuoteEditorPage() {
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [payingForQuote, setPayingForQuote] = useState(false);
   const [nextFreeSlot, setNextFreeSlot] = useState<Date | null>(null);
+  const [quoteStatus, setQuoteStatus] = useState<QuoteStatus | null>(null);
+  const [quoteUpdatedAt, setQuoteUpdatedAt] = useState<string | null>(null);
+  const [viewStats, setViewStats] = useState<Awaited<ReturnType<typeof getQuoteViewStats>> | null>(null);
   const [quoteId, setQuoteId] = useState<string | null>(id ?? null);
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [quoteType, setQuoteType] = useState<QuoteType>('quote');
@@ -157,7 +160,15 @@ export function MyQuoteEditorPage() {
       setProjectObjective(quote.project_objective ?? ''); setProjectScope(quote.project_scope ?? '');
       setItems(loadedItems.length > 0 ? loadedItems : [{ ...EMPTY_ITEM }]);
       setBlocks(quote.proposal_blocks ?? {});
+      setQuoteStatus(quote.status);
+      setQuoteUpdatedAt(quote.updated_at);
       setLoading(false);
+
+      // "El cliente abrió la propuesta hace 2 horas" — only meaningful once
+      // it's actually been sent (a draft has no signing link, so no views).
+      if (quote.status !== 'draft') {
+        getQuoteViewStats(quote.id).then(setViewStats).catch(() => {});
+      }
     }).catch(() => { toast.error(language === 'en' ? 'Could not load the quote.' : 'No se pudo cargar la cotización.'); navigate('/my-quotes'); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -330,6 +341,8 @@ export function MyQuoteEditorPage() {
       await setQuotePdfAndStatus(savedId, pdfUrl, 'sent');
 
       setShareLink(`${SITE_URL}/guest-sign/${token}`);
+      setQuoteStatus('sent');
+      setViewStats({ viewCount: 0, firstViewedAt: null, lastViewedAt: null, countries: [] });
       toast.success(language === 'en' ? 'Signature request created!' : '¡Solicitud de firma creada!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not request the signature.' : 'No se pudo solicitar la firma.'));
@@ -366,6 +379,59 @@ export function MyQuoteEditorPage() {
             ? 'Create, send, and get this quote signed — a full agreement, not just a PDF.'
             : 'Crea, envía y logra que firmen esta cotización — un acuerdo completo, no solo un PDF.'}
         </p>
+
+        {quoteStatus && quoteStatus !== 'draft' && (
+          <div className="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
+                <Activity className="size-3.5" />
+                {language === 'en' ? 'Client activity' : 'Actividad del cliente'}
+              </p>
+              <button
+                type="button"
+                onClick={() => quoteId && getQuoteViewStats(quoteId).then(setViewStats).catch(() => {})}
+                className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700"
+              >
+                <RefreshCw className="size-3" /> {language === 'en' ? 'Refresh' : 'Actualizar'}
+              </button>
+            </div>
+
+            <div className="space-y-1.5 text-xs text-slate-600">
+              {!viewStats || viewStats.viewCount === 0 ? (
+                <p className="flex items-center gap-1.5">
+                  <Eye className="size-3.5 text-slate-400" />
+                  {language === 'en' ? "The client hasn't opened the quote yet." : 'El cliente aún no ha abierto la cotización.'}
+                </p>
+              ) : (
+                <>
+                  <p className="flex items-center gap-1.5 font-semibold text-slate-800">
+                    <Eye className="size-3.5 text-indigo-500" />
+                    {language === 'en'
+                      ? `The client opened the quote ${viewStats.lastViewedAt ? formatRelativeTime(viewStats.lastViewedAt, 'en') : ''}.`
+                      : `El cliente abrió la propuesta ${viewStats.lastViewedAt ? formatRelativeTime(viewStats.lastViewedAt, 'es') : ''}.`}
+                  </p>
+                  <p className="pl-5 text-slate-500">
+                    {viewStats.viewCount === 1
+                      ? (language === 'en' ? 'Opened it once.' : 'La abrió una vez.')
+                      : (language === 'en' ? `Opened it ${viewStats.viewCount} times.` : `La abrió ${viewStats.viewCount} veces.`)}
+                  </p>
+                  {viewStats.countries.length > 0 && (
+                    <p className="flex items-center gap-1.5 pl-5 text-slate-500">
+                      <Globe2 className="size-3 text-slate-400" />
+                      {viewStats.countries.join(', ')}
+                    </p>
+                  )}
+                </>
+              )}
+              {quoteStatus === 'accepted' && quoteUpdatedAt && (
+                <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                  <PenLine className="size-3.5" />
+                  {language === 'en' ? `Signed ${formatRelativeTime(quoteUpdatedAt, 'en')}.` : `Firmó ${formatRelativeTime(quoteUpdatedAt, 'es')}.`}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {shareLink && (
           <div className="mt-5 rounded-2xl border border-emerald-300 bg-emerald-50 p-4">

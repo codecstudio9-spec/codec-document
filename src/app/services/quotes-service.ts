@@ -208,6 +208,20 @@ export async function recordQuoteView(id: string, country: string | null, city: 
   } catch { /* tracking must never break the client's view of the quote */ }
 }
 
+/** Guest-side lookup — the client signs at /guest-sign/:token (the
+ * generic e-signature engine, not a quote-specific page), which only
+ * knows a documentId. This resolves "is this document actually a quote,
+ * and which one" so guest-sign-page.tsx can call recordQuoteView(). */
+export async function getQuoteIdByDocument(documentId: string): Promise<string | null> {
+  try {
+    const { data, error } = await publicSupabase.rpc('get_quote_id_by_document', { p_document_id: documentId });
+    if (error || !data) return null;
+    return data as string;
+  } catch {
+    return null;
+  }
+}
+
 export async function getQuoteViewStats(id: string): Promise<{ viewCount: number; firstViewedAt: string | null; lastViewedAt: string | null; countries: string[] }> {
   const { data, error } = await supabase.rpc('get_quote_view_stats', { p_id: id });
   const row = !error && Array.isArray(data) ? data[0] : null;
@@ -239,4 +253,31 @@ const LATAM_TITLE_BY_COUNTRY: Record<string, string> = {
 export function getQuoteDocumentTitle(countryCode: string | null, quoteType: QuoteType, language: 'es' | 'en'): string {
   if (language === 'en' || countryCode === 'US') return QUOTE_TYPE_LABELS_US[quoteType];
   return LATAM_TITLE_BY_COUNTRY[(countryCode || '').toUpperCase()] ?? 'Cotización Comercial';
+}
+
+/** "hace 2 horas" / "2 hours ago" — the exact framing the client-activity
+ * dashboard needs ("El cliente abrió la propuesta hace 2 horas"), without
+ * pulling in a date library for one string. */
+export function formatRelativeTime(iso: string, language: 'es' | 'en'): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  const units: Array<[number, { en: string; es: string }]> = [
+    [60, { en: 'minute', es: 'minuto' }],
+    [24, { en: 'hour', es: 'hora' }],
+    [30, { en: 'day', es: 'día' }],
+    [12, { en: 'month', es: 'mes' }],
+  ];
+  if (diffMin < 1) return language === 'en' ? 'just now' : 'justo ahora';
+
+  let value = diffMin;
+  let unitLabel = units[0][1];
+  for (const [divisor, label] of units) {
+    if (value < divisor) { unitLabel = label; break; }
+    value = Math.round(value / divisor);
+    unitLabel = label;
+  }
+  const plural = value === 1 ? '' : (language === 'en' ? 's' : (unitLabel.es.endsWith('s') ? '' : 's'));
+  return language === 'en'
+    ? `${value} ${unitLabel.en}${plural} ago`
+    : `hace ${value} ${unitLabel.es}${plural}`;
 }

@@ -33,6 +33,7 @@ import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
+import { getQuoteIdByDocument, recordQuoteView } from '../services/quotes-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
@@ -615,6 +616,18 @@ export function GuestSignPage() {
         setTokenData(data);
         getDocumentBranding(data.documentId).then(setBranding).catch(() => {});
         detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
+
+        // Smart Quotes "el cliente abrió la propuesta" tracking — this
+        // generic signing page has no idea a given document is actually a
+        // quote, so resolve that first; recordQuoteView is a no-op (never
+        // throws) if it isn't one.
+        getQuoteIdByDocument(data.documentId).then((quoteId) => {
+          if (!quoteId) return;
+          detectSignerCountryCode().then((country) => {
+            const device = /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+            void recordQuoteView(quoteId, country, null, device);
+          }).catch(() => {});
+        }).catch(() => {});
 
         // Audit log is fire-and-forget
         getPublicIp()
