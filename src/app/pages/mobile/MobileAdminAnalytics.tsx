@@ -12,6 +12,7 @@ import {
   fetchRecentVisitors, topCountriesFromLocations, SOURCE_LABELS,
   type AnalyticsSummary,
 } from '../../services/analytics-service';
+import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -28,6 +29,7 @@ export function MobileAdminAnalytics() {
 function AnalyticsContent() {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<'visitantes' | 'comercial'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -88,6 +90,24 @@ function AnalyticsContent() {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {/* Comercial / Visitantes — solo admin, ver AdminRoute en routes.tsx */}
+        <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
+          {(['comercial', 'visitantes'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className="flex-1 rounded-full py-2 text-xs font-bold transition"
+              style={tab === t ? { background: '#4338CA', color: '#fff' } : { color: '#64748B' }}
+            >
+              {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial') : (language === 'en' ? 'Visitors' : 'Visitantes')}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'comercial' && <BusinessIntelligenceTab language={language} />}
+
+        {tab === 'visitantes' && <>
         {/* Range filter */}
         <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
           {RANGE_OPTIONS.map((opt) => (
@@ -305,6 +325,7 @@ function AnalyticsContent() {
             </button>
           )}
         </div>
+        </>}
       </div>
     </div>
   );

@@ -7,6 +7,16 @@
  */
 import { supabase, publicSupabase } from '../../lib/supabase';
 
+// Same reasoning as analytics-service.ts's withTimeout — a stalled request
+// on a slow/flaky mobile connection must never leave the admin leads table
+// stuck on "Cargando…" forever.
+function withTimeout<T>(thenable: PromiseLike<T>, ms = 12000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(thenable),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms)),
+  ]);
+}
+
 export type LeadStatus = 'new' | 'contacted' | 'negotiating' | 'closed' | 'lost';
 
 export interface BusinessLead {
@@ -79,7 +89,7 @@ export async function submitBusinessLead(input: SubmitLeadInput): Promise<void> 
 }
 
 export async function fetchBusinessLeads(): Promise<BusinessLead[]> {
-  const { data, error } = await supabase.rpc('get_business_leads');
+  const { data, error } = await withTimeout(supabase.rpc('get_business_leads'));
   if (error || !data) return [];
   return data as BusinessLead[];
 }

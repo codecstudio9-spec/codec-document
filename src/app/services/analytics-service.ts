@@ -18,6 +18,22 @@
 
 import { supabase, publicSupabase } from '../../lib/supabase';
 
+// Admin dashboards (desktop + mobile) used to show "Cargando…" forever on a
+// slow/flaky connection — none of these RPC calls had a timeout, so a
+// stalled request just never settled and the loading skeleton never went
+// away (confirmed live: a mobile session stuck 6+ minutes). Every fetch*
+// below races the real request against this timeout so the UI always
+// gets an answer — a real one, or a safe empty/zero fallback — within a
+// bounded time, exactly like the existing .catch(() => setX(fallback))
+// call sites already expect.
+const ADMIN_FETCH_TIMEOUT_MS = 12000;
+function withTimeout<T>(thenable: PromiseLike<T>, ms = ADMIN_FETCH_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    Promise.resolve(thenable),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms)),
+  ]);
+}
+
 const SESSION_KEY = 'codec_analytics_session';
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 min of inactivity = new "visit"
 const VISITOR_KEY = 'codec_analytics_visitor';
@@ -226,7 +242,7 @@ export interface AnalyticsSummary {
 }
 
 export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
-  const { data, error } = await supabase.rpc('get_analytics_summary');
+  const { data, error } = await withTimeout(supabase.rpc('get_analytics_summary'));
   const row = !error && Array.isArray(data) ? data[0] : null;
   return {
     totalVisitors: Number(row?.total_visitors ?? 0),
@@ -239,14 +255,14 @@ export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
 }
 
 export async function fetchVisitorsTrend(daysLimit: number): Promise<Array<{ day: string; visitors: number }>> {
-  const { data, error } = await supabase.rpc('get_visitors_trend', { days_limit: daysLimit });
+  const { data, error } = await withTimeout(supabase.rpc('get_visitors_trend', { days_limit: daysLimit }));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({ day: r.visit_date, visitors: Number(r.total_visits) }));
 }
 
 /** All-time — get_traffic_sources_summary() takes no date-range param. */
 export async function fetchTrafficSources(): Promise<Array<{ source: string; visitors: number }>> {
-  const { data, error } = await supabase.rpc('get_traffic_sources_summary');
+  const { data, error } = await withTimeout(supabase.rpc('get_traffic_sources_summary'));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({ source: r.source, visitors: Number(r.count) }));
 }
@@ -255,7 +271,7 @@ export async function fetchTrafficSources(): Promise<Array<{ source: string; vis
  * is a unique (city, country) pair, so "top countries" is derived here by
  * summing rows client-side rather than a second RPC. */
 export async function fetchLocationSummary(): Promise<Array<{ city: string; country: string; visitors: number }>> {
-  const { data, error } = await supabase.rpc('get_location_summary');
+  const { data, error } = await withTimeout(supabase.rpc('get_location_summary'));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({ city: r.city_name, country: r.country_name, visitors: Number(r.count) }));
 }
@@ -312,7 +328,7 @@ export interface SalesSummary {
 }
 
 export async function fetchSalesSummary(): Promise<SalesSummary> {
-  const { data, error } = await supabase.rpc('get_sales_summary');
+  const { data, error } = await withTimeout(supabase.rpc('get_sales_summary'));
   const row = !error && Array.isArray(data) ? data[0] : null;
   return {
     salesToday: Number(row?.sales_today ?? 0),
@@ -323,7 +339,7 @@ export async function fetchSalesSummary(): Promise<SalesSummary> {
 }
 
 export async function fetchTopDocuments(): Promise<Array<{ documentType: string; generatedCount: number; paidCount: number }>> {
-  const { data, error } = await supabase.rpc('get_top_documents');
+  const { data, error } = await withTimeout(supabase.rpc('get_top_documents'));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({
     documentType: r.document_type,
@@ -337,7 +353,7 @@ export interface ConversionFunnel {
 }
 
 export async function fetchConversionFunnel(daysLimit: number): Promise<ConversionFunnel> {
-  const { data, error } = await supabase.rpc('get_conversion_funnel', { days_limit: daysLimit });
+  const { data, error } = await withTimeout(supabase.rpc('get_conversion_funnel', { days_limit: daysLimit }));
   const row = !error && Array.isArray(data) ? data[0] : null;
   return {
     visited: Number(row?.visited ?? 0),
@@ -349,13 +365,13 @@ export async function fetchConversionFunnel(daysLimit: number): Promise<Conversi
 }
 
 export async function fetchSignatureStats(daysLimit: number): Promise<{ started: number; completed: number }> {
-  const { data, error } = await supabase.rpc('get_signature_stats', { days_limit: daysLimit });
+  const { data, error } = await withTimeout(supabase.rpc('get_signature_stats', { days_limit: daysLimit }));
   const row = !error && Array.isArray(data) ? data[0] : null;
   return { started: Number(row?.started ?? 0), completed: Number(row?.completed ?? 0) };
 }
 
 export async function fetchTopPages(): Promise<Array<{ landingPage: string; visits: number; conversions: number }>> {
-  const { data, error } = await supabase.rpc('get_top_pages');
+  const { data, error } = await withTimeout(supabase.rpc('get_top_pages'));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({ landingPage: r.landing_page, visits: Number(r.visits), conversions: Number(r.conversions) }));
 }
@@ -367,7 +383,7 @@ export async function fetchRecentVisitors(): Promise<Array<{
   generatedDocument: boolean; completedSignature: boolean;
   documentSource: ActivitySource | null; signatureSource: ActivitySource | null;
 }>> {
-  const { data, error } = await supabase.rpc('get_recent_visitors');
+  const { data, error } = await withTimeout(supabase.rpc('get_recent_visitors'));
   if (error || !data) return [];
   return (data as any[]).map((r) => ({
     id: r.id, country: r.country, city: r.city, source: r.referrer_source,
