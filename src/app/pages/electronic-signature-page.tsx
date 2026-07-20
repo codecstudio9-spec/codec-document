@@ -288,10 +288,33 @@ export function ElectronicSignaturePage() {
     // "firma iniciada", independent of whether it's ever completed.
     markVisitorFunnelStep('signature_started');
   }, []);
-  const [paywallContext, setPaywallContext] = useState<'upload' | 'doc' | null>(null);
+  // 'doc' — signature-limit gate, still checked at the "position" manual
+  // multi-signer step (rare/demo path). 'download' — the document-limit
+  // gate, now checked once the document is actually fully signed, right
+  // before it's shown as downloadable — see the step==='done' effect below.
+  const [paywallContext, setPaywallContext] = useState<'doc' | 'download' | null>(null);
   const [paywallNextSlotAt, setPaywallNextSlotAt] = useState<Date | null>(null);
   const [pendingPlacements, setPendingPlacements] = useState<PlacedSignature[] | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  // Guards the step==='done' quota check below so it only ever runs once
+  // per document, even if the effect re-fires (e.g. React strict-mode
+  // double-invoke, or the guest's remote completion and a manual "Verificar"
+  // click both flipping step to 'done' in the same session).
+  const downloadGateCheckedRef = useRef(false);
+  const [checkingDownloadGate, setCheckingDownloadGate] = useState(false);
+  const [downloadUnlocked, setDownloadUnlocked] = useState(false);
+  // Read-only peek (never consumes a slot) — purely to decide whether the
+  // live preview panel should carry a watermark while the creator is still
+  // free to go through the whole flow. The real, consuming check is the
+  // step==='done' effect above.
+  const [hasHitDocumentLimit, setHasHitDocumentLimit] = useState(false);
+  useEffect(() => {
+    if (isAdmin) return;
+    (async () => {
+      const userId = session?.user?.id;
+      const nextSlot = userId ? await getNextDocumentSlot(userId) : await getNextAnonUsageSlot('document');
+      setHasHitDocumentLimit(Boolean(nextSlot && nextSlot.getTime() > Date.now()));
+    })();
+  }, [isAdmin, session?.user?.id]);
   const [documentType, setDocumentType] = useState<string>('');
   const resolvedDocumentType = inferDocumentTypeHint(documentType);
 
@@ -340,6 +363,36 @@ export function ElectronicSignaturePage() {
   useEffect(() => {
     if (step === 'done' && !signedAt) setSignedAt(new Date().toISOString());
   }, [step, signedAt]);
+
+  // The free-tier document limit, checked exactly once, right when the
+  // document actually finishes being signed — whichever of the 3 paths got
+  // it there (solo signing, the manual multi-signer step, or the guest
+  // completing remotely and the creator clicking "Continuar"). Consuming
+  // it here instead of at upload time means the whole prepare/sign/invite/
+  // wait process is free; only this last unlock-to-download step can ask
+  // for payment, and only if the free 72h allowance is already spent.
+  useEffect(() => {
+    if (step !== 'done' || downloadGateCheckedRef.current) return;
+    downloadGateCheckedRef.current = true;
+    if (isAdmin) { setDownloadUnlocked(true); return; }
+    setCheckingDownloadGate(true);
+    (async () => {
+      try {
+        const userId = session?.user?.id;
+        const { allowed } = userId
+          ? await consumeDocumentLimit72h(userId, false)
+          : await consumeAnonUsage72h('document');
+        if (allowed) {
+          setDownloadUnlocked(true);
+        } else {
+          setPaywallNextSlotAt(userId ? await getNextDocumentSlot(userId) : await getNextAnonUsageSlot('document'));
+          setPaywallContext('download');
+        }
+      } finally {
+        setCheckingDownloadGate(false);
+      }
+    })();
+  }, [step, isAdmin, session?.user?.id]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -426,20 +479,17 @@ export function ElectronicSignaturePage() {
 
   // ── Step handlers ─────────────────────────────────────────────────────────
 
-  const handleUploadPdf = async (file?: File | null, bypassUsageCheck = false) => {
+  // The free-tier document limit used to be checked HERE, before letting
+  // anyone even upload — so the paywall interrupted the flow before the
+  // creator had gotten any value out of it at all. It's now checked once,
+  // right when the document actually finishes being signed (see the
+  // step==='done' effect below) — the whole prepare/sign/invite/wait
+  // process is free to go through; only the final unlock-to-download step
+  // can ask for payment.
+  const handleUploadPdf = async (file?: File | null) => {
     if (!file) return;
     if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
       setError('Solo se permiten archivos PDF.'); return;
-    }
-    if (!bypassUsageCheck && !isAdmin) {
-      const userId = session?.user?.id;
-      const { allowed } = userId
-        ? await consumeDocumentLimit72h(userId, false)
-        : await consumeAnonUsage72h('document');
-      if (!allowed) {
-        setPaywallNextSlotAt(userId ? await getNextDocumentSlot(userId) : await getNextAnonUsageSlot('document'));
-        setPendingFile(file); setPaywallContext('upload'); return;
-      }
     }
     setError(''); setIsLoading(true); setLoadingMsg('Procesando documento…');
     try {
@@ -450,11 +500,6 @@ export function ElectronicSignaturePage() {
       const hash = await sha256Hex(arrayBuffer); setFileHash(hash);
       setLoadingMsg('Creando registro…');
       const docId = await createDocumentRecord({ name: file.name.replace(/\.pdf$/i, ''), userId: session?.user?.id ?? null });
-      if (!docId) {
-        setPendingFile(file);
-        setPaywallContext('upload');
-        return;
-      }
       setDocumentId(docId);
       setDocumentType(file.name.replace(/\.pdf$/i, '').toLowerCase());
       setLoadingMsg('Subiendo al almacenamiento seguro…');
@@ -696,7 +741,9 @@ export function ElectronicSignaturePage() {
     setGuestName(''); setGuestEmail(''); setGuestSigDataUrl(''); setGuestSigUrl('');
     setSigningToken(''); setSignedPdfUrl(''); setSignedAt(''); setDocumentStatus('pending');
     setRequireIdPhoto(false); setRequireSelfie(false);
-    setPendingFile(null); setError('');
+    setPaywallContext(null); setPaywallNextSlotAt(null); setPendingPlacements(null);
+    downloadGateCheckedRef.current = false; setCheckingDownloadGate(false); setDownloadUnlocked(false);
+    setError('');
   };
 
   // Requirements travel as URL query-params — no extra DB table needed
@@ -775,7 +822,13 @@ export function ElectronicSignaturePage() {
         <div key={step}>
 
           {/* ── DONE ── */}
-          {isDone && (
+          {isDone && checkingDownloadGate && (
+            <div className="flex min-h-[50vh] items-center justify-center gap-3 text-slate-400">
+              <Loader className="size-5 animate-spin" />
+              <span className="text-sm">Verificando tu cuota gratuita…</span>
+            </div>
+          )}
+          {isDone && !checkingDownloadGate && downloadUnlocked && (
             <SignedSuccessScreen
               onFinish={handleReset}
               downloadUrl={signedPdfUrl}
@@ -783,6 +836,32 @@ export function ElectronicSignaturePage() {
               documentId={documentId}
               signedAt={signedAt}
             />
+          )}
+          {/* Document is fully signed but the free 72h document allowance is
+              already spent — the paywall overlay below handles payment;
+              this is what stays visible behind/after it closes without
+              paying, so the reader always has a way back in instead of a
+              blank screen. */}
+          {isDone && !checkingDownloadGate && !downloadUnlocked && (
+            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-amber-50">
+                <Lock className="size-7 text-amber-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Tu documento ya está firmado y certificado</h2>
+                <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-500">
+                  Ya usaste tus documentos gratis de las últimas 72 horas. Desbloquéalo para descargar el PDF certificado.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaywallContext('download')}
+                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
+              >
+                <Lock className="size-4" />
+                Desbloquear y descargar
+              </button>
+            </div>
           )}
 
           {/* ══════════════════════════════════════════════════════════════
@@ -885,6 +964,7 @@ export function ElectronicSignaturePage() {
               {/* Right panel — live preview */}
               <PdfSignaturePreview
                 pdfBytes={pdfBytes}
+                watermark={hasHitDocumentLimit}
                 signers={[
                   {
                     name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'),
@@ -1001,6 +1081,7 @@ export function ElectronicSignaturePage() {
               {/* Right panel */}
               <PdfSignaturePreview
                 pdfBytes={pdfBytes}
+                watermark={hasHitDocumentLimit}
                 signers={[
                   { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
                   { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
@@ -1076,6 +1157,7 @@ export function ElectronicSignaturePage() {
 
               <PdfSignaturePreview
                 pdfBytes={pdfBytes}
+                watermark={hasHitDocumentLimit}
                 signers={[
                   { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
                   { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: guestSigDataUrl || undefined, canSign: false },
@@ -1130,20 +1212,24 @@ export function ElectronicSignaturePage() {
       {/* Renders regardless of auth state — it used to require
           session?.user?.id, so an anonymous visitor who genuinely exhausted
           their free 72h allowance (see consumeAnonUsage72h) would have
-          paywallContext set but see nothing happen at all when blocked. */}
-      {paywallContext !== null && !isDone && (
+          paywallContext set but see nothing happen at all when blocked.
+          Also renders while isDone — the 'download' context is set exactly
+          then (see the step==='done' effect above), and the locked-teaser
+          screen behind it is what stays visible if this gets closed
+          without paying. */}
+      {paywallContext !== null && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/70 p-4 py-8 backdrop-blur-sm sm:items-center">
           <div className="relative my-auto max-h-[85vh] w-full max-w-md overflow-y-auto">
             <button
               type="button"
-              onClick={() => { setPaywallContext(null); setPendingPlacements(null); setPendingFile(null); }}
+              onClick={() => { setPaywallContext(null); setPendingPlacements(null); }}
               className="absolute -right-3 -top-3 z-10 flex size-9 items-center justify-center rounded-full bg-slate-800 text-white transition hover:bg-slate-700"
             >
               <X className="size-4" />
             </button>
             <div className="mb-3 rounded-2xl border border-amber-400/30 bg-amber-950/60 px-4 py-3 text-center">
               <p className="flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
-                {paywallContext === 'upload'
+                {paywallContext === 'download'
                   ? (<><Upload className="size-4 shrink-0" /> Límite gratuito de documentos alcanzado</>)
                   : (<><FileText className="size-4 shrink-0" /> Límite gratuito de firmas alcanzado</>)}
               </p>
@@ -1154,7 +1240,7 @@ export function ElectronicSignaturePage() {
                   const waitText = hours > 0
                     ? `Vuelve a hacerlo gratis en ${hours <= 1 ? 'menos de 1 hora' : `${hours} horas`}, o`
                     : 'Vuelve a intentarlo gratis en un momento, o';
-                  return `${waitText} paga solo por esta firma para continuar ahora.`;
+                  return `${waitText} paga solo por ${paywallContext === 'download' ? 'este documento' : 'esta firma'} para continuar ahora.`;
                 })()}
               </p>
             </div>
@@ -1163,10 +1249,10 @@ export function ElectronicSignaturePage() {
                 userId={session.user.id}
                 mode="signature"
                 onSuccess={() => {
-                  const ctx = paywallContext, pendingPos = pendingPlacements, pendingF = pendingFile;
-                  setPaywallContext(null); setPendingPlacements(null); setPendingFile(null);
-                  if (ctx === 'upload' && pendingF) void handleUploadPdf(pendingF, true);
-                  if (ctx === 'doc'    && pendingPos) void handleConfirmPositions(pendingPos, true);
+                  const ctx = paywallContext, pendingPos = pendingPlacements;
+                  setPaywallContext(null); setPendingPlacements(null);
+                  if (ctx === 'download') setDownloadUnlocked(true);
+                  if (ctx === 'doc' && pendingPos) void handleConfirmPositions(pendingPos, true);
                 }}
               />
             ) : (

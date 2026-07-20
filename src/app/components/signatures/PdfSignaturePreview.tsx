@@ -23,6 +23,30 @@ export interface PreviewSigner {
 interface PdfSignaturePreviewProps {
   pdfBytes: Uint8Array | null;
   signers: PreviewSigner[];
+  /** Shown only once the creator's free 72h document allowance is already
+   * spent — a soft deterrent against just screenshotting the free preview
+   * instead of unlocking the clean download, not a real anti-screenshot
+   * mechanism (no web page can actually block a screenshot; that's an OS-
+   * level capability). Goes away automatically once the 72h window rolls
+   * over or the document gets unlocked. */
+  watermark?: boolean;
+}
+
+const WATERMARK_TEXT = 'DESBLOQUEA PARA DESCARGAR · CODEC DOCUMENT';
+
+function watermarkTileStyle(): React.CSSProperties {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160">`
+    + `<text x="160" y="90" transform="rotate(-28 160 90)" font-family="Arial, Helvetica, sans-serif" `
+    + `font-size="14" font-weight="700" fill="rgba(15,23,42,0.16)" text-anchor="middle">${WATERMARK_TEXT}</text>`
+    + `</svg>`;
+  return {
+    backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+    backgroundRepeat: 'repeat',
+  };
+}
+
+function WatermarkOverlay() {
+  return <div className="pointer-events-none absolute inset-0 z-10" style={watermarkTileStyle()} />;
 }
 
 // ── Signer block — matches the exact spec the creator requested ───────────────
@@ -151,7 +175,7 @@ function SignerBlock({ signer, index }: { signer: PreviewSigner; index: number }
 }
 
 // ── Main preview component ─────────────────────────────────────────────────────
-export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewProps) {
+export function PdfSignaturePreview({ pdfBytes, signers, watermark = false }: PdfSignaturePreviewProps) {
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const renderedRef = useRef<Uint8Array | null>(null);
   const [loading, setLoading] = useState(true);
@@ -247,6 +271,7 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
           </div>
         )}
         <canvas ref={canvasRef} className={`block w-full ${loading ? 'invisible h-0' : ''}`} />
+        {ready && watermark && <WatermarkOverlay />}
         {ready && (
           <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
             <Maximize2 className="size-3" /> Ver completo
@@ -330,7 +355,7 @@ export function PdfSignaturePreview({ pdfBytes, signers }: PdfSignaturePreviewPr
         </div>
       </div>
 
-      <PdfViewerModal open={viewerOpen} onOpenChange={setViewerOpen} pdfBytes={pdfBytes} title="Vista previa del documento" />
+      <PdfViewerModal open={viewerOpen} onOpenChange={setViewerOpen} pdfBytes={pdfBytes} title="Vista previa del documento" watermark={watermark} />
     </div>
   );
 }

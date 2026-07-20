@@ -21,6 +21,24 @@ interface PdfViewerModalProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pdfDoc?: any;
   title?: string;
+  /** Shown only once the viewer's free 72h document allowance is spent —
+   * a soft deterrent against screenshotting the free preview instead of
+   * unlocking the clean download (no web page can truly block a
+   * screenshot — that's OS-level, not something this can enforce). */
+  watermark?: boolean;
+}
+
+const WATERMARK_TEXT = 'DESBLOQUEA PARA DESCARGAR · CODEC DOCUMENT';
+
+function watermarkTileStyle(): React.CSSProperties {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160">`
+    + `<text x="160" y="90" transform="rotate(-28 160 90)" font-family="Arial, Helvetica, sans-serif" `
+    + `font-size="14" font-weight="700" fill="rgba(15,23,42,0.16)" text-anchor="middle">${WATERMARK_TEXT}</text>`
+    + `</svg>`;
+  return {
+    backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+    backgroundRepeat: 'repeat',
+  };
 }
 
 const MIN_ZOOM = 0.5;
@@ -37,7 +55,7 @@ const RENDER_SCALE = 1.6;
  * the fixed-size single-page thumbnail those previews show inline.
  * Renders every page (not just the last one) stacked vertically.
  */
-export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title }: PdfViewerModalProps) {
+export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title, watermark = false }: PdfViewerModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const renderedRef = useRef<unknown>(null);
   const [loading, setLoading] = useState(true);
@@ -129,9 +147,14 @@ export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title }: 
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="relative flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
             style={{ maxHeight: '92vh' }}
           >
+            {/* Stays fixed over the card while the page stack scrolls
+                underneath it, so it covers every scroll position rather
+                than just whatever was visible when the modal opened. */}
+            {watermark && <div className="pointer-events-none absolute inset-0 z-20" style={watermarkTileStyle()} />}
+
             {/* Header */}
             <div className="flex shrink-0 items-center gap-2 border-b border-slate-100 px-4 py-3">
               <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
