@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
       const code = promoCode.trim().toUpperCase();
       const { data: promo } = await admin
         .from('promo_codes')
-        .select('code, product, active, expires_at, max_redemptions, redemption_count')
+        .select('code, product, active, expires_at, max_redemptions, redemption_count, unlimited_per_user')
         .eq('code', code)
         .maybeSingle();
 
@@ -315,13 +315,31 @@ Deno.serve(async (req) => {
         || req.headers.get('x-real-ip')
         || null;
 
+      // Codes with unlimited_per_user = true (e.g. the admin's own master
+      // code) can be redeemed any number of times by the same account —
+      // there's no DB-level UNIQUE(code, user_id) anymore (dropped
+      // deliberately, see supabase_add_promo_unlimited_per_user_migration.sql),
+      // so "already redeemed" is only enforced here, only for ordinary codes.
+      if (!promo.unlimited_per_user) {
+        const { data: alreadyRedeemed } = await admin
+          .from('promo_redemptions')
+          .select('id')
+          .eq('code', code)
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (alreadyRedeemed) {
+          return new Response(JSON.stringify({ error: 'You already redeemed this promo code' }), {
+            status: 409, headers: corsHeaders(origin),
+          });
+        }
+      }
+
       const { error: redemptionError } = await admin
         .from('promo_redemptions')
         .insert({ code, user_id: userId, ip_address: ipAddress, product: grantedProduct });
       if (redemptionError) {
-        // Unique(code, user_id) violation → already redeemed by this user.
-        return new Response(JSON.stringify({ error: 'You already redeemed this promo code' }), {
-          status: 409, headers: corsHeaders(origin),
+        return new Response(JSON.stringify({ error: 'Could not record this redemption' }), {
+          status: 500, headers: corsHeaders(origin),
         });
       }
       await admin.from('promo_codes').update({ redemption_count: promo.redemption_count + 1 }).eq('code', code);

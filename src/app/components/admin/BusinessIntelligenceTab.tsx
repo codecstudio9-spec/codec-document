@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   DollarSign, ShoppingCart, TrendingUp, Users2, FileText, PenLine,
-  Globe2, Download, Loader, ArrowRight,
+  Globe2, Download, Loader, ArrowRight, Tag, Search, Bell,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -12,6 +12,7 @@ import {
   fetchBusinessLeads, updateLeadStatus, leadsToCsv, LEAD_STATUS_LABELS,
   type BusinessLead, type LeadStatus,
 } from '../../services/business-leads-service';
+import { getPromoCodeUsage, type PromoCodeUsage } from '../../services/promo-admin-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 function Card({ children }: { children: React.ReactNode }) {
@@ -284,6 +285,109 @@ export function BusinessIntelligenceTab({ language }: { language: 'en' | 'es' })
           )}
         </div>
       </Card>
+
+      <PromoCodeLookup language={language} />
     </div>
+  );
+}
+
+/** Admin types the code they want to audit — never hardcoded here, since
+ * a code with no redemption limit shouldn't live in plain text in a
+ * committed file (a repo that could go public). Also doubles as the
+ * "notification" the admin asked for: if the usage count grew since the
+ * last time THIS browser checked this same code, it's called out — an
+ * in-app indicator you see when you open this panel, not a push/email
+ * alert while you're away (no such infra exists in this project yet). */
+function PromoCodeLookup({ language }: { language: 'en' | 'es' }) {
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [usage, setUsage] = useState<PromoCodeUsage[] | null>(null);
+  const [newSinceLastCheck, setNewSinceLastCheck] = useState(0);
+
+  const handleSearch = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return;
+    setLoading(true);
+    try {
+      const results = await getPromoCodeUsage(trimmed);
+      setUsage(results);
+      const storageKey = `promo_seen_count_${trimmed}`;
+      const previouslySeen = Number(localStorage.getItem(storageKey) ?? '0');
+      setNewSinceLastCheck(Math.max(0, results.length - previouslySeen));
+      localStorage.setItem(storageKey, String(results.length));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error');
+      setUsage(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <h2 className="flex items-center gap-2 text-sm font-black text-slate-900">
+        <Tag className="size-4 text-slate-400" />
+        {language === 'en' ? 'Promo code usage' : 'Uso de código promocional'}
+      </h2>
+      <p className="mt-0.5 text-xs text-slate-400">
+        {language === 'en' ? 'Type any code to see exactly where and when it was used.' : 'Escribe cualquier código para ver exactamente dónde y cuándo se usó.'}
+      </p>
+      <div className="mt-4 flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void handleSearch(); }}
+          placeholder={language === 'en' ? 'e.g. PROMO1022925002' : 'ej. PROMO1022925002'}
+          className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm uppercase tracking-wide outline-none focus:border-indigo-400"
+        />
+        <button
+          type="button"
+          disabled={loading || !code.trim()}
+          onClick={() => void handleSearch()}
+          className="flex items-center gap-1.5 rounded-xl bg-slate-800 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40"
+        >
+          {loading ? <Loader className="size-3.5 animate-spin" /> : <Search className="size-3.5" />}
+          {language === 'en' ? 'Search' : 'Buscar'}
+        </button>
+      </div>
+
+      {usage && newSinceLastCheck > 0 && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-800">
+          <Bell className="size-3.5" />
+          {language === 'en'
+            ? `${newSinceLastCheck} new use${newSinceLastCheck === 1 ? '' : 's'} since you last checked this code.`
+            : `${newSinceLastCheck} uso${newSinceLastCheck === 1 ? '' : 's'} nuevo${newSinceLastCheck === 1 ? '' : 's'} desde tu última revisión de este código.`}
+        </div>
+      )}
+
+      {usage && (
+        <div className="mt-4 overflow-x-auto">
+          {usage.length === 0 ? (
+            <p className="py-4 text-center text-xs text-slate-400">{language === 'en' ? 'No redemptions yet for this code.' : 'Aún no se ha usado este código.'}</p>
+          ) : (
+            <table className="w-full min-w-[520px] text-left text-xs">
+              <thead>
+                <tr className="text-slate-400">
+                  <th className="pb-2 font-semibold">{language === 'en' ? 'Date' : 'Fecha'}</th>
+                  <th className="pb-2 font-semibold">{language === 'en' ? 'Account' : 'Cuenta'}</th>
+                  <th className="pb-2 font-semibold">IP</th>
+                  <th className="pb-2 font-semibold">{language === 'en' ? 'Granted' : 'Otorgó'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usage.map((u, i) => (
+                  <tr key={i} className="border-t border-slate-50">
+                    <td className="py-2 pr-2 text-slate-500">{new Date(u.redeemedAt).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</td>
+                    <td className="py-2 pr-2 font-semibold text-slate-700">{u.userEmail}</td>
+                    <td className="py-2 pr-2 text-slate-500">{u.ipAddress ?? '—'}</td>
+                    <td className="py-2 pr-2 text-slate-500">{u.product}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
