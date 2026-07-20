@@ -207,6 +207,26 @@ const BlogComoEnviarDocumentoParaFirmaOnline = lazy(() => import("./pages/landin
 const BlogFirmaElectronicaParaRecursosHumanos = lazy(() => import("./pages/landings/blog-firma-electronica-para-recursos-humanos"));
 // Pilot article under the new problem-first / E-E-A-T content standard (see feedback_seo_article_standard memory).
 const BlogReducirTiempoFirmaContratos = lazy(() => import("./pages/landings/blog-reducir-tiempo-firma-contratos"));
+const BlogComoEvitarPerderVentasPorDemorasEnFirma = lazy(() => import("./pages/landings/blog-como-evitar-perder-ventas-por-demoras-en-firma"));
+const BlogNdaUnilateralVsBilateral = lazy(() => import("./pages/landings/blog-nda-unilateral-vs-bilateral"));
+const BlogErroresComunesAlRedactarUnNda = lazy(() => import("./pages/landings/blog-errores-comunes-al-redactar-un-nda"));
+const BlogQuePasaSiRompenUnNda = lazy(() => import("./pages/landings/blog-que-pasa-si-rompen-un-nda"));
+const BlogComoAutomatizarContratosEnUnaInmobiliariaPequena = lazy(() => import("./pages/landings/blog-como-automatizar-contratos-en-una-inmobiliaria-pequena"));
+const BlogComoProtegerseComoContratistaIndependiente = lazy(() => import("./pages/landings/blog-como-protegerse-como-contratista-independiente"));
+const BlogAhorrarHorasEliminandoPapelEnTuEmpresa = lazy(() => import("./pages/landings/blog-ahorrar-horas-eliminando-papel-en-tu-empresa"));
+const BlogComoOrganizarDocumentosLegalesDeTuEmpresa = lazy(() => import("./pages/landings/blog-como-organizar-documentos-legales-de-tu-empresa"));
+const BlogErroresComunesEnContratoDeArrendamiento = lazy(() => import("./pages/landings/blog-errores-comunes-en-contrato-de-arrendamiento"));
+const BlogComoVerificarIdentidadDeUnFirmante = lazy(() => import("./pages/landings/blog-como-verificar-identidad-de-un-firmante"));
+const BlogStopLosingSalesBecauseOfSlowContracts = lazy(() => import("./pages/landings/blog-stop-losing-sales-because-of-slow-contracts"));
+const BlogWhatHappensIfSomeoneBreaksAnNda = lazy(() => import("./pages/landings/blog-what-happens-if-someone-breaks-an-nda"));
+const BlogIndependentContractorVsEmployeePaperwork = lazy(() => import("./pages/landings/blog-independent-contractor-vs-employee-paperwork"));
+const BlogHowFreelancersCanProtectThemselvesWithAContract = lazy(() => import("./pages/landings/blog-how-freelancers-can-protect-themselves-with-a-contract"));
+const BlogRealCostOfNoWrittenContract = lazy(() => import("./pages/landings/blog-real-cost-of-no-written-contract"));
+const BlogSimpleDocumentWorkflowSmallCompany = lazy(() => import("./pages/landings/blog-simple-document-workflow-small-company"));
+const BlogHowToScreenTenantsAndDraftLeases = lazy(() => import("./pages/landings/blog-how-to-screen-tenants-and-draft-leases"));
+const BlogWhatToKnowBeforeSigningCommercialLease = lazy(() => import("./pages/landings/blog-what-to-know-before-signing-commercial-lease"));
+const BlogHowToWriteAServiceAgreementThatProtectsYou = lazy(() => import("./pages/landings/blog-how-to-write-a-service-agreement-that-protects-you"));
+const BlogHowToVetAClientBeforeSigningAContract = lazy(() => import("./pages/landings/blog-how-to-vet-a-client-before-signing-a-contract"));
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -471,6 +491,26 @@ export const router = createBrowserRouter([
   { path: "/blog/como-enviar-documento-para-firma-online", Component: BlogComoEnviarDocumentoParaFirmaOnline, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/firma-electronica-para-recursos-humanos", Component: BlogFirmaElectronicaParaRecursosHumanos, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/reducir-tiempo-firma-contratos", Component: BlogReducirTiempoFirmaContratos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-evitar-perder-ventas-por-demoras-en-firma", Component: BlogComoEvitarPerderVentasPorDemorasEnFirma, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/nda-unilateral-vs-bilateral", Component: BlogNdaUnilateralVsBilateral, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/errores-comunes-al-redactar-un-nda", Component: BlogErroresComunesAlRedactarUnNda, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/que-pasa-si-rompen-un-nda", Component: BlogQuePasaSiRompenUnNda, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-automatizar-contratos-en-una-inmobiliaria-pequena", Component: BlogComoAutomatizarContratosEnUnaInmobiliariaPequena, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-protegerse-como-contratista-independiente", Component: BlogComoProtegerseComoContratistaIndependiente, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/ahorrar-horas-eliminando-papel-en-tu-empresa", Component: BlogAhorrarHorasEliminandoPapelEnTuEmpresa, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-organizar-documentos-legales-de-tu-empresa", Component: BlogComoOrganizarDocumentosLegalesDeTuEmpresa, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/errores-comunes-en-contrato-de-arrendamiento", Component: BlogErroresComunesEnContratoDeArrendamiento, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-verificar-identidad-de-un-firmante", Component: BlogComoVerificarIdentidadDeUnFirmante, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/stop-losing-sales-because-of-slow-contracts", Component: BlogStopLosingSalesBecauseOfSlowContracts, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/what-happens-if-someone-breaks-an-nda", Component: BlogWhatHappensIfSomeoneBreaksAnNda, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/independent-contractor-vs-employee-paperwork", Component: BlogIndependentContractorVsEmployeePaperwork, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-freelancers-can-protect-themselves-with-a-contract", Component: BlogHowFreelancersCanProtectThemselvesWithAContract, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/real-cost-of-no-written-contract", Component: BlogRealCostOfNoWrittenContract, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/simple-document-workflow-small-company", Component: BlogSimpleDocumentWorkflowSmallCompany, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-to-screen-tenants-and-draft-leases", Component: BlogHowToScreenTenantsAndDraftLeases, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/what-to-know-before-signing-commercial-lease", Component: BlogWhatToKnowBeforeSigningCommercialLease, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-to-write-a-service-agreement-that-protects-you", Component: BlogHowToWriteAServiceAgreementThatProtectsYou, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-to-vet-a-client-before-signing-a-contract", Component: BlogHowToVetAClientBeforeSigningAContract, errorElement: <RouteErrorBoundary /> },
   // Smart Quotes -- SEO
   { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
   { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },

@@ -246,6 +246,21 @@ export function ArticleLanding({ data }: { data: Article }) {
         <div className="py-12">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-3xl">
+              {data.heroImage && (
+                <figure className="mb-8">
+                  <img
+                    src={data.heroImage.src}
+                    alt={data.heroImage.alt}
+                    loading="lazy"
+                    className="w-full rounded-2xl object-cover"
+                    style={{ maxHeight: 420 }}
+                  />
+                  {data.heroImage.credit && (
+                    <figcaption className="mt-1.5 text-right text-[11px] text-slate-400">{data.heroImage.credit}</figcaption>
+                  )}
+                </figure>
+              )}
+
               {data.intro.map((p, i) => (
                 <p key={i} className="mb-4 text-lg leading-relaxed text-slate-700">{p}</p>
               ))}
