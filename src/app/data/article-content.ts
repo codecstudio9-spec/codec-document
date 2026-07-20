@@ -17,6 +17,49 @@ export interface ArticleFaq {
   a: string;
 }
 
+/** A single frequent-mistake callout — Google ranks "common mistakes"
+ * sections well, and it forces the article past generic definitions into
+ * genuinely earned, specific advice. */
+export interface ArticleMistake {
+  title: string;
+  description: string;
+}
+
+/** A short, concrete "here's how this looks for a real business" case —
+ * one per relevant vertical (small business, real estate, freelancer, HR,
+ * construction, consulting, startup, legal), not a generic example. */
+export interface ArticleScenario {
+  vertical: string;
+  scenario: string;
+}
+
+export interface ArticleChecklist {
+  title: string;
+  items: string[];
+}
+
+export interface ArticleComparisonTable {
+  caption: string;
+  headers: string[];
+  rows: string[][];
+}
+
+/** A real, citable, official source for any legal/statistical claim in the
+ * article — never a fabricated citation. Shown in a visible "sources"
+ * section, not just used silently while writing. */
+export interface ArticleSource {
+  label: string;
+  url: string;
+}
+
+/** Only ever populated with a verified video from a university, government
+ * body, or other recognized authority — never a competitor's own content. */
+export interface ArticleVideoResource {
+  title: string;
+  url: string;
+  source: string;
+}
+
 export interface Article {
   slug: string;
   language: 'en' | 'es';
@@ -27,10 +70,34 @@ export interface Article {
   metaDescription: string;
   keywords: string;
   dateLabel: string;
+  /** ISO date (YYYY-MM-DD) — only needed for the Article schema's
+   * datePublished; dateLabel stays the human-readable string shown on
+   * the page. Optional so the original 20 articles don't need one. */
+  isoDate?: string;
   readMinutes: number;
   intro: string[];
   sections: ArticleSection[];
+  /** Real-world "how this plays out for an actual business" cases, one per
+   * vertical — renders as a scenario grid between the main sections and
+   * the mistakes/checklist blocks. */
+  scenarios?: ArticleScenario[];
+  /** "Common mistakes" section — optional so the original 20 lighter
+   * articles keep rendering unchanged without it. */
+  mistakes?: ArticleMistake[];
+  checklist?: ArticleChecklist;
+  comparisonTable?: ArticleComparisonTable;
   faq: ArticleFaq[];
+  sources?: ArticleSource[];
+  videoResources?: ArticleVideoResource[];
+  /** Groups this article with others on the same theme (e.g. 'nda',
+   * 'contract-speed', 'real-estate') so RelatedArticles can link by topic
+   * instead of only by region — the actual "topic cluster" signal Google
+   * looks for, per the internal-linking requirement. */
+  topicCluster?: string;
+  /** Hand-picked related slugs, when the automatic same-cluster match
+   * isn't precise enough (e.g. linking out to a different cluster on
+   * purpose, like "NDA" → "protecting intellectual property"). */
+  relatedSlugs?: string[];
   ctaHeading: string;
   ctaBody: string;
   ctaLabel: string;
@@ -1271,6 +1338,128 @@ export const ARTICLES: Article[] = [
     ],
     ctaHeading: 'Simplifica el papeleo de tu próxima contratación',
     ctaBody: 'Codec Document es gratis para crear y firmar cartas de oferta, contratos y documentos de políticas.',
+    ctaLabel: 'Probar gratis',
+    ctaHref: '/firma-electronica',
+  },
+  {
+    slug: 'reducir-tiempo-firma-contratos',
+    language: 'es',
+    region: 'latam',
+    category: 'PRODUCTIVIDAD',
+    title: 'Cómo Reducir de 7 Días a 24 Horas el Tiempo de Firma de Contratos',
+    metaDescription: 'Por qué un contrato tarda una semana en firmarse y cómo una empresa pequeña puede llevar ese mismo proceso a menos de 24 horas, paso a paso.',
+    keywords: 'reducir tiempo de firma de contratos, firma electronica rapida, agilizar contratos, cerrar contratos mas rapido, firma electronica para empresas',
+    dateLabel: 'Julio 2026',
+    isoDate: '2026-07-20',
+    readMinutes: 12,
+    topicCluster: 'velocidad-contratos',
+    intro: [
+      'Un contrato que tarda una semana en firmarse no es solo una molestia administrativa: en ese tiempo un cliente puede recibir otra propuesta, un proveedor puede subir sus precios, o un empleado con una oferta de trabajo puede aceptar otro puesto. No perder un contrato por esperar una firma puede representar miles de dólares para una empresa, y sin embargo la mayoría de los negocios nunca se sienta a medir cuánto les cuesta realmente ese tiempo muerto.',
+      'La buena noticia es que ese retraso casi nunca viene de la ley, ni de que el cliente esté "pensándolo". Viene de un proceso manual con demasiados pasos innecesarios: imprimir, escanear, reenviar, esperar a que alguien esté en la oficina para firmar, y volver a empezar si algo sale mal en el camino. Cuando se eliminan esos pasos, el mismo contrato que hoy tarda 7 días puede estar firmado y certificado en menos de 24 horas — no porque el cliente decida más rápido, sino porque el proceso deja de estorbarle.',
+    ],
+    sections: [
+      {
+        heading: 'Por qué un contrato tarda 7 días en firmarse (y no es por el cliente)',
+        paragraphs: [
+          'Cuando se analiza a detalle un proceso típico de firma en papel, el tiempo real "pensando el contrato" suele ser una fracción pequeña del total. El resto se va en pasos puramente logísticos: el documento se imprime, se firma por una parte, se escanea o se envía por mensajería a la otra parte, esa parte tiene que estar físicamente disponible para firmar, y si falta una página o una firma está en el lugar equivocado, todo el ciclo empieza de nuevo.',
+          'Cada uno de esos pasos depende de que una persona específica esté disponible en un momento específico — el mensajero, el firmante, la persona que escanea. Basta con que uno de ellos esté fuera de la oficina, de viaje, o simplemente ocupado, para que un contrato "casi listo" se quede parado dos o tres días sin que nadie lo esté bloqueando a propósito.',
+        ],
+        bullets: [
+          'El tiempo de "decisión" del cliente suele ser mucho menor que el tiempo de "logística" del proceso.',
+          'Cada paso manual (imprimir, escanear, mensajería) depende de que una persona esté disponible en ese momento exacto.',
+          'Un solo error de forma (firma en el lugar equivocado, página faltante) reinicia todo el ciclo.',
+        ],
+      },
+      {
+        heading: 'Qué cambia realmente al pasar a firma electrónica',
+        paragraphs: [
+          'La firma electrónica no acelera el contrato porque sea "más moderna" — lo acelera porque elimina la dependencia de que alguien esté físicamente presente para completar cada paso. El firmante recibe un enlace, lo abre desde su teléfono o computador en el momento que le quede cómodo (en una reunión, en un taxi, en su casa por la noche), y firma ahí mismo, sin imprimir nada.',
+          'En Estados Unidos, este tipo de firma es legalmente válida desde el año 2000 gracias a la Ley ESIGN (15 U.S.C. § 7001) y a la Ley Uniforme de Transacciones Electrónicas (UETA), adoptada por prácticamente todos los estados. Esto significa que la validez legal nunca fue el obstáculo real — el obstáculo era simplemente que las empresas seguían usando un proceso pensado para papel.',
+          'El otro cambio importante es la trazabilidad: cada firma electrónica seria queda acompañada de un registro de auditoría (quién firmó, desde qué dispositivo, a qué hora, con qué documento exacto), algo que un contrato en papel firmado con bolígrafo nunca tuvo. Eso no solo acelera el proceso — también deja a la empresa en una posición más fuerte si alguna vez hay una disputa.',
+        ],
+      },
+      {
+        heading: 'El proceso paso a paso para llevar un contrato de días a horas',
+        paragraphs: [
+          'Reducir el tiempo de firma no requiere un cambio complicado de sistemas. Los siguientes pasos son, en la práctica, todo lo que cambia:',
+        ],
+        bullets: [
+          'Preparar el documento una sola vez (plantilla reutilizable) en vez de redactarlo desde cero cada vez.',
+          'Enviarlo por un enlace de firma en el momento en que está listo — no esperar a "tener todo perfecto" para mandarlo por correo.',
+          'Definir de una vez quién firma primero y quién después, para que el documento no quede esperando una decisión de último momento.',
+          'Activar un recordatorio automático si el firmante no ha abierto el enlace en un día — en papel, ese seguimiento casi nunca se hace a tiempo.',
+          'Recibir el documento firmado y certificado automáticamente, listo para archivar, sin tener que escanear ni pedirle a nadie que lo reenvíe.',
+        ],
+      },
+      {
+        heading: 'Qué documentos se benefician más de este cambio',
+        paragraphs: [
+          'No todos los documentos tienen el mismo impacto al acelerarse, pero los que más se benefician son justamente los que hoy generan más fricción: contratos de servicios con clientes nuevos (donde la velocidad de respuesta influye directamente en si el cliente se queda o se va con otro proveedor), acuerdos de confidencialidad antes de una reunión importante, contratos de arrendamiento donde varias partes deben firmar desde ciudades distintas, y cartas de oferta laboral, donde un candidato con otra oferta sobre la mesa puede decidirse por quien le responda primero.',
+        ],
+      },
+    ],
+    scenarios: [
+      { vertical: 'Pequeña empresa', scenario: 'Una empresa de 8 personas que vende servicios de mantenimiento suele perder contratos porque el dueño viaja seguido y no siempre puede firmar en papel el mismo día. Al mover la firma de sus contratos de servicio a un enlace electrónico, empieza a firmar desde el celular entre reuniones, sin que el cliente tenga que esperar a que vuelva a la oficina.' },
+      { vertical: 'Inmobiliaria', scenario: 'Una inmobiliaria maneja arrendamientos donde el propietario, el arrendatario y a veces un codeudor deben firmar el mismo contrato desde tres ciudades distintas. En papel, eso significaba correo certificado y hasta dos semanas de espera; con firma electrónica, los tres reciben su enlace el mismo día y el contrato queda cerrado antes de que termine la semana.' },
+      { vertical: 'Freelancer / consultor independiente', scenario: 'Un consultor que cobra por proyecto pierde tiempo de facturación cada día que un contrato queda sin firmar. Empezar el proyecto solo después de tener el contrato firmado (en vez de "confiar" y empezar antes) se vuelve mucho más fácil de exigir cuando firmar toma dos minutos en vez de tener que imprimir y escanear.' },
+      { vertical: 'Recursos Humanos', scenario: 'Un equipo de RRHH que contrata en varias ciudades solía imprimir la carta de oferta, enviarla por mensajería y esperar a que el candidato la firmara y la devolviera — un proceso de varios días en el que, más de una vez, el candidato aceptaba otra oferta mientras tanto. Con un enlace de firma enviado por correo, la aceptación puede llegar el mismo día.' },
+      { vertical: 'Constructora', scenario: 'Una constructora que subcontrata cuadrillas para distintas obras necesita firmar acuerdos de trabajo antes de que cada cuadrilla empiece — y en obra, nadie tiene una impresora a la mano. Firmar desde el celular directamente en el sitio evita que el inicio de la obra se retrase esperando papeleo.' },
+      { vertical: 'Startup', scenario: 'Una startup que cierra su primera ronda de inversionistas ángel necesita que varios documentos (acuerdo de confidencialidad, carta de intención, términos preliminares) se firmen rápido antes de que el inversionista pierda interés o cambie de opinión. Cada día de retraso en papeleo es un día de incertidumbre para ambas partes.' },
+      { vertical: 'Abogado / firma legal', scenario: 'Un abogado que representa a varios clientes pequeños necesita que los acuerdos de representación y los poderes se firmen antes de poder actuar formalmente en un caso. Depender de que el cliente pase por la oficina a firmar retrasa el inicio del trabajo; un enlace de firma con verificación de identidad resuelve esto sin sacrificar el respaldo legal del documento.' },
+      { vertical: 'Contratista independiente', scenario: 'Un contratista que hace remodelaciones necesita el contrato firmado (con el alcance del trabajo y el precio claramente definidos) antes de comprar materiales o agendar la obra. Cuando el cliente puede firmar desde su teléfono el mismo día de la cotización, el contratista puede confirmar la fecha de inicio sin quedar a la espera de que alguien pase a firmar en persona.' },
+    ],
+    mistakes: [
+      { title: 'Esperar a tener el documento "perfecto" antes de enviarlo', description: 'Muchas empresas retrasan el envío días enteros puliendo detalles menores del contrato, cuando esos mismos ajustes se pueden hacer sobre la marcha si el cliente pide un cambio. El contrato no necesita estar perfecto para enviarse — necesita estar correcto.' },
+      { title: 'Confundir un PDF escaneado con una firma electrónica real', description: 'Firmar en papel, tomarle foto o escanearlo, y enviarlo por correo sigue siendo un proceso lento y sin ningún registro de auditoría real. No es lo mismo que una firma electrónica con verificación de identidad y trazabilidad — solo parece más rápido porque no se imprime en el momento.' },
+      { title: 'No definir de antemano el orden de firma', description: 'Cuando un contrato necesita dos o más firmas y nadie definió quién firma primero, el documento suele quedar "en el limbo" mientras cada parte espera a la otra. Definir el orden desde el principio evita ese estancamiento.' },
+      { title: 'No dar seguimiento a quién no ha firmado', description: 'Un contrato enviado por correo y olvidado puede quedar sin firmar por semanas simplemente porque nadie lo recordó. Un recordatorio automático a las 24-48 horas resuelve la mayoría de estos casos sin que nadie tenga que estar revisando manualmente.' },
+      { title: 'Exigir firma física "por política interna" sin revisar si sigue siendo necesario', description: 'Muchas empresas mantienen el requisito de firma en papel por costumbre, no porque la ley lo exija. Vale la pena revisar si esa política sigue teniendo un motivo real o si solo está ahí porque nadie la ha actualizado.' },
+    ],
+    checklist: {
+      title: 'Antes de enviar un contrato para firma, verifica',
+      items: [
+        'Nombre completo y correcto de cada firmante',
+        'Fecha (o que el sistema la registre automáticamente al firmar)',
+        'Que todas las cláusulas acordadas estén incluidas en la versión final',
+        'Que estén identificados todos los firmantes necesarios (incluyendo codeudores o testigos si aplica)',
+        'Que quede evidencia de identidad del firmante, no solo su firma',
+        'Que ambas partes reciban una copia del documento ya firmado',
+      ],
+    },
+    comparisonTable: {
+      caption: 'Firma física vs. electrónica vs. digital vs. PDF escaneado',
+      headers: ['Tipo', 'Tiempo típico', 'Validez legal', 'Evidencia / auditoría'],
+      rows: [
+        ['Firma física (papel)', 'Días (depende de logística)', 'Válida', 'Ninguna, salvo notariado aparte'],
+        ['PDF escaneado / foto de firma', 'Horas a días', 'Débil sin registro adicional', 'Prácticamente ninguna'],
+        ['Firma electrónica', 'Minutos a horas', 'Válida (ESIGN Act / UETA)', 'IP, hora, identidad, hash del documento'],
+        ['Firma digital (certificado criptográfico)', 'Minutos', 'Válida y de alta seguridad', 'Certificado digital verificable'],
+      ],
+    },
+    faq: [
+      { q: '¿Reducir el tiempo de firma afecta la validez legal del contrato?', a: 'No. La velocidad del proceso no tiene relación con su validez legal — un contrato firmado electrónicamente en minutos tiene el mismo peso legal que uno firmado en papel durante semanas, siempre que cumpla los requisitos de la Ley ESIGN y UETA en Estados Unidos.' },
+      { q: '¿Qué tan rápido se puede firmar realmente un contrato con firma electrónica?', a: 'Depende de cuándo el firmante abra el enlace, pero técnicamente el proceso de firma en sí toma minutos. La mayor parte de la reducción de tiempo viene de eliminar la espera de logística (imprimir, escanear, mensajería), no de acelerar la decisión del firmante.' },
+      { q: '¿Necesito que el cliente instale una aplicación para firmar electrónicamente?', a: 'No debería. Un buen enlace de firma electrónica se abre directamente desde el navegador del celular o computador del firmante, sin necesidad de instalar nada.' },
+      { q: '¿Qué pasa si el firmante no tiene buena conexión a internet?', a: 'La mayoría de plataformas de firma electrónica están optimizadas para funcionar bien incluso con conexiones lentas, ya que solo se necesita cargar el documento y confirmar la firma — es un proceso mucho más liviano que una videollamada.' },
+      { q: '¿Puedo saber si el firmante ya abrió el documento?', a: 'Sí — una buena plataforma de firma electrónica muestra cuándo el firmante abrió el enlace y en qué estado quedó el documento (pendiente, visto, firmado), lo que permite dar seguimiento sin tener que llamar a preguntar.' },
+      { q: '¿La firma electrónica sirve para contratos con varias partes firmando desde ciudades distintas?', a: 'Sí, de hecho es uno de los casos donde más tiempo se ahorra — cada firmante recibe su propio enlace y firma desde donde esté, sin depender de correo físico entre ciudades.' },
+      { q: '¿Qué documentos NO se pueden firmar electrónicamente?', a: 'Existen algunas excepciones bajo la ley — típicamente testamentos, ciertas órdenes judiciales y algunos documentos de derecho de familia todavía requieren firma en papel o notariado presencial.' },
+      { q: '¿Es necesario pagar por una plataforma de firma electrónica desde el primer contrato?', a: 'No necesariamente. Plataformas como Codec Document ofrecen un plan gratuito para crear documentos y firmar electrónicamente, suficiente para el volumen de la mayoría de negocios pequeños.' },
+      { q: '¿Qué pasa si me equivoco y necesito corregir el contrato después de enviarlo a firmar?', a: 'Si aún no ha sido firmado, generalmente se puede cancelar el enlace y enviar una versión corregida. Una vez firmado, cualquier cambio requiere un nuevo documento (un otrosí o adenda), igual que con un contrato en papel.' },
+      { q: '¿Cómo sé que el documento firmado no fue alterado después?', a: 'Una plataforma seria genera un hash criptográfico del documento en el momento exacto de la firma — cualquier cambio posterior al archivo produce un hash distinto, lo que permite comprobar que el documento firmado es exactamente el mismo que se certificó ese día.' },
+    ],
+    sources: [
+      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001 — Legal Information Institute, Cornell Law School', url: 'https://www.law.cornell.edu/uscode/text/15/7001' },
+      { label: 'Uniform Electronic Transactions Act — Uniform Law Commission', url: 'https://www.uniformlaws.org/viewdocument/final-act-21?CommunityKey=2c04b76c-2b7d-4399-977e-d5876ba7e034&tab=librarydocuments' },
+    ],
+    relatedSlugs: [
+      'firma-digital-empresas-2026',
+      'como-enviar-documento-para-firma-online',
+      'costo-oculto-del-papel-en-empresas',
+    ],
+    ctaHeading: 'Firma tu próximo contrato en minutos, no en días',
+    ctaBody: 'Codec Document es gratis para crear, enviar y firmar contratos electrónicamente — sin tarjeta de crédito.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },

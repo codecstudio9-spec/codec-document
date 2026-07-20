@@ -205,6 +205,8 @@ const BlogFirmaElectronicaGratisParaPymes = lazy(() => import("./pages/landings/
 const BlogCostoOcultoDelPapelEnEmpresas = lazy(() => import("./pages/landings/blog-costo-oculto-del-papel-en-empresas"));
 const BlogComoEnviarDocumentoParaFirmaOnline = lazy(() => import("./pages/landings/blog-como-enviar-documento-para-firma-online"));
 const BlogFirmaElectronicaParaRecursosHumanos = lazy(() => import("./pages/landings/blog-firma-electronica-para-recursos-humanos"));
+// Pilot article under the new problem-first / E-E-A-T content standard (see feedback_seo_article_standard memory).
+const BlogReducirTiempoFirmaContratos = lazy(() => import("./pages/landings/blog-reducir-tiempo-firma-contratos"));
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -468,6 +470,7 @@ export const router = createBrowserRouter([
   { path: "/blog/costo-oculto-del-papel-en-empresas", Component: BlogCostoOcultoDelPapelEnEmpresas, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/como-enviar-documento-para-firma-online", Component: BlogComoEnviarDocumentoParaFirmaOnline, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/firma-electronica-para-recursos-humanos", Component: BlogFirmaElectronicaParaRecursosHumanos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/reducir-tiempo-firma-contratos", Component: BlogReducirTiempoFirmaContratos, errorElement: <RouteErrorBoundary /> },
   // Smart Quotes -- SEO
   { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
   { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },

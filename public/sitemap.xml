@@ -778,4 +778,11 @@
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-para-recursos-humanos"/>
   </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/reducir-tiempo-firma-contratos</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/reducir-tiempo-firma-contratos"/>
+  </url>
 </urlset>
