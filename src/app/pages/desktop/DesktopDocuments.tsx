@@ -240,7 +240,7 @@ function DocumentsContent() {
                     </div>
                     {doc.href && <Download className="size-4 text-slate-300" />}
                   </div>
-                  <div className="min-w-0">
+                  <div className="w-full min-w-0">
                     <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
                     <p className="mt-0.5 text-xs text-slate-400">
                       {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
