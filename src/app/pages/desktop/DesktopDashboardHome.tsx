@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, PenLine, Clock, LayoutTemplate, Plus, Send, Upload, FolderOpen, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { FileText, PenLine, Clock, LayoutTemplate, Plus, Receipt, Upload, FolderOpen, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
@@ -83,31 +83,36 @@ function DashboardHomeContent() {
       {/* Quick actions */}
       <div className="mt-6 grid grid-cols-4 gap-4">
         {[
-          { icon: Plus, label: language === 'en' ? 'Create Document' : 'Crear Documento', onClick: () => navigate('/dashboard/templates'), primary: true },
-          { icon: Send, label: language === 'en' ? 'Request Signature' : 'Solicitar Firma', onClick: () => navigate('/dashboard/templates'), primary: false },
-          { icon: Upload, label: language === 'en' ? 'Sign Document' : 'Firmar Documento', onClick: () => navigate('/firma-electronica'), primary: false },
-          { icon: FolderOpen, label: language === 'en' ? 'View Templates' : 'Ver Plantillas', onClick: () => navigate('/dashboard/templates'), primary: false },
-        ].map(({ icon: Icon, label, onClick, primary }) => (
+          { icon: Plus, label: language === 'en' ? 'Create Document' : 'Crear Documento', onClick: () => navigate('/dashboard/templates'), variant: 'primary' as const },
+          { icon: Receipt, label: language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes', onClick: () => navigate('/my-quotes'), variant: 'quotes' as const },
+          { icon: Upload, label: language === 'en' ? 'Sign Document' : 'Firmar Documento', onClick: () => navigate('/firma-electronica'), variant: 'default' as const },
+          { icon: FolderOpen, label: language === 'en' ? 'View Templates' : 'Ver Plantillas', onClick: () => navigate('/dashboard/templates'), variant: 'default' as const },
+        ].map(({ icon: Icon, label, onClick, variant }) => (
           <motion.button
             key={label}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.98 }}
             type="button"
             onClick={onClick}
-            className="flex items-center gap-3 p-5 text-left"
+            className="relative flex items-center gap-3 overflow-hidden p-5 text-left"
             style={{
               borderRadius: CARD_RADIUS,
-              background: primary ? BLUE_GRADIENT : '#FFFFFF',
-              boxShadow: primary ? '0 14px 28px rgba(37,99,235,0.30)' : CARD_SHADOW,
+              background: variant === 'primary' ? BLUE_GRADIENT : variant === 'quotes' ? 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)' : '#FFFFFF',
+              boxShadow: variant === 'primary' ? '0 14px 28px rgba(37,99,235,0.30)' : variant === 'quotes' ? '0 14px 28px rgba(67,56,202,0.30)' : CARD_SHADOW,
             }}
           >
             <div
               className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: primary ? 'rgba(255,255,255,0.18)' : '#EFF6FF' }}
+              style={{ background: variant === 'default' ? '#EFF6FF' : 'rgba(255,255,255,0.18)' }}
             >
-              <Icon className="size-4.5" style={{ color: primary ? '#fff' : '#2563EB' }} />
+              <Icon className="size-4.5" style={{ color: variant === 'default' ? '#2563EB' : '#fff' }} />
             </div>
-            <span className="text-sm font-bold" style={{ color: primary ? '#fff' : '#111827' }}>{label}</span>
+            <span className="text-sm font-bold" style={{ color: variant === 'default' ? '#111827' : '#fff' }}>{label}</span>
+            {variant === 'quotes' && (
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                <Sparkles className="size-2.5" /> {language === 'en' ? 'New' : 'Nuevo'}
+              </span>
+            )}
           </motion.button>
         ))}
       </div>

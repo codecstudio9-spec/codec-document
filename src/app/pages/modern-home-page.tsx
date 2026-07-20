@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
@@ -1030,6 +1030,54 @@ export function ModernHomePage() {
           toward /my-templates; unauthenticated clicks open the same
           onboarding modal the header's "Get Started Free" button uses,
           instead of a silent bounce back to "/" via ProtectedRoute. */}
+      {/* ── Smart Quotes — a full product, not a form field, so it gets its
+          own prominent band right where "advanced feature" sections start,
+          same premium two-column treatment as "Upload your own templates"
+          below it ──────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 py-16 md:py-24">
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 20% 20%, rgba(99,102,241,0.30), transparent)' }} />
+        <div className="container relative mx-auto px-4">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 rounded-3xl border border-indigo-400/20 bg-white/[0.03] p-8 backdrop-blur md:flex-row md:gap-14 md:p-14">
+            <div className="flex size-40 shrink-0 items-center justify-center rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/25 to-blue-500/10 md:order-2 md:size-52">
+              <Receipt className="size-20 text-indigo-300 md:size-24" strokeWidth={1.5} />
+            </div>
+            <div className="flex-1 md:order-1">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
+                <Sparkles className="size-3" /> {language === 'en' ? 'New' : 'Nuevo'}
+              </span>
+              <h2 className="text-3xl font-black text-white md:text-4xl">
+                {language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes'}
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-300">
+                {language === 'en'
+                  ? 'Build a professional quote with live totals, send it to your client, and get it accepted with a real electronic signature — a full agreement, not just a PDF.'
+                  : 'Crea una cotización profesional con totales en tiempo real, envíasela a tu cliente, y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.'}
+              </p>
+              <ul className="mt-6 space-y-2.5">
+                {[
+                  language === 'en' ? 'Live totals — quantity, discount, and tax calculated as you type' : 'Totales en vivo — cantidad, descuento e impuesto calculados mientras escribes',
+                  language === 'en' ? '4 professional designs: Corporate, Modern, Executive, Minimal' : '4 diseños profesionales: Corporate, Modern, Executive, Minimal',
+                  language === 'en' ? 'Know when your client opens it, and get it signed online' : 'Sabe cuándo tu cliente la abre, y logra que la firme en línea',
+                ].map((line) => (
+                  <li key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => (user ? navigate('/my-quotes/new') : setOnboardingOpen(true))}
+                className="group mt-8 inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-4 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(99,102,241,0.55)]"
+              >
+                {language === 'en' ? 'Create my first quote' : 'Crear mi primera cotización'}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-blue-950 py-16 md:py-24">
         <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 80% 20%, rgba(99,102,241,0.25), transparent)' }} />
         <div className="container relative mx-auto px-4">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Plus, Upload, Camera, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen } from 'lucide-react';
+import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
@@ -9,7 +9,6 @@ import { Logo } from '../../components/brand/Logo';
 import { MobileLandingIntro } from '../../components/mobile/MobileLandingIntro';
 import { fetchDashboardStats, fetchUnreadSignedCount, type DashboardStats } from '../../services/mobile-dashboard-service';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
-import { toast } from 'sonner';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 function greeting(language: 'en' | 'es'): string {
@@ -81,12 +80,6 @@ function DashboardContent() {
       setRecent(combined);
     });
   }, [user?.id]);
-
-  const handleScan = (file?: File | null) => {
-    if (!file) return;
-    toast.success(language === 'en' ? 'Photo captured. Continue from "Upload document".' : 'Foto capturada. Continúa desde "Subir documento".');
-    navigate('/firma-electronica');
-  };
 
   // Signed-out visitor: this IS the mobile home screen for them too — a
   // compact intro instead of personalized stats, but still inside the
@@ -210,23 +203,23 @@ function DashboardContent() {
           <Upload className="size-4" /> {language === 'en' ? 'Sign a document' : 'Firmar documento'}
         </motion.button>
 
-        <motion.label
+        <motion.button
           whileTap={{ scale: 0.97 }}
-          className="flex w-full cursor-pointer items-center justify-center gap-2"
+          type="button"
+          onClick={() => navigate('/my-quotes')}
+          className="relative flex w-full items-center justify-center gap-2 overflow-hidden text-white"
           style={{
-            borderRadius: 16, height: 52, fontWeight: 600, fontSize: 14,
-            border: '1px solid #A7F3D0', background: '#ECFDF5', color: '#047857',
+            borderRadius: 16, height: 52, fontWeight: 700, fontSize: 14,
+            background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)',
+            boxShadow: '0 10px 22px rgba(67,56,202,0.32)',
           }}
         >
-          <Camera className="size-4" /> {language === 'en' ? 'Scan document' : 'Escanear documento'}
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="sr-only"
-            onChange={(e) => handleScan(e.target.files?.[0])}
-          />
-        </motion.label>
+          <Receipt className="size-4" />
+          {language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes'}
+          <span className="absolute right-3 flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+            <Sparkles className="size-2.5" /> {language === 'en' ? 'New' : 'Nuevo'}
+          </span>
+        </motion.button>
       </div>
 
       {/* Custom templates promo */}
