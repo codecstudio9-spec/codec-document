@@ -1,39 +1,39 @@
-// PLANTILLA PROFESIONAL DE CONTRATO DE COMPRA-VENTA DE VEHCULO
-// Acuerdo completo para transacciones privadas de vehculos
-// Incluye requisitos federales de declaracin de odmetro
+// PLANTILLA PROFESIONAL DE CONTRATO DE COMPRA-VENTA DE VEHÍCULO
+// Acuerdo completo para transacciones privadas de vehículos
+// Incluye requisitos federales de declaración de odómetro
 
 import { DocumentTemplate } from '../types/document';
 
 export const billOfSaleVehicleTemplateES: DocumentTemplate = {
   id: 'bill-of-sale-vehicle',
-  name: 'Contrato de Compra-Venta de Vehculo',
-  description: 'Contrato completo de compra-venta de vehculo para transacciones entre particulares. Incluye detalles del comprador/vendedor, informacin del vehculo, precio de venta, declaracin de odmetro (requisito federal), trminos de garanta/tal cual, y seccin de notarizacin.',
+  name: 'Contrato de Compra-Venta de Vehículo',
+  description: 'Contrato completo de compra-venta de vehículo para transacciones entre particulares. Incluye detalles del comprador/vendedor, información del vehículo, precio de venta, declaración de odómetro (requisito federal), términos de garantía/tal cual, y sección de notarización.',
   category: 'Negocios y Contratos',
   price: 7.00,
   fields: [
-    // Informacin del Vendedor
-    { 
-      id: 'seller_name', 
-      label: 'Nombre Legal Completo del Vendedor', 
-      type: 'text', 
+    // Información del Vendedor
+    {
+      id: 'seller_name',
+      label: 'Nombre Legal Completo del Vendedor',
+      type: 'text',
       required: true,
-      helpText: 'Nombre tal como aparece en el ttulo del vehculo' 
+      helpText: 'Nombre tal como aparece en el título del vehículo'
     },
-    { 
-      id: 'seller_address', 
-      label: 'Direccin del Vendedor', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'seller_address',
+      label: 'Dirección del Vendedor',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'seller_city', 
-      label: 'Ciudad del Vendedor', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'seller_city',
+      label: 'Ciudad del Vendedor',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'seller_state', 
-      label: 'Estado del Vendedor', 
+    {
+      id: 'seller_state',
+      label: 'Estado del Vendedor',
       type: 'select',
       options: [
         'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
@@ -47,57 +47,57 @@ export const billOfSaleVehicleTemplateES: DocumentTemplate = {
         'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
         'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
       ],
-      required: true 
+      required: true
     },
-    { 
-      id: 'seller_zip', 
-      label: 'Cdigo Postal del Vendedor', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'seller_zip',
+      label: 'Código Postal del Vendedor',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'seller_phone', 
-      label: 'Telfono del Vendedor', 
-      type: 'tel', 
-      required: true 
+    {
+      id: 'seller_phone',
+      label: 'Teléfono del Vendedor',
+      type: 'tel',
+      required: true
     },
-    { 
-      id: 'seller_email', 
-      label: 'Correo electrnico del Vendedor', 
-      type: 'email', 
-      required: false 
+    {
+      id: 'seller_email',
+      label: 'Correo electrónico del Vendedor',
+      type: 'email',
+      required: false
     },
-    { 
-      id: 'seller_license', 
-      label: 'Nmero de Licencia del Vendedor', 
-      type: 'text', 
+    {
+      id: 'seller_license',
+      label: 'Número de Licencia del Vendedor',
+      type: 'text',
       required: false,
-      helpText: 'Opcional pero recomendado para verificacin' 
+      helpText: 'Opcional pero recomendado para verificación'
     },
-    
-    // Informacin del Comprador
-    { 
-      id: 'buyer_name', 
-      label: 'Nombre Legal Completo del Comprador', 
-      type: 'text', 
+
+    // Información del Comprador
+    {
+      id: 'buyer_name',
+      label: 'Nombre Legal Completo del Comprador',
+      type: 'text',
       required: true,
-      helpText: 'Nombre como aparecer en el nuevo ttulo' 
+      helpText: 'Nombre como aparecerá en el nuevo título'
     },
-    { 
-      id: 'buyer_address', 
-      label: 'Direccin del Comprador', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'buyer_address',
+      label: 'Dirección del Comprador',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'buyer_city', 
-      label: 'Ciudad del Comprador', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'buyer_city',
+      label: 'Ciudad del Comprador',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'buyer_state', 
-      label: 'Estado del Comprador', 
+    {
+      id: 'buyer_state',
+      label: 'Estado del Comprador',
       type: 'select',
       options: [
         'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
@@ -111,86 +111,86 @@ export const billOfSaleVehicleTemplateES: DocumentTemplate = {
         'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
         'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
       ],
-      required: true 
+      required: true
     },
-    { 
-      id: 'buyer_zip', 
-      label: 'Cdigo Postal del Comprador', 
-      type: 'text', 
-      required: true 
+    {
+      id: 'buyer_zip',
+      label: 'Código Postal del Comprador',
+      type: 'text',
+      required: true
     },
-    { 
-      id: 'buyer_phone', 
-      label: 'Telfono del Comprador', 
-      type: 'tel', 
-      required: true 
+    {
+      id: 'buyer_phone',
+      label: 'Teléfono del Comprador',
+      type: 'tel',
+      required: true
     },
-    { 
-      id: 'buyer_email', 
-      label: 'Correo electrnico del Comprador', 
-      type: 'email', 
-      required: false 
+    {
+      id: 'buyer_email',
+      label: 'Correo electrónico del Comprador',
+      type: 'email',
+      required: false
     },
-    { 
-      id: 'buyer_license', 
-      label: 'Nmero de Licencia del Comprador', 
-      type: 'text', 
+    {
+      id: 'buyer_license',
+      label: 'Número de Licencia del Comprador',
+      type: 'text',
       required: false,
-      helpText: 'Opcional pero recomendado para verificacin' 
+      helpText: 'Opcional pero recomendado para verificación'
     },
-    
-    // Informacin del Vehculo
-    { 
-      id: 'vehicle_year', 
-      label: 'Ao del Vehculo', 
-      type: 'number', 
+
+    // Información del Vehículo
+    {
+      id: 'vehicle_year',
+      label: 'Año del Vehículo',
+      type: 'number',
       required: true,
-      placeholder: '2020' 
+      placeholder: 'Ej: 2020'
     },
-    { 
-      id: 'vehicle_make', 
-      label: 'Marca del Vehculo', 
-      type: 'text', 
+    {
+      id: 'vehicle_make',
+      label: 'Marca del Vehículo',
+      type: 'text',
       required: true,
       placeholder: 'Toyota, Honda, Ford, etc.',
-      helpText: 'Fabricante del vehculo' 
+      helpText: 'Fabricante del vehículo'
     },
-    { 
-      id: 'vehicle_model', 
-      label: 'Modelo del Vehculo', 
-      type: 'text', 
+    {
+      id: 'vehicle_model',
+      label: 'Modelo del Vehículo',
+      type: 'text',
       required: true,
-      placeholder: 'Camry, Civic, F-150, etc.' 
+      placeholder: 'Camry, Civic, F-150, etc.'
     },
-    { 
-      id: 'vehicle_trim', 
-      label: 'Versin/Estilo del Vehculo (Opcional)', 
-      type: 'text', 
+    {
+      id: 'vehicle_trim',
+      label: 'Versión/Estilo del Vehículo (Opcional)',
+      type: 'text',
       required: false,
-      placeholder: 'EX, Limited, XLT, etc.' 
+      placeholder: 'EX, Limited, XLT, etc.'
     },
-    { 
-      id: 'vehicle_vin', 
-      label: 'VIN del Vehculo (Nmero de Identificacin)', 
-      type: 'text', 
+    {
+      id: 'vehicle_vin',
+      label: 'VIN del Vehículo (Número de Identificación)',
+      type: 'text',
       required: true,
       helpText: 'VIN de 17 caracteres ubicado en el tablero o marco de puerta',
-      placeholder: '1HGBH41JXMN109186' 
+      placeholder: 'Ej: 1HGBH41JXMN109186'
     },
-    { 
-      id: 'vehicle_color', 
-      label: 'Color del Vehculo', 
-      type: 'text', 
+    {
+      id: 'vehicle_color',
+      label: 'Color del Vehículo',
+      type: 'text',
       required: true,
-      placeholder: 'Plateado, Negro, Azul, etc.' 
+      placeholder: 'Plateado, Negro, Azul, etc.'
     },
-    { 
-      id: 'vehicle_body_type', 
-      label: 'Tipo de Carrocera', 
+    {
+      id: 'vehicle_body_type',
+      label: 'Tipo de Carrocería',
       type: 'select',
       options: [
-        'Sedn',
-        'Cup',
+        'Sedán',
+        'Cupé',
         'SUV',
         'Camioneta',
         'Van',
@@ -203,174 +203,174 @@ export const billOfSaleVehicleTemplateES: DocumentTemplate = {
         'Remolque',
         'Otro'
       ],
-      required: true 
+      required: true
     },
-    { 
-      id: 'vehicle_mileage', 
-      label: 'Lectura Actual del Odmetro (Millas)', 
-      type: 'number', 
+    {
+      id: 'vehicle_mileage',
+      label: 'Lectura Actual del Odómetro (Millas)',
+      type: 'number',
       required: true,
-      helpText: 'Millaje exacto mostrado en el odmetro',
-      placeholder: '75420' 
+      helpText: 'Millaje exacto mostrado en el odómetro',
+      placeholder: 'Ej: 75420'
     },
-    { 
-      id: 'odometer_brand', 
-      label: 'Estado del Odmetro', 
+    {
+      id: 'odometer_brand',
+      label: 'Estado del Odómetro',
       type: 'select',
       options: [
         'Millaje Real',
-        'Millaje Excede Lmites Mecnicos',
+        'Millaje Excede Límites Mecánicos',
         'No es Millaje Real - Advertencia',
-        'Odmetro Daado/Inoperante'
+        'Odómetro Dañado/Inoperante'
       ],
       required: true,
-      helpText: 'Requisito federal - elija el estado preciso' 
+      helpText: 'Requisito federal - elija el estado preciso'
     },
-    { 
-      id: 'title_number', 
-      label: 'Nmero de Ttulo/Certificado', 
-      type: 'text', 
+    {
+      id: 'title_number',
+      label: 'Número de Título/Certificado',
+      type: 'text',
       required: false,
-      helpText: 'Nmero en el ttulo del vehculo' 
+      helpText: 'Número en el título del vehículo'
     },
-    
-    // Informacin de la Venta
-    { 
-      id: 'sale_price', 
-      label: 'Precio de Venta ($)', 
-      type: 'currency', 
+
+    // Información de la Venta
+    {
+      id: 'sale_price',
+      label: 'Precio de Venta ($)',
+      type: 'currency',
       required: true,
-      helpText: 'Precio total de compra en dlares estadounidenses' 
+      helpText: 'Precio total de compra en dólares estadounidenses'
     },
-    { 
-      id: 'payment_method', 
-      label: 'Mtodo de Pago', 
+    {
+      id: 'payment_method',
+      label: 'Método de Pago',
       type: 'select',
       options: [
         'Efectivo',
         'Cheque de Caja',
         'Cheque Personal',
         'Transferencia Bancaria',
-        'Pago Electrnico (Zelle, Venmo, etc.)',
+        'Pago Electrónico (Zelle, Venmo, etc.)',
         'Giro Postal',
         'Otro'
       ],
-      required: true 
+      required: true
     },
-    { 
-      id: 'payment_status', 
-      label: 'Estado del Pago', 
+    {
+      id: 'payment_status',
+      label: 'Estado del Pago',
       type: 'select',
       options: [
         'Pagado en Su Totalidad',
         'Pago Parcial - Saldo Pendiente',
         'Pago Pendiente'
       ],
-      required: true 
+      required: true
     },
-    { 
-      id: 'balance_due', 
-      label: 'Saldo Pendiente (si aplica)', 
-      type: 'currency', 
-      required: false 
+    {
+      id: 'balance_due',
+      label: 'Saldo Pendiente (si aplica)',
+      type: 'currency',
+      required: false
     },
-    { 
-      id: 'payment_due_date', 
-      label: 'Fecha de Vencimiento del Saldo (si aplica)', 
-      type: 'date', 
-      required: false 
+    {
+      id: 'payment_due_date',
+      label: 'Fecha de Vencimiento del Saldo (si aplica)',
+      type: 'date',
+      required: false
     },
-    
-    // Condicin del Vehculo y Garanta
-    { 
-      id: 'vehicle_condition', 
-      label: 'Declaracin de Condicin del Vehculo', 
+
+    // Condición del Vehículo y Garantía
+    {
+      id: 'vehicle_condition',
+      label: 'Declaración de Condición del Vehículo',
       type: 'select',
       options: [
-        'TAL CUAL - SIN GARANTA',
-        'TAL CUAL con Garanta Limitada del Vendedor',
-        'Con Garanta del Fabricante (An Vlida)',
-        'Con Garanta Extendida'
+        'TAL CUAL - SIN GARANTÍA',
+        'TAL CUAL con Garantía Limitada del Vendedor',
+        'Con Garantía del Fabricante (Aún Válida)',
+        'Con Garantía Extendida'
       ],
       required: true,
-      helpText: 'La mayora de ventas privadas son TAL CUAL' 
+      helpText: 'La mayoría de ventas privadas son TAL CUAL'
     },
-    { 
-      id: 'warranty_details', 
-      label: 'Detalles de Garanta (si aplica)', 
-      type: 'textarea', 
+    {
+      id: 'warranty_details',
+      label: 'Detalles de Garantía (si aplica)',
+      type: 'textarea',
       required: false,
-      placeholder: 'Describa cualquier cobertura de garanta, fechas de expiracin, transferibilidad, etc.' 
+      placeholder: 'Describa cualquier cobertura de garantía, fechas de expiración, transferibilidad, etc.'
     },
-    { 
-      id: 'known_defects', 
-      label: 'Defectos/Problemas Conocidos (si los hay)', 
-      type: 'textarea', 
+    {
+      id: 'known_defects',
+      label: 'Defectos/Problemas Conocidos (si los hay)',
+      type: 'textarea',
       required: false,
-      placeholder: 'Liste cualquier problema mecnico conocido, dao o defectos. La honestidad protege a ambas partes.',
-      helpText: 'Recomendado para transparencia' 
+      placeholder: 'Liste cualquier problema mecánico conocido, daño o defectos. La honestidad protege a ambas partes.',
+      helpText: 'Recomendado para transparencia'
     },
-    
-    // Informacin del Ttulo y Gravmenes
-    { 
-      id: 'title_status', 
-      label: 'Estado del Ttulo', 
+
+    // Información del Título y Gravámenes
+    {
+      id: 'title_status',
+      label: 'Estado del Título',
       type: 'select',
       options: [
-        'Ttulo Limpio - Sin Gravmenes',
-        'Ttulo de Salvamento',
-        'Ttulo Reconstruido',
-        'Gravamen/Prstamo Pendiente - A Pagar',
-        'Esperando Ttulo del DMV',
+        'Título Limpio - Sin Gravámenes',
+        'Título de Salvamento',
+        'Título Reconstruido',
+        'Gravamen/Préstamo Pendiente - A Pagar',
+        'Esperando Título del DMV',
         'Otro'
       ],
       required: true,
-      helpText: 'Sea honesto sobre el estado del ttulo' 
+      helpText: 'Sea honesto sobre el estado del título'
     },
-    { 
-      id: 'lienholder_name', 
-      label: 'Nombre del Acreedor Prendario (si aplica)', 
-      type: 'text', 
+    {
+      id: 'lienholder_name',
+      label: 'Nombre del Acreedor Prendario (si aplica)',
+      type: 'text',
       required: false,
-      helpText: 'Banco o prestamista con gravamen sobre el vehculo' 
+      helpText: 'Banco o prestamista con gravamen sobre el vehículo'
     },
-    { 
-      id: 'lien_payoff', 
-      label: 'Monto a Pagar del Gravamen (si aplica)', 
-      type: 'currency', 
-      required: false 
+    {
+      id: 'lien_payoff',
+      label: 'Monto a Pagar del Gravamen (si aplica)',
+      type: 'currency',
+      required: false
     },
-    
-    // Artculos Adicionales Incluidos
-    { 
-      id: 'included_items', 
-      label: 'Artculos Adicionales Incluidos en la Venta', 
-      type: 'textarea', 
+
+    // Artículos Adicionales Incluidos
+    {
+      id: 'included_items',
+      label: 'Artículos Adicionales Incluidos en la Venta',
+      type: 'textarea',
       required: false,
       placeholder: 'Ejemplos: llanta de repuesto, tapetes, portaequipaje, llaves extra, manual del propietario, registros de servicio, etc.',
-      helpText: 'Liste cualquier extra incluido con el vehculo' 
+      helpText: 'Liste cualquier extra incluido con el vehículo'
     },
-    
-    // Fecha y Ubicacin de Venta
-    { 
-      id: 'sale_date', 
-      label: 'Fecha de Venta', 
-      type: 'date', 
+
+    // Fecha y Ubicación de Venta
+    {
+      id: 'sale_date',
+      label: 'Fecha de Venta',
+      type: 'date',
       required: true,
-      helpText: 'Fecha en que la propiedad se transfiere al comprador' 
+      helpText: 'Fecha en que la propiedad se transfiere al comprador'
     },
-    { 
-      id: 'sale_location', 
-      label: 'Ubicacin de Venta (Ciudad, Estado)', 
-      type: 'text', 
+    {
+      id: 'sale_location',
+      label: 'Ubicación de Venta (Ciudad, Estado)',
+      type: 'text',
       required: true,
-      placeholder: 'Los ngeles, California' 
+      placeholder: 'Ej: Los Ángeles, California'
     },
-    
+
     // Ley Aplicable
-    { 
-      id: 'governing_state', 
-      label: 'Ley Estatal Aplicable', 
+    {
+      id: 'governing_state',
+      label: 'Ley Estatal Aplicable',
       type: 'select',
       options: [
         'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
@@ -385,11 +385,11 @@ export const billOfSaleVehicleTemplateES: DocumentTemplate = {
         'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
       ],
       required: true,
-      helpText: 'Generalmente el estado donde se realiza la venta' 
+      helpText: 'Generalmente el estado donde se realiza la venta'
     },
   ],
-  
-  template: `CONTRATO DE COMPRA-VENTA DE VEHCULO MOTORIZADO
+
+  template: `CONTRATO DE COMPRA-VENTA DE VEHÍCULO MOTORIZADO
 
 ESTE CONTRATO DE COMPRA-VENTA se ejecuta el {{sale_date}}, en {{sale_location}}, entre:
 
@@ -398,10 +398,10 @@ ESTE CONTRATO DE COMPRA-VENTA se ejecuta el {{sale_date}}, en {{sale_location}},
 VENDEDOR:
 
 Nombre: {{seller_name}}
-Direccin: {{seller_address}}
+Dirección: {{seller_address}}
            {{seller_city}}, {{seller_state}} {{seller_zip}}
-Telfono: {{seller_phone}}
-{{#if seller_email}}Correo electrnico: {{seller_email}}{{/if}}
+Teléfono: {{seller_phone}}
+{{#if seller_email}}Correo electrónico: {{seller_email}}{{/if}}
 {{#if seller_license}}Licencia de Conducir: {{seller_license}}{{/if}}
 
 (en adelante denominado "Vendedor")
@@ -411,103 +411,103 @@ Telfono: {{seller_phone}}
 COMPRADOR:
 
 Nombre: {{buyer_name}}
-Direccin: {{buyer_address}}
+Dirección: {{buyer_address}}
            {{buyer_city}}, {{buyer_state}} {{buyer_zip}}
-Telfono: {{buyer_phone}}
-{{#if buyer_email}}Correo electrnico: {{buyer_email}}{{/if}}
+Teléfono: {{buyer_phone}}
+{{#if buyer_email}}Correo electrónico: {{buyer_email}}{{/if}}
 {{#if buyer_license}}Licencia de Conducir: {{buyer_license}}{{/if}}
 
 (en adelante denominado "Comprador")
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-DESCRIPCIN DEL VEHCULO:
+DESCRIPCIÓN DEL VEHÍCULO:
 
-Ao:            {{vehicle_year}}
+Año:            {{vehicle_year}}
 Marca:          {{vehicle_make}}
 Modelo:         {{vehicle_model}}
-{{#if vehicle_trim}}Versin:        {{vehicle_trim}}{{/if}}
+{{#if vehicle_trim}}Versión:        {{vehicle_trim}}{{/if}}
 Tipo:           {{vehicle_body_type}}
 Color:          {{vehicle_color}}
 VIN:            {{vehicle_vin}}
-{{#if title_number}}Nm. Ttulo:    {{title_number}}{{/if}}
+{{#if title_number}}Núm. Título:    {{title_number}}{{/if}}
 
-Lectura Actual del Odmetro: {{vehicle_mileage}} millas
-Estado del Odmetro: {{odometer_brand}}
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-ARTCULO 1 - VENTA Y TRANSFERENCIA
-
-1.1. VENTA DEL VEHCULO. El Vendedor por este medio vende, transfiere y traspasa al Comprador, y el Comprador por este medio compra del Vendedor, el vehculo motorizado descrito arriba (el "Vehculo"), libre de todo gravamen y restriccin, excepto segn se divulgue especficamente en este Contrato de Compra-Venta.
-
-1.2. FECHA EFECTIVA. Esta venta ser efectiva a partir del {{sale_date}} (la "Fecha de Venta"). El ttulo y el riesgo de prdida pasarn al Comprador en la Fecha de Venta al recibir el pago completo.
+Lectura Actual del Odómetro: {{vehicle_mileage}} millas
+Estado del Odómetro: {{odometer_brand}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 2 - PRECIO DE COMPRA Y PAGO
+ARTÍCULO 1 - VENTA Y TRANSFERENCIA
 
-2.1. PRECIO DE COMPRA. El precio total de compra del Vehculo es:
+1.1. VENTA DEL VEHÍCULO. El Vendedor por este medio vende, transfiere y traspasa al Comprador, y el Comprador por este medio compra del Vendedor, el vehículo motorizado descrito arriba (el "Vehículo"), libre de todo gravamen y restricción, excepto según se divulgue específicamente en este Contrato de Compra-Venta.
 
-    PRECIO DE VENTA: USD {{sale_price}} (Dlares Estadounidenses)
+1.2. FECHA EFECTIVA. Esta venta será efectiva a partir del {{sale_date}} (la "Fecha de Venta"). El título y el riesgo de pérdida pasarán al Comprador en la Fecha de Venta al recibir el pago completo.
 
-2.2. M0TODO DE PAGO. El pago se realizar mediante: {{payment_method}}
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+ARTÍCULO 2 - PRECIO DE COMPRA Y PAGO
+
+2.1. PRECIO DE COMPRA. El precio total de compra del Vehículo es:
+
+    PRECIO DE VENTA: USD {{sale_price}} (Dólares Estadounidenses)
+
+2.2. MÉTODO DE PAGO. El pago se realizará mediante: {{payment_method}}
 
 2.3. ESTADO DEL PAGO: {{payment_status}}
 
 {{#if balance_due}}
 2.4. SALDO PENDIENTE. Un saldo de USD {{balance_due}} permanece pendiente y pagadero.
     {{#if payment_due_date}}Fecha de Vencimiento: {{payment_due_date}}{{/if}}
-    
+
     Hasta que el saldo se pague en su totalidad:
-    " El Vendedor retiene el ttulo legal del Vehculo
-    " El Comprador no puede vender, transferir o gravar el Vehculo
-    " El Vendedor puede recuperar el Vehculo si no se recibe el pago para la fecha de vencimiento
+    • El Vendedor retiene el título legal del Vehículo
+    • El Comprador no puede vender, transferir o gravar el Vehículo
+    • El Vendedor puede recuperar el Vehículo si no se recibe el pago para la fecha de vencimiento
 {{/if}}
 
 2.5. RECIBO DE PAGO. El Vendedor reconoce haber recibido {{#if balance_due}}pago parcial{{else}}pago completo{{/if}} del Comprador en la cantidad especificada arriba.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 3 - TTULO Y PROPIEDAD
+ARTÍCULO 3 - TÍTULO Y PROPIEDAD
 
-3.1. ESTADO DEL TTULO: {{title_status}}
+3.1. ESTADO DEL TÍTULO: {{title_status}}
 
 3.2. DECLARACIONES DEL VENDEDOR. El Vendedor declara y garantiza que:
-    (a) El Vendedor es el propietario legal del Vehculo con pleno derecho a vender;
-    (b) La informacin de identificacin del Vehculo proporcionada es verdadera y precisa;
-    (c) La lectura del odmetro divulgada es precisa segn el mejor conocimiento del Vendedor;
-    (d) {{#if lienholder_name}}Existe un gravamen sobre el Vehculo en manos de {{lienholder_name}} por aproximadamente USD {{lien_payoff}}, el cual el Vendedor se compromete a pagar{{else}}El Vehculo est libre de todo gravamen y restriccin{{/if}};
+    (a) El Vendedor es el propietario legal del Vehículo con pleno derecho a vender;
+    (b) La información de identificación del Vehículo proporcionada es verdadera y precisa;
+    (c) La lectura del odómetro divulgada es precisa según el mejor conocimiento del Vendedor;
+    (d) {{#if lienholder_name}}Existe un gravamen sobre el Vehículo en manos de {{lienholder_name}} por aproximadamente USD {{lien_payoff}}, el cual el Vendedor se compromete a pagar{{else}}El Vehículo está libre de todo gravamen y restricción{{/if}};
     (e) El Vendedor ha divulgado todos los defectos materiales conocidos;
-    (f) El Vendedor no ha recibido notificacin de que el Vehculo haya sido robado o est sujeto a reclamo de robo.
+    (f) El Vendedor no ha recibido notificación de que el Vehículo haya sido robado o esté sujeto a reclamo de robo.
 
-3.3. ENTREGA DEL TTULO. El Vendedor se compromete a entregar el Certificado de Ttulo debidamente firmado y notarizado al Comprador {{#if lienholder_name}}dentro de [X] das despus del pago del gravamen{{else}}inmediatamente al recibir el pago completo{{/if}}.
+3.3. ENTREGA DEL TÍTULO. El Vendedor se compromete a entregar el Certificado de Título debidamente firmado y notarizado al Comprador {{#if lienholder_name}}dentro de [X] días después del pago del gravamen{{else}}inmediatamente al recibir el pago completo{{/if}}.
 
 {{#if lienholder_name}}
-3.4. PAGO DEL GRAVAMEN. El Vendedor se compromete a pagar el gravamen con {{lienholder_name}} y proporcionar al Comprador evidencia de la liberacin del gravamen dentro de un tiempo razonable despus de recibir el pago del Comprador.
+3.4. PAGO DEL GRAVAMEN. El Vendedor se compromete a pagar el gravamen con {{lienholder_name}} y proporcionar al Comprador evidencia de la liberación del gravamen dentro de un tiempo razonable después de recibir el pago del Comprador.
 {{/if}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 4 - CONDICIN Y GARANTA
+ARTÍCULO 4 - CONDICIÓN Y GARANTÍA
 
-4.1. CONDICIN DEL VEHCULO: {{vehicle_condition}}
+4.1. CONDICIÓN DEL VEHÍCULO: {{vehicle_condition}}
 
 {{#if warranty_details}}
-4.2. INFORMACIN DE GARANTA:
+4.2. INFORMACIÓN DE GARANTÍA:
 {{warranty_details}}
 {{/if}}
 
 4.3. DESCARGO TAL CUAL (si aplica):
 {{#if vehicle_condition}}
-ESTE VEHCULO SE VENDE "TAL CUAL" Y "DONDE EST" CON TODOS SUS DEFECTOS. EL VENDEDOR NO OTORGA GARANTAS, EXPRESAS O IMPLCITAS, INCLUYENDO PERO NO LIMITADO A CUALQUIER GARANTA IMPLCITA DE COMERCIABILIDAD O IDONEIDAD PARA UN PROPSITO PARTICULAR. EL COMPRADOR ACEPTA EL VEHCULO EN SU CONDICIN ACTUAL Y ASUME TODO RIESGO DE SU CALIDAD Y DESEMPEO.
+ESTE VEHÍCULO SE VENDE "TAL CUAL" Y "DONDE ESTÁ" CON TODOS SUS DEFECTOS. EL VENDEDOR NO OTORGA GARANTÍAS, EXPRESAS O IMPLÍCITAS, INCLUYENDO PERO NO LIMITADO A CUALQUIER GARANTÍA IMPLÍCITA DE COMERCIABILIDAD O IDONEIDAD PARA UN PROPÓSITO PARTICULAR. EL COMPRADOR ACEPTA EL VEHÍCULO EN SU CONDICIÓN ACTUAL Y ASUME TODO RIESGO DE SU CALIDAD Y DESEMPEÑO.
 
 EL COMPRADOR RECONOCE QUE:
-" El Comprador ha inspeccionado el Vehculo o ha renunciado al derecho de inspeccionarlo;
-" El Comprador est satisfecho con la condicin del Vehculo;
-" El Comprador asume todo riesgo de reparaciones y defectos;
-" El Vendedor no tiene obligacin de reparar o pagar por defectos descubiertos despus de la venta;
-" El Comprador est comprando el Vehculo basndose nicamente en su propia inspeccin y juicio.
+• El Comprador ha inspeccionado el Vehículo o ha renunciado al derecho de inspeccionarlo;
+• El Comprador está satisfecho con la condición del Vehículo;
+• El Comprador asume todo riesgo de reparaciones y defectos;
+• El Vendedor no tiene obligación de reparar o pagar por defectos descubiertos después de la venta;
+• El Comprador está comprando el Vehículo basándose únicamente en su propia inspección y juicio.
 {{/if}}
 
 {{#if known_defects}}
@@ -515,40 +515,40 @@ EL COMPRADOR RECONOCE QUE:
 
 {{known_defects}}
 
-El Comprador reconoce haber sido informado de los defectos anteriores y acepta el Vehculo con dichos defectos.
+El Comprador reconoce haber sido informado de los defectos anteriores y acepta el Vehículo con dichos defectos.
 {{/if}}
 
-4.5. ACEPTACIN DEL COMPRADOR. Al firmar este Contrato de Compra-Venta, el Comprador reconoce haber tenido la oportunidad de inspeccionar el Vehculo y lo acepta en su condicin actual.
+4.5. ACEPTACIÓN DEL COMPRADOR. Al firmar este Contrato de Compra-Venta, el Comprador reconoce haber tenido la oportunidad de inspeccionar el Vehículo y lo acepta en su condición actual.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 5 - DECLARACIN FEDERAL DEL ODMETRO
-(Requerido por Ley Federal - 49 U.S.C.  32705)
+ARTÍCULO 5 - DECLARACIÓN FEDERAL DEL ODÓMETRO
+(Requerido por Ley Federal - 49 U.S.C. § 32705)
 
-5.1. LECTURA DEL ODMETRO. El odmetro del Vehculo ahora marca {{vehicle_mileage}} millas.
+5.1. LECTURA DEL ODÓMETRO. El odómetro del Vehículo ahora marca {{vehicle_mileage}} millas.
 
-5.2. ESTADO DEL ODMETRO: {{odometer_brand}}
+5.2. ESTADO DEL ODÓMETRO: {{odometer_brand}}
 
-Yo, {{seller_name}}, declaro que segn mi mejor conocimiento:
+Yo, {{seller_name}}, declaro que según mi mejor conocimiento:
 
- La lectura del odmetro refleja el MILLAJE REAL del vehculo.
+☐ La lectura del odómetro refleja el MILLAJE REAL del vehículo.
 
- La lectura del odmetro EXCEDE los lmites mecnicos del odmetro y NO es el millaje real. ADVERTENCIA - DISCREPANCIA DE ODMETRO.
+☐ La lectura del odómetro EXCEDE los límites mecánicos del odómetro y NO es el millaje real. ADVERTENCIA - DISCREPANCIA DE ODÓMETRO.
 
- La lectura del odmetro NO es el millaje real. ADVERTENCIA - DISCREPANCIA DE ODMETRO.
+☐ La lectura del odómetro NO es el millaje real. ADVERTENCIA - DISCREPANCIA DE ODÓMETRO.
 
- El odmetro est daado, desconectado o no funciona, y el millaje no puede determinarse.
+☐ El odómetro está dañado, desconectado o no funciona, y el millaje no puede determinarse.
 
-5.3. ADVERTENCIA FEDERAL: La ley federal y estatal requiere que declare el millaje al transferir la propiedad. No completar esta declaracin o proporcionar informacin falsa puede resultar en multas y/o prisin. La divulgacin del millaje debe entregarse al cesionario en conjunto con la transferencia de propiedad.
+5.3. ADVERTENCIA FEDERAL: La ley federal y estatal requiere que declare el millaje al transferir la propiedad. No completar esta declaración o proporcionar información falsa puede resultar en multas y/o prisión. La divulgación del millaje debe entregarse al cesionario en conjunto con la transferencia de propiedad.
 
-5.4. CERTIFICACIN DEL VENDEDOR. Por este medio certifico que la informacin del odmetro proporcionada arriba es verdadera y precisa segn mi mejor conocimiento.
+5.4. CERTIFICACIÓN DEL VENDEDOR. Por este medio certifico que la información del odómetro proporcionada arriba es verdadera y precisa según mi mejor conocimiento.
 
 _____________________________________
-Firma del Vendedor (Declaracin de Odmetro)
+Firma del Vendedor (Declaración de Odómetro)
 
 Fecha: ___________________________
 
-5.5. RECONOCIMIENTO DEL COMPRADOR. Por este medio reconozco haber recibido esta declaracin de odmetro.
+5.5. RECONOCIMIENTO DEL COMPRADOR. Por este medio reconozco haber recibido esta declaración de odómetro.
 
 _____________________________________
 Firma del Comprador
@@ -557,117 +557,117 @@ Fecha: ___________________________
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 6 - ARTCULOS Y ACCESORIOS ADICIONALES
+ARTÍCULO 6 - ARTÍCULOS Y ACCESORIOS ADICIONALES
 
 {{#if included_items}}
-6.1. ARTCULOS INCLUIDOS EN LA VENTA. Los siguientes artculos estn incluidos con el Vehculo:
+6.1. ARTÍCULOS INCLUIDOS EN LA VENTA. Los siguientes artículos están incluidos con el Vehículo:
 
 {{included_items}}
 
-6.2. Los artculos no especficamente listados arriba no estn incluidos a menos que se acuerde por separado por escrito.
+6.2. Los artículos no específicamente listados arriba no están incluidos a menos que se acuerde por separado por escrito.
 {{else}}
-6.1. ARTCULOS INCLUIDOS. Solo el Vehculo mismo est incluido. No se incluyen accesorios, equipos o artculos adicionales a menos que sean especficamente listados por las partes por escrito.
+6.1. ARTÍCULOS INCLUIDOS. Solo el Vehículo mismo está incluido. No se incluyen accesorios, equipos o artículos adicionales a menos que sean específicamente listados por las partes por escrito.
 {{/if}}
 
-6.3. LLAVES Y DOCUMENTOS. El Vendedor proporcionar al Comprador:
-     Todas las llaves y controles disponibles
-     Manual del propietario (si est disponible)
-     Registros de mantenimiento (si estn disponibles)
-     Certificado de Ttulo firmado
-     Declaracin del Odmetro (este documento)
+6.3. LLAVES Y DOCUMENTOS. El Vendedor proporcionará al Comprador:
+     ☐ Todas las llaves y controles disponibles
+     ☐ Manual del propietario (si está disponible)
+     ☐ Registros de mantenimiento (si están disponibles)
+     ☐ Certificado de Título firmado
+     ☐ Declaración del Odómetro (este documento)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 7 - RESPONSABILIDADES DEL COMPRADOR
+ARTÍCULO 7 - RESPONSABILIDADES DEL COMPRADOR
 
-7.1. REGISTRO Y TITULACIN. El Comprador es el nico responsable de:
-    (a) Registrar el Vehculo con el departamento estatal de vehculos motorizados apropiado;
-    (b) Transferir el ttulo al nombre del Comprador;
-    (c) Pagar todas las tarifas de registro, tarifas de ttulo e impuestos aplicables;
-    (d) Obtener seguro vehicular segn lo requiera la ley;
-    (e) Cumplir con todos los requisitos especficos del estado para el registro de vehculos.
+7.1. REGISTRO Y TITULACIÓN. El Comprador es el único responsable de:
+    (a) Registrar el Vehículo con el departamento estatal de vehículos motorizados apropiado;
+    (b) Transferir el título al nombre del Comprador;
+    (c) Pagar todas las tarifas de registro, tarifas de título e impuestos aplicables;
+    (d) Obtener seguro vehicular según lo requiera la ley;
+    (e) Cumplir con todos los requisitos específicos del estado para el registro de vehículos.
 
-7.2. LMITE DE TIEMPO. El Comprador debe completar el registro y la transferencia del ttulo dentro del perodo de tiempo requerido por la ley estatal (tpicamente 10-30 das) para evitar penalidades.
+7.2. LÍMITE DE TIEMPO. El Comprador debe completar el registro y la transferencia del título dentro del período de tiempo requerido por la ley estatal (típicamente 10-30 días) para evitar penalidades.
 
 7.3. INSPECCIONES DE EMISIONES Y SEGURIDAD. El Comprador es responsable de cualquier prueba de emisiones requerida, inspecciones de seguridad o verificaciones de smog requeridas por el estado de registro del Comprador.
 
-7.4. IMPUESTOS. El Comprador es responsable de todo impuesto sobre ventas, impuesto sobre uso y otros impuestos adeudados en esta transaccin segn lo requiera la ley estatal y local aplicable.
+7.4. IMPUESTOS. El Comprador es responsable de todo impuesto sobre ventas, impuesto sobre uso y otros impuestos adeudados en esta transacción según lo requiera la ley estatal y local aplicable.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 8 - RESPONSABILIDADES DEL VENDEDOR
+ARTÍCULO 8 - RESPONSABILIDADES DEL VENDEDOR
 
-8.1. NOTIFICACIN DE VENTA. El Vendedor notificar al departamento estatal de vehculos motorizados de la venta dentro del tiempo requerido por la ley estatal para evitar responsabilidad por futuros boletos, accidentes u otros incidentes relacionados con el Vehculo.
+8.1. NOTIFICACIÓN DE VENTA. El Vendedor notificará al departamento estatal de vehículos motorizados de la venta dentro del tiempo requerido por la ley estatal para evitar responsabilidad por futuros boletos, accidentes u otros incidentes relacionados con el Vehículo.
 
-8.2. LIBERACIN DE RESPONSABILIDAD. El Vendedor presentar un formulario de Liberacin de Responsabilidad ante el DMV/MVD estatal para notificar formalmente al estado que el Vendedor ya no es el propietario del Vehculo.
+8.2. LIBERACIÓN DE RESPONSABILIDAD. El Vendedor presentará un formulario de Liberación de Responsabilidad ante el DMV/MVD estatal para notificar formalmente al estado que el Vendedor ya no es el propietario del Vehículo.
 
-8.3. PLACAS. El Vendedor [retendr/transferir] las placas segn los requisitos de la ley estatal.
+8.3. PLACAS. El Vendedor [retendrá/transferirá] las placas según los requisitos de la ley estatal.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 9 - DECLARACIONES Y CERTIFICACIONES
+ARTÍCULO 9 - DECLARACIONES Y CERTIFICACIONES
 
 9.1. EL VENDEDOR CERTIFICA:
-    S Soy el propietario legal del Vehculo y tengo el derecho de venderlo
-    S El VIN e informacin del vehculo proporcionados son precisos
-    S El Vehculo no ha sido reportado como robado
-    S {{#if lienholder_name}}Existe un gravamen que pagar{{else}}El ttulo est libre de gravmenes{{/if}}
-    S He divulgado todos los defectos conocidos segn mi mejor conocimiento
-    S La lectura del odmetro es precisa segn mi mejor conocimiento
-    S Proporcionar un ttulo debidamente firmado al Comprador
-    S Notificar al DMV/MVD de esta venta
+    ✓ Soy el propietario legal del Vehículo y tengo el derecho de venderlo
+    ✓ El VIN e información del vehículo proporcionados son precisos
+    ✓ El Vehículo no ha sido reportado como robado
+    ✓ {{#if lienholder_name}}Existe un gravamen que pagaré{{else}}El título está libre de gravámenes{{/if}}
+    ✓ He divulgado todos los defectos conocidos según mi mejor conocimiento
+    ✓ La lectura del odómetro es precisa según mi mejor conocimiento
+    ✓ Proporcionaré un título debidamente firmado al Comprador
+    ✓ Notificaré al DMV/MVD de esta venta
 
 9.2. EL COMPRADOR CERTIFICA:
-    S He inspeccionado el Vehculo o he renunciado a mi derecho de inspeccin
-    S Acepto el Vehculo en su condicin actual
-    S Entiendo que estoy comprando TAL CUAL (si aplica)
-    S Registrar y titular el Vehculo a mi nombre
-    S Obtendr seguro segn lo requiera la ley
-    S Pagar todos los impuestos y tarifas aplicables
-    S Entiendo que esta transaccin est regida por la ley estatal y federal
+    ✓ He inspeccionado el Vehículo o he renunciado a mi derecho de inspección
+    ✓ Acepto el Vehículo en su condición actual
+    ✓ Entiendo que estoy comprando TAL CUAL (si aplica)
+    ✓ Registraré y titularé el Vehículo a mi nombre
+    ✓ Obtendré seguro según lo requiera la ley
+    ✓ Pagaré todos los impuestos y tarifas aplicables
+    ✓ Entiendo que esta transacción está regida por la ley estatal y federal
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 10 - RESPONSABILIDAD Y RIESGO DE P0RDIDA
+ARTÍCULO 10 - RESPONSABILIDAD Y RIESGO DE PÉRDIDA
 
-10.1. TRANSFERENCIA DE RIESGO. El riesgo de prdida o dao al Vehculo pasa al Comprador el {{sale_date}} al tomar posesin el Comprador, independientemente de cundo se transfiera oficialmente el ttulo.
+10.1. TRANSFERENCIA DE RIESGO. El riesgo de pérdida o daño al Vehículo pasa al Comprador el {{sale_date}} al tomar posesión el Comprador, independientemente de cuándo se transfiera oficialmente el título.
 
-10.2. SEGURO. El Comprador es responsable de obtener cobertura de seguro sobre el Vehculo inmediatamente al tomar posesin. El seguro del Vendedor ya no cubrir el Vehculo despus de la Fecha de Venta.
+10.2. SEGURO. El Comprador es responsable de obtener cobertura de seguro sobre el Vehículo inmediatamente al tomar posesión. El seguro del Vendedor ya no cubrirá el Vehículo después de la Fecha de Venta.
 
-10.3. LIBERACIN DE RESPONSABILIDAD. A partir del {{sale_date}}, el Vendedor no ser responsable por boletos, accidentes, daos, lesiones u otros incidentes relacionados con el Vehculo. El Comprador asume toda dicha responsabilidad.
+10.3. LIBERACIÓN DE RESPONSABILIDAD. A partir del {{sale_date}}, el Vendedor no será responsable por boletos, accidentes, daños, lesiones u otros incidentes relacionados con el Vehículo. El Comprador asume toda dicha responsabilidad.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 11 - RESOLUCIN DE DISPUTAS
+ARTÍCULO 11 - RESOLUCIÓN DE DISPUTAS
 
-11.1. LEY APLICABLE. Este Contrato de Compra-Venta se regir e interpretar de acuerdo con las leyes del Estado de {{governing_state}}, sin consideracin a sus principios de conflicto de leyes.
+11.1. LEY APLICABLE. Este Contrato de Compra-Venta se regirá e interpretará de acuerdo con las leyes del Estado de {{governing_state}}, sin consideración a sus principios de conflicto de leyes.
 
-11.2. DISPUTAS. Cualquier disputa que surja de esta transaccin se resolver mediante:
-    (a) Negociacin de buena fe entre las partes;
-    (b) Si la negociacin falla, mediacin o arbitraje segn se acuerde mutuamente;
-    (c) Si es necesario, accin legal en los tribunales de {{governing_state}}.
+11.2. DISPUTAS. Cualquier disputa que surja de esta transacción se resolverá mediante:
+    (a) Negociación de buena fe entre las partes;
+    (b) Si la negociación falla, mediación o arbitraje según se acuerde mutuamente;
+    (c) Si es necesario, acción legal en los tribunales de {{governing_state}}.
 
 11.3. HONORARIOS DE ABOGADO. En caso de una disputa legal, la parte que prevalezca puede tener derecho a recuperar honorarios razonables de abogado y costos.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 12 - DISPOSICIONES GENERALES
+ARTÍCULO 12 - DISPOSICIONES GENERALES
 
-12.1. ACUERDO COMPLETO. Este Contrato de Compra-Venta constituye el acuerdo completo entre el Vendedor y el Comprador con respecto a la venta del Vehculo y reemplaza todas las negociaciones, entendimientos y acuerdos previos.
+12.1. ACUERDO COMPLETO. Este Contrato de Compra-Venta constituye el acuerdo completo entre el Vendedor y el Comprador con respecto a la venta del Vehículo y reemplaza todas las negociaciones, entendimientos y acuerdos previos.
 
 12.2. ENMIENDAS. Este Contrato de Compra-Venta no puede ser enmendado o modificado excepto por un instrumento escrito firmado tanto por el Vendedor como por el Comprador.
 
-12.3. DIVISIBILIDAD. Si cualquier disposicin de este Contrato de Compra-Venta se considera invlida o inaplicable, las disposiciones restantes continuarn en pleno vigor y efecto.
+12.3. DIVISIBILIDAD. Si cualquier disposición de este Contrato de Compra-Venta se considera inválida o inaplicable, las disposiciones restantes continuarán en pleno vigor y efecto.
 
-12.4. EFECTO VINCULANTE. Este Contrato de Compra-Venta ser vinculante y en beneficio de las partes y sus respectivos herederos, ejecutores, administradores, sucesores y cesionarios.
+12.4. EFECTO VINCULANTE. Este Contrato de Compra-Venta será vinculante y en beneficio de las partes y sus respectivos herederos, ejecutores, administradores, sucesores y cesionarios.
 
-12.5. CONTRAPARTES. Este Contrato de Compra-Venta puede ejecutarse en mltiples contrapartes, cada una de las cuales se considerar un original y todas juntas constituirn un mismo documento.
+12.5. CONTRAPARTES. Este Contrato de Compra-Venta puede ejecutarse en múltiples contrapartes, cada una de las cuales se considerará un original y todas juntas constituirán un mismo documento.
 
-12.6. SIN GARANTAS DEL VENDEDOR (VENTAS TAL CUAL). A menos que se indique expresamente lo contrario en este documento, el Vendedor no hace declaraciones o garantas con respecto a la condicin, calidad, comerciabilidad o idoneidad del Vehculo para cualquier propsito particular.
+12.6. SIN GARANTÍAS DEL VENDEDOR (VENTAS TAL CUAL). A menos que se indique expresamente lo contrario en este documento, el Vendedor no hace declaraciones o garantías con respecto a la condición, calidad, comerciabilidad o idoneidad del Vehículo para cualquier propósito particular.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-ARTCULO 13 - FIRMAS Y RECONOCIMIENTO
+ARTÍCULO 13 - FIRMAS Y RECONOCIMIENTO
 
 EN FE DE LO CUAL, las partes han ejecutado este Contrato de Compra-Venta en la fecha indicada arriba.
 
@@ -704,15 +704,15 @@ ESTADO DE {{seller_state}}     )
                                 ) ss.
 CONDADO DE _________________    )
 
-En este da _______ de ________________, 20___, ante m, un Notario Pblico en y para dicho Estado, comparecieron personalmente {{seller_name}} y {{buyer_name}}, conocidos por m (o satisfactoriamente comprobados) como las personas cuyos nombres estn suscritos al instrumento anterior, y reconocieron que ejecutaron el mismo para los propsitos en l contenidos.
+En este día _______ de ________________, 20___, ante mí, un Notario Público en y para dicho Estado, comparecieron personalmente {{seller_name}} y {{buyer_name}}, conocidos por mí (o satisfactoriamente comprobados) como las personas cuyos nombres están suscritos al instrumento anterior, y reconocieron que ejecutaron el mismo para los propósitos en él contenidos.
 
 EN FE DE LO CUAL, he puesto mi mano y sello oficial.
 
 
 _____________________________________
-Notario Pblico
+Notario Público
 
-Mi Comisin Expira: _______________
+Mi Comisión Expira: _______________
 
 [SELLO NOTARIAL]
 
@@ -721,108 +721,108 @@ Mi Comisin Expira: _______________
 
 AVISOS LEGALES IMPORTANTES Y DESCARGOS DE RESPONSABILIDAD
 
-a PRECAUCIN AL COMPRADOR - INFORMACIN IMPORTANTE DE PROTECCIN AL CONSUMIDOR:
+⚠ PRECAUCIÓN AL COMPRADOR - INFORMACIÓN IMPORTANTE DE PROTECCIÓN AL CONSUMIDOR:
 
-1. REPORTE DE HISTORIAL DEL VEHCULO: Antes de comprar cualquier vehculo usado, obtenga un reporte de historial del vehculo de Carfax, AutoCheck o el Sistema Nacional de Informacin de Ttulos de Vehculos Motorizados (NMVTIS) usando el VIN. Verifique:
-   " Historial de accidentes
-   " Daos por inundacin
-   " Ttulo de salvamento/reconstruido
-   " Reversin del odmetro
-   " Informacin de recalls
-   " Nmero de propietarios previos
-   " Registros de mantenimiento
+1. REPORTE DE HISTORIAL DEL VEHÍCULO: Antes de comprar cualquier vehículo usado, obtenga un reporte de historial del vehículo de Carfax, AutoCheck o el Sistema Nacional de Información de Títulos de Vehículos Motorizados (NMVTIS) usando el VIN. Verifique:
+   • Historial de accidentes
+   • Daños por inundación
+   • Título de salvamento/reconstruido
+   • Reversión del odómetro
+   • Información de recalls
+   • Número de propietarios previos
+   • Registros de mantenimiento
 
-2. INSPECCIN PREVIA A LA COMPRA: Haga que un mecnico independiente inspeccione el vehculo ANTES de completar la compra. Una inspeccin previa a la compra ($100-200) puede ahorrar miles en reparaciones inesperadas.
+2. INSPECCIÓN PREVIA A LA COMPRA: Haga que un mecánico independiente inspeccione el vehículo ANTES de completar la compra. Una inspección previa a la compra ($100-200) puede ahorrar miles en reparaciones inesperadas.
 
-3. PRUEBA DE MANEJO: Siempre pruebe el vehculo bajo varias condiciones (autopista, ciudad, estacionamiento) antes de comprar.
+3. PRUEBA DE MANEJO: Siempre pruebe el vehículo bajo varias condiciones (autopista, ciudad, estacionamiento) antes de comprar.
 
-4. VERIFICACIN DEL TTULO: Verifique que el nombre del vendedor en el ttulo coincida con su identificacin y este Contrato de Compra-Venta. Nunca compre un vehculo sin un ttulo limpio a nombre del vendedor.
+4. VERIFICACIÓN DEL TÍTULO: Verifique que el nombre del vendedor en el título coincida con su identificación y este Contrato de Compra-Venta. Nunca compre un vehículo sin un título limpio a nombre del vendedor.
 
-5. VERIFICACIN DE GRAVMENES: Contacte al DMV de su estado para verificar que no haya gravmenes no divulgados sobre el vehculo. Una bsqueda de gravmenes puede prevenir que compre un vehculo que el vendedor legalmente no posee.
+5. VERIFICACIÓN DE GRAVÁMENES: Contacte al DMV de su estado para verificar que no haya gravámenes no divulgados sobre el vehículo. Una búsqueda de gravámenes puede prevenir que compre un vehículo que el vendedor legalmente no posee.
 
-6. VENTAS TAL CUAL: La mayora de las ventas entre particulares son "TAL CUAL" sin garanta. Una vez que se vaya, todos los problemas son suyos. Inspeccione cuidadosamente.
+6. VENTAS TAL CUAL: La mayoría de las ventas entre particulares son "TAL CUAL" sin garantía. Una vez que se vaya, todos los problemas son suyos. Inspeccione cuidadosamente.
 
-7. EMISIONES E INSPECCIN: Algunos estados requieren pruebas de emisiones y/o inspeccin de seguridad antes del registro. Considere este costo y posible falla en su decisin.
+7. EMISIONES E INSPECCIÓN: Algunos estados requieren pruebas de emisiones y/o inspección de seguridad antes del registro. Considere este costo y posible falla en su decisión.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-REQUISITOS ESPECFICOS POR ESTADO (Ejemplos - Verifique Su Estado):
+REQUISITOS ESPECÍFICOS POR ESTADO (Ejemplos - Verifique Su Estado):
 
-" CALIFORNIA: Se requiere certificado de smog (a menos que est exento). El vendedor debe proporcionar dentro de los 90 das de la venta.
-" TEXAS: Se requiere inspeccin vehicular dentro de los 7 das de la venta para el registro.
-" NUEVA YORK: El Contrato de Compra-Venta debe ser notarizado para el registro en el DMV.
-" FLORIDA: La transferencia del ttulo debe ocurrir dentro de los 30 das para evitar cargos por mora.
-" MASSACHUSETTS: Debe pasar la inspeccin estatal dentro de los 7 das de la compra.
+• CALIFORNIA: Se requiere certificado de smog (a menos que esté exento). El vendedor debe proporcionar dentro de los 90 días de la venta.
+• TEXAS: Se requiere inspección vehicular dentro de los 7 días de la venta para el registro.
+• NUEVA YORK: El Contrato de Compra-Venta debe ser notarizado para el registro en el DMV.
+• FLORIDA: La transferencia del título debe ocurrir dentro de los 30 días para evitar cargos por mora.
+• MASSACHUSETTS: Debe pasar la inspección estatal dentro de los 7 días de la compra.
 
-SIEMPRE VERIFIQUE LOS REQUISITOS ESPECFICOS DE SU ESTADO para:
-S Requisitos de notarizacin para el Contrato de Compra-Venta
-S Lmites de tiempo para transferencia de ttulo y registro
-S Requisitos de inspeccin de emisiones y seguridad
-S Procedimientos de cobro y pago de impuestos sobre ventas
-S Formularios y divulgaciones requeridas
-S Protecciones de ley limn (generalmente no aplican a ventas privadas)
+SIEMPRE VERIFIQUE LOS REQUISITOS ESPECÍFICOS DE SU ESTADO para:
+☐ Requisitos de notarización para el Contrato de Compra-Venta
+☐ Límites de tiempo para transferencia de título y registro
+☐ Requisitos de inspección de emisiones y seguridad
+☐ Procedimientos de cobro y pago de impuestos sobre ventas
+☐ Formularios y divulgaciones requeridas
+☐ Protecciones de ley limón (generalmente no aplican a ventas privadas)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 REQUISITOS FEDERALES:
 
-1. DIVULGACIN DE ODMETRO (49 U.S.C.  32705): La ley federal REQUIERE divulgacin precisa del odmetro para vehculos de menos de 20 aos. Las violaciones pueden resultar en:
-   " Penalidades civiles hasta $10,000
-   " Penalidades criminales incluyendo multas y prisin
-   " El comprador puede demandar por daos de $1,500 o tres veces los daos reales, lo que sea mayor
+1. DIVULGACIÓN DE ODÓMETRO (49 U.S.C. § 32705): La ley federal REQUIERE divulgación precisa del odómetro para vehículos de menos de 20 años. Las violaciones pueden resultar en:
+   • Penalidades civiles hasta $10,000
+   • Penalidades criminales incluyendo multas y prisión
+   • El comprador puede demandar por daños de $1,500 o tres veces los daños reales, lo que sea mayor
 
-2. RECALLS: Verifique recalls de seguridad abiertos en www.nhtsa.gov/recalls o llame al fabricante. Los concesionarios deben reparar los recalls gratis, incluso en vehculos usados.
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-LISTA DE VERIFICACIN DEL VENDEDOR - COMPLETAR ANTES/DESPU0S DE LA VENTA:
-
- Verificar que el VIN coincida con el ttulo y el vehculo
- Completar y firmar la seccin de transferencia de ttulo en el reverso del ttulo
- Completar divulgacin del odmetro (este Contrato de Compra-Venta satisface el requisito federal)
- Proporcionar Contrato de Compra-Venta al comprador (este documento)
- Proporcionar todas las llaves, manuales y documentos
- Retirar las placas (en la mayora de los estados)
- Cancelar el seguro del vehculo
- Presentar Aviso de Transferencia y Liberacin de Responsabilidad ante el DMV/MVD estatal dentro del plazo requerido
- Guardar una copia del Contrato de Compra-Venta firmado para sus registros
+2. RECALLS: Verifique recalls de seguridad abiertos en www.nhtsa.gov/recalls o llame al fabricante. Los concesionarios deben reparar los recalls gratis, incluso en vehículos usados.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-LISTA DE VERIFICACIN DEL COMPRADOR - COMPLETAR INMEDIATAMENTE DESPU0S DE LA COMPRA:
+LISTA DE VERIFICACIÓN DEL VENDEDOR - COMPLETAR ANTES/DESPUÉS DE LA VENTA:
 
- Obtener reporte de historial del vehculo si no se hizo antes de la compra
- Obtener ttulo firmado del vendedor
- Obtener Contrato de Compra-Venta (este documento)
- Obtener todas las llaves, manuales y documentos
- Obtener cobertura de seguro ANTES de conducir el vehculo
- Registrar y titular el vehculo con el DMV de su estado dentro del plazo requerido (generalmente 10-30 das)
- Pagar impuesto sobre ventas, tarifas de registro y tarifas de ttulo aplicables
- Completar inspeccin de emisiones/seguridad si lo requiere su estado
- Actualizar su compaa de seguros con la informacin del vehculo
- Guardar copias de todos los documentos en un lugar seguro
+☐ Verificar que el VIN coincida con el título y el vehículo
+☐ Completar y firmar la sección de transferencia de título en el reverso del título
+☐ Completar divulgación del odómetro (este Contrato de Compra-Venta satisface el requisito federal)
+☐ Proporcionar Contrato de Compra-Venta al comprador (este documento)
+☐ Proporcionar todas las llaves, manuales y documentos
+☐ Retirar las placas (en la mayoría de los estados)
+☐ Cancelar el seguro del vehículo
+☐ Presentar Aviso de Transferencia y Liberación de Responsabilidad ante el DMV/MVD estatal dentro del plazo requerido
+☐ Guardar una copia del Contrato de Compra-Venta firmado para sus registros
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+LISTA DE VERIFICACIÓN DEL COMPRADOR - COMPLETAR INMEDIATAMENTE DESPUÉS DE LA COMPRA:
+
+☐ Obtener reporte de historial del vehículo si no se hizo antes de la compra
+☐ Obtener título firmado del vendedor
+☐ Obtener Contrato de Compra-Venta (este documento)
+☐ Obtener todas las llaves, manuales y documentos
+☐ Obtener cobertura de seguro ANTES de conducir el vehículo
+☐ Registrar y titular el vehículo con el DMV de su estado dentro del plazo requerido (generalmente 10-30 días)
+☐ Pagar impuesto sobre ventas, tarifas de registro y tarifas de título aplicables
+☐ Completar inspección de emisiones/seguridad si lo requiere su estado
+☐ Actualizar su compañía de seguros con la información del vehículo
+☐ Guardar copias de todos los documentos en un lugar seguro
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 DESCARGO DE RESPONSABILIDAD LEGAL:
 
-Esta plantilla de Contrato de Compra-Venta se proporciona solo con fines informativos y no constituye asesoramiento legal. Las ventas de vehculos estn regidas por la ley federal (divulgacin del odmetro, requisitos de ttulo) y la ley estatal (registro, impuestos, proteccin al consumidor), que varan significativamente segn la jurisdiccin.
+Esta plantilla de Contrato de Compra-Venta se proporciona solo con fines informativos y no constituye asesoramiento legal. Las ventas de vehículos están regidas por la ley federal (divulgación del odómetro, requisitos de título) y la ley estatal (registro, impuestos, protección al consumidor), que varían significativamente según la jurisdicción.
 
 Consulte con un abogado licenciado en su estado si tiene preguntas o inquietudes sobre:
-" Transacciones complejas (ttulos de salvamento, ventas fuera del estado, ventas de concesionarios)
-" Disputas sobre la condicin del vehculo o problemas de ttulo
-" Montos de transaccin grandes
-" Vehculos comerciales o tipos especiales de vehculos
-" Planes de pago a plazos o financiamiento del vendedor
-" Requisitos legales especficos del estado
+• Transacciones complejas (títulos de salvamento, ventas fuera del estado, ventas de concesionarios)
+• Disputas sobre la condición del vehículo o problemas de título
+• Montos de transacción grandes
+• Vehículos comerciales o tipos especiales de vehículos
+• Planes de pago a plazos o financiamiento del vendedor
+• Requisitos legales específicos del estado
 
 Se alienta a ambas partes a:
-" Investigar los requisitos especficos del DMV/MVD de su estado
-" Entender sus derechos y obligaciones bajo la ley estatal
-" Mantener registros detallados de la transaccin
-" Buscar asesoramiento legal para situaciones complejas
+• Investigar los requisitos específicos del DMV/MVD de su estado
+• Entender sus derechos y obligaciones bajo la ley estatal
+• Mantener registros detallados de la transacción
+• Buscar asesoramiento legal para situaciones complejas
 
-Esta plantilla est diseada para ventas directas de vehculos entre particulares entre individuos. Puede no ser adecuada para ventas de concesionarios, ventas en subasta, transferencias de regalo, transferencias familiares u otras circunstancias especiales que pueden tener diferentes requisitos legales.
+Esta plantilla está diseñada para ventas directas de vehículos entre particulares entre individuos. Puede no ser adecuada para ventas de concesionarios, ventas en subasta, transferencias de regalo, transferencias familiares u otras circunstancias especiales que pueden tener diferentes requisitos legales.
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -830,5 +830,3 @@ Este Contrato de Compra-Venta fue generado el {{current_month}} {{current_day}},
 
 AMBAS PARTES DEBEN CONSERVAR UNA COPIA FIRMADA PARA SUS REGISTROS.`
 };
-
-
