@@ -134,12 +134,7 @@ function DashboardHomeContent() {
           <FolderOpen className="size-6 text-indigo-200" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-base font-black text-white">{language === 'en' ? 'Upload your own document templates' : 'Sube tus propias plantillas de documentos'}</p>
-            <span className="flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-200">
-              <Sparkles className="size-2.5" /> {language === 'en' ? 'New' : 'Nuevo'}
-            </span>
-          </div>
+          <p className="text-base font-black text-white">{language === 'en' ? 'Upload your own document templates' : 'Sube tus propias plantillas de documentos'}</p>
           <p className="mt-1 text-sm text-white/50">
             {language === 'en'
               ? 'Upload any PDF once, click to mark the fillable fields and signature spot, and reuse it forever with your own branding.'

@@ -99,7 +99,11 @@ export function MyQuotesPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-4xl">
-        <button type="button" onClick={() => navigate(-1)} className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700">
+        <button
+          type="button"
+          onClick={() => navigate(window.matchMedia('(max-width: 767px)').matches ? '/app' : '/dashboard')}
+          className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
+        >
           <ArrowLeft className="size-4" /> {language === 'en' ? 'Back' : 'Volver'}
         </button>
 
