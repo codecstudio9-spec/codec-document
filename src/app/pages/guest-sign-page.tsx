@@ -81,18 +81,25 @@ type SigningRequirements = { requireIdPhoto: boolean; requireSelfie: boolean };
 function PdfPage({
   pdfDoc,
   pageNumber,
-  width,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pdfDoc: any;
   pageNumber: number;
-  width: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rendered, setRendered] = useState(false);
 
+  // Renders at a fixed pdf.js scale and lets CSS (width: 100%) do the
+  // actual on-screen sizing — same pattern as GuestSignaturePlacer/
+  // PdfSignatureEditor. The previous version scaled pdf.js's own render to
+  // match a container width measured via a ref+ResizeObserver; that
+  // measurement ran once on mount, before this component's wrapping div
+  // even existed yet (the page was still in its "loading" state), so
+  // `width` stayed 0 forever and every page silently never rendered —
+  // exactly the "huge blank space" a guest would see on mobile. Not
+  // needing a pre-measured pixel width removes that failure mode entirely.
   useEffect(() => {
-    if (!width || !pdfDoc) return;
+    if (!pdfDoc) return;
     let cancelled = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let renderTask: any = null;
@@ -102,15 +109,15 @@ function PdfPage({
         const page = await pdfDoc.getPage(pageNumber);
         if (cancelled) return;
 
-        const baseVp = page.getViewport({ scale: 1 });
-        const scale = width / baseVp.width;
-        const vp = page.getViewport({ scale });
+        const vp = page.getViewport({ scale: 1.8 });
 
         const canvas = canvasRef.current;
         if (!canvas || cancelled) return;
 
         canvas.width = vp.width;
         canvas.height = vp.height;
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
 
         const ctx = canvas.getContext('2d')!;
         renderTask = page.render({ canvasContext: ctx, viewport: vp });
@@ -126,7 +133,7 @@ function PdfPage({
       cancelled = true;
       try { renderTask?.cancel(); } catch { /* ignore */ }
     };
-  }, [pdfDoc, pageNumber, width]);
+  }, [pdfDoc, pageNumber]);
 
   return (
     <div className="relative w-full bg-white">
@@ -529,7 +536,6 @@ export function GuestSignPage() {
   const [pdfError, setPdfError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
 
   // ── Guest info ────────────────────────────────────────────────────────────────
   const [guestName, setGuestName] = useState('');
@@ -719,16 +725,6 @@ export function GuestSignPage() {
 
     return () => { cancelled = true; };
   }, [tokenData?.originalPdfUrl]);
-
-  // ─── Measure PDF container width (for pdfjs scale calculation) ────────────────
-  useEffect(() => {
-    const el = pdfContainerRef.current;
-    if (!el) return;
-    setContainerWidth(el.offsetWidth);
-    const ro = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // ─── Scroll-to-end detection via IntersectionObserver ────────────────────────
   useEffect(() => {
@@ -1278,7 +1274,7 @@ export function GuestSignPage() {
             </div>
           )}
 
-          {!pdfLoading && !pdfError && pdfDoc && containerWidth > 0 && (
+          {!pdfLoading && !pdfError && pdfDoc && (
             <div className="relative divide-y divide-slate-100 bg-white">
               <button
                 type="button"
@@ -1289,7 +1285,7 @@ export function GuestSignPage() {
                 <Maximize2 className="size-3" /> Ver documento completo
               </button>
               {Array.from({ length: pdfPageCount }, (_, i) => (
-                <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} width={containerWidth} />
+                <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} />
               ))}
             </div>
           )}
@@ -1594,7 +1590,7 @@ export function GuestSignPage() {
               </div>
             )}
 
-            {!pdfLoading && !pdfError && pdfDoc && containerWidth > 0 && (
+            {!pdfLoading && !pdfError && pdfDoc && (
               <div className="relative divide-y divide-slate-100">
                 <button
                   type="button"
@@ -1609,7 +1605,6 @@ export function GuestSignPage() {
                     key={i + 1}
                     pdfDoc={pdfDoc}
                     pageNumber={i + 1}
-                    width={containerWidth}
                   />
                 ))}
               </div>
