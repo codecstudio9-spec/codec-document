@@ -294,7 +294,13 @@ export function PremiumDownloadModal({
     setPromoLoading(true);
     setPromoError('');
     try {
-      await redeemPromoCode(code);
+      const planProductMap: Record<PlanKey, 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
+        monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
+      };
+      const context = mode === 'single'
+        ? { product: 'doc_single' as const, documentId }
+        : { product: planProductMap[selectedPlan] };
+      await redeemPromoCode(code, context);
       setPromoApplied(true);
       onSuccess(`PROMO-${code}`);
       onOpenChange(false);

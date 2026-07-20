@@ -65,10 +65,20 @@ export async function verifyPaypalOrder(params: {
  * cap, one-per-user, and the actual grant all live in the `paypal-verify`
  * Edge Function + public.promo_codes table) — the client never decides
  * whether a code is valid, only which code the user typed.
+ *
+ * `context.product` tells the server which checkout this code was typed
+ * into (monthly plan, single document, etc.) — a master/unlimited code
+ * uses it to grant exactly that instead of always granting its fixed
+ * configured product; an ordinary discount code ignores it and keeps
+ * granting whatever it was created for. Omit it entirely for surfaces
+ * with no specific plan context (e.g. the admin-only audit lookup).
  */
-export async function redeemPromoCode(promoCode: string): Promise<{ verified: true; product: PaypalProduct }> {
+export async function redeemPromoCode(
+  promoCode: string,
+  context?: { product: PaypalProduct; documentId?: string },
+): Promise<{ verified: true; product: PaypalProduct }> {
   const { data, error } = await supabase.functions.invoke('paypal-verify', {
-    body: { promoCode },
+    body: { promoCode, product: context?.product, documentId: context?.documentId },
   });
   if (error) {
     throw new Error(await extractEdgeFunctionErrorMessage(error, 'No se pudo validar el código promocional.'));

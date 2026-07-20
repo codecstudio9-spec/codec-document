@@ -87,6 +87,13 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
   const clientId = getPayPalClientId();
   const plan = PLANS.find((p) => p.id === selectedPlan)!;
 
+  // Same product for a real payment and for a promo-code redemption in
+  // this checkout — whichever plan/tab is currently selected is what
+  // either path unlocks.
+  const currentContextProduct = mode === 'document'
+    ? (selectedPlan === 'single' ? 'doc_single' : 'sub_monthly')
+    : (selectedPlan === 'single' ? 'sig_single' : 'sig_monthly');
+
   // PayPal's card-fields overlay can lock body scroll on its own, outside
   // any lifecycle event this component gets — see paypal-scroll-fix.ts.
   useEffect(() => watchAndUnlockBodyScroll(), []);
@@ -97,9 +104,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
       // Server verifies the order with PayPal's REST API (real payment,
       // correct amount, not reused) and grants the credit/plan itself —
       // this component no longer writes user_credits directly.
-      const product = mode === 'document'
-        ? (selectedPlan === 'single' ? 'doc_single' : 'sub_monthly')
-        : (selectedPlan === 'single' ? 'sig_single' : 'sig_monthly');
+      const product = currentContextProduct;
       await verifyPaypalOrder({
         orderId,
         product,
@@ -125,7 +130,10 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
     setPromoLoading(true);
     setPromoError('');
     try {
-      await redeemPromoCode(code);
+      await redeemPromoCode(code, {
+        product: currentContextProduct,
+        documentId: mode === 'document' ? 'generic-single-document' : undefined,
+      });
       setSucceeded(true);
       toast.success('¡Código aplicado! Acceso desbloqueado.');
       onSuccess(selectedPlan);

@@ -89,9 +89,19 @@ interface RequestBody {
   orderId?: string;        // Orders API — doc_single / doc_bundle / sig_single / sig_monthly
   subscriptionId?: string; // Subscriptions API — sub_monthly / sub_semiannual / sub_annual
   promoCode?: string;      // validated against public.promo_codes — no PayPal call at all
-  product: Product;
+  // Required for a real payment (what's being bought). For a promoCode
+  // redemption it's OPTIONAL and means something different: the checkout
+  // context the code was typed into (which plan/product the user had
+  // selected) — see the promo branch below for how it's used.
+  product?: Product;
   documentId?: string; // required for doc_single / doc_bundle
 }
+
+const KNOWN_PRODUCTS = new Set<Product>([
+  'doc_single', 'doc_bundle', 'sig_single', 'sig_monthly',
+  'sub_monthly', 'sub_semiannual', 'sub_annual', 'full_access',
+  'company_monthly', 'company_annual', 'quote_single',
+]);
 
 function corsHeaders(origin: string | null) {
   return {
@@ -307,7 +317,19 @@ Deno.serve(async (req) => {
         });
       }
 
-      const grantedProduct = (promo.product as Product) ?? 'doc_single';
+      // A master/unlimited code (unlimited_per_user = true — e.g. the
+      // admin's own PROMO1022925002) waives payment for whatever the
+      // account was actually trying to buy, instead of always granting
+      // the fixed product on the promo_codes row: select "monthly" and
+      // apply it there, only the monthly plan activates; pay for a single
+      // $7/$9 document and apply it there, only that document unlocks.
+      // Ordinary (non-unlimited) discount codes ignore this and keep
+      // granting exactly the product they were configured for, same as
+      // before — that's normal, expected coupon behavior.
+      const contextProduct = product && KNOWN_PRODUCTS.has(product) ? product : null;
+      const grantedProduct: Product = (promo.unlimited_per_user && contextProduct)
+        ? contextProduct
+        : ((promo.product as Product) ?? 'doc_single');
       // Best-effort real client IP for the audit record — same header
       // chain reverse proxies/CDNs conventionally set; never blocks
       // redemption if absent.

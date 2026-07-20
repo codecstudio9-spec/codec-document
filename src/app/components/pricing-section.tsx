@@ -281,7 +281,10 @@ export function PricingSection() {
     setPromoLoading(true);
     setPromoError('');
     try {
-      await redeemPromoCode(code);
+      const planProductMap: Record<Product['planId'], 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
+        monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
+      };
+      await redeemPromoCode(code, selectedProduct ? { product: planProductMap[selectedProduct.planId] } : undefined);
       await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);
       toast.success(language === 'en' ? 'Promo code applied — plan activated!' : '¡Código aplicado — plan activado!');
       closeModal();
