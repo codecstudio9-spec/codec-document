@@ -1406,35 +1406,20 @@ export function GuestSignPage() {
         />
 
         {showPlacer && pdfDoc && (
-          <div className="fixed inset-0 z-[9997] flex flex-col bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <button
-                type="button"
-                onClick={() => { setShowPlacer(false); setShowSignPad(true); }}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Atrás
-              </button>
-              <p className="text-sm font-bold text-slate-900">Coloca tu firma</p>
-              <span className="w-16" />
-            </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <div className="mx-auto w-full max-w-2xl">
-                <GuestSignaturePlacer
-                  pdfDoc={pdfDoc}
-                  pageCount={pdfPageCount}
-                  signatureDataUrl={guestSigDataUrl}
-                  signerName={guestName || 'Invitado'}
-                  isLoading={isSigning}
-                  fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                  onConfirm={(placement) => {
-                    setShowPlacer(false);
-                    void handleSubmitSignature(guestSigDataUrl, placement);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+          <GuestSignaturePlacer
+            pdfDoc={pdfDoc}
+            pageCount={pdfPageCount}
+            signatureDataUrl={guestSigDataUrl}
+            signerName={guestName || 'Invitado'}
+            documentName={tokenData.documentName}
+            isLoading={isSigning}
+            fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+            onBack={() => { setShowPlacer(false); setShowSignPad(true); }}
+            onConfirm={(placement) => {
+              setShowPlacer(false);
+              void handleSubmitSignature(guestSigDataUrl, placement);
+            }}
+          />
         )}
 
         {isSigning && (
@@ -1759,35 +1744,20 @@ export function GuestSignPage() {
           drag to reposition, resize with the corner handle, browse every
           page. Whatever's on screen when confirmed is what gets baked in. */}
       {showPlacer && pdfDoc && (
-        <div className="fixed inset-0 z-[9997] flex flex-col bg-white">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <button
-              type="button"
-              onClick={() => { setShowPlacer(false); setShowSignPad(true); }}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Atrás
-            </button>
-            <p className="text-sm font-bold text-slate-900">Coloca tu firma</p>
-            <span className="w-16" />
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="mx-auto w-full max-w-2xl">
-              <GuestSignaturePlacer
-                pdfDoc={pdfDoc}
-                pageCount={pdfPageCount}
-                signatureDataUrl={guestSigDataUrl}
-                signerName={guestName || 'Invitado'}
-                isLoading={isSigning}
-                fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                onConfirm={(placement) => {
-                  setShowPlacer(false);
-                  void handleSubmitSignature(guestSigDataUrl, placement);
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        <GuestSignaturePlacer
+          pdfDoc={pdfDoc}
+          pageCount={pdfPageCount}
+          signatureDataUrl={guestSigDataUrl}
+          signerName={guestName || 'Invitado'}
+          documentName={tokenData.documentName}
+          isLoading={isSigning}
+          fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+          onBack={() => { setShowPlacer(false); setShowSignPad(true); }}
+          onConfirm={(placement) => {
+            setShowPlacer(false);
+            void handleSubmitSignature(guestSigDataUrl, placement);
+          }}
+        />
       )}
 
       {/* ── Signing progress overlay (shown after modal closes while upload runs) */}
