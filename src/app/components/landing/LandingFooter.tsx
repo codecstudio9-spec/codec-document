@@ -82,6 +82,7 @@ export function LandingFooter() {
                 {language === 'en' ? 'Resources' : 'Recursos'}
               </h4>
               <ul className="space-y-3 text-sm">
+                <li><a href="/blog" className="transition hover:text-white">{language === 'en' ? 'Guides & Blog' : 'Guías y Blog'}</a></li>
                 <li><a href="/free-legal-documents" className="transition hover:text-white">{language === 'en' ? 'Free Legal Docs' : 'Documentos Legales Gratis'}</a></li>
                 <li><a href="/electronic-signature" className="transition hover:text-white">{language === 'en' ? 'E-Signature Platform' : 'Plataforma de Firma Electrónica'}</a></li>
                 <li><a href="/nda-generator" className="transition hover:text-white">{language === 'en' ? 'NDA Generator' : 'Generador de NDA'}</a></li>

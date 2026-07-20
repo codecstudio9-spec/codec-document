@@ -182,6 +182,30 @@ const DesktopAdminAnalytics = lazy(() => import("./pages/desktop/DesktopAdminAna
 // California, solo el <title>/meta de Google nombra la ciudad -- ver
 // city-seo-content.ts).
 
+// Blog / content marketing -- 20 articulos educativos (10 en ingles para
+// EEUU, 10 en espanol para LatAm) + indice -- ver article-content.ts.
+const BlogIndex = lazy(() => import("./pages/landings/blog-index"));
+const BlogWhyDigitalSignaturesMatter2026 = lazy(() => import("./pages/landings/blog-why-digital-signatures-matter-2026"));
+const BlogElectronicSignatureVsDigitalSignature = lazy(() => import("./pages/landings/blog-electronic-signature-vs-digital-signature"));
+const BlogWhatIsAnNda = lazy(() => import("./pages/landings/blog-what-is-an-nda"));
+const BlogESignaturesForRealEstate = lazy(() => import("./pages/landings/blog-e-signatures-for-real-estate"));
+const BlogESignaturesForBanksFinancialInstitutions = lazy(() => import("./pages/landings/blog-e-signatures-for-banks-financial-institutions"));
+const BlogEsignActLegalValidityUs = lazy(() => import("./pages/landings/blog-esign-act-legal-validity-us"));
+const BlogFreeESignatureSoftwareSmallBusiness = lazy(() => import("./pages/landings/blog-free-e-signature-software-small-business"));
+const BlogHiddenCostOfPaperContracts = lazy(() => import("./pages/landings/blog-hidden-cost-of-paper-contracts"));
+const BlogHowToSendDocumentForSignatureOnline = lazy(() => import("./pages/landings/blog-how-to-send-document-for-signature-online"));
+const BlogDigitalSignaturesForHrOnboarding = lazy(() => import("./pages/landings/blog-digital-signatures-for-hr-onboarding"));
+const BlogFirmaDigitalEmpresas2026 = lazy(() => import("./pages/landings/blog-firma-digital-empresas-2026"));
+const BlogFirmaElectronicaVsFirmaDigital = lazy(() => import("./pages/landings/blog-firma-electronica-vs-firma-digital"));
+const BlogQueEsUnNdaAcuerdoConfidencialidad = lazy(() => import("./pages/landings/blog-que-es-un-nda-acuerdo-confidencialidad"));
+const BlogFirmaElectronicaParaInmobiliarias = lazy(() => import("./pages/landings/blog-firma-electronica-para-inmobiliarias"));
+const BlogFirmaElectronicaParaBancos = lazy(() => import("./pages/landings/blog-firma-electronica-para-bancos"));
+const BlogValidezLegalFirmaElectronicaLatinoamerica = lazy(() => import("./pages/landings/blog-validez-legal-firma-electronica-latinoamerica"));
+const BlogFirmaElectronicaGratisParaPymes = lazy(() => import("./pages/landings/blog-firma-electronica-gratis-para-pymes"));
+const BlogCostoOcultoDelPapelEnEmpresas = lazy(() => import("./pages/landings/blog-costo-oculto-del-papel-en-empresas"));
+const BlogComoEnviarDocumentoParaFirmaOnline = lazy(() => import("./pages/landings/blog-como-enviar-documento-para-firma-online"));
+const BlogFirmaElectronicaParaRecursosHumanos = lazy(() => import("./pages/landings/blog-firma-electronica-para-recursos-humanos"));
+
 function ProtectedMyDocumentsPage() {
   return (
     <ProtectedRoute>
@@ -422,6 +446,28 @@ export const router = createBrowserRouter([
   { path: "/service-agreement-san-jose-california", Component: ServiceAgreementSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/promissory-note-san-jose-california", Component: PromissoryNoteSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-san-jose-california", Component: VehicleBillOfSaleSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  // Blog / content marketing -- 20 articulos + indice
+  { path: "/blog", Component: BlogIndex, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/why-digital-signatures-matter-2026", Component: BlogWhyDigitalSignaturesMatter2026, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/electronic-signature-vs-digital-signature", Component: BlogElectronicSignatureVsDigitalSignature, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/what-is-an-nda", Component: BlogWhatIsAnNda, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/e-signatures-for-real-estate", Component: BlogESignaturesForRealEstate, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/e-signatures-for-banks-financial-institutions", Component: BlogESignaturesForBanksFinancialInstitutions, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/esign-act-legal-validity-us", Component: BlogEsignActLegalValidityUs, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/free-e-signature-software-small-business", Component: BlogFreeESignatureSoftwareSmallBusiness, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/hidden-cost-of-paper-contracts", Component: BlogHiddenCostOfPaperContracts, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-to-send-document-for-signature-online", Component: BlogHowToSendDocumentForSignatureOnline, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/digital-signatures-for-hr-onboarding", Component: BlogDigitalSignaturesForHrOnboarding, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-digital-empresas-2026", Component: BlogFirmaDigitalEmpresas2026, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-electronica-vs-firma-digital", Component: BlogFirmaElectronicaVsFirmaDigital, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/que-es-un-nda-acuerdo-confidencialidad", Component: BlogQueEsUnNdaAcuerdoConfidencialidad, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-electronica-para-inmobiliarias", Component: BlogFirmaElectronicaParaInmobiliarias, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-electronica-para-bancos", Component: BlogFirmaElectronicaParaBancos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/validez-legal-firma-electronica-latinoamerica", Component: BlogValidezLegalFirmaElectronicaLatinoamerica, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-electronica-gratis-para-pymes", Component: BlogFirmaElectronicaGratisParaPymes, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/costo-oculto-del-papel-en-empresas", Component: BlogCostoOcultoDelPapelEnEmpresas, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/como-enviar-documento-para-firma-online", Component: BlogComoEnviarDocumentoParaFirmaOnline, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firma-electronica-para-recursos-humanos", Component: BlogFirmaElectronicaParaRecursosHumanos, errorElement: <RouteErrorBoundary /> },
   // Smart Quotes -- SEO
   { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
   { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },

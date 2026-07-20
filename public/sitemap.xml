@@ -629,4 +629,153 @@
     <priority>0.75</priority>
     <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/cotizacion-profesional"/>
   </url>
+
+  <!-- Blog / content marketing: 20 educational articles + index -->
+  <url>
+    <loc>https://www.codecdocument.com/blog</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/why-digital-signatures-matter-2026</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/why-digital-signatures-matter-2026"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/electronic-signature-vs-digital-signature</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/electronic-signature-vs-digital-signature"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/what-is-an-nda</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/what-is-an-nda"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/e-signatures-for-real-estate</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/e-signatures-for-real-estate"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/e-signatures-for-banks-financial-institutions</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/e-signatures-for-banks-financial-institutions"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/esign-act-legal-validity-us</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/esign-act-legal-validity-us"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/free-e-signature-software-small-business</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/free-e-signature-software-small-business"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/hidden-cost-of-paper-contracts</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/hidden-cost-of-paper-contracts"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/how-to-send-document-for-signature-online</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/how-to-send-document-for-signature-online"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/digital-signatures-for-hr-onboarding</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/digital-signatures-for-hr-onboarding"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-digital-empresas-2026</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-digital-empresas-2026"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-electronica-vs-firma-digital</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-vs-firma-digital"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/que-es-un-nda-acuerdo-confidencialidad</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/que-es-un-nda-acuerdo-confidencialidad"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-electronica-para-inmobiliarias</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-para-inmobiliarias"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-electronica-para-bancos</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-para-bancos"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/validez-legal-firma-electronica-latinoamerica</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/validez-legal-firma-electronica-latinoamerica"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-electronica-gratis-para-pymes</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-gratis-para-pymes"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/costo-oculto-del-papel-en-empresas</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/costo-oculto-del-papel-en-empresas"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/como-enviar-documento-para-firma-online</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/como-enviar-documento-para-firma-online"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/blog/firma-electronica-para-recursos-humanos</loc>
+    <lastmod>2026-07-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/blog/firma-electronica-para-recursos-humanos"/>
+  </url>
 </urlset>
