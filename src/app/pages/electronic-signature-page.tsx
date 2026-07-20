@@ -330,8 +330,16 @@ export function ElectronicSignaturePage() {
   const [loadingMsg, setLoadingMsg]   = useState('');
   const [error, setError]             = useState('');
   const [signedPdfUrl, setSignedPdfUrl] = useState('');
+  const [signedAt, setSignedAt] = useState('');
   const [documentStatus, setDocumentStatus] = useState<string>('pending');
   const [linkCopied, setLinkCopied]   = useState(false);
+
+  // Timestamps the moment the wizard first reaches "Listo" — the success
+  // screen shows this so the creator knows exactly when they signed,
+  // instead of having to guess from memory later.
+  useEffect(() => {
+    if (step === 'done' && !signedAt) setSignedAt(new Date().toISOString());
+  }, [step, signedAt]);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -686,7 +694,7 @@ export function ElectronicSignaturePage() {
     setStep('upload'); setPdfBytes(null); setFileName(''); setDocumentId(''); setFileHash('');
     setCreatorName(''); setCreatorEmail(''); setCreatorSigDataUrl(''); setCreatorSigUrl(''); setCreatorPlacement(null);
     setGuestName(''); setGuestEmail(''); setGuestSigDataUrl(''); setGuestSigUrl('');
-    setSigningToken(''); setSignedPdfUrl(''); setDocumentStatus('pending');
+    setSigningToken(''); setSignedPdfUrl(''); setSignedAt(''); setDocumentStatus('pending');
     setRequireIdPhoto(false); setRequireSelfie(false);
     setPendingFile(null); setError('');
   };
@@ -773,6 +781,7 @@ export function ElectronicSignaturePage() {
               downloadUrl={signedPdfUrl}
               documentName={fileName.replace(/\.pdf$/i, '')}
               documentId={documentId}
+              signedAt={signedAt}
             />
           )}
 

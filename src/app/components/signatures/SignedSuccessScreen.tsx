@@ -1,4 +1,5 @@
-import { ShieldCheck, Download, FileCheck } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { ShieldCheck, Download, FileCheck, FolderOpen, Clock } from 'lucide-react';
 import { triggerDownloadFromUrl } from '../../utils/download';
 
 interface SignedSuccessScreenProps {
@@ -6,6 +7,10 @@ interface SignedSuccessScreenProps {
   downloadUrl?: string;
   documentName?: string;
   documentId?: string;
+  /** ISO timestamp of the moment this wizard reached "Listo" — shown so the
+   * creator has an exact record of when they signed, instead of having to
+   * guess from memory later. */
+  signedAt?: string;
 }
 
 export function SignedSuccessScreen({
@@ -13,7 +18,15 @@ export function SignedSuccessScreen({
   downloadUrl,
   documentName = 'Documento firmado',
   documentId,
+  signedAt,
 }: SignedSuccessScreenProps) {
+  const navigate = useNavigate();
+  const formattedSignedAt = signedAt
+    ? new Intl.DateTimeFormat('es-CO', {
+        dateStyle: 'long', timeStyle: 'short', timeZone: 'America/Bogota',
+      }).format(new Date(signedAt)) + ' (hora Colombia)'
+    : '';
+
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
@@ -48,12 +61,33 @@ export function SignedSuccessScreen({
             </div>
           )}
 
+          {formattedSignedAt && (
+            <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5">
+              <Clock className="size-4 shrink-0 text-emerald-400" />
+              <span className="text-sm text-white/70">Firmado el {formattedSignedAt}</span>
+            </div>
+          )}
+
           {documentId && (
             <p className="mt-3 text-[10px] text-white/25 font-mono">ID: {documentId}</p>
           )}
 
-          {/* Download + Finish buttons */}
+          {/* Where-to-find-it + download + finish buttons — the creator
+              asked "firmé el documento pero no sé dónde quedó": every
+              signed document is already saved to their account the moment
+              it's created (documents.user_id), but this screen previously
+              gave no path back to it — "Volver al inicio" just reset the
+              wizard to upload a new file, in place, without navigating
+              anywhere. */}
           <div className="mt-7 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/my-documents')}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] transition hover:from-indigo-500 hover:to-blue-500"
+            >
+              <FolderOpen className="size-4" />
+              Ver en Mis Documentos
+            </button>
             {downloadUrl && (
               <button
                 type="button"
@@ -62,7 +96,7 @@ export function SignedSuccessScreen({
                     window.open(downloadUrl, '_blank', 'noopener,noreferrer');
                   });
                 }}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(16,185,129,0.35)] transition hover:from-emerald-500 hover:to-teal-500"
+                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
               >
                 <Download className="size-4" />
                 Descargar PDF certificado
@@ -71,9 +105,9 @@ export function SignedSuccessScreen({
             <button
               type="button"
               onClick={onFinish}
-              className="rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+              className="rounded-xl py-2 text-xs font-semibold text-white/40 transition hover:text-white/70"
             >
-              Volver al inicio
+              Firmar otro documento
             </button>
           </div>
         </div>
