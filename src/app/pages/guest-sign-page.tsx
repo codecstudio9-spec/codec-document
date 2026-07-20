@@ -828,21 +828,50 @@ export function GuestSignPage() {
       // 4. Claim the signer slot atomically — if another concurrent submission
       // (the same signing link opened twice) already completed it, stop here
       // instead of racing it to insert a duplicate signature / compiled PDF.
+      // BUT "already completed" also covers a real-world case that isn't a
+      // duplicate at all: the guest's browser closed or lost connection
+      // AFTER this same call succeeded once already but BEFORE the signed
+      // PDF got compiled/uploaded/finalized below — the signer is
+      // 'completed' yet the document was never finalized, so without this
+      // check the signature would be stuck forever with no way to recover
+      // (the guest reopens the link expecting to retry and just gets a
+      // hard "already signed" error). Re-verify the document's CURRENT
+      // finalization state (fresh, not the tokenData snapshot from page
+      // load) to tell the two cases apart: no signed_pdf_url yet means
+      // finalization never happened, so resume it instead of blocking.
       const claimed = await tryCompleteSignerOnce(tokenData.signerId, 'pending');
+      let resumingInterruptedSignature = false;
       if (!claimed) {
-        toast.error('Este documento ya fue firmado en otra sesión. Actualiza la página.');
-        return;
+        const fresh = signToken ? await verifySigningTokenPublic(signToken).catch(() => null) : null;
+        if (fresh && !fresh.signedPdfUrl) {
+          resumingInterruptedSignature = true;
+        } else {
+          toast.error('Este documento ya fue firmado en otra sesión. Actualiza la página.');
+          return;
+        }
       }
 
-      // 5. Persist signature row and document evidence package
-      await insertSignature({
-        documentId:   tokenData.documentId,
-        signerName:   guestName || 'Invitado',
-        signerEmail:  guestEmail || '',
-        ip,
-        userAgent:    auditUserAgent,
-        signatureUrl: sigUrl,
-      });
+      // 5. Persist signature row and document evidence package — skipped
+      // when resuming an interrupted signature that already inserted this
+      // same row before it got cut off, so retrying doesn't leave two rows
+      // for the same signer.
+      let alreadyHasSignatureRow = false;
+      if (resumingInterruptedSignature) {
+        const existingSignatures = await getDocumentSignatures(tokenData.documentId).catch(() => []);
+        alreadyHasSignatureRow = existingSignatures.some((s) =>
+          (guestEmail && s.signer_email === guestEmail) || s.signer_name === (guestName || 'Invitado'),
+        );
+      }
+      if (!alreadyHasSignatureRow) {
+        await insertSignature({
+          documentId:   tokenData.documentId,
+          signerName:   guestName || 'Invitado',
+          signerEmail:  guestEmail || '',
+          ip,
+          userAgent:    auditUserAgent,
+          signatureUrl: sigUrl,
+        });
+      }
 
       // The creator's ink is already flattened as pixels into
       // tokenData.signedPdfUrl — compilePdfWithSignatures only needs to
