@@ -55,7 +55,7 @@ export async function fetchUserDocuments(userId: string): Promise<UserDocument[]
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) return [];
+  if (error) { console.error('fetchUserDocuments: query failed:', error); return []; }
   return (data as UserDocument[]) ?? [];
 }
 
@@ -152,6 +152,15 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
     supabase.from('documents').select(DOC_COLUMNS).eq('user_id', userId),
     supabase.from('profile_documents').select('document_id, role, associated_at').eq('profile_id', userId),
   ]);
+
+  // A query error here (e.g. a column the frontend expects doesn't exist
+  // in the live schema) used to be swallowed by the `?? []` fallback below
+  // — the list just rendered as "nothing here yet" even for an account
+  // with real completed documents, with zero trace in the console. Logging
+  // it doesn't fix the underlying issue by itself, but it turns "silently
+  // empty" into something that's actually debuggable next time.
+  if (ownedRes.error) console.error('fetchAssociatedDocuments: owned query failed:', ownedRes.error);
+  if (linksRes.error) console.error('fetchAssociatedDocuments: links query failed:', linksRes.error);
 
   const merged = new Map<string, AssociatedDocument>();
 
