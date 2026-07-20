@@ -499,4 +499,134 @@
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
+
+  <!-- San Jose, California (city cluster: hub + 6 doc types) -->
+  <url>
+    <loc>https://www.codecdocument.com/san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/nda-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/nda-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/nda-san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/lease-agreement-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/lease-agreement-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/lease-agreement-san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/independent-contractor-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/independent-contractor-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/independent-contractor-san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/service-agreement-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/service-agreement-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/service-agreement-san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/promissory-note-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/promissory-note-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/promissory-note-san-jose-california"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/vehicle-bill-of-sale-san-jose-california</loc>
+    <lastmod>2026-07-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/vehicle-bill-of-sale-san-jose-california"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/vehicle-bill-of-sale-san-jose-california"/>
+  </url>
+
+  <!-- Smart Quotes SEO (5 US English + 5 LatAm Spanish) -->
+  <url>
+    <loc>https://www.codecdocument.com/quote-generator</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/quote-generator"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/proposal-generator</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/proposal-generator"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/business-estimate-generator</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/business-estimate-generator"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/professional-quote-template</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/professional-quote-template"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/commercial-proposal-generator</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.codecdocument.com/commercial-proposal-generator"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/cotizador-online</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/cotizador-online"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/crear-cotizacion</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/crear-cotizacion"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/propuesta-comercial</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/propuesta-comercial"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/generador-de-cotizaciones</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/generador-de-cotizaciones"/>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/cotizacion-profesional</loc>
+    <lastmod>2026-07-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.codecdocument.com/cotizacion-profesional"/>
+  </url>
 </urlset>
