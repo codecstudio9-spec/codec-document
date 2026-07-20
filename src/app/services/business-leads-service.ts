@@ -35,22 +35,25 @@ export interface BusinessLead {
   status: LeadStatus;
 }
 
-let geoCache: { country: string | null; city: string | null } | null = null;
+let geoCache: { country: string | null; city: string | null; ip: string | null } | null = null;
 
 /** Same ipwho.is lookup already used independently in analytics-service.ts,
  * geo.ts and language-context.tsx — kept as its own small call here rather
- * than importing a private helper from another module. */
-async function resolveLeadGeo(): Promise<{ country: string | null; city: string | null }> {
+ * than importing a private helper from another module. Also doubles as
+ * the IP the server-side rate limit (submit_business_lead) keys off of,
+ * since this same response already carries it — no second network call
+ * needed just to fight form-spam bots. */
+async function resolveLeadGeo(): Promise<{ country: string | null; city: string | null; ip: string | null }> {
   if (geoCache) return geoCache;
   try {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 4000);
     const res = await fetch('https://ipwho.is/', { signal: controller.signal });
     window.clearTimeout(timeout);
-    const data = await res.json() as { success?: boolean; country?: string; city?: string };
-    geoCache = data?.success ? { country: data.country ?? null, city: data.city ?? null } : { country: null, city: null };
+    const data = await res.json() as { success?: boolean; country?: string; city?: string; ip?: string };
+    geoCache = data?.success ? { country: data.country ?? null, city: data.city ?? null, ip: data.ip ?? null } : { country: null, city: null, ip: null };
   } catch {
-    geoCache = { country: null, city: null };
+    geoCache = { country: null, city: null, ip: null };
   }
   return geoCache;
 }
@@ -84,6 +87,7 @@ export async function submitBusinessLead(input: SubmitLeadInput): Promise<void> 
     p_city: geo.city,
     p_language: input.language,
     p_message: input.message || null,
+    p_ip_address: geo.ip,
   });
   if (error) throw new Error(error.message);
 }

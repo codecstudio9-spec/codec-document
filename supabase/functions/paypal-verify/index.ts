@@ -294,6 +294,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Rate-limits GUESSING codes, not just redeeming them — logs this
+      // attempt and rejects BEFORE even looking up whether the code is
+      // real, so brute-forcing promo codes costs an authenticated account
+      // real friction instead of being free to script indefinitely.
+      const { data: withinAttemptLimit } = await admin.rpc('check_and_log_promo_attempt', { p_user_id: userId });
+      if (!withinAttemptLimit) {
+        return new Response(JSON.stringify({ error: 'Too many promo code attempts. Please try again later.' }), {
+          status: 429, headers: corsHeaders(origin),
+        });
+      }
+
       const code = promoCode.trim().toUpperCase();
       const { data: promo } = await admin
         .from('promo_codes')
