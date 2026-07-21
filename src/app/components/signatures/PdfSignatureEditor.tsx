@@ -116,10 +116,14 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
       let pdf: pdfjsLib.PDFDocumentProxy;
       try {
         try {
-          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+          // isOffscreenCanvasSupported disabled: on iOS/iPadOS Safari,
+          // pdf.js's OffscreenCanvas-backed render path silently produces a
+          // blank canvas (render() resolves fine, nothing is painted) —
+          // confirmed live on iPhone. Desktop/Android are unaffected either way.
+          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), isOffscreenCanvasSupported: false }).promise;
         } catch {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), disableWorker: true } as any).promise;
+          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), isOffscreenCanvasSupported: false, disableWorker: true } as any).promise;
         }
       } catch (e) {
         console.error('PdfSignatureEditor: error loading PDF:', e);
@@ -148,7 +152,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           const ctx = canvas.getContext('2d');
           if (!ctx) throw new Error('canvas 2D context unavailable');
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
 
           // Cheap thumbnail: downscale the canvas we just rendered instead
           // of asking pdf.js to render the whole page a second time.

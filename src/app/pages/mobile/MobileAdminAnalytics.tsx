@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { ArrowLeft, Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat, FileText, PenLine, ChevronDown } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
+import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import {
   fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
@@ -13,6 +14,7 @@ import {
   type AnalyticsSummary,
 } from '../../services/analytics-service';
 import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
+import { AnalyticsAccessManager } from '../../components/admin/AnalyticsAccessManager';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -27,6 +29,7 @@ export function MobileAdminAnalytics() {
 }
 
 function AnalyticsContent() {
+  const { isAdmin } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [tab, setTab] = useState<'visitantes' | 'comercial'>('comercial');
@@ -105,7 +108,12 @@ function AnalyticsContent() {
           ))}
         </div>
 
-        {tab === 'comercial' && <BusinessIntelligenceTab language={language} />}
+        {tab === 'comercial' && (
+          <div className="space-y-4">
+            <BusinessIntelligenceTab language={language} />
+            {isAdmin && <AnalyticsAccessManager language={language} />}
+          </div>
+        )}
 
         {tab === 'visitantes' && <>
         {/* Range filter */}

@@ -52,10 +52,14 @@ export function TemplateFieldEditor({ pdfBytes, fields, onFieldsChange }: {
         const safeData = pdfBytes.slice(0);
         let pdf: pdfjsLib.PDFDocumentProxy;
         try {
-          pdf = await pdfjsLib.getDocument({ data: safeData }).promise;
+          // isOffscreenCanvasSupported disabled: on iOS/iPadOS Safari,
+          // pdf.js's OffscreenCanvas-backed render path silently produces a
+          // blank canvas (render() resolves fine, nothing is painted) —
+          // confirmed live on iPhone elsewhere in this app's PDF viewers.
+          pdf = await pdfjsLib.getDocument({ data: safeData, isOffscreenCanvasSupported: false }).promise;
         } catch {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), disableWorker: true } as any).promise;
+          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), isOffscreenCanvasSupported: false, disableWorker: true } as any).promise;
         }
         pdfDocRef.current = pdf;
         thumbCanvasRefs.current = new Array(pdf.numPages).fill(null);
@@ -82,7 +86,7 @@ export function TemplateFieldEditor({ pdfBytes, fields, onFieldsChange }: {
           canvas.style.width = '100%'; canvas.style.height = 'auto';
           const ctx = canvas.getContext('2d');
           if (!ctx) continue;
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
         } catch (e) { console.error(`Thumb ${i}:`, e); }
       }
     })();
@@ -103,7 +107,7 @@ export function TemplateFieldEditor({ pdfBytes, fields, onFieldsChange }: {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
         renderedPageRef.current = activePage;
       } catch (e) {
         console.error(`Page ${activePage}:`, e);

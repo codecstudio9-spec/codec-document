@@ -3,6 +3,9 @@ import { CheckCircle, Loader, MousePointerClick, ArrowLeft, Minus, Plus, HelpCir
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
 
+// NOTE: this component receives an already-loaded pdfDoc from its caller
+// (see guest-sign-page.tsx) — the isOffscreenCanvasSupported iOS fix lives
+// there, at the actual pdfjsLib.getDocument() call site.
 interface GuestSignaturePlacerProps {
   // Already-loaded pdfjs document (PDFDocumentProxy) — reuses whatever the
   // caller already fetched for the read-only preview, including its
@@ -98,7 +101,7 @@ export function GuestSignaturePlacer({
           const ctx = canvas.getContext('2d');
           if (!ctx) throw new Error('canvas 2D context unavailable');
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
           renderedPagesRef.current.add(pageNum);
 
           // Cheap thumbnail: downscale the canvas we just rendered instead

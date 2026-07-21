@@ -28,7 +28,7 @@ export function MobileProfile() {
 }
 
 function ProfileContent() {
-  const { user, isAdmin, unlimitedActive, subscriptionActive, logout } = useAuth();
+  const { user, isAdmin, isAnalyticsAdmin, unlimitedActive, subscriptionActive, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<UserPlanInfo | null>(null);
@@ -135,7 +135,7 @@ function ProfileContent() {
       {/* Options */}
       <div className="mt-5 space-y-2.5">
         {[
-          ...(isAdmin ? [{ icon: BarChart3, label: 'Analytics', badge: 0, onClick: () => navigate('/app/admin/analytics') }] : []),
+          ...((isAdmin || isAnalyticsAdmin) ? [{ icon: BarChart3, label: 'Analytics', badge: 0, onClick: () => navigate('/app/admin/analytics') }] : []),
           { icon: FileText, label: language === 'en' ? 'Document usage' : 'Uso de documentos', badge: 0, onClick: () => navigate('/app/documents') },
           { icon: Settings, label: language === 'en' ? 'Settings' : 'Ajustes', badge: 0, onClick: () => navigate('/app/profile/settings') },
           { icon: Bell, label: language === 'en' ? 'Notifications' : 'Notificaciones', badge: unreadCount, onClick: () => navigate('/app/profile/notifications') },

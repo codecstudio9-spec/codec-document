@@ -62,13 +62,17 @@ export function PdfViewer({
 
         let pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>;
         try {
-          pdf = await pdfjsLib.getDocument({ data: safeData }).promise;
+          // isOffscreenCanvasSupported disabled: on iOS/iPadOS Safari,
+          // pdf.js's OffscreenCanvas-backed render path silently produces a
+          // blank canvas (render() resolves fine, nothing is painted) —
+          // confirmed live on iPhone. Desktop/Android are unaffected either way.
+          pdf = await pdfjsLib.getDocument({ data: safeData, isOffscreenCanvasSupported: false }).promise;
         } catch (workerError) {
           // Fallback: some CSP / extension setups break the worker.
           // We use another fresh slice so the fallback path is also safe.
           const fallbackData = pdfBytes.slice(0);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          pdf = await pdfjsLib.getDocument({ data: fallbackData, disableWorker: true } as any).promise;
+          pdf = await pdfjsLib.getDocument({ data: fallbackData, isOffscreenCanvasSupported: false, disableWorker: true } as any).promise;
           console.warn('pdf.js worker fallback activado:', workerError);
         }
 

@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { Users, Globe2, MapPin, Radio, Loader, UserPlus, Repeat, FileText, PenLine, ChevronDown } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
+import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import {
   fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
@@ -12,6 +13,7 @@ import {
   type AnalyticsSummary,
 } from '../../services/analytics-service';
 import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
+import { AnalyticsAccessManager } from '../../components/admin/AnalyticsAccessManager';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -42,6 +44,7 @@ export function DesktopAdminAnalytics() {
 }
 
 function AdminAnalyticsContent() {
+  const { isAdmin } = useAuth();
   const { language } = useLanguage();
   const [tab, setTab] = useState<'visitantes' | 'comercial'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
@@ -128,7 +131,14 @@ function AdminAnalyticsContent() {
         ))}
       </div>
 
-      {tab === 'comercial' && <div className="mt-6"><BusinessIntelligenceTab language={language} /></div>}
+      {tab === 'comercial' && (
+        <div className="mt-6 space-y-6">
+          <BusinessIntelligenceTab language={language} />
+          {/* Never shown to a granted analytics-only viewer — see
+              AnalyticsAccessManager's own doc comment for why. */}
+          {isAdmin && <AnalyticsAccessManager language={language} />}
+        </div>
+      )}
 
       {tab === 'visitantes' && <>
       {/* KPIs — always today/week/month/total, independent of the range filter */}

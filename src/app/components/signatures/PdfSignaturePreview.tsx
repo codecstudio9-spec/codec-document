@@ -193,10 +193,14 @@ export function PdfSignaturePreview({ pdfBytes, signers, watermark = false }: Pd
 
         let pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>;
         try {
-          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+          // isOffscreenCanvasSupported disabled: on iOS/iPadOS Safari,
+          // pdf.js's OffscreenCanvas-backed render path silently produces a
+          // blank canvas (render() resolves fine, nothing is painted) —
+          // confirmed live on iPhone. Desktop/Android are unaffected either way.
+          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), isOffscreenCanvasSupported: false }).promise;
         } catch {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), disableWorker: true } as any).promise;
+          pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0), isOffscreenCanvasSupported: false, disableWorker: true } as any).promise;
         }
 
         const page = await pdf.getPage(pdf.numPages);
@@ -209,7 +213,7 @@ export function PdfSignaturePreview({ pdfBytes, signers, watermark = false }: Pd
         canvas.style.height = 'auto';
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
         setReady(true);
       } catch (e) {
         console.error('PdfSignaturePreview render error:', e);

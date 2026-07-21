@@ -4,6 +4,7 @@ import { fetchMyPurchasedDocuments, fetchSubscriptionStatus } from '../services/
 import { supabase } from '../../lib/supabase';
 import { isAdminEmail } from '../utils/admin-access';
 import { markVisitorFunnelStep } from '../services/analytics-service';
+import { checkIsAnalyticsAdmin } from '../services/analytics-admin-service';
 
 type AuthUser = { id?: string; email: string; name?: string; picture?: string };
 
@@ -13,6 +14,10 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  /** Granted via analytics_admins (see analytics-admin-service.ts) — sees
+   * ONLY /dashboard/admin/analytics, not the rest of what isAdmin unlocks
+   * (can't grant/revoke access itself, doesn't get plan_type: 'admin'). */
+  isAnalyticsAdmin: boolean;
   unlimitedActive: boolean;
   subscriptionActive: boolean;
   annualPriceUsd: number;
@@ -44,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAnalyticsAdmin, setIsAnalyticsAdmin] = useState(false);
   const [unlimitedActive, setUnlimitedActive] = useState(false);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [annualPriceUsd, setAnnualPriceUsd] = useState(180);
@@ -61,6 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // without a code deploy, but the hardcoded email stays as a permanent
     // fallback (same defense-in-depth already used by admin-access.ts).
     if (status.role === 'admin') setIsAdmin(true);
+  };
+
+  // A granted analytics-only viewer gets the same unlimited-usage bypass
+  // as isAdmin (via unlimitedActive/subscriptionActive, the flag already
+  // read app-wide for paywall gates — see preview-page.tsx,
+  // document-generator-page.tsx, my-documents-page.tsx,
+  // my-quote-editor-page.tsx) but NEVER sets isAdmin itself, so they stay
+  // locked out of every other admin-only surface.
+  const refreshAnalyticsAdmin = async () => {
+    if (!session?.user) { setIsAnalyticsAdmin(false); return; }
+    const granted = await checkIsAnalyticsAdmin();
+    setIsAnalyticsAdmin(granted);
+    if (granted) {
+      setUnlimitedActive(true);
+      setSubscriptionActive(true);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -117,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setIsAnalyticsAdmin(false);
     setUser(null);
     setToken(null);
     setSession(null);
@@ -222,6 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Wrap both calls so a down backend never throws an unhandled rejection
     refreshSubscription().catch(() => {});
     refreshPurchasedDocuments(token).catch(() => {});
+    refreshAnalyticsAdmin().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -232,6 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       isAdmin,
+      isAnalyticsAdmin,
       unlimitedActive,
       subscriptionActive,
       annualPriceUsd,
@@ -245,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshPurchasedDocuments,
       logout,
     }),
-    [user, token, session, loading, isAdmin, unlimitedActive, subscriptionActive, annualPriceUsd, purchasedDocumentIds],
+    [user, token, session, loading, isAdmin, isAnalyticsAdmin, unlimitedActive, subscriptionActive, annualPriceUsd, purchasedDocumentIds],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

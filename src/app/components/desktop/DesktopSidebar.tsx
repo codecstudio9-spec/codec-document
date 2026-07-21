@@ -23,10 +23,10 @@ const ADMIN_NAV_ITEM = {
  * counterpart to MobileBottomNav, same active-tab-by-pathname logic. */
 export function DesktopSidebar() {
   const { pathname } = useLocation();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isAnalyticsAdmin, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const navItems = isAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
+  const navItems = (isAdmin || isAnalyticsAdmin) ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
 
   const handleLogout = async () => {
     await logout();

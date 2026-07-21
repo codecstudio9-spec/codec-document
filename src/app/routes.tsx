@@ -302,7 +302,7 @@ function ProtectedMyQuoteEditorPage() {
 
 function ProtectedAdminAnalyticsPage() {
   return (
-    <AdminRoute>
+    <AdminRoute allowAnalyticsViewer>
       <DesktopAdminAnalytics />
     </AdminRoute>
   );
@@ -310,7 +310,7 @@ function ProtectedAdminAnalyticsPage() {
 
 function ProtectedMobileAdminAnalyticsPage() {
   return (
-    <AdminRoute>
+    <AdminRoute allowAnalyticsViewer>
       <MobileAdminAnalytics />
     </AdminRoute>
   );

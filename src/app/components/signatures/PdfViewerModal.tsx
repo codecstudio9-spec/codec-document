@@ -92,10 +92,14 @@ export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title, wa
           pdf = pdfDoc;
         } else {
           try {
-            pdf = await pdfjsLib.getDocument({ data: (pdfBytes as Uint8Array).slice(0) }).promise;
+            // isOffscreenCanvasSupported disabled: on iOS/iPadOS Safari,
+            // pdf.js's OffscreenCanvas-backed render path silently produces a
+            // blank canvas (render() resolves fine, nothing is painted) —
+            // confirmed live on iPhone. Desktop/Android are unaffected either way.
+            pdf = await pdfjsLib.getDocument({ data: (pdfBytes as Uint8Array).slice(0), isOffscreenCanvasSupported: false }).promise;
           } catch {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            pdf = await pdfjsLib.getDocument({ data: (pdfBytes as Uint8Array).slice(0), disableWorker: true } as any).promise;
+            pdf = await pdfjsLib.getDocument({ data: (pdfBytes as Uint8Array).slice(0), isOffscreenCanvasSupported: false, disableWorker: true } as any).promise;
           }
         }
         setPageCount(pdf.numPages);
@@ -113,7 +117,7 @@ export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title, wa
           canvas.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
           const ctx = canvas.getContext('2d');
           if (!ctx) continue;
-          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise;
           container.appendChild(canvas);
         }
       } catch (e) {
