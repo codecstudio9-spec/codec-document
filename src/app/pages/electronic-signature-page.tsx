@@ -154,6 +154,17 @@ function ShareHub({
   onContinue: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const { speak } = useVoiceGuide();
+  const spokenRef = useRef(false);
+  useEffect(() => {
+    if (spokenRef.current) return;
+    spokenRef.current = true;
+    speak({
+      es: 'Copia el enlace y compártelo por WhatsApp o correo con el firmante.',
+      en: 'Copy the link and share it with the signer over WhatsApp or email.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const waText = encodeURIComponent(
     `Estimado ${guestName || 'firmante'}, Codec Document le ha enviado el documento "${docName}" para su revisión y firma electrónica segura. Acceda aquí: ${link}`,

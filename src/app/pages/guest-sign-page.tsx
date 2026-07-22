@@ -264,16 +264,16 @@ function IdentityGate({
       setActiveCamera(target);
       const targetMessages: Record<CameraTarget, { es: string; en: string }> = {
         'id-front': {
-          es: 'Toma la foto del frente de tu documento de identidad. Cuando se vea bien, toca el botón blanco Capturar.',
-          en: 'Take a photo of the front of your ID. Once it looks good, tap the white Capture button.',
+          es: 'Toma la foto del frente de tu documento.',
+          en: 'Take the photo of the front of your document.',
         },
         'id-back': {
-          es: 'Ahora toma la foto del reverso de tu documento de identidad. Toca Capturar cuando esté listo.',
-          en: 'Now take a photo of the back of your ID. Tap Capture when it’s ready.',
+          es: 'Ahora, captura el reverso.',
+          en: 'Now, capture the back.',
         },
         selfie: {
-          es: 'Ahora tómate una selfie. Asegúrate de que tu cara se vea bien iluminada, y toca Capturar.',
-          en: 'Now take a selfie. Make sure your face is clearly visible and well lit, then tap Capture.',
+          es: 'Centra tu rostro en el círculo. Cuando esté listo, toca Capturar.',
+          en: 'Center your face in the circle. When you’re ready, tap Capture.',
         },
       };
       speak(targetMessages[target]);
@@ -319,6 +319,13 @@ function IdentityGate({
                 muted
                 className={`h-full w-full object-cover ${target === 'selfie' ? '[transform:scaleX(-1)]' : ''}`}
               />
+              {/* Face-guide ring — matches the voice prompt ("centra tu
+                  rostro en el círculo") to what's actually on screen. */}
+              {target === 'selfie' && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="aspect-square h-[72%] rounded-full border-4 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                </div>
+              )}
             </div>
             <div className="flex gap-2 bg-black/80 p-2.5">
               <button

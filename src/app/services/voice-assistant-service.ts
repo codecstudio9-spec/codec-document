@@ -12,12 +12,43 @@
  * explicitly to `speak()` so the narration always matches what's on
  * screen, rather than possibly disagreeing with a user who manually
  * switched the site's language away from their OS default.
+ *
+ * Voice/accent — Web Speech API has a hard ceiling worth knowing up front:
+ * it can only pick among whatever voices the user's OS/browser already has
+ * installed (Windows/macOS/Android/iOS speech packs). There is no API knob
+ * for "neural" or "HD" quality, and no way to request a specific voice
+ * provider — `pickVoice()` below picks the BEST candidate available on the
+ * device, ranked to strongly prefer Latin American Spanish locales
+ * (es-419/es-MX/es-US/es-CO/…) over peninsular Spanish (es-ES), per the
+ * corporate LatAm accent requirement. On a device whose only Spanish voice
+ * happens to be Spain Spanish, that's still what plays — there is no free,
+ * guaranteed way around that; a hard guarantee of a specific neural LatAm
+ * voice (e.g. Mexican/Colombian) would require a paid cloud TTS provider
+ * (Azure Neural, Google Cloud TTS, Amazon Polly, ElevenLabs) instead of
+ * this native, zero-cost approach.
  */
 
 export type VoiceLang = 'es' | 'en';
 export type VoiceMessage = string | { es: string; en: string };
 
 const STORAGE_KEY = 'codec_voice_guide_enabled';
+
+// Fluid, friendly, real-time-guide pace (like a navigation/mobility
+// assistant) — slightly brisker than the 1.0 robotic default, without
+// sounding rushed. Natural-sounding pauses come from the punctuation in
+// each message's text itself (commas, periods) — the Web Speech API's
+// SpeechSynthesisUtterance takes plain text only, not SSML, so pacing
+// can't be scripted beyond that.
+const SPEECH_RATE = 1.03;
+const SPEECH_PITCH = 1.0;
+
+// Ranked so index 0 is most preferred. Any locale on this list beats a
+// bare "es" tag or es-ES; es-ES itself is the explicit last resort.
+const LATAM_LOCALE_PRIORITY = [
+  'es-419', 'es-mx', 'es-us', 'es-co', 'es-ar', 'es-cl', 'es-pe', 'es-ve',
+  'es-ec', 'es-gt', 'es-cr', 'es-pa', 'es-do', 'es-hn', 'es-sv', 'es-ni',
+  'es-py', 'es-uy', 'es-bo', 'es-pr',
+];
 
 function isSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -40,10 +71,24 @@ if (isSupported()) {
   window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
 }
 
+// Higher is better. Peninsular Spanish (es-ES, or a voice literally named
+// "Spain"/"España") is never excluded outright — a device with no other
+// Spanish voice at all still needs something to speak — but it's ranked
+// below every Latin American locale, including an unrecognized bare "es".
+function spanishVoiceScore(v: SpeechSynthesisVoice): number {
+  const lang = v.lang.toLowerCase();
+  const name = v.name.toLowerCase();
+  if (lang === 'es-es' || name.includes('spain') || name.includes('españa') || name.includes('espana')) return 0;
+  const idx = LATAM_LOCALE_PRIORITY.indexOf(lang);
+  if (idx !== -1) return 100 - idx;
+  return 50; // bare "es" or an unlisted-but-not-Spain regional tag
+}
+
 function pickVoice(lang: VoiceLang): SpeechSynthesisVoice | null {
   const candidates = cachedVoices.filter((v) => v.lang.toLowerCase().startsWith(lang));
   if (candidates.length === 0) return null;
-  return candidates.find((v) => v.default) ?? candidates[0];
+  if (lang === 'en') return candidates.find((v) => v.default) ?? candidates[0];
+  return [...candidates].sort((a, b) => spanishVoiceScore(b) - spanishVoiceScore(a))[0];
 }
 
 function readStoredPreference(): boolean {
@@ -101,9 +146,18 @@ class VoiceAssistantServiceClass {
     // stale guidance for a step the user already left.
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = effectiveLang === 'es' ? 'es-ES' : 'en-US';
     const voice = pickVoice(effectiveLang);
-    if (voice) utterance.voice = voice;
+    if (voice) {
+      utterance.voice = voice;
+      // Match the tag to the voice we actually picked (e.g. es-MX) instead
+      // of forcing es-ES, which some engines use to bias pronunciation
+      // toward peninsular Spanish even when a LatAm voice is selected.
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = effectiveLang === 'es' ? 'es-419' : 'en-US';
+    }
+    utterance.rate = SPEECH_RATE;
+    utterance.pitch = SPEECH_PITCH;
     window.speechSynthesis.speak(utterance);
   }
 
