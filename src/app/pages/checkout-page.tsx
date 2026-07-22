@@ -14,7 +14,7 @@ import { PayPalCheckoutBackend } from '../components/paypal-checkout-backend';
 import { useAuth } from '../contexts/auth-context';
 import { saveMyPurchasedDocument } from '../services/auth-service';
 import { verifyPaypalOrder } from '../../lib/paypal-verify';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 
 const BUNDLE_PRICE = 12;
@@ -27,7 +27,7 @@ export function CheckoutPage() {
   const [, setIsProcessing] = useState(false);
   const { t, language } = useLanguage();
   const { token, refreshPurchasedDocuments, isAdmin } = useAuth();
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   const [email, setEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'single' | 'bundle'>('single');
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

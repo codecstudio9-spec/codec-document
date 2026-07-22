@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, Camera, CreditCard, FileCheck, BarChart3, PenLine, X } from 'lucide-react';
 import type { SecurityConfig } from '../services/sign-transaction-service';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 
 interface SecurityConfigModalProps {
   open:      boolean;
@@ -91,7 +91,7 @@ const rowVariants = {
 
 export function SecurityConfigModal({ open, language, onConfirm, onCancel }: SecurityConfigModalProps) {
   const [config, setConfig] = useState<SecurityConfig>(DEFAULT);
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
 
   // Explains what this screen is actually for the first time it opens —
   // the copy alone ("Security & Verification") doesn't make clear this is

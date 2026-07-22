@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useVoiceGuide } from './useVoiceGuide';
+import { useVoiceSpeak } from './useVoiceGuide';
 import type { VoiceMessage } from '../services/voice-assistant-service';
 import { logVoiceAssistantEvent, type VoiceEventRole } from '../services/voice-assistant-analytics-service';
 
@@ -50,7 +50,7 @@ export interface VoiceStepGuideOptions {
  * the signing flow — see logVoiceAssistantEvent.
  */
 export function useVoiceStepGuide(opts: VoiceStepGuideOptions): void {
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   const activatedStepRef = useRef<string | null>(null);
 
   const base = {

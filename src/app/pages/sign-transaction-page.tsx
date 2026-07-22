@@ -26,6 +26,10 @@ import { markVisitorActivity } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { toast } from 'sonner';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
+import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
+import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 'loading' | 'esign' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
@@ -152,6 +156,61 @@ export default function SignTransactionPage() {
   // `disabled={submitting}` alone can't block a same-tick second invocation.
   const submittingRef = useRef(false);
   const { user, isAdmin } = useAuth();
+
+  // ── Voice guidance ──────────────────────────────────────────────────────────
+  const { speak } = useVoiceSpeak();
+  const voiceSessionId = useRef(crypto.randomUUID()).current;
+  const voiceBase = { sessionId: voiceSessionId, role: 'guest' as const, flow: 'sign-transaction', documentId: transactionId };
+
+  // Fires exactly once, the moment the transaction loads successfully —
+  // independent of which security steps this particular document requires,
+  // so it always plays first regardless of the step order below.
+  const spokenWelcomeRef = useRef(false);
+  useEffect(() => {
+    if (!tx || spokenWelcomeRef.current) return;
+    spokenWelcomeRef.current = true;
+    speak({
+      es: 'Bienvenido a Codec Document. Has sido invitado a firmar un documento.',
+      en: 'Welcome to Codec Document. You’ve been invited to sign a document.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tx]);
+
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'esign', step: 'esign', stepIndex: 1,
+    message: {
+      es: 'Lee el consentimiento de firma electrónica, marca la casilla para aceptarlo, y toca Continuar.',
+      en: 'Read the electronic signature consent, check the box to accept it, and tap Continue.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'selfie', step: 'selfie', stepIndex: 2,
+    message: {
+      es: 'Tómate una selfie con tu cara bien visible e iluminada para verificar tu identidad.',
+      en: 'Take a selfie with your face clearly visible and well lit to verify your identity.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'id', step: 'id', stepIndex: 3,
+    message: {
+      es: 'Toma una foto del frente de tu documento de identidad, y luego del reverso.',
+      en: 'Take a photo of the front of your ID, then the back.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'sign', step: 'sign', stepIndex: 4,
+    message: {
+      es: 'Dibuja tu firma para terminar de firmar el documento.',
+      en: 'Draw your signature to finish signing the document.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'done', step: 'done', stepIndex: 5, isTerminal: true,
+    message: {
+      es: '¡Listo! Tu firma se registró correctamente. Gracias por usar Codec Document.',
+      en: 'Done! Your signature was registered successfully. Thank you for using Codec Document.',
+    },
+  });
 
   // ── Load transaction on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -491,6 +550,7 @@ export default function SignTransactionPage() {
           <p className="text-sm font-bold text-slate-800 leading-tight">Codec Document</p>
           <p className="text-xs text-slate-500 leading-tight truncate">Firma electronica con validez legal</p>
         </div>
+        <VoiceGuideToggle className="hidden sm:flex" />
         {tx?.security_config?.requireEsignConsent && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
             {jurisdiction.badgeEs}
@@ -806,6 +866,11 @@ export default function SignTransactionPage() {
           onConfirm={(url) => { setSignatureDataUrl(url); setSigModalOpen(false); }}
         />
       )}
+
+      <VoiceReplayButton
+        sessionId={voiceSessionId} role="guest" flow="sign-transaction" documentId={transactionId}
+        step={currentStep} stepIndex={stepIdx}
+      />
     </div>
   );
 }

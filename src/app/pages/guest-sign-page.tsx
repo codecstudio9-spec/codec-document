@@ -37,7 +37,7 @@ import { getQuoteIdByDocument, recordQuoteView, rejectQuotePublic } from '../ser
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
@@ -198,7 +198,7 @@ function IdentityGate({
     (!requirements.requireIdPhoto || (idFrontReady && idBackReady)) &&
     (!requirements.requireSelfie  || selfieReady);
 
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   const logIdentityEvent = (step: string, eventType: 'auto_play' | 'idle_hint') =>
     logVoiceAssistantEvent({ sessionId, role: 'guest', flow: 'guest-sign', step, stepIndex: 2, documentId, eventType });
 

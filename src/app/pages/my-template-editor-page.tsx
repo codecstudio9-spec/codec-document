@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { TemplateFieldEditor } from '../components/templates/TemplateFieldEditor';
 import { createTemplate, uploadTemplateFile, type PlacedField } from '../services/template-service';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 
 export function MyTemplateEditorPage() {
@@ -20,7 +20,7 @@ export function MyTemplateEditorPage() {
   const [fields, setFields] = useState<PlacedField[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
 
   useEffect(() => {
     speak(pdfBytes

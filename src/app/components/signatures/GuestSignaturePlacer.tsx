@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Loader, MousePointerClick, ArrowLeft, Minus, Plus, HelpCircle, X } from 'lucide-react';
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
-import { useVoiceGuide } from '../../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../../hooks/useVoiceGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../../hooks/useVoiceHighlight';
 import { VoiceReplayButton } from '../voice/VoiceReplayButton';
 import { logVoiceAssistantEvent } from '../../services/voice-assistant-analytics-service';
@@ -59,7 +59,7 @@ export function GuestSignaturePlacer({
   pdfDoc, pageCount, signatureDataUrl, signerName, documentName, onConfirm, onBack, isLoading, fallbackPdfUrl,
   voiceSessionId, documentId,
 }: GuestSignaturePlacerProps) {
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   const firmarHighlighted = useVoiceHighlight('guest-firmar-button');
   const voiceLogBase = { sessionId: voiceSessionId, role: 'guest' as const, flow: 'guest-sign', documentId, stepIndex: 4 };
   const [pdfLoading, setPdfLoading] = useState(true);

@@ -179,3 +179,25 @@
     line-height: 1.5;
   }
 }
+
+/* Thin, near-invisible scrollbar for scrollable overlays/modals (e.g.
+   PremiumDownloadModal) — content stays scrollable, it just doesn't look
+   like a thick OS scrollbar framing the whole dialog. */
+.slim-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+.slim-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.slim-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.slim-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+}
+.slim-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.55);
+}

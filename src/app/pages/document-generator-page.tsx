@@ -13,7 +13,7 @@ import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { getDocumentTranslation } from '../data/document-translations';
 import { getFieldTranslation, getFieldOptionTranslation } from '../data/field-translations';
@@ -230,7 +230,7 @@ export function DocumentGeneratorPage() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>('');
   const [flowStep, setFlowStep] = useState<FlowStep>('form');
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   useEffect(() => {
     // Bienvenida al llegar al primer paso, y agradecimiento al llegar al
     // último de este asistente — el mismo patrón que en las otras
@@ -291,6 +291,21 @@ export function DocumentGeneratorPage() {
   const [activeTx, setActiveTx]                 = useState<SignTransaction | null>(null);
   const [pendingSecConfig, setPendingSecConfig] = useState<SecurityConfig | null>(null);
   const [senderSignModalOpen, setSenderSignModalOpen] = useState(false);
+
+  // Voice: the "Enlace Seguro Listo" share screen — tells the creator what
+  // to do with the link the moment it's ready, and again once the
+  // recipient actually signs (a different, later, moment).
+  const spokenTxShareRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!txShareData) { spokenTxShareRef.current = null; return; }
+    const isSigned = activeTx?.status === 'completed';
+    const key = `${txShareData.txId}:${isSigned ? 'signed' : 'pending'}`;
+    if (spokenTxShareRef.current === key) return;
+    spokenTxShareRef.current = key;
+    speak(isSigned
+      ? { es: '¡El destinatario ya firmó! Puedes descargar el documento firmado.', en: 'The recipient has signed! You can now download the signed document.' }
+      : { es: 'Copia el enlace, o envíalo por WhatsApp o correo, a la persona que debe firmar.', en: 'Copy the link, or send it over WhatsApp or email, to the person who needs to sign.' });
+  }, [txShareData, activeTx?.status]);
 
   // ── Resume a previously-sent transaction from its id (?tx=<id>) ──────────
   useEffect(() => {

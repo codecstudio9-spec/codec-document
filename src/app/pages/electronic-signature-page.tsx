@@ -37,7 +37,7 @@ import {
   getNextAnonUsageSlot,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
-import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
@@ -157,7 +157,7 @@ function ShareHub({
   onContinue: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const { speak } = useVoiceGuide();
+  const { speak } = useVoiceSpeak();
   const spokenRef = useRef(false);
   useEffect(() => {
     if (spokenRef.current) return;
@@ -358,11 +358,11 @@ export function ElectronicSignaturePage() {
   useVoiceStepGuide({
     ...voiceBase, active: step === 'creator-sign', step: 'creator-sign', stepIndex: 1, highlight: 'creator-sign-button',
     message: {
-      es: 'Dibuja o escribe tu firma para continuar. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
-      en: 'Draw or type your signature to continue. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
+      es: 'Escribe tu nombre completo y tu correo electrónico. Luego, dale clic al botón para trazar tu firma en el documento. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
+      en: 'Enter your full name and your email. Then, click the button to draw your signature on the document. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
     },
     idleHint: { es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.', en: 'If you need help, tap the Listen to instructions button at the bottom.' },
-    stuckHint: { es: 'Toca el botón azul para trazar tu firma.', en: 'Tap the blue button to draw your signature.' },
+    stuckHint: { es: 'Completa tu nombre y correo, y luego toca el botón azul para trazar tu firma.', en: 'Fill in your name and email, then tap the blue button to draw your signature.' },
   });
   useVoiceStepGuide({
     ...voiceBase, active: step === 'position-creator', step: 'position-creator', stepIndex: 2,

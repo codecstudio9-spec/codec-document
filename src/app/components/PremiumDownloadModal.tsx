@@ -89,9 +89,19 @@ const BENEFITS = [
 ];
 
 // ── body scroll lock ───────────────────────────────────────────────────────
+// Was previously a no-op — the cleanup reset styles that were never
+// actually set, so the page behind this modal stayed scrollable (visible
+// as the outer vertical + horizontal scrollbars framing the whole modal,
+// not scrollbars belonging to the modal card itself).
 function useBodyScrollLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
+    // Compensate for the vanishing scrollbar's width so the page doesn't
+    // shift/reflow horizontally the instant it's hidden.
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    document.body.setAttribute('data-scroll-locked', 'true');
     return () => {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
@@ -324,7 +334,7 @@ export function PremiumDownloadModal({
     <div
       ref={overlayRef}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-[9900] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto"
+      className="slim-scrollbar fixed inset-0 z-[9900] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label={t('Unlock document', 'Desbloquear documento')}
