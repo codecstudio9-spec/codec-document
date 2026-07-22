@@ -38,7 +38,10 @@ import {
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
+import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
+import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
@@ -286,53 +289,8 @@ function GuestCompletedBanner({ guestName, onContinue }: { guestName: string; on
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function ElectronicSignaturePage() {
   const { session, isAdmin, signInWithGoogle } = useAuth();
-  const { speak } = useVoiceGuide();
 
   const [step, setStep] = useState<Step>('upload');
-  // Contextual voice guidance — narrates what to do at each wizard step.
-  // This page has no i18n of its own (100% hardcoded Spanish), so these
-  // messages are passed bilingual and useVoiceGuide picks es/en the same
-  // way VoiceAssistantService would on its own (navigator.language),
-  // since there's no site-language context here to defer to instead.
-  useEffect(() => {
-    const messages: Partial<Record<Step, { es: string; en: string }>> = {
-      upload: {
-        es: 'Sube el documento en PDF que quieres firmar.',
-        en: 'Upload the PDF document you want to sign.',
-      },
-      'creator-sign': {
-        es: 'Dibuja o escribe tu firma para continuar. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
-        en: 'Draw or type your signature to continue. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
-      },
-      'position-creator': {
-        es: 'Toca el documento en el lugar donde quieres colocar tu firma.',
-        en: 'Tap the document where you want to place your signature.',
-      },
-      'invite-guest': {
-        es: 'Ingresa el nombre y correo de la persona que debe firmar contigo, o continúa solo si no necesitas otro firmante.',
-        en: 'Enter the name and email of the person who needs to sign with you, or continue alone if you don’t need another signer.',
-      },
-      'await-guest': {
-        es: 'Estamos esperando a que el invitado firme el documento. Te avisaremos cuando lo haga.',
-        en: 'We’re waiting for the guest to sign the document. We’ll let you know when they do.',
-      },
-      position: {
-        es: 'Coloca la firma de cada firmante en el documento.',
-        en: 'Place each signer’s signature on the document.',
-      },
-      compiling: {
-        es: 'Estamos generando tu documento certificado, esto toma unos segundos.',
-        en: 'We’re generating your certified document, this takes a few seconds.',
-      },
-      done: {
-        es: '¡Listo! Tu documento ha sido firmado y certificado.',
-        en: 'Done! Your document has been signed and certified.',
-      },
-    };
-    const message = messages[step];
-    if (message) speak(message);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
   // Resolved once on mount from the creator's real IP — reused for the
   // certification page (see handleSignAloneOnly/handleConfirmPositions)
   // and the small footer badge below, so both cite the same jurisdiction
@@ -381,6 +339,61 @@ export function ElectronicSignaturePage() {
   const [pdfBytes, setPdfBytes]     = useState<Uint8Array | null>(null);
   const [fileName, setFileName]     = useState('');
   const [fileHash, setFileHash]     = useState('');
+
+  // Contextual voice guidance — a real step-by-step companion, not just an
+  // opening line: speaks once per step, nudges the creator if they stall
+  // (15s totally idle, or 20s stuck on the same step), and logs everything
+  // for the "Asistente de Voz" admin panel. This page has no i18n of its
+  // own (100% hardcoded Spanish), so messages are bilingual and
+  // useVoiceGuide picks es/en the same way VoiceAssistantService would on
+  // its own (navigator.language), since there's no site-language context
+  // here to defer to instead.
+  const voiceSessionId = useRef(crypto.randomUUID()).current;
+  const voiceBase = { sessionId: voiceSessionId, role: 'creator' as const, flow: 'electronic-signature', documentId };
+
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'upload', step: 'upload', stepIndex: 0,
+    message: { es: 'Sube el documento en PDF que quieres firmar.', en: 'Upload the PDF document you want to sign.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'creator-sign', step: 'creator-sign', stepIndex: 1, highlight: 'creator-sign-button',
+    message: {
+      es: 'Dibuja o escribe tu firma para continuar. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
+      en: 'Draw or type your signature to continue. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
+    },
+    idleHint: { es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.', en: 'If you need help, tap the Listen to instructions button at the bottom.' },
+    stuckHint: { es: 'Toca el botón azul para trazar tu firma.', en: 'Tap the blue button to draw your signature.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'position-creator', step: 'position-creator', stepIndex: 2,
+    message: { es: 'Toca el documento en el lugar donde quieres colocar tu firma.', en: 'Tap the document where you want to place your signature.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'invite-guest', step: 'invite-guest', stepIndex: 3, highlight: 'creator-generate-link-button',
+    message: {
+      es: 'Ingresa el nombre y correo de la persona que debe firmar contigo, o continúa solo si no necesitas otro firmante.',
+      en: 'Enter the name and email of the person who needs to sign with you, or continue alone if you don’t need another signer.',
+    },
+    stuckHint: { es: 'Puedes generar el enlace único de firma, o firmar solo si no necesitas invitar a nadie.', en: 'You can generate the unique signing link, or sign alone if you don’t need to invite anyone.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'await-guest', step: 'await-guest', stepIndex: 4,
+    message: { es: 'Estamos esperando a que el invitado firme el documento. Te avisaremos cuando lo haga.', en: 'We’re waiting for the guest to sign the document. We’ll let you know when they do.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'position', step: 'position', stepIndex: 5,
+    message: { es: 'Coloca la firma de cada firmante en el documento.', en: 'Place each signer’s signature on the document.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'compiling', step: 'compiling', stepIndex: 6,
+    message: { es: 'Estamos generando tu documento certificado, esto toma unos segundos.', en: 'We’re generating your certified document, this takes a few seconds.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'done', step: 'done', stepIndex: 7, isTerminal: true,
+    message: { es: '¡Listo! Tu documento ha sido firmado y certificado.', en: 'Done! Your document has been signed and certified.' },
+  });
+  const creatorSignButtonHighlighted = useVoiceHighlight('creator-sign-button');
+  const creatorGenerateLinkHighlighted = useVoiceHighlight('creator-generate-link-button');
 
   // ── Creator ────────────────────────────────────────────────────────────────
   const [creatorName, setCreatorName]         = useState('');
@@ -859,6 +872,10 @@ export function ElectronicSignaturePage() {
         </header>
       )}
 
+      {!isDone && (
+        <VoiceReplayButton sessionId={voiceSessionId} role="creator" flow="electronic-signature" documentId={documentId} step={step} stepIndex={wizardStep} />
+      )}
+
       <main className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
 
         {/* Loading overlay */}
@@ -969,7 +986,7 @@ export function ElectronicSignaturePage() {
                     type="button"
                     onClick={() => setCreatorModalOpen(true)}
                     disabled={!creatorName.trim()}
-                    className="mt-5 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`mt-5 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 ${creatorSignButtonHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
                   >
                     <PenLine className="mr-1.5 inline size-4" /> Trazar mi firma en el documento
                   </button>
@@ -1102,7 +1119,7 @@ export function ElectronicSignaturePage() {
                       type="button"
                       onClick={() => void handleGenerateLink()}
                       disabled={!guestName.trim() || !guestEmail.trim() || isLoading}
-                      className="mt-5 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+                      className={`mt-5 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 ${creatorGenerateLinkHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
                     >
                       <Send className="mr-2 inline size-4" />
                       Generar enlace único de firma

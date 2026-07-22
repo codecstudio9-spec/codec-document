@@ -98,6 +98,7 @@ function readStoredPreference(): boolean {
 }
 
 type EnabledListener = (enabled: boolean) => void;
+type HighlightListener = (id: string | null) => void;
 
 /**
  * Three real Web Speech API gotchas explain "works once, then goes quiet"
@@ -124,10 +125,16 @@ type EnabledListener = (enabled: boolean) => void;
 class VoiceAssistantServiceClass {
   private enabled = readStoredPreference();
   private listeners = new Set<EnabledListener>();
+  private highlightListeners = new Set<HighlightListener>();
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private keepAliveTimer: number | null = null;
+  private highlightTimer: number | null = null;
   private gestureSeen = false;
-  private pendingReplay: { message: string; lang: VoiceLang } | null = null;
+  private pendingReplay: { message: string; lang: VoiceLang; highlight?: string } | null = null;
+  /** What was last spoken, kept around so the floating "🎤 Escuchar
+   * instrucciones" button can repeat the current step's line on demand
+   * without needing the caller to re-supply it. */
+  private lastSpoken: { text: VoiceMessage; lang?: VoiceLang; highlight?: string } | null = null;
 
   constructor() {
     if (typeof document === 'undefined') return;
@@ -137,9 +144,9 @@ class VoiceAssistantServiceClass {
       // needs a nudge — harmless no-op if nothing was paused.
       if (isSupported()) window.speechSynthesis.resume();
       if (this.pendingReplay) {
-        const { message, lang } = this.pendingReplay;
+        const { message, lang, highlight } = this.pendingReplay;
         this.pendingReplay = null;
-        this.speakNow(message, lang);
+        this.speakNow(message, lang, highlight);
       }
     };
     // Not `{ once: true }` — every future gesture also gets a resume()
@@ -171,6 +178,18 @@ class VoiceAssistantServiceClass {
     return () => this.listeners.delete(listener);
   }
 
+  /** Notified with the currently-highlighted element id (or null when
+   * nothing should be highlighted) — components call useVoiceHighlight(id)
+   * to know whether to pulse themselves right now. */
+  onHighlightChange(listener: HighlightListener): () => void {
+    this.highlightListeners.add(listener);
+    return () => this.highlightListeners.delete(listener);
+  }
+
+  private setHighlight(id: string | null): void {
+    this.highlightListeners.forEach((l) => l(id));
+  }
+
   detectLanguage(): VoiceLang {
     return detectLang();
   }
@@ -179,24 +198,38 @@ class VoiceAssistantServiceClass {
    * match a page's active UI language (via useLanguage()); omit it to
    * fall back to auto-detecting from navigator.language. No-ops silently
    * when the guide is off or the browser has no SpeechSynthesis support —
-   * callers never need to guard for either case themselves. */
-  speak(text: VoiceMessage, lang?: VoiceLang): void {
+   * callers never need to guard for either case themselves.
+   *
+   * `highlight` names a UI element (matched via useVoiceHighlight(id) in
+   * whatever button/element should pulse) that stays "active" for as long
+   * as this line is actually being spoken. */
+  speak(text: VoiceMessage, lang?: VoiceLang, highlight?: string): void {
     if (!this.enabled || !isSupported()) return;
     const effectiveLang = lang ?? detectLang();
     const message = typeof text === 'string' ? text : text[effectiveLang];
     if (!message) return;
 
+    this.lastSpoken = { text, lang, highlight };
     if (!this.gestureSeen) {
       // Almost certainly about to be silently dropped (no user gesture on
       // this page yet) — remember it so the guest's first tap replays it,
       // instead of the whole flow just staying mute.
-      this.pendingReplay = { message, lang: effectiveLang };
+      this.pendingReplay = { message, lang: effectiveLang, highlight };
     }
-    this.speakNow(message, effectiveLang);
+    this.speakNow(message, effectiveLang, highlight);
   }
 
-  private speakNow(message: string, effectiveLang: VoiceLang): void {
+  /** Repeats whatever was last spoken (or attempted) — backs the floating
+   * "🎤 Escuchar instrucciones" button. A no-op if nothing has been
+   * spoken yet in this session. */
+  replayLast(): void {
+    if (!this.lastSpoken) return;
+    this.speak(this.lastSpoken.text, this.lastSpoken.lang, this.lastSpoken.highlight);
+  }
+
+  private speakNow(message: string, effectiveLang: VoiceLang, highlight?: string): void {
     if (this.keepAliveTimer !== null) { window.clearInterval(this.keepAliveTimer); this.keepAliveTimer = null; }
+    if (this.highlightTimer !== null) { window.clearTimeout(this.highlightTimer); this.highlightTimer = null; }
 
     // A new line always replaces whatever was mid-sentence — e.g. jumping
     // from one wizard step to the next shouldn't queue narration behind
@@ -204,6 +237,7 @@ class VoiceAssistantServiceClass {
     // (see class doc, gotcha #2) so Chrome's cancel()→speak() race doesn't
     // silently swallow every line after the first.
     window.speechSynthesis.cancel();
+    this.setHighlight(null);
     window.setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(message);
       const voice = pickVoice(effectiveLang);
@@ -221,6 +255,7 @@ class VoiceAssistantServiceClass {
 
       utterance.onstart = () => {
         if (this.pendingReplay?.message === message) this.pendingReplay = null;
+        if (highlight) this.setHighlight(highlight);
         // Chrome silently pauses long-running synthesis after ~15s unless
         // nudged — a cheap periodic pause/resume keeps it alive. Cleared
         // in onend/onerror below and at the top of the next speakNow().
@@ -231,6 +266,9 @@ class VoiceAssistantServiceClass {
       const clearKeepAlive = () => {
         if (this.keepAliveTimer !== null) { window.clearInterval(this.keepAliveTimer); this.keepAliveTimer = null; }
         this.currentUtterance = null;
+        // A couple extra seconds so a fast reader still sees the pulse
+        // land, rather than it vanishing the instant audio stops.
+        this.highlightTimer = window.setTimeout(() => this.setHighlight(null), 2000);
       };
       utterance.onend = clearKeepAlive;
       utterance.onerror = clearKeepAlive;
@@ -246,6 +284,8 @@ class VoiceAssistantServiceClass {
   stop(): void {
     this.pendingReplay = null;
     if (this.keepAliveTimer !== null) { window.clearInterval(this.keepAliveTimer); this.keepAliveTimer = null; }
+    if (this.highlightTimer !== null) { window.clearTimeout(this.highlightTimer); this.highlightTimer = null; }
+    this.setHighlight(null);
     if (isSupported()) window.speechSynthesis.cancel();
   }
 

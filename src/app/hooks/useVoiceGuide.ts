@@ -18,8 +18,8 @@ export function useVoiceGuide() {
 
   useEffect(() => voiceAssistant.onEnabledChange(setEnabledState), []);
 
-  const speak = useCallback((text: VoiceMessage) => {
-    voiceAssistant.speak(text, language);
+  const speak = useCallback((text: VoiceMessage, highlight?: string) => {
+    voiceAssistant.speak(text, language, highlight);
   }, [language]);
 
   const setEnabled = useCallback((value: boolean) => {
@@ -29,6 +29,7 @@ export function useVoiceGuide() {
   const stop = useCallback(() => voiceAssistant.stop(), []);
   const pause = useCallback(() => voiceAssistant.pause(), []);
   const resume = useCallback(() => voiceAssistant.resume(), []);
+  const replay = useCallback(() => voiceAssistant.replayLast(), []);
 
-  return { speak, stop, pause, resume, enabled, setEnabled };
+  return { speak, stop, pause, resume, replay, enabled, setEnabled };
 }

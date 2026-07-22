@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Loader, MousePointerClick, ArrowLeft, Minus, Plus, HelpCircle, X } from 'lucide-react';
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
+import { useVoiceGuide } from '../../hooks/useVoiceGuide';
+import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../../hooks/useVoiceHighlight';
+import { VoiceReplayButton } from '../voice/VoiceReplayButton';
+import { logVoiceAssistantEvent } from '../../services/voice-assistant-analytics-service';
 
 // NOTE: this component receives an already-loaded pdfDoc from its caller
 // (see guest-sign-page.tsx) — the isOffscreenCanvasSupported iOS fix lives
@@ -27,6 +31,10 @@ interface GuestSignaturePlacerProps {
    * identically either way — they're computed from each page's own
    * bounding box, not from canvas pixels. */
   fallbackPdfUrl?: string;
+  /** Ties this screen's voice narration/telemetry to the rest of the
+   * guest's session — see guest-sign-page.tsx's voiceSessionId. */
+  voiceSessionId: string;
+  documentId?: string;
 }
 
 const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
@@ -48,13 +56,32 @@ const ZOOM_STEP = 0.25;
  */
 export function GuestSignaturePlacer({
   pdfDoc, pageCount, signatureDataUrl, signerName, documentName, onConfirm, onBack, isLoading, fallbackPdfUrl,
+  voiceSessionId, documentId,
 }: GuestSignaturePlacerProps) {
+  const { speak } = useVoiceGuide();
+  const firmarHighlighted = useVoiceHighlight('guest-firmar-button');
+  const voiceLogBase = { sessionId: voiceSessionId, role: 'guest' as const, flow: 'guest-sign', documentId, stepIndex: 4 };
   const [pdfLoading, setPdfLoading] = useState(true);
   const [renderFailed, setRenderFailed] = useState(false);
   const [placement, setPlacement] = useState<PlacedSignature | null>(null);
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map());
+
+  // "Pantalla de confirmación" — fires once, right when the guest's tap
+  // actually places the signature, distinct from the earlier "toca donde
+  // quieras firmar" line spoken by the parent when this screen first opens.
+  const spokenConfirmRef = useRef(false);
+  useEffect(() => {
+    if (!placement || spokenConfirmRef.current) return;
+    spokenConfirmRef.current = true;
+    speak({
+      es: 'Verifica que la firma esté correctamente ubicada, y luego presiona Firmar.',
+      en: 'Check that your signature is correctly placed, then tap Sign.',
+    }, 'guest-firmar-button');
+    logVoiceAssistantEvent({ ...voiceLogBase, step: 'confirm-signature', eventType: 'auto_play' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placement]);
   const [showHelp, setShowHelp] = useState(false);
 
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
@@ -420,7 +447,7 @@ export function GuestSignaturePlacer({
           type="button"
           disabled={!placement || isLoading}
           onClick={() => placement && onConfirm(placement)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 ${firmarHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
         >
           {isLoading ? (
             <><Loader className="size-5 animate-spin" />Guardando tu firma…</>
@@ -429,6 +456,11 @@ export function GuestSignaturePlacer({
           )}
         </button>
       </div>
+
+      <VoiceReplayButton
+        sessionId={voiceSessionId} role="guest" flow="guest-sign" documentId={documentId}
+        step={placement ? 'confirm-signature' : 'place-signature'} stepIndex={4}
+      />
 
       {showHelp && (
         <div

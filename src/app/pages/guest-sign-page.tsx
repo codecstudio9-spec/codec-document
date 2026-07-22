@@ -38,7 +38,11 @@ import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
 import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
+import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
+import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
+import { logVoiceAssistantEvent } from '../services/voice-assistant-analytics-service';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
 
@@ -165,6 +169,7 @@ function fileToDataUrl(file: File): Promise<string> {
 
 // ─── Identity gate overlay ────────────────────────────────────────────────────
 function IdentityGate({
+  documentId, sessionId,
   requirements,
   idFrontDataUrl, idBackDataUrl, selfieDataUrl,
   idFrontReady, idBackReady, selfieReady,
@@ -172,6 +177,7 @@ function IdentityGate({
   onIdFrontSelect, onIdBackSelect, onSelfieSelect, onContinue, onBack,
 }: {
   documentId: string;
+  sessionId: string;
   requirements: SigningRequirements;
   idFrontDataUrl: string;
   idBackDataUrl: string;
@@ -193,6 +199,8 @@ function IdentityGate({
     (!requirements.requireSelfie  || selfieReady);
 
   const { speak } = useVoiceGuide();
+  const logIdentityEvent = (step: string, eventType: 'auto_play' | 'idle_hint') =>
+    logVoiceAssistantEvent({ sessionId, role: 'guest', flow: 'guest-sign', step, stepIndex: 2, documentId, eventType });
 
   // Overview once, when the gate first appears — tells the guest exactly
   // which of the two possible requirements apply (the creator may have
@@ -215,6 +223,7 @@ function IdentityGate({
         en: 'Before signing, take a selfie with your face clearly visible and well lit.',
       });
     }
+    logIdentityEvent('identity-gate', 'auto_play');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -276,7 +285,8 @@ function IdentityGate({
           en: 'Center your face in the circle. When you’re ready, tap Capture.',
         },
       };
-      speak(targetMessages[target]);
+      speak(targetMessages[target], `capture-${target}`);
+      logIdentityEvent(`identity-${target}`, 'auto_play');
     } catch {
       setCameraError('No se pudo acceder a la cámara. Revisa los permisos del navegador o sube un archivo.');
     }
@@ -307,6 +317,7 @@ function IdentityGate({
 
   function CameraCapture({ target, label }: { target: CameraTarget; label: string }) {
     const isActive = activeCamera === target;
+    const isHighlighted = useVoiceHighlight(`capture-${target}`);
     return (
       <div className="space-y-2">
         {isActive ? (
@@ -331,7 +342,7 @@ function IdentityGate({
               <button
                 type="button"
                 onClick={() => void capturePhoto()}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-sm font-bold text-slate-900"
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-sm font-bold text-slate-900 ${isHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
               >
                 <Camera className="size-4" /> Capturar
               </button>
@@ -653,64 +664,93 @@ export function GuestSignPage() {
   const [jurisdiction, setJurisdiction] = useState(DEFAULT_JURISDICTION);
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
 
-  // ── Voice guidance — step-by-step narration for the guest, who often
-  // doesn't know this flow at all (unlike the creator, who set it up).
-  // Per-photo instructions for the identity gate (front/back/selfie, and
-  // which button to tap) live inside IdentityGate itself, right next to
-  // its own camera logic; these cover the rest of the wizard.
-  const { speak } = useVoiceGuide();
+  // ── Voice guidance — a real step-by-step companion for the guest, who
+  // (unlike the creator) usually has no idea what this flow is. Each
+  // useVoiceStepGuide call below is one screen: it speaks once on arrival,
+  // nudges the guest if they stall (15s totally idle, or 20s stuck on the
+  // same screen even while fiddling with it), and logs everything for the
+  // "Asistente de Voz" admin panel. Per-photo instructions for the identity
+  // gate live inside IdentityGate itself, right next to its own camera
+  // logic — this only logs that step's overall entry/exit.
+  const voiceSessionId = useRef(crypto.randomUUID()).current;
+  const voiceBase = { sessionId: voiceSessionId, role: 'guest' as const, flow: 'guest-sign', documentId: tokenData?.documentId };
+  const guestNextHighlighted = useVoiceHighlight('guest-next-button');
 
-  const spokenReadIntroRef = useRef(false);
-  useEffect(() => {
-    if (spokenReadIntroRef.current || pdfLoading || !pdfDoc) return;
-    spokenReadIntroRef.current = true;
-    speak({
-      es: 'Lee todo el documento deslizando hacia abajo. Cuando llegues al final, podrás continuar.',
-      en: 'Read through the whole document by scrolling down. Once you reach the end, you’ll be able to continue.',
-    });
-  }, [pdfLoading, pdfDoc, speak]);
+  // "Invitado abre el enlace" + "Pantalla de revisión" are the same actual
+  // screen in this app (there's no separate welcome screen before the PDF
+  // viewer) — merged into one line instead of two that would talk over
+  // each other a few hundred ms apart.
+  useVoiceStepGuide({
+    ...voiceBase, active: !pdfLoading && !!pdfDoc && !hasScrolledToEnd && !showIdGate && !showSignPad && !showPlacer,
+    step: 'welcome-review', stepIndex: 0,
+    message: {
+      es: 'Bienvenido. Aquí puedes revisar el documento que te han enviado para firma. Desliza hacia abajo para ver todas las páginas antes de continuar.',
+      en: 'Welcome. Here you can review the document you’ve been sent to sign. Scroll down to see every page before continuing.',
+    },
+    idleHint: {
+      es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.',
+      en: 'If you need help, tap the Listen to instructions button at the bottom.',
+    },
+  });
 
-  const spokenScrollEndRef = useRef(false);
-  useEffect(() => {
-    if (!hasScrolledToEnd || spokenScrollEndRef.current) return;
-    spokenScrollEndRef.current = true;
-    speak({
+  useVoiceStepGuide({
+    ...voiceBase, active: hasScrolledToEnd && !showIdGate && !showSignPad && !showPlacer && !isSigning && !done,
+    step: 'ready-to-sign', stepIndex: 1, highlight: 'guest-next-button',
+    message: {
       es: 'Ya terminaste de leer el documento. Toca el botón azul que dice Siguiente para continuar.',
       en: 'You’ve finished reading the document. Tap the blue Next button to continue.',
-    });
-  }, [hasScrolledToEnd, speak]);
+    },
+    idleHint: {
+      es: 'Si necesitas ayuda, presiona el botón azul ubicado en la parte inferior.',
+      en: 'If you need help, tap the blue button at the bottom.',
+    },
+    stuckHint: {
+      es: 'Puedes continuar presionando Siguiente.',
+      en: 'You can continue by tapping Next.',
+    },
+  });
 
-  useEffect(() => {
-    if (!showSignPad) return;
-    speak({
+  useVoiceStepGuide({
+    ...voiceBase, active: showIdGate, step: 'identity-gate', stepIndex: 2,
+    // No `message` here — IdentityGate speaks its own overview + per-photo
+    // lines; this call only logs the step so it shows up in the funnel.
+  });
+
+  useVoiceStepGuide({
+    ...voiceBase, active: showSignPad, step: 'draw-signature', stepIndex: 3,
+    message: {
       es: 'Dibuja tu firma con el dedo o el mouse, y toca Confirmar.',
       en: 'Draw your signature with your finger or mouse, then tap Confirm.',
-    });
-  }, [showSignPad, speak]);
+    },
+  });
 
-  useEffect(() => {
-    if (!showPlacer) return;
-    speak({
-      es: 'Toca el documento en el lugar donde quieres colocar tu firma.',
+  useVoiceStepGuide({
+    ...voiceBase, active: showPlacer, step: 'place-signature', stepIndex: 4,
+    message: {
+      es: 'Toca el documento donde quieres firmar. Luego puedes arrastrarla para ajustarla, y acercar o alejar con dos dedos.',
+      en: 'Tap the document where you want to sign. You can then drag it to adjust, and pinch to zoom in or out.',
+    },
+    idleHint: {
+      es: 'Toca el documento donde quieres colocar tu firma.',
       en: 'Tap the document where you want to place your signature.',
-    });
-  }, [showPlacer, speak]);
+    },
+  });
 
-  useEffect(() => {
-    if (!isSigning) return;
-    speak({
+  useVoiceStepGuide({
+    ...voiceBase, active: isSigning, step: 'signing', stepIndex: 5,
+    message: {
       es: 'Estamos registrando tu firma, espera un momento.',
       en: 'We’re registering your signature, please wait a moment.',
-    });
-  }, [isSigning, speak]);
+    },
+  });
 
-  useEffect(() => {
-    if (!done) return;
-    speak({
-      es: '¡Listo! Firmaste el documento correctamente.',
-      en: 'Done! You’ve successfully signed the document.',
-    });
-  }, [done, speak]);
+  useVoiceStepGuide({
+    ...voiceBase, active: done, step: 'done', stepIndex: 6, isTerminal: true,
+    message: {
+      es: 'Tu firma se registró correctamente. Ahora puedes descargar una copia del documento.',
+      en: 'Your signature was registered successfully. You can now download a copy of the document.',
+    },
+  });
 
   const isPremiumLimitError = (err: unknown) => {
     const message = err instanceof Error ? err.message : String(err ?? '');
@@ -1416,7 +1456,7 @@ export function GuestSignPage() {
               const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
               if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${guestNextHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
             style={{ minHeight: 56 }}
           >
             {hasScrolledToEnd
@@ -1424,6 +1464,11 @@ export function GuestSignPage() {
               : 'Desliza para leer el documento'}
           </button>
         </div>
+        <VoiceReplayButton
+          sessionId={voiceSessionId} role="guest" flow="guest-sign" documentId={tokenData.documentId}
+          step={hasScrolledToEnd ? 'ready-to-sign' : 'welcome-review'}
+          stepIndex={hasScrolledToEnd ? 1 : 0}
+        />
 
         {/* ── Shared overlays (identity gate, sign pad, placer, progress,
             premium modal) — identical to desktop, they're already
@@ -1431,6 +1476,7 @@ export function GuestSignPage() {
         {showIdGate && (
           <IdentityGate
             documentId={tokenData.documentId}
+            sessionId={voiceSessionId}
             requirements={requirements}
             idFrontDataUrl={idFrontDataUrl}
             idBackDataUrl={idBackDataUrl}
@@ -1520,6 +1566,8 @@ export function GuestSignPage() {
             documentName={tokenData.documentName}
             isLoading={isSigning}
             fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+            voiceSessionId={voiceSessionId}
+            documentId={tokenData.documentId}
             onBack={() => { setShowPlacer(false); setShowSignPad(true); }}
             onConfirm={(placement) => {
               setShowPlacer(false);
@@ -1759,6 +1807,7 @@ export function GuestSignPage() {
       {showIdGate && (
         <IdentityGate
           documentId={tokenData.documentId}
+            sessionId={voiceSessionId}
           requirements={requirements}
           idFrontDataUrl={idFrontDataUrl}
           idBackDataUrl={idBackDataUrl}
@@ -1860,6 +1909,8 @@ export function GuestSignPage() {
           documentName={tokenData.documentName}
           isLoading={isSigning}
           fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+          voiceSessionId={voiceSessionId}
+          documentId={tokenData.documentId}
           onBack={() => { setShowPlacer(false); setShowSignPad(true); }}
           onConfirm={(placement) => {
             setShowPlacer(false);
