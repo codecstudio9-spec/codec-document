@@ -6,6 +6,7 @@ import { useVoiceGuide } from '../../hooks/useVoiceGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../../hooks/useVoiceHighlight';
 import { VoiceReplayButton } from '../voice/VoiceReplayButton';
 import { logVoiceAssistantEvent } from '../../services/voice-assistant-analytics-service';
+import { defaultViewerZoom } from '../../utils/viewport-zoom';
 
 // NOTE: this component receives an already-loaded pdfDoc from its caller
 // (see guest-sign-page.tsx) — the isOffscreenCanvasSupported iOS fix lives
@@ -64,7 +65,7 @@ export function GuestSignaturePlacer({
   const [pdfLoading, setPdfLoading] = useState(true);
   const [renderFailed, setRenderFailed] = useState(false);
   const [placement, setPlacement] = useState<PlacedSignature | null>(null);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(defaultViewerZoom);
   const [currentPage, setCurrentPage] = useState(1);
   const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map());
 

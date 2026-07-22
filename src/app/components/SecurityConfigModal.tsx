@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, Camera, CreditCard, FileCheck, BarChart3, PenLine, X } from 'lucide-react';
 import type { SecurityConfig } from '../services/sign-transaction-service';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
 
 interface SecurityConfigModalProps {
   open:      boolean;
@@ -90,6 +91,20 @@ const rowVariants = {
 
 export function SecurityConfigModal({ open, language, onConfirm, onCancel }: SecurityConfigModalProps) {
   const [config, setConfig] = useState<SecurityConfig>(DEFAULT);
+  const { speak } = useVoiceGuide();
+
+  // Explains what this screen is actually for the first time it opens —
+  // the copy alone ("Security & Verification") doesn't make clear this is
+  // the CREATOR choosing requirements for the SIGNER, not something the
+  // creator must personally complete.
+  useEffect(() => {
+    if (!open) return;
+    speak({
+      es: 'Aquí eliges qué debe completar la persona que va a firmar, antes de firmar. La firma digital ya es obligatoria. Si quieres más seguridad, puedes pedirle también una selfie, una foto de su documento de identidad, o su consentimiento explícito.',
+      en: 'Here you choose what the person signing must complete before they sign. The digital signature is already required. For extra security, you can also ask for a selfie, a photo of their ID, or their explicit consent.',
+    }, language);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const toggle = (key: keyof SecurityConfig) => {
     if (key === 'standardSignature' || key === 'requireSmsOtp') return;

@@ -353,7 +353,7 @@ export function ElectronicSignaturePage() {
 
   useVoiceStepGuide({
     ...voiceBase, active: step === 'upload', step: 'upload', stepIndex: 0,
-    message: { es: 'Sube el documento en PDF que quieres firmar.', en: 'Upload the PDF document you want to sign.' },
+    message: { es: 'Bienvenido a Codec Document. Sube el documento en PDF que quieres firmar.', en: 'Welcome to Codec Document. Upload the PDF document you want to sign.' },
   });
   useVoiceStepGuide({
     ...voiceBase, active: step === 'creator-sign', step: 'creator-sign', stepIndex: 1, highlight: 'creator-sign-button',
@@ -390,7 +390,7 @@ export function ElectronicSignaturePage() {
   });
   useVoiceStepGuide({
     ...voiceBase, active: step === 'done', step: 'done', stepIndex: 7, isTerminal: true,
-    message: { es: '¡Listo! Tu documento ha sido firmado y certificado.', en: 'Done! Your document has been signed and certified.' },
+    message: { es: '¡Listo! Tu documento ha sido firmado y certificado. Gracias por usar Codec Document.', en: 'Done! Your document has been signed and certified. Thank you for using Codec Document.' },
   });
   const creatorSignButtonHighlighted = useVoiceHighlight('creator-sign-button');
   const creatorGenerateLinkHighlighted = useVoiceHighlight('creator-generate-link-button');

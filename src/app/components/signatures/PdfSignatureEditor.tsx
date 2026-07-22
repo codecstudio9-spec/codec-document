@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
+import { defaultViewerZoom } from '../../utils/viewport-zoom';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -60,7 +61,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
   const [pdfLoading, setPdfLoading] = useState(true);
   const [renderFailed, setRenderFailed] = useState(false);
   const [placements, setPlacements] = useState<PlacedSignature[]>([]);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(defaultViewerZoom);
   const [currentPage, setCurrentPage] = useState(1);
   const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map());
   const [showHelp, setShowHelp] = useState(false);

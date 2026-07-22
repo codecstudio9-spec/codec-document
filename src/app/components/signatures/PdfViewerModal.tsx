@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ZoomIn, ZoomOut, RotateCcw, Loader } from 'lucide-react';
+import { defaultViewerZoom } from '../../utils/viewport-zoom';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -59,7 +60,7 @@ export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title, wa
   const containerRef = useRef<HTMLDivElement>(null);
   const renderedRef = useRef<unknown>(null);
   const [loading, setLoading] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(defaultViewerZoom);
   const [pageCount, setPageCount] = useState(0);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export function PdfViewerModal({ open, onOpenChange, pdfBytes, pdfDoc, title, wa
 
   useEffect(() => {
     if (!open) return;
-    setZoom(1);
+    setZoom(defaultViewerZoom());
   }, [open]);
 
   useEffect(() => {

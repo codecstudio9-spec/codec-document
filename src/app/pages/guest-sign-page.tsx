@@ -684,8 +684,8 @@ export function GuestSignPage() {
     ...voiceBase, active: !pdfLoading && !!pdfDoc && !hasScrolledToEnd && !showIdGate && !showSignPad && !showPlacer,
     step: 'welcome-review', stepIndex: 0,
     message: {
-      es: 'Bienvenido. Aquí puedes revisar el documento que te han enviado para firma. Desliza hacia abajo para ver todas las páginas antes de continuar.',
-      en: 'Welcome. Here you can review the document you’ve been sent to sign. Scroll down to see every page before continuing.',
+      es: 'Bienvenido a Codec Document. Aquí puedes revisar el documento que te han enviado para firma. Desliza hacia abajo para ver todas las páginas antes de continuar.',
+      en: 'Welcome to Codec Document. Here you can review the document you’ve been sent to sign. Scroll down to see every page before continuing.',
     },
     idleHint: {
       es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.',
@@ -747,8 +747,8 @@ export function GuestSignPage() {
   useVoiceStepGuide({
     ...voiceBase, active: done, step: 'done', stepIndex: 6, isTerminal: true,
     message: {
-      es: 'Tu firma se registró correctamente. Ahora puedes descargar una copia del documento.',
-      en: 'Your signature was registered successfully. You can now download a copy of the document.',
+      es: 'Tu firma se registró correctamente. Ahora puedes descargar una copia del documento. Gracias por usar Codec Document.',
+      en: 'Your signature was registered successfully. You can now download a copy of the document. Thank you for using Codec Document.',
     },
   });
 

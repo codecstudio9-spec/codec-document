@@ -29,8 +29,8 @@ export function MyTemplateEditorPage() {
         en: 'Click anywhere on the document to add a name, date, or signature field. When you’re done, give the template a name and save it.',
       }
       : {
-        es: 'Sube el documento en PDF sobre el que quieres crear tu plantilla.',
-        en: 'Upload the PDF document you want to build your template on.',
+        es: 'Bienvenido a Codec Document. Sube el documento en PDF sobre el que quieres crear tu plantilla.',
+        en: 'Welcome to Codec Document. Upload the PDF document you want to build your template on.',
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Boolean(pdfBytes)]);
@@ -57,6 +57,10 @@ export function MyTemplateEditorPage() {
       const fileUrl = await uploadTemplateFile(user.id, pdfFile);
       const templateId = await createTemplate({ userId: user.id, name: templateName.trim(), fileUrl, fields });
       toast.success(language === 'en' ? 'Template saved!' : '¡Plantilla guardada!');
+      speak({
+        es: 'Tu plantilla se guardó correctamente. Gracias por usar Codec Document.',
+        en: 'Your template was saved successfully. Thank you for using Codec Document.',
+      });
       navigate(`/my-templates/${templateId}/fill`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

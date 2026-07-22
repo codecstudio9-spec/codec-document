@@ -232,18 +232,21 @@ export function DocumentGeneratorPage() {
   const [flowStep, setFlowStep] = useState<FlowStep>('form');
   const { speak } = useVoiceGuide();
   useEffect(() => {
+    // Bienvenida al llegar al primer paso, y agradecimiento al llegar al
+    // último de este asistente — el mismo patrón que en las otras
+    // pantallas con voz.
     const messages: Record<FlowStep, { es: string; en: string }> = {
       form: {
-        es: 'Completa los campos del documento. Los campos marcados como obligatorios deben llenarse antes de continuar.',
-        en: 'Fill in the document fields. Fields marked as required must be completed before continuing.',
+        es: 'Bienvenido a Codec Document. Completa los campos del documento. Los campos marcados como obligatorios deben llenarse antes de continuar.',
+        en: 'Welcome to Codec Document. Fill in the document fields. Fields marked as required must be completed before continuing.',
       },
       sign: {
         es: 'Firma el documento para continuar.',
         en: 'Sign the document to continue.',
       },
       verify: {
-        es: 'Verifica tu identidad para finalizar el documento.',
-        en: 'Verify your identity to finish the document.',
+        es: 'Verifica tu identidad para finalizar el documento. Gracias por usar Codec Document.',
+        en: 'Verify your identity to finish the document. Thank you for using Codec Document.',
       },
     };
     speak(messages[flowStep]);
@@ -555,6 +558,20 @@ export function DocumentGeneratorPage() {
     setMissingRequiredFields(missing);
     if (missing.length > 0) {
       toast.error(t('generator.fillAllFields'));
+      // Names the actual missing fields out loud (not just "fill everything
+      // in") — up to 3 by name, since a longer list read aloud stops being
+      // useful and starts being noise.
+      const labels = missing.map((id) => {
+        const field = visibleFields.find((f) => f.id === id);
+        return field ? (getFieldTranslation(template?.id ?? '', field.id, 'label', language) || field.label) : id;
+      });
+      const shown = labels.slice(0, 3);
+      const extra = labels.length - shown.length;
+      const list = shown.join(language === 'en' ? ', ' : ', ') + (extra > 0 ? (language === 'en' ? `, and ${extra} more` : ` y ${extra} más`) : '');
+      speak({
+        es: `Te falta llenar: ${list}. Esos campos están marcados en rojo.`,
+        en: `You still need to fill in: ${list}. Those fields are marked in red.`,
+      });
       return;
     }
     try {
