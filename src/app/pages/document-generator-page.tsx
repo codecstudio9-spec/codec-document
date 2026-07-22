@@ -665,15 +665,25 @@ export function DocumentGeneratorPage() {
     };
 
     if (!isAdmin && !unlimitedActive && !subscriptionActive) {
-      const userId = session?.user?.id;
-      const { allowed } = userId
-        ? await consumeSignatureRequest72h(userId, false)
-        : await consumeAnonUsage72h('signature');
-      if (!allowed) {
-        setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
-        setPendingLimitRetry(() => doCreateUnilateral);
-        setLimitDialogOpen(true);
-        return;
+      try {
+        const userId = session?.user?.id;
+        const { allowed } = userId
+          ? await consumeSignatureRequest72h(userId, false)
+          : await consumeAnonUsage72h('signature');
+        if (!allowed) {
+          setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
+          setPendingLimitRetry(() => doCreateUnilateral);
+          setLimitDialogOpen(true);
+          return;
+        }
+      } catch (err) {
+        // Network hiccup on the usage-limit check must never leave the user
+        // stuck on a blank screen with no link and no error — proceed with
+        // creation instead of silently swallowing the failure.
+        console.error('Error checking signature usage limit:', err);
+        toast.error(language === 'en'
+          ? 'Could not verify your usage limit, but continuing anyway.'
+          : 'No se pudo verificar tu limite de uso, pero continuamos igual.');
       }
     }
     await doCreateUnilateral();
@@ -708,15 +718,25 @@ export function DocumentGeneratorPage() {
     };
 
     if (!isAdmin && !unlimitedActive && !subscriptionActive) {
-      const userId = session?.user?.id;
-      const { allowed } = userId
-        ? await consumeSignatureRequest72h(userId, false)
-        : await consumeAnonUsage72h('signature');
-      if (!allowed) {
-        setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
-        setPendingLimitRetry(() => doCreateBilateral);
-        setLimitDialogOpen(true);
-        return;
+      try {
+        const userId = session?.user?.id;
+        const { allowed } = userId
+          ? await consumeSignatureRequest72h(userId, false)
+          : await consumeAnonUsage72h('signature');
+        if (!allowed) {
+          setLimitNextSlotAt(userId ? await getNextSignatureRequestSlot(userId) : null);
+          setPendingLimitRetry(() => doCreateBilateral);
+          setLimitDialogOpen(true);
+          return;
+        }
+      } catch (err) {
+        // A dropped mobile connection here must not silently strand the
+        // user with the sender-sign modal already closed and no link, no
+        // error, and no way forward — proceed with creation instead.
+        console.error('Error checking signature usage limit:', err);
+        toast.error(language === 'en'
+          ? 'Could not verify your usage limit, but continuing anyway.'
+          : 'No se pudo verificar tu limite de uso, pero continuamos igual.');
       }
     }
     await doCreateBilateral();
@@ -1607,6 +1627,7 @@ export function DocumentGeneratorPage() {
         }}
         onConfirm={handleSenderSignatureAndCreate}
         signerName={user?.user_metadata?.full_name || user?.email || ''}
+        userId={session?.user?.id}
         title={language === 'en' ? 'Sign as Sender' : 'Firma como Remitente'}
         subtitle={language === 'en'
           ? 'Your signature will be embedded in the contract before sharing the link.'
