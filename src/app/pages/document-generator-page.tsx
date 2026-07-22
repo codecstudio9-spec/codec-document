@@ -13,6 +13,8 @@ import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { getDocumentTranslation } from '../data/document-translations';
 import { getFieldTranslation, getFieldOptionTranslation } from '../data/field-translations';
 import { US_STATES, stateNotes, STATE_DEPENDENT_DOCUMENTS } from '../data/state-variations';
@@ -228,6 +230,25 @@ export function DocumentGeneratorPage() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>('');
   const [flowStep, setFlowStep] = useState<FlowStep>('form');
+  const { speak } = useVoiceGuide();
+  useEffect(() => {
+    const messages: Record<FlowStep, { es: string; en: string }> = {
+      form: {
+        es: 'Completa los campos del documento. Los campos marcados como obligatorios deben llenarse antes de continuar.',
+        en: 'Fill in the document fields. Fields marked as required must be completed before continuing.',
+      },
+      sign: {
+        es: 'Firma el documento para continuar.',
+        en: 'Sign the document to continue.',
+      },
+      verify: {
+        es: 'Verifica tu identidad para finalizar el documento.',
+        en: 'Verify your identity to finish the document.',
+      },
+    };
+    speak(messages[flowStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowStep]);
   const [userSigDataUrl, setUserSigDataUrl] = useState<string>('');
   // Signing modal
   const [signingPanelOpen, setSigningPanelOpen] = useState(false);
@@ -1315,6 +1336,7 @@ export function DocumentGeneratorPage() {
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-3">
+              <VoiceGuideToggle className="hidden sm:flex" />
               {/* Compact progress pill in navbar */}
               {flowStep === 'form' && requiredFields.length > 0 && (
                 <span className={`hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tabular-nums ${

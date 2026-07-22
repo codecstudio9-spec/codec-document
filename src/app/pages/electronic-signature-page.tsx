@@ -37,6 +37,8 @@ import {
   getNextAnonUsageSlot,
 } from '../services/user-limits-service';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
@@ -273,8 +275,53 @@ function GuestCompletedBanner({ guestName, onContinue }: { guestName: string; on
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function ElectronicSignaturePage() {
   const { session, isAdmin, signInWithGoogle } = useAuth();
+  const { speak } = useVoiceGuide();
 
   const [step, setStep] = useState<Step>('upload');
+  // Contextual voice guidance — narrates what to do at each wizard step.
+  // This page has no i18n of its own (100% hardcoded Spanish), so these
+  // messages are passed bilingual and useVoiceGuide picks es/en the same
+  // way VoiceAssistantService would on its own (navigator.language),
+  // since there's no site-language context here to defer to instead.
+  useEffect(() => {
+    const messages: Partial<Record<Step, { es: string; en: string }>> = {
+      upload: {
+        es: 'Sube el documento en PDF que quieres firmar.',
+        en: 'Upload the PDF document you want to sign.',
+      },
+      'creator-sign': {
+        es: 'Dibuja o escribe tu firma para continuar.',
+        en: 'Draw or type your signature to continue.',
+      },
+      'position-creator': {
+        es: 'Toca el documento en el lugar donde quieres colocar tu firma.',
+        en: 'Tap the document where you want to place your signature.',
+      },
+      'invite-guest': {
+        es: 'Ingresa el nombre y correo de la persona que debe firmar contigo, o continúa solo si no necesitas otro firmante.',
+        en: 'Enter the name and email of the person who needs to sign with you, or continue alone if you don’t need another signer.',
+      },
+      'await-guest': {
+        es: 'Estamos esperando a que el invitado firme el documento. Te avisaremos cuando lo haga.',
+        en: 'We’re waiting for the guest to sign the document. We’ll let you know when they do.',
+      },
+      position: {
+        es: 'Coloca la firma de cada firmante en el documento.',
+        en: 'Place each signer’s signature on the document.',
+      },
+      compiling: {
+        es: 'Estamos generando tu documento certificado, esto toma unos segundos.',
+        en: 'We’re generating your certified document, this takes a few seconds.',
+      },
+      done: {
+        es: '¡Listo! Tu documento ha sido firmado y certificado.',
+        en: 'Done! Your document has been signed and certified.',
+      },
+    };
+    const message = messages[step];
+    if (message) speak(message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
   // Resolved once on mount from the creator's real IP — reused for the
   // certification page (see handleSignAloneOnly/handleConfirmPositions)
   // and the small footer badge below, so both cite the same jurisdiction
@@ -783,9 +830,12 @@ export function ElectronicSignaturePage() {
                   <p className="text-xs text-slate-500">Powered by Codec Studio · {jurisdiction.badgeEs}</p>
                 </div>
               </div>
-              <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
-                ← Inicio
-              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <VoiceGuideToggle />
+                <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+                  ← Inicio
+                </Link>
+              </div>
             </div>
           </div>
 

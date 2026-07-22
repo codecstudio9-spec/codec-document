@@ -14,6 +14,8 @@ import { PayPalCheckoutBackend } from '../components/paypal-checkout-backend';
 import { useAuth } from '../contexts/auth-context';
 import { saveMyPurchasedDocument } from '../services/auth-service';
 import { verifyPaypalOrder } from '../../lib/paypal-verify';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 
 const BUNDLE_PRICE = 12;
 const BUNDLE_BONUS_IDS = ['rental-application', 'move-in-checklist'];
@@ -25,6 +27,7 @@ export function CheckoutPage() {
   const [, setIsProcessing] = useState(false);
   const { t, language } = useLanguage();
   const { token, refreshPurchasedDocuments, isAdmin } = useAuth();
+  const { speak } = useVoiceGuide();
   const [email, setEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'single' | 'bundle'>('single');
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +46,15 @@ export function CheckoutPage() {
     }
     setPurchaseData(JSON.parse(saved));
   }, [navigate]);
+
+  useEffect(() => {
+    if (!purchaseData) return;
+    speak({
+      es: 'Estás a punto de completar tu compra. Ingresa tu correo y confirma el pago con PayPal para desbloquear tu documento.',
+      en: 'You’re about to complete your purchase. Enter your email and confirm payment with PayPal to unlock your document.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [purchaseData]);
 
   if (!purchaseData) {
     return null;
@@ -170,9 +182,12 @@ export function CheckoutPage() {
               <ArrowLeft className="size-5" />
               <span>{t('checkout.back')}</span>
             </button>
-            <div className="flex items-center gap-2">
-              <Lock className="size-5 text-green-600" />
-              <span className="font-medium">{t('checkout.secureCheckout')}</span>
+            <div className="flex items-center gap-3">
+              <VoiceGuideToggle className="hidden sm:flex" />
+              <div className="flex items-center gap-2">
+                <Lock className="size-5 text-green-600" />
+                <span className="font-medium">{t('checkout.secureCheckout')}</span>
+              </div>
             </div>
           </div>
         </div>

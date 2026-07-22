@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, Upload, FileText, Save, Loader } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { TemplateFieldEditor } from '../components/templates/TemplateFieldEditor';
 import { createTemplate, uploadTemplateFile, type PlacedField } from '../services/template-service';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 
 export function MyTemplateEditorPage() {
   const { user } = useAuth();
@@ -18,6 +20,20 @@ export function MyTemplateEditorPage() {
   const [fields, setFields] = useState<PlacedField[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const { speak } = useVoiceGuide();
+
+  useEffect(() => {
+    speak(pdfBytes
+      ? {
+        es: 'Haz clic en cualquier parte del documento para agregar un campo de nombre, fecha o firma. Cuando termines, ponle un nombre a la plantilla y guárdala.',
+        en: 'Click anywhere on the document to add a name, date, or signature field. When you’re done, give the template a name and save it.',
+      }
+      : {
+        es: 'Sube el documento en PDF sobre el que quieres crear tu plantilla.',
+        en: 'Upload the PDF document you want to build your template on.',
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(pdfBytes)]);
 
   const handleFileSelect = async (file?: File | null) => {
     if (!file) return;
@@ -63,10 +79,13 @@ export function MyTemplateEditorPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-6xl">
-        <button type="button" onClick={() => navigate('/my-templates')} className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700">
-          <ArrowLeft className="size-4" />
-          {language === 'en' ? 'My Templates' : 'Mis Plantillas'}
-        </button>
+        <div className="mb-4 flex items-center justify-between">
+          <button type="button" onClick={() => navigate('/my-templates')} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700">
+            <ArrowLeft className="size-4" />
+            {language === 'en' ? 'My Templates' : 'Mis Plantillas'}
+          </button>
+          <VoiceGuideToggle />
+        </div>
 
         <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'New Template' : 'Nueva Plantilla'}</h1>
 
