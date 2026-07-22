@@ -54,6 +54,18 @@ function isSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
 }
 
+// The periodic pause()/resume() keep-alive below only exists for a
+// desktop-Chrome-specific bug (silent auto-pause after ~15s of continuous
+// synthesis). On mobile engines (Android Chrome, iOS Safari), calling
+// pause() mid-utterance is NOT reliably resumed by resume() — the result
+// is exactly "sentences get cut off partway", confirmed live on longer
+// messages that cross the 5s mark. There's no equivalent mobile bug this
+// nudge is fixing, so it's disabled there entirely rather than tuned.
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+}
+
 function detectLang(): VoiceLang {
   const raw = (typeof navigator !== 'undefined' ? navigator.language : '') || '';
   return raw.toLowerCase().startsWith('es') ? 'es' : 'en';
@@ -256,12 +268,17 @@ class VoiceAssistantServiceClass {
       utterance.onstart = () => {
         if (this.pendingReplay?.message === message) this.pendingReplay = null;
         if (highlight) this.setHighlight(highlight);
-        // Chrome silently pauses long-running synthesis after ~15s unless
-        // nudged — a cheap periodic pause/resume keeps it alive. Cleared
-        // in onend/onerror below and at the top of the next speakNow().
-        this.keepAliveTimer = window.setInterval(() => {
-          if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); window.speechSynthesis.resume(); }
-        }, 5000);
+        // Chrome (desktop) silently pauses long-running synthesis after
+        // ~15s unless nudged — a cheap periodic pause/resume keeps it
+        // alive there. Skipped on mobile entirely: see isMobileDevice()'s
+        // doc comment — pause()/resume() there cuts sentences off instead
+        // of fixing anything. Cleared in onend/onerror below and at the
+        // top of the next speakNow().
+        if (!isMobileDevice()) {
+          this.keepAliveTimer = window.setInterval(() => {
+            if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); window.speechSynthesis.resume(); }
+          }, 5000);
+        }
       };
       const clearKeepAlive = () => {
         if (this.keepAliveTimer !== null) { window.clearInterval(this.keepAliveTimer); this.keepAliveTimer = null; }
