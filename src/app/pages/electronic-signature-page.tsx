@@ -290,8 +290,8 @@ export function ElectronicSignaturePage() {
         en: 'Upload the PDF document you want to sign.',
       },
       'creator-sign': {
-        es: 'Dibuja o escribe tu firma para continuar.',
-        en: 'Draw or type your signature to continue.',
+        es: 'Dibuja o escribe tu firma para continuar. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
+        en: 'Draw or type your signature to continue. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
       },
       'position-creator': {
         es: 'Toca el documento en el lugar donde quieres colocar tu firma.',

@@ -37,6 +37,8 @@ import { getQuoteIdByDocument, recordQuoteView, rejectQuotePublic } from '../ser
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { X } from 'lucide-react';
+import { useVoiceGuide } from '../hooks/useVoiceGuide';
+import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
 
@@ -190,6 +192,32 @@ function IdentityGate({
     (!requirements.requireIdPhoto || (idFrontReady && idBackReady)) &&
     (!requirements.requireSelfie  || selfieReady);
 
+  const { speak } = useVoiceGuide();
+
+  // Overview once, when the gate first appears — tells the guest exactly
+  // which of the two possible requirements apply (the creator may have
+  // turned on either, both, or (if neither) this gate wouldn't render at
+  // all — see the `needsGate` check in the parent).
+  useEffect(() => {
+    if (requirements.requireIdPhoto && requirements.requireSelfie) {
+      speak({
+        es: 'Antes de firmar, debes tomar dos fotos de tu documento de identidad, frente y reverso, y una selfie. Las tres son obligatorias para continuar.',
+        en: 'Before signing, you need to take two photos of your ID — front and back — plus a selfie. All three are required to continue.',
+      });
+    } else if (requirements.requireIdPhoto) {
+      speak({
+        es: 'Antes de firmar, toma una foto del frente y otra del reverso de tu documento de identidad.',
+        en: 'Before signing, take a photo of the front and another of the back of your ID.',
+      });
+    } else if (requirements.requireSelfie) {
+      speak({
+        es: 'Antes de firmar, tómate una selfie con tu cara bien visible e iluminada.',
+        en: 'Before signing, take a selfie with your face clearly visible and well lit.',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const idFrontInputRef = useRef<HTMLInputElement>(null);
   const idBackInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +262,21 @@ function IdentityGate({
       });
       streamRef.current = stream;
       setActiveCamera(target);
+      const targetMessages: Record<CameraTarget, { es: string; en: string }> = {
+        'id-front': {
+          es: 'Toma la foto del frente de tu documento de identidad. Cuando se vea bien, toca el botón blanco Capturar.',
+          en: 'Take a photo of the front of your ID. Once it looks good, tap the white Capture button.',
+        },
+        'id-back': {
+          es: 'Ahora toma la foto del reverso de tu documento de identidad. Toca Capturar cuando esté listo.',
+          en: 'Now take a photo of the back of your ID. Tap Capture when it’s ready.',
+        },
+        selfie: {
+          es: 'Ahora tómate una selfie. Asegúrate de que tu cara se vea bien iluminada, y toca Capturar.',
+          en: 'Now take a selfie. Make sure your face is clearly visible and well lit, then tap Capture.',
+        },
+      };
+      speak(targetMessages[target]);
     } catch {
       setCameraError('No se pudo acceder a la cámara. Revisa los permisos del navegador o sube un archivo.');
     }
@@ -602,6 +645,65 @@ export function GuestSignPage() {
   // of always defaulting to US E-SIGN Act / UETA.
   const [jurisdiction, setJurisdiction] = useState(DEFAULT_JURISDICTION);
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+
+  // ── Voice guidance — step-by-step narration for the guest, who often
+  // doesn't know this flow at all (unlike the creator, who set it up).
+  // Per-photo instructions for the identity gate (front/back/selfie, and
+  // which button to tap) live inside IdentityGate itself, right next to
+  // its own camera logic; these cover the rest of the wizard.
+  const { speak } = useVoiceGuide();
+
+  const spokenReadIntroRef = useRef(false);
+  useEffect(() => {
+    if (spokenReadIntroRef.current || pdfLoading || !pdfDoc) return;
+    spokenReadIntroRef.current = true;
+    speak({
+      es: 'Lee todo el documento deslizando hacia abajo. Cuando llegues al final, podrás continuar.',
+      en: 'Read through the whole document by scrolling down. Once you reach the end, you’ll be able to continue.',
+    });
+  }, [pdfLoading, pdfDoc, speak]);
+
+  const spokenScrollEndRef = useRef(false);
+  useEffect(() => {
+    if (!hasScrolledToEnd || spokenScrollEndRef.current) return;
+    spokenScrollEndRef.current = true;
+    speak({
+      es: 'Ya terminaste de leer el documento. Toca el botón azul que dice Siguiente para continuar.',
+      en: 'You’ve finished reading the document. Tap the blue Next button to continue.',
+    });
+  }, [hasScrolledToEnd, speak]);
+
+  useEffect(() => {
+    if (!showSignPad) return;
+    speak({
+      es: 'Dibuja tu firma con el dedo o el mouse, y toca Confirmar.',
+      en: 'Draw your signature with your finger or mouse, then tap Confirm.',
+    });
+  }, [showSignPad, speak]);
+
+  useEffect(() => {
+    if (!showPlacer) return;
+    speak({
+      es: 'Toca el documento en el lugar donde quieres colocar tu firma.',
+      en: 'Tap the document where you want to place your signature.',
+    });
+  }, [showPlacer, speak]);
+
+  useEffect(() => {
+    if (!isSigning) return;
+    speak({
+      es: 'Estamos registrando tu firma, espera un momento.',
+      en: 'We’re registering your signature, please wait a moment.',
+    });
+  }, [isSigning, speak]);
+
+  useEffect(() => {
+    if (!done) return;
+    speak({
+      es: '¡Listo! Firmaste el documento correctamente.',
+      en: 'Done! You’ve successfully signed the document.',
+    });
+  }, [done, speak]);
 
   const isPremiumLimitError = (err: unknown) => {
     const message = err instanceof Error ? err.message : String(err ?? '');
@@ -1193,6 +1295,7 @@ export function GuestSignPage() {
             <ShieldCheck className="size-4 text-white" />
           </div>
           <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{tokenData.documentName}</p>
+          <VoiceGuideToggle className="hidden sm:flex" />
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
             <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
             Pendiente
@@ -1462,9 +1565,12 @@ export function GuestSignPage() {
               <p className="text-[11px] text-slate-500">Firma digital certificada</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5">
-            <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
-            <span className="text-xs font-semibold text-amber-700">Firma pendiente</span>
+          <div className="flex items-center gap-2">
+            <VoiceGuideToggle />
+            <div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5">
+              <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+              <span className="text-xs font-semibold text-amber-700">Firma pendiente</span>
+            </div>
           </div>
         </div>
       </header>
