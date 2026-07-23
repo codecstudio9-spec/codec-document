@@ -30,6 +30,7 @@ import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
+import { LanguageToggle } from '../components/language-toggle';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 'loading' | 'esign' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
@@ -170,8 +171,8 @@ export default function SignTransactionPage() {
     if (!tx || spokenWelcomeRef.current) return;
     spokenWelcomeRef.current = true;
     speak({
-      es: 'Bienvenido a Codec Document. Has sido invitado a firmar un documento.',
-      en: 'Welcome to Codec Document. You’ve been invited to sign a document.',
+      es: 'Bienvenido a Codec Document. Has sido invitado a firmar un documento. Si prefieres escucharlo en inglés, toca el botón ES / EN en la parte superior.',
+      en: 'Welcome to Codec Document. You’ve been invited to sign a document. If you’d rather hear this in Spanish, tap the ES / EN button at the top.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tx]);
@@ -179,29 +180,29 @@ export default function SignTransactionPage() {
   useVoiceStepGuide({
     ...voiceBase, active: currentStep === 'esign', step: 'esign', stepIndex: 1,
     message: {
-      es: 'Lee el consentimiento de firma electrónica, marca la casilla para aceptarlo, y toca Continuar.',
-      en: 'Read the electronic signature consent, check the box to accept it, and tap Continue.',
+      es: 'Lee el consentimiento de firma electrónica, marca la casilla para aceptarlo, y toca Continuar. Al aceptar, confirmas que entiendes que tu firma electrónica tiene la misma validez legal que una firma en papel.',
+      en: 'Read the electronic signature consent, check the box to accept it, and tap Continue. By accepting, you confirm you understand your electronic signature carries the same legal validity as a signature on paper.',
     },
   });
   useVoiceStepGuide({
     ...voiceBase, active: currentStep === 'selfie', step: 'selfie', stepIndex: 2,
     message: {
-      es: 'Tómate una selfie con tu cara bien visible e iluminada para verificar tu identidad.',
-      en: 'Take a selfie with your face clearly visible and well lit to verify your identity.',
+      es: 'Quien te envió este documento pidió verificar tu identidad: tómate una selfie con tu cara bien visible e iluminada. Si tu cámara no funciona, puedes subir un archivo en su lugar.',
+      en: 'Whoever sent you this document asked to verify your identity: take a selfie with your face clearly visible and well lit. If your camera doesn’t work, you can upload a file instead.',
     },
   });
   useVoiceStepGuide({
     ...voiceBase, active: currentStep === 'id', step: 'id', stepIndex: 3,
     message: {
-      es: 'Toma una foto del frente de tu documento de identidad, y luego del reverso.',
-      en: 'Take a photo of the front of your ID, then the back.',
+      es: 'Toma una foto del frente de tu documento de identidad, y luego del reverso. Puede ser tu cédula, licencia de conducir o pasaporte. Si tu cámara no funciona, puedes subir un archivo en su lugar.',
+      en: 'Take a photo of the front of your ID, then the back. This can be a national ID card, driver’s license, or passport. If your camera doesn’t work, you can upload a file instead.',
     },
   });
   useVoiceStepGuide({
     ...voiceBase, active: currentStep === 'sign', step: 'sign', stepIndex: 4,
     message: {
-      es: 'Dibuja tu firma para terminar de firmar el documento.',
-      en: 'Draw your signature to finish signing the document.',
+      es: 'Dibuja tu firma con el dedo o el mouse para terminar de firmar el documento. Si prefieres, arriba puedes cambiar a Texto para escribir tu nombre con letra de firma, o a Imagen para subir una firma que ya tengas guardada.',
+      en: 'Draw your signature with your finger or mouse to finish signing the document. If you’d rather not draw, you can switch to Text above to type your name in a signature font, or to Image to upload a signature you already have saved.',
     },
   });
   useVoiceStepGuide({
@@ -550,6 +551,7 @@ export default function SignTransactionPage() {
           <p className="text-sm font-bold text-slate-800 leading-tight">Codec Document</p>
           <p className="text-xs text-slate-500 leading-tight truncate">Firma electronica con validez legal</p>
         </div>
+        <LanguageToggle />
         <VoiceGuideToggle className="hidden sm:flex" />
         {tx?.security_config?.requireEsignConsent && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">

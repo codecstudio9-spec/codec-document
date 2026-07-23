@@ -50,8 +50,8 @@ export function CheckoutPage() {
   useEffect(() => {
     if (!purchaseData) return;
     speak({
-      es: 'Estás a punto de completar tu compra. Ingresa tu correo y confirma el pago con PayPal para desbloquear tu documento.',
-      en: 'You’re about to complete your purchase. Enter your email and confirm payment with PayPal to unlock your document.',
+      es: 'Estás a punto de completar tu compra. Ingresa tu correo electrónico y confirma el pago con PayPal o tarjeta de débito o crédito para desbloquear tu documento. El pago se procesa de forma segura a través de PayPal; tus datos de tarjeta no pasan por nuestros servidores.',
+      en: 'You’re about to complete your purchase. Enter your email and confirm payment with PayPal or a debit or credit card to unlock your document. Payment is processed securely through PayPal; your card details never pass through our servers.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchaseData]);
@@ -116,6 +116,10 @@ export function CheckoutPage() {
         ? (language === 'es' ? '¡Bundle descargado! Accediendo a tus 3 documentos...' : 'Bundle unlocked! Accessing your 3 documents...')
         : (language === 'es' ? '¡Pago completado! Redirigiendo a tu documento...' : 'Payment completed! Redirecting to your document...')
     );
+    speak({
+      es: '¡Pago confirmado! Tu documento está desbloqueado. Gracias por usar Codec Document.',
+      en: 'Payment confirmed! Your document is unlocked. Thank you for using Codec Document.',
+    });
 
     setTimeout(() => {
       navigate(`/preview/${purchaseData.template.id}`);
@@ -125,6 +129,10 @@ export function CheckoutPage() {
   const handlePayPalError = (error: any) => {
     console.error('PayPal error:', error);
     setIsProcessing(false);
+    speak({
+      es: 'No se pudo procesar el pago. Verifica los datos de tu tarjeta o intenta con otro método en la ventana de PayPal.',
+      en: 'The payment could not be processed. Check your card details or try another method in the PayPal window.',
+    });
   };
 
   const handleAdminAccess = async () => {

@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileSignature, Send, UserCheck, ClipboardList } from 'lucide-react';
 import { SigningIntent } from '../services/sign-transaction-service';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 
 interface IntentModalProps {
   open:     boolean;
@@ -73,6 +75,22 @@ const cardVariants = {
 };
 
 export function IntentModal({ open, language, onSelect }: IntentModalProps) {
+  const { speak } = useVoiceSpeak();
+
+  // The very first decision a creator makes — and the one that determines
+  // whether they'll be asked to sign their own document first (fill_send,
+  // fill_approve) or not (fill_self, blank_send). Explaining all four
+  // options out loud here prevents the confusion of picking the wrong
+  // workflow and only discovering it steps later.
+  useEffect(() => {
+    if (!open) return;
+    speak({
+      es: 'Elige cómo quieres usar este documento. Llenar y Enviar al Firmante: tú completas el formulario y envías un enlace para que la otra persona firme. Llenar y Firmar Yo Mismo: completas el formulario y firmas tú mismo en este dispositivo, sin enviar nada a nadie. Enviar Formulario en Blanco: envías la plantilla vacía para que la otra persona la complete y firme. Llenar, Enviar y Co-Firmar: tú completas el formulario, el destinatario firma primero, y luego tú firmas también para finalizar el documento.',
+      en: 'Choose how you want to use this document. Fill and Send to Signer: you complete the form and send a link for the other person to sign. Fill and Sign Yourself: you complete the form and sign it yourself on this device, without sending anything to anyone. Send Blank to Recipient: you send the empty template for the other person to fill in and sign. Fill, Send and Co-Sign: you complete the form, the recipient signs first, and then you also sign to finalize the document.',
+    }, language);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (

@@ -163,8 +163,8 @@ function ShareHub({
     if (spokenRef.current) return;
     spokenRef.current = true;
     speak({
-      es: 'Copia el enlace y compártelo por WhatsApp o correo con el firmante.',
-      en: 'Copy the link and share it with the signer over WhatsApp or email.',
+      es: 'Copia el enlace y compártelo por WhatsApp o correo con el firmante. El enlace es válido durante 48 horas, y te avisaremos aquí mismo en cuanto la otra persona firme.',
+      en: 'Copy the link and share it with the signer over WhatsApp or email. The link is valid for 48 hours, and we’ll let you know right here the moment the other person signs.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -340,61 +340,6 @@ export function ElectronicSignaturePage() {
   const [fileName, setFileName]     = useState('');
   const [fileHash, setFileHash]     = useState('');
 
-  // Contextual voice guidance — a real step-by-step companion, not just an
-  // opening line: speaks once per step, nudges the creator if they stall
-  // (15s totally idle, or 20s stuck on the same step), and logs everything
-  // for the "Asistente de Voz" admin panel. This page has no i18n of its
-  // own (100% hardcoded Spanish), so messages are bilingual and
-  // useVoiceGuide picks es/en the same way VoiceAssistantService would on
-  // its own (navigator.language), since there's no site-language context
-  // here to defer to instead.
-  const voiceSessionId = useRef(crypto.randomUUID()).current;
-  const voiceBase = { sessionId: voiceSessionId, role: 'creator' as const, flow: 'electronic-signature', documentId };
-
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'upload', step: 'upload', stepIndex: 0,
-    message: { es: 'Bienvenido a Codec Document. Sube el documento en PDF que quieres firmar.', en: 'Welcome to Codec Document. Upload the PDF document you want to sign.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'creator-sign', step: 'creator-sign', stepIndex: 1, highlight: 'creator-sign-button',
-    message: {
-      es: 'Escribe tu nombre completo y tu correo electrónico. Luego, dale clic al botón para trazar tu firma en el documento. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
-      en: 'Enter your full name and your email. Then, click the button to draw your signature on the document. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
-    },
-    idleHint: { es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.', en: 'If you need help, tap the Listen to instructions button at the bottom.' },
-    stuckHint: { es: 'Completa tu nombre y correo, y luego toca el botón azul para trazar tu firma.', en: 'Fill in your name and email, then tap the blue button to draw your signature.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'position-creator', step: 'position-creator', stepIndex: 2,
-    message: { es: 'Toca el documento en el lugar donde quieres colocar tu firma.', en: 'Tap the document where you want to place your signature.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'invite-guest', step: 'invite-guest', stepIndex: 3, highlight: 'creator-generate-link-button',
-    message: {
-      es: 'Ingresa el nombre y correo de la persona que debe firmar contigo, o continúa solo si no necesitas otro firmante.',
-      en: 'Enter the name and email of the person who needs to sign with you, or continue alone if you don’t need another signer.',
-    },
-    stuckHint: { es: 'Puedes generar el enlace único de firma, o firmar solo si no necesitas invitar a nadie.', en: 'You can generate the unique signing link, or sign alone if you don’t need to invite anyone.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'await-guest', step: 'await-guest', stepIndex: 4,
-    message: { es: 'Estamos esperando a que el invitado firme el documento. Te avisaremos cuando lo haga.', en: 'We’re waiting for the guest to sign the document. We’ll let you know when they do.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'position', step: 'position', stepIndex: 5,
-    message: { es: 'Coloca la firma de cada firmante en el documento.', en: 'Place each signer’s signature on the document.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'compiling', step: 'compiling', stepIndex: 6,
-    message: { es: 'Estamos generando tu documento certificado, esto toma unos segundos.', en: 'We’re generating your certified document, this takes a few seconds.' },
-  });
-  useVoiceStepGuide({
-    ...voiceBase, active: step === 'done', step: 'done', stepIndex: 7, isTerminal: true,
-    message: { es: '¡Listo! Tu documento ha sido firmado y certificado. Gracias por usar Codec Document.', en: 'Done! Your document has been signed and certified. Thank you for using Codec Document.' },
-  });
-  const creatorSignButtonHighlighted = useVoiceHighlight('creator-sign-button');
-  const creatorGenerateLinkHighlighted = useVoiceHighlight('creator-generate-link-button');
-
   // ── Creator ────────────────────────────────────────────────────────────────
   const [creatorName, setCreatorName]         = useState('');
   const [creatorEmail, setCreatorEmail]       = useState('');
@@ -414,6 +359,78 @@ export function ElectronicSignaturePage() {
   const [guestSigUrl, setGuestSigUrl]       = useState('');
   const [signingToken, setSigningToken]     = useState('');
   const [shareOpen, setShareOpen]           = useState(false);
+
+  // Contextual voice guidance — a real step-by-step companion, not just an
+  // opening line: speaks once per step, nudges the creator if they stall
+  // (15s totally idle, or 20s stuck on the same step), and logs everything
+  // for the "Asistente de Voz" admin panel. This page has no i18n of its
+  // own (100% hardcoded Spanish), so messages are bilingual and
+  // useVoiceGuide picks es/en the same way VoiceAssistantService would on
+  // its own (navigator.language), since there's no site-language context
+  // here to defer to instead. Placed after guestName/guestEmail so the
+  // await-guest message can reference the guest's name by value.
+  const voiceSessionId = useRef(crypto.randomUUID()).current;
+  const voiceBase = { sessionId: voiceSessionId, role: 'creator' as const, flow: 'electronic-signature', documentId };
+
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'upload', step: 'upload', stepIndex: 0,
+    message: {
+      es: 'Bienvenido a Codec Document. Toca el recuadro para seleccionar el documento en PDF que quieres firmar desde tu dispositivo. Solo se admiten archivos PDF, con un tamaño máximo recomendado de 10 megabytes.',
+      en: 'Welcome to Codec Document. Tap the box to select the PDF document you want to sign from your device. Only PDF files are supported, with a recommended maximum size of 10 megabytes.',
+    },
+    idleHint: { es: 'Toca el recuadro para elegir el archivo PDF que quieres firmar.', en: 'Tap the box to choose the PDF file you want to sign.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'creator-sign', step: 'creator-sign', stepIndex: 1, highlight: 'creator-sign-button',
+    message: {
+      es: 'Escribe tu nombre completo y tu correo electrónico. Luego, dale clic al botón para trazar tu firma en el documento. Más abajo, en Seguridad Avanzada, puedes elegir si quien va a firmar también debe fotografiar su documento de identidad o tomarse una selfie antes de firmar. La firma en sí siempre es obligatoria.',
+      en: 'Enter your full name and your email. Then, click the button to draw your signature on the document. Below, under Advanced Security, you can choose whether the other signer must also photograph their ID or take a selfie before signing. The signature itself is always required.',
+    },
+    idleHint: { es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.', en: 'If you need help, tap the Listen to instructions button at the bottom.' },
+    stuckHint: { es: 'Completa tu nombre y correo, y luego toca el botón azul para trazar tu firma.', en: 'Fill in your name and email, then tap the blue button to draw your signature.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'position-creator', step: 'position-creator', stepIndex: 2,
+    message: {
+      es: 'Toca el documento en el lugar donde quieres colocar tu firma. Puedes arrastrarla para moverla, y usar las esquinas para cambiar su tamaño hasta que quede exactamente donde debe ir. Cuando estés conforme, confirma para continuar.',
+      en: 'Tap the document where you want to place your signature. You can drag it to move it, and use the corners to resize it until it’s exactly where it should go. When you’re happy with it, confirm to continue.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'invite-guest', step: 'invite-guest', stepIndex: 3, highlight: 'creator-generate-link-button',
+    message: {
+      es: 'Ingresa el nombre y correo del segundo firmante y toca Generar enlace único de firma; ese enlace será válido durante 48 horas. Si no necesitas otro firmante, toca "Solo yo firmo" y el documento quedará certificado únicamente con tu firma.',
+      en: 'Enter the second signer’s name and email and tap Generate unique signing link; that link will be valid for 48 hours. If you don’t need another signer, tap "I sign alone" and the document will be certified with only your signature.',
+    },
+    stuckHint: { es: 'Puedes generar el enlace único de firma, o firmar solo si no necesitas invitar a nadie.', en: 'You can generate the unique signing link, or sign alone if you don’t need to invite anyone.' },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'await-guest', step: 'await-guest', stepIndex: 4,
+    message: {
+      es: `Estamos esperando a que ${guestName || 'el invitado'} firme el documento. Te avisaremos aquí mismo en cuanto lo haga, no necesitas hacer nada más. Mientras tanto puedes copiar el enlace de nuevo, o tocar "¿Ya firmó? Verificar" para revisar manualmente.`,
+      en: `We’re waiting for ${guestName || 'the guest'} to sign the document. We’ll let you know right here the moment they do, you don’t need to do anything else. Meanwhile you can copy the link again, or tap "Already signed? Check" to verify manually.`,
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'position', step: 'position', stepIndex: 5,
+    message: {
+      es: 'Coloca la firma de cada firmante en el documento: arrastra, mueve y ajusta el tamaño de cada bloque de firma hasta que quede en el lugar correcto para cada persona.',
+      en: 'Place each signer’s signature on the document: drag, move, and resize each signature block until it’s in the right spot for each person.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'compiling', step: 'compiling', stepIndex: 6,
+    message: {
+      es: 'Estamos generando tu documento certificado con validez legal. Esto toma solo unos segundos, no cierres ni recargues esta pantalla.',
+      en: 'We’re generating your legally certified document. This only takes a few seconds — please don’t close or reload this screen.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: step === 'done', step: 'done', stepIndex: 7, isTerminal: true,
+    message: { es: '¡Listo! Tu documento ha sido firmado y certificado. Gracias por usar Codec Document.', en: 'Done! Your document has been signed and certified. Thank you for using Codec Document.' },
+  });
+  const creatorSignButtonHighlighted = useVoiceHighlight('creator-sign-button');
+  const creatorGenerateLinkHighlighted = useVoiceHighlight('creator-generate-link-button');
 
   // ── Security requirements (saved to document_requirements table) ──────────
   const [requireIdPhoto, setRequireIdPhoto] = useState(false);

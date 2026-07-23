@@ -42,6 +42,7 @@ import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
+import { LanguageToggle } from '../components/language-toggle';
 import { logVoiceAssistantEvent } from '../services/voice-assistant-analytics-service';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
@@ -209,18 +210,18 @@ function IdentityGate({
   useEffect(() => {
     if (requirements.requireIdPhoto && requirements.requireSelfie) {
       speak({
-        es: 'Antes de firmar, debes tomar dos fotos de tu documento de identidad, frente y reverso, y una selfie. Las tres son obligatorias para continuar.',
-        en: 'Before signing, you need to take two photos of your ID — front and back — plus a selfie. All three are required to continue.',
+        es: 'Antes de firmar, quien envió este documento pidió verificar tu identidad: debes tomar dos fotos de tu documento de identidad, frente y reverso, y una selfie. Las tres son obligatorias para continuar. Si tu cámara no funciona, puedes subir un archivo desde tu dispositivo en su lugar.',
+        en: 'Before signing, whoever sent this document asked to verify your identity: you need to take two photos of your ID — front and back — plus a selfie. All three are required to continue. If your camera doesn’t work, you can upload a file from your device instead.',
       });
     } else if (requirements.requireIdPhoto) {
       speak({
-        es: 'Antes de firmar, toma una foto del frente y otra del reverso de tu documento de identidad.',
-        en: 'Before signing, take a photo of the front and another of the back of your ID.',
+        es: 'Antes de firmar, quien envió este documento pidió verificar tu identidad: toma una foto del frente y otra del reverso de tu documento de identidad. Si tu cámara no funciona, puedes subir un archivo en su lugar.',
+        en: 'Before signing, whoever sent this document asked to verify your identity: take a photo of the front and another of the back of your ID. If your camera doesn’t work, you can upload a file instead.',
       });
     } else if (requirements.requireSelfie) {
       speak({
-        es: 'Antes de firmar, tómate una selfie con tu cara bien visible e iluminada.',
-        en: 'Before signing, take a selfie with your face clearly visible and well lit.',
+        es: 'Antes de firmar, quien envió este documento pidió verificar tu identidad: tómate una selfie con tu cara bien visible e iluminada. Si tu cámara no funciona, puedes subir un archivo en su lugar.',
+        en: 'Before signing, whoever sent this document asked to verify your identity: take a selfie with your face clearly visible and well lit. If your camera doesn’t work, you can upload a file instead.',
       });
     }
     logIdentityEvent('identity-gate', 'auto_play');
@@ -684,8 +685,8 @@ export function GuestSignPage() {
     ...voiceBase, active: !pdfLoading && !!pdfDoc && !hasScrolledToEnd && !showIdGate && !showSignPad && !showPlacer,
     step: 'welcome-review', stepIndex: 0,
     message: {
-      es: 'Bienvenido a Codec Document. Aquí puedes revisar el documento que te han enviado para firma. Desliza hacia abajo para ver todas las páginas antes de continuar.',
-      en: 'Welcome to Codec Document. Here you can review the document you’ve been sent to sign. Scroll down to see every page before continuing.',
+      es: 'Bienvenido a Codec Document. Aquí puedes revisar el documento que te han enviado para firma. Desliza hacia abajo para ver todas las páginas antes de continuar. Si prefieres escucharlo en inglés, toca el botón ES / EN en la parte superior.',
+      en: 'Welcome to Codec Document. Here you can review the document you’ve been sent to sign. Scroll down to see every page before continuing. If you’d rather hear this in Spanish, tap the ES / EN button at the top.',
     },
     idleHint: {
       es: 'Si necesitas ayuda, toca el botón Escuchar instrucciones en la parte inferior.',
@@ -719,8 +720,8 @@ export function GuestSignPage() {
   useVoiceStepGuide({
     ...voiceBase, active: showSignPad, step: 'draw-signature', stepIndex: 3,
     message: {
-      es: 'Dibuja tu firma con el dedo o el mouse, y toca Confirmar.',
-      en: 'Draw your signature with your finger or mouse, then tap Confirm.',
+      es: 'Dibuja tu firma con el dedo o el mouse, y toca Confirmar. Si prefieres, arriba puedes cambiar a Texto para escribir tu nombre con letra de firma, o a Imagen para subir una firma que ya tengas guardada.',
+      en: 'Draw your signature with your finger or mouse, then tap Confirm. If you’d rather not draw, you can switch to Text above to type your name in a signature font, or to Image to upload a signature you already have saved.',
     },
   });
 
@@ -1342,6 +1343,7 @@ export function GuestSignPage() {
             <ShieldCheck className="size-4 text-white" />
           </div>
           <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{tokenData.documentName}</p>
+          <LanguageToggle />
           <VoiceGuideToggle className="hidden sm:flex" />
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
             <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
@@ -1621,6 +1623,7 @@ export function GuestSignPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <VoiceGuideToggle />
             <div className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5">
               <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />

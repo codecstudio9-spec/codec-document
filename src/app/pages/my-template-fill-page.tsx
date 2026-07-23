@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/language-context';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { getTemplate, generateFilledDocument, saveFilledDocument, type CustomTemplate, type PlacedField } from '../services/template-service';
 import { markVisitorActivity } from '../services/analytics-service';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 
 export function MyTemplateFillPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,11 +20,22 @@ export function MyTemplateFillPage() {
   const [signingFieldId, setSigningFieldId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const { speak } = useVoiceSpeak();
 
   useEffect(() => {
     if (!id) return;
     getTemplate(id).then(setTemplate).catch(() => setTemplate(null));
   }, [id]);
+
+  useEffect(() => {
+    if (!template) return;
+    if (template.fields.length === 0) return;
+    speak({
+      es: 'Completa cada campo de la plantilla. Los campos con un asterisco rojo son obligatorios. Donde veas "Firmar aquí", toca el botón para trazar tu firma o iniciales. Cuando termines, toca Generar documento para crear y descargar tu PDF.',
+      en: 'Fill in each field on the template. Fields with a red asterisk are required. Wherever you see "Sign here", tap the button to draw your signature or initials. When you’re done, tap Generate document to create and download your PDF.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(template)]);
 
   const setFieldValue = (fieldId: string, value: string) => setValues((prev) => ({ ...prev, [fieldId]: value }));
 
@@ -33,6 +45,13 @@ export function MyTemplateFillPage() {
     if (!template) return;
     if (missingRequired.length > 0) {
       toast.error(language === 'en' ? 'Fill in all required fields first.' : 'Completa todos los campos obligatorios primero.');
+      const shown = missingRequired.slice(0, 3).map((f) => f.label);
+      const extra = missingRequired.length - shown.length;
+      const list = shown.join(', ') + (extra > 0 ? (language === 'en' ? `, and ${extra} more` : ` y ${extra} más`) : '');
+      speak({
+        es: `Te falta llenar: ${list}.`,
+        en: `You still need to fill in: ${list}.`,
+      });
       return;
     }
     setIsGenerating(true);
@@ -42,6 +61,10 @@ export function MyTemplateFillPage() {
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
       toast.success(language === 'en' ? 'Document generated!' : '¡Documento generado!');
+      speak({
+        es: 'Tu documento se generó correctamente. Descárgalo con el botón verde. Gracias por usar Codec Document.',
+        en: 'Your document was generated successfully. Download it with the green button. Thank you for using Codec Document.',
+      });
       markVisitorActivity('document', 'custom-template-fill');
       // Best-effort — a save failure must never block the download the
       // user already has in hand via resultUrl above.
