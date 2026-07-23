@@ -227,6 +227,21 @@ const BlogHowToScreenTenantsAndDraftLeases = lazy(() => import("./pages/landings
 const BlogWhatToKnowBeforeSigningCommercialLease = lazy(() => import("./pages/landings/blog-what-to-know-before-signing-commercial-lease"));
 const BlogHowToWriteAServiceAgreementThatProtectsYou = lazy(() => import("./pages/landings/blog-how-to-write-a-service-agreement-that-protects-you"));
 const BlogHowToVetAClientBeforeSigningAContract = lazy(() => import("./pages/landings/blog-how-to-vet-a-client-before-signing-a-contract"));
+const BlogPoderNotarialFirmaElectronica = lazy(() => import("./pages/landings/blog-poder-notarial-firma-electronica"));
+const BlogCartasOfertaEmpleoFirmaElMismoDia = lazy(() => import("./pages/landings/blog-cartas-oferta-empleo-firma-el-mismo-dia"));
+const BlogErroresVenderAutoUsadoSinContrato = lazy(() => import("./pages/landings/blog-errores-vender-auto-usado-sin-contrato"));
+const BlogContratoDeSociedadAntesDeEmprender = lazy(() => import("./pages/landings/blog-contrato-de-sociedad-antes-de-emprender"));
+const BlogPagarePrestamoEntreParticulares = lazy(() => import("./pages/landings/blog-pagare-prestamo-entre-particulares"));
+const BlogExencionResponsabilidadGimnasiosEventos = lazy(() => import("./pages/landings/blog-exencion-responsabilidad-gimnasios-eventos"));
+const BlogContratosProveedoresRestaurantesSinPapeleo = lazy(() => import("./pages/landings/blog-contratos-proveedores-restaurantes-sin-papeleo"));
+const BlogConsentimientoInformadoDigitalClinicas = lazy(() => import("./pages/landings/blog-consentimiento-informado-digital-clinicas"));
+const BlogContratosProveedoresEcommerce = lazy(() => import("./pages/landings/blog-contratos-proveedores-ecommerce"));
+const BlogContratosMatriculaEscuelasAcademias = lazy(() => import("./pages/landings/blog-contratos-matricula-escuelas-academias"));
+const BlogContratosTransporteLogisticaDisputas = lazy(() => import("./pages/landings/blog-contratos-transporte-logistica-disputas"));
+const BlogCartaDeIntencionAntesDeContrato = lazy(() => import("./pages/landings/blog-carta-de-intencion-antes-de-contrato"));
+const BlogClausulasNoCompetenciaQuePuedePedirTuEmpleador = lazy(() => import("./pages/landings/blog-clausulas-no-competencia-que-puede-pedir-tu-empleador"));
+const BlogConsultorIndependienteBlindarHonorariosContrato = lazy(() => import("./pages/landings/blog-consultor-independiente-blindar-honorarios-contrato"));
+const BlogAcuerdosVoluntariadoOngsContratos = lazy(() => import("./pages/landings/blog-acuerdos-voluntariado-ongs-contratos"));
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -511,6 +526,21 @@ export const router = createBrowserRouter([
   { path: "/blog/what-to-know-before-signing-commercial-lease", Component: BlogWhatToKnowBeforeSigningCommercialLease, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/how-to-write-a-service-agreement-that-protects-you", Component: BlogHowToWriteAServiceAgreementThatProtectsYou, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/how-to-vet-a-client-before-signing-a-contract", Component: BlogHowToVetAClientBeforeSigningAContract, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/poder-notarial-firma-electronica", Component: BlogPoderNotarialFirmaElectronica, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/cartas-oferta-empleo-firma-el-mismo-dia", Component: BlogCartasOfertaEmpleoFirmaElMismoDia, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/errores-vender-auto-usado-sin-contrato", Component: BlogErroresVenderAutoUsadoSinContrato, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contrato-de-sociedad-antes-de-emprender", Component: BlogContratoDeSociedadAntesDeEmprender, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/pagare-prestamo-entre-particulares", Component: BlogPagarePrestamoEntreParticulares, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/exencion-responsabilidad-gimnasios-eventos", Component: BlogExencionResponsabilidadGimnasiosEventos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contratos-proveedores-restaurantes-sin-papeleo", Component: BlogContratosProveedoresRestaurantesSinPapeleo, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/consentimiento-informado-digital-clinicas", Component: BlogConsentimientoInformadoDigitalClinicas, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contratos-proveedores-ecommerce", Component: BlogContratosProveedoresEcommerce, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contratos-matricula-escuelas-academias", Component: BlogContratosMatriculaEscuelasAcademias, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contratos-transporte-logistica-disputas", Component: BlogContratosTransporteLogisticaDisputas, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/carta-de-intencion-antes-de-contrato", Component: BlogCartaDeIntencionAntesDeContrato, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador", Component: BlogClausulasNoCompetenciaQuePuedePedirTuEmpleador, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/consultor-independiente-blindar-honorarios-contrato", Component: BlogConsultorIndependienteBlindarHonorariosContrato, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/acuerdos-voluntariado-ongs-contratos", Component: BlogAcuerdosVoluntariadoOngsContratos, errorElement: <RouteErrorBoundary /> },
   // Smart Quotes -- SEO
   { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
   { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },
