@@ -374,8 +374,8 @@ export function PremiumDownloadModal({
               <p className="mt-1 text-sm text-slate-500 max-w-md mx-auto">
                 {reason === '72h_limit'
                   ? t(
-                      'You used your 2 free documents today. Pay for this one or unlock unlimited access.',
-                      'Usaste tus 2 documentos gratuitos de hoy. Paga este documento o desbloquea acceso ilimitado.',
+                      'You used your 2 free documents in the last 72 hours. Pay for this one or unlock unlimited access.',
+                      'Usaste tus 2 documentos gratuitos de las últimas 72 horas. Paga este documento o desbloquea acceso ilimitado.',
                     )
                   : documentName}
               </p>
