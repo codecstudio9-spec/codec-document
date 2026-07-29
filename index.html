@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -46,11 +47,15 @@
     <meta name="twitter:description" content="Create legal documents, collect signatures and verify signer identity with audit records and location verification." />
     <meta name="twitter:image" content="https://www.codecdocument.com/og-image.png" />
 
-    <!-- ═══ Canonical + Alternates ════════════════════════════════════════════ -->
-    <link rel="canonical" href="https://www.codecdocument.com" />
-    <link rel="alternate" hreflang="en" href="https://www.codecdocument.com" />
-    <link rel="alternate" hreflang="es" href="https://www.codecdocument.com" />
-    <link rel="alternate" hreflang="x-default" href="https://www.codecdocument.com" />
+    <!-- ═══ Canonical + Alternates ════════════════════════════════════════════
+         Intentionally NOT present here: this single static HTML shell is
+         served for ~200 different routes (Vercel SPA rewrite in vercel.json),
+         so a canonical/hreflang hardcoded to the homepage was wrong on every
+         other one of them — the exact "Google chose a different canonical"
+         failure mode. The real per-route canonical/hreflang is set by
+         middleware.ts as an HTTP `Link` response header (seen by every
+         crawler, JS or not) and reinforced client-side by SEOHead.tsx
+         (src/app/components/seo-head.tsx) once React mounts. -->
 
     <!-- ═══ Preconnect for performance ════════════════════════════════════════ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

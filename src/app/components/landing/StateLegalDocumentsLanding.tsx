@@ -2,7 +2,7 @@ import { MapPin, FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, Arr
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
@@ -89,6 +89,16 @@ function DocTypeLinks({ state }: { state: StateSeoConfig }) {
  * keep these from being thin, near-duplicate "doorway pages" across the 6
  * states — everything else reuses the same proven sections/copy. */
 export function StateLegalDocumentsLanding({ state }: { state: StateSeoConfig }) {
+  // Fixed to English (US-state legal content) regardless of visitor/crawler
+  // IP — see FixedLanguageProvider's docstring in language-context.tsx.
+  return (
+    <FixedLanguageProvider defaultLanguage="en">
+      <StateLegalDocumentsLandingContent state={state} />
+    </FixedLanguageProvider>
+  );
+}
+
+function StateLegalDocumentsLandingContent({ state }: { state: StateSeoConfig }) {
   const title = `Free Legal Documents & E-Signatures in ${state.name} | CodecDocument`;
   const desc = `Create legally-vetted documents and ESIGN Act compliant e-signatures for ${state.name}. Free NDA, lease agreement, and contract templates with ${state.name}-specific clauses, identity verification, and audit trail.`;
   const canonicalUrl = `${SITE_URL}/legal-documents-${state.slug}`;

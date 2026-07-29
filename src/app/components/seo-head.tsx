@@ -11,6 +11,16 @@ interface SEOHeadProps {
   ogType?: string;
   canonicalUrl?: string;
   image?: string;
+  /** ONLY for pages that are a genuine translation of the SAME content
+   * (e.g. a generic /electronic-signature (en) <-> /firma-electronica (es)
+   * pair). Do NOT use this to link a US-state page to a LatAm-country page
+   * or vice versa — those are different documents citing different local
+   * law, not translations of each other, and hreflang-linking them would
+   * incorrectly tell Google they're interchangeable. Leave unset for any
+   * page without a real translated counterpart; SEOHead then emits a
+   * correct self-referencing hreflang instead, which is what Google
+   * recommends for single-language content. */
+  alternateLanguages?: Array<{ hreflang: string; url: string }>;
 }
 
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
@@ -24,6 +34,7 @@ export function SEOHead({
   ogType = 'website',
   canonicalUrl,
   image,
+  alternateLanguages,
 }: SEOHeadProps) {
   const { language } = useLanguage();
 
@@ -119,12 +130,30 @@ export function SEOHead({
       linkElement.href = href;
     };
 
-    const currentUrl = window.location.origin + window.location.pathname;
-    updateLangAlternate('en', currentUrl);
-    updateLangAlternate('es', currentUrl);
-    updateLangAlternate('x-default', currentUrl);
+    // Clear any alternate hreflang tags left over from a previous route
+    // (client-side navigation reuses the same document — a stale tag from
+    // the last page would otherwise linger) before writing this page's own.
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
 
-  }, [title, description, keywords, ogTitle, ogDescription, ogType, canonicalUrl, image, language]);
+    const selfUrl = canonicalUrl || (window.location.origin + window.location.pathname);
+    if (alternateLanguages?.length) {
+      // Genuine translation cluster: link every real counterpart, plus this
+      // page itself so the cluster is complete and self-referencing (both
+      // required by Google's hreflang spec).
+      alternateLanguages.forEach(({ hreflang, url }) => updateLangAlternate(hreflang, url));
+      updateLangAlternate(language === 'en' ? 'en' : 'es', selfUrl);
+      const defaultUrl = alternateLanguages.find((a) => a.hreflang === 'en')?.url ?? selfUrl;
+      updateLangAlternate('x-default', defaultUrl);
+    } else {
+      // No real translation of this specific page exists — self-referencing
+      // hreflang is the correct thing to emit (Google explicitly recommends
+      // this for single-language pages), not a fake alternate pointing at
+      // an unrelated page in another market.
+      updateLangAlternate(language === 'en' ? 'en' : 'es', selfUrl);
+      updateLangAlternate('x-default', selfUrl);
+    }
+
+  }, [title, description, keywords, ogTitle, ogDescription, ogType, canonicalUrl, image, language, alternateLanguages]);
 
   return null;
 }

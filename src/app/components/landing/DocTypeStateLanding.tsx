@@ -2,7 +2,7 @@ import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, ArrowRight,
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
@@ -54,6 +54,16 @@ function OtherStatesLinks({ current, docType, labelEn, labelEs }: {
 }
 
 export function DocTypeStateLanding({ data }: { data: DocTypeState }) {
+  // Fixed to English (US-state legal content) regardless of visitor/crawler
+  // IP — see FixedLanguageProvider's docstring in language-context.tsx.
+  return (
+    <FixedLanguageProvider defaultLanguage="en">
+      <DocTypeStateLandingContent data={data} />
+    </FixedLanguageProvider>
+  );
+}
+
+function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
   const { language } = useLanguage();
   const docLabel = language === 'en' ? data.docTypeLabelEn : data.docTypeLabelEs;
   const stateLabel = language === 'en' ? data.stateName : data.stateNameEs;

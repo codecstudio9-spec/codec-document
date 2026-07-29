@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { SEOHead } from '../../components/seo-head';
 import { StructuredData } from '../../components/structured-data';
 import {
@@ -15,6 +15,16 @@ import {
 } from '../../utils/seo';
 
 export default function StateDocumentLanding() {
+  // Fixed to English (US-state legal content) regardless of visitor/crawler
+  // IP — see FixedLanguageProvider's docstring in language-context.tsx.
+  return (
+    <FixedLanguageProvider defaultLanguage="en">
+      <StateDocumentLandingContent />
+    </FixedLanguageProvider>
+  );
+}
+
+function StateDocumentLandingContent() {
   const { language } = useLanguage();
   const { documentType, stateSlug } = useParams<{ documentType: string; stateSlug: string }>();
   const document = useMemo(() => getDocumentTemplate(documentType || ''), [documentType]);

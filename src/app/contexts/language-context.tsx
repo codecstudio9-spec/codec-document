@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Language = 'en' | 'es';
+export type Language = 'en' | 'es';
 
 interface LanguageContextType {
   language: Language;
@@ -319,4 +319,49 @@ export function useLanguage() {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
+}
+
+/**
+ * Fixes the language for its subtree to a specific value, independent of
+ * the app-wide IP/browser-locale-detected default from LanguageProvider
+ * above. Wraps a small number of SEO landing "template" components
+ * (CountrySignatureLanding, DocTypeStateLanding, CityDocTypeLanding,
+ * CityLegalDocumentsLanding, StateLegalDocumentsLanding,
+ * StateDocumentLanding) whose every descendant already reads `useLanguage()`
+ * — React context resolves to the NEAREST provider, so nesting this one
+ * inside the app-wide LanguageProvider makes every existing consumer in
+ * that subtree pick up the fixed value with zero changes to those
+ * components.
+ *
+ * Why this exists: a page's URL already announces its target
+ * language/market (e.g. /firma-electronica-colombia is Spanish content
+ * about Colombian law; /nda-texas is English content about Texas law).
+ * Before this, those pages' actual rendered language came from
+ * LanguageProvider's IP lookup (ipwho.is) or browser locale instead — so
+ * the same URL could render in English for a Googlebot crawl from a US IP
+ * and in Spanish for a real Colombian visitor. That's the opposite of the
+ * "geolocation-independent, crawler-friendly" structure international SEO
+ * requires: the indexed snapshot of a URL must be deterministic.
+ *
+ * The language is still a real, local `useState` — an in-page
+ * LanguageToggle click still works and re-renders that page in the other
+ * language for that visit. It's just no longer auto-selected by IP, and
+ * resets to the page's own default on the next load, which is exactly the
+ * behavior a crawler needs.
+ */
+export function FixedLanguageProvider({
+  defaultLanguage,
+  children,
+}: {
+  defaultLanguage: Language;
+  children: ReactNode;
+}) {
+  const [language, setLanguage] = useState<Language>(defaultLanguage);
+  const t = (key: string): string => translations[language][key as keyof typeof translations.en] || key;
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }

@@ -2,7 +2,7 @@ import { PenLine, ArrowRight, ShieldCheck, Camera, FileCheck } from 'lucide-reac
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
@@ -52,6 +52,18 @@ function OtherCountryLinks({ current }: { current: string }) {
  * the platform — this only changes which law is cited and which
  * language/market the copy is written for. */
 export function CountrySignatureLanding({ country }: { country: LatamCountryConfig }) {
+  // Fixed to Spanish regardless of visitor/crawler IP — see
+  // FixedLanguageProvider's docstring in language-context.tsx for why.
+  // The in-page LanguageToggle can still switch a real visitor to English
+  // for this session; the crawlable default must stay deterministic.
+  return (
+    <FixedLanguageProvider defaultLanguage="es">
+      <CountrySignatureLandingContent country={country} />
+    </FixedLanguageProvider>
+  );
+}
+
+function CountrySignatureLandingContent({ country }: { country: LatamCountryConfig }) {
   const { language } = useLanguage();
 
   const title = `Firma Electrónica en ${country.nameEs} | Válida y Legal — CodecDocument`;
@@ -85,7 +97,10 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
         keywords={`firma electrónica ${country.nameEs}, firmar documentos ${country.nameEs}, firma digital ${country.nameEs}, e-signature ${country.name}, ${country.lawBadgeEs}`}
         canonicalUrl={canonicalUrl}
       />
-      <StructuredData />
+      <StructuredData
+        language="es"
+        country={{ name: country.name, nameEs: country.nameEs, lawBadgeEn: country.lawBadgeEn, lawBadgeEs: country.lawBadgeEs }}
+      />
       <LandingHeader />
 
       <LandingHero

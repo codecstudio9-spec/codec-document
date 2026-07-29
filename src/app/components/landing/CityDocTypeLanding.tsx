@@ -2,7 +2,7 @@ import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, type Lucide
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
@@ -26,6 +26,16 @@ const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
  * facts (docState.facts) as-is and talk about California law, never the
  * city name, per explicit instruction. */
 export function CityDocTypeLanding({ city, docState }: { city: CitySeoConfig; docState: DocTypeState }) {
+  // Fixed to English (US-city legal content) regardless of visitor/crawler
+  // IP — see FixedLanguageProvider's docstring in language-context.tsx.
+  return (
+    <FixedLanguageProvider defaultLanguage="en">
+      <CityDocTypeLandingContent city={city} docState={docState} />
+    </FixedLanguageProvider>
+  );
+}
+
+function CityDocTypeLandingContent({ city, docState }: { city: CitySeoConfig; docState: DocTypeState }) {
   const { language } = useLanguage();
   const state = city.state;
   const docLabel = language === 'en' ? docState.docTypeLabelEn : docState.docTypeLabelEs;

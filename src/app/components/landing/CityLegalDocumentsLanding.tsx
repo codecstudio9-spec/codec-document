@@ -2,7 +2,7 @@ import { MapPin } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { useLanguage } from '../../contexts/language-context';
+import { useLanguage, FixedLanguageProvider } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
@@ -18,6 +18,16 @@ import type { CitySeoConfig } from '../../data/city-seo-content';
  * California's (city.state), reused as-is — legally accurate, since these
  * documents follow state law, not city ordinances. */
 export function CityLegalDocumentsLanding({ city }: { city: CitySeoConfig }) {
+  // Fixed to English (US-city legal content) regardless of visitor/crawler
+  // IP — see FixedLanguageProvider's docstring in language-context.tsx.
+  return (
+    <FixedLanguageProvider defaultLanguage="en">
+      <CityLegalDocumentsLandingContent city={city} />
+    </FixedLanguageProvider>
+  );
+}
+
+function CityLegalDocumentsLandingContent({ city }: { city: CitySeoConfig }) {
   const { language } = useLanguage();
   const state = city.state;
 
