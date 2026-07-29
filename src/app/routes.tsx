@@ -23,6 +23,10 @@ const MyDocumentsPage = lazy(() => import("./pages/my-documents-page").then((m) 
 const MyTemplatesPage = lazy(() => import("./pages/my-templates-page").then((m) => ({ default: m.MyTemplatesPage })));
 const MyTemplateEditorPage = lazy(() => import("./pages/my-template-editor-page").then((m) => ({ default: m.MyTemplateEditorPage })));
 const MyTemplateFillPage = lazy(() => import("./pages/my-template-fill-page").then((m) => ({ default: m.MyTemplateFillPage })));
+const MyDocxTemplateEditorPage = lazy(() => import("./pages/my-docx-template-editor-page").then((m) => ({ default: m.MyDocxTemplateEditorPage })));
+const MyTemplatesHelpPage = lazy(() => import("./pages/my-templates-help-page").then((m) => ({ default: m.MyTemplatesHelpPage })));
+const TemplateFillPublicPage = lazy(() => import("./pages/template-fill-public-page").then((m) => ({ default: m.TemplateFillPublicPage })));
+const CustomTemplatePreviewPage = lazy(() => import("./pages/custom-template-preview-page").then((m) => ({ default: m.CustomTemplatePreviewPage })));
 const MyBrandingPage = lazy(() => import("./pages/my-branding-page").then((m) => ({ default: m.MyBrandingPage })));
 const MyCompanyPage = lazy(() => import("./pages/my-company-page").then((m) => ({ default: m.MyCompanyPage })));
 const MyContactsPage = lazy(() => import("./pages/my-contacts-page").then((m) => ({ default: m.MyContactsPage })));
@@ -271,6 +275,30 @@ function ProtectedMyTemplateFillPage() {
   return (
     <ProtectedRoute>
       <MyTemplateFillPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyDocxTemplateEditorPage() {
+  return (
+    <ProtectedRoute>
+      <MyDocxTemplateEditorPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedMyTemplatesHelpPage() {
+  return (
+    <ProtectedRoute>
+      <MyTemplatesHelpPage />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedCustomTemplatePreviewPage() {
+  return (
+    <ProtectedRoute>
+      <CustomTemplatePreviewPage />
     </ProtectedRoute>
   );
 }
@@ -687,6 +715,16 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    // Static path wins over the dynamic :documentType route below for
+    // this literal URL (same precedence already relied on by
+    // /preview/success further down) — a docx-templated document doesn't
+    // fit preview-page.tsx's templates.ts-based rendering, so it gets its
+    // own small page instead. See custom-template-preview-page.tsx.
+    path: "/preview/custom-template",
+    Component: ProtectedCustomTemplatePreviewPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/preview/:documentType",
     Component: PreviewPage,
     errorElement: <RouteErrorBoundary />,
@@ -727,6 +765,34 @@ export const router = createBrowserRouter([
   {
     path: "/my-templates/:id/fill",
     Component: ProtectedMyTemplateFillPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Word (.docx) {{variable}} templates, ZapSign-style — the second
+    // template engine alongside the PDF-by-coordinates one above. See
+    // src/app/services/docx-template-service.ts.
+    path: "/my-templates/new-docx",
+    Component: ProtectedMyDocxTemplateEditorPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-templates/:id/edit-docx",
+    Component: ProtectedMyDocxTemplateEditorPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/my-templates/ayuda",
+    Component: ProtectedMyTemplatesHelpPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Public, permanent link for a Word template — NOT behind
+    // ProtectedRoute: this is the one page in the templates feature meant
+    // to be opened by an anonymous end client. Creates a sign_transactions
+    // row and hands off to /sign/:transactionId (the existing signing
+    // engine) once the client submits their values.
+    path: "/t/:slug",
+    Component: TemplateFillPublicPage,
     errorElement: <RouteErrorBoundary />,
   },
   {
