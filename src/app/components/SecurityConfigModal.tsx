@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Camera, CreditCard, FileCheck, BarChart3, PenLine, X } from 'lucide-react';
+import { Shield, Camera, CreditCard, FileCheck, BarChart3, PenLine, Fingerprint, X } from 'lucide-react';
 import type { SecurityConfig } from '../services/sign-transaction-service';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 
@@ -52,6 +52,15 @@ const TOGGLES: Toggle[] = [
     activeBg:       '#faf5ff',
   },
   {
+    key:            'requireBiometric',
+    icon:           Fingerprint,
+    title:          { en: 'Biometric Authentication', es: 'Autenticacion Biometrica' },
+    desc:           { en: 'Recipient confirms their identity with their device fingerprint or Face ID (WebAuthn/FIDO2).', es: 'El destinatario confirma su identidad con la huella o Face ID de su dispositivo (WebAuthn/FIDO2).' },
+    activeGradient: 'linear-gradient(135deg,#f472b6 0%,#db2777 100%)',
+    activeShadow:   '0 3px 10px rgba(219,39,119,0.4)',
+    activeBg:       '#fdf2f8',
+  },
+  {
     key:            'requireEsignConsent',
     icon:           FileCheck,
     title:          { en: 'ESIGN Act Consent', es: 'Consentimiento ESIGN' },
@@ -78,6 +87,7 @@ const DEFAULT: SecurityConfig = {
   requireSmsOtp:       false,
   requireEsignConsent: false,
   advancedAuditTrail:  false,
+  requireBiometric:    false,
 };
 
 const rowVariants = {
@@ -100,8 +110,8 @@ export function SecurityConfigModal({ open, language, onConfirm, onCancel }: Sec
   useEffect(() => {
     if (!open) return;
     speak({
-      es: 'Aquí eliges qué debe completar la persona que va a firmar, antes de firmar. La firma digital ya es obligatoria. Si quieres más seguridad, puedes pedirle también una selfie, una foto de su documento de identidad, o su consentimiento explícito.',
-      en: 'Here you choose what the person signing must complete before they sign. The digital signature is already required. For extra security, you can also ask for a selfie, a photo of their ID, or their explicit consent.',
+      es: 'Aquí eliges qué debe completar la persona que va a firmar, antes de firmar. La firma digital ya es obligatoria. Si quieres más seguridad, puedes pedirle también una selfie, una foto de su documento de identidad, verificar su huella o Face ID, o su consentimiento explícito.',
+      en: 'Here you choose what the person signing must complete before they sign. The digital signature is already required. For extra security, you can also ask for a selfie, a photo of their ID, their fingerprint or Face ID, or their explicit consent.',
     }, language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);

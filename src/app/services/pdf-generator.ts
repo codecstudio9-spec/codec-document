@@ -55,6 +55,12 @@ interface PDFGeneratorOptions {
   identityIdDoc?: string;
   identityIdDocFront?: string;
   identityIdDocBack?: string;
+  /** Result of a WebAuthn/FIDO2 biometric verification (Touch ID / Face ID /
+   * Windows Hello / Android fingerprint) — never a real fingerprint image,
+   * only the device's cryptographic proof that its own sensor verified the
+   * signer. See addIdentityAuditPage / addSignatureMirrorBlock for how this
+   * renders as a "Biometric Verification" badge. */
+  identityBiometric?: { deviceLabel: string; verifiedAt: string; credentialIdHash: string };
   /** Which country's e-signature law to cite on the certification/identity
    * pages — defaults to the US (E-SIGN Act & UETA), the text that was
    * always hardcoded here before. Pass a detected jurisdiction (see
@@ -1202,13 +1208,64 @@ export class PDFGenerator {
     this.doc.addImage(dataUrl, fmt, drawX, drawY, drawW, drawH, undefined, 'FAST');
   }
 
+  /** Stylized concentric-ring "fingerprint" glyph — drawn with vector
+   * primitives, never a real scanned print (WebAuthn never gives this app
+   * access to one). Used purely as a recognizable "biometric" visual
+   * anchor next to the crypto-proof text. */
+  private drawFingerprintGlyph(cx: number, cy: number, size: number, color: [number, number, number] = [219, 39, 119]) {
+    this.doc.setDrawColor(color[0], color[1], color[2]);
+    this.doc.setLineWidth(0.55);
+    const rings = 4;
+    for (let i = 1; i <= rings; i++) {
+      this.doc.circle(cx, cy, (size / 2) * (i / rings) * 0.88, 'S');
+    }
+    this.doc.setFillColor(color[0], color[1], color[2]);
+    this.doc.circle(cx, cy, size * 0.05, 'F');
+  }
+
+  private addBiometricVerificationBlock(
+    x: number, y: number, width: number,
+    biometric: NonNullable<PDFGeneratorOptions['identityBiometric']>,
+    language: 'en' | 'es',
+  ): number {
+    const height = 26;
+    this.doc.setFillColor(253, 242, 248);
+    this.doc.setDrawColor(244, 114, 182);
+    this.doc.setLineWidth(0.35);
+    this.doc.roundedRect(x, y, width, height, 3, 3, 'FD');
+
+    this.drawFingerprintGlyph(x + 14, y + height / 2, 15);
+
+    const textX = x + 30;
+    this.setFontForLang('bold');
+    this.doc.setFontSize(8.5);
+    this.doc.setTextColor(157, 23, 77);
+    this.safeText(language === 'es' ? 'AUTENTICACIÓN BIOMÉTRICA — VERIFICADA' : 'BIOMETRIC AUTHENTICATION — VERIFIED', textX, y + 6.5);
+
+    this.setFontForLang('normal');
+    this.doc.setFontSize(7);
+    this.doc.setTextColor(80, 40, 60);
+    const verifiedDate = new Date(biometric.verifiedAt).toLocaleString(language === 'es' ? 'es-MX' : 'en-US', {
+      dateStyle: 'medium', timeStyle: 'short',
+    });
+    this.safeText(`${language === 'es' ? 'Método' : 'Method'}: ${biometric.deviceLabel}`, textX, y + 12);
+    this.safeText(`${language === 'es' ? 'Verificado el' : 'Verified at'}: ${verifiedDate}`, textX, y + 17);
+    this.safeText(
+      `${language === 'es' ? 'Referencia de credencial' : 'Credential reference'}: ${biometric.credentialIdHash || '—'} · WebAuthn/FIDO2`,
+      textX, y + 22,
+    );
+
+    return y + height;
+  }
+
   private async addIdentityAuditPage(
     selfieDataUrl?: string,
     idDocFrontDataUrl?: string,
     idDocBackDataUrl?: string,
-    _language: 'en' | 'es' = 'en',
+    language: 'en' | 'es' = 'en',
+    biometric?: PDFGeneratorOptions['identityBiometric'],
   ) {
-    if (!selfieDataUrl && !idDocFrontDataUrl && !idDocBackDataUrl) return;
+    if (!selfieDataUrl && !idDocFrontDataUrl && !idDocBackDataUrl && !biometric) return;
 
     this.doc.addPage();
     const PW = this.pageWidth;
@@ -1306,15 +1363,24 @@ export class PDFGenerator {
       cardX += cardWidth + cardGap;
     });
 
-    this.currentY = photoSectionY + cardHeight + 16;
+    this.currentY = cards.length > 0 ? photoSectionY + cardHeight + 16 : photoSectionY;
+
+    if (biometric) {
+      this.currentY = this.addBiometricVerificationBlock(M, this.currentY, PW - M * 2, biometric, language) + 10;
+    }
 
     // Audit data table
     const now = new Date();
+    const methodParts = ['Digital Signature'];
+    if (biometric) methodParts.unshift('WebAuthn/FIDO2 Biometric');
+    if (selfieDataUrl) methodParts.push('Selfie Verification');
+    if (idDocFrontDataUrl || idDocBackDataUrl) methodParts.push('Government ID Photo');
     const tableRows: Array<[string, string]> = [
       ['Document ID',          `CDX-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(Date.now()).slice(-6)}`],
       ['Verification Date',    now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
       ['Verification Time',    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })],
-      ['Verification Method',  'Biometric + Government ID + Digital Signature'],
+      ['Verification Method',  methodParts.join(' + ')],
+      ...(biometric ? [['Biometric Verification', `Passed — ${biometric.deviceLabel} (Platform Authenticator)`] as [string, string]] : []),
       ['Compliance Framework', this.jurisdiction.complianceFrameworkEn],
       ['Signature Algorithm',  'SHA-256 Cryptographic Hash'],
       ['Legal Status',         'VALID — Legally Binding Electronic Signature'],
@@ -1379,7 +1445,9 @@ export class PDFGenerator {
     this.ensureFontMetadata('helvetica', 'normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(100, 116, 139);
-    const legalNote = 'This Identity Verification Report is an integral part of the executed agreement. The biometric images and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.';
+    const legalNote = biometric
+      ? 'This Identity Verification Report is an integral part of the executed agreement. Biometric authentication was performed locally on the signatory\'s own device (WebAuthn/FIDO2) — Codec Document never received or stored a fingerprint image, face scan, or any raw biometric data, only the device\'s cryptographic proof of a successful local verification. Any photo evidence and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.'
+      : 'This Identity Verification Report is an integral part of the executed agreement. The biometric images and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.';
     const legalLines = this.splitTextToSize(legalNote, PW - M * 2);
     legalLines.forEach((line: string) => {
       this.safeText(line, M, this.currentY);
@@ -1769,6 +1837,7 @@ export class PDFGenerator {
     identitySelfie?: string,
     identityIdDocFront?: string,
     identityIdDocBack?: string,
+    identityBiometric?: PDFGeneratorOptions['identityBiometric'],
   ) {
     if (!leftSig && !rightSig) return;
 
@@ -1827,9 +1896,9 @@ export class PDFGenerator {
     };
 
     const identityIdDoc = identityIdDocFront || identityIdDocBack;
-    const hasIdentity = !!(identitySelfie || identityIdDoc);
-    // Space needed: sigs (~44) + optional compact identity strip (~32)
-    const needed = hasIdentity ? 78 : 58;
+    const hasIdentity = !!(identitySelfie || identityIdDoc || identityBiometric);
+    // Space needed: sigs (~44) + optional compact identity strip (~32) + optional biometric badge (~30)
+    const needed = hasIdentity ? 78 + (identityBiometric ? 30 : 0) : 58;
     if (this.currentY + needed > this.pageHeight - this.margin) {
       this.doc.addPage();
       this.currentY = this.margin + 6;
@@ -1953,6 +2022,11 @@ export class PDFGenerator {
       });
 
       this.currentY += cardHeight + 10;
+      this.doc.setTextColor(0, 0, 0);
+    }
+
+    if (identityBiometric) {
+      this.currentY = this.addBiometricVerificationBlock(leftX, this.currentY, this.maxWidth, identityBiometric, language) + 6;
       this.doc.setTextColor(0, 0, 0);
     }
   }
@@ -2079,6 +2153,7 @@ export class PDFGenerator {
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
+        opts.identityBiometric,
       );
       if (after) generator.processContent(after);
     } else {
@@ -2095,13 +2170,14 @@ export class PDFGenerator {
       }
     }
 
-    // Identity verification page (separate page when photos exist)
-    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
+    // Identity verification page (separate page when photos or a biometric result exist)
+    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack || opts.identityBiometric) {
       await generator.addIdentityAuditPage(
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
         opts.language,
+        opts.identityBiometric,
       );
     }
 
@@ -2156,6 +2232,7 @@ export class PDFGenerator {
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
+        opts.identityBiometric,
       );
       if (after) generator.processContent(after);
     } else {
@@ -2172,13 +2249,14 @@ export class PDFGenerator {
       }
     }
 
-    // Identity verification page (separate page when photos exist)
-    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack) {
+    // Identity verification page (separate page when photos or a biometric result exist)
+    if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack || opts.identityBiometric) {
       await generator.addIdentityAuditPage(
         opts.identitySelfie,
         opts.identityIdDocFront ?? opts.identityIdDoc,
         opts.identityIdDocBack,
         opts.language,
+        opts.identityBiometric,
       );
     }
 

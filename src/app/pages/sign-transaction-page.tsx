@@ -15,7 +15,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 import {
   ShieldCheck, Camera, CreditCard, PenLine, CheckCircle2,
-  Loader, AlertCircle, FileText, ChevronRight, X, Upload,
+  Loader, AlertCircle, FileText, ChevronRight, X, Upload, Fingerprint,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { useAuth } from '../contexts/auth-context';
@@ -26,6 +26,7 @@ import { markVisitorActivity } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { toast } from 'sonner';
+import { isBiometricAvailable, runBiometricVerification, BiometricError } from '../../lib/webauthnClient';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
@@ -33,12 +34,16 @@ import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Step = 'loading' | 'esign' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
+type Step = 'loading' | 'esign' | 'biometric' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
 
 // ─── Step builder ─────────────────────────────────────────────────────────────
 function buildSteps(cfg: SecurityConfig): Step[] {
   const steps: Step[] = ['loading'];
   if (cfg.requireEsignConsent) steps.push('esign');
+  // Biometric before the photo steps: it's a quick device-level check
+  // (no camera permission dance) that proves possession of the signer's
+  // own device before asking them to also hand over selfie/ID photos.
+  if (cfg.requireBiometric)    steps.push('biometric');
   if (cfg.requireSelfie)       steps.push('selfie');
   if (cfg.requireIdPhoto)      steps.push('id');
   steps.push('sign');
@@ -136,6 +141,9 @@ export default function SignTransactionPage() {
   const [idBackDataUrl,    setIdBackDataUrl]     = useState('');
   const [idCaptureSide,    setIdCaptureSide]     = useState<'front' | 'back'>('front');
   const [esignAccepted,    setEsignAccepted]     = useState(false);
+  const [biometricStatus,  setBiometricStatus]   = useState<'idle' | 'checking' | 'unavailable' | 'prompting' | 'verified' | 'error'>('idle');
+  const [biometricDeviceLabel, setBiometricDeviceLabel] = useState('');
+  const [biometricError,   setBiometricError]    = useState('');
   // Resolved once on mount from the signer's real IP, so the consent
   // screen cites the law that actually governs THIS signer instead of
   // always showing the US E-SIGN Act regardless of where they are.
@@ -143,6 +151,38 @@ export default function SignTransactionPage() {
   useEffect(() => {
     detectSignerCountryCode().then((code) => setJurisdiction(resolveJurisdiction(code))).catch(() => {});
   }, []);
+
+  // ── Biometric device-capability check ──────────────────────────────────────
+  // Runs once, the moment the biometric step becomes active — checks
+  // whether THIS signer's device even has a platform authenticator before
+  // showing the "Verify" button, so we can show the fallback message
+  // instead of a button that would just fail.
+  const currentStepForBiometric = steps[stepIdx];
+  useEffect(() => {
+    if (currentStepForBiometric !== 'biometric' || biometricStatus !== 'idle') return;
+    setBiometricStatus('checking');
+    isBiometricAvailable().then((available) => {
+      setBiometricStatus(available ? 'idle' : 'unavailable');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepForBiometric]);
+
+  const handleBiometricVerify = useCallback(async () => {
+    if (!tx) return;
+    setBiometricStatus('prompting');
+    setBiometricError('');
+    try {
+      const result = await runBiometricVerification(tx.id);
+      setBiometricDeviceLabel(result.deviceLabel);
+      setBiometricStatus('verified');
+    } catch (err) {
+      const message = err instanceof BiometricError
+        ? err.message
+        : (err instanceof Error ? err.message : 'No se pudo completar la verificacion biometrica.');
+      setBiometricError(message);
+      setBiometricStatus('error');
+    }
+  }, [tx]);
 
   const [sigModalOpen,  setSigModalOpen]  = useState(false);
   const [cameraActive,  setCameraActive]  = useState(false);
@@ -182,6 +222,13 @@ export default function SignTransactionPage() {
     message: {
       es: 'Lee el consentimiento de firma electrónica, marca la casilla para aceptarlo, y toca Continuar. Al aceptar, confirmas que entiendes que tu firma electrónica tiene la misma validez legal que una firma en papel.',
       en: 'Read the electronic signature consent, check the box to accept it, and tap Continue. By accepting, you confirm you understand your electronic signature carries the same legal validity as a signature on paper.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'biometric', step: 'biometric', stepIndex: 2,
+    message: {
+      es: 'Quien te envió este documento pidió confirmar tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Toca el botón y sigue el mensaje que te muestre tu teléfono o computadora. Esto ocurre localmente en tu dispositivo — Codec Document nunca recibe tu huella ni tu rostro.',
+      en: 'Whoever sent you this document asked you to confirm your identity using your own device\'s fingerprint or face recognition. Tap the button and follow the prompt shown by your phone or computer. This happens locally on your device — Codec Document never receives your fingerprint or face data.',
     },
   });
   useVoiceStepGuide({
@@ -606,6 +653,78 @@ export default function SignTransactionPage() {
             >
               Continuar <ChevronRight className="size-4" />
             </button>
+          </div>
+        )}
+
+        {/* ── Biometric Step ── */}
+        {currentStep === 'biometric' && (
+          <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
+              <Fingerprint className="size-5 text-pink-600 shrink-0" />
+              Autenticacion Biometrica
+            </h2>
+            <p className="text-sm text-slate-500">
+              Confirma tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Esto ocurre localmente — tu huella o rostro nunca se envian a nuestros servidores.
+            </p>
+
+            {biometricStatus === 'checking' && (
+              <div className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
+                <Loader className="size-4 animate-spin shrink-0" /> Verificando compatibilidad del dispositivo...
+              </div>
+            )}
+
+            {biometricStatus === 'unavailable' && (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed">
+                  Este dispositivo no tiene un sensor de huella o Face ID compatible (o el navegador no lo soporta). Usa un telefono con huella/Face ID, o una computadora con Windows Hello, para continuar. Si no es posible, contacta a quien te envio el documento.
+                </div>
+                <button
+                  onClick={() => setBiometricStatus('idle')}
+                  className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
+
+            {biometricStatus === 'error' && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700 leading-relaxed">
+                {biometricError || 'No se pudo completar la verificacion biometrica.'}
+              </div>
+            )}
+
+            {biometricStatus === 'verified' ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+                  <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-emerald-800">Identidad verificada</p>
+                    <p className="text-xs text-emerald-700">{biometricDeviceLabel}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={advance}
+                  className="w-full rounded-xl py-3 text-sm font-bold text-white hover:brightness-110 transition-all"
+                  style={{ background: 'linear-gradient(180deg,#f472b6 0%,#db2777 68%,#9d174d 100%)', boxShadow: '0 3px 0 #831843' }}
+                >
+                  Continuar
+                </button>
+              </div>
+            ) : (biometricStatus === 'idle' || biometricStatus === 'error') && (
+              <button
+                onClick={handleBiometricVerify}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+                style={{ background: 'linear-gradient(180deg,#f472b6 0%,#db2777 68%,#9d174d 100%)', boxShadow: '0 3px 0 #831843' }}
+              >
+                <Fingerprint className="size-4" /> Verificar con huella / Face ID
+              </button>
+            )}
+
+            {biometricStatus === 'prompting' && (
+              <div className="flex items-center gap-2 rounded-xl bg-pink-50 border border-pink-200 px-4 py-3 text-sm text-pink-700">
+                <Loader className="size-4 animate-spin shrink-0" /> Sigue las instrucciones de tu dispositivo...
+              </div>
+            )}
           </div>
         )}
 

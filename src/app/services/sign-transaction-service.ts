@@ -75,6 +75,7 @@ export interface SecurityConfig {
   requireSmsOtp:      boolean;
   requireEsignConsent: boolean;
   advancedAuditTrail: boolean;
+  requireBiometric:   boolean;
 }
 
 export interface SignTransaction {
@@ -91,6 +92,10 @@ export interface SignTransaction {
   recipient_id_photo?:    string;
   recipient_ip?:          string;
   esign_consent_accepted?: boolean;
+  recipient_biometric_credential_id?: string;
+  recipient_biometric_device_label?:  string;
+  recipient_biometric_aaguid?:        string;
+  recipient_biometric_verified_at?:   string;
   sender_signature?:      string;
   signed_at?:             string;
   viewed_at?:             string | null;
@@ -237,6 +242,16 @@ export function stashSignedTransactionForDownload(tx: SignTransaction, language:
       sessionStorage.removeItem('identityIdDocFront');
       sessionStorage.removeItem('identityIdDocBack');
       sessionStorage.removeItem('identityIdDoc');
+    }
+
+    if (tx.recipient_biometric_verified_at && tx.recipient_biometric_device_label) {
+      sessionStorage.setItem('identityBiometric', JSON.stringify({
+        deviceLabel: tx.recipient_biometric_device_label,
+        verifiedAt: tx.recipient_biometric_verified_at,
+        credentialIdHash: (tx.recipient_biometric_credential_id ?? '').slice(0, 16),
+      }));
+    } else {
+      sessionStorage.removeItem('identityBiometric');
     }
 
     sessionStorage.setItem('isPurchased', 'true');

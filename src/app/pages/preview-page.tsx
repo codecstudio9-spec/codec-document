@@ -519,6 +519,7 @@ export function PreviewPage() {
   const [identitySelfie, setIdentitySelfie] = useState<string | undefined>();
   const [identityIdDocFront, setIdentityIdDocFront] = useState<string | undefined>();
   const [identityIdDocBack, setIdentityIdDocBack] = useState<string | undefined>();
+  const [identityBiometric, setIdentityBiometric] = useState<{ deviceLabel: string; verifiedAt: string; credentialIdHash: string } | undefined>();
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'download' | 'sign' | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -642,6 +643,12 @@ export function PreviewPage() {
         if (identitySelfie) setIdentitySelfie(identitySelfie);
         if (identityIdDocFront) setIdentityIdDocFront(identityIdDocFront);
         if (identityIdDocBack) setIdentityIdDocBack(identityIdDocBack);
+
+        const identityBiometricRaw = sessionStorage.getItem('identityBiometric');
+        if (identityBiometricRaw) {
+          const parsedBiometric = safeParseJson<{ deviceLabel: string; verifiedAt: string; credentialIdHash: string }>(identityBiometricRaw);
+          if (parsedBiometric) setIdentityBiometric(parsedBiometric);
+        }
       } else {
         navigate(`/generator/${documentType}`);
       }
@@ -945,6 +952,7 @@ export function PreviewPage() {
         identitySelfie,
         identityIdDocFront,
         identityIdDocBack,
+        identityBiometric,
       });
 
       await triggerDownload(blob, fileName);
