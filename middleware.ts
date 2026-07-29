@@ -28,10 +28,15 @@ const SITE = 'https://www.codecdocument.com';
 // Keep in sync with EXCLUDE_PREFIXES/EXCLUDE_EXACT in scripts/generate-sitemap.mjs.
 const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|dashboard|app|sign|checkout|success)(\/|$)/;
 
+// One-off routes whose path looks like a marketing landing but is actually
+// the authenticated in-app tool (both point at ProtectedSignaturePage —
+// verified by reading routes.tsx). A prefix rule can't catch these.
+const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures']);
+
 export default function middleware(request: Request) {
   const url = new URL(request.url);
 
-  if (EXCLUDED.test(url.pathname)) {
+  if (EXCLUDED.test(url.pathname) || EXCLUDED_EXACT.has(url.pathname)) {
     return next();
   }
 
