@@ -32,9 +32,10 @@ import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
+import { useLanguage } from '../contexts/language-context';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Step = 'loading' | 'esign' | 'biometric' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
+type Step = 'loading' | 'esign' | 'biometric' | 'identity_consent' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
 
 // ─── Step builder ─────────────────────────────────────────────────────────────
 function buildSteps(cfg: SecurityConfig): Step[] {
@@ -44,6 +45,18 @@ function buildSteps(cfg: SecurityConfig): Step[] {
   // (no camera permission dance) that proves possession of the signer's
   // own device before asking them to also hand over selfie/ID photos.
   if (cfg.requireBiometric)    steps.push('biometric');
+  // Explicit, separate consent BEFORE any photo of the signer's face/ID is
+  // actually captured — deliberately distinct from the biometric step's
+  // "this stays on your device" promise, so the two claims never blur
+  // together: the fingerprint/Face ID check truly never leaves the
+  // device, but a selfie/ID photo IS captured and stored as evidence, and
+  // the signer must explicitly acknowledge that before either camera
+  // step opens. This also gives us an explicit-consent record for
+  // jurisdictions (GDPR/LGPD/Colombia's Ley 1581, etc.) that treat a
+  // face photo used for identity verification as sensitive/biometric
+  // data requiring express consent, not just implied consent from
+  // clicking a camera button.
+  if (cfg.requireSelfie || cfg.requireIdPhoto) steps.push('identity_consent');
   if (cfg.requireSelfie)       steps.push('selfie');
   if (cfg.requireIdPhoto)      steps.push('id');
   steps.push('sign');
@@ -141,6 +154,7 @@ export default function SignTransactionPage() {
   const [idBackDataUrl,    setIdBackDataUrl]     = useState('');
   const [idCaptureSide,    setIdCaptureSide]     = useState<'front' | 'back'>('front');
   const [esignAccepted,    setEsignAccepted]     = useState(false);
+  const [identityConsentAccepted, setIdentityConsentAccepted] = useState(false);
   const [biometricStatus,  setBiometricStatus]   = useState<'idle' | 'checking' | 'unavailable' | 'prompting' | 'verified' | 'error'>('idle');
   const [biometricDeviceLabel, setBiometricDeviceLabel] = useState('');
   const [biometricError,   setBiometricError]    = useState('');
@@ -197,6 +211,8 @@ export default function SignTransactionPage() {
   // `disabled={submitting}` alone can't block a same-tick second invocation.
   const submittingRef = useRef(false);
   const { user, isAdmin } = useAuth();
+  const { language } = useLanguage();
+  const tr = (en: string, es: string) => (language === 'en' ? en : es);
 
   // ── Voice guidance ──────────────────────────────────────────────────────────
   const { speak } = useVoiceSpeak();
@@ -229,6 +245,13 @@ export default function SignTransactionPage() {
     message: {
       es: 'Quien te envió este documento pidió confirmar tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Toca el botón y sigue el mensaje que te muestre tu teléfono o computadora. Esto ocurre localmente en tu dispositivo — Codec Document nunca recibe tu huella ni tu rostro.',
       en: 'Whoever sent you this document asked you to confirm your identity using your own device\'s fingerprint or face recognition. Tap the button and follow the prompt shown by your phone or computer. This happens locally on your device — Codec Document never receives your fingerprint or face data.',
+    },
+  });
+  useVoiceStepGuide({
+    ...voiceBase, active: currentStep === 'identity_consent', step: 'identity_consent', stepIndex: 2,
+    message: {
+      es: 'Antes de tomarte una foto, lee este aviso: a diferencia de la huella o Face ID, la foto de tu rostro o documento sí queda guardada como evidencia de tu identidad. Marca la casilla si estás de acuerdo y toca Continuar.',
+      en: 'Before taking a photo, read this notice: unlike the fingerprint or Face ID check, a photo of your face or ID IS stored as evidence of your identity. Check the box if you agree, and tap Continue.',
     },
   });
   useVoiceStepGuide({
@@ -346,9 +369,9 @@ export default function SignTransactionPage() {
       setCameraActive(true); // triggers re-render → video mounts → useEffect assigns srcObject
     } catch (err) {
       console.error('Camera access error:', err);
-      setCameraError('No se pudo acceder a la camara. Permite el acceso en tu navegador y recarga la pagina.');
+      setCameraError(tr('Could not access the camera. Allow access in your browser and reload the page.', 'No se pudo acceder a la camara. Permite el acceso en tu navegador y recarga la pagina.'));
     }
-  }, []);
+  }, [tr]);
 
   const capturePhoto = useCallback(async (target: 'selfie' | 'id_front' | 'id_back') => {
     try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
@@ -389,19 +412,19 @@ export default function SignTransactionPage() {
 
     // Guard: signature must exist and be a real data URL
     if (!signatureDataUrl || !signatureDataUrl.startsWith('data:')) {
-      toast.error('La firma no es valida. Por favor dibuja tu firma antes de continuar.');
+      toast.error(tr('Your signature isn\'t valid. Please draw your signature before continuing.', 'La firma no es valida. Por favor dibuja tu firma antes de continuar.'));
       submittingRef.current = false;
       return;
     }
 
     setSubmitting(true);
-    setSubmitStatus('Preparando envio...');
+    setSubmitStatus(tr('Preparing submission...', 'Preparando envio...'));
 
     // ── Step 1: Collect IP (non-blocking, never fails the flow) ──────────────
     let recipientIp = '';
     if (tx.security_config.advancedAuditTrail) {
       try {
-        setSubmitStatus('Obteniendo datos de auditoria...');
+        setSubmitStatus(tr('Gathering audit data...', 'Obteniendo datos de auditoria...'));
         const r = await fetch('https://api.ipify.org?format=json');
         const j = await r.json() as { ip?: string };
         recipientIp = j.ip ?? '';
@@ -442,7 +465,7 @@ export default function SignTransactionPage() {
     // legitimate first-time completion. The RPC checks the expected status
     // and applies the update atomically server-side and returns a real
     // boolean, regardless of the caller's read permissions.
-    setSubmitStatus('Guardando firma...');
+    setSubmitStatus(tr('Saving signature...', 'Guardando firma...'));
     try {
       const { data: completed, error } = await publicSupabase.rpc('complete_sign_transaction', {
         p_id: tx.id,
@@ -454,7 +477,7 @@ export default function SignTransactionPage() {
         console.error('Error al guardar firma en sign_transactions:', error);
         console.error('  code:', error.code, '| message:', error.message, '| details:', error.details);
         toast.error(
-          `No se pudo guardar la firma: ${error.message}`,
+          tr(`Could not save the signature: ${error.message}`, `No se pudo guardar la firma: ${error.message}`),
           { description: `Code: ${error.code}`, duration: 8000 },
         );
         return;
@@ -462,7 +485,7 @@ export default function SignTransactionPage() {
 
       if (!completed) {
         toast.error(
-          'Este documento ya fue firmado o modificado en otra sesión. Actualiza la página.',
+          tr('This document was already signed or modified in another session. Refresh the page.', 'Este documento ya fue firmado o modificado en otra sesión. Actualiza la página.'),
           { duration: 8000 },
         );
         setSteps(['loading', 'already_signed']);
@@ -510,7 +533,7 @@ export default function SignTransactionPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('Error al guardar firma (excepcion de red):', msg);
-      toast.error(`Error de red al guardar la firma: ${msg}`, { duration: 8000 });
+      toast.error(tr(`Network error while saving the signature: ${msg}`, `Error de red al guardar la firma: ${msg}`), { duration: 8000 });
     } finally {
       setSubmitting(false);
       setSubmitStatus('');
@@ -523,7 +546,7 @@ export default function SignTransactionPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
         <Loader className="size-8 animate-spin text-blue-600" />
-        <p className="text-sm text-slate-500">Cargando documento...</p>
+        <p className="text-sm text-slate-500">{tr('Loading document...', 'Cargando documento...')}</p>
       </div>
     );
   }
@@ -534,9 +557,12 @@ export default function SignTransactionPage() {
         <div className="rounded-full bg-red-100 p-4">
           <AlertCircle className="size-10 text-red-500" />
         </div>
-        <h1 className="text-xl font-bold text-slate-800">Enlace no valido o expirado</h1>
+        <h1 className="text-xl font-bold text-slate-800">{tr('Invalid or expired link', 'Enlace no valido o expirado')}</h1>
         <p className="text-slate-500 max-w-sm text-sm">
-          Este enlace de firma no existe o ya fue procesado. Contacta a quien te lo envio para que genere uno nuevo.
+          {tr(
+            'This signing link doesn\'t exist or was already processed. Contact whoever sent it to you to generate a new one.',
+            'Este enlace de firma no existe o ya fue procesado. Contacta a quien te lo envio para que genere uno nuevo.',
+          )}
         </p>
       </div>
     );
@@ -548,9 +574,12 @@ export default function SignTransactionPage() {
         <div className="rounded-full bg-emerald-100 p-4">
           <CheckCircle2 className="size-10 text-emerald-600" />
         </div>
-        <h1 className="text-xl font-bold text-slate-800">Documento ya firmado</h1>
+        <h1 className="text-xl font-bold text-slate-800">{tr('Document already signed', 'Documento ya firmado')}</h1>
         <p className="text-slate-500 max-w-sm text-sm">
-          Este documento ya fue firmado y procesado correctamente. No se admiten cambios adicionales.
+          {tr(
+            'This document was already signed and processed successfully. No further changes are accepted.',
+            'Este documento ya fue firmado y procesado correctamente. No se admiten cambios adicionales.',
+          )}
         </p>
       </div>
     );
@@ -565,17 +594,19 @@ export default function SignTransactionPage() {
         <div className="rounded-full bg-emerald-100 p-5">
           <CheckCircle2 className="size-14 text-emerald-600" />
         </div>
-        <h1 className="text-2xl font-black text-slate-800">Documento firmado exitosamente</h1>
+        <h1 className="text-2xl font-black text-slate-800">{tr('Document signed successfully', 'Documento firmado exitosamente')}</h1>
         <p className="text-slate-500 max-w-sm text-sm leading-relaxed">
-          Tu firma ha sido registrada con validez legal y almacenada de forma segura.
-          El creador del documento recibira una notificacion automatica.
+          {tr(
+            'Your signature has been legally recorded and securely stored. The document creator will receive an automatic notification.',
+            'Tu firma ha sido registrada con validez legal y almacenada de forma segura. El creador del documento recibira una notificacion automatica.',
+          )}
         </p>
         {tx?.security_config?.advancedAuditTrail && (
           <div className="rounded-2xl bg-white border border-slate-200 px-5 py-4 text-left text-xs text-slate-500 max-w-sm w-full shadow-sm space-y-1.5">
-            <p className="font-semibold text-slate-700 text-sm mb-2">Registro de auditoria</p>
-            <p>Documento: <span className="text-slate-800 font-medium">{tx.document_type?.replace(/-/g, ' ')}</span></p>
-            <p>ID de transaccion: <span className="text-slate-800 font-mono font-medium">{tx.id.slice(0, 8)}...</span></p>
-            <p>Firmado el: <span className="text-slate-800 font-medium">{new Date().toLocaleString('es-MX')}</span></p>
+            <p className="font-semibold text-slate-700 text-sm mb-2">{tr('Audit record', 'Registro de auditoria')}</p>
+            <p>{tr('Document', 'Documento')}: <span className="text-slate-800 font-medium">{tx.document_type?.replace(/-/g, ' ')}</span></p>
+            <p>{tr('Transaction ID', 'ID de transaccion')}: <span className="text-slate-800 font-mono font-medium">{tx.id.slice(0, 8)}...</span></p>
+            <p>{tr('Signed at', 'Firmado el')}: <span className="text-slate-800 font-medium">{new Date().toLocaleString(language === 'en' ? 'en-US' : 'es-MX')}</span></p>
           </div>
         )}
       </div>
@@ -596,13 +627,13 @@ export default function SignTransactionPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 leading-tight">Codec Document</p>
-          <p className="text-xs text-slate-500 leading-tight truncate">Firma electronica con validez legal</p>
+          <p className="text-xs text-slate-500 leading-tight truncate">{tr('Legally valid electronic signature', 'Firma electronica con validez legal')}</p>
         </div>
         <LanguageToggle />
         <VoiceGuideToggle className="hidden sm:flex" />
         {tx?.security_config?.requireEsignConsent && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-            {jurisdiction.badgeEs}
+            {tr(jurisdiction.badgeEn, jurisdiction.badgeEs)}
           </span>
         )}
       </div>
@@ -619,7 +650,7 @@ export default function SignTransactionPage() {
               <span>{docName}</span>
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
-              Se requiere tu firma para completar este documento
+              {tr('Your signature is required to complete this document', 'Se requiere tu firma para completar este documento')}
             </p>
           </div>
         </div>
@@ -629,10 +660,10 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <ShieldCheck className="size-5 text-blue-600 shrink-0" />
-              {jurisdiction.consentTitleEs}
+              {tr(jurisdiction.consentTitleEn, jurisdiction.consentTitleEs)}
             </h2>
             <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600 leading-relaxed max-h-44 overflow-y-auto">
-              {jurisdiction.consentBodyEs}
+              {tr(jurisdiction.consentBodyEn, jurisdiction.consentBodyEs)}
             </div>
             <label className="flex items-start gap-3 cursor-pointer group">
               <input
@@ -642,7 +673,10 @@ export default function SignTransactionPage() {
                 onChange={e => setEsignAccepted(e.target.checked)}
               />
               <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
-                Acepto el consentimiento de firma electronica y comprendo que mi firma tiene plena validez legal.
+                {tr(
+                  'I accept the electronic signature consent and understand my signature carries full legal validity.',
+                  'Acepto el consentimiento de firma electronica y comprendo que mi firma tiene plena validez legal.',
+                )}
               </span>
             </label>
             <button
@@ -651,7 +685,7 @@ export default function SignTransactionPage() {
               className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 38%,#1d4ed8 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
             >
-              Continuar <ChevronRight className="size-4" />
+              {tr('Continue', 'Continuar')} <ChevronRight className="size-4" />
             </button>
           </div>
         )}
@@ -661,35 +695,49 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <Fingerprint className="size-5 text-pink-600 shrink-0" />
-              Autenticacion Biometrica
+              {tr('Biometric Authentication', 'Autenticacion Biometrica')}
             </h2>
             <p className="text-sm text-slate-500">
-              Confirma tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Esto ocurre localmente — tu huella o rostro nunca se envian a nuestros servidores.
+              {tr(
+                'This step confirms your identity using your own device\'s fingerprint or Face ID sensor. It happens locally — the fingerprint or face scan itself is never sent to our servers, only a cryptographic confirmation that your device verified you.',
+                'Este paso confirma tu identidad usando el sensor de huella o Face ID de tu propio dispositivo. Ocurre localmente — la huella o el escaneo facial en si nunca se envian a nuestros servidores, solo una confirmacion criptografica de que tu dispositivo te verifico.',
+              )}
             </p>
+            {(tx?.security_config?.requireSelfie || tx?.security_config?.requireIdPhoto) && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                {tr(
+                  'Note: this document separately also asks for a selfie/ID photo in a later step — that photo IS captured and stored as evidence, unlike this fingerprint/Face ID check.',
+                  'Nota: este documento tambien pide por separado una selfie o foto de identificacion en un paso posterior — esa foto SI se captura y almacena como evidencia, a diferencia de esta verificacion por huella/Face ID.',
+                )}
+              </div>
+            )}
 
             {biometricStatus === 'checking' && (
               <div className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
-                <Loader className="size-4 animate-spin shrink-0" /> Verificando compatibilidad del dispositivo...
+                <Loader className="size-4 animate-spin shrink-0" /> {tr('Checking device compatibility...', 'Verificando compatibilidad del dispositivo...')}
               </div>
             )}
 
             {biometricStatus === 'unavailable' && (
               <div className="space-y-3">
                 <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed">
-                  Este dispositivo no tiene un sensor de huella o Face ID compatible (o el navegador no lo soporta). Usa un telefono con huella/Face ID, o una computadora con Windows Hello, para continuar. Si no es posible, contacta a quien te envio el documento.
+                  {tr(
+                    'This device doesn\'t have a compatible fingerprint/Face ID sensor (or the browser doesn\'t support it). Use a phone with fingerprint/Face ID, or a computer with Windows Hello, to continue. If that\'s not possible, contact whoever sent you the document.',
+                    'Este dispositivo no tiene un sensor de huella o Face ID compatible (o el navegador no lo soporta). Usa un telefono con huella/Face ID, o una computadora con Windows Hello, para continuar. Si no es posible, contacta a quien te envio el documento.',
+                  )}
                 </div>
                 <button
                   onClick={() => setBiometricStatus('idle')}
                   className="w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
-                  Reintentar
+                  {tr('Try again', 'Reintentar')}
                 </button>
               </div>
             )}
 
             {biometricStatus === 'error' && (
               <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700 leading-relaxed">
-                {biometricError || 'No se pudo completar la verificacion biometrica.'}
+                {biometricError || tr('Biometric verification could not be completed.', 'No se pudo completar la verificacion biometrica.')}
               </div>
             )}
 
@@ -698,7 +746,7 @@ export default function SignTransactionPage() {
                 <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
                   <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
                   <div className="text-sm">
-                    <p className="font-semibold text-emerald-800">Identidad verificada</p>
+                    <p className="font-semibold text-emerald-800">{tr('Identity verified', 'Identidad verificada')}</p>
                     <p className="text-xs text-emerald-700">{biometricDeviceLabel}</p>
                   </div>
                 </div>
@@ -707,7 +755,7 @@ export default function SignTransactionPage() {
                   className="w-full rounded-xl py-3 text-sm font-bold text-white hover:brightness-110 transition-all"
                   style={{ background: 'linear-gradient(180deg,#f472b6 0%,#db2777 68%,#9d174d 100%)', boxShadow: '0 3px 0 #831843' }}
                 >
-                  Continuar
+                  {tr('Continue', 'Continuar')}
                 </button>
               </div>
             ) : (biometricStatus === 'idle' || biometricStatus === 'error') && (
@@ -716,15 +764,67 @@ export default function SignTransactionPage() {
                 className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:brightness-110 transition-all"
                 style={{ background: 'linear-gradient(180deg,#f472b6 0%,#db2777 68%,#9d174d 100%)', boxShadow: '0 3px 0 #831843' }}
               >
-                <Fingerprint className="size-4" /> Verificar con huella / Face ID
+                <Fingerprint className="size-4" /> {tr('Verify with fingerprint / Face ID', 'Verificar con huella / Face ID')}
               </button>
             )}
 
             {biometricStatus === 'prompting' && (
               <div className="flex items-center gap-2 rounded-xl bg-pink-50 border border-pink-200 px-4 py-3 text-sm text-pink-700">
-                <Loader className="size-4 animate-spin shrink-0" /> Sigue las instrucciones de tu dispositivo...
+                <Loader className="size-4 animate-spin shrink-0" /> {tr('Follow your device\'s prompt...', 'Sigue las instrucciones de tu dispositivo...')}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Identity Photo Consent Step ── */}
+        {currentStep === 'identity_consent' && (
+          <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
+              <ShieldCheck className="size-5 text-blue-600 shrink-0" />
+              {tr('Photo & Identity Data Consent', 'Consentimiento de Datos de Identidad y Foto')}
+            </h2>
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600 leading-relaxed space-y-2">
+              <p>
+                {tr(
+                  'This document also requires a photo of your face and/or ID as evidence of your identity.',
+                  'Este documento tambien requiere una foto de tu rostro y/o de tu identificacion como evidencia de tu identidad.',
+                )}
+              </p>
+              <p className="font-semibold text-slate-700">
+                {tr(
+                  'Unlike a fingerprint/Face ID check, this photo IS captured and stored — attached to this document as part of its audit trail.',
+                  'A diferencia de la verificacion por huella/Face ID, esta foto SI se captura y se almacena, adjunta a este documento como parte de su registro de auditoria.',
+                )}
+              </p>
+              <p>
+                {tr(
+                  'It is used solely to verify your identity as the signer of this document and is not used for facial-recognition matching against any other database.',
+                  'Se usa unicamente para verificar tu identidad como firmante de este documento y no se utiliza para reconocimiento facial contra ninguna otra base de datos.',
+                )}
+              </p>
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 rounded border-slate-300 accent-blue-600 cursor-pointer"
+                checked={identityConsentAccepted}
+                onChange={e => setIdentityConsentAccepted(e.target.checked)}
+              />
+              <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
+                {tr(
+                  'I understand and consent to a photo of my face and/or ID being captured and stored for identity verification of this document.',
+                  'Entiendo y doy mi consentimiento para que se capture y almacene una foto de mi rostro y/o mi identificacion para la verificacion de identidad de este documento.',
+                )}
+              </span>
+            </label>
+            <button
+              disabled={!identityConsentAccepted}
+              onClick={advance}
+              className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:brightness-110 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 38%,#1d4ed8 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
+            >
+              {tr('Continue', 'Continuar')} <ChevronRight className="size-4" />
+            </button>
           </div>
         )}
 
@@ -733,16 +833,16 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <Camera className="size-5 text-blue-600 shrink-0" />
-              Selfie de Verificacion de Identidad
+              {tr('Identity Verification Selfie', 'Selfie de Verificacion de Identidad')}
             </h2>
             <p className="text-sm text-slate-500">
-              Toma una foto clara de tu rostro mirando directamente a la camara.
+              {tr('Take a clear photo of your face looking directly at the camera.', 'Toma una foto clara de tu rostro mirando directamente a la camara.')}
             </p>
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-              <p className="font-semibold">Center your face inside the circle</p>
-              <p>✓ Look directly at camera</p>
-              <p>✓ Remove sunglasses</p>
-              <p>✓ Good lighting</p>
+              <p className="font-semibold">{tr('Center your face inside the circle', 'Centra tu rostro dentro del circulo')}</p>
+              <p>✓ {tr('Look directly at camera', 'Mira directamente a la camara')}</p>
+              <p>✓ {tr('Remove sunglasses', 'Quitate los lentes de sol')}</p>
+              <p>✓ {tr('Good lighting', 'Buena iluminacion')}</p>
             </div>
 
             {selfieDataUrl ? (
@@ -755,14 +855,14 @@ export default function SignTransactionPage() {
                     onClick={() => { setSelfieDataUrl(''); startCamera('user'); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    Repetir foto
+                    {tr('Retake photo', 'Repetir foto')}
                   </button>
                   <button
                     onClick={advance}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white hover:brightness-110 transition-all"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    Usar esta foto
+                    {tr('Use this photo', 'Usar esta foto')}
                   </button>
                 </div>
               </div>
@@ -783,14 +883,14 @@ export default function SignTransactionPage() {
                     onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 flex items-center justify-center gap-1.5"
                   >
-                    <X className="size-4" /> Cancelar
+                    <X className="size-4" /> {tr('Cancel', 'Cancelar')}
                   </button>
                   <button
                     onClick={() => capturePhoto('selfie')}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    <Camera className="size-4" /> Capturar
+                    <Camera className="size-4" /> {tr('Capture', 'Capturar')}
                   </button>
                 </div>
                 {cameraError && <p className="text-xs text-red-500 text-center">{cameraError}</p>}
@@ -801,7 +901,7 @@ export default function SignTransactionPage() {
                 className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:brightness-110 transition-all"
                 style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
               >
-                <Camera className="size-4" /> Abrir Camara Frontal
+                <Camera className="size-4" /> {tr('Open Front Camera', 'Abrir Camara Frontal')}
               </button>
             )}
           </div>
@@ -812,17 +912,17 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <CreditCard className="size-5 text-blue-600 shrink-0" />
-              Documento de Identidad (Frente y Reverso)
+              {tr('ID Document (Front and Back)', 'Documento de Identidad (Frente y Reverso)')}
             </h2>
             <p className="text-sm text-slate-500">
-              Captura ambas caras de tu documento oficial en alta definición para completar la verificación legal.
+              {tr('Capture both sides of your official ID in high definition to complete legal verification.', 'Captura ambas caras de tu documento oficial en alta definición para completar la verificación legal.')}
             </p>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-              <p className="font-semibold">Captura requerida: frente y reverso</p>
-              <p>✓ Entire document is visible</p>
-              <p>✓ No glare</p>
-              <p>✓ Good lighting</p>
-              <p>✓ All corners visible</p>
+              <p className="font-semibold">{tr('Required capture: front and back', 'Captura requerida: frente y reverso')}</p>
+              <p>✓ {tr('Entire document is visible', 'Todo el documento es visible')}</p>
+              <p>✓ {tr('No glare', 'Sin reflejos')}</p>
+              <p>✓ {tr('Good lighting', 'Buena iluminacion')}</p>
+              <p>✓ {tr('All corners visible', 'Todas las esquinas visibles')}</p>
             </div>
 
             {(idFrontDataUrl || idBackDataUrl) && !cameraActive ? (
@@ -832,17 +932,17 @@ export default function SignTransactionPage() {
                     {idFrontDataUrl ? (
                       <img src={idFrontDataUrl} alt="id-front" className="w-full object-contain bg-white max-h-52" />
                     ) : (
-                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">Frente pendiente</div>
+                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">{tr('Front pending', 'Frente pendiente')}</div>
                     )}
-                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">Frente</p>
+                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">{tr('Front', 'Frente')}</p>
                   </div>
                   <div className="rounded-xl overflow-hidden border border-slate-200 bg-white">
                     {idBackDataUrl ? (
                       <img src={idBackDataUrl} alt="id-back" className="w-full object-contain bg-white max-h-52" />
                     ) : (
-                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">Reverso pendiente</div>
+                      <div className="flex h-32 items-center justify-center text-xs text-slate-400">{tr('Back pending', 'Reverso pendiente')}</div>
                     )}
-                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">Reverso</p>
+                    <p className="border-t border-slate-100 px-3 py-2 text-center text-xs font-semibold text-slate-600">{tr('Back', 'Reverso')}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -850,13 +950,13 @@ export default function SignTransactionPage() {
                     onClick={() => { setIdCaptureSide('front'); void startCamera('environment'); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    {idFrontDataUrl ? 'Repetir frente' : 'Capturar frente'}
+                    {idFrontDataUrl ? tr('Retake front', 'Repetir frente') : tr('Capture front', 'Capturar frente')}
                   </button>
                   <button
                     onClick={() => { setIdCaptureSide('back'); void startCamera('environment'); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    {idBackDataUrl ? 'Repetir reverso' : 'Capturar reverso'}
+                    {idBackDataUrl ? tr('Retake back', 'Repetir reverso') : tr('Capture back', 'Capturar reverso')}
                   </button>
                 </div>
                 <div className="flex gap-2">
@@ -866,7 +966,7 @@ export default function SignTransactionPage() {
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white hover:brightness-110 transition-all"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    Continuar
+                    {tr('Continue', 'Continuar')}
                   </button>
                 </div>
               </div>
@@ -887,14 +987,14 @@ export default function SignTransactionPage() {
                     onClick={() => { streamRef.current?.getTracks().forEach(t => t.stop()); setCameraActive(false); }}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 flex items-center justify-center gap-1.5"
                   >
-                    <X className="size-4" /> Cancelar
+                    <X className="size-4" /> {tr('Cancel', 'Cancelar')}
                   </button>
                   <button
                     onClick={() => capturePhoto(idCaptureSide === 'front' ? 'id_front' : 'id_back')}
                     className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5"
                     style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
                   >
-                    <Camera className="size-4" /> {idCaptureSide === 'front' ? 'Capturar frente' : 'Capturar reverso'}
+                    <Camera className="size-4" /> {idCaptureSide === 'front' ? tr('Capture front', 'Capturar frente') : tr('Capture back', 'Capturar reverso')}
                   </button>
                 </div>
               </div>
@@ -904,7 +1004,7 @@ export default function SignTransactionPage() {
                 className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:brightness-110 transition-all"
                 style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #1e3a8a' }}
               >
-                <CreditCard className="size-4" /> Fotografiar Frente del Documento
+                <CreditCard className="size-4" /> {tr('Photograph Front of Document', 'Fotografiar Frente del Documento')}
               </button>
             )}
           </div>
@@ -915,17 +1015,17 @@ export default function SignTransactionPage() {
           <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-4">
             <h2 className="font-bold text-slate-800 flex items-center gap-2 text-base">
               <PenLine className="size-5 text-blue-600 shrink-0" />
-              Firma el Documento
+              {tr('Sign the Document', 'Firma el Documento')}
             </h2>
             <p className="text-sm text-slate-500">
-              Dibuja tu firma o escribe tu nombre para crear tu firma electronica con validez legal.
+              {tr('Draw your signature or type your name to create your legally valid electronic signature.', 'Dibuja tu firma o escribe tu nombre para crear tu firma electronica con validez legal.')}
             </p>
 
             {signatureDataUrl ? (
               <div className="space-y-4">
                 {/* Signature preview */}
                 <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4 flex items-center justify-center min-h-[80px]">
-                  <img src={signatureDataUrl} alt="Tu firma" className="max-h-24 object-contain" />
+                  <img src={signatureDataUrl} alt={tr('Your signature', 'Tu firma')} className="max-h-24 object-contain" />
                 </div>
 
                 {submitting && submitStatus && (
@@ -941,7 +1041,7 @@ export default function SignTransactionPage() {
                     disabled={submitting}
                     className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-colors"
                   >
-                    Cambiar firma
+                    {tr('Change signature', 'Cambiar firma')}
                   </button>
                   <button
                     onClick={handleFinalSubmit}
@@ -953,13 +1053,13 @@ export default function SignTransactionPage() {
                     }}
                   >
                     {submitting
-                      ? <><Loader className="size-4 animate-spin" /> Enviando...</>
-                      : <><Upload className="size-4" /> Confirmar y Enviar Firma</>
+                      ? <><Loader className="size-4 animate-spin" /> {tr('Sending...', 'Enviando...')}</>
+                      : <><Upload className="size-4" /> {tr('Confirm and Send Signature', 'Confirmar y Enviar Firma')}</>
                     }
                   </button>
                 </div>
                 <p className="text-center text-xs text-slate-400">
-                  La firma quedará ubicada automáticamente en el lugar correcto del documento.
+                  {tr('Your signature will be placed automatically in the correct spot on the document.', 'La firma quedará ubicada automáticamente en el lugar correcto del documento.')}
                 </p>
               </div>
             ) : (
@@ -971,7 +1071,7 @@ export default function SignTransactionPage() {
                   boxShadow: '0 3px 0 #1e3a8a,0 5px 14px rgba(29,78,216,0.55)',
                 }}
               >
-                <PenLine className="size-4" /> Crear mi Firma
+                <PenLine className="size-4" /> {tr('Create my Signature', 'Crear mi Firma')}
               </button>
             )}
           </div>

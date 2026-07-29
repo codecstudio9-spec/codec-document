@@ -123,9 +123,15 @@ Deno.serve(async (req) => {
         });
       }
 
+      // userID must be supplied explicitly — @simplewebauthn/server does not
+      // synthesize one, and without it the JSON response comes back with no
+      // `user.id` at all, which crashes the browser's
+      // navigator.credentials.create() call (it requires user.id).
+      const userID = crypto.getRandomValues(new Uint8Array(32));
       const options = await generateRegistrationOptions({
         rpName: RP_NAME,
         rpID: rp.rpID,
+        userID,
         userName: 'signer',
         userDisplayName: 'Document Signer',
         attestationType: 'none',
@@ -143,7 +149,15 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + CHALLENGE_TTL_MS).toISOString(),
       });
 
-      return new Response(JSON.stringify(options), { headers: corsHeaders(origin) });
+      // Force user.id to a base64url string ourselves — the resolved
+      // @simplewebauthn/server build echoes back whatever Uint8Array we
+      // passed as `userID` without base64url-encoding it, which serializes
+      // to `{"0":195,"1":41,...}` over JSON and crashes the browser's
+      // navigator.credentials.create() (it needs a BufferSource it can
+      // decode, not an array-like object of numbers).
+      const optionsJSON = { ...options, user: { ...options.user, id: bufToBase64url(userID) } };
+
+      return new Response(JSON.stringify(optionsJSON), { headers: corsHeaders(origin) });
     }
 
     if (action === 'verify') {
