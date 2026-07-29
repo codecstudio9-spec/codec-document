@@ -18,14 +18,15 @@
 // no separate deploy step, just part of the normal `vercel deploy` /
 // git-push-triggered build for this project.
 
-import { next } from '@vercel/edge';
+import { next } from '@vercel/functions';
 import { getHreflangCluster } from './src/app/data/hreflang-clusters';
 
 const SITE = 'https://www.codecdocument.com';
 
 // App/product routes have no independent SEO identity of their own (behind
 // auth, or a functional tool page, not a landing page) — leave them alone.
-const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|sign|checkout|success)(\/|$)/;
+// Keep in sync with EXCLUDE_PREFIXES/EXCLUDE_EXACT in scripts/generate-sitemap.mjs.
+const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|dashboard|app|sign|checkout|success)(\/|$)/;
 
 export default function middleware(request: Request) {
   const url = new URL(request.url);
