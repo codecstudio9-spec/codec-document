@@ -8,12 +8,16 @@
 export const SITE_URL =
   (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, '') || 'https://www.codecdocument.com';
 
-export const SUPPORT_EMAIL =
-  (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || 'support@codecdocument.com';
-
-/** General inquiries — footer/contact-us surfaces. */
+/** General inquiries — footer/contact-us surfaces. Also backs SUPPORT_EMAIL
+ * below: there is no separate support@ mailbox actually set up, only this
+ * one and BUSINESS_EMAIL, so "support" surfaces (Settings, refund policy,
+ * the home FAQ) point here too rather than to a real-looking but
+ * non-existent address. */
 export const INFO_EMAIL =
   (import.meta.env.VITE_INFO_EMAIL as string | undefined) || 'info@codecdocument.com';
+
+export const SUPPORT_EMAIL =
+  (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || INFO_EMAIL;
 
 /** Business/enterprise sales inquiries. */
 export const BUSINESS_EMAIL =
