@@ -50,7 +50,7 @@ async function docxToHtmlWithInlineImages(docxArrayBuffer: ArrayBuffer): Promise
     { arrayBuffer: docxArrayBuffer },
     {
       convertImage: mammoth.images.imgElement((image) =>
-        image.read('base64').then((b64) => ({ src: `data:${image.contentType};base64,${b64}` })),
+        image.read('base64').then((b64) => ({ src: `data:${image.contentType || 'image/png'};base64,${b64}` })),
       ),
     },
   );
@@ -103,14 +103,22 @@ export async function renderDocxToPageImages(mergedDocxBytes: ArrayBuffer): Prom
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => requestAnimationFrame(r));
 
-    const captured = await html2canvas(container, {
-      scale: RENDER_SCALE,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: RENDER_WIDTH_PX,
-    });
+    // html2canvas can hang indefinitely on a malformed embedded image
+    // instead of rejecting (observed with a mis-typed data: URI) — a
+    // race against a generous timeout turns that into a real error the
+    // caller's catch block can show, instead of a stuck "Preparando..."
+    // forever.
+    const captured = await Promise.race([
+      html2canvas(container, {
+        scale: RENDER_SCALE,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: RENDER_WIDTH_PX,
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out rendering the document page.')), 25000)),
+    ]);
 
     if (!captured || captured.width === 0 || captured.height === 0) return [];
 
