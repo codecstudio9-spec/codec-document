@@ -80,11 +80,19 @@ export function ModernHomePage() {
   // — confirmed explicitly with the user (see conversation). US or
   // undetected visitors keep the exact original experience.
   const [visitorIsLatam, setVisitorIsLatam] = useState(false);
+  // Manual override — ?market=us / ?market=latam in the URL — so anyone
+  // (not just an account whose real IP happens to geolocate to the other
+  // market) can preview either home experience on demand. Wins over the
+  // real geo-detection below when present; the footer link that sets this
+  // is exactly for that "let me see the other version" use case.
+  const marketOverride = new URLSearchParams(window.location.search).get('market');
   useEffect(() => {
+    if (marketOverride === 'us' || marketOverride === 'latam') return;
     detectSignerCountryCode().then((code) => {
       if (code && code !== 'US') setVisitorIsLatam(true);
     }).catch(() => {});
-  }, []);
+  }, [marketOverride]);
+  const effectiveIsLatam = marketOverride === 'us' ? false : marketOverride === 'latam' ? true : visitorIsLatam;
 
   // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
   // not) gets the bottom-nav app shell instead of the long-scroll landing
@@ -1071,7 +1079,7 @@ export function ModernHomePage() {
 
       {/* This whole page is desktop-only now (mobile redirects to /app
           above), so the hero always renders — no mobile branching left. */}
-      {visitorIsLatam ? <LatamHero /> : <ModernHero />}
+      {effectiveIsLatam ? <LatamHero /> : <ModernHero />}
 
       {/* US document templates — hidden entirely for a visitor detected
           outside the US (LatamHero above is their actual home experience),
@@ -1079,9 +1087,9 @@ export function ModernHomePage() {
           Argentine NDA. Exception: the account owner's own admin email
           always sees both interfaces, needed to review/demo either market
           regardless of where they're actually connecting from. */}
-      {(!visitorIsLatam || isAdminEmail(user?.email)) && (
+      {(!effectiveIsLatam || isAdminEmail(user?.email)) && (
         <section id="documents-section">
-          {visitorIsLatam && (
+          {effectiveIsLatam && (
             <div className="bg-slate-50 pt-14 text-center">
               <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
                 {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
@@ -1727,6 +1735,22 @@ export function ModernHomePage() {
                   {language === 'en' ? c.name : c.nameEs}
                 </a>
               ))}
+            </div>
+
+            {/* Manual market preview — lets anyone (not just a visitor whose
+                real IP happens to geolocate to the other market) see the
+                other home experience on demand, via the ?market= override
+                above. */}
+            <div className="mb-6 text-xs text-slate-500">
+              {effectiveIsLatam ? (
+                <a href="/?market=us" className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-white">
+                  🇺🇸 {language === 'en' ? 'Viewing the LatAm experience — see the US version' : 'Viendo la experiencia LatAm — ver la versión para Estados Unidos'}
+                </a>
+              ) : (
+                <a href="/?market=latam" className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-white">
+                  🌎 {language === 'en' ? 'Viewing the US experience — see the Latin America version' : 'Viendo la experiencia de EE. UU. — ver la versión para Latinoamérica'}
+                </a>
+              )}
             </div>
 
             {/* Bottom strip */}

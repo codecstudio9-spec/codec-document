@@ -161,6 +161,12 @@ export function LatamHero() {
       <div className="relative z-10 flex min-h-[78vh] items-center">
         {/* LEFT — text */}
         <div className="flex w-full flex-col justify-center px-5 pt-20 pb-14 sm:px-8 sm:pt-24 sm:pb-16 lg:w-[54%] lg:px-12 xl:px-16 lg:pt-0 lg:pb-0 lg:py-16">
+          {/* Free hook — most important line for a first-time visitor */}
+          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/15 px-4 py-1.5 text-xs font-bold text-emerald-300 backdrop-blur-sm">
+            <Zap className="size-3.5" />
+            {language === 'en' ? 'Free documents & e-signatures to get started' : 'Documentos y firmas electrónicas gratis para empezar'}
+          </div>
+
           <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white/55 backdrop-blur-sm">
             <span className="flex size-1.5 rounded-full bg-blue-400" />
             {String(current + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
