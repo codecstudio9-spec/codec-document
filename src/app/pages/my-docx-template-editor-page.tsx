@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { useCompany } from '../hooks/useCompany';
-import { detectFields, type DetectedField, type DetectedFieldType } from '../../lib/docxTemplateEngine';
+import { detectFields, detectBoldFields, type DetectedField, type DetectedFieldType } from '../../lib/docxTemplateEngine';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
   type TemplateSigner,
@@ -101,19 +101,43 @@ export function MyDocxTemplateEditorPage() {
     setError('');
     try {
       const buffer = await file.arrayBuffer();
-      const detected = detectFields(buffer);
+      let detected = detectFields(buffer);
+      let fileForUpload: File = file;
+
+      if (detected.length === 0) {
+        // No {{variables}} typed by hand — this is the common case for a
+        // real contract someone already filled in (or a template migrated
+        // from another platform like ZapSign), where the answers are just
+        // bold text after a label ("Nombre: Juan"). Auto-detect those and
+        // silently rewrite the document to use {{tags}} in those spots —
+        // everything downstream works exactly the same either way.
+        try {
+          const { fields: boldFields, transformedDocx } = detectBoldFields(buffer);
+          detected = boldFields;
+          fileForUpload = new File(
+            [transformedDocx], file.name,
+            { type: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+          );
+          toast.success(language === 'en'
+            ? `Detected ${boldFields.length} bold field(s) automatically`
+            : `Se detectaron ${boldFields.length} campo(s) en negrita automáticamente`);
+        } catch {
+          // Falls through to the "no fields found" error below.
+        }
+      }
+
       if (detected.length === 0) {
         setError(language === 'en'
-          ? 'No {{variables}} were found in this document. Add at least one, e.g. {{client_name}}.'
-          : 'No se encontraron {{variables}} en este documento. Agrega al menos una, ej. {{nombre_cliente}}.');
+          ? 'No {{variables}} or bold values with a label (e.g. "Name: John") were found in this document.'
+          : 'No se encontraron {{variables}} ni valores en negrita con una etiqueta (ej. "Nombre: Juan") en este documento.');
         return;
       }
       setFields(detected);
       setFieldsOpen(true);
-      setDocxFile(file);
+      setDocxFile(fileForUpload);
       // Object URL only for the "file selected" UI state below — the real
       // stored URL comes from uploadDocxTemplateFile on save.
-      setDocxFileUrl(URL.createObjectURL(file));
+      setDocxFileUrl(URL.createObjectURL(fileForUpload));
       if (!templateName) setTemplateName(file.name.replace(/\.docx$/i, ''));
     } catch {
       setError(language === 'en' ? 'Could not read this .docx file — is it a valid Word document?' : 'No se pudo leer este archivo .docx — ¿es un documento de Word válido?');

@@ -198,3 +198,192 @@ export async function fetchDocxArrayBuffer(url: string): Promise<ArrayBuffer> {
   if (!res.ok) throw new Error(`No se pudo descargar el archivo de plantilla (${res.status})`);
   return res.arrayBuffer();
 }
+
+// ─── Bold-value auto-detection ───────────────────────────────────────────
+//
+// For a real-world contract like "Apellidos: RINCON BARRERA Nombres: IVON
+// NATALY" (already-filled documents, or templates from another platform
+// like ZapSign, that mark answers with bold instead of {{tags}}), typing
+// {{}} by hand around every value isn't realistic — this detects the bold
+// value automatically and REWRITES the underlying document.xml so the
+// bold run's text becomes {{key}}, keeping the SAME <w:rPr> (so the merged
+// value still renders bold, matching the original design exactly). The
+// result feeds straight into the existing detectFields/renderDocxTemplate
+// pipeline — nothing downstream needs to know a document was auto-tagged
+// instead of hand-authored.
+
+const MAX_BOLD_FIELD_VALUE_LENGTH = 150;
+
+function slugifyKey(label: string): string {
+  return label
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/(^_+|_+$)/g, '')
+    .slice(0, 40) || 'campo';
+}
+
+function extractRunText(runXml: string): string {
+  const textRe = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+  let out = '';
+  let m: RegExpExecArray | null;
+  while ((m = textRe.exec(runXml))) out += m[1];
+  return out;
+}
+
+/** Direct run-level bold (Ctrl+B on a value) only — NOT bold coming from a
+ * paragraph style (headings/titles), which is exactly what keeps section
+ * titles like "CLAUSULAS." or "DATOS TITULAR DEL CONTRATO" from being
+ * mistaken for fillable values. */
+function isRunBold(runXml: string): boolean {
+  const rPrMatch = /<w:rPr>[\s\S]*?<\/w:rPr>/.exec(runXml);
+  if (!rPrMatch) return false;
+  const bMatch = /<w:b(\s[^/>]*)?\/?>/.exec(rPrMatch[0]);
+  if (!bMatch) return false;
+  const attrs = bMatch[1] ?? '';
+  return !/w:val\s*=\s*"(0|false)"/i.test(attrs);
+}
+
+type ParaToken =
+  | { kind: 'run'; xml: string; text: string; bold: boolean }
+  | { kind: 'gap'; xml: string };
+
+function tokenizeParagraphRuns(paragraphXml: string): ParaToken[] {
+  const runRe = /<w:r(?:\s[^>]*)?>[\s\S]*?<\/w:r>/g;
+  const tokens: ParaToken[] = [];
+  let lastEnd = 0;
+  let m: RegExpExecArray | null;
+  while ((m = runRe.exec(paragraphXml))) {
+    if (m.index > lastEnd) tokens.push({ kind: 'gap', xml: paragraphXml.slice(lastEnd, m.index) });
+    const runXml = m[0];
+    tokens.push({ kind: 'run', xml: runXml, text: decodeXmlEntities(extractRunText(runXml)), bold: isRunBold(runXml) });
+    lastEnd = runRe.lastIndex;
+  }
+  if (lastEnd < paragraphXml.length) tokens.push({ kind: 'gap', xml: paragraphXml.slice(lastEnd) });
+  return tokens;
+}
+
+/**
+ * Walks one paragraph's runs in order. Consecutive bold runs (gaps like
+ * <w:proofErr>/bookmarks in between don't break the streak, only a real
+ * non-bold RUN does) are treated as one candidate field — but only turned
+ * into {{key}} when the plain text immediately before it ends in a label
+ * punctuation mark (":", "-", "–" — same rule as extractContextualLabel,
+ * reused as-is), so a bolded clause title ("PRIMERA-NATURALEZA DEL
+ * CONTRATO:") or mid-sentence emphasis never gets mistaken for a value:
+ * in both of those cases the colon is INSIDE the bold text itself (or
+ * there's no colon at all right before it), not in the preceding plain
+ * text, so the check fails and the original bold is left untouched.
+ */
+function rewriteParagraphBoldFields(
+  paragraphXml: string,
+  usedKeyCounts: Map<string, number>,
+): { xml: string; detected: DetectedField[] } {
+  const tokens = tokenizeParagraphRuns(paragraphXml);
+  const detected: DetectedField[] = [];
+  let out = '';
+  let plainTextAcc = '';
+  let pending: ParaToken[] = [];
+
+  const flushPending = () => {
+    if (pending.length === 0) return;
+    const boldRuns = pending.filter((t): t is Extract<ParaToken, { kind: 'run' }> => t.kind === 'run');
+    const combinedText = boldRuns.map((r) => r.text).join('');
+    const contextualLabel = extractContextualLabel(plainTextAcc);
+    const trimmedValue = combinedText.trim();
+
+    if (boldRuns.length > 0 && contextualLabel && trimmedValue && trimmedValue.length <= MAX_BOLD_FIELD_VALUE_LENGTH) {
+      const baseKey = slugifyKey(contextualLabel);
+      const n = (usedKeyCounts.get(baseKey) ?? 0) + 1;
+      usedKeyCounts.set(baseKey, n);
+      const key = n > 1 ? `${baseKey}_${n}` : baseKey;
+      const label = n > 1 ? `${contextualLabel} (${n})` : contextualLabel;
+      const rPrMatch = /<w:rPr>[\s\S]*?<\/w:rPr>/.exec(boldRuns[0].xml);
+      out += `<w:r>${rPrMatch ? rPrMatch[0] : ''}<w:t xml:space="preserve">{{${key}}}</w:t></w:r>`;
+      detected.push({ key, label, type: 'text', required: true });
+      plainTextAcc = '';
+    } else {
+      out += pending.map((t) => t.xml).join('');
+      plainTextAcc += combinedText;
+    }
+    pending = [];
+  };
+
+  for (const token of tokens) {
+    if (token.kind === 'gap') {
+      pending.push(token);
+      continue;
+    }
+    if (token.bold) {
+      pending.push(token);
+    } else {
+      flushPending();
+      out += token.xml;
+      plainTextAcc += token.text;
+    }
+  }
+  flushPending();
+
+  return { xml: out, detected };
+}
+
+/**
+ * Same paragraph-boundary scan as extractParagraphs/flattenParagraphText,
+ * but rebuilding the xml via slice+concat around exec() match indices
+ * (not xml.match()+string.replace()) — two paragraphs with byte-identical
+ * XML (e.g. two short empty ones) would otherwise make a plain string
+ * .replace() rewrite the wrong instance.
+ */
+function rewriteDocumentXmlBoldFields(xml: string): { xml: string; fields: DetectedField[] } {
+  const paragraphRe = /<w:p[ >][\s\S]*?<\/w:p>/g;
+  const usedKeyCounts = new Map<string, number>();
+  const fields: DetectedField[] = [];
+  let result = '';
+  let lastEnd = 0;
+  let m: RegExpExecArray | null;
+  while ((m = paragraphRe.exec(xml))) {
+    result += xml.slice(lastEnd, m.index);
+    const { xml: newParaXml, detected } = rewriteParagraphBoldFields(m[0], usedKeyCounts);
+    result += newParaXml;
+    fields.push(...detected);
+    lastEnd = paragraphRe.lastIndex;
+  }
+  result += xml.slice(lastEnd);
+  return { xml: result, fields };
+}
+
+/**
+ * Fallback detection mode for documents with no {{variables}} typed by
+ * hand — auto-detects bold values preceded by a "Label:" style hint and
+ * rewrites the .docx in place so those spots become {{key}} (bold
+ * formatting preserved), then returns the SAME DetectedField[] shape
+ * detectFields() produces. The returned `transformedDocx` is what should
+ * actually get uploaded/stored — everything downstream (renderDocxTemplate,
+ * the public fill page, GenerateSendModal) treats it exactly like a
+ * template someone tagged with {{}} by hand.
+ *
+ * Deliberately does NOT try to merge repeated labels (e.g. "Apellidos"
+ * appearing under both "Datos Titular" and "Datos del Beneficiario") into
+ * one shared key — two different people can have different last names
+ * even if today's example document happens to repeat the same value, so
+ * merging by label text alone would risk silently overwriting one
+ * person's data with another's. Repeats get distinct keys/labels
+ * ("Apellidos", "Apellidos (2)", ...) instead — safe by default, and the
+ * admin can still rename a field's key in the editor to intentionally
+ * reuse another field's key if they want one input to fill both.
+ */
+export function detectBoldFields(docxArrayBuffer: ArrayBuffer): { fields: DetectedField[]; transformedDocx: ArrayBuffer } {
+  const zip = new PizZip(docxArrayBuffer);
+  const docXmlFile = zip.file('word/document.xml');
+  if (!docXmlFile) {
+    throw new Error('Archivo .docx inválido: no se encontró word/document.xml (¿es realmente un archivo de Word?)');
+  }
+  const xml = docXmlFile.asText();
+  const { xml: newXml, fields } = rewriteDocumentXmlBoldFields(xml);
+  if (fields.length === 0) {
+    throw new Error('No se detectó texto en negrita precedido de una etiqueta (ej. "Nombre: ") en este documento.');
+  }
+  zip.file('word/document.xml', newXml);
+  const transformedDocx = zip.generate({ type: 'arraybuffer' }) as ArrayBuffer;
+  return { fields, transformedDocx };
+}
