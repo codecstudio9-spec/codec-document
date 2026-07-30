@@ -19,6 +19,7 @@ import { LATAM_COUNTRIES } from '../data/latam-signature-seo-content';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
+import { voiceAssistant } from '../services/voice-assistant-service';
 import { QRCodeSVG } from 'qrcode.react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { OnboardingModal } from '../components/auth/OnboardingModal';
@@ -54,6 +55,7 @@ export function ModernHomePage() {
   // of one-per-card keeps this simple: image-forward (big icon), 1-2 short
   // sentences, no wall of text.
   const [infoModal, setInfoModal] = useState<{ icon: LucideIcon; color: string; title: string; desc: string } | null>(null);
+  const [voiceDemoPlaying, setVoiceDemoPlaying] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [uploadFileName, setUploadFileName] = useState('');
@@ -78,6 +80,19 @@ export function ModernHomePage() {
   const featuredDocuments = documentTemplates.slice(0, 6);
   const [scrolled, setScrolled] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  // Contextual message shown in the signup popup — set right before opening
+  // it from a spot other than the generic "Try free" header button, so the
+  // popup explains WHY it appeared (clicked "Sign now" or a free template
+  // card while signed out) instead of always showing the default intro.
+  const [onboardingContext, setOnboardingContext] = useState<string | undefined>(undefined);
+  const requireAuthToSign = () => {
+    setOnboardingContext(language === 'en' ? 'To sign, register free first' : 'Para firmar debes registrarte gratis');
+    setOnboardingOpen(true);
+  };
+  const requireAuthToUseTemplate = () => {
+    setOnboardingContext(language === 'en' ? 'Register free to create your document' : 'Regístrate gratis para crear tu documento');
+    setOnboardingOpen(true);
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Geolocation-aware home: a visitor detected outside the US sees the
   // LatAm hero (4 universal actions, same moving-card/background style
@@ -693,7 +708,16 @@ export function ModernHomePage() {
               <div
                 className="relative"
                 onMouseEnter={() => setShowPlatformMenu(true)}
-                onMouseLeave={() => setShowPlatformMenu(false)}
+                onMouseLeave={() => {
+                  // Opening the info popup mounts a fixed full-screen overlay
+                  // right on top of the cursor, which makes the browser fire
+                  // a native mouseleave on this wrapper even though the user
+                  // never actually moved off it — without this guard, the
+                  // whole Platform panel would vanish behind the popup the
+                  // instant a security-feature or law card was clicked.
+                  if (infoModal) return;
+                  setShowPlatformMenu(false);
+                }}
               >
                 <button
                   type="button"
@@ -814,11 +838,23 @@ export function ModernHomePage() {
                         })}
 
                         {/* Voice guide — its own bigger, more prominent card
-                            instead of a thin footnote line. */}
-                        <motion.div
+                            instead of a thin footnote line. Clicking it
+                            actually demos the assistant instead of just
+                            describing it, using the exact same
+                            voiceAssistant.speak() every signing flow uses. */}
+                        <motion.button
+                          type="button"
+                          onClick={() => {
+                            setVoiceDemoPlaying(true);
+                            voiceAssistant.speak(
+                              { en: "I'm here to help you complete your documents, or sign them.", es: 'Estoy aquí para ayudarte a completar tus documentos, o firmarlos.' },
+                              language,
+                            );
+                            window.setTimeout(() => setVoiceDemoPlaying(false), 4000);
+                          }}
                           variants={{ hidden: { opacity: 0, y: 10, scale: 0.94 }, show: { opacity: 1, y: 0, scale: 1 } }}
                           whileHover={{ y: -3, scale: 1.03 }}
-                          className="col-span-2 flex items-center gap-3 rounded-2xl border p-3"
+                          className="col-span-2 flex items-center gap-3 rounded-2xl border p-3 text-left"
                           style={{
                             background: 'linear-gradient(135deg, #4f46e514 0%, #2563eb08 100%)',
                             borderColor: '#4f46e530',
@@ -826,7 +862,7 @@ export function ModernHomePage() {
                           }}
                         >
                           <span
-                            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+                            className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-white ${voiceDemoPlaying ? 'animate-pulse' : ''}`}
                             style={{ background: 'linear-gradient(145deg, #4f46e5, #2563eb)', boxShadow: '0 3px 8px #4f46e566' }}
                           >
                             <Volume2 className="size-5" />
@@ -834,10 +870,12 @@ export function ModernHomePage() {
                           <div>
                             <p className="text-xs font-black text-slate-900">{language === 'en' ? 'Voice Guide' : 'Guía por Voz'}</p>
                             <p className="text-[11px] leading-tight text-slate-500">
-                              {language === 'en' ? 'Walks every signer through each step, out loud' : 'Acompaña a cada firmante paso a paso, en voz alta'}
+                              {voiceDemoPlaying
+                                ? (language === 'en' ? 'Speaking now…' : 'Hablando ahora…')
+                                : (language === 'en' ? 'Walks every signer through each step, out loud — click to hear it' : 'Acompaña a cada firmante paso a paso, en voz alta — clic para escucharlo')}
                             </p>
                           </div>
-                        </motion.div>
+                        </motion.button>
                       </motion.div>
 
                       {/* Where it's available — same markets as the SEO pages */}
@@ -956,9 +994,12 @@ export function ModernHomePage() {
                 {language === 'en' ? 'Talk to sales' : 'Hablar con ventas'}
               </a>
 
-              {/* Signature CTA */}
+              {/* Signature CTA — signed-out visitors get the signup popup
+                  (with a "you must register to sign" context message)
+                  instead of landing on /firma-electronica with no account. */}
               <a
                 href="/firma-electronica"
+                onClick={(e) => { if (!user) { e.preventDefault(); requireAuthToSign(); } }}
                 className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-all hover:shadow-[0_4px_16px_rgba(79,70,229,0.5)]"
               >
                 <PenLine className="size-3.5" />
@@ -1164,7 +1205,7 @@ export function ModernHomePage() {
 
       {/* This whole page is desktop-only now (mobile redirects to /app
           above), so the hero always renders — no mobile branching left. */}
-      {effectiveIsLatam ? <LatamHero /> : <ModernHero />}
+      {effectiveIsLatam ? <LatamHero onRequireAuth={requireAuthToUseTemplate} /> : <ModernHero onRequireAuth={requireAuthToUseTemplate} />}
 
       {/* US document templates — hidden entirely for a visitor detected
           outside the US (LatamHero above is their actual home experience),
@@ -1897,7 +1938,11 @@ export function ModernHomePage() {
         )}
       </div>
 
-      <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />
+      <OnboardingModal
+        open={onboardingOpen}
+        onOpenChange={(v) => { setOnboardingOpen(v); if (!v) setOnboardingContext(undefined); }}
+        contextMessage={onboardingContext}
+      />
 
       {/* Info popup — explains whichever security feature or compliance/law
           badge was clicked. Image-forward (big icon), 1-2 short sentences,

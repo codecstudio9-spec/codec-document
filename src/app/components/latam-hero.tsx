@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Zap, ChevronLeft, ChevronRight, Upload, PenLine, Palette, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
+import { useAuth } from '../contexts/auth-context';
 
 /** Same exact mechanics as ModernHero (rotating background carousel +
  * auto-scrolling glass card strip) — shown instead of ModernHero for
@@ -58,12 +59,13 @@ const textVariants = {
   exit: (dir: number) => ({ y: dir >= 0 ? -16 : 16, opacity: 0 }),
 };
 
-function ActionCard({ action, language }: { action: typeof ACTIONS[0]; language: 'en' | 'es' }) {
+function ActionCard({ action, language, isAuthed, onRequireAuth }: { action: typeof ACTIONS[0]; language: 'en' | 'es'; isAuthed: boolean; onRequireAuth: () => void }) {
   const Icon = action.icon;
   const title = language === 'en' ? action.titleEn : action.titleEs;
   return (
     <a
       href={action.route}
+      onClick={(e) => { if (!isAuthed) { e.preventDefault(); onRequireAuth(); } }}
       style={{
         width: '178px', flexShrink: 0, borderRadius: '20px',
         background: 'rgba(255,255,255,0.10)',
@@ -110,8 +112,9 @@ function ActionCard({ action, language }: { action: typeof ACTIONS[0]; language:
   );
 }
 
-export function LatamHero() {
+export function LatamHero({ onRequireAuth }: { onRequireAuth: () => void }) {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [[current, direction], setSlide] = useState([0, 1]);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -257,7 +260,7 @@ export function LatamHero() {
               style={{ width: 'max-content', animation: 'latamCardScroll 22s linear infinite', willChange: 'transform' }}
             >
               {carouselCards.map((action, i) => (
-                <ActionCard key={`card-${i}`} action={action} language={language} />
+                <ActionCard key={`card-${i}`} action={action} language={language} isAuthed={!!user} onRequireAuth={onRequireAuth} />
               ))}
             </div>
           </div>

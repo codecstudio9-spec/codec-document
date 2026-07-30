@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Zap, ChevronLeft, ChevronRight, Home, ShieldCheck, Briefcase, Settings, Car, TrendingUp } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
+import { useAuth } from '../contexts/auth-context';
 
 const SLIDES = [
   {
@@ -60,13 +61,14 @@ const textVariants = {
   exit: (dir: number) => ({ y: dir >= 0 ? -16 : 16, opacity: 0 }),
 };
 
-function GlassCard({ card, language }: { card: typeof TEMPLATE_CARDS[0]; language: 'en' | 'es' }) {
+function GlassCard({ card, language, isAuthed, onRequireAuth }: { card: typeof TEMPLATE_CARDS[0]; language: 'en' | 'es'; isAuthed: boolean; onRequireAuth: () => void }) {
   const Icon = card.icon;
   const title = language === 'en' ? card.titleEn : card.titleEs;
   const btnLabel = language === 'en' ? card.btnEn : card.btnEs;
   return (
     <a
       href={card.route}
+      onClick={(e) => { if (!isAuthed) { e.preventDefault(); onRequireAuth(); } }}
       style={{
         width: '178px', flexShrink: 0, borderRadius: '20px',
         background: 'rgba(255,255,255,0.10)',
@@ -113,8 +115,9 @@ function GlassCard({ card, language }: { card: typeof TEMPLATE_CARDS[0]; languag
   );
 }
 
-export function ModernHero() {
+export function ModernHero({ onRequireAuth }: { onRequireAuth: () => void }) {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [[current, direction], setSlide] = useState([0, 1]);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -272,7 +275,7 @@ export function ModernHero() {
               style={{ width: 'max-content', animation: 'docCardScroll 32s linear infinite', willChange: 'transform' }}
             >
               {carouselCards.map((card, i) => (
-                <GlassCard key={`card-${i}`} card={card} language={language} />
+                <GlassCard key={`card-${i}`} card={card} language={language} isAuthed={!!user} onRequireAuth={onRequireAuth} />
               ))}
             </div>
           </div>

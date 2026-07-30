@@ -9,12 +9,16 @@ import { GoogleSignInButton } from './GoogleSignInButton';
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Overrides the default "Únete a Codec Document" chip — used to explain
+   * WHY the popup appeared (e.g. clicked "Firmar ahora" or a free template
+   * card while signed out), instead of always showing the generic intro. */
+  contextMessage?: string;
 }
 
 type PlanType = 'personal' | 'business';
 type Step = 'segmentation' | 'auth';
 
-export function OnboardingModal({ open, onOpenChange }: Props) {
+export function OnboardingModal({ open, onOpenChange, contextMessage }: Props) {
   const { signInWithMagicLink } = useAuth();
   const [step, setStep] = useState<Step>('segmentation');
   const [planType, setPlanType] = useState<PlanType | null>(null);
@@ -93,7 +97,7 @@ export function OnboardingModal({ open, onOpenChange }: Props) {
                     </div>
                     <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1 text-xs font-semibold text-indigo-300">
                       <Sparkles className="size-3" />
-                      Únete a Codec Document
+                      {contextMessage ?? 'Únete a Codec Document'}
                     </div>
                     <h2 className="mt-1 text-2xl font-black text-white">
                       ¿Para qué vas a usar<br />Codec Document?
