@@ -6,6 +6,15 @@ import { isAdminEmail } from '../utils/admin-access';
 import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag } from 'lucide-react';
+import { OnboardingModal } from './auth/OnboardingModal';
+
+// Real numbers behind the free tier — 2 documents + 2 signatures per
+// rolling 72h window (user-limits-service.ts: DOCUMENT_LIMIT_72H /
+// SIGNATURE_REQUEST_LIMIT_72H). 720h in a 30-day month / 72h ≈ 10 windows,
+// so 2 × 10 = 20 of each per month — an honest "up to" approximation of a
+// rolling window, not a hard calendar-month cap.
+const FREE_DOCS_PER_MONTH_APPROX = 20;
+const FREE_SIGS_PER_MONTH_APPROX = 20;
 
 type Product = {
   hostedButtonId: string;
@@ -148,6 +157,7 @@ function ensurePayPalSdk(clientId: string) {
 export function PricingSection() {
   const { language } = useLanguage();
   const { user, isAdmin, refreshSubscription, refreshPurchasedDocuments } = useAuth();
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [payerName, setPayerName] = useState('');
@@ -316,30 +326,78 @@ export function PricingSection() {
           <p className="mt-1 text-sm text-slate-400">{copy.subtitle2}</p>
         </div>
 
-        {/* Free tier callout — deliberately doesn't mention any number or
-            time window. The user only needs to know "it's free to try"
-            up front; the specific limit and what to do next (wait, or pay
-            just for that one document/signature) only matters once they
-            actually hit it — that message lives in the paywall itself. */}
-        <div className="mb-8 mx-auto flex max-w-2xl items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-left">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 ring-1 ring-emerald-200">
-            <Gift className="size-5 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-emerald-700">
-              {language === 'en'
-                ? 'Your first document or signature is on us'
-                : 'Tu primer documento o firma va por nuestra cuenta'}
-            </p>
-            <p className="mt-0.5 text-xs text-emerald-600/80">
-              {language === 'en'
-                ? "We know how much this matters to you — try it free, no credit card required. Full template editor included."
-                : 'Sabemos lo importante que esto es para ti — pruébalo gratis, sin tarjeta de crédito. Editor de plantillas completo incluido.'}
-            </p>
-          </div>
-        </div>
+        <div className="grid gap-6 items-stretch mt-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Free plan — a real, numbered plan card instead of a vague
+              "try it free" banner, so a signed-up user can point at it and
+              say "I'm on the free plan" and see exactly what upgrading buys
+              them. Numbers are the real 72h rolling-window limits from
+              user-limits-service.ts (2 documents + 2 signatures), converted
+              to an approximate monthly figure people actually think in. */}
+          <article className="relative rounded-3xl p-[1px]" style={{ background: 'rgba(16,185,129,0.35)' }}>
+            <div className="h-full rounded-3xl bg-white p-5 md:p-7 border border-slate-100" style={{ boxShadow: '0 8px 30px -8px rgba(16,185,129,0.25)' }}>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+                <Gift className="size-3.5" />
+                <span>{language === 'en' ? 'NO CREDIT CARD' : 'SIN TARJETA'}</span>
+              </div>
 
-        <div className="grid gap-6 items-stretch mt-6 sm:grid-cols-2 lg:grid-cols-3">
+              <h3 className="text-2xl font-bold text-slate-900">{language === 'en' ? 'Free Plan' : 'Plan Gratuito'}</h3>
+              <p className="mt-2 text-4xl font-extrabold text-slate-900">$0</p>
+              <p className="mt-1 text-sm font-medium text-emerald-600">
+                {language === 'en' ? 'Perfect to try it out' : 'Perfecto para probarlo'}
+              </p>
+
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
+                  <span>
+                    {language === 'en'
+                      ? `2 documents every 72 hours (~${FREE_DOCS_PER_MONTH_APPROX}/month)`
+                      : `2 documentos cada 72 horas (~${FREE_DOCS_PER_MONTH_APPROX}/mes)`}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
+                  <span>
+                    {language === 'en'
+                      ? `2 e-signatures every 72 hours (~${FREE_SIGS_PER_MONTH_APPROX}/month)`
+                      : `2 firmas electrónicas cada 72 horas (~${FREE_SIGS_PER_MONTH_APPROX}/mes)`}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
+                  <span>{language === 'en' ? 'Full legal document editor' : 'Editor de documentos legales completo'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
+                  <span>{language === 'en' ? 'Identity verification & audit trail' : 'Verificación de identidad y auditoría'}</span>
+                </li>
+              </ul>
+
+              {user ? (
+                <div className="mt-6 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700">
+                  {language === 'en' ? 'Your current plan' : 'Tu plan actual'}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setOnboardingOpen(true)}
+                  className="mt-6 w-full rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                >
+                  {language === 'en' ? 'Start free' : 'Empezar gratis'}
+                </button>
+              )}
+              <p className="mt-2 text-center text-xs text-slate-400">
+                {language === 'en' ? 'Upgrade anytime for unlimited access' : 'Actualiza cuando quieras para acceso ilimitado'}
+              </p>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <Lock className="size-3 text-slate-500" />
+                <span className="text-[10px] text-slate-500">
+                  {language === 'en' ? 'Secure · ESIGN compliant' : 'Seguro · ESIGN compliant'}
+                </span>
+              </div>
+            </div>
+          </article>
+
           {PRODUCTS.map((product) => (
             <article
               key={product.hostedButtonId}
@@ -551,6 +609,12 @@ export function PricingSection() {
           </div>
         </div>
       )}
+
+      <OnboardingModal
+        open={onboardingOpen}
+        onOpenChange={setOnboardingOpen}
+        contextMessage={language === 'en' ? 'Register free for the Free Plan' : 'Regístrate gratis para el Plan Gratuito'}
+      />
     </section>
   );
 }

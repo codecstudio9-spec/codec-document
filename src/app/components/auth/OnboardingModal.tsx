@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
-import { Building2, User, ArrowRight, X, Shield, Check, Sparkles, Loader } from 'lucide-react';
+import { Building2, User, ArrowRight, X, Shield, Check, Sparkles, Loader, Gift } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface Props {
@@ -146,7 +146,14 @@ export function OnboardingModal({ open, onOpenChange, contextMessage }: Props) {
                     </button>
                   </div>
 
-                  <p className="mt-6 text-center text-[11px] text-white/20">
+                  {/* Sets expectations up front — a new signup lands on the
+                      Free Plan by default, so they should know what that
+                      actually includes before finishing registration. */}
+                  <div className="mt-6 flex items-center justify-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-center text-[11px] font-semibold text-emerald-300">
+                    <Gift className="size-3" />
+                    Empiezas en el Plan Gratuito: 2 documentos y 2 firmas cada 72 horas (~20 de cada uno al mes)
+                  </div>
+                  <p className="mt-3 text-center text-[11px] text-white/20">
                     Podrás cambiar esto en cualquier momento desde tu perfil
                   </p>
                 </motion.div>
