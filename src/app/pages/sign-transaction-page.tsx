@@ -15,12 +15,15 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 import {
   ShieldCheck, Camera, CreditCard, PenLine, CheckCircle2,
-  Loader, AlertCircle, FileText, ChevronRight, X, Upload, Fingerprint,
+  Loader, AlertCircle, FileText, ChevronRight, X, Upload, Fingerprint, Download,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { useAuth } from '../contexts/auth-context';
 import { publicSupabase } from '../../lib/supabase';
-import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
+import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, parseIdEvidencePayload, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
+import { PDFGenerator } from '../services/pdf-generator';
+import { triggerDownload } from '../utils/download';
+import { buildGuestDocumentContent } from '../utils/guest-document-content';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { markVisitorActivity } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
@@ -154,6 +157,7 @@ export default function SignTransactionPage() {
   const [idBackDataUrl,    setIdBackDataUrl]     = useState('');
   const [idCaptureSide,    setIdCaptureSide]     = useState<'front' | 'back'>('front');
   const [esignAccepted,    setEsignAccepted]     = useState(false);
+  const [recipientEmail,   setRecipientEmail]     = useState('');
   const [identityConsentAccepted, setIdentityConsentAccepted] = useState(false);
   const [biometricStatus,  setBiometricStatus]   = useState<'idle' | 'checking' | 'unavailable' | 'prompting' | 'verified' | 'error'>('idle');
   const [biometricDeviceLabel, setBiometricDeviceLabel] = useState('');
@@ -405,6 +409,52 @@ export default function SignTransactionPage() {
   }, []);
 
   // ── Final submit ───────────────────────────────────────────────────────────
+  // Lets the guest signer (no account at all) get their own copy right from
+  // this page — same content-resolution used by preview-page.tsx (built-in
+  // documents) and custom-template-preview-page.tsx (Word templates), just
+  // callable without a login since it only needs what get_sign_transaction_public
+  // already exposes to anyone holding this transaction's id.
+  const [downloadingCopy, setDownloadingCopy] = useState(false);
+  const handleDownloadCopy = async () => {
+    if (!tx) return;
+    setDownloadingCopy(true);
+    try {
+      const { content, title } = await buildGuestDocumentContent(tx, language);
+      const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
+      const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
+      const fileName = `${title.replace(/[^a-z0-9]+/gi, '-')}.pdf`;
+
+      const blob = await PDFGenerator.generateBlob({
+        content,
+        title,
+        fileName,
+        language,
+        showWatermark: false,
+        jurisdiction,
+        leftSig: tx.sender_signature ? { dataUrl: tx.sender_signature, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
+        rightSig: tx.recipient_signature ? { dataUrl: tx.recipient_signature, name: language === 'en' ? 'Signer' : 'Firmante' } : undefined,
+        mirrorLayout: true,
+        mirrorLanguage: language,
+        identitySelfie: tx.recipient_selfie,
+        identityIdDocFront: parsedId.front,
+        identityIdDocBack: parsedId.back,
+        identityBiometric: tx.recipient_biometric_verified_at && tx.recipient_biometric_device_label
+          ? {
+              deviceLabel: tx.recipient_biometric_device_label,
+              verifiedAt: tx.recipient_biometric_verified_at,
+              credentialIdHash: (tx.recipient_biometric_credential_id ?? '').slice(0, 16),
+            }
+          : undefined,
+      });
+
+      await triggerDownload(blob, fileName);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate your document.' : 'No se pudo generar tu documento.'));
+    } finally {
+      setDownloadingCopy(false);
+    }
+  };
+
   const handleFinalSubmit = async () => {
     if (!tx) return;
     if (submittingRef.current) return; // blocks a same-tick double-tap/double-fire
@@ -454,6 +504,7 @@ export default function SignTransactionPage() {
     }
     if (esignAccepted)     initialPayload.esign_consent_accepted = true;
     if (recipientIp)       initialPayload.recipient_ip           = recipientIp;
+    if (recipientEmail.trim()) initialPayload.recipient_email    = recipientEmail.trim();
 
     // ── Step 3: Complete the transaction via RPC — not waiting on storage.
     // Goes through a SECURITY DEFINER RPC (not a raw UPDATE...select()) so
@@ -496,6 +547,10 @@ export default function SignTransactionPage() {
       console.log('Firma guardada exitosamente. Transaction:', tx.id, '| payload keys:', Object.keys(initialPayload));
       markVisitorActivity('signature', 'template-signature');
       advance();
+
+      // Fire-and-forget — a failed/slow email must never block or error out
+      // a signature that's already saved. See supabase/functions/notify-completion.
+      void publicSupabase.functions.invoke('notify-completion', { body: { txId: tx.id } }).catch(() => {});
 
       void (async () => {
         try {
@@ -609,6 +664,18 @@ export default function SignTransactionPage() {
             <p>{tr('Signed at', 'Firmado el')}: <span className="text-slate-800 font-medium">{new Date().toLocaleString(language === 'en' ? 'en-US' : 'es-MX')}</span></p>
           </div>
         )}
+        <button
+          type="button"
+          disabled={downloadingCopy}
+          onClick={() => void handleDownloadCopy()}
+          className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-60"
+          style={{ background: 'linear-gradient(180deg,#34d399 0%,#059669 68%,#065f46 100%)', boxShadow: '0 3px 0 #065f46' }}
+        >
+          {downloadingCopy
+            ? <><Loader className="size-4 animate-spin" /> {tr('Preparing...', 'Preparando...')}</>
+            : <><Download className="size-4" /> {tr('Download my copy', 'Descargar mi copia')}</>
+          }
+        </button>
       </div>
     );
   }
@@ -630,7 +697,7 @@ export default function SignTransactionPage() {
           <p className="text-xs text-slate-500 leading-tight truncate">{tr('Legally valid electronic signature', 'Firma electronica con validez legal')}</p>
         </div>
         <LanguageToggle />
-        <VoiceGuideToggle className="hidden sm:flex" />
+        <VoiceGuideToggle />
         {tx?.security_config?.requireEsignConsent && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
             {tr(jurisdiction.badgeEn, jurisdiction.badgeEs)}
@@ -1026,6 +1093,22 @@ export default function SignTransactionPage() {
                 {/* Signature preview */}
                 <div className="rounded-xl border-2 border-slate-200 bg-slate-50 p-4 flex items-center justify-center min-h-[80px]">
                   <img src={signatureDataUrl} alt={tr('Your signature', 'Tu firma')} className="max-h-24 object-contain" />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    {tr('Email for your copy (optional)', 'Correo para tu copia (opcional)')}
+                  </label>
+                  <input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder={tr('you@email.com', 'tu@correo.com')}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">
+                    {tr("We'll send the signed document here once it's ready.", 'Te enviaremos el documento firmado aquí cuando esté listo.')}
+                  </p>
                 </div>
 
                 {submitting && submitStatus && (

@@ -163,11 +163,19 @@ export async function updateDocxTemplate(templateId: string, updates: Partial<{
   if (error) throw new Error(`updateDocxTemplate: ${error.message}`);
 }
 
+/**
+ * `userId` is unused directly — relies entirely on RLS (`templates_own` +
+ * `templates_select_company_shared`) to return the union of the caller's
+ * own templates and any their company has shared, so a company template
+ * an admin created shows up for every teammate without a second query.
+ * Kept as a parameter so call sites don't need to change and this only
+ * ever runs for a signed-in user.
+ */
 export async function listDocxTemplates(userId: string): Promise<DocxTemplate[]> {
+  if (!userId) return [];
   const { data, error } = await supabase
     .from('templates')
     .select(ROW_COLUMNS)
-    .eq('user_id', userId)
     .eq('kind', 'docx_variables')
     .order('created_at', { ascending: false });
   if (error || !data) return [];
@@ -199,16 +207,45 @@ export async function getTemplateBySlugPublic(slug: string): Promise<PublicDocxT
   return rowToTemplate({ ...row, user_id: '', created_at: '' } as DocxTemplateRow);
 }
 
+/** Public, anonymous-safe lookup by id (not slug) — used by the guest
+ * "download my copy" button on /sign/:transactionId, which only has
+ * document_data.templateId to go on, not the original public_slug. */
+export async function getDocxTemplateByIdPublic(templateId: string): Promise<{ id: string; name: string; docxFileUrl: string } | null> {
+  const { data, error } = await supabase.rpc('get_docx_template_by_id_public', { p_id: templateId }).maybeSingle();
+  if (error || !data) return null;
+  const row = data as { id: string; name: string; docx_file_url: string };
+  return { id: row.id, name: row.name, docxFileUrl: row.docx_file_url };
+}
+
 /**
- * Creates the sign_transactions row for a filled-in public template —
- * goes through create_custom_template_transaction, which resolves the
+ * Creates the sign_transactions row for a filled-in template — goes
+ * through create_custom_template_transaction, which resolves the
  * template's real owner (creator_id) server-side so it never has to be
  * exposed to this anonymous client. Returns the new transaction id; the
  * caller navigates to /sign/<id>, which is the exact same signing engine
  * (selfie/ID/biometric/ESIGN consent) every other document type uses.
+ *
+ * Two callers, two different `options`:
+ * - The public /t/:slug fill page (a guest fills a BLANK template and
+ *   signs it themselves) calls this with no options — intent defaults to
+ *   'blank_send' and security_config defaults to the template's own.
+ * - GenerateSendModal (an authenticated user fills the template THEMSELVES
+ *   and generates a one-time link for someone else to just sign) passes
+ *   intent: 'fill_send' and may pass securityOverride to raise/lower
+ *   verification for this one document without touching the template's
+ *   stored default.
  */
-export async function createCustomTemplateTransaction(slug: string, values: Record<string, string>): Promise<string> {
-  const { data, error } = await supabase.rpc('create_custom_template_transaction', { p_slug: slug, p_values: values });
+export async function createCustomTemplateTransaction(
+  slug: string,
+  values: Record<string, string>,
+  options?: { securityOverride?: SecurityConfig; intent?: 'blank_send' | 'fill_send' },
+): Promise<string> {
+  const { data, error } = await supabase.rpc('create_custom_template_transaction', {
+    p_slug: slug,
+    p_values: values,
+    p_security_override: options?.securityOverride ?? null,
+    p_intent: options?.intent ?? 'blank_send',
+  });
   if (error) throw new Error(`createCustomTemplateTransaction: ${error.message}`);
   return data as string;
 }

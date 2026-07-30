@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown } from 'lucide-react';
+import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown, FilePenLine, Send, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { listTemplates, deleteTemplate, type CustomTemplate } from '../services/template-service';
 import { listDocxTemplates, deleteDocxTemplate, type DocxTemplate } from '../services/docx-template-service';
+import { GenerateSendModal } from '../components/templates/GenerateSendModal';
 import { SITE_URL } from '../config/site';
 
 export function MyTemplatesPage() {
@@ -18,6 +19,7 @@ export function MyTemplatesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [sendTemplate, setSendTemplate] = useState<DocxTemplate | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -25,10 +27,13 @@ export function MyTemplatesPage() {
     listDocxTemplates(user.id).then(setDocxTemplates).catch(() => setDocxTemplates([]));
   }, [user?.id]);
 
-  const handleCopyLink = (slug: string) => {
+  const handleCopyLink = (slug: string, announce?: boolean) => {
     navigator.clipboard.writeText(`${SITE_URL}/t/${slug}`).then(() => {
       setCopiedSlug(slug);
       setTimeout(() => setCopiedSlug(null), 2000);
+      if (announce) {
+        toast.success(language === 'en' ? 'Link copied — share it so the recipient fills it in and signs' : 'Enlace copiado — compártelo para que el destinatario lo llene y firme');
+      }
     });
   };
 
@@ -184,6 +189,11 @@ export function MyTemplatesPage() {
                           <p className="text-xs text-slate-400">
                             {t.detectedFields.length} {language === 'en' ? 'field(s)' : 'campo(s)'}
                           </p>
+                          {t.userId !== user.id && (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
+                              <Building2 className="size-2.5" /> {language === 'en' ? 'Shared by your company' : 'Compartida por tu empresa'}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <button
@@ -195,22 +205,46 @@ export function MyTemplatesPage() {
                         <span className="truncate">/t/{t.publicSlug}</span>
                         <Copy className="ml-auto size-3.5 shrink-0 text-slate-300" />
                       </button>
-                      <div className="mt-auto flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500"
-                        >
-                          <PenLine className="size-3.5" />
-                          {language === 'en' ? 'Edit' : 'Editar'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingId(t.id)}
-                          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
+                      <div className="mt-auto flex flex-col gap-2">
+                        {t.userId === user.id && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500"
+                            >
+                              <PenLine className="size-3.5" />
+                              {language === 'en' ? 'Edit' : 'Editar'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(t.id)}
+                              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSendTemplate(t)}
+                            title={language === 'en' ? 'You fill it in, then send only for a signature' : 'Tú lo llenas, y lo envías solo para firmar'}
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2 text-[11px] font-bold text-blue-700 hover:bg-blue-100"
+                          >
+                            <FilePenLine className="size-3.5" />
+                            {language === 'en' ? 'Fill before sending' : 'Llenar antes de enviar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyLink(t.publicSlug, true)}
+                            title={language === 'en' ? 'Copy the public link — the recipient fills it in and signs' : 'Copia el enlace público — el destinatario lo llena y firma'}
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
+                          >
+                            <Send className="size-3.5" />
+                            {language === 'en' ? 'Signer fills & signs' : 'Firmante llena y firma'}
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
@@ -219,6 +253,8 @@ export function MyTemplatesPage() {
             </div>
           </div>
         )}
+
+        <GenerateSendModal template={sendTemplate} language={language} onClose={() => setSendTemplate(null)} />
 
         <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
           <FileText className="size-4" /> {language === 'en' ? 'PDF templates' : 'Plantillas PDF'}

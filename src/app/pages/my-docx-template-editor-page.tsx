@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink } from 'lucide-react';
+import {
+  ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
+  ChevronDown, Lock, ListChecks,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { useCompany } from '../hooks/useCompany';
 import { detectFields, type DetectedField, type DetectedFieldType } from '../../lib/docxTemplateEngine';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
@@ -33,12 +38,21 @@ export function MyDocxTemplateEditorPage() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const { speak } = useVoiceSpeak();
+  const { company, isCompanyAdmin } = useCompany();
+
+  // Field DEFINITIONS (the {{tag}} -> label/type/required mapping) are
+  // only editable by a company admin once this user belongs to a company
+  // — a regular employee still sees the list (read-only) but can't change
+  // what the template asks for. An individual user with no company at all
+  // is unaffected (company is null -> always editable), same as today.
+  const canEditFields = !company || isCompanyAdmin;
 
   const [loading, setLoading] = useState(isEditMode);
   const [docxFile, setDocxFile] = useState<File | null>(null);
   const [docxFileUrl, setDocxFileUrl] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState('');
   const [fields, setFields] = useState<DetectedField[]>([]);
+  const [fieldsOpen, setFieldsOpen] = useState(false);
   const [signers, setSigners] = useState<TemplateSigner[]>([{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }]);
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(DEFAULT_SECURITY);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -95,6 +109,7 @@ export function MyDocxTemplateEditorPage() {
         return;
       }
       setFields(detected);
+      setFieldsOpen(true);
       setDocxFile(file);
       // Object URL only for the "file selected" UI state below — the real
       // stored URL comes from uploadDocxTemplateFile on save.
@@ -106,9 +121,13 @@ export function MyDocxTemplateEditorPage() {
   };
 
   const updateField = (key: string, patch: Partial<DetectedField>) => {
+    if (!canEditFields) return;
     setFields((prev) => prev.map((f) => (f.key === key ? { ...f, ...patch } : f)));
   };
-  const removeField = (key: string) => setFields((prev) => prev.filter((f) => f.key !== key));
+  const removeField = (key: string) => {
+    if (!canEditFields) return;
+    setFields((prev) => prev.filter((f) => f.key !== key));
+  };
 
   const addFixedSigner = () => {
     setSigners((prev) => [...prev, {
@@ -275,47 +294,90 @@ export function MyDocxTemplateEditorPage() {
             </div>
             {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
 
-            {/* Detected fields */}
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-400">
-                {language === 'en' ? `Detected fields (${fields.length})` : `Campos detectados (${fields.length})`}
-              </h2>
-              <div className="space-y-2">
-                {fields.map((f) => (
-                  <div key={f.key} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
-                    <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
-                    <input
-                      value={f.label}
-                      onChange={(e) => updateField(f.key, { label: e.target.value })}
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
-                    />
-                    <select
-                      value={f.type}
-                      onChange={(e) => updateField(f.key, { type: e.target.value as DetectedFieldType, options: e.target.value === 'choice' ? (f.options ?? ['']) : undefined })}
-                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-400"
-                    >
-                      {(Object.keys(FIELD_TYPE_LABELS) as DetectedFieldType[]).map((t) => (
-                        <option key={t} value={t}>{FIELD_TYPE_LABELS[t][language]}</option>
-                      ))}
-                    </select>
-                    {f.type === 'choice' && (
-                      <input
-                        value={(f.options ?? []).join(';')}
-                        onChange={(e) => updateField(f.key, { options: e.target.value.split(';').map((o) => o.trim()).filter(Boolean) })}
-                        placeholder={language === 'en' ? 'Option1;Option2' : 'Opcion1;Opcion2'}
-                        className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
-                      />
-                    )}
-                    <label className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
-                      <input type="checkbox" checked={f.required} onChange={(e) => updateField(f.key, { required: e.target.checked })} />
-                      {language === 'en' ? 'Required' : 'Obligatorio'}
-                    </label>
-                    <button type="button" onClick={() => removeField(f.key)} className="shrink-0 text-slate-300 hover:text-red-600">
-                      <Trash2 className="size-4" />
-                    </button>
+            {/* Detected fields — collapsible drawer; field DEFINITIONS are
+                admin-only once this user belongs to a company (see
+                canEditFields above), everyone else can still see them. */}
+            <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+              <button
+                type="button"
+                onClick={() => setFieldsOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-3 p-5 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-700">
+                    <ListChecks className="size-4 text-white" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+                      {language === 'en' ? `Detected fields (${fields.length})` : `Campos detectados (${fields.length})`}
+                    </p>
+                    {!canEditFields && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                        <Lock className="size-3" />
+                        {language === 'en' ? 'Only a company admin can edit these' : 'Solo un administrador de tu empresa puede editarlos'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${fieldsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence initial={false}>
+                {fieldsOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div className="space-y-2 px-5 pb-5">
+                      {fields.map((f) => canEditFields ? (
+                        <div key={f.key} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
+                          <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
+                          <input
+                            value={f.label}
+                            onChange={(e) => updateField(f.key, { label: e.target.value })}
+                            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+                          />
+                          <select
+                            value={f.type}
+                            onChange={(e) => updateField(f.key, { type: e.target.value as DetectedFieldType, options: e.target.value === 'choice' ? (f.options ?? ['']) : undefined })}
+                            className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-400"
+                          >
+                            {(Object.keys(FIELD_TYPE_LABELS) as DetectedFieldType[]).map((t) => (
+                              <option key={t} value={t}>{FIELD_TYPE_LABELS[t][language]}</option>
+                            ))}
+                          </select>
+                          {f.type === 'choice' && (
+                            <input
+                              value={(f.options ?? []).join(';')}
+                              onChange={(e) => updateField(f.key, { options: e.target.value.split(';').map((o) => o.trim()).filter(Boolean) })}
+                              placeholder={language === 'en' ? 'Option1;Option2' : 'Opcion1;Opcion2'}
+                              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
+                            />
+                          )}
+                          <label className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
+                            <input type="checkbox" checked={f.required} onChange={(e) => updateField(f.key, { required: e.target.checked })} />
+                            {language === 'en' ? 'Required' : 'Obligatorio'}
+                          </label>
+                          <button type="button" onClick={() => removeField(f.key)} className="shrink-0 text-slate-300 hover:text-red-600">
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div key={f.key} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
+                          <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
+                          <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{f.label}</span>
+                          <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">{FIELD_TYPE_LABELS[f.type][language]}</span>
+                          {f.required && (
+                            <span className="shrink-0 text-xs font-semibold text-slate-400">{language === 'en' ? 'Required' : 'Obligatorio'}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </section>
 
             {/* Signers */}
@@ -380,20 +442,46 @@ export function MyDocxTemplateEditorPage() {
               </button>
             </section>
 
-            {/* Security */}
-            <section className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <Shield className="size-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800">{language === 'en' ? 'Security & Verification' : 'Seguridad y Verificación'}</p>
-                  <p className="text-xs text-slate-400">
-                    {Object.values(securityConfig).filter(Boolean).length} {language === 'en' ? 'option(s) active' : 'opción(es) activa(s)'}
-                  </p>
+            {/* Security & Verification — deliberately the most visually
+                prominent section on this page (gradient border + icon
+                badge), since this is a legal/trust decision, not just
+                another form field. What's set here becomes the DEFAULT
+                security applied whenever this template is used, but stays
+                fully overridable per document (e.g. from "Fill before
+                sending" on My Templates) — never locked in. */}
+            <section
+              className="relative overflow-hidden rounded-3xl p-[1.5px] shadow-md"
+              style={{ background: 'linear-gradient(135deg,#2563eb 0%,#7c3aed 55%,#0891b2 100%)' }}
+            >
+              <div className="flex flex-col gap-4 rounded-[22px] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
+                    style={{ background: 'linear-gradient(135deg,#60a5fa 0%,#2563eb 100%)', boxShadow: '0 3px 10px rgba(37,99,235,0.4)' }}
+                  >
+                    <Shield className="size-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">{language === 'en' ? 'Security & Verification' : 'Seguridad y Verificación'}</p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {Object.values(securityConfig).filter(Boolean).length} {language === 'en' ? 'option(s) active' : 'opción(es) activa(s)'}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                      {language === 'en'
+                        ? "Applies as the default every time this template is used — whoever generates a document can still adjust it for that one send."
+                        : 'Se aplica por defecto cada vez que se use esta plantilla — quien genere un documento podrá ajustarlo para ese envío.'}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setSecurityModalOpen(true)}
+                  className="shrink-0 rounded-xl px-5 py-2.5 text-xs font-bold text-white"
+                  style={{ background: 'linear-gradient(180deg,#60a5fa 0%,#2563eb 38%,#1d4ed8 68%,#1e3a8a 100%)', boxShadow: '0 3px 0 #172554, 0 5px 14px rgba(29,78,216,0.45), 0 1px 0 rgba(255,255,255,0.25) inset' }}
+                >
+                  {language === 'en' ? 'Configure' : 'Configurar'}
+                </button>
               </div>
-              <button type="button" onClick={() => setSecurityModalOpen(true)} className="rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100">
-                {language === 'en' ? 'Configure' : 'Configurar'}
-              </button>
             </section>
 
             {/* Instructions */}
@@ -421,6 +509,7 @@ export function MyDocxTemplateEditorPage() {
       <SecurityConfigModal
         open={securityModalOpen}
         language={language}
+        initialConfig={securityConfig}
         onConfirm={(config) => { setSecurityConfig(config); setSecurityModalOpen(false); }}
         onCancel={() => setSecurityModalOpen(false)}
       />

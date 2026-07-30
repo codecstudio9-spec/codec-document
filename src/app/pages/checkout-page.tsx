@@ -191,7 +191,7 @@ export function CheckoutPage() {
               <span>{t('checkout.back')}</span>
             </button>
             <div className="flex items-center gap-3">
-              <VoiceGuideToggle className="hidden sm:flex" />
+              <VoiceGuideToggle />
               <div className="flex items-center gap-2">
                 <Lock className="size-5 text-green-600" />
                 <span className="font-medium">{t('checkout.secureCheckout')}</span>

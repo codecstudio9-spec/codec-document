@@ -7,6 +7,11 @@ import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 interface SecurityConfigModalProps {
   open:      boolean;
   language:  'en' | 'es';
+  /** Seeds the toggles when the modal opens — pass the current/default
+   * config so re-opening shows what's already set instead of resetting to
+   * bare defaults every time. Omit for the original "start from scratch"
+   * behavior. */
+  initialConfig?: SecurityConfig;
   onConfirm: (config: SecurityConfig) => void;
   onCancel:  () => void;
 }
@@ -99,9 +104,17 @@ const rowVariants = {
   }),
 };
 
-export function SecurityConfigModal({ open, language, onConfirm, onCancel }: SecurityConfigModalProps) {
-  const [config, setConfig] = useState<SecurityConfig>(DEFAULT);
+export function SecurityConfigModal({ open, language, initialConfig, onConfirm, onCancel }: SecurityConfigModalProps) {
+  const [config, setConfig] = useState<SecurityConfig>(initialConfig ?? DEFAULT);
   const { speak } = useVoiceSpeak();
+
+  // Re-seed every time the modal opens — otherwise editing an existing
+  // template's security config (or a per-send override) would always show
+  // bare defaults instead of what's actually set right now.
+  useEffect(() => {
+    if (open) setConfig(initialConfig ?? DEFAULT);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Explains what this screen is actually for the first time it opens —
   // the copy alone ("Security & Verification") doesn't make clear this is

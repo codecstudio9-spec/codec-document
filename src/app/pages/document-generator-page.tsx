@@ -1388,7 +1388,7 @@ export function DocumentGeneratorPage() {
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              <VoiceGuideToggle className="hidden sm:flex" />
+              <VoiceGuideToggle />
               {/* Compact progress pill in navbar */}
               {flowStep === 'form' && requiredFields.length > 0 && (
                 <span className={`hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tabular-nums ${

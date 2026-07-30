@@ -31,7 +31,7 @@ import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 import { SITE_HOSTNAME } from '../config/site';
 
-function normalizeCorruptedText(input: string): string {
+export function normalizeCorruptedText(input: string): string {
   if (!input) return input;
   return input
     .replace(/Ã¡/g, 'á').replace(/Ã©/g, 'é').replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú')
@@ -41,7 +41,7 @@ function normalizeCorruptedText(input: string): string {
     .replace(/â•/g, '═').replace(/Ã/g, 'í');
 }
 
-function normalizeLanguageSensitiveFields(data: DocumentData, language: 'en' | 'es'): DocumentData {
+export function normalizeLanguageSensitiveFields(data: DocumentData, language: 'en' | 'es'): DocumentData {
   const next: DocumentData = { ...data };
   const specialRaw = String(next.special_provisions ?? '').trim();
   const isSpanishNone = /^(ninguna|ninguno|ningun|n\/a|na|no aplica|sin disposiciones)$/i.test(specialRaw);
