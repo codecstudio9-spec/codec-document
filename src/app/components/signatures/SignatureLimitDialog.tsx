@@ -5,6 +5,7 @@ import {
 } from '../ui/dialog';
 import { PaypalSignatureCheckout } from './PaypalSignatureCheckout';
 import { useAuth } from '../../contexts/auth-context';
+import { GoogleSignInButton } from '../auth/GoogleSignInButton';
 
 interface SignatureLimitDialogProps {
   open: boolean;
@@ -38,7 +39,6 @@ export function SignatureLimitDialog({
   open, onOpenChange, userId, nextSlotAt, onUnlocked,
 }: SignatureLimitDialogProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const { signInWithGoogle } = useAuth();
 
   return (
     <Dialog
@@ -109,13 +109,9 @@ export function SignatureLimitDialog({
               <p className="mt-1 text-sm text-white/50">
                 Ya usaste tus solicitudes de firma gratuitas como invitado. Crea una cuenta gratis (o inicia sesión) para seguir, o desbloquea más con un pago.
               </p>
-              <button
-                type="button"
-                onClick={() => void signInWithGoogle()}
-                className="mt-5 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:from-blue-500 hover:to-indigo-500"
-              >
-                Continuar con Google
-              </button>
+              <div className="mt-5">
+                <GoogleSignInButton theme="filled_black" className="flex justify-center" />
+              </div>
             </div>
           )}
         </div>

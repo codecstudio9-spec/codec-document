@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
-import { Shield, Mail, Lock, Chrome, SendHorizonal, Loader, Check } from 'lucide-react';
+import { Shield, Mail, Lock, SendHorizonal, Loader, Check } from 'lucide-react';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 type Props = {
   loginOpen: boolean;
@@ -27,7 +28,7 @@ function GlassLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegisterOpenChange }: Props) {
-  const { signIn, signUp, signInWithGoogle, signInWithMagicLink } = useAuth();
+  const { signIn, signUp, signInWithMagicLink } = useAuth();
 
   const [tab, setTab] = useState<LoginTab>('magic');
   const [email, setEmail] = useState('');
@@ -41,19 +42,6 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
     setMagicSent(false);
     setEmail('');
     setPassword('');
-  };
-
-  const onGoogle = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (e: any) {
-      const msg = String(e?.message || '');
-      if (msg.toLowerCase().includes('unsupported provider')) {
-        toast.error('El inicio de sesión con Google no está disponible en este momento. Intenta de nuevo más tarde.');
-        return;
-      }
-      toast.error(msg || 'No se pudo iniciar con Google');
-    }
   };
 
   const onMagicLink = async () => {
@@ -202,21 +190,15 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
       {/* Google tab */}
       {isLogin && tab === 'google' && (
         <div className="space-y-3">
-          <button type="button" onClick={() => void onGoogle()} className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/8 py-3.5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/12">
-            <Chrome className="size-5 text-blue-400" />
-            Continuar con Google
-          </button>
-          <p className="text-center text-[11px] text-white/35">Se abrirá la ventana de autenticación de Google</p>
+          <GoogleSignInButton theme="filled_black" />
+          <p className="text-center text-[11px] text-white/35">La ventana de Google se abre sobre nuestro propio dominio</p>
         </div>
       )}
 
       {/* Divider + extras */}
       <div className="mt-5 space-y-3">
         {(!isLogin || (isLogin && tab !== 'google')) && (
-          <button type="button" onClick={() => void onGoogle()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-semibold text-white/60 transition hover:bg-white/10 hover:text-white/80">
-            <Chrome className="size-4 text-blue-400" />
-            Continuar con Google
-          </button>
+          <GoogleSignInButton theme="filled_black" width={240} />
         )}
         <p className="text-center text-[11px] text-white/30">
           {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}

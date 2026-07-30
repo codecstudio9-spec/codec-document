@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check } from 'lucide-react';
+import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
@@ -107,31 +107,36 @@ export function MyTemplatesPage() {
               >
                 <Plus className="size-4" />
                 {language === 'en' ? 'New Template' : 'Nueva Plantilla'}
+                <ChevronDown className={`size-4 transition-transform ${newMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {newMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setNewMenuOpen(false)} />
                   <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                    <button
-                      type="button"
-                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new'); }}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50"
-                    >
-                      <FileText className="size-5 shrink-0 text-slate-400" />
-                      <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'PDF with boxes' : 'PDF con casillas'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Click to place fields' : 'Clic para colocar campos'}</span>
-                      </span>
-                    </button>
+                    {/* Word/{{variables}} listed first — this is the primary
+                        engine going forward; the legacy PDF-by-coordinates
+                        option second so muscle memory from before this menu
+                        existed doesn't default users into the wrong one. */}
                     <button
                       type="button"
                       onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new-docx'); }}
-                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50"
                     >
                       <FileType2 className="size-5 shrink-0 text-indigo-500" />
                       <span>
                         <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Word with {{variables}}' : 'Word con {{variables}}'}</span>
                         <span className="block text-xs text-slate-400">{language === 'en' ? 'Public link, anyone can fill & sign' : 'Enlace público, cualquiera llena y firma'}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new'); }}
+                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
+                    >
+                      <FileText className="size-5 shrink-0 text-slate-400" />
+                      <span>
+                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'PDF with boxes' : 'PDF con casillas'}</span>
+                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Click to place fields' : 'Clic para colocar campos'}</span>
                       </span>
                     </button>
                   </div>

@@ -13,6 +13,7 @@ import {
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 
 type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null; color: string | null; daysLeft: number | null };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
@@ -229,7 +230,7 @@ function DocumentsContent() {
                   type="button"
                   onClick={() => {
                     if (!doc.href) return;
-                    if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
+                    if (doc.href.startsWith('http')) window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
                     else navigate(doc.href);
                   }}
                   className="flex w-full flex-col items-start gap-3 text-left"

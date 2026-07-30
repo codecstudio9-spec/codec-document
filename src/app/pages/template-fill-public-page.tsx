@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
 import { getTemplateBySlugPublic, createCustomTemplateTransaction, type PublicDocxTemplate } from '../services/docx-template-service';
 import { LanguageToggle } from '../components/language-toggle';
+import { DynamicDocForm } from '../components/templates/DynamicDocForm';
 
 const DEFAULT_INSTRUCTIONS = {
   en: [
@@ -106,31 +107,8 @@ export function TemplateFillPublicPage() {
           )}
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          {template.detectedFields.map((f) => (
-            <div key={f.key}>
-              <label className="mb-1 block text-xs font-bold text-slate-600">
-                {f.label}{f.required && <span className="text-red-500"> *</span>}
-              </label>
-              {f.type === 'choice' ? (
-                <select
-                  value={values[f.key] ?? ''}
-                  onChange={(e) => setFieldValue(f.key, e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
-                >
-                  <option value="">{language === 'en' ? 'Select...' : 'Selecciona...'}</option>
-                  {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              ) : (
-                <input
-                  type={f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}
-                  value={values[f.key] ?? ''}
-                  onChange={(e) => setFieldValue(f.key, e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
-                />
-              )}
-            </div>
-          ))}
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <DynamicDocForm fields={template.detectedFields} values={values} onChange={setFieldValue} language={language} />
 
           <button
             type="button"

@@ -44,6 +44,7 @@ import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
 import { logVoiceAssistantEvent } from '../services/voice-assistant-analytics-service';
+import { toProxiedPdfUrl } from '../utils/pdf-proxy';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
 
@@ -1408,12 +1409,12 @@ export function GuestSignPage() {
               {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
                 <>
                   <iframe
-                    src={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                    src={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                     title="Vista previa del documento"
                     className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white"
                   />
                   <a
-                    href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                    href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700"
@@ -1567,7 +1568,7 @@ export function GuestSignPage() {
             signerName={guestName || 'Invitado'}
             documentName={tokenData.documentName}
             isLoading={isSigning}
-            fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+            fallbackPdfUrl={toProxiedPdfUrl(workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
             voiceSessionId={voiceSessionId}
             documentId={tokenData.documentId}
             onBack={() => { setShowPlacer(false); setShowSignPad(true); }}
@@ -1703,7 +1704,7 @@ export function GuestSignPage() {
             </span>
             {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
               <a
-                href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 transition hover:underline"
@@ -1736,12 +1737,12 @@ export function GuestSignPage() {
                         least Ingrid can read the document — the "Continuar
                         a Firmar" button below still unlocks either way. */}
                     <iframe
-                      src={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                      src={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                       title="Vista previa del documento"
                       className="h-[60vh] w-full rounded-xl border border-slate-200"
                     />
                     <a
-                      href={(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                      href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
@@ -1911,7 +1912,7 @@ export function GuestSignPage() {
           signerName={guestName || 'Invitado'}
           documentName={tokenData.documentName}
           isLoading={isSigning}
-          fallbackPdfUrl={workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+          fallbackPdfUrl={toProxiedPdfUrl(workingPdfUrl || (tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
           voiceSessionId={voiceSessionId}
           documentId={tokenData.documentId}
           onBack={() => { setShowPlacer(false); setShowSignPad(true); }}

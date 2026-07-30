@@ -14,6 +14,7 @@ import {
   type UserDocument, type AssociatedDocument,
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
+import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 
 type UnifiedDoc = {
   id: string;
@@ -201,7 +202,7 @@ function DocumentsContent() {
             const openDoc = () => {
               if (!doc.href) return;
               if (doc.href.startsWith('http')) {
-                window.open(doc.href, '_blank', 'noopener,noreferrer');
+                window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
               } else {
                 navigate(doc.href);
               }

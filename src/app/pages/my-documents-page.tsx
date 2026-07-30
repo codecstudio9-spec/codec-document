@@ -9,6 +9,7 @@ import {
   fetchAssociatedDocuments, type AssociatedDocument,
 } from '../services/documents-service';
 import { getTemplateById } from '../data/templates';
+import { toProxiedPdfUrl } from '../utils/pdf-proxy';
 
 export function MyDocumentsPage() {
   const navigate = useNavigate();
@@ -268,7 +269,7 @@ export function MyDocumentsPage() {
                     </div>
                     {fileUrl && (
                       <a
-                        href={fileUrl}
+                        href={toProxiedPdfUrl(fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-1 rounded-md bg-slate-900 text-white px-3 py-2 text-xs font-semibold"

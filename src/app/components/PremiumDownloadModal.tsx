@@ -4,6 +4,7 @@ import {
   X, Crown, ShieldCheck, Download, Tag, TicketPercent, Check, Lock, Zap, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
+import { GoogleSignInButton } from './auth/GoogleSignInButton';
 import {
   PAYPAL_SUBSCRIPTION_PLANS,
   getDocumentPrice,
@@ -133,7 +134,7 @@ export function PremiumDownloadModal({
   price,
   reason = 'always',
 }: Props) {
-  const { isAdmin, user, signInWithGoogle } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const [mode, setMode]                   = useState<'single' | 'subscription'>('single');
   const [selectedPlan, setSelectedPlan]   = useState<PlanKey>('annual');
@@ -613,14 +614,7 @@ export function PremiumDownloadModal({
                           <p className="mb-3 text-xs text-slate-500">
                             {t('Please sign in to subscribe', 'Inicia sesión para suscribirte')}
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => void signInWithGoogle()}
-                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
-                          >
-                            {t('Sign in with Google', 'Iniciar sesión con Google')}
-                            <ArrowRight className="size-3.5" />
-                          </button>
+                          <GoogleSignInButton width={220} />
                         </div>
                       )}
                       {user && !planIsReady && (

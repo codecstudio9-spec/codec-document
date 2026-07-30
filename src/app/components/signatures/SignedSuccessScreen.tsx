@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import { ShieldCheck, Download, FileCheck, FolderOpen, Clock } from 'lucide-react';
 import { triggerDownloadFromUrl } from '../../utils/download';
+import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 
 interface SignedSuccessScreenProps {
   onFinish: () => void;
@@ -93,7 +94,7 @@ export function SignedSuccessScreen({
                 type="button"
                 onClick={() => {
                   void triggerDownloadFromUrl(downloadUrl, `${documentName}.pdf`).catch(() => {
-                    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+                    window.open(toProxiedPdfUrl(downloadUrl), '_blank', 'noopener,noreferrer');
                   });
                 }}
                 className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"

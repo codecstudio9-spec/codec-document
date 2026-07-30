@@ -93,6 +93,28 @@ function parseTag(raw: string): { key: string; type: DetectedFieldType; options?
   return { key, type: 'text' };
 }
 
+const MAX_LABEL_CANDIDATE_LENGTH = 60;
+
+/**
+ * A form-style docx almost always writes its variables as
+ * "Some Label: {{key}}" on their own line — if the text immediately
+ * before a tag (within the same paragraph, after any earlier tag in that
+ * same paragraph) ends in a colon/dash, that's a real human-written label
+ * and is a much better form label than humanizing the variable's own key
+ * (e.g. "Cédula de Ciudadanía" beats "Cedula"). Falls back to null (→
+ * humanizeLabel(key)) whenever there's no such punctuation right before
+ * the tag, so free-flowing prose with an inline {{tag}} is unaffected.
+ */
+function extractContextualLabel(precedingText: string): string | null {
+  const trimmed = precedingText.trimEnd();
+  if (!trimmed) return null;
+  const lastChar = trimmed[trimmed.length - 1];
+  if (!':：-–'.includes(lastChar)) return null;
+  const withoutPunctuation = trimmed.slice(0, -1).trim();
+  if (!withoutPunctuation || withoutPunctuation.length > MAX_LABEL_CANDIDATE_LENGTH) return null;
+  return withoutPunctuation;
+}
+
 /**
  * Scans a .docx file's contents for every unique {{variable}} tag and
  * classifies its field type. Deduplicates by key — the same variable
@@ -113,10 +135,13 @@ export function detectFields(docxArrayBuffer: ArrayBuffer): DetectedField[] {
     const flat = flattenParagraphText(paragraphXml);
     const re = new RegExp(TAG_RE);
     let match: RegExpExecArray | null;
+    let cursor = 0;
     while ((match = re.exec(flat))) {
       const { key, type, options } = parseTag(match[1]);
+      const contextualLabel = extractContextualLabel(flat.slice(cursor, match.index));
+      cursor = match.index + match[0].length;
       if (!key || seen.has(key)) continue;
-      seen.set(key, { key, label: humanizeLabel(key), type, options, required: true });
+      seen.set(key, { key, label: contextualLabel || humanizeLabel(key), type, options, required: true });
     }
   }
   return [...seen.values()];

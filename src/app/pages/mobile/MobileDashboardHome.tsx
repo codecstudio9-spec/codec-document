@@ -10,6 +10,7 @@ import { MobileLandingIntro } from '../../components/mobile/MobileLandingIntro';
 import { fetchDashboardStats, fetchUnreadSignedCount, type DashboardStats } from '../../services/mobile-dashboard-service';
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 
 function greeting(language: 'en' | 'es'): string {
   const h = new Date().getHours();
@@ -267,7 +268,7 @@ function DashboardContent() {
               const s = statusLabel(doc.status, language);
               const openDoc = () => {
                 if (!doc.href) return;
-                if (doc.href.startsWith('http')) window.open(doc.href, '_blank', 'noopener,noreferrer');
+                if (doc.href.startsWith('http')) window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
                 else navigate(doc.href);
               };
               return (
