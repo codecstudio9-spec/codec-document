@@ -218,7 +218,7 @@ export function ModernHomePage() {
     ? [
         {
           q: 'Is Codec Document free to use?',
-          a: 'Yes. Our Free Plan gives you 2 structured intelligent documents and 2 free ESIGN-compliant digital signatures every 72 hours (about 20 of each per month) — no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
+          a: 'Yes. Our Free Plan gives you 18 structured intelligent documents and 18 free ESIGN-compliant digital signatures per month — no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
         },
         {
           q: 'How does Codec Document compare to DocuSign or PandaDoc?',
@@ -248,7 +248,7 @@ export function ModernHomePage() {
     : [
         {
           q: '¿Codec Document es gratis?',
-          a: 'Sí. Nuestro Plan Gratuito te da 2 documentos inteligentes estructurados y 2 firmas digitales gratuitas cada 72 horas (unos 20 de cada uno al mes), sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs subidos, el editor de Codec Document construye NDAs, contratos de arrendamiento y acuerdos de servicios desde cero, de forma gratuita. Los planes premium desbloquean documentos ilimitados, QR de co-firmantes y verificación de identidad.'
+          a: 'Sí. Nuestro Plan Gratuito te da 18 documentos inteligentes estructurados y 18 firmas digitales gratuitas al mes, sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs subidos, el editor de Codec Document construye NDAs, contratos de arrendamiento y acuerdos de servicios desde cero, de forma gratuita. Los planes premium desbloquean documentos ilimitados, QR de co-firmantes y verificación de identidad.'
         },
         {
           q: '¿Cómo se compara con DocuSign o PandaDoc?',
@@ -1491,8 +1491,8 @@ export function ModernHomePage() {
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-500">
             {language === 'en'
-              ? 'Start with our Free Plan — 2 documents and 2 signatures every 72 hours (about 20 of each per month), no credit card required. Upgrade anytime for unlimited access.'
-              : 'Empieza con nuestro Plan Gratuito — 2 documentos y 2 firmas cada 72 horas (unos 20 de cada uno al mes), sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
+              ? 'Start with our Free Plan — 18 documents and 18 signatures per month, no credit card required. Upgrade anytime for unlimited access.'
+              : 'Empieza con nuestro Plan Gratuito — 18 documentos y 18 firmas al mes, sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
           </p>
           <Link
             to="/pricing"

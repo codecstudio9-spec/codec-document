@@ -151,7 +151,7 @@ export function OnboardingModal({ open, onOpenChange, contextMessage }: Props) {
                       actually includes before finishing registration. */}
                   <div className="mt-6 flex items-center justify-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-center text-[11px] font-semibold text-emerald-300">
                     <Gift className="size-3" />
-                    Empiezas en el Plan Gratuito: 2 documentos y 2 firmas cada 72 horas (~20 de cada uno al mes)
+                    Empiezas en el Plan Gratuito: 18 documentos y 18 firmas al mes
                   </div>
                   <p className="mt-3 text-center text-[11px] text-white/20">
                     Podrás cambiar esto en cualquier momento desde tu perfil

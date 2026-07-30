@@ -8,13 +8,14 @@ import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag } from 'lucide-react';
 import { OnboardingModal } from './auth/OnboardingModal';
 
-// Real numbers behind the free tier — 2 documents + 2 signatures per
-// rolling 72h window (user-limits-service.ts: DOCUMENT_LIMIT_72H /
-// SIGNATURE_REQUEST_LIMIT_72H). 720h in a 30-day month / 72h ≈ 10 windows,
-// so 2 × 10 = 20 of each per month — an honest "up to" approximation of a
-// rolling window, not a hard calendar-month cap.
-const FREE_DOCS_PER_MONTH_APPROX = 20;
-const FREE_SIGS_PER_MONTH_APPROX = 20;
+// User-facing free-plan numbers — deliberately a flat "N per month" claim,
+// not "every 72 hours". The actual quota is enforced as a 2-per-72h rolling
+// window server-side (user-limits-service.ts: DOCUMENT_LIMIT_72H /
+// SIGNATURE_REQUEST_LIMIT_72H) — that accounting is internal only and
+// should never surface in copy; 18 is the conservative monthly figure we
+// show customers instead.
+const FREE_DOCS_PER_MONTH = 18;
+const FREE_SIGS_PER_MONTH = 18;
 
 type Product = {
   hostedButtonId: string;
@@ -351,16 +352,16 @@ export function PricingSection() {
                   <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
                   <span>
                     {language === 'en'
-                      ? `2 documents every 72 hours (~${FREE_DOCS_PER_MONTH_APPROX}/month)`
-                      : `2 documentos cada 72 horas (~${FREE_DOCS_PER_MONTH_APPROX}/mes)`}
+                      ? `${FREE_DOCS_PER_MONTH} documents per month`
+                      : `${FREE_DOCS_PER_MONTH} documentos al mes`}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
                   <span>
                     {language === 'en'
-                      ? `2 e-signatures every 72 hours (~${FREE_SIGS_PER_MONTH_APPROX}/month)`
-                      : `2 firmas electrónicas cada 72 horas (~${FREE_SIGS_PER_MONTH_APPROX}/mes)`}
+                      ? `${FREE_SIGS_PER_MONTH} e-signatures per month`
+                      : `${FREE_SIGS_PER_MONTH} firmas electrónicas al mes`}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
