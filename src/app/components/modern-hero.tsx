@@ -167,14 +167,6 @@ export function ModernHero() {
         {/* LEFT — text */}
         <div className="flex w-full flex-col justify-center px-5 pt-20 pb-14 sm:px-8 sm:pt-24 sm:pb-16 lg:w-[54%] lg:px-12 xl:px-16 lg:pt-0 lg:pb-0 lg:py-16">
 
-          {/* Free hook — the single most important line for a first-time
-              visitor to see before anything else, so it comes before the
-              slide counter, not buried in a chip list below the fold. */}
-          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/15 px-4 py-1.5 text-xs font-bold text-emerald-300 backdrop-blur-sm">
-            <Zap className="size-3.5" />
-            {language === 'en' ? 'Free documents & e-signatures to get started' : 'Documentos y firmas electrónicas gratis para empezar'}
-          </div>
-
           {/* Slide counter */}
           <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white/55 backdrop-blur-sm">
             <span className="flex size-1.5 rounded-full bg-blue-400" />
@@ -265,7 +257,7 @@ export function ModernHero() {
         {/* RIGHT — single card carousel, desktop only */}
         <div className="hidden lg:flex lg:w-[46%] flex-col items-center justify-center py-16 pr-6">
           <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
-            {language === 'en' ? 'Click any card to start' : 'Haz clic en una tarjeta para empezar'}
+            {language === 'en' ? 'Click any card, free' : 'Haz clic en una tarjeta gratis'}
           </p>
 
           <div
