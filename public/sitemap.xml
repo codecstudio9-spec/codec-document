@@ -848,6 +848,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.codecdocument.com/pricing</loc>
+    <lastmod>2026-07-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.codecdocument.com/privacy</loc>
     <lastmod>2026-07-30</lastmod>
     <changefreq>weekly</changefreq>
@@ -1137,6 +1143,12 @@
   </url>
   <url>
     <loc>https://www.codecdocument.com/vehicle-bill-of-sale-virginia</loc>
+    <lastmod>2026-07-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.codecdocument.com/verificar</loc>
     <lastmod>2026-07-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

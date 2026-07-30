@@ -9,6 +9,7 @@ import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 // into the initial load. See App.tsx for the <Suspense> boundary.
 const ModernHomePage = lazy(() => import("./pages/modern-home-page").then((m) => ({ default: m.ModernHomePage })));
 const PricingPage = lazy(() => import("./pages/pricing-page").then((m) => ({ default: m.PricingPage })));
+const VerifyDocumentPage = lazy(() => import("./pages/verify-document-page").then((m) => ({ default: m.VerifyDocumentPage })));
 const DocumentGeneratorPage = lazy(() => import("./pages/document-generator-page").then((m) => ({ default: m.DocumentGeneratorPage })));
 const PreviewPage = lazy(() => import("./pages/preview-page").then((m) => ({ default: m.PreviewPage })));
 const CheckoutPage = lazy(() => import("./pages/checkout-page").then((m) => ({ default: m.CheckoutPage })));
@@ -377,6 +378,11 @@ export const router = createBrowserRouter([
   {
     path: "/pricing",
     Component: PricingPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/verificar",
+    Component: VerifyDocumentPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

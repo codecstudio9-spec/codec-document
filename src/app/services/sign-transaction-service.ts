@@ -125,6 +125,27 @@ export async function getSignTransaction(id: string): Promise<SignTransaction | 
   return data as SignTransaction;
 }
 
+export interface VerifiedTransaction {
+  found:         boolean;
+  status:        TxStatus | null;
+  document_type: string | null;
+  completed_at:  string | null;
+  created_at:    string | null;
+}
+
+/** Public "is this document real" check for the /verificar page — goes
+ * through verify_sign_transaction(uuid), a narrower RPC than
+ * get_sign_transaction_public: it returns only status/document_type/dates,
+ * never selfies, ID photos, IPs or signature images, so it's safe to expose
+ * to anyone who has a transaction id printed on a document's audit page. */
+export async function verifySignTransaction(id: string): Promise<VerifiedTransaction> {
+  const { data, error } = await supabase
+    .rpc('verify_sign_transaction', { p_id: id })
+    .maybeSingle();
+  if (error || !data) return { found: false, status: null, document_type: null, completed_at: null, created_at: null };
+  return data as VerifiedTransaction;
+}
+
 /** Marks a signed transaction as "seen" by its creator — the only signal
  * the unread-notifications badge uses. Called the moment the sender opens
  * a completed transaction from the Firmas/Notificaciones list. Uses the

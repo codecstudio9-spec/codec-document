@@ -887,15 +887,20 @@ export function ModernHomePage() {
 
               {/* Google login OR user avatar */}
               {!user ? (
-                <button
-                  type="button"
-                  onClick={() => setOnboardingOpen(true)}
-                  className="group relative hidden sm:inline-flex items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-bold text-white shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)] active:translate-y-0"
-                  style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)' }}
-                >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  {language === 'en' ? 'Try free' : 'Prueba gratis'}
-                </button>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="hidden xl:inline text-[11px] font-semibold text-slate-400">
+                    {language === 'en' ? 'No credit card required' : 'Sin tarjeta de crédito'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingOpen(true)}
+                    className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-bold text-white shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)] active:translate-y-0"
+                    style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)' }}
+                  >
+                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                    {language === 'en' ? 'Try free' : 'Prueba gratis'}
+                  </button>
+                </div>
               ) : (
                 <div className="relative">
                   <button
@@ -1080,6 +1085,27 @@ export function ModernHomePage() {
       {/* This whole page is desktop-only now (mobile redirects to /app
           above), so the hero always renders — no mobile branching left. */}
       {effectiveIsLatam ? <LatamHero /> : <ModernHero />}
+
+      {/* Trust stat strip — surfaced right under the hero instead of buried
+          down in the testimonials section, so the "50K docs signed" proof
+          point is visible before a first-time visitor has scrolled far. */}
+      <div className="border-b border-slate-100 bg-white py-6">
+        <div className="container mx-auto grid grid-cols-2 gap-4 px-4 sm:grid-cols-4">
+          {[
+            { num: '50K+', labelEn: 'Documents signed', labelEs: 'Documentos firmados' },
+            { num: '50', labelEn: 'U.S. states covered', labelEs: 'Estados cubiertos' },
+            { num: '6', labelEn: 'Latin American countries', labelEs: 'Países en Latinoamérica' },
+            { num: 'SHA-256', labelEn: 'Cryptographic security', labelEs: 'Seguridad criptográfica' },
+          ].map((stat) => (
+            <div key={stat.num} className="text-center">
+              <p className="text-xl font-black text-slate-900 sm:text-2xl">{stat.num}</p>
+              <p className="mt-0.5 text-[11px] font-semibold text-slate-400 sm:text-xs">
+                {language === 'en' ? stat.labelEn : stat.labelEs}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* US document templates — hidden entirely for a visitor detected
           outside the US (LatamHero above is their actual home experience),
@@ -1640,6 +1666,7 @@ export function ModernHomePage() {
                   <li><a href="/nda-generator" className="transition hover:text-white">{language === 'en' ? 'NDA Generator' : 'Generador de NDA'}</a></li>
                   <li><a href="/online-lease-agreement" className="transition hover:text-white">{language === 'en' ? 'Lease Agreement' : 'Contrato de Arrendamiento'}</a></li>
                   <li><a href="/promissory-note" className="transition hover:text-white">{language === 'en' ? 'Promissory Note' : 'Pagaré Comercial'}</a></li>
+                  <li><Link to="/verificar" className="transition hover:text-white">{language === 'en' ? 'Verify a Document' : 'Verificar un Documento'}</Link></li>
                 </ul>
               </div>
 
@@ -1684,6 +1711,13 @@ export function ModernHomePage() {
                     </div>
                   ))}
                 </div>
+                <Link
+                  to="/verificar"
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 transition hover:text-indigo-300"
+                >
+                  <ShieldCheck className="size-3.5" />
+                  {language === 'en' ? 'Verify a document' : 'Verificar un documento'} →
+                </Link>
               </div>
             </div>
 

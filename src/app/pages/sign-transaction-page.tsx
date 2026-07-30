@@ -445,6 +445,11 @@ export default function SignTransactionPage() {
               credentialIdHash: (tx.recipient_biometric_credential_id ?? '').slice(0, 16),
             }
           : undefined,
+        auditLog: {
+          documentId: tx.id,
+          guestIp: tx.recipient_ip,
+          guestSignedAt: tx.signed_at,
+        },
       });
 
       await triggerDownload(blob, fileName);
