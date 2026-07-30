@@ -4,14 +4,6 @@ import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signat
 
 interface PDFGeneratorOptions {
   content: string;
-  /** Pre-rasterized full-page images (see utils/render-docx-pages.ts) —
-   * when present, these REPLACE `content` as the document body (drawn via
-   * addRichContentPages instead of processContent's text engine), so a
-   * custom Word template's own bold values / embedded logo / layout
-   * survive untouched. Everything else (letterhead, signature block,
-   * identity verification, audit certificate, chrome/watermark) still
-   * runs exactly as it does for plain-text content. */
-  richContentPages?: Array<{ dataUrl: string; format: 'PNG' | 'JPEG'; heightMm: number }>;
   title: string;
   fileName: string;
   language: 'en' | 'es';
@@ -692,34 +684,6 @@ export class PDFGenerator {
     }
     // If the line has bold markers, strip them and render the line bold
     this.addText(line.replace(/\*\*/g, ''), fontSize, 'bold', 'left');
-  }
-
-  /**
-   * Draws pre-rasterized full-page images as the document body — one
-   * jsPDF page per entry, at this.margin/this.maxWidth so it lines up
-   * with everything else this class draws. Used instead of processContent
-   * when the caller supplied richContentPages (a custom Word template
-   * rendered to images to preserve its own bold/logo/layout). Page 1
-   * reuses the current page (after whatever letterhead/header already
-   * ran); every subsequent entry gets its own addPage(), matching how
-   * addText's own pagination resets currentY.
-   */
-  private addRichContentPages(pages: Array<{ dataUrl: string; format: 'PNG' | 'JPEG'; heightMm: number }>) {
-    pages.forEach((p, i) => {
-      if (i > 0) {
-        this.doc.addPage();
-        this.currentY = this.margin + 6;
-      }
-      const drawY = this.currentY;
-      const maxH = this.pageHeight - this.margin - drawY;
-      const h = Math.min(p.heightMm, maxH);
-      try {
-        this.doc.addImage(p.dataUrl, p.format, this.margin, drawY, this.maxWidth, h, undefined, 'FAST');
-      } catch {
-        // Skip an unrenderable page rather than fail the whole document.
-      }
-      this.currentY = drawY + h;
-    });
   }
 
   /**
@@ -2179,29 +2143,7 @@ export class PDFGenerator {
 
     // Split content at natural signature position so PDF order matches preview:
     // [body] → [signature block] → [checklist / state compliance / addenda]
-    if (opts.richContentPages?.length) {
-      generator.addRichContentPages(opts.richContentPages);
-      if (opts.signatures?.length) {
-        generator.addEmbeddedSignatures(opts.signatures, opts.language);
-      } else if (opts.leftSig || opts.rightSig) {
-        generator.addSignatureMirrorBlock(
-          opts.leftSig,
-          opts.rightSig,
-          opts.mirrorLanguage ?? opts.language,
-          opts.identitySelfie,
-          opts.identityIdDocFront ?? opts.identityIdDoc,
-          opts.identityIdDocBack,
-          opts.identityBiometric,
-        );
-      } else {
-        generator.addEmbeddedSignature(
-          opts.auditLog?.signatureDataUrl,
-          opts.auditLog?.signerName,
-          opts.auditLog?.guestSignedAt,
-          opts.language
-        );
-      }
-    } else if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+    if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
       generator.addSignatureMirrorBlock(
@@ -2280,29 +2222,7 @@ export class PDFGenerator {
     generator.applyBrandingTopSpacing(opts.branding);
     generator.addPremiumFirstPageHeader(opts.title, opts.branding);
 
-    if (opts.richContentPages?.length) {
-      generator.addRichContentPages(opts.richContentPages);
-      if (opts.signatures?.length) {
-        generator.addEmbeddedSignatures(opts.signatures, opts.language);
-      } else if (opts.leftSig || opts.rightSig) {
-        generator.addSignatureMirrorBlock(
-          opts.leftSig,
-          opts.rightSig,
-          opts.mirrorLanguage ?? opts.language,
-          opts.identitySelfie,
-          opts.identityIdDocFront ?? opts.identityIdDoc,
-          opts.identityIdDocBack,
-          opts.identityBiometric,
-        );
-      } else {
-        generator.addEmbeddedSignature(
-          opts.auditLog?.signatureDataUrl,
-          opts.auditLog?.signerName,
-          opts.auditLog?.guestSignedAt,
-          opts.language
-        );
-      }
-    } else if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+    if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
       generator.addSignatureMirrorBlock(
