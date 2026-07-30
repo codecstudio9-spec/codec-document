@@ -117,7 +117,7 @@ export function MyDocumentsPage() {
             </div>
             <button
               type="button"
-              onClick={() => navigate('/#plan-ultimate')}
+              onClick={() => navigate('/pricing')}
               className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700"
             >
               {language === 'es' ? 'Ver planes' : 'See plans'}

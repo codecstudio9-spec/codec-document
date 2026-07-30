@@ -72,7 +72,7 @@ export function LandingHeader() {
               );
             })}
             <a
-              href="/#plan-ultimate"
+              href="/pricing"
               className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-amber-400/80 transition hover:bg-amber-400/10 hover:text-amber-300"
             >
               {language === 'en' ? 'Plans' : 'Planes'}

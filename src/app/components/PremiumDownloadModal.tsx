@@ -626,7 +626,7 @@ export function PremiumDownloadModal({
                             )}
                           </p>
                           <a
-                            href="/#plan-ultimate"
+                            href="/pricing"
                             onClick={() => onOpenChange(false)}
                             className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
                           >

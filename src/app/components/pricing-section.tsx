@@ -305,14 +305,14 @@ export function PricingSection() {
   };
 
   return (
-    <section id="plan-ultimate" className="py-16 border-b" style={{ background: '#001220' }}>
+    <section id="plan-ultimate" className="border-b border-slate-100 bg-gradient-to-b from-blue-50/50 to-white py-16">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+          <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
             <ShieldCheck className="size-3.5" /> {copy.topPill}
           </span>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-white">{copy.title}</h2>
-          <p className="mt-3 text-base text-slate-300 md:text-lg">{copy.subtitle}</p>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">{copy.title}</h2>
+          <p className="mt-3 text-base text-slate-500 md:text-lg">{copy.subtitle}</p>
           <p className="mt-1 text-sm text-slate-400">{copy.subtitle2}</p>
         </div>
 
@@ -321,17 +321,17 @@ export function PricingSection() {
             up front; the specific limit and what to do next (wait, or pay
             just for that one document/signature) only matters once they
             actually hit it — that message lives in the paywall itself. */}
-        <div className="mb-8 mx-auto flex max-w-2xl items-center gap-4 rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 to-emerald-400/5 px-6 py-5 text-left">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-400/30">
-            <Gift className="size-5 text-emerald-300" />
+        <div className="mb-8 mx-auto flex max-w-2xl items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-left">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 ring-1 ring-emerald-200">
+            <Gift className="size-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-sm font-bold text-emerald-300">
+            <p className="text-sm font-bold text-emerald-700">
               {language === 'en'
                 ? 'Your first document or signature is on us'
                 : 'Tu primer documento o firma va por nuestra cuenta'}
             </p>
-            <p className="mt-0.5 text-xs text-emerald-200/60">
+            <p className="mt-0.5 text-xs text-emerald-600/80">
               {language === 'en'
                 ? "We know how much this matters to you — try it free, no credit card required. Full template editor included."
                 : 'Sabemos lo importante que esto es para ti — pruébalo gratis, sin tarjeta de crédito. Editor de plantillas completo incluido.'}
@@ -353,10 +353,10 @@ export function PricingSection() {
               }}
             >
               <div
-                className="h-full rounded-3xl bg-[#031a2d] p-5 md:p-7 border border-white/10"
-                style={{ boxShadow: `0 0 30px ${product.glow}` }}
+                className="h-full rounded-3xl bg-white p-5 md:p-7 border border-slate-100"
+                style={{ boxShadow: `0 8px 30px -8px ${product.glow}` }}
               >
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-slate-200">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
                   {(() => {
                     const Icon = iconByPlan[product.icon];
                     return <Icon className="size-3.5" />;
@@ -365,7 +365,7 @@ export function PricingSection() {
                 </div>
 
                 {product.featured && (
-                  <p className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-500 px-4 py-1 text-xs font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.6)]">
+                  <p className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-black text-white shadow-[0_4px_12px_rgba(37,99,235,0.4)]">
                     {language === 'en' ? product.savingsLabelEn : product.savingsLabelEs}
                   </p>
                 )}
@@ -375,16 +375,16 @@ export function PricingSection() {
                   </p>
                 )}
 
-                <h3 className="text-2xl font-bold text-white">{language === 'en' ? product.titleEn : product.titleEs}</h3>
-                <p className="mt-2 text-4xl font-extrabold text-white">{product.price}</p>
-                <p className="mt-1 text-sm font-medium text-blue-300">
+                <h3 className="text-2xl font-bold text-slate-900">{language === 'en' ? product.titleEn : product.titleEs}</h3>
+                <p className="mt-2 text-4xl font-extrabold text-slate-900">{product.price}</p>
+                <p className="mt-1 text-sm font-medium text-blue-600">
                   {language === 'en' ? product.taglineEn : product.taglineEs}
                 </p>
 
-                <ul className="mt-4 space-y-2 text-sm text-slate-200">
+                <ul className="mt-4 space-y-2 text-sm text-slate-600">
                   {(language === 'en' ? product.descriptionEn : product.descriptionEs).map((benefit) => (
                     <li key={benefit} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 size-4 text-emerald-400" />
+                      <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
                       <span>{benefit}</span>
                     </li>
                   ))}
@@ -397,7 +397,7 @@ export function PricingSection() {
               >
                 {copy.ctaPrimary}
               </button>
-              <p className="mt-2 text-center text-xs text-slate-300">{copy.ctaSecondary}</p>
+              <p className="mt-2 text-center text-xs text-slate-400">{copy.ctaSecondary}</p>
               {/* Per-card trust micro-badge */}
               <div className="mt-3 flex items-center justify-center gap-1.5">
                 <Lock className="size-3 text-slate-500" />
@@ -413,16 +413,16 @@ export function PricingSection() {
 
       {/* ── ESIGN / UETA Trust Strip ────────────────────────────────────────── */}
       <div className="mt-10 flex flex-col items-center gap-3 px-4 text-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/6 px-6 py-3">
-          <ShieldCheck className="size-4 text-emerald-400" />
-          <span className="text-xs font-bold text-emerald-300">ESIGN Act Compliant</span>
-          <span className="text-slate-600">·</span>
+        <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-3">
+          <ShieldCheck className="size-4 text-emerald-600" />
+          <span className="text-xs font-bold text-emerald-700">ESIGN Act Compliant</span>
+          <span className="text-slate-300">·</span>
           <Lock className="size-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">UETA Compliant</span>
-          <span className="text-slate-600">·</span>
-          <span className="text-xs text-slate-400">SHA-256 Audit Trail</span>
-          <span className="text-slate-600">·</span>
-          <span className="text-xs text-slate-400">PayPal Encrypted Checkout</span>
+          <span className="text-xs text-slate-500">UETA Compliant</span>
+          <span className="text-slate-300">·</span>
+          <span className="text-xs text-slate-500">SHA-256 Audit Trail</span>
+          <span className="text-slate-300">·</span>
+          <span className="text-xs text-slate-500">PayPal Encrypted Checkout</span>
         </div>
         <p className="max-w-2xl text-xs text-slate-500">
           {language === 'en'

@@ -120,10 +120,6 @@ export function ModernHero() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    SLIDES.forEach((s) => { const img = new Image(); img.src = s.image; });
-  }, []);
-
-  useEffect(() => {
     if (paused) return;
     const id = setInterval(() => setSlide(([p]) => [(p + 1) % SLIDES.length, 1]), INTERVAL_MS);
     return () => clearInterval(id);
@@ -139,7 +135,6 @@ export function ModernHero() {
 
   const prev = () => goTo(current - 1, -1);
   const next = () => goTo(current + 1, 1);
-  const trackX = `${-current * (100 / SLIDES.length)}%`;
 
   // Duplicate cards for seamless infinite loop
   const carouselCards = [...TEMPLATE_CARDS, ...TEMPLATE_CARDS];
@@ -147,11 +142,13 @@ export function ModernHero() {
   const trustChips = ['Legal Documents', 'E-Signatures', 'Identity Verification', 'Audit Trail', 'Geolocation', 'Secure Workflow'];
 
   return (
-    <section
-      className="relative min-h-[88vh] overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <section className="bg-white px-3 pt-4 sm:px-5 sm:pt-6 lg:px-8">
+      <div
+        className="relative mx-auto min-h-[78vh] max-w-[1600px] overflow-hidden rounded-[2rem] sm:rounded-[2.75rem]"
+        style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4338ca 55%, #3730a3 100%)' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
       <style>{`
         @keyframes docCardScroll {
           0%   { transform: translateX(0); }
@@ -159,28 +156,13 @@ export function ModernHero() {
         }
       `}</style>
 
-      {/* Background strip */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="flex h-full"
-          style={{ width: `${SLIDES.length * 100}%`, willChange: 'transform' }}
-          animate={{ x: trackX }}
-          transition={{ duration: 0.72, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
-          {SLIDES.map((slide) => (
-            <div key={slide.image} className="relative h-full shrink-0" style={{ width: `${100 / SLIDES.length}%` }}>
-              <img src={slide.image} alt="" className="h-full w-full object-cover" loading="eager" draggable={false} />
-            </div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Overlay */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(100deg, rgba(5,10,24,0.94) 0%, rgba(5,10,24,0.78) 38%, rgba(5,10,24,0.52) 62%, rgba(5,10,24,0.28) 100%)' }} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
+      {/* Soft decorative glow blobs — flat-color depth instead of a photo */}
+      <div className="pointer-events-none absolute -left-24 -top-24 size-[26rem] rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-16 size-[30rem] rounded-full bg-indigo-400/20 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
 
       {/* Two-column layout */}
-      <div className="relative z-10 flex min-h-[88vh] items-center">
+      <div className="relative z-10 flex min-h-[78vh] items-center">
 
         {/* LEFT — text */}
         <div className="flex w-full flex-col justify-center px-5 pt-20 pb-14 sm:px-8 sm:pt-24 sm:pb-16 lg:w-[54%] lg:px-12 xl:px-16 lg:pt-0 lg:pb-0 lg:py-16">
@@ -300,9 +282,7 @@ export function ModernHero() {
           </p>
         </div>
       </div>
-
-      {/* Bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white/95 via-white/35 to-transparent sm:h-12" />
+      </div>
     </section>
   );
 }

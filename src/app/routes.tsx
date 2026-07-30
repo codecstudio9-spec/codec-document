@@ -8,6 +8,7 @@ import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 // that route is actually visited, instead of bundling all ~150 pages
 // into the initial load. See App.tsx for the <Suspense> boundary.
 const ModernHomePage = lazy(() => import("./pages/modern-home-page").then((m) => ({ default: m.ModernHomePage })));
+const PricingPage = lazy(() => import("./pages/pricing-page").then((m) => ({ default: m.PricingPage })));
 const DocumentGeneratorPage = lazy(() => import("./pages/document-generator-page").then((m) => ({ default: m.DocumentGeneratorPage })));
 const PreviewPage = lazy(() => import("./pages/preview-page").then((m) => ({ default: m.PreviewPage })));
 const CheckoutPage = lazy(() => import("./pages/checkout-page").then((m) => ({ default: m.CheckoutPage })));
@@ -371,6 +372,11 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: ModernHomePage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/pricing",
+    Component: PricingPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

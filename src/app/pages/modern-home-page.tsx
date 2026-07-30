@@ -14,7 +14,6 @@ import { LatamHero } from '../components/latam-hero';
 import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { detectSignerCountryCode } from '../../lib/geo';
-import { PricingSection } from '../components/pricing-section';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
@@ -591,29 +590,29 @@ export function ModernHomePage() {
       {/* ── Sticky Header ─────────────────────────────────────────────────── */}
       <header
         className={[
-          'sticky top-0 z-50 transition-all duration-500',
+          'sticky top-0 z-50 transition-all duration-300',
           scrolled
-            ? 'border-b border-white/8 bg-slate-950/90 shadow-[0_4px_40px_rgba(0,0,0,0.45)] backdrop-blur-2xl'
-            : 'border-b border-transparent bg-slate-950',
+            ? 'border-b border-slate-200 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04),0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-xl'
+            : 'border-b border-transparent bg-white',
         ].join(' ')}
       >
-        {/* Top accent line */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+        {/* Top accent line — the logo's own gradient, thin */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
 
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
 
             {/* ── Logo ───────────────────────────────────────────────────── */}
             <a href="/" className="group flex items-center gap-2.5">
-              <div className="relative flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[0_0_20px_rgba(99,102,241,0.5)] transition-shadow duration-300 group-hover:shadow-[0_0_28px_rgba(99,102,241,0.7)]">
+              <div className="relative flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-shadow duration-300 group-hover:shadow-[0_4px_16px_rgba(79,70,229,0.5)]">
                 <Shield className="size-5 text-white" />
                 <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
               </div>
               <div>
-                <span translate="no" className="notranslate block text-base font-black tracking-tight text-white">
-                  Codec <span className="text-indigo-400">Document</span>
+                <span translate="no" className="notranslate block text-base font-black tracking-tight text-slate-900">
+                  Codec <span className="text-indigo-600">Document</span>
                 </span>
-                <span className="block text-[10px] font-medium text-white/35 leading-none">
+                <span className="block text-[10px] font-medium text-slate-400 leading-none">
                   {language === 'en' ? 'Legal · Signatures · AI' : 'Legal · Firmas · IA'}
                 </span>
               </div>
@@ -626,7 +625,7 @@ export function ModernHomePage() {
                 <button
                   type="button"
                   onClick={() => setShowDocumentsMenu((prev) => !prev)}
-                  className="group flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white/60 transition-all hover:bg-white/8 hover:text-white"
+                  className="group flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
                 >
                   <FolderOpen className="size-4" />
                   {language === 'en' ? 'Templates' : 'Plantillas'}
@@ -639,9 +638,9 @@ export function ModernHomePage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 4, scale: 0.97 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-0 mt-1 w-72 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+                      className="absolute left-0 mt-1 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_50px_rgba(15,23,42,0.14)]"
                     >
-                      <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                      <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {language === 'en' ? 'Catalog' : 'Catálogo'}
                       </p>
                       <ul className="max-h-64 space-y-0.5 overflow-auto">
@@ -649,7 +648,7 @@ export function ModernHomePage() {
                           <li key={doc.id}>
                             <button
                               type="button"
-                              className="w-full rounded-xl px-3 py-2 text-left text-sm text-white/70 transition hover:bg-white/8 hover:text-white"
+                              className="w-full rounded-xl px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                               onClick={() => { setShowDocumentsMenu(false); navigate(`/generator/${doc.id}`); }}
                             >
                               {doc.name}
@@ -664,7 +663,7 @@ export function ModernHomePage() {
 
               <Link
                 to="/free-legal-documents"
-                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <FileText className="size-4" />
                 {language === 'en' ? 'Free Docs' : 'Documentos gratis'}
@@ -672,28 +671,39 @@ export function ModernHomePage() {
 
               <a
                 href="/firma-electronica"
-                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
+                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <QrCode className="size-4" />
                 {language === 'en' ? 'Signatures' : 'Firmas'}
               </a>
 
-              {/* Plans */}
-              <button
-                type="button"
-                onClick={() => document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' })}
-                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium text-amber-400/80 transition hover:bg-amber-400/10 hover:text-amber-300"
+              {/* Pricing — its own page now */}
+              <Link
+                to="/pricing"
+                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                {language === 'en' ? 'Plans' : 'Planes'}
-              </button>
+                {language === 'en' ? 'Pricing' : 'Precios'}
+              </Link>
             </nav>
 
             {/* ── Right actions ─────────────────────────────────────────── */}
             <div className="flex items-center gap-2">
+              {/* Talk to sales — mirrors the ZapSign-style "Hablar con ventas"
+                  ghost button, wired to the real Calendar/Meet booking link. */}
+              <a
+                href={MEETING_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+              >
+                <CalendarClock className="size-3.5" />
+                {language === 'en' ? 'Talk to sales' : 'Hablar con ventas'}
+              </a>
+
               {/* Signature CTA */}
               <a
                 href="/firma-electronica"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-[0_0_16px_rgba(99,102,241,0.4)] transition-all hover:shadow-[0_0_24px_rgba(99,102,241,0.6)]"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-all hover:shadow-[0_4px_16px_rgba(79,70,229,0.5)]"
               >
                 <PenLine className="size-3.5" />
                 {language === 'en' ? 'Sign now' : 'Firmar ahora'}
@@ -704,30 +714,30 @@ export function ModernHomePage() {
                 <button
                   type="button"
                   onClick={() => setOnboardingOpen(true)}
-                  className="group relative hidden sm:inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-400/25 px-4 py-2 text-sm font-bold text-white shadow-[0_4px_0_#1e3a8a,0_6px_20px_rgba(29,78,216,0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_0_#1e3a8a,0_8px_28px_rgba(29,78,216,0.55)] active:translate-y-0 active:shadow-[0_2px_0_#1e3a8a]"
-                  style={{ background: 'linear-gradient(180deg, #4f9af8 0%, #2563eb 40%, #1d4ed8 100%)' }}
+                  className="group relative hidden sm:inline-flex items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-bold text-white shadow-[0_2px_10px_rgba(79,70,229,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)] active:translate-y-0"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)' }}
                 >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/18 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  {language === 'en' ? 'Get Started' : 'Comenzar'}
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  {language === 'en' ? 'Try free' : 'Prueba gratis'}
                 </button>
               ) : (
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowUserMenu((prev) => !prev)}
-                    className="group flex items-center gap-2 rounded-2xl border border-white/10 bg-white/6 pl-1 pr-3 py-1 transition hover:border-white/20 hover:bg-white/10"
+                    className="group flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 pl-1 pr-3 py-1 transition hover:border-slate-300 hover:bg-slate-100"
                   >
                     {user.picture ? (
-                      <img src={user.picture} alt="Perfil" className="size-7 rounded-xl object-cover ring-1 ring-white/20" />
+                      <img src={user.picture} alt="Perfil" className="size-7 rounded-xl object-cover ring-1 ring-slate-200" />
                     ) : (
-                      <span className="flex size-7 items-center justify-center rounded-xl bg-indigo-500/20 ring-1 ring-indigo-400/20">
-                        <User className="size-3.5 text-indigo-300" />
+                      <span className="flex size-7 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+                        <User className="size-3.5 text-indigo-600" />
                       </span>
                     )}
-                    <span className="hidden max-w-[120px] truncate text-xs font-semibold text-white/80 sm:block">
+                    <span className="hidden max-w-[120px] truncate text-xs font-semibold text-slate-700 sm:block">
                       {user.name || user.email}
                     </span>
-                    <ChevronDown className={`size-3.5 text-white/40 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`size-3.5 text-slate-400 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
                   </button>
 
                   <AnimatePresence>
@@ -737,34 +747,34 @@ export function ModernHomePage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.97 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+                        className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]"
                       >
                         {/* User info */}
-                        <div className="mb-1.5 border-b border-white/8 px-3 pb-2 pt-1">
-                          <p className="text-xs font-bold text-white">{user.name || 'Usuario'}</p>
-                          <p className="truncate text-[10px] text-white/40">{user.email}</p>
+                        <div className="mb-1.5 border-b border-slate-100 px-3 pb-2 pt-1">
+                          <p className="text-xs font-bold text-slate-900">{user.name || 'Usuario'}</p>
+                          <p className="truncate text-[10px] text-slate-400">{user.email}</p>
                         </div>
                         {[
                           { icon: FileText, label: language === 'en' ? 'My Documents' : 'Mis documentos', action: () => { navigate('/my-documents'); setShowUserMenu(false); } },
-                          { icon: Settings, label: language === 'en' ? 'My Subscription' : 'Mi Suscripción', action: () => { setShowUserMenu(false); document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' }); } },
+                          { icon: Settings, label: language === 'en' ? 'My Subscription' : 'Mi Suscripción', action: () => { setShowUserMenu(false); navigate('/pricing'); } },
                         ].map((item) => {
                           const ItemIcon = item.icon;
                           return (
                             <button
                               key={item.label}
                               type="button"
-                              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-white/70 transition hover:bg-white/8 hover:text-white"
+                              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                               onClick={item.action}
                             >
-                              <ItemIcon className="size-4 text-white/40" />
+                              <ItemIcon className="size-4 text-slate-400" />
                               {item.label}
                             </button>
                           );
                         })}
-                        <div className="mt-1 border-t border-white/8 pt-1">
+                        <div className="mt-1 border-t border-slate-100 pt-1">
                           <button
                             type="button"
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-red-400/80 transition hover:bg-red-500/10 hover:text-red-400"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-red-500 transition hover:bg-red-50"
                             onClick={() => { logout(); setShowUserMenu(false); }}
                           >
                             <LogOut className="size-4" />
@@ -784,7 +794,7 @@ export function ModernHomePage() {
                 type="button"
                 onClick={() => setMobileMenuOpen((p) => !p)}
                 aria-label="Menu"
-                className="md:hidden flex size-9 items-center justify-center rounded-xl border border-white/12 bg-white/6 text-white/70 transition hover:bg-white/12 hover:text-white"
+                className="md:hidden flex size-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
               >
                 <AnimatePresence mode="wait">
                   {mobileMenuOpen ? (
@@ -810,52 +820,63 @@ export function ModernHomePage() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="overflow-hidden border-t border-white/8 bg-slate-950/98 md:hidden backdrop-blur-xl"
+              className="overflow-hidden border-t border-slate-200 bg-white md:hidden"
             >
               <div className="container mx-auto px-4 py-4 space-y-1">
                 {/* Templates */}
                 <button
                   type="button"
                   onClick={() => { setMobileMenuOpen(false); document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/8 hover:text-white"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                 >
-                  <FolderOpen className="size-4 text-blue-400" />
+                  <FolderOpen className="size-4 text-blue-500" />
                   {language === 'en' ? 'Templates' : 'Plantillas'}
                 </button>
                 {/* Signatures */}
                 <a
                   href="/firma-electronica"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/8 hover:text-white"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                 >
-                  <QrCode className="size-4 text-indigo-400" />
+                  <QrCode className="size-4 text-indigo-500" />
                   {language === 'en' ? 'E-Signatures' : 'Firmas Electrónicas'}
                 </a>
-                {/* Plans */}
-                <button
-                  type="button"
-                  onClick={() => { setMobileMenuOpen(false); document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-amber-400/80 transition hover:bg-amber-400/10 hover:text-amber-300"
+                {/* Pricing */}
+                <Link
+                  to="/pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                 >
-                  <Star className="size-4" />
+                  <Star className="size-4 text-amber-500" />
                   {language === 'en' ? 'Plans & Pricing' : 'Planes y Precios'}
-                </button>
+                </Link>
+                {/* Talk to sales */}
+                <a
+                  href={MEETING_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <CalendarClock className="size-4 text-slate-400" />
+                  {language === 'en' ? 'Talk to sales' : 'Hablar con ventas'}
+                </a>
 
                 {user ? (
                   <>
-                    <div className="my-2 h-px bg-white/8" />
+                    <div className="my-2 h-px bg-slate-100" />
                     <button
                       type="button"
                       onClick={() => { setMobileMenuOpen(false); navigate('/my-documents'); }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/8 hover:text-white"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                     >
-                      <FileText className="size-4 text-white/40" />
+                      <FileText className="size-4 text-slate-400" />
                       {language === 'en' ? 'My Documents' : 'Mis Documentos'}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setMobileMenuOpen(false); logout(); }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-400/80 transition hover:bg-red-500/10 hover:text-red-400"
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-50"
                     >
                       <LogOut className="size-4" />
                       {language === 'en' ? 'Sign out' : 'Cerrar sesión'}
@@ -863,12 +884,12 @@ export function ModernHomePage() {
                   </>
                 ) : (
                   <>
-                    <div className="my-2 h-px bg-white/8" />
+                    <div className="my-2 h-px bg-slate-100" />
                     <button
                       type="button"
                       onClick={() => { setMobileMenuOpen(false); setOnboardingOpen(true); }}
                       className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition-all"
-                      style={{ background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%)', boxShadow: '0 4px 0 #1e3a8a' }}
+                      style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)' }}
                     >
                       {language === 'en' ? 'Get Started Free' : 'Empezar Gratis'}
                     </button>
@@ -1148,7 +1169,32 @@ export function ModernHomePage() {
       </section>
       <EnterpriseLeadModal open={enterpriseModalOpen} onOpenChange={setEnterpriseModalOpen} />
 
-      <PricingSection />
+      {/* ── Pricing teaser — full plans + checkout now live on their own
+          page (/pricing), so a second pricing model has somewhere to go
+          later without turning the home page into a second pricing page
+          too. PricingSection itself still backs /pricing unchanged. ──── */}
+      <section className="bg-white py-16 md:py-20">
+        <div className="container mx-auto px-4 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+            {language === 'en' ? 'Pricing' : 'Precios'}
+          </span>
+          <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black text-slate-900 md:text-4xl">
+            {language === 'en' ? 'Simple, transparent pricing' : 'Precios simples y transparentes'}
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-slate-500">
+            {language === 'en'
+              ? 'Your first document or signature is on us — no credit card required. Upgrade anytime for unlimited access.'
+              : 'Tu primer documento o firma va por nuestra cuenta — sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
+          </p>
+          <Link
+            to="/pricing"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(79,70,229,0.35)] transition-all hover:-translate-y-0.5"
+          >
+            {language === 'en' ? 'View plans & pricing' : 'Ver planes y precios'}
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </section>
 
       {/* ── Testimonials ──────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-slate-950 py-16 text-white md:py-28">
@@ -1307,13 +1353,12 @@ export function ModernHomePage() {
                 <CheckCircle2 className="size-4" />
                 {language === 'en' ? 'Get Started Free' : 'Empezar Gratis'}
               </a>
-              <button
-                type="button"
-                onClick={() => document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' })}
+              <Link
+                to="/pricing"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
               >
                 {language === 'en' ? 'View Plans' : 'Ver Planes'}
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -1357,7 +1402,7 @@ export function ModernHomePage() {
                   <li><button type="button" onClick={() => document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth' })} className="transition hover:text-white">{language === 'en' ? 'Templates' : 'Plantillas'}</button></li>
                   <li><a href="/firma-electronica" className="transition hover:text-white">{language === 'en' ? 'E-Signatures' : 'Firmas Electrónicas'}</a></li>
                   <li><a href="/my-documents" className="transition hover:text-white">{language === 'en' ? 'My Documents' : 'Mis Documentos'}</a></li>
-                  <li><button type="button" onClick={() => document.getElementById('plan-ultimate')?.scrollIntoView({ behavior: 'smooth' })} className="transition hover:text-amber-300 text-amber-400/70">{language === 'en' ? 'Pricing' : 'Precios'}</button></li>
+                  <li><Link to="/pricing" className="transition hover:text-amber-300 text-amber-400/70">{language === 'en' ? 'Pricing' : 'Precios'}</Link></li>
                   <li><a href="/firma-electronica" className="transition hover:text-white">{language === 'en' ? 'ID Verification' : 'Verificación ID'}</a></li>
                 </ul>
               </div>

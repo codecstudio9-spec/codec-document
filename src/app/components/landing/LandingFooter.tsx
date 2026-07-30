@@ -34,7 +34,7 @@ export function LandingFooter() {
               {language === 'en' ? 'Get Started Free' : 'Empezar Gratis'}
             </a>
             <a
-              href="/#plan-ultimate"
+              href="/pricing"
               className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
               {language === 'en' ? 'View Plans' : 'Ver Planes'}
@@ -73,7 +73,7 @@ export function LandingFooter() {
                 <li><a href="/" className="transition hover:text-white">{language === 'en' ? 'Templates' : 'Plantillas'}</a></li>
                 <li><a href="/firma-electronica" className="transition hover:text-white">{language === 'en' ? 'E-Signatures' : 'Firmas Electrónicas'}</a></li>
                 <li><a href="/my-documents" className="transition hover:text-white">{language === 'en' ? 'My Documents' : 'Mis Documentos'}</a></li>
-                <li><a href="/#plan-ultimate" className="transition hover:text-amber-300 text-amber-400/70">{language === 'en' ? 'Pricing' : 'Precios'}</a></li>
+                <li><a href="/pricing" className="transition hover:text-amber-300 text-amber-400/70">{language === 'en' ? 'Pricing' : 'Precios'}</a></li>
               </ul>
             </div>
 

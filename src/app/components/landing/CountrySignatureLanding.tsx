@@ -116,7 +116,7 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
         ctaLabelEn="Start Free Now" ctaLabelEs="Empieza Gratis Ahora"
         ctaHref="/firma-electronica"
         secondaryLabelEn="See Pricing" secondaryLabelEs="Ver Precios"
-        secondaryHref="/#plan-ultimate"
+        secondaryHref="/pricing"
         trustBadges={trustBadges}
       />
 

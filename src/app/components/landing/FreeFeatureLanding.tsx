@@ -113,7 +113,7 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         ctaLabelEn="Empieza Gratis Ahora" ctaLabelEs="Empieza Gratis Ahora"
         ctaHref="/firma-electronica"
         secondaryLabelEn="Ver Precios" secondaryLabelEs="Ver Precios"
-        secondaryHref="/#plan-ultimate"
+        secondaryHref="/pricing"
         trustBadges={[
           { en: 'Sin Tarjeta de Crédito', es: 'Sin Tarjeta de Crédito' },
           { en: 'Acceso Inmediato', es: 'Acceso Inmediato' },
