@@ -419,13 +419,14 @@ export default function SignTransactionPage() {
     if (!tx) return;
     setDownloadingCopy(true);
     try {
-      const { content, title } = await buildGuestDocumentContent(tx, language);
+      const { content, title, richContentPages } = await buildGuestDocumentContent(tx, language);
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
       const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
       const fileName = `${title.replace(/[^a-z0-9]+/gi, '-')}.pdf`;
 
       const blob = await PDFGenerator.generateBlob({
         content,
+        richContentPages,
         title,
         fileName,
         language,

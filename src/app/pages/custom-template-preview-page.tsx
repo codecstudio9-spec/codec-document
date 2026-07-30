@@ -28,7 +28,8 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getDocxTemplateForOwner } from '../services/docx-template-service';
-import { fetchDocxArrayBuffer, renderDocxTemplate, extractTextFromDocx } from '../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, renderDocxTemplate } from '../../lib/docxTemplateEngine';
+import { renderDocxToPageImages } from '../utils/render-docx-pages';
 import { PDFGenerator } from '../services/pdf-generator';
 import { saveDocumentRecord } from '../services/documents-service';
 import { triggerDownload } from '../utils/download';
@@ -70,7 +71,7 @@ export function CustomTemplatePreviewPage() {
 
       const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
       const mergedBytes = renderDocxTemplate(docxBytes, savedData.values ?? {});
-      const content = await extractTextFromDocx(mergedBytes);
+      const richContentPages = await renderDocxToPageImages(mergedBytes);
 
       const ownerSigUrl = sessionStorage.getItem('userSignatureDataUrl') || undefined;
       const coSignersJson = sessionStorage.getItem('coSigners');
@@ -87,7 +88,8 @@ export function CustomTemplatePreviewPage() {
       const fileName = `${template.name.replace(/[^a-z0-9]+/gi, '-')}.pdf`;
 
       const blob = await PDFGenerator.generateBlob({
-        content,
+        content: '',
+        richContentPages,
         title: template.name,
         fileName,
         language,
@@ -95,7 +97,6 @@ export function CustomTemplatePreviewPage() {
         jurisdiction,
         leftSig: ownerSigUrl ? { dataUrl: ownerSigUrl, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
         rightSig: recipientSig ? { dataUrl: recipientSig.sigDataUrl, name: recipientSig.name } : undefined,
-        mirrorLayout: true,
         mirrorLanguage: language,
         identitySelfie,
         identityIdDocFront,
