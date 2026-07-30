@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Download, X } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
@@ -21,6 +20,12 @@ import { stashSignedTransactionForDownload, markTransactionViewed, type SignTran
  * the tab was open — exactly the "while I'm using the app" behavior asked
  * for, distinct from the Firmas tab which shows the full history.
  *
+ * Uses a plain `window.location.href` navigation instead of react-router's
+ * useNavigate() — this component is mounted as a sibling of <RouterProvider>
+ * in App.tsx (so it's active on every route, not just ones already inside
+ * the router tree), and useNavigate() throws immediately if called outside
+ * a Router's component tree, which crashed the entire app on every page.
+ *
  * Dedup: viewed_at is the same "have I already seen this" signal the
  * Firmas tab/notification badge already use (see markTransactionViewed) —
  * gating on `!viewed_at` means a later UPDATE on the same row (e.g. the
@@ -31,7 +36,6 @@ import { stashSignedTransactionForDownload, markTransactionViewed, type SignTran
 export function SignedDocumentPopup() {
   const { user } = useAuth();
   const { language } = useLanguage();
-  const navigate = useNavigate();
   const [queue, setQueue] = useState<SignTransaction[]>([]);
   const shownIds = useRef(new Set<string>());
 
@@ -60,7 +64,7 @@ export function SignedDocumentPopup() {
     if (!current) return;
     void markTransactionViewed(current.id);
     stashSignedTransactionForDownload(current, language);
-    navigate(current.document_type === 'custom-template' ? '/preview/custom-template' : `/preview/${current.document_type}`);
+    window.location.href = current.document_type === 'custom-template' ? '/preview/custom-template' : `/preview/${current.document_type}`;
     dismiss();
   };
 
