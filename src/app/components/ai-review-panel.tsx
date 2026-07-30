@@ -21,10 +21,9 @@ const SEVERITY_STYLE: Record<AiRiskItem['severity'], { border: string; bg: strin
 /**
  * Drop-in "Analizar con IA" button + results, reused across the document
  * editor, both preview pages, and the dashboard AI page — one place to get
- * the gating/loading/streaming/error states right instead of four
- * near-duplicates. Client-side gating (isAdmin/subscriptionActive) is only
- * a UX nicety; the ai-document-review Edge Function re-checks the same
- * thing server-side.
+ * the gating/loading/error states right instead of four near-duplicates.
+ * Client-side gating (isAdmin/subscriptionActive) is only a UX nicety; the
+ * ai-document-review Edge Function re-checks the same thing server-side.
  */
 export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
   const { language } = useLanguage();
@@ -32,7 +31,6 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
   const canUseAi = isAdmin || subscriptionActive;
 
   const [loading, setLoading] = useState(false);
-  const [liveText, setLiveText] = useState('');
   const [result, setResult] = useState<AiReviewResult | null>(null);
   const [error, setError] = useState('');
 
@@ -40,11 +38,9 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
     if (!content.trim() || loading) return;
     setLoading(true);
     setError('');
-    setLiveText('');
     setResult(null);
     try {
-      const final = await reviewDocumentWithAi(content, language, (partial) => setLiveText(partial));
-      setResult(final);
+      setResult(await reviewDocumentWithAi(content, language));
     } catch (err) {
       setError(
         err instanceof AiReviewUpgradeRequiredError
@@ -100,14 +96,6 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
             ? (language === 'en' ? 'Analyzing…' : 'Analizando…')
             : (language === 'en' ? 'Analyze with AI' : 'Analizar con IA')}
         </button>
-      )}
-
-      {/* Live streaming preview — raw text as it arrives, swapped for the
-          parsed/structured view the instant the stream finishes. */}
-      {loading && liveText && (
-        <pre className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-indigo-100 bg-indigo-50/30 p-3 font-mono text-[11px] leading-relaxed text-slate-500">
-          {liveText}
-        </pre>
       )}
 
       {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}

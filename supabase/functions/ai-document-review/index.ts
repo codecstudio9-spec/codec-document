@@ -4,12 +4,14 @@
 // secrets via Deno.env, Bearer JWT resolved to a real user id server-side
 // (never trust a client-supplied plan flag for a paid-feature gate).
 //
-// Streams the Groq response straight through to the client (Server-Sent
-// Events, same OpenAI-compatible wire format Groq emits) once the gate
-// passes — the client accumulates `delta.content` chunks for a live
-// "typing" effect, then JSON.parses the finished string. Everything
-// BEFORE the Groq call (auth, plan gate, validation) still returns a
-// normal buffered JSON error response — only the successful path streams.
+// Buffered JSON response, NOT streamed — an earlier version tried to pass
+// Groq's raw SSE stream straight through as this function's own Response
+// body, which is a fragile pattern in Supabase's sandboxed Edge Runtime
+// (the upstream ReadableStream isn't guaranteed to survive being returned
+// across the isolate boundary) and broke in production. Groq itself
+// handles streaming fine (confirmed directly) — the problem was proxying
+// it through here. Buffering the full response before replying is the
+// same proven pattern paypal-verify/notify-completion already use.
 //
 // Deploy:
 //   supabase functions deploy ai-document-review --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
@@ -45,13 +47,19 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile';
 // thousand characters at most.
 const MAX_CONTENT_CHARS = 20000;
 
-function corsHeaders(origin: string | null, contentType = 'application/json') {
+function corsHeaders(origin: string | null) {
   return {
     'Access-Control-Allow-Origin': origin ?? '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': contentType,
+    'Content-Type': 'application/json',
   };
+}
+
+interface ReviewResult {
+  summary: string;
+  risks: { title: string; detail: string; severity: 'high' | 'medium' | 'low'; suggestion: string }[];
+  missingClauses: { title: string; detail: string; suggestion: string }[];
 }
 
 function buildPrompt(content: string, language: 'en' | 'es'): string {
@@ -69,6 +77,28 @@ function buildPrompt(content: string, language: 'en' | 'es'): string {
     `DOCUMENT TEXT:`,
     content,
   ].join('\n');
+}
+
+function extractJson(raw: string): ReviewResult {
+  // Groq (like most chat-completion APIs) can wrap JSON in a code fence
+  // even when explicitly told not to — strip that before parsing rather
+  // than failing the whole request over formatting.
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const parsed = JSON.parse(cleaned);
+  return {
+    summary: String(parsed.summary ?? ''),
+    risks: Array.isArray(parsed.risks) ? parsed.risks.map((r: any) => ({
+      title: String(r?.title ?? ''),
+      detail: String(r?.detail ?? ''),
+      severity: (['high', 'medium', 'low'] as const).includes(r?.severity) ? r.severity : 'medium',
+      suggestion: String(r?.suggestion ?? ''),
+    })) : [],
+    missingClauses: Array.isArray(parsed.missingClauses) ? parsed.missingClauses.map((c: any) => ({
+      title: String(c?.title ?? ''),
+      detail: String(c?.detail ?? ''),
+      suggestion: String(c?.suggestion ?? ''),
+    })) : [],
+  };
 }
 
 Deno.serve(async (req) => {
@@ -147,11 +177,10 @@ Deno.serve(async (req) => {
         messages: [{ role: 'user', content: buildPrompt(truncated, language) }],
         temperature: 0.2,
         response_format: { type: 'json_object' },
-        stream: true,
       }),
     });
 
-    if (!groqRes.ok || !groqRes.body) {
+    if (!groqRes.ok) {
       const errText = await groqRes.text().catch(() => '');
       console.error('[ai-document-review] Groq request failed:', groqRes.status, errText);
       return new Response(JSON.stringify({ error: 'AI review service is temporarily unavailable.' }), {
@@ -159,10 +188,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Direct passthrough — Groq's stream is already OpenAI-compatible SSE
-    // (`data: {...}\n\n` chunks ending in `data: [DONE]\n\n`); the client
-    // reads it the same way it would read OpenAI's.
-    return new Response(groqRes.body, { headers: corsHeaders(origin, 'text/event-stream; charset=utf-8') });
+    const groqJson = await groqRes.json();
+    const rawText = groqJson?.choices?.[0]?.message?.content ?? '';
+
+    let result: ReviewResult;
+    try {
+      result = extractJson(rawText);
+    } catch (parseErr) {
+      console.error('[ai-document-review] Could not parse Groq response as JSON:', rawText, parseErr);
+      return new Response(JSON.stringify({ error: 'AI review returned an unexpected response.' }), {
+        status: 502, headers: corsHeaders(origin),
+      });
+    }
+
+    return new Response(JSON.stringify(result), { headers: corsHeaders(origin) });
   } catch (err) {
     console.error('[ai-document-review] error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message ?? 'Unexpected error' }), {
