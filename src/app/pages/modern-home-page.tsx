@@ -1914,6 +1914,27 @@ export function ModernHomePage() {
           always redirects into the /app bottom-nav shell above. ────────── */}
       <div className="fixed bottom-6 right-4 z-50 flex flex-col items-end gap-3">
 
+        {/* FAB: Verificar un documento — stacked just above WhatsApp
+            (WhatsApp stays the primary, bottom-most FAB). Links straight
+            to the public authenticity verifier built earlier. */}
+        <motion.div
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="group flex items-center gap-2"
+        >
+          <span className="rounded-xl border border-white/10 bg-slate-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-xl transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+            {language === 'en' ? 'Verify a document' : 'Verificar documento'}
+          </span>
+          <Link
+            to="/verificar"
+            className="flex size-12 items-center justify-center rounded-2xl text-white shadow-xl shadow-black/40 transition-all duration-200 hover:scale-110"
+            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)' }}
+          >
+            <ShieldCheck className="size-5" />
+          </Link>
+        </motion.div>
+
         {/* FAB 3: WhatsApp — LatAm only, no US number yet */}
         {language === 'es' && (
           <motion.div

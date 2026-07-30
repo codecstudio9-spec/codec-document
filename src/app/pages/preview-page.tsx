@@ -24,6 +24,7 @@ import { getPurchaseUnlockStatus } from '../services/paypal-service';
 import { getSignatureAuditByOrder, getSignatureAuditsByOrder } from '../services/paypal-service';
 import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
+import { AiReviewPanel } from '../components/ai-review-panel';
 import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } from '../services/analytics-service';
@@ -785,6 +786,46 @@ export function PreviewPage() {
   const canDownloadFree = isPurchased || unlimitedActive || subscriptionActive || isAdmin;
   const canEditDocument = unlimitedActive || subscriptionActive || isAdmin;
 
+  /** Same variable-interpolation logic handleDownload uses to build
+   * `exportContent` for the PDF — pulled out so the AI review panel can
+   * get real document text without duplicating a payment-relevant flow or
+   * waiting on a download click. Pure/no side effects, safe to call as
+   * often as the panel re-renders. */
+  const computeExportContent = (): string => {
+    let templateForExport = exportLanguage === 'es' && spanishTemplates[template.id]
+      ? spanishTemplates[template.id]
+      : template.template;
+
+    if (selectedState) {
+      templateForExport = getStateSpecificTemplate(templateForExport, template.id, selectedState, exportLanguage);
+    }
+
+    let content = templateForExport;
+    const enrichedData = normalizeLanguageSensitiveFields(
+      enrichDocumentDataWithDates(documentData, exportLanguage),
+      exportLanguage,
+    );
+
+    content = content.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, fieldName, innerContent) => {
+      const cleanFieldName = fieldName.trim();
+      const fieldValue = enrichedData[cleanFieldName];
+      if (fieldValue && fieldValue !== '' && fieldValue !== 'No' && fieldValue !== 'false') {
+        return innerContent;
+      }
+      return '';
+    });
+
+    Object.entries(enrichedData).forEach(([key, value]) => {
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
+      const normalizedValue = typeof value === 'boolean' ? (value ? '(x)' : '( )') : value;
+      content = content.replace(regex, String(normalizedValue || ''));
+    });
+
+    content = content.replace(/\{\{([^}]+)\}\}/g, '');
+    return normalizeCorruptedText(content);
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -1299,6 +1340,11 @@ export function PreviewPage() {
               </span>
             </div>
           )}
+
+          {/* AI risk / missing-clause review — real text resolved the same
+              way the PDF export is, so what's analyzed matches what gets
+              downloaded. Gated to paid/admin inside the panel itself. */}
+          <AiReviewPanel content={computeExportContent()} />
 
           {/* ── Document preview ─────────────────────────────────────────────── */}
           <Card className="overflow-hidden shadow-sm">

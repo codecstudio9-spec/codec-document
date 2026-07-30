@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
 import { Button } from '../components/ui/button';
+import { AiReviewPanel } from '../components/ai-review-panel';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
@@ -1066,6 +1067,25 @@ export function DocumentGeneratorPage() {
     ? spanishTemplates[template.id]
     : template.template;
 
+  /** Plain-text version of the live in-progress draft, for the AI review
+   * panel — a simpler substitution than the final PDF export (no date
+   * enrichment/state variations) since this is a draft check, not the
+   * document that actually gets signed. */
+  const computeLiveDocumentText = (): string => {
+    let text = previewTemplate;
+    text = text.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match: string, fieldName: string, innerContent: string) => {
+      const value = formData[fieldName.trim()];
+      return value && value !== '' && value !== 'No' && value !== 'false' ? innerContent : '';
+    });
+    Object.entries(formData).forEach(([key, value]) => {
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
+      const normalizedValue = typeof value === 'boolean' ? (value ? '(x)' : '( )') : value;
+      text = text.replace(regex, String(normalizedValue ?? ''));
+    });
+    return text.replace(/\{\{([^}]+)\}\}/g, '');
+  };
+
   const PreviewPanel = () => (
     <div key="document-preview-live-root">
       <Card className="lg:sticky lg:top-4 overflow-hidden">
@@ -1086,6 +1106,12 @@ export function DocumentGeneratorPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI risk / missing-clause review of the in-progress draft — gated
+          to paid/admin inside the panel itself. */}
+      <div className="mt-4">
+        <AiReviewPanel content={computeLiveDocumentText()} />
+      </div>
     </div>
   );
 

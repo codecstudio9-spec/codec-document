@@ -34,6 +34,7 @@ import { saveDocumentRecord } from '../services/documents-service';
 import { triggerDownload } from '../utils/download';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction } from '../data/signature-jurisdictions';
+import { AiReviewPanel } from '../components/ai-review-panel';
 
 interface StashedSig { id: string; name: string; sigDataUrl: string }
 
@@ -44,6 +45,10 @@ export function CustomTemplatePreviewPage() {
   const [templateName, setTemplateName] = useState('');
   const [status, setStatus] = useState<'loading' | 'ready' | 'generating' | 'done' | 'error'>('loading');
   const [error, setError] = useState('');
+  // Resolved once the template loads (not just inside handleGenerate) so
+  // the AI review panel has real text to analyze before the user commits
+  // to generating the final PDF.
+  const [resolvedContent, setResolvedContent] = useState('');
 
   useEffect(() => {
     const savedData = sessionStorage.getItem('documentData');
@@ -52,9 +57,17 @@ export function CustomTemplatePreviewPage() {
     try { parsed = JSON.parse(savedData); } catch { setStatus('error'); setError(language === 'en' ? 'Corrupted document data.' : 'Datos del documento corruptos.'); return; }
     if (!parsed.templateId) { setStatus('error'); setError(language === 'en' ? 'This document has no linked template.' : 'Este documento no tiene una plantilla vinculada.'); return; }
 
-    getDocxTemplateForOwner(parsed.templateId).then((t) => {
+    getDocxTemplateForOwner(parsed.templateId).then(async (t) => {
       if (!t) { setStatus('error'); setError(language === 'en' ? 'Template not found.' : 'Plantilla no encontrada.'); return; }
       setTemplateName(t.name);
+      try {
+        const docxBytes = await fetchDocxArrayBuffer(t.docxFileUrl);
+        const mergedBytes = renderDocxTemplate(docxBytes, parsed.values ?? {});
+        setResolvedContent(await extractTextFromDocx(mergedBytes));
+      } catch {
+        // Non-fatal — the AI panel just won't have content yet; the real
+        // download flow re-resolves this itself in handleGenerate below.
+      }
       setStatus('ready');
     }).catch(() => { setStatus('error'); setError(language === 'en' ? 'Could not load the template.' : 'No se pudo cargar la plantilla.'); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,9 +81,11 @@ export function CustomTemplatePreviewPage() {
       const template = await getDocxTemplateForOwner(savedData.templateId);
       if (!template) throw new Error(language === 'en' ? 'Template not found.' : 'Plantilla no encontrada.');
 
-      const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
-      const mergedBytes = renderDocxTemplate(docxBytes, savedData.values ?? {});
-      const content = await extractTextFromDocx(mergedBytes);
+      const content = resolvedContent || await (async () => {
+        const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
+        const mergedBytes = renderDocxTemplate(docxBytes, savedData.values ?? {});
+        return extractTextFromDocx(mergedBytes);
+      })();
 
       const ownerSigUrl = sessionStorage.getItem('userSignatureDataUrl') || undefined;
       const coSignersJson = sessionStorage.getItem('coSigners');
@@ -156,6 +171,12 @@ export function CustomTemplatePreviewPage() {
         <button type="button" onClick={() => navigate('/my-documents')} className="text-sm font-semibold text-slate-500 hover:text-slate-700">
           {language === 'en' ? 'Go to My Documents' : 'Ir a Mis Documentos'}
         </button>
+      )}
+
+      {resolvedContent && (
+        <div className="w-full max-w-md text-left">
+          <AiReviewPanel content={resolvedContent} />
+        </div>
       )}
     </div>
   );
