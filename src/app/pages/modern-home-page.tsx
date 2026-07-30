@@ -1086,27 +1086,6 @@ export function ModernHomePage() {
           above), so the hero always renders — no mobile branching left. */}
       {effectiveIsLatam ? <LatamHero /> : <ModernHero />}
 
-      {/* Trust stat strip — surfaced right under the hero instead of buried
-          down in the testimonials section, so the "50K docs signed" proof
-          point is visible before a first-time visitor has scrolled far. */}
-      <div className="border-b border-slate-100 bg-white py-6">
-        <div className="container mx-auto grid grid-cols-2 gap-4 px-4 sm:grid-cols-4">
-          {[
-            { num: '50K+', labelEn: 'Documents signed', labelEs: 'Documentos firmados' },
-            { num: '50', labelEn: 'U.S. states covered', labelEs: 'Estados cubiertos' },
-            { num: '6', labelEn: 'Latin American countries', labelEs: 'Países en Latinoamérica' },
-            { num: 'SHA-256', labelEn: 'Cryptographic security', labelEs: 'Seguridad criptográfica' },
-          ].map((stat) => (
-            <div key={stat.num} className="text-center">
-              <p className="text-xl font-black text-slate-900 sm:text-2xl">{stat.num}</p>
-              <p className="mt-0.5 text-[11px] font-semibold text-slate-400 sm:text-xs">
-                {language === 'en' ? stat.labelEn : stat.labelEs}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* US document templates — hidden entirely for a visitor detected
           outside the US (LatamHero above is their actual home experience),
           since these templates mean nothing for a Colombian rental or an
