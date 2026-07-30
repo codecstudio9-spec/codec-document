@@ -1,7 +1,8 @@
-import { Shield, BadgeCheck, CheckCircle2 } from 'lucide-react';
+import { Shield, BadgeCheck, CheckCircle2, Mail, Briefcase, CalendarClock, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/language-context';
 import { STATES } from '../../data/doctype-state-seo-content';
 import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
+import { INFO_EMAIL, BUSINESS_EMAIL, WHATSAPP_LINK, MEETING_LINK } from '../../config/site';
 
 /**
  * Same visual language as the Home page footer (dark, pre-footer CTA strip,
@@ -113,6 +114,33 @@ export function LandingFooter() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Direct contact channels — general inquiries + business/sales,
+              plus WhatsApp for the LatAm market only (no US number yet, so
+              this must never render unconditionally: gated on language
+              rather than a real per-visitor country check, same pattern
+              LandingFooter already uses everywhere else for en/es content,
+              and reliably 'es' on every LatAm-fixed page template). */}
+          <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/8 pt-6 text-sm">
+            <a href={`mailto:${INFO_EMAIL}`} className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+              <Mail className="size-4 text-indigo-400" />
+              {INFO_EMAIL}
+            </a>
+            <a href={`mailto:${BUSINESS_EMAIL}`} className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+              <Briefcase className="size-4 text-indigo-400" />
+              {BUSINESS_EMAIL}
+            </a>
+            <a href={MEETING_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+              <CalendarClock className="size-4 text-indigo-400" />
+              {language === 'en' ? 'Book a call' : 'Agenda una llamada'}
+            </a>
+            {language === 'es' && (
+              <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-400 transition hover:text-emerald-400">
+                <MessageCircle className="size-4 text-emerald-500" />
+                WhatsApp
+              </a>
+            )}
           </div>
 
           {/* Popular states — internal links so the state SEO pages are

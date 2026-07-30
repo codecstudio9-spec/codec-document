@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
 import { LanguageToggle } from '../components/language-toggle';
 import { SEOHead } from '../components/seo-head';
 import { StructuredData } from '../components/structured-data';
-import { SITE_URL, SUPPORT_EMAIL } from '../config/site';
+import { SITE_URL, SUPPORT_EMAIL, INFO_EMAIL, BUSINESS_EMAIL, WHATSAPP_LINK, MEETING_LINK } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
 import { LatamHero } from '../components/latam-hero';
 import { ComparisonTable } from '../components/comparison-table';
@@ -1418,6 +1418,29 @@ export function ModernHomePage() {
               </div>
             </div>
 
+            {/* Direct contact channels — general inquiries + business/sales,
+                plus WhatsApp for the LatAm market only (no US number yet). */}
+            <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/8 pt-6 text-sm">
+              <a href={`mailto:${INFO_EMAIL}`} className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+                <Mail className="size-4 text-indigo-400" />
+                {INFO_EMAIL}
+              </a>
+              <a href={`mailto:${BUSINESS_EMAIL}`} className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+                <Briefcase className="size-4 text-indigo-400" />
+                {BUSINESS_EMAIL}
+              </a>
+              <a href={MEETING_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
+                <CalendarClock className="size-4 text-indigo-400" />
+                {language === 'en' ? 'Book a call' : 'Agenda una llamada'}
+              </a>
+              {language === 'es' && (
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-slate-400 transition hover:text-emerald-400">
+                  <MessageCircle className="size-4 text-emerald-500" />
+                  WhatsApp
+                </a>
+              )}
+            </div>
+
             {/* Bottom strip */}
             <div className="flex flex-col items-center gap-3 border-t border-white/8 pt-8 text-center text-xs sm:flex-row sm:justify-between">
               <p className="text-slate-600">
@@ -1444,6 +1467,29 @@ export function ModernHomePage() {
       {/* ── Floating Action Buttons — this page is desktop-only now, mobile
           always redirects into the /app bottom-nav shell above. ────────── */}
       <div className="fixed bottom-6 right-4 z-50 flex flex-col items-end gap-3">
+
+        {/* FAB 3: WhatsApp — LatAm only, no US number yet */}
+        {language === 'es' && (
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="group flex items-center gap-2"
+          >
+            <span className="rounded-xl border border-white/10 bg-slate-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-xl transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+              WhatsApp
+            </span>
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex size-12 items-center justify-center rounded-2xl text-white shadow-xl shadow-black/40 transition-all duration-200 hover:scale-110"
+              style={{ background: '#25D366' }}
+            >
+              <MessageCircle className="size-5" />
+            </a>
+          </motion.div>
+        )}
 
         {/* FAB 2: Browse templates */}
         <motion.div

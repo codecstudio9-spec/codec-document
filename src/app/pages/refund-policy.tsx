@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { Shield, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
 import { LanguageToggle } from '../components/language-toggle';
+import { SUPPORT_EMAIL } from '../config/site';
 
 export function RefundPolicyPage() {
   const { language } = useLanguage();
@@ -241,7 +242,9 @@ export function RefundPolicyPage() {
                       Questions? Contact Us BEFORE Purchasing
                     </p>
                     <p className="text-blue-800">
-                      If you have any questions or concerns about a document, please contact us BEFORE making your purchase. We're happy to help you determine if a document is right for your needs - but we cannot offer refunds after purchase.
+                      If you have any questions or concerns about a document, please contact us at{' '}
+                      <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold underline">{SUPPORT_EMAIL}</a>{' '}
+                      BEFORE making your purchase. We're happy to help you determine if a document is right for your needs - but we cannot offer refunds after purchase.
                     </p>
                   </div>
                 </>
@@ -386,7 +389,9 @@ export function RefundPolicyPage() {
                     <li>Damos la bienvenida a comentarios para mejorar nuestras plantillas</li>
                   </ul>
                   <p>
-                    Por favor contáctenos si necesita asistencia, pero entienda que no podemos ofrecer reembolsos.
+                    Por favor escríbanos a{' '}
+                    <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold underline">{SUPPORT_EMAIL}</a>{' '}
+                    si necesita asistencia, pero entienda que no podemos ofrecer reembolsos.
                   </p>
 
                   <h2>10. Reconocimiento</h2>

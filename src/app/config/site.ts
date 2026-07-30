@@ -11,4 +11,23 @@ export const SITE_URL =
 export const SUPPORT_EMAIL =
   (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) || 'support@codecdocument.com';
 
+/** General inquiries — footer/contact-us surfaces. */
+export const INFO_EMAIL =
+  (import.meta.env.VITE_INFO_EMAIL as string | undefined) || 'info@codecdocument.com';
+
+/** Business/enterprise sales inquiries. */
+export const BUSINESS_EMAIL =
+  (import.meta.env.VITE_BUSINESS_EMAIL as string | undefined) || 'business@codecdocument.com';
+
+/** LATAM-only for now — no US number yet, so any UI using this must gate
+ * on the visitor being in a Spanish/LatAm context (language === 'es'),
+ * never render it unconditionally site-wide. */
+export const WHATSAPP_LINK =
+  (import.meta.env.VITE_WHATSAPP_LINK as string | undefined) || 'https://wa.link/5yku3k';
+
+/** Book a call (Google Calendar/Meet) — paired with BUSINESS_EMAIL for
+ * sales/enterprise conversations. */
+export const MEETING_LINK =
+  (import.meta.env.VITE_MEETING_LINK as string | undefined) || 'https://calendar.app.google/aUo8a4CJxduFDuNz9';
+
 export const SITE_HOSTNAME = SITE_URL.replace(/^https?:\/\//, '');

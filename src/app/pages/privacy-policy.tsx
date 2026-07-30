@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
 import { LanguageToggle } from '../components/language-toggle';
+import { INFO_EMAIL } from '../config/site';
 
 export function PrivacyPolicyPage() {
   const { language } = useLanguage();
@@ -182,7 +183,8 @@ export function PrivacyPolicyPage() {
 
                   <h2>13. Contact Us</h2>
                   <p>
-                    If you have any questions about this Privacy Policy or our data practices, please contact us through our website.
+                    If you have any questions about this Privacy Policy or our data practices, please contact us at{' '}
+                    <a href={`mailto:${INFO_EMAIL}`} className="text-blue-600 hover:underline">{INFO_EMAIL}</a>.
                   </p>
 
                   <div className="bg-green-50 border-l-4 border-green-600 p-6 mt-8">
