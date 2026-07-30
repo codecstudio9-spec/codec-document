@@ -73,98 +73,109 @@ export function DocumentBentoGrid({ documents }: DocumentBentoGridProps) {
             </motion.p>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {documents.slice(0, 6).map((doc, idx) => {
-              const Icon = getIcon(doc.id);
-              const translatedName = getDocumentTranslation(doc.id, 'name', language);
-              const translatedDesc = getDocumentTranslation(doc.id, 'desc', language);
+          {/* Infinite horizontal scroll — same technique as the hero's
+              template-card strip (duplicated list + CSS keyframe,
+              mask-fade at the edges, pauses on hover) instead of a static
+              grid, so this reads as a living catalog rather than "here
+              are 6 boxes". */}
+          <style>{`
+            @keyframes bentoCardScroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+          <div
+            className="group/row relative -mx-4 overflow-hidden px-4"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
+            }}
+          >
+            <div
+              className="flex gap-6 py-2"
+              style={{ width: 'max-content', animation: 'bentoCardScroll 38s linear infinite' }}
+              onMouseEnter={(e) => { e.currentTarget.style.animationPlayState = 'paused'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.animationPlayState = 'running'; }}
+            >
+              {[...documents.slice(0, 6), ...documents.slice(0, 6)].map((doc, idx) => {
+                const Icon = getIcon(doc.id);
+                const translatedName = getDocumentTranslation(doc.id, 'name', language);
+                const translatedDesc = getDocumentTranslation(doc.id, 'desc', language);
 
-              return (
-                <motion.div
-                  key={doc.id}
-                  initial={{ opacity: 0, y: 32 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.08 }}
-                  /* 3-D depth: lift on hover, no rotation */
-                  whileHover={{ y: -10, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
-                  className="cursor-pointer"
-                  style={{
-                    filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.11))',
-                  }}
-                >
-                  <Link to={`/generator/${doc.id}`} className="block h-full">
-                    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:border-indigo-200 hover:shadow-[0_20px_60px_rgba(99,102,241,0.18),0_4px_16px_rgba(0,0,0,0.06)]"
-                      style={{ boxShadow: '0 6px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)' }}
-                    >
-                      {/* Top gradient accent on hover */}
-                      <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-500/0 via-indigo-500/60 to-blue-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                return (
+                  <div key={`${doc.id}-${idx}`} className="w-[320px] shrink-0 cursor-pointer" style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.11))' }}>
+                    <Link to={`/generator/${doc.id}`} className="block h-full">
+                      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition-all duration-300 hover:border-indigo-200 hover:shadow-[0_20px_60px_rgba(99,102,241,0.18),0_4px_16px_rgba(0,0,0,0.06)]"
+                        style={{ boxShadow: '0 6px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)' }}
+                      >
+                        {/* Top gradient accent on hover */}
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-500/0 via-indigo-500/60 to-blue-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-                      {/* Hover background tint */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-2xl" />
+                        {/* Hover background tint */}
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-2xl" />
 
-                      <div className="relative flex flex-1 flex-col p-6">
-                        {/* Icon & Free Badge */}
-                        <div className="mb-4 flex items-start justify-between">
-                          <div
-                            className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 transition-all duration-300 group-hover:shadow-[0_8px_24px_rgba(99,102,241,0.45)]"
-                            style={{ boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
-                          >
-                            <Icon className="size-6 text-white" />
-                          </div>
-                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                            {language === 'en' ? 'Free to Start' : 'Comienza Gratis'}
-                          </span>
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="mb-2 text-xl font-bold text-slate-900 transition-colors duration-200 group-hover:text-indigo-700">
-                          {translatedName || doc.name}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="mb-4 flex-1 text-sm leading-relaxed text-slate-500 line-clamp-3">
-                          {translatedDesc || doc.description}
-                        </p>
-
-                        {/* Features */}
-                        <div className="mb-4 space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <Clock className="size-4 shrink-0 text-emerald-500" />
-                            <span>{language === 'en' ? 'Instant preview' : 'Vista previa instantánea'}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <FileCheck className="size-4 shrink-0 text-blue-500" />
-                            <span>
-                              {doc.fields.length}{' '}
-                              {language === 'en' ? 'customizable fields' : 'campos personalizables'}
+                        <div className="relative flex flex-1 flex-col p-6">
+                          {/* Icon & Free Badge */}
+                          <div className="mb-4 flex items-start justify-between">
+                            <div
+                              className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 transition-all duration-300 group-hover:shadow-[0_8px_24px_rgba(99,102,241,0.45)]"
+                              style={{ boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
+                            >
+                              <Icon className="size-6 text-white" />
+                            </div>
+                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                              {language === 'en' ? 'Free to Start' : 'Comienza Gratis'}
                             </span>
                           </div>
-                        </div>
 
-                        {/* CTA */}
-                        <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                          <span className="text-sm font-semibold text-indigo-600 transition-colors group-hover:text-indigo-700">
-                            {language === 'en' ? 'Generate Free' : 'Generar Gratis'}
-                          </span>
-                          <div className="flex size-7 items-center justify-center rounded-full bg-indigo-50 transition-all duration-200 group-hover:bg-indigo-100">
-                            <ArrowRight className="size-3.5 text-indigo-600 transition-transform duration-200 group-hover:translate-x-0.5" />
+                          {/* Title */}
+                          <h3 className="mb-2 text-xl font-bold text-slate-900 transition-colors duration-200 group-hover:text-indigo-700">
+                            {translatedName || doc.name}
+                          </h3>
+
+                          {/* Description */}
+                          <p className="mb-4 flex-1 text-sm leading-relaxed text-slate-500 line-clamp-3">
+                            {translatedDesc || doc.description}
+                          </p>
+
+                          {/* Features */}
+                          <div className="mb-4 space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Clock className="size-4 shrink-0 text-emerald-500" />
+                              <span>{language === 'en' ? 'Instant preview' : 'Vista previa instantánea'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <FileCheck className="size-4 shrink-0 text-blue-500" />
+                              <span>
+                                {doc.fields.length}{' '}
+                                {language === 'en' ? 'customizable fields' : 'campos personalizables'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* CTA */}
+                          <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                            <span className="text-sm font-semibold text-indigo-600 transition-colors group-hover:text-indigo-700">
+                              {language === 'en' ? 'Generate Free' : 'Generar Gratis'}
+                            </span>
+                            <div className="flex size-7 items-center justify-center rounded-full bg-indigo-50 transition-all duration-200 group-hover:bg-indigo-100">
+                              <ArrowRight className="size-3.5 text-indigo-600 transition-transform duration-200 group-hover:translate-x-0.5" />
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Popular badge */}
-                      {idx === 0 && (
-                        <div className="absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1 text-xs font-bold text-white shadow-[0_2px_10px_rgba(251,191,36,0.4)]">
-                          {language === 'en' ? 'POPULAR' : 'POPULAR'}
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
+                        {/* Popular badge */}
+                        {idx === 0 && (
+                          <div className="absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 px-3 py-1 text-xs font-bold text-white shadow-[0_2px_10px_rgba(251,191,36,0.4)]">
+                            {language === 'en' ? 'POPULAR' : 'POPULAR'}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {documents.length > 6 && (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
@@ -11,9 +11,11 @@ import { StructuredData } from '../components/structured-data';
 import { SITE_URL, SUPPORT_EMAIL, INFO_EMAIL, BUSINESS_EMAIL, WHATSAPP_LINK, MEETING_LINK } from '../config/site';
 import { ModernHero } from '../components/modern-hero';
 import { LatamHero } from '../components/latam-hero';
-import { ComparisonTable } from '../components/comparison-table';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { detectSignerCountryCode } from '../../lib/geo';
+import { isAdminEmail } from '../utils/admin-access';
+import { STATES } from '../data/doctype-state-seo-content';
+import { LATAM_COUNTRIES } from '../data/latam-signature-seo-content';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
@@ -46,6 +48,7 @@ export function ModernHomePage() {
   const [filteredDocuments] = useState(documentTemplates);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showDocumentsMenu, setShowDocumentsMenu] = useState(false);
+  const [showPlatformMenu, setShowPlatformMenu] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [uploadFileName, setUploadFileName] = useState('');
@@ -661,13 +664,95 @@ export function ModernHomePage() {
                 </AnimatePresence>
               </div>
 
-              <Link
-                to="/free-legal-documents"
-                className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              {/* Platform showcase — hover/click reveals the full process
+                  (create → send → validate → sign → follow-up) plus the
+                  voice-guide and security/certification highlights, to
+                  build trust before asking anyone to sign up. Replaces the
+                  old "Free Docs" link, which had no real function here. */}
+              <div
+                className="relative"
+                onMouseEnter={() => setShowPlatformMenu(true)}
+                onMouseLeave={() => setShowPlatformMenu(false)}
               >
-                <FileText className="size-4" />
-                {language === 'en' ? 'Free Docs' : 'Documentos gratis'}
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowPlatformMenu((prev) => !prev)}
+                  className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <Layers className="size-4" />
+                  {language === 'en' ? 'Platform' : 'Plataforma'}
+                  <ChevronDown className={`size-3.5 transition-transform duration-200 ${showPlatformMenu ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {showPlatformMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 4, scale: 0.97 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute left-1/2 mt-1 w-[30rem] -translate-x-1/2 overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_30px_70px_rgba(15,23,42,0.18)]"
+                    >
+                      <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        {language === 'en' ? 'How it works' : 'Cómo funciona'}
+                      </p>
+                      <motion.div
+                        className="flex items-start justify-between"
+                        initial="hidden"
+                        animate="show"
+                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+                      >
+                        {[
+                          { icon: FileText, en: 'Create', es: 'Se crea' },
+                          { icon: Send, en: 'Send', es: 'Se envía' },
+                          { icon: ShieldCheck, en: 'Validate', es: 'Se valida' },
+                          { icon: PenLine, en: 'Sign', es: 'Se firma' },
+                          { icon: BadgeCheck, en: 'Follow-up', es: 'Acompañamiento' },
+                        ].map((step, idx, arr) => {
+                          const StepIcon = step.icon;
+                          return (
+                            <motion.div
+                              key={step.en}
+                              className="flex flex-1 flex-col items-center text-center"
+                              variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+                            >
+                              <div className="relative flex w-full items-center">
+                                {idx > 0 && <span className="absolute -left-1/2 right-1/2 top-4 h-px bg-gradient-to-r from-blue-200 to-indigo-200" />}
+                                <span className="relative z-10 mx-auto flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_2px_8px_rgba(79,70,229,0.35)]">
+                                  <StepIcon className="size-4" />
+                                </span>
+                              </div>
+                              <p className="mt-2 text-[11px] font-bold text-slate-700">{language === 'en' ? step.en : step.es}</p>
+                              {idx === arr.length - 1 ? null : null}
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+
+                      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-2.5">
+                        <Volume2 className="size-4 shrink-0 text-indigo-600" />
+                        <p className="text-xs font-semibold text-indigo-700">
+                          {language === 'en' ? 'Voice guide walks every signer through each step' : 'Guía por voz acompaña a cada firmante paso a paso'}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="size-3.5 text-emerald-600" />
+                          <span className="text-[11px] font-bold text-emerald-700">ESIGN Act</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="size-3.5 text-emerald-600" />
+                          <span className="text-[11px] font-bold text-emerald-700">UETA</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="size-3.5 text-emerald-600" />
+                          <span className="text-[11px] font-bold text-emerald-700">SHA-256</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <a
                 href="/firma-electronica"
@@ -905,35 +990,32 @@ export function ModernHomePage() {
           above), so the hero always renders — no mobile branching left. */}
       {visitorIsLatam ? <LatamHero /> : <ModernHero />}
 
-      {/* US document templates — not the DEFAULT/lead for a visitor
-          detected outside the US (that's the LatamHero above), but kept
-          under their own clearly labeled section rather than fully
-          removed — the user's own closing note on this ask was explicit:
-          "no ocultes completamente las plantillas de EE. UU. ... mejor
-          muéstralas dentro de una sección llamada 'Documentos Legales
-          para Estados Unidos'". This is also what the LatamHero's own
-          "Documentos para EE. UU." button scrolls down to. */}
-      <section id="documents-section">
-        {visitorIsLatam && (
-          <div className="bg-slate-50 pt-14 text-center">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
-              {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
-            </span>
-            <h2 className="mx-auto max-w-xl px-4 text-2xl font-black text-slate-900 md:text-3xl">
-              {language === 'en' ? 'Legal Documents for the United States' : 'Documentos Legales para Estados Unidos'}
-            </h2>
-            <p className="mx-auto mt-2 max-w-lg px-4 text-sm text-slate-500">
-              {language === 'en'
-                ? 'State-specific templates for NDAs, leases, contracts and more — for property or business you have in the US.'
-                : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más — para propiedades o negocios que tengas en EE. UU.'}
-            </p>
-          </div>
-        )}
-        <DocumentBentoGrid documents={filteredDocuments} />
-      </section>
-
-      {/* Comparativa de IA Mejorada */}
-      <ComparisonTable />
+      {/* US document templates — hidden entirely for a visitor detected
+          outside the US (LatamHero above is their actual home experience),
+          since these templates mean nothing for a Colombian rental or an
+          Argentine NDA. Exception: the account owner's own admin email
+          always sees both interfaces, needed to review/demo either market
+          regardless of where they're actually connecting from. */}
+      {(!visitorIsLatam || isAdminEmail(user?.email)) && (
+        <section id="documents-section">
+          {visitorIsLatam && (
+            <div className="bg-slate-50 pt-14 text-center">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+                {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
+              </span>
+              <h2 className="mx-auto max-w-xl px-4 text-2xl font-black text-slate-900 md:text-3xl">
+                {language === 'en' ? 'Legal Documents for the United States' : 'Documentos Legales para Estados Unidos'}
+              </h2>
+              <p className="mx-auto mt-2 max-w-lg px-4 text-sm text-slate-500">
+                {language === 'en'
+                  ? 'State-specific templates for NDAs, leases, contracts and more — for property or business you have in the US.'
+                  : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más — para propiedades o negocios que tengas en EE. UU.'}
+              </p>
+            </div>
+          )}
+          <DocumentBentoGrid documents={filteredDocuments} />
+        </section>
+      )}
 
       {/* How It Works — 4 steps matching the app flow */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40 py-16 md:py-28">
@@ -1051,120 +1133,94 @@ export function ModernHomePage() {
           toward /my-templates; unauthenticated clicks open the same
           onboarding modal the header's "Get Started Free" button uses,
           instead of a silent bounce back to "/" via ProtectedRoute. */}
-      {/* ── Smart Quotes — a full product, not a form field, so it gets its
-          own prominent band right where "advanced feature" sections start,
-          same premium two-column treatment as "Upload your own templates"
-          below it ──────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 py-16 md:py-24">
-        <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 20% 20%, rgba(99,102,241,0.30), transparent)' }} />
+      {/* ── Do more with Codec Document — Smart Quotes / Upload templates /
+          Enterprise used to be 3 separate full-bleed sections, each with
+          its own mismatched dark gradient. Consolidated into one section
+          with 3 horizontal cards on a single, consistent background —
+          same functionality (each card's CTA goes to exactly what it did
+          before), just visually unified. ─────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white py-16 md:py-24">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.4]" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.08), transparent)' }} />
         <div className="container relative mx-auto px-4">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 rounded-3xl border border-indigo-400/20 bg-white/[0.03] p-8 backdrop-blur md:flex-row md:gap-14 md:p-14">
-            <div className="flex size-40 shrink-0 items-center justify-center rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/25 to-blue-500/10 md:order-2 md:size-52">
-              <Receipt className="size-20 text-indigo-300 md:size-24" strokeWidth={1.5} />
-            </div>
-            <div className="flex-1 md:order-1">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
-                <Sparkles className="size-3" /> {language === 'en' ? 'New' : 'Nuevo'}
-              </span>
-              <h2 className="text-3xl font-black text-white md:text-4xl">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600">
+              <Sparkles className="size-3" /> {language === 'en' ? 'Do more' : 'Haz más'}
+            </span>
+            <h2 className="mt-4 text-3xl font-black text-slate-900 md:text-4xl">
+              {language === 'en' ? 'One platform, every workflow' : 'Una plataforma, todos tus flujos'}
+            </h2>
+          </div>
+
+          <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+            {/* Smart Quotes */}
+            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(37,99,235,0.25)]">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-[0_4px_14px_rgba(37,99,235,0.35)]">
+                <Receipt className="size-6 text-white" />
+              </div>
+              <h3 className="mt-5 text-xl font-black text-slate-900">
                 {language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes'}
-              </h2>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-300">
+              </h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
                 {language === 'en'
-                  ? 'Build a professional quote with live totals, send it to your client, and get it accepted with a real electronic signature — a full agreement, not just a PDF.'
-                  : 'Crea una cotización profesional con totales en tiempo real, envíasela a tu cliente, y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.'}
+                  ? 'Build a professional quote with live totals and get it accepted with a real electronic signature — a full agreement, not just a PDF.'
+                  : 'Crea una cotización profesional con totales en tiempo real y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.'}
               </p>
-              <ul className="mt-6 space-y-2.5">
-                {[
-                  language === 'en' ? 'Live totals — quantity, discount, and tax calculated as you type' : 'Totales en vivo — cantidad, descuento e impuesto calculados mientras escribes',
-                  language === 'en' ? '4 professional designs: Corporate, Modern, Executive, Minimal' : '4 diseños profesionales: Corporate, Modern, Executive, Minimal',
-                  language === 'en' ? 'Know when your client opens it, and get it signed online' : 'Sabe cuándo tu cliente la abre, y logra que la firme en línea',
-                ].map((line) => (
-                  <li key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                    {line}
-                  </li>
-                ))}
-              </ul>
               <button
                 type="button"
                 onClick={() => (user ? navigate('/my-quotes/new') : setOnboardingOpen(true))}
-                className="group mt-8 inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-4 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(99,102,241,0.55)]"
+                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-0.5"
               >
                 {language === 'en' ? 'Create my first quote' : 'Crear mi primera cotización'}
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-950 to-blue-950 py-16 md:py-24">
-        <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 80% 20%, rgba(99,102,241,0.25), transparent)' }} />
-        <div className="container relative mx-auto px-4">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur md:flex-row md:gap-14 md:p-14">
-            <div className="flex-1">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
-                {language === 'en' ? 'For your business' : 'Para tu negocio'}
-              </span>
-              <h2 className="text-3xl font-black text-white md:text-4xl">
+            {/* Upload your own templates */}
+            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(79,70,229,0.25)]">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_4px_14px_rgba(79,70,229,0.35)]">
+                <FolderOpen className="size-6 text-white" />
+              </div>
+              <h3 className="mt-5 text-xl font-black text-slate-900">
                 {language === 'en' ? 'Upload your own templates' : 'Sube tus propias plantillas'}
-              </h2>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-300">
+              </h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
                 {language === 'en'
-                  ? 'Upload any document once, click to mark where the fillable fields and signature go, and reuse it forever — every time you fill it in, your logo, header and footer come with it automatically.'
-                  : 'Sube tu propio documento una vez, marca con clics dónde van los campos y la firma, y reúsalo para siempre — cada vez que lo llenes, tu logo, encabezado y pie de página quedan puestos automáticamente.'}
+                  ? 'Upload any document once, mark where the fields and signature go, and reuse it forever — your logo and branding come with it automatically.'
+                  : 'Sube tu propio documento una vez, marca dónde van los campos y la firma, y reúsalo para siempre — tu logo y tu marca quedan puestos automáticamente.'}
               </p>
-              <ul className="mt-6 space-y-2.5">
-                {[
-                  language === 'en' ? 'Upload a PDF and mark the fields yourself, no guesswork' : 'Sube un PDF y marca los campos tú mismo, sin adivinar',
-                  language === 'en' ? 'Fill it in as many times as you need — it stays saved' : 'Llénalo las veces que necesites — queda guardado',
-                  language === 'en' ? 'Your logo, colors and branding, automatically' : 'Tu logo, colores y marca, de forma automática',
-                ].map((line) => (
-                  <li key={line} className="flex items-center gap-2.5 text-sm text-slate-300">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                    {line}
-                  </li>
-                ))}
-              </ul>
               <button
                 type="button"
                 onClick={() => (user ? navigate('/my-templates') : setOnboardingOpen(true))}
-                className="group mt-8 inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(99,102,241,0.55)]"
+                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-0.5"
               >
                 {language === 'en' ? 'Create my first template' : 'Crear mi primera plantilla'}
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
-            <div className="flex size-40 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/20 to-blue-500/10 md:size-52">
-              <FolderOpen className="size-20 text-indigo-300 md:size-24" strokeWidth={1.5} />
+
+            {/* Enterprise Solutions */}
+            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(124,58,237,0.25)]">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 shadow-[0_4px_14px_rgba(124,58,237,0.35)]">
+                <Building2 className="size-6 text-white" />
+              </div>
+              <h3 className="mt-5 text-xl font-black text-slate-900">
+                {language === 'en' ? 'Enterprise Solutions' : 'Soluciones para Empresas'}
+              </h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
+                {language === 'en'
+                  ? 'Automate documents, e-signatures and corporate workflows from a single platform, tailored to your team.'
+                  : 'Automatiza documentos, firmas electrónicas y flujos corporativos desde una sola plataforma, a la medida de tu equipo.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setEnterpriseModalOpen(true)}
+                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:-translate-y-0.5"
+              >
+                {language === 'en' ? 'Talk to a specialist' : 'Hablar con un especialista'}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </button>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── Enterprise Solutions — small, premium, deliberately not a full
-          form on the page itself; opens a modal on click ─────────────── */}
-      <section className="bg-slate-950 px-4 py-14 md:py-20">
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/60 to-slate-900/60 p-8 text-center shadow-2xl md:p-12">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-indigo-500/15">
-            <Building2 className="size-6 text-indigo-300" />
-          </div>
-          <h2 className="text-2xl font-black text-white md:text-3xl">
-            {language === 'en' ? 'Enterprise Solutions' : 'Soluciones para Empresas'}
-          </h2>
-          <p className="max-w-lg text-sm text-slate-300 md:text-base">
-            {language === 'en'
-              ? 'Automate documents, e-signatures and corporate workflows from a single platform.'
-              : 'Automatiza documentos, firmas electrónicas y flujos corporativos desde una sola plataforma.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => setEnterpriseModalOpen(true)}
-            className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(99,102,241,0.40)] transition-all hover:-translate-y-0.5"
-          >
-            {language === 'en' ? 'Talk to a specialist' : 'Hablar con un especialista'}
-          </button>
         </div>
       </section>
       <EnterpriseLeadModal open={enterpriseModalOpen} onOpenChange={setEnterpriseModalOpen} />
@@ -1217,32 +1273,50 @@ export function ModernHomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {premiumTestimonials.slice(0, 6).map((item, idx) => (
-              <motion.article
-                key={`${item.author}-${idx}`}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: (idx % 3) * 0.1 }}
-                className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-6 backdrop-blur-md transition-all hover:border-blue-400/20 hover:bg-white/7 hover:shadow-[0_8px_40px_rgba(59,130,246,0.15)]"
-              >
-                <div className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 ring-1 ring-blue-500/25 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="mb-3 flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`size-3.5 ${i < item.stars ? 'fill-amber-400 text-amber-400' : 'text-white/15'}`} />
-                  ))}
-                </div>
-                <p className="mb-4 text-sm leading-relaxed text-white/70">"{item.quote}"</p>
-                <div className="flex items-center gap-3 border-t border-white/8 pt-4">
-                  <img src={item.avatar} alt={item.author} className="size-10 rounded-full object-cover ring-2 ring-white/12" loading="lazy" />
-                  <div>
-                    <p className="text-sm font-bold text-white">{item.author}</p>
-                    <p className="text-xs text-white/40">{item.role}</p>
+          {/* Slow infinite scroll instead of a static grid — same
+              duplicated-list + CSS keyframe technique used elsewhere on
+              this page, paused on hover so a review stays readable. */}
+          <style>{`
+            @keyframes testimonialScroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+          <div
+            className="relative -mx-4 overflow-hidden px-4"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
+            }}
+          >
+            <div
+              className="flex gap-4 py-2"
+              style={{ width: 'max-content', animation: 'testimonialScroll 55s linear infinite' }}
+              onMouseEnter={(e) => { e.currentTarget.style.animationPlayState = 'paused'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.animationPlayState = 'running'; }}
+            >
+              {[...premiumTestimonials.slice(0, 6), ...premiumTestimonials.slice(0, 6)].map((item, idx) => (
+                <article
+                  key={`${item.author}-${idx}`}
+                  className="group relative w-[340px] shrink-0 overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-6 backdrop-blur-md transition-all hover:border-blue-400/20 hover:bg-white/7 hover:shadow-[0_8px_40px_rgba(59,130,246,0.15)]"
+                >
+                  <div className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 ring-1 ring-blue-500/25 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="mb-3 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`size-3.5 ${i < item.stars ? 'fill-amber-400 text-amber-400' : 'text-white/15'}`} />
+                    ))}
                   </div>
-                </div>
-              </motion.article>
-            ))}
+                  <p className="mb-4 text-sm leading-relaxed text-white/70">"{item.quote}"</p>
+                  <div className="flex items-center gap-3 border-t border-white/8 pt-4">
+                    <img src={item.avatar} alt={item.author} className="size-10 rounded-full object-cover ring-2 ring-white/12" loading="lazy" />
+                    <div>
+                      <p className="text-sm font-bold text-white">{item.author}</p>
+                      <p className="text-xs text-white/40">{item.role}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
 
           {/* Trust numbers */}
@@ -1486,6 +1560,33 @@ export function ModernHomePage() {
               )}
             </div>
 
+            {/* Popular states + LatAm countries — same internal-linking
+                rows LandingFooter already shows on every SEO landing page,
+                added here too so the home page reads with the same depth
+                and trust signal as the rest of the site. */}
+            <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-600">{language === 'en' ? 'Popular states:' : 'Estados populares:'}</span>
+              {STATES.map((s, i, arr) => (
+                <span key={s.slug}>
+                  <a href={`/legal-documents-${s.slug}`} className="transition hover:text-white">{language === 'en' ? s.name : s.nameEs}</a>
+                  {i < arr.length - 1 && <span className="text-slate-700">,</span>}
+                </span>
+              ))}
+            </div>
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-600">{language === 'en' ? 'Also in Latin America:' : 'También en Latinoamérica:'}</span>
+              {LATAM_COUNTRIES.map((c) => (
+                <a
+                  key={c.slug}
+                  href={`/firma-electronica-${c.slug}`}
+                  className="inline-flex items-center gap-1 transition hover:text-white"
+                >
+                  <span>{c.flag}</span>
+                  {language === 'en' ? c.name : c.nameEs}
+                </a>
+              ))}
+            </div>
+
             {/* Bottom strip */}
             <div className="flex flex-col items-center gap-3 border-t border-white/8 pt-8 text-center text-xs sm:flex-row sm:justify-between">
               <p className="text-slate-600">
@@ -1535,46 +1636,6 @@ export function ModernHomePage() {
             </a>
           </motion.div>
         )}
-
-        {/* FAB 2: Browse templates */}
-        <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="group flex items-center gap-2"
-        >
-          {/* Label — visible on hover (desktop) / always on mobile */}
-          <span className="rounded-xl border border-white/10 bg-slate-900/90 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-xl transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
-            {language === 'en' ? 'Create legal doc' : 'Crear documento'}
-          </span>
-          <button
-            type="button"
-            onClick={() => document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="flex size-12 items-center justify-center rounded-2xl border border-white/15 bg-slate-900/80 text-white shadow-xl shadow-black/40 backdrop-blur-xl transition-all duration-200 hover:scale-110 hover:border-indigo-400/40 hover:shadow-[0_0_24px_rgba(99,102,241,0.35)]"
-          >
-            <FileText className="size-5" />
-          </button>
-        </motion.div>
-
-        {/* FAB 1: Sign now — primary, with pulse ring */}
-        <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.0, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="group flex items-center gap-2"
-        >
-          <span className="rounded-xl border border-indigo-400/20 bg-indigo-950/90 px-3 py-1.5 text-xs font-bold text-indigo-200 shadow-lg backdrop-blur-xl transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
-            {language === 'en' ? '✍️ Sign here' : '✍️ Firma aquí'}
-          </span>
-
-          <a href="/firma-electronica" className="relative flex">
-            {/* Pulse ring */}
-            <span className="absolute inset-0 animate-ping rounded-2xl bg-indigo-500/30" />
-            <span className="relative flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-[0_0_28px_rgba(99,102,241,0.6)] ring-1 ring-white/20 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_48px_rgba(99,102,241,0.8)]">
-              <BadgeCheck className="size-6" />
-            </span>
-          </a>
-        </motion.div>
       </div>
 
       <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />

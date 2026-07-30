@@ -45,8 +45,8 @@ const SLIDES = [
 const TEMPLATE_CARDS = [
   { titleEn: 'Residential Lease\nAgreement', titleEs: 'Contrato de\nArrendamiento', badge: 'LEASE', color: '#2563eb', route: '/generator/residential-lease', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Home },
   { titleEn: 'Non-Disclosure\nAgreement', titleEs: 'Acuerdo de\nConfidencialidad', badge: 'NDA', color: '#7c3aed', route: '/generator/nda', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: ShieldCheck },
-  { titleEn: 'Independent\nContractor Agr.', titleEs: 'Contrato\nIndependiente', badge: 'FREELANCE', color: '#059669', route: '/generator/independent-contractor', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Briefcase },
-  { titleEn: 'Service\nAgreement', titleEs: 'Acuerdo de\nServicios', badge: 'SERVICES', color: '#dc2626', route: '/generator/service-agreement', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Settings },
+  { titleEn: 'Independent\nContractor Agr.', titleEs: 'Contrato\nIndependiente', badge: 'FREELANCE', color: '#4f46e5', route: '/generator/independent-contractor', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Briefcase },
+  { titleEn: 'Service\nAgreement', titleEs: 'Acuerdo de\nServicios', badge: 'SERVICES', color: '#0284c7', route: '/generator/service-agreement', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Settings },
   { titleEn: 'Bill of Sale\nVehicle', titleEs: 'Contrato de\nCompraventa', badge: 'VEHICLE', color: '#0891b2', route: '/generator/bill-of-sale-vehicle', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Car },
   { titleEn: 'Promissory\nNote', titleEs: 'Pagaré\nComercial', badge: 'FINANCE', color: '#d97706', route: '/generator/promissory-note', btnEn: 'Sign Here', btnEs: 'Firmar Aquí', icon: TrendingUp },
 ];
