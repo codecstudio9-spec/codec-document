@@ -104,7 +104,7 @@ function ActionCard({ action, language }: { action: typeof ACTIONS[0]; language:
           boxShadow: `0 3px 0 ${action.color}99, 0 5px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25)`,
           color: 'white', fontWeight: 800, fontSize: '10px', textAlign: 'center',
           padding: '8px 0', letterSpacing: '0.04em', textShadow: '0 1px 2px rgba(0,0,0,0.30)',
-        }}>{language === 'en' ? 'Start' : 'Empezar'}</div>
+        }}>{language === 'en' ? 'Free' : 'Gratis'}</div>
       </div>
     </a>
   );

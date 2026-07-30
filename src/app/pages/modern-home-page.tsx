@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck, CreditCard, Smartphone, FileCheck, Fingerprint, Search } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck, CreditCard, Smartphone, FileCheck, Fingerprint, Search, X, type LucideIcon } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
@@ -49,6 +49,11 @@ export function ModernHomePage() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showDocumentsMenu, setShowDocumentsMenu] = useState(false);
   const [showPlatformMenu, setShowPlatformMenu] = useState(false);
+  // Single reusable "explain this" popup — driven by whichever security
+  // feature or compliance/law badge the visitor clicked. One modal instead
+  // of one-per-card keeps this simple: image-forward (big icon), 1-2 short
+  // sentences, no wall of text.
+  const [infoModal, setInfoModal] = useState<{ icon: LucideIcon; color: string; title: string; desc: string } | null>(null);
   const [googleReady, setGoogleReady] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [uploadFileName, setUploadFileName] = useState('');
@@ -80,6 +85,11 @@ export function ModernHomePage() {
   // — confirmed explicitly with the user (see conversation). US or
   // undetected visitors keep the exact original experience.
   const [visitorIsLatam, setVisitorIsLatam] = useState(false);
+  // Real detected country code (e.g. 'CO', 'MX') — kept separate from the
+  // market override below so the compliance strip can still show the
+  // visitor's actual local law even when ?market=latam is only overriding
+  // which hero/section layout renders, not the underlying geo fact.
+  const [visitorCountryCode, setVisitorCountryCode] = useState<string | null>(null);
   // Manual override — ?market=us / ?market=latam in the URL — so anyone
   // (not just an account whose real IP happens to geolocate to the other
   // market) can preview either home experience on demand. Wins over the
@@ -87,12 +97,15 @@ export function ModernHomePage() {
   // is exactly for that "let me see the other version" use case.
   const marketOverride = new URLSearchParams(window.location.search).get('market');
   useEffect(() => {
-    if (marketOverride === 'us' || marketOverride === 'latam') return;
     detectSignerCountryCode().then((code) => {
-      if (code && code !== 'US') setVisitorIsLatam(true);
+      if (!code) return;
+      setVisitorCountryCode(code);
+      if (marketOverride === 'us' || marketOverride === 'latam') return;
+      if (code !== 'US') setVisitorIsLatam(true);
     }).catch(() => {});
   }, [marketOverride]);
   const effectiveIsLatam = marketOverride === 'us' ? false : marketOverride === 'latam' ? true : visitorIsLatam;
+  const matchedLatamCountry = LATAM_COUNTRIES.find((c) => c.code === visitorCountryCode) ?? null;
 
   // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
   // not) gets the bottom-nav app shell instead of the long-scroll landing
@@ -750,21 +763,37 @@ export function ModernHomePage() {
                         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.1 } } }}
                       >
                         {[
-                          { icon: PenLine, en: 'Standard Signature', es: 'Firma Estándar', color: '#2563eb' },
-                          { icon: Camera, en: 'Selfie', es: 'Selfie', color: '#4f46e5' },
-                          { icon: CreditCard, en: 'ID Photo', es: 'Foto de Identificación', color: '#7c3aed' },
-                          { icon: Smartphone, en: 'SMS Code', es: 'Código SMS', color: '#0284c7' },
-                          { icon: FileCheck, en: 'E-Sign Consent', es: 'Consentimiento E-Sign', color: '#0891b2' },
-                          { icon: Search, en: 'Advanced Audit Trail', es: 'Auditoría Avanzada', color: '#d97706' },
-                          { icon: Fingerprint, en: 'Biometric Verification', es: 'Verificación Biométrica', color: '#a21caf' },
+                          { icon: PenLine, en: 'Standard Signature', es: 'Firma Estándar', color: '#2563eb',
+                            descEn: 'The signer draws or types their signature directly on the document before sending it.',
+                            descEs: 'El firmante dibuja o escribe su firma directamente sobre el documento antes de enviarlo.' },
+                          { icon: Camera, en: 'Selfie', es: 'Selfie', color: '#4f46e5',
+                            descEn: 'The signer takes a selfie at the moment of signing, confirming a real person signed — not just a typed name.',
+                            descEs: 'Se le pide al firmante tomarse una selfie justo al firmar, para confirmar que es una persona real y no solo un nombre escrito.' },
+                          { icon: CreditCard, en: 'ID Photo', es: 'Foto de Identificación', color: '#7c3aed',
+                            descEn: 'The signer is asked to photograph their ID so it stays attached to the signed document as proof of identity.',
+                            descEs: 'Se le pide a la otra persona que tome una foto de su identificación, para que quede registrada en el documento como prueba de identidad.' },
+                          { icon: Smartphone, en: 'SMS Code', es: 'Código SMS', color: '#0284c7',
+                            descEn: 'A one-time code is sent by SMS to the signer\'s phone before the signature can be completed.',
+                            descEs: 'Se envía un código de un solo uso por SMS al número del firmante antes de poder completar la firma.' },
+                          { icon: FileCheck, en: 'E-Sign Consent', es: 'Consentimiento E-Sign', color: '#0891b2',
+                            descEn: 'The signer must explicitly accept a short legal consent statement before signing electronically.',
+                            descEs: 'El firmante debe aceptar de forma explícita un texto legal de consentimiento antes de firmar electrónicamente.' },
+                          { icon: Search, en: 'Advanced Audit Trail', es: 'Auditoría Avanzada', color: '#d97706',
+                            descEn: 'Every signature is logged with date, time, IP address and browser, in a tamper-evident audit trail.',
+                            descEs: 'Cada firma queda registrada con fecha, hora, IP y navegador, en una pista de auditoría imposible de alterar.' },
+                          { icon: Fingerprint, en: 'Biometric Verification', es: 'Verificación Biométrica', color: '#a21caf',
+                            descEn: 'The signer confirms their identity with Face ID, Touch ID or Windows Hello on their own device.',
+                            descEs: 'El firmante confirma su identidad con Face ID, Touch ID o Windows Hello en su propio dispositivo.' },
                         ].map((perm) => {
                           const PermIcon = perm.icon;
                           return (
-                            <motion.div
+                            <motion.button
                               key={perm.en}
+                              type="button"
+                              onClick={() => setInfoModal({ icon: perm.icon, color: perm.color, title: language === 'en' ? perm.en : perm.es, desc: language === 'en' ? perm.descEn : perm.descEs })}
                               variants={{ hidden: { opacity: 0, y: 10, scale: 0.94 }, show: { opacity: 1, y: 0, scale: 1 } }}
                               whileHover={{ y: -3, scale: 1.03 }}
-                              className="flex flex-col items-start gap-2 rounded-2xl border p-3 transition-shadow"
+                              className="flex flex-col items-start gap-2 rounded-2xl border p-3 text-left transition-shadow"
                               style={{
                                 background: `linear-gradient(160deg, ${perm.color}14 0%, ${perm.color}05 100%)`,
                                 borderColor: `${perm.color}30`,
@@ -780,7 +809,7 @@ export function ModernHomePage() {
                               <span className="text-[11px] font-bold leading-tight text-slate-700">
                                 {language === 'en' ? perm.en : perm.es}
                               </span>
-                            </motion.div>
+                            </motion.button>
                           );
                         })}
 
@@ -820,25 +849,76 @@ export function ModernHomePage() {
                           <span>🇺🇸</span> {language === 'en' ? 'United States' : 'Estados Unidos'}
                         </span>
                         {LATAM_COUNTRIES.map((c) => (
-                          <span key={c.slug} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                          <a
+                            key={c.slug}
+                            href={`/firma-electronica-${c.slug}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 transition hover:text-indigo-600"
+                          >
                             <span>{c.flag}</span> {language === 'en' ? c.name : c.nameEs}
-                          </span>
+                          </a>
                         ))}
                       </div>
 
+                      {/* Compliance strip — geolocation-aware: a visitor
+                          detected in one of the 6 LatAm countries sees THAT
+                          country's real law badge instead of the US ESIGN
+                          Act/UETA claims, which don't apply outside the US
+                          (same principle as the SEO landing pages). Each
+                          badge is clickable and opens the same info popup. */}
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <ShieldCheck className="size-3.5 text-emerald-600" />
-                          <span className="text-[11px] font-bold text-emerald-700">ESIGN Act</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <ShieldCheck className="size-3.5 text-emerald-600" />
-                          <span className="text-[11px] font-bold text-emerald-700">UETA</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <ShieldCheck className="size-3.5 text-emerald-600" />
-                          <span className="text-[11px] font-bold text-emerald-700">SHA-256</span>
-                        </div>
+                        {effectiveIsLatam ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setInfoModal({
+                                icon: ShieldCheck, color: '#059669',
+                                title: matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.lawBadgeEn : matchedLatamCountry.lawBadgeEs) : (language === 'en' ? 'Local E-Signature Law' : 'Ley Local de Firma Electrónica'),
+                                desc: matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.highlights[0]?.factEn ?? '' : matchedLatamCountry.highlights[0]?.factEs ?? '') : (language === 'en' ? 'Electronic signatures are legally recognized across Latin America — Codec Document adapts the certificate to each country\'s real law.' : 'Las firmas electrónicas tienen reconocimiento legal en toda Latinoamérica — Codec Document adapta el certificado a la ley real de cada país.'),
+                              })}
+                              className="flex items-center gap-1.5 transition hover:opacity-70"
+                            >
+                              <ShieldCheck className="size-3.5 text-emerald-600" />
+                              <span className="text-[11px] font-bold text-emerald-700">
+                                {matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.lawBadgeEn : matchedLatamCountry.lawBadgeEs) : (language === 'en' ? 'Local Law' : 'Ley Local')}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInfoModal({ icon: ShieldCheck, color: '#059669', title: 'SHA-256', desc: language === 'en' ? 'Every signed document receives a unique cryptographic fingerprint proving it was never altered after signing.' : 'Cada documento firmado recibe una huella digital criptográfica única que prueba que nunca fue alterado después de firmarse.' })}
+                              className="flex items-center gap-1.5 transition hover:opacity-70"
+                            >
+                              <ShieldCheck className="size-3.5 text-emerald-600" />
+                              <span className="text-[11px] font-bold text-emerald-700">SHA-256</span>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setInfoModal({ icon: ShieldCheck, color: '#059669', title: 'ESIGN Act', desc: language === 'en' ? 'US federal law (15 U.S.C. § 7001) giving electronic signatures the same legal validity as a signature on paper.' : 'Ley federal de EE. UU. (15 U.S.C. § 7001) que da a las firmas electrónicas la misma validez legal que una firma en papel.' })}
+                              className="flex items-center gap-1.5 transition hover:opacity-70"
+                            >
+                              <ShieldCheck className="size-3.5 text-emerald-600" />
+                              <span className="text-[11px] font-bold text-emerald-700">ESIGN Act</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInfoModal({ icon: ShieldCheck, color: '#059669', title: 'UETA', desc: language === 'en' ? 'Uniform law adopted by all 50 US states recognizing the validity of electronic contracts and signatures.' : 'Ley uniforme adoptada por los 50 estados de EE. UU. que reconoce la validez de contratos y firmas electrónicas.' })}
+                              className="flex items-center gap-1.5 transition hover:opacity-70"
+                            >
+                              <ShieldCheck className="size-3.5 text-emerald-600" />
+                              <span className="text-[11px] font-bold text-emerald-700">UETA</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInfoModal({ icon: ShieldCheck, color: '#059669', title: 'SHA-256', desc: language === 'en' ? 'Every signed document receives a unique cryptographic fingerprint proving it was never altered after signing.' : 'Cada documento firmado recibe una huella digital criptográfica única que prueba que nunca fue alterado después de firmarse.' })}
+                              className="flex items-center gap-1.5 transition hover:opacity-70"
+                            >
+                              <ShieldCheck className="size-3.5 text-emerald-600" />
+                              <span className="text-[11px] font-bold text-emerald-700">SHA-256</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -1818,6 +1898,47 @@ export function ModernHomePage() {
       </div>
 
       <OnboardingModal open={onboardingOpen} onOpenChange={setOnboardingOpen} />
+
+      {/* Info popup — explains whichever security feature or compliance/law
+          badge was clicked. Image-forward (big icon), 1-2 short sentences,
+          no wall of text, per explicit feedback on the Platform menu. */}
+      <AnimatePresence>
+        {infoModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+            onClick={() => setInfoModal(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.96 }}
+              transition={{ duration: 0.18 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white p-8 text-center shadow-[0_30px_70px_rgba(15,23,42,0.35)]"
+            >
+              <button
+                type="button"
+                onClick={() => setInfoModal(null)}
+                aria-label="Close"
+                className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600"
+              >
+                <X className="size-4" />
+              </button>
+              <div
+                className="mx-auto mb-5 flex size-20 items-center justify-center rounded-3xl text-white"
+                style={{ background: `linear-gradient(145deg, ${infoModal.color}, ${infoModal.color}cc)`, boxShadow: `0 10px 30px -6px ${infoModal.color}88` }}
+              >
+                <infoModal.icon className="size-10" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">{infoModal.title}</h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-slate-500">{infoModal.desc}</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
