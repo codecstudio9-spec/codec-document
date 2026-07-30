@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck, CreditCard, Smartphone, FileCheck, Fingerprint, Search } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
@@ -690,8 +690,9 @@ export function ModernHomePage() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 4, scale: 0.97 }}
                       transition={{ duration: 0.18 }}
-                      className="absolute left-1/2 mt-1 w-[30rem] -translate-x-1/2 overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_30px_70px_rgba(15,23,42,0.18)]"
+                      className="absolute left-1/2 mt-1 w-[46rem] max-w-[92vw] -translate-x-1/2 overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_30px_70px_rgba(15,23,42,0.18)]"
                     >
+                      {/* Process strip */}
                       <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {language === 'en' ? 'How it works' : 'Cómo funciona'}
                       </p>
@@ -699,7 +700,7 @@ export function ModernHomePage() {
                         className="flex items-start justify-between"
                         initial="hidden"
                         animate="show"
-                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
                       >
                         {[
                           { icon: FileText, en: 'Create', es: 'Se crea' },
@@ -707,7 +708,7 @@ export function ModernHomePage() {
                           { icon: ShieldCheck, en: 'Validate', es: 'Se valida' },
                           { icon: PenLine, en: 'Sign', es: 'Se firma' },
                           { icon: BadgeCheck, en: 'Follow-up', es: 'Acompañamiento' },
-                        ].map((step, idx, arr) => {
+                        ].map((step, idx) => {
                           const StepIcon = step.icon;
                           return (
                             <motion.div
@@ -722,17 +723,99 @@ export function ModernHomePage() {
                                 </span>
                               </div>
                               <p className="mt-2 text-[11px] font-bold text-slate-700">{language === 'en' ? step.en : step.es}</p>
-                              {idx === arr.length - 1 ? null : null}
                             </motion.div>
                           );
                         })}
                       </motion.div>
 
-                      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-2.5">
-                        <Volume2 className="size-4 shrink-0 text-indigo-600" />
-                        <p className="text-xs font-semibold text-indigo-700">
-                          {language === 'en' ? 'Voice guide walks every signer through each step' : 'Guía por voz acompaña a cada firmante paso a paso'}
-                        </p>
+                      {/* Security & permissions the client can turn on per document
+                          — the real SecurityConfig flags (sign-transaction-service.ts),
+                          each its own color so it reads as "look how much is already
+                          built", not one generic checklist line. */}
+                      <p className="mb-3 mt-7 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        {language === 'en' ? 'Security your clients can activate' : 'Seguridad que tus clientes pueden activar'}
+                      </p>
+                      <motion.div
+                        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+                        initial="hidden"
+                        animate="show"
+                        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.1 } } }}
+                      >
+                        {[
+                          { icon: PenLine, en: 'Standard Signature', es: 'Firma Estándar', color: '#2563eb' },
+                          { icon: Camera, en: 'Selfie', es: 'Selfie', color: '#4f46e5' },
+                          { icon: CreditCard, en: 'ID Photo', es: 'Foto de Identificación', color: '#7c3aed' },
+                          { icon: Smartphone, en: 'SMS Code', es: 'Código SMS', color: '#0284c7' },
+                          { icon: FileCheck, en: 'E-Sign Consent', es: 'Consentimiento E-Sign', color: '#0891b2' },
+                          { icon: Search, en: 'Advanced Audit Trail', es: 'Auditoría Avanzada', color: '#d97706' },
+                          { icon: Fingerprint, en: 'Biometric Verification', es: 'Verificación Biométrica', color: '#a21caf' },
+                        ].map((perm) => {
+                          const PermIcon = perm.icon;
+                          return (
+                            <motion.div
+                              key={perm.en}
+                              variants={{ hidden: { opacity: 0, y: 10, scale: 0.94 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                              whileHover={{ y: -3, scale: 1.03 }}
+                              className="flex flex-col items-start gap-2 rounded-2xl border p-3 transition-shadow"
+                              style={{
+                                background: `linear-gradient(160deg, ${perm.color}14 0%, ${perm.color}05 100%)`,
+                                borderColor: `${perm.color}30`,
+                                boxShadow: `0 6px 16px -8px ${perm.color}55`,
+                              }}
+                            >
+                              <span
+                                className="flex size-8 items-center justify-center rounded-xl text-white"
+                                style={{ background: `linear-gradient(145deg, ${perm.color}, ${perm.color}cc)`, boxShadow: `0 3px 8px ${perm.color}66` }}
+                              >
+                                <PermIcon className="size-4" />
+                              </span>
+                              <span className="text-[11px] font-bold leading-tight text-slate-700">
+                                {language === 'en' ? perm.en : perm.es}
+                              </span>
+                            </motion.div>
+                          );
+                        })}
+
+                        {/* Voice guide — its own bigger, more prominent card
+                            instead of a thin footnote line. */}
+                        <motion.div
+                          variants={{ hidden: { opacity: 0, y: 10, scale: 0.94 }, show: { opacity: 1, y: 0, scale: 1 } }}
+                          whileHover={{ y: -3, scale: 1.03 }}
+                          className="col-span-2 flex items-center gap-3 rounded-2xl border p-3"
+                          style={{
+                            background: 'linear-gradient(135deg, #4f46e514 0%, #2563eb08 100%)',
+                            borderColor: '#4f46e530',
+                            boxShadow: '0 6px 16px -8px #4f46e555',
+                          }}
+                        >
+                          <span
+                            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+                            style={{ background: 'linear-gradient(145deg, #4f46e5, #2563eb)', boxShadow: '0 3px 8px #4f46e566' }}
+                          >
+                            <Volume2 className="size-5" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-black text-slate-900">{language === 'en' ? 'Voice Guide' : 'Guía por Voz'}</p>
+                            <p className="text-[11px] leading-tight text-slate-500">
+                              {language === 'en' ? 'Walks every signer through each step, out loud' : 'Acompaña a cada firmante paso a paso, en voz alta'}
+                            </p>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+
+                      {/* Where it's available — same markets as the SEO pages */}
+                      <p className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        {language === 'en' ? 'Available in' : 'Disponible en'}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-2.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                          <span>🇺🇸</span> {language === 'en' ? 'United States' : 'Estados Unidos'}
+                        </span>
+                        {LATAM_COUNTRIES.map((c) => (
+                          <span key={c.slug} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                            <span>{c.flag}</span> {language === 'en' ? c.name : c.nameEs}
+                          </span>
+                        ))}
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-2.5">
@@ -1139,87 +1222,122 @@ export function ModernHomePage() {
           with 3 horizontal cards on a single, consistent background —
           same functionality (each card's CTA goes to exactly what it did
           before), just visually unified. ─────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white py-16 md:py-24">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.4]" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.08), transparent)' }} />
+      <section className="relative overflow-hidden py-16 md:py-28" style={{ background: 'radial-gradient(ellipse 90% 60% at 50% 0%, #0f172a 0%, #1e1b4b 45%, #0f172a 100%)' }}>
+        {/* Tech-grid texture + ambient glows for a premium, "this platform
+            has depth" feel instead of a flat white row of boxes. */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+        <div className="pointer-events-none absolute left-1/4 top-0 size-[28rem] -translate-y-1/2 rounded-full bg-blue-500/20 blur-[100px]" />
+        <div className="pointer-events-none absolute right-1/4 bottom-0 size-[28rem] translate-y-1/2 rounded-full bg-violet-500/20 blur-[100px]" />
+
         <div className="container relative mx-auto px-4">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
               <Sparkles className="size-3" /> {language === 'en' ? 'Do more' : 'Haz más'}
             </span>
-            <h2 className="mt-4 text-3xl font-black text-slate-900 md:text-4xl">
+            <h2 className="mt-4 text-3xl font-black text-white md:text-4xl">
               {language === 'en' ? 'One platform, every workflow' : 'Una plataforma, todos tus flujos'}
             </h2>
           </div>
 
-          <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
-            {/* Smart Quotes */}
-            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(37,99,235,0.25)]">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-[0_4px_14px_rgba(37,99,235,0.35)]">
-                <Receipt className="size-6 text-white" />
-              </div>
-              <h3 className="mt-5 text-xl font-black text-slate-900">
-                {language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes'}
-              </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
-                {language === 'en'
-                  ? 'Build a professional quote with live totals and get it accepted with a real electronic signature — a full agreement, not just a PDF.'
-                  : 'Crea una cotización profesional con totales en tiempo real y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => (user ? navigate('/my-quotes/new') : setOnboardingOpen(true))}
-                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-0.5"
-              >
-                {language === 'en' ? 'Create my first quote' : 'Crear mi primera cotización'}
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
+          <div className="mx-auto grid max-w-6xl gap-7 md:grid-cols-3">
+            {[
+              {
+                icon: Receipt,
+                color: '#3b82f6',
+                gradient: 'from-blue-500 to-blue-700',
+                title: { en: 'Smart Quotes', es: 'Cotizaciones Inteligentes' },
+                desc: {
+                  en: 'Build a professional quote with live totals and get it accepted with a real electronic signature — a full agreement, not just a PDF.',
+                  es: 'Crea una cotización profesional con totales en tiempo real y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.',
+                },
+                bullets: [
+                  { en: 'Live totals — quantity, discount and tax as you type', es: 'Totales en vivo — cantidad, descuento e impuesto mientras escribes' },
+                  { en: '4 professional designs: Corporate, Modern, Executive, Minimal', es: '4 diseños profesionales: Corporate, Modern, Executive, Minimal' },
+                  { en: 'Know when your client opens it, and get it signed online', es: 'Sabe cuándo tu cliente la abre, y logra que la firme en línea' },
+                ],
+                cta: { en: 'Create my first quote', es: 'Crear mi primera cotización' },
+                action: () => (user ? navigate('/my-quotes/new') : setOnboardingOpen(true)),
+              },
+              {
+                icon: FolderOpen,
+                color: '#4f46e5',
+                gradient: 'from-indigo-500 to-indigo-700',
+                title: { en: 'Upload your own templates', es: 'Sube tus propias plantillas' },
+                desc: {
+                  en: 'Upload any document once, mark where the fields and signature go, and reuse it forever.',
+                  es: 'Sube tu propio documento una vez, marca dónde van los campos y la firma, y reúsalo para siempre.',
+                },
+                bullets: [
+                  { en: 'Upload a PDF and mark the fields yourself, no guesswork', es: 'Sube un PDF y marca los campos tú mismo, sin adivinar' },
+                  { en: 'Fill it in as many times as you need — it stays saved', es: 'Llénalo las veces que necesites — queda guardado' },
+                  { en: 'Your logo, colors and branding, automatically', es: 'Tu logo, colores y marca, de forma automática' },
+                ],
+                cta: { en: 'Create my first template', es: 'Crear mi primera plantilla' },
+                action: () => (user ? navigate('/my-templates') : setOnboardingOpen(true)),
+              },
+              {
+                icon: Building2,
+                color: '#8b5cf6',
+                gradient: 'from-violet-500 to-violet-700',
+                title: { en: 'Enterprise Solutions', es: 'Soluciones para Empresas' },
+                desc: {
+                  en: 'Automate documents, e-signatures and corporate workflows from a single platform, tailored to your team.',
+                  es: 'Automatiza documentos, firmas electrónicas y flujos corporativos desde una sola plataforma, a la medida de tu equipo.',
+                },
+                bullets: [
+                  { en: 'Your company branding on every document', es: 'Tu marca empresarial en cada documento' },
+                  { en: 'Role-based permissions for your whole team', es: 'Permisos por rol para todo tu equipo' },
+                  { en: 'API & webhooks to connect your own systems', es: 'API y webhooks para conectar tus propios sistemas' },
+                ],
+                cta: { en: 'Talk to a specialist', es: 'Hablar con un especialista' },
+                action: () => setEnterpriseModalOpen(true),
+              },
+            ].map((card) => {
+              const CardIcon = card.icon;
+              return (
+                <button
+                  key={card.title.en}
+                  type="button"
+                  onClick={card.action}
+                  className="group relative flex flex-col rounded-[1.75rem] p-[1px] text-left transition-all duration-300 hover:-translate-y-2"
+                  style={{ background: `linear-gradient(145deg, ${card.color}80, ${card.color}10 40%, transparent 70%)` }}
+                >
+                  <div
+                    className="relative flex h-full flex-col overflow-hidden rounded-[1.7rem] bg-slate-900/90 p-7 backdrop-blur-xl transition-shadow duration-300"
+                    style={{ boxShadow: `0 20px 50px -20px ${card.color}40, inset 0 1px 0 rgba(255,255,255,0.06)` }}
+                  >
+                    <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-40" style={{ background: card.color }} />
 
-            {/* Upload your own templates */}
-            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(79,70,229,0.25)]">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-[0_4px_14px_rgba(79,70,229,0.35)]">
-                <FolderOpen className="size-6 text-white" />
-              </div>
-              <h3 className="mt-5 text-xl font-black text-slate-900">
-                {language === 'en' ? 'Upload your own templates' : 'Sube tus propias plantillas'}
-              </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
-                {language === 'en'
-                  ? 'Upload any document once, mark where the fields and signature go, and reuse it forever — your logo and branding come with it automatically.'
-                  : 'Sube tu propio documento una vez, marca dónde van los campos y la firma, y reúsalo para siempre — tu logo y tu marca quedan puestos automáticamente.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => (user ? navigate('/my-templates') : setOnboardingOpen(true))}
-                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-0.5"
-              >
-                {language === 'en' ? 'Create my first template' : 'Crear mi primera plantilla'}
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
+                    <div className={`relative flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.gradient} ring-1 ring-white/20`} style={{ boxShadow: `0 8px 20px -4px ${card.color}70` }}>
+                      <CardIcon className="size-7 text-white" />
+                    </div>
 
-            {/* Enterprise Solutions */}
-            <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.12)] transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_-10px_rgba(124,58,237,0.25)]">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 shadow-[0_4px_14px_rgba(124,58,237,0.35)]">
-                <Building2 className="size-6 text-white" />
-              </div>
-              <h3 className="mt-5 text-xl font-black text-slate-900">
-                {language === 'en' ? 'Enterprise Solutions' : 'Soluciones para Empresas'}
-              </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
-                {language === 'en'
-                  ? 'Automate documents, e-signatures and corporate workflows from a single platform, tailored to your team.'
-                  : 'Automatiza documentos, firmas electrónicas y flujos corporativos desde una sola plataforma, a la medida de tu equipo.'}
-              </p>
-              <button
-                type="button"
-                onClick={() => setEnterpriseModalOpen(true)}
-                className="group mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-violet-700 px-5 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(124,58,237,0.3)] transition-all hover:-translate-y-0.5"
-              >
-                {language === 'en' ? 'Talk to a specialist' : 'Hablar con un especialista'}
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
+                    <h3 className="relative mt-5 text-xl font-black text-white">
+                      {language === 'en' ? card.title.en : card.title.es}
+                    </h3>
+                    <p className="relative mt-2 text-sm leading-relaxed text-slate-400">
+                      {language === 'en' ? card.desc.en : card.desc.es}
+                    </p>
+
+                    <ul className="relative mt-4 space-y-2">
+                      {card.bullets.map((b) => (
+                        <li key={b.en} className="flex items-start gap-2 text-xs leading-relaxed text-slate-300">
+                          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" style={{ color: card.color }} />
+                          {language === 'en' ? b.en : b.es}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div
+                      className={`group/btn relative mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${card.gradient} px-5 py-3 text-sm font-bold text-white shadow-lg transition-transform group-hover:scale-[1.02]`}
+                    >
+                      {language === 'en' ? card.cta.en : card.cta.es}
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1408,31 +1526,55 @@ export function ModernHomePage() {
 
       {/* Footer */}
       <footer className="relative overflow-hidden bg-slate-950 text-slate-400">
-        {/* Pre-footer CTA strip */}
-        <div className="border-b border-white/8 bg-gradient-to-r from-blue-600 to-indigo-600 py-8 md:py-10">
-          <div className="container mx-auto px-4 text-center">
-            <h3 className="text-xl font-black text-white sm:text-2xl md:text-3xl">
-              {language === 'en' ? 'Ready to sign your first document?' : '¿Listo para firmar tu primer documento?'}
+        {/* Pre-footer CTA strip — soft light-blue gradient with diagonal
+            ribbon streaks and dark navy text, instead of a flat solid
+            blue-to-indigo bar. Same "elegant, techy, trustworthy" feel
+            requested for the rest of the page, without copying ZapSign's
+            actual assets. */}
+        <div
+          className="relative overflow-hidden border-b border-white/8 py-14 md:py-20"
+          style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #bfdbfe 55%, #60a5fa 100%)' }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{ background: 'repeating-linear-gradient(115deg, rgba(255,255,255,0.55) 0px, rgba(255,255,255,0.55) 60px, transparent 60px, transparent 150px)' }}
+          />
+          <div className="pointer-events-none absolute left-1/2 top-0 flex size-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/70 shadow-[0_8px_30px_rgba(37,99,235,0.25)] backdrop-blur-sm">
+            <Shield className="size-9 text-blue-600" />
+          </div>
+
+          <div className="container relative mx-auto px-4 text-center">
+            <h3 className="mx-auto max-w-2xl text-3xl font-black leading-tight text-slate-900 sm:text-4xl md:text-5xl">
+              {language === 'en' ? 'Start closing deals securely, today' : 'Empieza a cerrar negocios de forma segura hoy'}
             </h3>
-            <p className="mt-2 text-blue-100">
-              {language === 'en'
-                ? 'Create your free account in 30 seconds. No credit card required.'
-                : 'Crea tu cuenta gratis en 30 segundos. Sin tarjeta de crédito.'}
-            </p>
-            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              {[
+                language === 'en' ? 'Legally binding signatures' : 'Firma con validez legal',
+                language === 'en' ? 'Fast and reliable experience' : 'Experiencia ágil y confiable',
+                language === 'en' ? 'Fully customizable' : 'Personaliza la experiencia',
+              ].map((feat) => (
+                <span key={feat} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                  <CheckCircle2 className="size-4 text-slate-900" />
+                  {feat}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-2">
               <a
                 href="/firma-electronica"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-blue-700 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-4 text-sm font-bold text-white shadow-[0_8px_24px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
-                <CheckCircle2 className="size-4" />
-                {language === 'en' ? 'Get Started Free' : 'Empezar Gratis'}
+                {language === 'en' ? 'Try free now' : 'Prueba gratis ahora'}
               </a>
-              <Link
-                to="/pricing"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+              <a
+                href="/firma-electronica"
+                aria-label={language === 'en' ? 'Try free now' : 'Prueba gratis ahora'}
+                className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_8px_24px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
-                {language === 'en' ? 'View Plans' : 'Ver Planes'}
-              </Link>
+                <ArrowRight className="size-5 -rotate-45" />
+              </a>
             </div>
           </div>
         </div>

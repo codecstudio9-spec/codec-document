@@ -45,8 +45,8 @@ const SLIDES = [
 const ACTIONS: Array<{ icon: LucideIcon; titleEn: string; titleEs: string; badge: string; color: string; route: string }> = [
   { icon: Upload, titleEn: 'Create\nDocument', titleEs: 'Crear\nDocumento', badge: 'SUBIR PDF', color: '#2563eb', route: '/firma-electronica' },
   { icon: PenLine, titleEn: 'Sign\nDocument', titleEs: 'Firmar\nDocumento', badge: 'FIRMA', color: '#7c3aed', route: '/firma-electronica' },
-  { icon: Palette, titleEn: 'Personalize\nDocument', titleEs: 'Personalizar\nDocumento', badge: 'MARCA', color: '#059669', route: '/my-branding' },
-  { icon: ShieldCheck, titleEn: 'Certify\nDocument', titleEs: 'Certificar\nDocumento', badge: 'EVIDENCIA', color: '#dc2626', route: '/firma-electronica' },
+  { icon: Palette, titleEn: 'Personalize\nDocument', titleEs: 'Personalizar\nDocumento', badge: 'MARCA', color: '#4f46e5', route: '/my-branding' },
+  { icon: ShieldCheck, titleEn: 'Certify\nDocument', titleEs: 'Certificar\nDocumento', badge: 'EVIDENCIA', color: '#0284c7', route: '/firma-electronica' },
 ];
 
 const SIMULATED_LINES = [100, 76, 92, 58, 85];
