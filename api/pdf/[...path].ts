@@ -6,6 +6,15 @@
 // Vercel's `/api/*.ts` convention works the same way for any static
 // project without needing Next.js at all.
 //
+// Single catch-all file (not a `[bucket]/[...path].ts` nested-dynamic
+// pair) on purpose: that nested form matched in production only for a
+// single trailing path segment and returned a platform-level 404 (never
+// even reaching this handler) for anything deeper, which is every real
+// signed document (documents-bucket/documents/<uuid>/<file>.pdf is 3
+// segments) — this is what broke viewing every previously-signed
+// document. A single `[...path]` catch-all splits bucket/path itself
+// instead of relying on Vercel to resolve two dynamic segments at once.
+//
 // Security note: this only ever fetches from a hardcoded, fixed Supabase
 // project URL + an ALLOWLISTED bucket name — never a client-supplied
 // full URL — so it can't be turned into an open proxy/SSRF vector. Every
@@ -26,9 +35,9 @@ const ALLOWED_BUCKETS = new Set(['documents-bucket', 'tx-evidence']);
 const SAFE_PATH = /^[a-zA-Z0-9/_.-]+$/;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { bucket, path } = req.query;
-  const bucketName = Array.isArray(bucket) ? bucket[0] : bucket;
-  const relativePath = Array.isArray(path) ? path.join('/') : path;
+  const segments = Array.isArray(req.query.path) ? req.query.path : req.query.path ? [req.query.path] : [];
+  const [bucketName, ...rest] = segments;
+  const relativePath = rest.join('/');
 
   if (!bucketName || !ALLOWED_BUCKETS.has(bucketName)) {
     res.status(400).json({ error: 'Unknown bucket' });
