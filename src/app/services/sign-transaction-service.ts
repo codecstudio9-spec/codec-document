@@ -125,6 +125,26 @@ export async function getSignTransaction(id: string): Promise<SignTransaction | 
   return data as SignTransaction;
 }
 
+/** Lists the caller's own sent/created transactions — direct `.select()`
+ * works here (unlike getSignTransaction above) because RLS policy
+ * "tx_select_own" already scopes it to `auth.uid()::text = creator_id`
+ * (see supabase_lockdown_public_read_migration.sql), so there's no risk of
+ * leaking another user's rows the way an unrestricted SELECT would. Used
+ * to power a "pick one of your documents" picker (e.g. the AI review
+ * page) — trimmed to the fields buildGuestDocumentContent() needs plus
+ * enough to label each option, never selfies/ID photos. */
+export async function listMySentTransactions(userId: string, limit = 25): Promise<SignTransaction[]> {
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('sign_transactions')
+    .select('id, document_type, document_data, status, created_at')
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error || !data) return [];
+  return data as SignTransaction[];
+}
+
 export interface VerifiedTransaction {
   found:         boolean;
   status:        TxStatus | null;

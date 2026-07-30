@@ -4,6 +4,13 @@
 // secrets via Deno.env, Bearer JWT resolved to a real user id server-side
 // (never trust a client-supplied plan flag for a paid-feature gate).
 //
+// Streams the Groq response straight through to the client (Server-Sent
+// Events, same OpenAI-compatible wire format Groq emits) once the gate
+// passes — the client accumulates `delta.content` chunks for a live
+// "typing" effect, then JSON.parses the finished string. Everything
+// BEFORE the Groq call (auth, plan gate, validation) still returns a
+// normal buffered JSON error response — only the successful path streams.
+//
 // Deploy:
 //   supabase functions deploy ai-document-review --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
 // Secrets (supabase secrets set):
@@ -38,47 +45,30 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile';
 // thousand characters at most.
 const MAX_CONTENT_CHARS = 20000;
 
-function corsHeaders(origin: string | null) {
+function corsHeaders(origin: string | null, contentType = 'application/json') {
   return {
     'Access-Control-Allow-Origin': origin ?? '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
+    'Content-Type': contentType,
   };
-}
-
-interface ReviewResult {
-  summary: string;
-  risks: { title: string; detail: string }[];
-  missingClauses: { title: string; detail: string }[];
 }
 
 function buildPrompt(content: string, language: 'en' | 'es'): string {
   const lang = language === 'en' ? 'English' : 'Spanish';
   return [
     `You are a careful legal-document reviewer. Analyze the following document text and respond ONLY with a single JSON object (no markdown, no prose outside the JSON) in ${lang}, with this exact shape:`,
-    `{"summary": string, "risks": [{"title": string, "detail": string}], "missingClauses": [{"title": string, "detail": string}]}`,
+    `{"summary": string, "risks": [{"title": string, "detail": string, "severity": "high"|"medium"|"low", "suggestion": string}], "missingClauses": [{"title": string, "detail": string, "suggestion": string}]}`,
     `"summary" is 2-3 sentences describing what the document is and does.`,
     `"risks" lists ambiguous, one-sided, or legally risky clauses actually present in the text (empty array if none found — never invent risks that aren't there).`,
+    `"severity" reflects how serious the risk is for whoever is less protected by the clause: "high" for something that could cause real financial/legal harm, "medium" for a real but limited concern, "low" for a minor wording nitpick.`,
+    `"suggestion" (on both risks and missingClauses) is a short, concrete alternative wording or addition — not just "consider revising", an actual proposed clause/phrase.`,
     `"missingClauses" lists standard clauses a document of this type would normally include but that are missing here (empty array if the document looks complete).`,
-    `Keep each "detail" to 1-2 sentences. Do not include any text outside the JSON object.`,
+    `Keep each "detail" and "suggestion" to 1-2 sentences. Do not include any text outside the JSON object.`,
     ``,
     `DOCUMENT TEXT:`,
     content,
   ].join('\n');
-}
-
-function extractJson(raw: string): ReviewResult {
-  // Groq (like most chat-completion APIs) can wrap JSON in a code fence
-  // even when explicitly told not to — strip that before parsing rather
-  // than failing the whole request over formatting.
-  const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-  const parsed = JSON.parse(cleaned);
-  return {
-    summary: String(parsed.summary ?? ''),
-    risks: Array.isArray(parsed.risks) ? parsed.risks.map((r: any) => ({ title: String(r?.title ?? ''), detail: String(r?.detail ?? '') })) : [],
-    missingClauses: Array.isArray(parsed.missingClauses) ? parsed.missingClauses.map((c: any) => ({ title: String(c?.title ?? ''), detail: String(c?.detail ?? '') })) : [],
-  };
 }
 
 Deno.serve(async (req) => {
@@ -157,10 +147,11 @@ Deno.serve(async (req) => {
         messages: [{ role: 'user', content: buildPrompt(truncated, language) }],
         temperature: 0.2,
         response_format: { type: 'json_object' },
+        stream: true,
       }),
     });
 
-    if (!groqRes.ok) {
+    if (!groqRes.ok || !groqRes.body) {
       const errText = await groqRes.text().catch(() => '');
       console.error('[ai-document-review] Groq request failed:', groqRes.status, errText);
       return new Response(JSON.stringify({ error: 'AI review service is temporarily unavailable.' }), {
@@ -168,20 +159,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const groqJson = await groqRes.json();
-    const rawText = groqJson?.choices?.[0]?.message?.content ?? '';
-
-    let result: ReviewResult;
-    try {
-      result = extractJson(rawText);
-    } catch (parseErr) {
-      console.error('[ai-document-review] Could not parse Groq response as JSON:', rawText, parseErr);
-      return new Response(JSON.stringify({ error: 'AI review returned an unexpected response.' }), {
-        status: 502, headers: corsHeaders(origin),
-      });
-    }
-
-    return new Response(JSON.stringify(result), { headers: corsHeaders(origin) });
+    // Direct passthrough — Groq's stream is already OpenAI-compatible SSE
+    // (`data: {...}\n\n` chunks ending in `data: [DONE]\n\n`); the client
+    // reads it the same way it would read OpenAI's.
+    return new Response(groqRes.body, { headers: corsHeaders(origin, 'text/event-stream; charset=utf-8') });
   } catch (err) {
     console.error('[ai-document-review] error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message ?? 'Unexpected error' }), {

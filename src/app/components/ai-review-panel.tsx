@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Sparkles, Loader, ShieldAlert, ListChecks, Lock } from 'lucide-react';
+import { Sparkles, Loader, ShieldAlert, ListChecks, Lock, Lightbulb } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
-import { reviewDocumentWithAi, AiReviewUpgradeRequiredError, type AiReviewResult } from '../services/ai-review-service';
+import { reviewDocumentWithAi, AiReviewUpgradeRequiredError, type AiReviewResult, type AiRiskItem } from '../services/ai-review-service';
 
 interface AiReviewPanelProps {
   /** Plain-text document content to send for review — caller resolves
@@ -12,12 +12,19 @@ interface AiReviewPanelProps {
   className?: string;
 }
 
+const SEVERITY_STYLE: Record<AiRiskItem['severity'], { border: string; bg: string; text: string; labelEn: string; labelEs: string }> = {
+  high:   { border: 'border-red-300',    bg: 'bg-red-50',    text: 'text-red-700',    labelEn: 'High risk',   labelEs: 'Riesgo alto' },
+  medium: { border: 'border-amber-300',  bg: 'bg-amber-50',  text: 'text-amber-700',  labelEn: 'Medium risk', labelEs: 'Riesgo medio' },
+  low:    { border: 'border-slate-300',  bg: 'bg-slate-50',  text: 'text-slate-600',  labelEn: 'Low risk',    labelEs: 'Riesgo bajo' },
+};
+
 /**
  * Drop-in "Analizar con IA" button + results, reused across the document
  * editor, both preview pages, and the dashboard AI page — one place to get
- * the gating/loading/error states right instead of four near-duplicates.
- * Client-side gating (isAdmin/subscriptionActive) is only a UX nicety; the
- * ai-document-review Edge Function re-checks the same thing server-side.
+ * the gating/loading/streaming/error states right instead of four
+ * near-duplicates. Client-side gating (isAdmin/subscriptionActive) is only
+ * a UX nicety; the ai-document-review Edge Function re-checks the same
+ * thing server-side.
  */
 export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
   const { language } = useLanguage();
@@ -25,6 +32,7 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
   const canUseAi = isAdmin || subscriptionActive;
 
   const [loading, setLoading] = useState(false);
+  const [liveText, setLiveText] = useState('');
   const [result, setResult] = useState<AiReviewResult | null>(null);
   const [error, setError] = useState('');
 
@@ -32,8 +40,11 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
     if (!content.trim() || loading) return;
     setLoading(true);
     setError('');
+    setLiveText('');
+    setResult(null);
     try {
-      setResult(await reviewDocumentWithAi(content, language));
+      const final = await reviewDocumentWithAi(content, language, (partial) => setLiveText(partial));
+      setResult(final);
     } catch (err) {
       setError(
         err instanceof AiReviewUpgradeRequiredError
@@ -72,6 +83,9 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
     );
   }
 
+  const risks = result?.risks ?? [];
+  const missingClauses = result?.missingClauses ?? [];
+
   return (
     <div className={className}>
       {!result && (
@@ -86,6 +100,14 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
             ? (language === 'en' ? 'Analyzing…' : 'Analizando…')
             : (language === 'en' ? 'Analyze with AI' : 'Analizar con IA')}
         </button>
+      )}
+
+      {/* Live streaming preview — raw text as it arrives, swapped for the
+          parsed/structured view the instant the stream finishes. */}
+      {loading && liveText && (
+        <pre className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-xl border border-indigo-100 bg-indigo-50/30 p-3 font-mono text-[11px] leading-relaxed text-slate-500">
+          {liveText}
+        </pre>
       )}
 
       {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
@@ -108,41 +130,61 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
 
           <p className="text-sm text-slate-700">{result.summary}</p>
 
-          {result.risks.length > 0 && (
+          {risks.length > 0 && (
             <div className="mt-4">
               <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-amber-700">
                 <ShieldAlert className="size-3.5" />
                 {language === 'en' ? 'Risks found' : 'Riesgos encontrados'}
               </p>
               <ul className="space-y-2">
-                {result.risks.map((r, i) => (
-                  <li key={i} className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs">
-                    <p className="font-bold text-amber-800">{r.title}</p>
-                    <p className="mt-0.5 text-amber-700/80">{r.detail}</p>
-                  </li>
-                ))}
+                {risks.map((r, i) => {
+                  const sev = SEVERITY_STYLE[r.severity] ?? SEVERITY_STYLE.medium;
+                  return (
+                    <li key={i} className={`rounded-lg border ${sev.border} ${sev.bg} p-2.5 text-xs`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-bold text-slate-800">{r.title}</p>
+                        <span className={`shrink-0 rounded-full border ${sev.border} px-2 py-0.5 text-[10px] font-bold ${sev.text}`}>
+                          {language === 'en' ? sev.labelEn : sev.labelEs}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-slate-600">{r.detail}</p>
+                      {r.suggestion && (
+                        <div className="mt-1.5 flex items-start gap-1.5 rounded-md bg-white/70 p-1.5">
+                          <Lightbulb className="mt-0.5 size-3 shrink-0 text-indigo-500" />
+                          <p className="text-slate-600">{r.suggestion}</p>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
 
-          {result.missingClauses.length > 0 && (
+          {missingClauses.length > 0 && (
             <div className="mt-4">
               <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-rose-700">
                 <ListChecks className="size-3.5" />
                 {language === 'en' ? 'Possibly missing' : 'Posiblemente faltante'}
               </p>
               <ul className="space-y-2">
-                {result.missingClauses.map((c, i) => (
+                {missingClauses.map((c, i) => (
                   <li key={i} className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs">
                     <p className="font-bold text-rose-800">{c.title}</p>
                     <p className="mt-0.5 text-rose-700/80">{c.detail}</p>
+                    {c.suggestion && (
+                      <div className="mt-1.5 flex items-start gap-1.5 rounded-md bg-white/70 p-1.5">
+                        <Lightbulb className="mt-0.5 size-3 shrink-0 text-indigo-500" />
+                        <p className="text-rose-700/80">{c.suggestion}</p>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {result.risks.length === 0 && result.missingClauses.length === 0 && (
+          {risks.length === 0 && missingClauses.length === 0 && (
             <p className="mt-3 text-xs font-semibold text-emerald-600">
               {language === 'en' ? 'No obvious risks or missing clauses detected.' : 'No se detectaron riesgos ni cláusulas faltantes evidentes.'}
             </p>
