@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Download, X } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
@@ -27,6 +26,11 @@ import { stashSignedTransactionForDownload, markTransactionViewed, type SignTran
  * in App.tsx (so it's active on every route, not just ones already inside
  * the router tree), and useNavigate() throws immediately if called outside
  * a Router's component tree, which crashed the entire app on every page.
+ * Same reason the mobile-bottom-nav-clearance check below reads
+ * `window.location.pathname` directly instead of react-router's
+ * useLocation() — that hook has the identical "must be inside a Router"
+ * requirement and crashed the whole app (blank white screen, every route,
+ * desktop and mobile) the first time it was tried here.
  *
  * Dedup: viewed_at is the same "have I already seen this" signal the
  * Firmas tab/notification badge already use (see markTransactionViewed) —
@@ -39,14 +43,15 @@ export function SignedDocumentPopup() {
   const { user } = useAuth();
   const { language } = useLanguage();
   const isMobile = useIsMobile();
-  const { pathname } = useLocation();
   const [queue, setQueue] = useState<SignTransaction[]>([]);
   const shownIds = useRef(new Set<string>());
   // MobileAppShell renders a fixed 72px bottom tab bar (+ safe-area inset)
   // on every /app/* route when on a real mobile viewport — this popup
   // mounts as an App.tsx-level sibling with no knowledge of that nav, so
   // without this it renders straight on top of it instead of above it.
-  const clearsBottomNav = isMobile && pathname.startsWith('/app');
+  // Re-evaluated on every render (not memoized) since a real navigation
+  // only reaches here via a state change (queue) anyway.
+  const clearsBottomNav = isMobile && typeof window !== 'undefined' && window.location.pathname.startsWith('/app');
 
   useEffect(() => {
     if (!user?.id) return;
