@@ -200,7 +200,16 @@ export function subscribeToTransaction(
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'sign_transactions', filter: `id=eq.${txId}` },
-      (payload) => onChange(payload.new as SignTransaction),
+      () => {
+        // Refetch the full row instead of trusting the realtime payload
+        // directly — large base64 identity-evidence columns (a scanned ID
+        // photo can be several hundred KB of text) aren't reliably
+        // delivered whole over postgres_changes, which was silently
+        // dropping selfie/ID/biometric evidence from the eventual
+        // downloaded PDF for documents that had it. A plain RPC call has
+        // no such size constraint.
+        void getSignTransaction(txId).then((tx) => { if (tx) onChange(tx); });
+      },
     )
     .subscribe();
 

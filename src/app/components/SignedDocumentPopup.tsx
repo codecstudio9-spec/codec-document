@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import { supabase } from '../../lib/supabase';
-import { stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../services/sign-transaction-service';
+import { stashSignedTransactionForDownload, markTransactionViewed, getSignTransaction, type SignTransaction } from '../services/sign-transaction-service';
 
 /**
  * Mounted once at the app root (App.tsx), next to <Toaster />, so it fires
@@ -73,11 +73,21 @@ export function SignedDocumentPopup() {
 
   const current = queue[0];
   const dismiss = () => setQueue((prev) => prev.slice(1));
+  const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!current) return;
+    setDownloading(true);
     void markTransactionViewed(current.id);
-    stashSignedTransactionForDownload(current, language);
+    // Refetch the full row instead of trusting the realtime payload
+    // directly: `current` comes from a postgres_changes UPDATE event,
+    // and large base64 identity-evidence columns (a scanned ID photo can
+    // be 300-500KB of text) aren't reliably delivered whole over that
+    // channel — this was silently dropping selfie/ID/biometric evidence
+    // from the downloaded PDF for documents that had it. A normal RPC
+    // call has no such size constraint.
+    const freshTx = await getSignTransaction(current.id);
+    stashSignedTransactionForDownload(freshTx ?? current, language);
     window.location.href = current.document_type === 'custom-template' ? '/preview/custom-template' : `/preview/${current.document_type}`;
     dismiss();
   };
@@ -115,11 +125,12 @@ export function SignedDocumentPopup() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={handleDownload}
-                  className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white"
+                  disabled={downloading}
+                  onClick={() => void handleDownload()}
+                  className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white disabled:opacity-60"
                   style={{ background: 'linear-gradient(180deg,#34d399 0%,#059669 68%,#065f46 100%)', boxShadow: '0 3px 0 #065f46' }}
                 >
-                  <Download className="size-3.5" /> {language === 'en' ? 'Download' : 'Descargar'}
+                  <Download className="size-3.5" /> {downloading ? (language === 'en' ? 'Preparing…' : 'Preparando…') : (language === 'en' ? 'Download' : 'Descargar')}
                 </button>
                 <button type="button" onClick={dismiss} className="rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-600">
                   {language === 'en' ? 'Later' : 'Después'}
