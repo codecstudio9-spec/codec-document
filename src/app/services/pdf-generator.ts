@@ -1698,8 +1698,11 @@ export class PDFGenerator {
 
     this.doc.addPage();
     this.currentY = this.margin;
-    this.addText(language === 'es' ? 'CERTIFICADO DE AUDITORÍA' : 'AUDIT CERTIFICATE', 16, 'bold', 'center');
-    this.addSpacing(0.8);
+    // addMixedRuns (not addText) so this page shares the exact same font
+    // (always real helvetica) and calibrated scale as the document body
+    // instead of addText's separate StandardArial-cascade font path,
+    // which visibly didn't match.
+    this.addMixedRuns([{ text: language === 'es' ? 'CERTIFICADO DE AUDITORÍA' : 'AUDIT CERTIFICATE', bold: true }], 11, 'center', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.8 });
     this.doc.setDrawColor(37, 99, 235);
     this.doc.setLineWidth(0.5);
     this.doc.line(this.margin, this.currentY, this.margin + 40, this.currentY);
@@ -1727,8 +1730,11 @@ export class PDFGenerator {
     ];
 
     rows.forEach((r) => {
-      this.addText(r, 9, 'normal', 'left');
-      this.addSpacing(0.1);
+      const colonIdx = r.indexOf(':');
+      const runs: DocxRun[] = colonIdx > -1
+        ? [{ text: `${r.slice(0, colonIdx)}: `, bold: true }, { text: r.slice(colonIdx + 1).trim(), bold: false }]
+        : [{ text: r, bold: false }];
+      this.addMixedRuns(runs, 9, 'left', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.4 });
     });
 
     // Compact legal security footer requested for signed documents
