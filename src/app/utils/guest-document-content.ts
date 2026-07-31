@@ -21,7 +21,7 @@ import { getDocumentTranslation } from '../data/document-translations';
 import { enrichDocumentDataWithDates } from './document-dates';
 import { normalizeCorruptedText, normalizeLanguageSensitiveFields } from '../pages/preview-page';
 import { getDocxTemplateByIdPublic } from '../services/docx-template-service';
-import { fetchDocxArrayBuffer, renderDocxTemplate, extractTextFromDocx } from '../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import type { SignTransaction } from '../services/sign-transaction-service';
 import type { DocumentData } from '../types/document';
 
@@ -55,18 +55,19 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   };
 }
 
-async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }): Promise<{ content: string; title: string }> {
+async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }): Promise<{ content: string; title: string; formattedParagraphs: DocxParagraph[] }> {
   if (!documentData.templateId) throw new Error('Missing templateId');
   const template = await getDocxTemplateByIdPublic(documentData.templateId);
   if (!template) throw new Error('Template not found');
 
   const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
   const mergedBytes = renderDocxTemplate(docxBytes, documentData.values ?? {});
-  const content = await extractTextFromDocx(mergedBytes);
-  return { content, title: template.name };
+  const formattedParagraphs = extractFormattedParagraphs(mergedBytes);
+  const content = formattedParagraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
+  return { content, title: template.name, formattedParagraphs };
 }
 
-export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string }> {
+export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[] }> {
   if (tx.document_type === 'custom-template') {
     return interpolateCustomTemplate(tx.document_data as { templateId?: string; values?: Record<string, string> });
   }

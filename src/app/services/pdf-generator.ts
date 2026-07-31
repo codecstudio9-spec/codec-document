@@ -858,9 +858,9 @@ export class PDFGenerator {
     // isolated by blank-line spacing, never bold, never a bigger font.
     // Only the title itself and the very next line (the "Fecha: ...
     // Número de Contrato: ..." subtitle) are centered.
-    const FIELD_SIZE = 10;   // labels/values ("Apellidos: NOMBRE") + section headers
-    const CLAUSE_SIZE = 9;   // clause headings + justified legal prose
-    const TITLE_SIZE = 12;
+    const FIELD_SIZE = 9.5;   // labels/values ("Apellidos: NOMBRE") + section headers
+    const CLAUSE_SIZE = 8.5;  // clause headings + justified legal prose
+    const TITLE_SIZE = 11;
     let titleAssigned = false;
     let centerNextFieldLine = false;
 
@@ -875,14 +875,14 @@ export class PDFGenerator {
       if (role === 'title') {
         titleAssigned = true;
         centerNextFieldLine = true; // the "Fecha: ... Número de Contrato: ..." line right after the title is centered too
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.05, spaceBefore: 0, spaceAfter: 2 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.1, spaceBefore: 0, spaceAfter: 2.2 });
         continue;
       }
 
       if (role === 'section') {
         // Plain — same weight/size as body, not a "heading" at all, just
         // its own isolated line (matches the reference exactly).
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: false, sizePt: FIELD_SIZE }], FIELD_SIZE, 'left', { leading: 1.05, spaceBefore: 1.8, spaceAfter: 0.8 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: false, sizePt: FIELD_SIZE }], FIELD_SIZE, 'left', { leading: 1.1, spaceBefore: 2, spaceAfter: 1 });
         continue;
       }
 
@@ -899,7 +899,7 @@ export class PDFGenerator {
         const runs = splitAt > 0
           ? this.collapseParagraphChars(chars.map((c, i) => (i < splitAt ? { ...c, bold: true } : c)))
           : para.runs;
-        this.addMixedRuns(runs, CLAUSE_SIZE, 'justify', { leading: 1.0, spaceBefore: 0, spaceAfter: 0.5 });
+        this.addMixedRuns(runs, CLAUSE_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
         continue;
       }
 
@@ -912,7 +912,7 @@ export class PDFGenerator {
       const size = isFieldLine ? FIELD_SIZE : CLAUSE_SIZE;
       const align: 'left' | 'justify' | 'center' = isFieldLine ? (centerNextFieldLine ? 'center' : 'left') : 'justify';
       if (isFieldLine) centerNextFieldLine = false;
-      this.addMixedRuns(para.runs, size, align, { leading: isFieldLine ? 1.05 : 1.0, spaceBefore: 0, spaceAfter: isFieldLine ? 0.4 : 0.5 });
+      this.addMixedRuns(para.runs, size, align, { leading: isFieldLine ? 1.1 : 1.05, spaceBefore: 0, spaceAfter: isFieldLine ? 0.5 : 0.6 });
     }
   }
 
@@ -970,7 +970,8 @@ export class PDFGenerator {
 
     const measure = (w: Word) => {
       try { this.doc.setFontSize(w.size); this.doc.setFont('helvetica', w.bold ? 'bold' : 'normal'); } catch {}
-      return this.safeGetTextWidth(w.text);
+      const raw = this.safeGetTextWidth(w.text);
+      return /^\s+$/.test(w.text) ? Math.max(raw, w.size * 0.3528 * 0.32) : raw;
     };
 
     const lines: Word[][] = [];
@@ -1012,9 +1013,9 @@ export class PDFGenerator {
       }
 
       for (const w of lineWords) {
-        try { this.doc.setFontSize(w.size); this.doc.setFont('helvetica', w.bold ? 'bold' : 'normal'); } catch {}
+        const wWidth = measure(w); // sets font/size as a side effect too
         this.safeText(w.text, x, this.currentY);
-        x += this.safeGetTextWidth(w.text) + (/^\s+$/.test(w.text) ? extraPerSpace : 0);
+        x += wWidth + (/^\s+$/.test(w.text) ? extraPerSpace : 0);
       }
       this.currentY += lineHeightMm;
     });
@@ -2360,7 +2361,7 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
-    if (opts.formattedParagraphs) generator.setMargin(13);
+    if (opts.formattedParagraphs) generator.setMargin(18);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
@@ -2473,7 +2474,7 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
-    if (opts.formattedParagraphs) generator.setMargin(13);
+    if (opts.formattedParagraphs) generator.setMargin(18);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
