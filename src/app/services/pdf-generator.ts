@@ -829,7 +829,13 @@ export class PDFGenerator {
 
     if (!titleAssigned && isAllCaps && t.length >= 15 && !looksLikeFieldLine) return 'title';
     if (isAllCaps && t.length < 70 && !looksLikeFieldLine) return 'section';
+    // Spanish ordinal clause headings (PRIMERA-OBJETO:) and their English
+    // equivalent (FIRST-PURPOSE:) — templates targeting the US market use
+    // the same "ORDINAL-TITLE:" convention in English, and without this
+    // the heading fell through to 'body', where its own colon made it get
+    // misclassified as a short field-line instead of justified clause prose.
     if (/^(PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|S[ÉE]PTIMA|OCTAVA|NOVENA|D[ÉE]CIMA(\s+\p{L}+)?|PAR[ÁA]GRAFO(\s+\p{L}+)?)\s*[\-:]/iu.test(t)) return 'clauseHeading';
+    if (/^(FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH|NINTH|TENTH)\s*[\-:]/i.test(t)) return 'clauseHeading';
     return 'body';
   }
 
