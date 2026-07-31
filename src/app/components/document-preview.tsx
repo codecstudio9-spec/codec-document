@@ -36,10 +36,10 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
         return <span key={`${keyPrefix}-ef-${i}`} className="inline-flex min-w-[8rem] h-[1.1em] border-b border-slate-400 align-bottom mx-1" aria-hidden="true" />;
       }
       if (part === ACTIVE_EMPTY_TOKEN) {
-        return <span key={`${keyPrefix}-ae-${i}`} className="inline-flex min-w-[8rem] h-[1.1em] border-b-2 border-blue-400 align-bottom mx-1 animate-pulse bg-blue-50/60 rounded-sm" aria-hidden="true" />;
+        return <span key={`${keyPrefix}-ae-${i}`} data-active-field="true" className="inline-flex min-w-[8rem] h-[1.1em] border-b-2 border-blue-400 align-bottom mx-1 animate-pulse bg-blue-50/60 rounded-sm" aria-hidden="true" />;
       }
       if (part.startsWith(ACTIVE_OPEN) && part.endsWith(ACTIVE_CLOSE)) {
-        return <mark key={`${keyPrefix}-av-${i}`} className="bg-yellow-100 border-b-2 border-blue-500 rounded-sm px-0.5 not-italic font-[inherit]">{part.slice(1, -1)}</mark>;
+        return <mark key={`${keyPrefix}-av-${i}`} data-active-field="true" className="bg-yellow-100 border-b-2 border-blue-500 rounded-sm px-0.5 not-italic font-[inherit]">{part.slice(1, -1)}</mark>;
       }
       return part || null;
     });
@@ -353,20 +353,22 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
     return formatDocumentContent(processedContent, leftSignatureUrl, rightSignatureUrl);
   }, [contentAfterConditionals, enrichedData, activeFieldId, leftSignatureUrl, rightSignatureUrl]);
 
+  // Scrolls the preview just enough to bring the field the user just
+  // focused into view — nothing moves if it's already visible, and it
+  // never re-fires while they keep typing into the SAME field (deps are
+  // just activeFieldId, not the content, which changes on every
+  // keystroke). Previously this estimated a scroll offset from the
+  // active field's character position in the raw template string, which
+  // didn't match the field's real rendered position (formatting adds
+  // headers/spacing, substituted values are a different length than
+  // "{{tag}}") — that mismatch is what caused the preview to visibly
+  // jump around instead of settling.
   useEffect(() => {
     if (!activeFieldId) return;
-    const container = previewContentRef.current?.closest('[data-preview-scroll-container]') as HTMLElement | null;
-    if (!container) return;
-    const escapedFieldId = activeFieldId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const fieldTokenRegex = new RegExp(`\\{\\{\\s*${escapedFieldId}\\s*\\}\\}`, 'i');
-    const match = fieldTokenRegex.exec(contentAfterConditionals);
-    if (!match) return;
-    const contentLength = Math.max(contentAfterConditionals.length, 1);
-    const relativePosition = match.index / contentLength;
-    const maxScroll = Math.max(container.scrollHeight - container.clientHeight, 0);
-    const targetTop = Math.max((relativePosition * maxScroll) - (container.clientHeight * 0.2), 0);
-    container.scrollTo({ top: targetTop, behavior: 'smooth' });
-  }, [activeFieldId, contentAfterConditionals]);
+    const target = previewContentRef.current?.querySelector('[data-active-field="true"]') as HTMLElement | null;
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  }, [activeFieldId]);
 
   const handleCopy = (e: React.ClipboardEvent) => {
     if (showWatermark) {
