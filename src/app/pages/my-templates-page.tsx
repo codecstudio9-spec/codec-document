@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown, FilePenLine, Send, Building2 } from 'lucide-react';
+import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown, FilePenLine, Send, Building2, Sparkles, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { listTemplates, deleteTemplate, type CustomTemplate } from '../services/template-service';
-import { listDocxTemplates, deleteDocxTemplate, type DocxTemplate } from '../services/docx-template-service';
+import {
+  listDocxTemplates, deleteDocxTemplate, listPublicExampleTemplates, cloneExampleTemplate,
+  type DocxTemplate, type PublicExampleTemplate,
+} from '../services/docx-template-service';
 import { GenerateSendModal } from '../components/templates/GenerateSendModal';
 import { SITE_URL } from '../config/site';
 
@@ -20,12 +23,35 @@ export function MyTemplatesPage() {
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [sendTemplate, setSendTemplate] = useState<DocxTemplate | null>(null);
+  const [examples, setExamples] = useState<PublicExampleTemplate[] | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
     listTemplates(user.id).then(setTemplates).catch(() => setTemplates([]));
     listDocxTemplates(user.id).then(setDocxTemplates).catch(() => setDocxTemplates([]));
   }, [user?.id]);
+
+  // Loads regardless of whether the user has any templates of their own —
+  // the whole point of this gallery is giving a brand-new account
+  // something to start from instead of a blank page.
+  useEffect(() => {
+    listPublicExampleTemplates().then(setExamples).catch(() => setExamples([]));
+  }, []);
+
+  const handleUseExample = async (example: PublicExampleTemplate) => {
+    if (!user?.id) return;
+    setCloningId(example.id);
+    try {
+      const created = await cloneExampleTemplate(example.id, user.id, language);
+      toast.success(language === 'en' ? 'Your own editable copy is ready!' : '¡Tu copia editable está lista!');
+      navigate(`/my-templates/${created.id}/edit-docx`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not copy this template.' : 'No se pudo copiar esta plantilla.'));
+    } finally {
+      setCloningId(null);
+    }
+  };
 
   const handleCopyLink = (slug: string, announce?: boolean) => {
     navigator.clipboard.writeText(`${SITE_URL}/t/${slug}`).then(() => {
@@ -150,6 +176,50 @@ export function MyTemplatesPage() {
             </div>
           </div>
         </div>
+
+        {/* Public example gallery — always visible, even for a brand-new
+            account with zero templates of its own. "Usar esta plantilla"
+            clones it into an independent copy the new owner can freely
+            rewrite (fields, clauses, everything) without touching the
+            original example. */}
+        {examples !== null && examples.length > 0 && (
+          <div className="mt-6">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
+              <Sparkles className="size-4 text-purple-500" /> {language === 'en' ? 'Example templates' : 'Plantillas de ejemplo'}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {examples.map((ex) => (
+                <div key={ex.id} className="flex flex-col gap-3 rounded-3xl border border-purple-200 bg-purple-50/40 p-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100">
+                      <Sparkles className="size-5 text-purple-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-slate-900">{ex.exampleLabel || ex.name}</p>
+                      <p className="text-xs text-slate-400">
+                        {ex.fieldCount} {language === 'en' ? 'field(s) · fully editable' : 'campo(s) · totalmente editable'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-500">
+                    {language === 'en'
+                      ? 'Get your own independent copy — rewrite the clauses, fields, and form however you need.'
+                      : 'Obtén tu propia copia independiente — reescribe las cláusulas, campos y formulario como lo necesites.'}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={cloningId === ex.id}
+                    onClick={() => void handleUseExample(ex)}
+                    className="mt-auto flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 py-2.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-60"
+                  >
+                    {cloningId === ex.id ? <Loader className="size-3.5 animate-spin" /> : <Copy className="size-3.5" />}
+                    {language === 'en' ? 'Use this template' : 'Usar esta plantilla'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {docxTemplates !== null && docxTemplates.length > 0 && (
           <div className="mt-6">

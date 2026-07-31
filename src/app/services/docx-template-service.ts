@@ -258,6 +258,58 @@ export async function unshareDocxTemplate(shareId: string): Promise<void> {
   if (error) throw new Error(`unshareDocxTemplate: ${error.message}`);
 }
 
+/**
+ * Public example templates — a small gallery ANY account can see and
+ * clone into their own account (independent copy, not a shared row —
+ * see template_shares for that). See supabase/migrations/
+ * 20260731030000_add_public_example_templates.sql.
+ */
+export interface PublicExampleTemplate {
+  id: string;
+  name: string;
+  exampleLabel: string | null;
+  fieldCount: number;
+}
+
+export async function listPublicExampleTemplates(): Promise<PublicExampleTemplate[]> {
+  const { data, error } = await supabase.rpc('list_public_example_templates');
+  if (error || !data) return [];
+  return (data as Array<{ id: string; name: string; example_label: string | null; detected_fields: unknown }>).map((row) => ({
+    id: row.id,
+    name: row.name,
+    exampleLabel: row.example_label,
+    fieldCount: Array.isArray(row.detected_fields) ? row.detected_fields.length : 0,
+  }));
+}
+
+/** Clones a public example into a brand-new template owned by `userId` —
+ * an independent copy (its own id, its own docx-template row) the new
+ * owner can freely rewrite (fields, clauses, security, everything)
+ * without touching the original example. Signers reset to a single
+ * default "Signer 1" since the example's own signer setup was tuned for
+ * its original use case, not the new owner's. */
+export async function cloneExampleTemplate(exampleId: string, userId: string, language: 'en' | 'es'): Promise<DocxTemplate> {
+  const { data, error } = await supabase.rpc('get_public_example_template', { p_id: exampleId }).maybeSingle();
+  if (error || !data) throw new Error(language === 'en' ? 'Example template not found.' : 'Plantilla de ejemplo no encontrada.');
+  const row = data as {
+    name: string; example_label: string | null; docx_file_url: string; detected_fields: unknown;
+    security_config: unknown; instructions_en: string | null; instructions_es: string | null;
+    clause_overrides: unknown; extra_clauses: unknown;
+  };
+  return createDocxTemplate({
+    userId,
+    name: `${row.example_label || row.name} — ${language === 'en' ? 'Copy' : 'Copia'}`,
+    docxFileUrl: row.docx_file_url,
+    detectedFields: Array.isArray(row.detected_fields) ? (row.detected_fields as DetectedField[]) : [],
+    signers: [{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }],
+    securityConfig: { ...DEFAULT_SECURITY_CONFIG, ...(row.security_config as Partial<SecurityConfig> ?? {}) },
+    instructionsEn: row.instructions_en ?? '',
+    instructionsEs: row.instructions_es ?? '',
+    clauseOverrides: (row.clause_overrides && typeof row.clause_overrides === 'object') ? (row.clause_overrides as Record<string, string>) : {},
+    extraClauses: Array.isArray(row.extra_clauses) ? (row.extra_clauses as ExtraClause[]) : [],
+  });
+}
+
 /** Public, anonymous-safe lookup for the /t/:slug fill page — goes
  * through the SECURITY DEFINER RPC, never a direct table SELECT. */
 export async function getTemplateBySlugPublic(slug: string): Promise<PublicDocxTemplate | null> {
