@@ -948,9 +948,10 @@ export class PDFGenerator {
     runs: DocxRun[],
     baseFontSize: number,
     align: 'left' | 'center' | 'right' | 'justify',
-    layout?: { leading?: number; spaceBefore?: number; spaceAfter?: number },
+    layout?: { leading?: number; spaceBefore?: number; spaceAfter?: number; textColor?: [number, number, number] },
   ) {
-    this.doc.setTextColor(0, 0, 0);
+    const [r, g, b] = layout?.textColor ?? [0, 0, 0];
+    this.doc.setTextColor(r, g, b);
     const leading = layout?.leading ?? 1.05;
 
     type Word = { text: string; bold: boolean; size: number };
@@ -1702,7 +1703,11 @@ export class PDFGenerator {
     // (always real helvetica) and calibrated scale as the document body
     // instead of addText's separate StandardArial-cascade font path,
     // which visibly didn't match.
-    this.addMixedRuns([{ text: language === 'es' ? 'CERTIFICADO DE AUDITORÍA' : 'AUDIT CERTIFICATE', bold: true }], 11, 'center', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.8 });
+    // Dark slate gray instead of pure black — reads as a calmer, more
+    // professional certificate page instead of a harsh black-on-white wall
+    // of text.
+    const AUDIT_TEXT_COLOR: [number, number, number] = [51, 65, 85];
+    this.addMixedRuns([{ text: language === 'es' ? 'CERTIFICADO DE AUDITORÍA' : 'AUDIT CERTIFICATE', bold: true }], 11, 'center', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.8, textColor: AUDIT_TEXT_COLOR });
     this.doc.setDrawColor(37, 99, 235);
     this.doc.setLineWidth(0.5);
     this.doc.line(this.margin, this.currentY, this.margin + 40, this.currentY);
@@ -1734,7 +1739,7 @@ export class PDFGenerator {
       const runs: DocxRun[] = colonIdx > -1
         ? [{ text: `${r.slice(0, colonIdx)}: `, bold: true }, { text: r.slice(colonIdx + 1).trim(), bold: false }]
         : [{ text: r, bold: false }];
-      this.addMixedRuns(runs, 9, 'left', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.4 });
+      this.addMixedRuns(runs, 9, 'left', { leading: 1.15, spaceBefore: 0, spaceAfter: 0.7, textColor: AUDIT_TEXT_COLOR });
     });
 
     // Compact legal security footer requested for signed documents

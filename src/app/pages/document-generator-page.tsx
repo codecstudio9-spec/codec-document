@@ -1177,7 +1177,7 @@ export function DocumentGeneratorPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-slate-50 to-white">
 
       {/* ── Intent Modal (shown once at start) ──────────────────────────── */}
       <IntentModal
@@ -1459,16 +1459,21 @@ export function DocumentGeneratorPage() {
               <ArrowLeft className="size-5" />
               <span className="hidden sm:inline">{t('generator.backToTemplates')}</span>
             </Link>
-            {/* Step indicators */}
+            {/* Step indicators — full text labels only from sm: up; on mobile
+                just the number, since the full-text pills plus the voice
+                toggle and document icon all together were wider than a
+                phone screen, forcing the whole sticky header (and with it
+                the rest of the page) to overflow horizontally. */}
             <div className="flex items-center gap-1 text-xs font-semibold">
               {[
-                { key: 'form',   label: language === 'en' ? '1 · Form'    : '1 · Formulario' },
-                { key: 'sign',   label: language === 'en' ? '2 · Sign'    : '2 · Firma'      },
-                { key: 'verify', label: language === 'en' ? '3 · Verify'  : '3 · Verificar'  },
+                { key: 'form',   shortLabel: '1', label: language === 'en' ? '1 · Form'    : '1 · Formulario' },
+                { key: 'sign',   shortLabel: '2', label: language === 'en' ? '2 · Sign'    : '2 · Firma'      },
+                { key: 'verify', shortLabel: '3', label: language === 'en' ? '3 · Verify'  : '3 · Verificar'  },
               ].map((s, i, arr) => (
                 <span key={s.key} className="flex items-center gap-1">
-                  <span className={`rounded-full px-2.5 py-0.5 ${flowStep === s.key ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}>
-                    {s.label}
+                  <span className={`flex size-6 items-center justify-center rounded-full sm:size-auto sm:px-2.5 sm:py-0.5 ${flowStep === s.key ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}>
+                    <span className="sm:hidden">{s.shortLabel}</span>
+                    <span className="hidden sm:inline">{s.label}</span>
                   </span>
                   {i < arr.length - 1 && <span className="text-slate-300">›</span>}
                 </span>
