@@ -195,16 +195,22 @@ export function MyTemplatesPage() {
                       <Sparkles className="size-5 text-purple-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-slate-900">{ex.exampleLabel || ex.name}</p>
+                      <p className="text-sm font-bold leading-snug text-slate-900">{ex.exampleLabel || ex.name}</p>
                       <p className="text-xs text-slate-400">
                         {ex.fieldCount} {language === 'en' ? 'field(s) · fully editable' : 'campo(s) · totalmente editable'}
                       </p>
                     </div>
                   </div>
+                  {/* Real per-template instructions (written when the example
+                      was created) so someone browsing the gallery understands
+                      what THIS specific template is for, instead of a single
+                      generic blurb shown identically on every card. Falls
+                      back to that generic blurb only if a template genuinely
+                      has none set. */}
                   <p className="text-xs leading-relaxed text-slate-500">
-                    {language === 'en'
+                    {(language === 'en' ? ex.instructionsEn : ex.instructionsEs) || (language === 'en'
                       ? 'Get your own independent copy — rewrite the clauses, fields, and form however you need.'
-                      : 'Obtén tu propia copia independiente — reescribe las cláusulas, campos y formulario como lo necesites.'}
+                      : 'Obtén tu propia copia independiente — reescribe las cláusulas, campos y formulario como lo necesites.')}
                   </p>
                   <button
                     type="button"

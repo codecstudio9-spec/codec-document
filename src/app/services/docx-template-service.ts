@@ -269,16 +269,23 @@ export interface PublicExampleTemplate {
   name: string;
   exampleLabel: string | null;
   fieldCount: number;
+  instructionsEs: string;
+  instructionsEn: string;
 }
 
 export async function listPublicExampleTemplates(): Promise<PublicExampleTemplate[]> {
   const { data, error } = await supabase.rpc('list_public_example_templates');
   if (error || !data) return [];
-  return (data as Array<{ id: string; name: string; example_label: string | null; detected_fields: unknown }>).map((row) => ({
+  return (data as Array<{
+    id: string; name: string; example_label: string | null; detected_fields: unknown;
+    instructions_es: string | null; instructions_en: string | null;
+  }>).map((row) => ({
     id: row.id,
     name: row.name,
     exampleLabel: row.example_label,
     fieldCount: Array.isArray(row.detected_fields) ? row.detected_fields.length : 0,
+    instructionsEs: row.instructions_es ?? '',
+    instructionsEn: row.instructions_en ?? '',
   }));
 }
 
