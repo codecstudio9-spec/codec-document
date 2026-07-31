@@ -30,6 +30,7 @@ export function TemplateFillPublicPage() {
   const [template, setTemplate] = useState<PublicDocxTemplate | null | undefined>(undefined); // undefined = loading
   const [values, setValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -39,10 +40,12 @@ export function TemplateFillPublicPage() {
   const setFieldValue = (key: string, value: string) => setValues((prev) => ({ ...prev, [key]: value }));
 
   const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !values[f.key]?.trim());
+  const invalidKeys = showValidation ? new Set(missingRequired.map((f) => f.key)) : undefined;
 
   const handleSubmit = async () => {
     if (!template || !slug) return;
     if (missingRequired.length > 0) {
+      setShowValidation(true);
       toast.error(language === 'en' ? 'Fill in all required fields first.' : 'Completa todos los campos obligatorios primero.');
       return;
     }
@@ -134,7 +137,7 @@ export function TemplateFillPublicPage() {
             )}
           </div>
 
-          <DynamicDocForm fields={template.detectedFields} values={values} onChange={setFieldValue} language={language} />
+          <DynamicDocForm fields={template.detectedFields} values={values} onChange={setFieldValue} language={language} invalidKeys={invalidKeys} />
 
           <button
             type="button"

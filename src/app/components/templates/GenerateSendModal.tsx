@@ -33,21 +33,24 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const [generating, setGenerating] = useState(false);
   const [resultLink, setResultLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   const open = Boolean(template);
   const effectiveSecurity = securityOverride ?? template?.securityConfig;
   const activeCount = effectiveSecurity ? Object.values(effectiveSecurity).filter(Boolean).length : 0;
 
   const handleClose = () => {
-    setValues({}); setSecurityOverride(null); setResultLink(null); setCopied(false);
+    setValues({}); setSecurityOverride(null); setResultLink(null); setCopied(false); setShowValidation(false);
     onClose();
   };
 
   const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !values[f.key]?.trim());
+  const invalidKeys = showValidation ? new Set(missingRequired.map((f) => f.key)) : undefined;
 
   const handleGenerate = async () => {
     if (!template) return;
     if (missingRequired.length > 0) {
+      setShowValidation(true);
       toast.error(language === 'en' ? 'Fill in all required fields first.' : 'Completa todos los campos obligatorios primero.');
       return;
     }
@@ -131,7 +134,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <DynamicDocForm fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} />
+                  <DynamicDocForm fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5">
                     <div className="flex min-w-0 items-center gap-2.5">

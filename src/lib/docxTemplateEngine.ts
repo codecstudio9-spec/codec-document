@@ -22,7 +22,13 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 
-export type DetectedFieldType = 'text' | 'date' | 'number' | 'choice';
+// 'section' is a pseudo-field the template owner inserts manually in the
+// editor (never auto-detected from the .docx) — it renders as a group
+// heading in the fill form (e.g. "Datos del titular", "Referencia
+// familiar") so a long form reads as clearly-grouped subsections instead
+// of one flat list. It has no `options`/`required` and is never sent as a
+// {{tag}} value — purely a fill-form organization aid.
+export type DetectedFieldType = 'text' | 'date' | 'number' | 'choice' | 'section';
 
 export interface DetectedField {
   key: string;

@@ -29,6 +29,7 @@ const FIELD_TYPE_LABELS: Record<DetectedFieldType, { en: string; es: string }> =
   date: { en: 'Date', es: 'Fecha' },
   number: { en: 'Number', es: 'Número' },
   choice: { en: 'Multiple choice', es: 'Opción múltiple' },
+  section: { en: 'Section title', es: 'Título de sección' },
 };
 
 export function MyDocxTemplateEditorPage() {
@@ -151,6 +152,43 @@ export function MyDocxTemplateEditorPage() {
   const removeField = (key: string) => {
     if (!canEditFields) return;
     setFields((prev) => prev.filter((f) => f.key !== key));
+  };
+
+  // Sections are a pseudo-field (type: 'section') the owner inserts
+  // manually to group the FILL FORM into subsections (e.g. "Datos del
+  // titular", "Referencia familiar") — never a real {{tag}}, never sent
+  // to docxtemplater. Inserted at a specific index (not just appended) so
+  // it can actually sit between two existing fields.
+  const addSectionAt = (index: number) => {
+    if (!canEditFields) return;
+    const section: DetectedField = {
+      key: `section_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      label: language === 'en' ? 'New section' : 'Nueva sección',
+      type: 'section',
+      required: false,
+    };
+    setFields((prev) => {
+      const next = [...prev];
+      next.splice(index, 0, section);
+      return next;
+    });
+  };
+
+  const addOption = (key: string) => {
+    const f = fields.find((x) => x.key === key);
+    updateField(key, { options: [...(f?.options ?? []), ''] });
+  };
+  const updateOption = (key: string, idx: number, value: string) => {
+    const f = fields.find((x) => x.key === key);
+    if (!f) return;
+    const opts = [...(f.options ?? [])];
+    opts[idx] = value;
+    updateField(key, { options: opts });
+  };
+  const removeOption = (key: string, idx: number) => {
+    const f = fields.find((x) => x.key === key);
+    if (!f) return;
+    updateField(key, { options: (f.options ?? []).filter((_, i) => i !== idx) });
   };
 
   const addFixedSigner = () => {
@@ -354,50 +392,123 @@ export function MyDocxTemplateEditorPage() {
                     transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                     style={{ overflow: 'hidden' }}
                   >
-                    <div className="space-y-2 px-5 pb-5">
-                      {fields.map((f) => canEditFields ? (
-                        <div key={f.key} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
-                          <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
-                          <input
-                            value={f.label}
-                            onChange={(e) => updateField(f.key, { label: e.target.value })}
-                            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
-                          />
-                          <select
-                            value={f.type}
-                            onChange={(e) => updateField(f.key, { type: e.target.value as DetectedFieldType, options: e.target.value === 'choice' ? (f.options ?? ['']) : undefined })}
-                            className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-400"
-                          >
-                            {(Object.keys(FIELD_TYPE_LABELS) as DetectedFieldType[]).map((t) => (
-                              <option key={t} value={t}>{FIELD_TYPE_LABELS[t][language]}</option>
-                            ))}
-                          </select>
-                          {f.type === 'choice' && (
-                            <input
-                              value={(f.options ?? []).join(';')}
-                              onChange={(e) => updateField(f.key, { options: e.target.value.split(';').map((o) => o.trim()).filter(Boolean) })}
-                              placeholder={language === 'en' ? 'Option1;Option2' : 'Opcion1;Opcion2'}
-                              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
-                            />
+                    <div className="space-y-1 px-5 pb-5">
+                      {fields.map((f, idx) => (
+                        <div key={f.key}>
+                          {canEditFields && (
+                            <button
+                              type="button"
+                              onClick={() => addSectionAt(idx)}
+                              className="group flex w-full items-center gap-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-indigo-500"
+                            >
+                              <span className="h-px flex-1 bg-slate-200 group-hover:bg-indigo-300" />
+                              <Plus className="size-3" />
+                              {language === 'en' ? 'Insert section title here' : 'Insertar título de sección aquí'}
+                              <span className="h-px flex-1 bg-slate-200 group-hover:bg-indigo-300" />
+                            </button>
                           )}
-                          <label className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
-                            <input type="checkbox" checked={f.required} onChange={(e) => updateField(f.key, { required: e.target.checked })} />
-                            {language === 'en' ? 'Required' : 'Obligatorio'}
-                          </label>
-                          <button type="button" onClick={() => removeField(f.key)} className="shrink-0 text-slate-300 hover:text-red-600">
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div key={f.key} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
-                          <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
-                          <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{f.label}</span>
-                          <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">{FIELD_TYPE_LABELS[f.type][language]}</span>
-                          {f.required && (
-                            <span className="shrink-0 text-xs font-semibold text-slate-400">{language === 'en' ? 'Required' : 'Obligatorio'}</span>
+
+                          {f.type === 'section' ? (
+                            <div className="flex items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 p-3">
+                              <ListChecks className="size-4 shrink-0 text-indigo-500" />
+                              {canEditFields ? (
+                                <input
+                                  value={f.label}
+                                  onChange={(e) => updateField(f.key, { label: e.target.value })}
+                                  placeholder={language === 'en' ? 'Section title' : 'Título de la sección'}
+                                  className="min-w-0 flex-1 rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-sm font-black uppercase tracking-wide text-indigo-700 outline-none focus:border-indigo-400"
+                                />
+                              ) : (
+                                <span className="flex-1 text-sm font-black uppercase tracking-wide text-indigo-700">{f.label}</span>
+                              )}
+                              {canEditFields && (
+                                <button type="button" onClick={() => removeField(f.key)} className="shrink-0 text-indigo-300 hover:text-red-600">
+                                  <Trash2 className="size-4" />
+                                </button>
+                              )}
+                            </div>
+                          ) : canEditFields ? (
+                            <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
+                                <input
+                                  value={f.label}
+                                  onChange={(e) => updateField(f.key, { label: e.target.value })}
+                                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+                                />
+                                <select
+                                  value={f.type}
+                                  onChange={(e) => updateField(f.key, { type: e.target.value as DetectedFieldType, options: e.target.value === 'choice' ? (f.options?.length ? f.options : ['']) : undefined })}
+                                  className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold outline-none focus:border-indigo-400"
+                                >
+                                  {(Object.keys(FIELD_TYPE_LABELS) as DetectedFieldType[]).filter((t) => t !== 'section').map((t) => (
+                                    <option key={t} value={t}>{FIELD_TYPE_LABELS[t][language]}</option>
+                                  ))}
+                                </select>
+                                <label className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-slate-500">
+                                  <input type="checkbox" checked={f.required} onChange={(e) => updateField(f.key, { required: e.target.checked })} />
+                                  {language === 'en' ? 'Required' : 'Obligatorio'}
+                                </label>
+                                <button type="button" onClick={() => removeField(f.key)} className="shrink-0 text-slate-300 hover:text-red-600">
+                                  <Trash2 className="size-4" />
+                                </button>
+                              </div>
+
+                              {/* Options list — was a single ";"-joined text input that
+                                  silently produced only one option unless the user knew
+                                  to type a literal semicolon between values. A real
+                                  add/remove list makes "as many options as I want"
+                                  obvious. */}
+                              {f.type === 'choice' && (
+                                <div className="ml-0 flex flex-col gap-1.5 border-t border-slate-200 pt-2 sm:ml-24">
+                                  {(f.options ?? []).map((opt, oi) => (
+                                    <div key={oi} className="flex items-center gap-1.5">
+                                      <input
+                                        value={opt}
+                                        onChange={(e) => updateOption(f.key, oi, e.target.value)}
+                                        placeholder={language === 'en' ? `Option ${oi + 1}` : `Opción ${oi + 1}`}
+                                        className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-indigo-400"
+                                      />
+                                      <button type="button" onClick={() => removeOption(f.key, oi)} className="shrink-0 text-slate-300 hover:text-red-600">
+                                        <Trash2 className="size-3.5" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => addOption(f.key)}
+                                    className="flex items-center gap-1 self-start text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                                  >
+                                    <Plus className="size-3.5" /> {language === 'en' ? 'Add option' : 'Agregar opción'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
+                              <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
+                              <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{f.label}</span>
+                              <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500">{FIELD_TYPE_LABELS[f.type][language]}</span>
+                              {f.required && (
+                                <span className="shrink-0 text-xs font-semibold text-slate-400">{language === 'en' ? 'Required' : 'Obligatorio'}</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}
+
+                      {canEditFields && (
+                        <button
+                          type="button"
+                          onClick={() => addSectionAt(fields.length)}
+                          className="group flex w-full items-center gap-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-indigo-500"
+                        >
+                          <span className="h-px flex-1 bg-slate-200 group-hover:bg-indigo-300" />
+                          <Plus className="size-3" />
+                          {language === 'en' ? 'Insert section title here' : 'Insertar título de sección aquí'}
+                          <span className="h-px flex-1 bg-slate-200 group-hover:bg-indigo-300" />
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 )}
