@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useDeferredValue, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useDeferredValue, useRef, useCallback, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { getTemplateById } from '../data/templates';
@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 // Select/Tooltip Radix components removed — replaced with native elements to avoid portal removeChild errors
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine, CreditCard, Lock, UserPlus, Copy, Check, Download, Camera, User, RefreshCw, ScanLine, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine, CreditCard, Lock, UserPlus, Copy, Check, Download, Camera, User, RefreshCw, ScanLine, CheckCircle2, Users, SlidersHorizontal, ClipboardList, Palette } from 'lucide-react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
@@ -553,6 +553,19 @@ export function DocumentGeneratorPage() {
     };
   }, [visibleFields]);
 
+  /** Required-field completion count for one section card's header badge —
+   * same "filled = not empty/false" rule as the overall progress bar,
+   * scoped to just that group's fields. */
+  const sectionProgress = (fields: typeof visibleFields) => {
+    const required = fields.filter((f) => f.required);
+    if (required.length === 0) return null;
+    const done = required.filter((f) => {
+      const v = formData[f.id];
+      return v !== undefined && v !== '' && v !== false;
+    }).length;
+    return { done, total: required.length };
+  };
+
   const handleInputChange = (fieldId: string, value: string | number | boolean) => {
     setActiveFieldId(fieldId);
     setFormData(prev => ({ ...prev, [fieldId]: value }));
@@ -1084,6 +1097,33 @@ export function DocumentGeneratorPage() {
     );
   };
 
+  /** Icon-in-box + title + "done/total required" badge for a section
+   * Card's header — keeps the three field-group cards visually scannable
+   * (which section am I in, how much is left) instead of identical plain
+   * titles. */
+  const sectionHeader = (icon: ReactNode, iconBg: string, title: string, fields: typeof visibleFields) => {
+    const progress = sectionProgress(fields);
+    return (
+      <CardHeader className="flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+            {icon}
+          </div>
+          <CardTitle className="text-base">{title}</CardTitle>
+        </div>
+        {progress && (
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              progress.done === progress.total ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+            }`}
+          >
+            {progress.done}/{progress.total}
+          </span>
+        )}
+      </CardHeader>
+    );
+  };
+
   const previewTemplate = language === 'es' && spanishTemplates[template.id]
     ? spanishTemplates[template.id]
     : template.template;
@@ -1109,7 +1149,7 @@ export function DocumentGeneratorPage() {
 
   const PreviewPanel = () => (
     <div key="document-preview-live-root">
-      <Card className="lg:sticky lg:top-4 overflow-hidden">
+      <Card className="lg:sticky lg:top-4 overflow-hidden shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">{t('preview.documentPreview')}</CardTitle>
           <CardDescription className="text-xs">
@@ -1955,12 +1995,23 @@ export function DocumentGeneratorPage() {
           {/* Form column — independently scrollable */}
           <div className="space-y-6 py-8 lg:h-full lg:overflow-y-auto lg:pr-2 pb-24">
 
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader className="flex-row items-start justify-between gap-4">
-                <div>
-                  <CardTitle>{t('generator.documentInfo')}</CardTitle>
-                  <CardDescription>{t('generator.fillRequired')}</CardDescription>
+                <div className="flex items-start gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                    <FileText className="size-4.5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle>{t('generator.documentInfo')}</CardTitle>
+                    <CardDescription>{t('generator.fillRequired')}</CardDescription>
+                  </div>
                 </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {requiredFields.length > 0 && (
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${formProgress === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                      {formProgress}%
+                    </span>
+                  )}
                 {Object.keys(formData).length > 0 && (
                   <button
                     type="button"
@@ -1970,6 +2021,7 @@ export function DocumentGeneratorPage() {
                     {language === 'en' ? '✕ Clear form' : '✕ Borrar formulario'}
                   </button>
                 )}
+                </div>
               </CardHeader>
             </Card>
 
@@ -2039,46 +2091,45 @@ export function DocumentGeneratorPage() {
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-base">{language === 'en' ? 'Party Information' : 'Información de las Partes'}</CardTitle>
-                </CardHeader>
+              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+                {sectionHeader(<Users className="size-4.5 text-indigo-600" />, 'bg-indigo-50', language === 'en' ? 'Party Information' : 'Información de las Partes', groupedFields.parties)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.parties.map(renderField)}
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-base">{language === 'en' ? 'Agreement Details' : 'Detalles del Acuerdo'}</CardTitle>
-                </CardHeader>
+              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+                {sectionHeader(<ClipboardList className="size-4.5 text-sky-600" />, 'bg-sky-50', language === 'en' ? 'Agreement Details' : 'Detalles del Acuerdo', groupedFields.agreement)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.agreement.map(renderField)}
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-base">{language === 'en' ? 'Specific Variables' : 'Variables Específicas'}</CardTitle>
-                </CardHeader>
+              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+                {sectionHeader(<SlidersHorizontal className="size-4.5 text-purple-600" />, 'bg-purple-50', language === 'en' ? 'Specific Variables' : 'Variables Específicas', groupedFields.variables)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.variables.map(renderField)}
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2 overflow-hidden">
+              <Card className="md:col-span-2 overflow-hidden shadow-sm transition-shadow duration-200 hover:shadow-md">
                 <button
                   type="button"
                   onClick={() => setDesignOpen((v) => !v)}
                   className="flex w-full items-center justify-between gap-3 p-6 text-left"
                 >
-                  <div>
-                    <CardTitle className="text-base">{language === 'en' ? 'Customize Design' : 'Personalizar Diseño'}</CardTitle>
-                    <CardDescription>
-                      {language === 'en'
-                        ? 'Optional — logo, header, footer and business identity for a premium export'
-                        : 'Opcional — logo, encabezado, pie e identidad empresarial para una exportación premium'}
-                    </CardDescription>
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-50">
+                      <Palette className="size-4.5 text-amber-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{language === 'en' ? 'Customize Design' : 'Personalizar Diseño'}</CardTitle>
+                      <CardDescription>
+                        {language === 'en'
+                          ? 'Optional — logo, header, footer and business identity for a premium export'
+                          : 'Opcional — logo, encabezado, pie e identidad empresarial para una exportación premium'}
+                      </CardDescription>
+                    </div>
                   </div>
                   <motion.div animate={{ rotate: designOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
                     <ChevronDown className="size-5 text-slate-400" />

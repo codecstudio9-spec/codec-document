@@ -6,6 +6,7 @@ import { LanguageProvider } from './contexts/language-context';
 import { AuthProvider } from './contexts/auth-context';
 import { CookieBanner } from './components/CookieBanner';
 import { SignedDocumentPopup } from './components/SignedDocumentPopup';
+import { GlobalVoiceMuteButton } from './components/voice/GlobalVoiceMuteButton';
 import { trackVisitorSession } from './services/analytics-service';
 
 /** Shown while a lazy-loaded route's JS chunk downloads (routes.tsx) —
@@ -38,6 +39,7 @@ export default function App() {
         <CookieBanner />
         <Toaster />
         <SignedDocumentPopup />
+        <GlobalVoiceMuteButton />
       </AuthProvider>
     </LanguageProvider>
   );

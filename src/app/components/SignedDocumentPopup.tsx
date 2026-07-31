@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Download, X } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { useIsMobile } from '../hooks/use-is-mobile';
 import { supabase } from '../../lib/supabase';
 import { stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../services/sign-transaction-service';
 
@@ -36,8 +38,15 @@ import { stashSignedTransactionForDownload, markTransactionViewed, type SignTran
 export function SignedDocumentPopup() {
   const { user } = useAuth();
   const { language } = useLanguage();
+  const isMobile = useIsMobile();
+  const { pathname } = useLocation();
   const [queue, setQueue] = useState<SignTransaction[]>([]);
   const shownIds = useRef(new Set<string>());
+  // MobileAppShell renders a fixed 72px bottom tab bar (+ safe-area inset)
+  // on every /app/* route when on a real mobile viewport — this popup
+  // mounts as an App.tsx-level sibling with no knowledge of that nav, so
+  // without this it renders straight on top of it instead of above it.
+  const clearsBottomNav = isMobile && pathname.startsWith('/app');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -77,7 +86,7 @@ export function SignedDocumentPopup() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.95 }}
           transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-6 right-6 z-[9997] w-[calc(100vw-2rem)] max-w-sm overflow-hidden bg-white"
+          className={`fixed right-6 z-[9997] w-[calc(100vw-2rem)] max-w-sm overflow-hidden bg-white ${clearsBottomNav ? 'bottom-24' : 'bottom-6'}`}
           style={{
             borderRadius: '20px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.04), 0 12px 32px rgba(15,23,42,0.12), 0 32px 80px rgba(15,23,42,0.18)',

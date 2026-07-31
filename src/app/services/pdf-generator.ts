@@ -679,27 +679,37 @@ export class PDFGenerator {
    * Render a line split into strong/legal fragments and normal fragments.
    * This implementation avoids Y rewinds/overprints and keeps output stable.
    */
-  private renderLegalEmphasisLine(line: string) {
-    const clean = line.replace(/\*\*/g, '');
-    console.log('TEXTO PROCESADO:', clean);
-    console.log('FUENTE ACTUAL:', this.doc.getFont());
-    this.addText(clean, 10, 'bold', 'left');
-  }
-
-  private addTextWithBoldMarkdown(line: string, fontSize: number = 10) {
-    if (!line.includes('**')) {
-      this.addText(line, fontSize, 'normal', 'left');
-      return;
-    }
-    // If the line has bold markers, strip them and render the line bold
-    this.addText(line.replace(/\*\*/g, ''), fontSize, 'bold', 'left');
+  /**
+   * Splits a line on **bold** markdown markers into DocxRun-shaped
+   * fragments so it can go through the same real-justification renderer
+   * (addMixedRuns) as custom Word templates, instead of stripping the
+   * markers and rendering the whole line as one flat weight.
+   */
+  private parseInlineBold(text: string): DocxRun[] {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+    const runs: DocxRun[] = parts.map((part) => {
+      const m = part.match(/^\*\*([^*]+)\*\*$/);
+      return m ? { text: m[1], bold: true } : { text: part, bold: false };
+    });
+    return runs.length ? runs : [{ text, bold: false }];
   }
 
   /**
-   * Process document content with professional legal formatting
+   * Process document content with professional legal formatting.
+   * Shares the same calibrated typography (real justification via
+   * addMixedRuns, consistent title/section/body sizes) as
+   * processFormattedParagraphs -- the two used to be very different
+   * rendering engines (this one used addText, which silently treated
+   * 'justify' the same as 'left'), producing a visibly lower-quality PDF
+   * for every built-in document type (leases, NDAs, etc.) than for
+   * uploaded Word templates.
    */
   private processContent(content: string) {
+    const TITLE_SIZE = 12;
+    const SECTION_SIZE = 10;
+    const BODY_SIZE = 9.5;
     const lines = content.split('\n');
+    let titleAssigned = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -707,7 +717,7 @@ export class PDFGenerator {
 
       // Skip empty lines (but add minimal spacing)
       if (trimmedLine === '') {
-        this.addSpacing(0.1); // Reduced spacing for cleaner look
+        this.addSpacing(0.12);
         continue;
       }
 
@@ -725,80 +735,65 @@ export class PDFGenerator {
         continue;
       }
 
-      // Detect and format main headers (all caps lines under 100 chars)
+      // Detect main/section headers (all caps lines under 100 chars) --
+      // first one is the document title (centered, bold), the rest are
+      // section headers (left-aligned), mirroring classifyParagraphRole.
       if (/^[A-Z\s\u00C0-\u017F]+$/.test(trimmedLine) && trimmedLine.length > 0 && trimmedLine.length < 100) {
-        this.addSpacing(1.35);
-        this.addText(trimmedLine, 14, 'bold', 'center');
-        this.addSpacing(0.7);
+        if (!titleAssigned) {
+          titleAssigned = true;
+          this.addMixedRuns([{ text: trimmedLine, bold: true }], TITLE_SIZE, 'center', { leading: 1.1, spaceBefore: 1.2, spaceAfter: 2.2 });
+        } else {
+          this.addMixedRuns([{ text: trimmedLine, bold: true }], SECTION_SIZE, 'left', { leading: 1.1, spaceBefore: 2, spaceAfter: 1 });
+        }
         continue;
       }
 
-      // Detect article headers (ARTICLE I, ARTÍCULO I, etc.)
-      if (/^(ARTICLE|ARTÍCULO)\s+[IVX\d]+/i.test(trimmedLine)) {
-        this.addSpacing(1.2);
-        this.addText(trimmedLine, 12, 'bold', 'left');
-        this.addSpacing(0.5);
+      // Detect article headers (ARTICLE I, ARTICULO I, etc.)
+      if (/^(ARTICLE|ART[ÍI]CULO)\s+[IVX\d]+/i.test(trimmedLine)) {
+        this.addMixedRuns([{ text: trimmedLine, bold: true }], SECTION_SIZE, 'left', { leading: 1.1, spaceBefore: 2, spaceAfter: 1 });
         continue;
       }
 
-      // Numbered legal sections
+      // Numbered legal sections -- bold heading inline with justified body
       if (this.isNumberedSection(trimmedLine)) {
         const { heading, body } = this.splitNumberedSection(trimmedLine);
-        this.addText(heading, 11, 'bold', 'left');
-        if (body) {
-          this.addText(body, 10, 'normal', 'left');
-        }
-        this.addSpacing(0.15);
+        const runs: DocxRun[] = body ? [{ text: `${heading} `, bold: true }, ...this.parseInlineBold(body)] : [{ text: heading, bold: true }];
+        this.addMixedRuns(runs, BODY_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
         continue;
       }
 
-      // Bulleted/list lines
+      // Bulleted/list lines -- left-aligned, never justified
       if (this.isBulletLine(trimmedLine)) {
-        this.addText(trimmedLine, 10, 'normal', 'left');
-        this.addSpacing(0.1);
+        this.addMixedRuns(this.parseInlineBold(trimmedLine), BODY_SIZE, 'left', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.4 });
         continue;
       }
 
-      // Lines with **bold** markdown — strip markers and render bold
+      // Lines with **bold** markdown -- real inline bold runs, justified
       if (trimmedLine.includes('**')) {
-        this.addTextWithBoldMarkdown(trimmedLine, 10);
-        this.addSpacing(0.1);
+        this.addMixedRuns(this.parseInlineBold(trimmedLine), BODY_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
         continue;
       }
 
-      // Detect and bold important legal terms and phrases
+      // Legal emphasis terms -- whole line bold, justified
       if (this.containsLegalTerms(trimmedLine)) {
-        try {
-          this.renderLegalEmphasisLine(trimmedLine);
-        } catch (error) {
-          console.error('Error al procesar renderLegalEmphasisLine para la línea:', trimmedLine, error);
-          throw error;
-        }
-        this.addSpacing(0.15);
+        this.addMixedRuns([{ text: trimmedLine, bold: true }], BODY_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
         continue;
       }
 
-      // Detect clauses and definitions (lines starting with capital letters followed by colon)
+      // Clauses and definitions ("LABEL: content") -- bold label inline
+      // with the normal-weight value on the same line, not stacked.
       if (this.isClauseHeader(trimmedLine)) {
         const parts = trimmedLine.split(':');
-        if (parts.length > 1) {
-          const label = parts[0].trim() + ':';
-          const content = parts.slice(1).join(':').trim();
-          this.addText(label, 11, 'bold', 'left');
-          if (content) {
-            this.addText(content, 10, 'normal', 'left');
-          }
-        } else {
-          this.addText(trimmedLine, 11, 'bold', 'left');
-        }
-        this.addSpacing(0.15);
+        const runs: DocxRun[] = parts.length > 1
+          ? [{ text: `${parts[0].trim()}: `, bold: true }, ...this.parseInlineBold(parts.slice(1).join(':').trim())]
+          : [{ text: trimmedLine, bold: true }];
+        this.addMixedRuns(runs, SECTION_SIZE, 'left', { leading: 1.1, spaceBefore: 0, spaceAfter: 0.5 });
         continue;
       }
 
       // Regular lines
       const formattedLine = this.formatLineCapitalization(trimmedLine);
-      this.addText(formattedLine, 10, 'normal', 'left');
-      this.addSpacing(0.1);
+      this.addMixedRuns(this.parseInlineBold(formattedLine), BODY_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
     }
   }
 
