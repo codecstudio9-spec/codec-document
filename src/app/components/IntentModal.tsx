@@ -95,7 +95,7 @@ export function IntentModal({ open, language, onSelect }: IntentModalProps) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -103,7 +103,7 @@ export function IntentModal({ open, language, onSelect }: IntentModalProps) {
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(10px)' }}
         >
           <motion.div
-            className="w-full max-w-2xl overflow-hidden bg-white"
+            className="w-full max-w-2xl max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden bg-white"
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1,    y: 0 }}
             exit={{   opacity: 0, scale: 0.94,  y: 12 }}

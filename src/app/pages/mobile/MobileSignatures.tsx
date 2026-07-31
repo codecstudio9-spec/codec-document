@@ -223,6 +223,31 @@ function SignaturesContent() {
       </div>
       </div>
 
+      {/* Floating shortcut — jumps straight to the first pending signature,
+          so a document that needs YOUR action (e.g. countersigning after
+          the recipient already signed in a Fill/Send/Co-Sign flow) is one
+          tap away instead of having to open the Pendientes list and find
+          it. Only shown when there's actually something pending. */}
+      {pending.length > 0 && (
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          type="button"
+          onClick={() => navigate(`/sign/${pending[0].id}`)}
+          title={language === 'en' ? 'Go to next pending signature' : 'Ir a la próxima firma pendiente'}
+          className="fixed flex items-center justify-center text-white"
+          style={{
+            bottom: 164, right: 20, width: 56, height: 56, borderRadius: 18,
+            background: 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%)',
+            boxShadow: '0 14px 28px rgba(245,158,11,0.4)',
+          }}
+        >
+          <PenLine className="size-5" />
+          <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            {pending.length}
+          </span>
+        </motion.button>
+      )}
+
       {/* Floating action — start a new signature request */}
       <motion.button
         whileTap={{ scale: 0.9 }}
