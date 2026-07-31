@@ -1,9 +1,18 @@
 import { jsPDF } from 'jspdf';
 import { DocumentBranding } from '../types/document';
 import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signature-jurisdictions';
+import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
 
 interface PDFGeneratorOptions {
   content: string;
+  /** When set (custom Word-template documents only), rendered INSTEAD of
+   * `content` via processFormattedParagraphs() — real per-run bold/size and
+   * per-paragraph alignment straight from the source .docx XML, instead of
+   * processContent()'s generic text-pattern heuristics (which are tuned
+   * for Codec's own built-in templates.ts documents and get an arbitrary
+   * user-authored Word doc's bolding/headers wrong). `content` is still
+   * required as a fallback/for callers that don't have this. */
+  formattedParagraphs?: DocxParagraph[];
   title: string;
   fileName: string;
   language: 'en' | 'es';
@@ -790,6 +799,102 @@ export class PDFGenerator {
       const formattedLine = this.formatLineCapitalization(trimmedLine);
       this.addText(formattedLine, 10, 'normal', 'left');
       this.addSpacing(0.1);
+    }
+  }
+
+  /**
+   * Renders a custom Word template's real paragraph structure — see
+   * DocxParagraph in lib/docxTemplateEngine.ts. Each paragraph keeps its
+   * own alignment and per-run bold/size straight from the source .docx,
+   * so "Label: **VALUE**" renders with only VALUE bold (matching the
+   * original document) instead of processContent()'s pattern-based
+   * guessing bolding whole lines/paragraphs it shouldn't.
+   */
+  private processFormattedParagraphs(paragraphs: DocxParagraph[]) {
+    const BASE_SIZE = 10;
+    for (const para of paragraphs) {
+      if (para.runs.length === 0) {
+        this.addSpacing(0.4);
+        continue;
+      }
+      const allBold = para.runs.every((r) => r.bold);
+      const allPlain = para.runs.every((r) => !r.bold);
+      const uniformSize = para.runs.every((r) => (r.sizePt ?? BASE_SIZE) === (para.runs[0].sizePt ?? BASE_SIZE));
+
+      if ((allBold || allPlain) && uniformSize) {
+        const text = para.runs.map((r) => r.text).join('');
+        const size = para.runs[0].sizePt ?? BASE_SIZE;
+        this.addMixedRuns([{ text, bold: allBold, sizePt: size }], BASE_SIZE, para.align);
+      } else {
+        this.addMixedRuns(para.runs, BASE_SIZE, para.align);
+      }
+      this.addSpacing(0.3);
+    }
+  }
+
+  /**
+   * Renders a sequence of (text, bold, size) runs on the SAME logical
+   * paragraph, word-wrapping across run boundaries — jsPDF's own
+   * splitTextToSize only handles one string in one font style, so mixed
+   * "Label: **VALUE**" content needs manual per-word measurement instead.
+   * Always uses built-in Helvetica directly (bypassing the StandardArial/
+   * Unicode font-registration cascade elsewhere in this class) for a
+   * predictable, guaranteed sans-serif result — Spanish accented
+   * characters (á é í ó ú ñ) are within Helvetica's Latin-1 coverage.
+   */
+  private addMixedRuns(runs: DocxRun[], baseFontSize: number, align: 'left' | 'center' | 'right') {
+    this.doc.setTextColor(0, 0, 0);
+
+    type Word = { text: string; bold: boolean; size: number };
+    const words: Word[] = [];
+    for (const run of runs) {
+      const size = run.sizePt && run.sizePt > 0 ? run.sizePt : baseFontSize;
+      for (const part of run.text.split(/(\s+)/)) {
+        if (part) words.push({ text: part, bold: run.bold, size });
+      }
+    }
+    if (words.length === 0) return;
+
+    const measure = (w: Word) => {
+      try { this.doc.setFontSize(w.size); this.doc.setFont('helvetica', w.bold ? 'bold' : 'normal'); } catch {}
+      return this.safeGetTextWidth(w.text);
+    };
+
+    const lines: Word[][] = [];
+    let current: Word[] = [];
+    let currentWidth = 0;
+    for (const w of words) {
+      if (current.length === 0 && /^\s+$/.test(w.text)) continue; // never start a line with whitespace
+      const width = measure(w);
+      if (currentWidth + width > this.maxWidth && current.length > 0) {
+        lines.push(current);
+        current = [];
+        currentWidth = 0;
+        if (/^\s+$/.test(w.text)) continue;
+      }
+      current.push(w);
+      currentWidth += width;
+    }
+    if (current.length > 0) lines.push(current);
+
+    for (const lineWords of lines) {
+      if (this.currentY + this.lineHeight > this.pageHeight - this.margin) {
+        this.doc.addPage();
+        this.currentY = this.margin + 6;
+      }
+      const lineWidth = lineWords.reduce((sum, w) => sum + measure(w), 0);
+      let x = this.margin;
+      if (align === 'center') x = (this.pageWidth - lineWidth) / 2;
+      else if (align === 'right') x = this.pageWidth - this.margin - lineWidth;
+
+      let maxSize = baseFontSize;
+      for (const w of lineWords) {
+        try { this.doc.setFontSize(w.size); this.doc.setFont('helvetica', w.bold ? 'bold' : 'normal'); } catch {}
+        this.safeText(w.text, x, this.currentY);
+        x += this.safeGetTextWidth(w.text);
+        maxSize = Math.max(maxSize, w.size);
+      }
+      this.currentY += Math.max(this.lineHeight, maxSize * 0.352 * 1.38);
     }
   }
 
@@ -2141,9 +2246,39 @@ export class PDFGenerator {
     generator.applyBrandingTopSpacing(opts.branding);
     generator.addPremiumFirstPageHeader(opts.title, opts.branding);
 
+    // Custom Word-template documents: render the REAL per-run bold/size and
+    // per-paragraph alignment from the source .docx instead of guessing
+    // from generic text patterns. There's no "natural signature position"
+    // to split at here (that split works on plain-text patterns
+    // processContent() understands) — the signature block simply renders
+    // after the full body, which matches where these documents' own
+    // signature section already sits.
+    if (opts.formattedParagraphs) {
+      generator.processFormattedParagraphs(opts.formattedParagraphs);
+      if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+        generator.addSignatureMirrorBlock(
+          opts.leftSig,
+          opts.rightSig,
+          opts.mirrorLanguage ?? opts.language,
+          opts.identitySelfie,
+          opts.identityIdDocFront ?? opts.identityIdDoc,
+          opts.identityIdDocBack,
+          opts.identityBiometric,
+        );
+      } else if (opts.signatures?.length) {
+        generator.addEmbeddedSignatures(opts.signatures, opts.language);
+      } else {
+        generator.addEmbeddedSignature(
+          opts.auditLog?.signatureDataUrl,
+          opts.auditLog?.signerName,
+          opts.auditLog?.guestSignedAt,
+          opts.language
+        );
+      }
+    }
     // Split content at natural signature position so PDF order matches preview:
     // [body] → [signature block] → [checklist / state compliance / addenda]
-    if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+    else if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
       generator.addSignatureMirrorBlock(

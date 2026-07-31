@@ -193,6 +193,74 @@ export async function extractTextFromDocx(docxArrayBuffer: ArrayBuffer): Promise
   return result.value;
 }
 
+export interface DocxRun {
+  text: string;
+  bold: boolean;
+  sizePt?: number;
+}
+
+export interface DocxParagraph {
+  runs: DocxRun[];
+  align: 'left' | 'center' | 'right';
+}
+
+/**
+ * Extracts each paragraph's real text runs — text, bold flag, and font
+ * size — directly from the merged .docx's own XML (same PizZip approach
+ * as detectFields above, no mammoth involved), instead of mammoth's plain
+ * text extraction, which discards ALL formatting.
+ *
+ * This is what lets the generated PDF faithfully reproduce exactly which
+ * words were bold in the source Word document (e.g. "Label: **VALUE**")
+ * and how each paragraph was aligned, instead of PDFGenerator's
+ * processContent() guessing from generic text patterns (ALL-CAPS lines,
+ * "contains a legal term", etc.) — accurate for Codec's own built-in
+ * templates.ts documents, but wrong for an arbitrary user-authored Word
+ * document (it was bolding entire clause paragraphs and centering every
+ * ALL-CAPS section label as if it were a big heading).
+ */
+export function extractFormattedParagraphs(docxArrayBuffer: ArrayBuffer): DocxParagraph[] {
+  const zip = new PizZip(docxArrayBuffer);
+  const docXmlFile = zip.file('word/document.xml');
+  if (!docXmlFile) {
+    throw new Error('Archivo .docx inválido: no se encontró word/document.xml');
+  }
+  const xml = docXmlFile.asText();
+  const paragraphXmls = extractParagraphs(xml);
+
+  const paragraphs: DocxParagraph[] = [];
+  for (const pXml of paragraphXmls) {
+    const alignMatch = pXml.match(/<w:jc\s+w:val="(\w+)"/);
+    const align: DocxParagraph['align'] =
+      alignMatch?.[1] === 'center' ? 'center' : alignMatch?.[1] === 'right' ? 'right' : 'left';
+
+    const runRe = /<w:r[ >][\s\S]*?<\/w:r>/g;
+    const runs: DocxRun[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = runRe.exec(pXml))) {
+      const runXml = m[0];
+      const rPrMatch = runXml.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/);
+      const rPr = rPrMatch?.[1] ?? '';
+
+      const boldMatch = rPr.match(/<w:b(\s+w:val="([^"]*)")?\s*\/>/);
+      const bold = !!boldMatch && boldMatch[2] !== '0' && boldMatch[2] !== 'false';
+
+      const sizeMatch = rPr.match(/<w:sz\s+w:val="(\d+)"/);
+      const sizePt = sizeMatch ? Number(sizeMatch[1]) / 2 : undefined;
+
+      const textMatches = runXml.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) ?? [];
+      const text = textMatches
+        .map((t) => decodeXmlEntities(t.replace(/^<w:t[^>]*>/, '').replace(/<\/w:t>$/, '')))
+        .join('');
+      if (text) runs.push({ text, bold, sizePt });
+    }
+    // Pushed even when empty (a blank Word paragraph) so paragraph spacing
+    // in the source document is preserved rather than silently collapsed.
+    paragraphs.push({ runs, align });
+  }
+  return paragraphs;
+}
+
 export async function fetchDocxArrayBuffer(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`No se pudo descargar el archivo de plantilla (${res.status})`);

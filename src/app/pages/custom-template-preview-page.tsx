@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getDocxTemplateForOwner } from '../services/docx-template-service';
-import { fetchDocxArrayBuffer, renderDocxTemplate, extractTextFromDocx } from '../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import { PDFGenerator } from '../services/pdf-generator';
 import { saveDocumentRecord } from '../services/documents-service';
 import { triggerDownload } from '../utils/download';
@@ -47,7 +47,12 @@ export function CustomTemplatePreviewPage() {
   const [error, setError] = useState('');
   // Resolved once the template loads (not just inside handleGenerate) so
   // the AI review panel has real text to analyze before the user commits
-  // to generating the final PDF.
+  // to generating the final PDF. formattedParagraphs carries the real
+  // per-run bold/size/alignment from the source .docx (see
+  // extractFormattedParagraphs) so the PDF matches the original Word
+  // formatting instead of PDFGenerator's generic text-pattern guessing;
+  // resolvedContent is just the flattened plain text, for the AI panel.
+  const [formattedParagraphs, setFormattedParagraphs] = useState<DocxParagraph[] | null>(null);
   const [resolvedContent, setResolvedContent] = useState('');
 
   useEffect(() => {
@@ -63,7 +68,9 @@ export function CustomTemplatePreviewPage() {
       try {
         const docxBytes = await fetchDocxArrayBuffer(t.docxFileUrl);
         const mergedBytes = renderDocxTemplate(docxBytes, parsed.values ?? {});
-        setResolvedContent(await extractTextFromDocx(mergedBytes));
+        const paragraphs = extractFormattedParagraphs(mergedBytes);
+        setFormattedParagraphs(paragraphs);
+        setResolvedContent(paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n'));
       } catch {
         // Non-fatal — the AI panel just won't have content yet; the real
         // download flow re-resolves this itself in handleGenerate below.
@@ -81,11 +88,12 @@ export function CustomTemplatePreviewPage() {
       const template = await getDocxTemplateForOwner(savedData.templateId);
       if (!template) throw new Error(language === 'en' ? 'Template not found.' : 'Plantilla no encontrada.');
 
-      const content = resolvedContent || await (async () => {
+      const paragraphs = formattedParagraphs ?? await (async () => {
         const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
         const mergedBytes = renderDocxTemplate(docxBytes, savedData.values ?? {});
-        return extractTextFromDocx(mergedBytes);
+        return extractFormattedParagraphs(mergedBytes);
       })();
+      const content = paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
 
       const ownerSigUrl = sessionStorage.getItem('userSignatureDataUrl') || undefined;
       const coSignersJson = sessionStorage.getItem('coSigners');
@@ -103,6 +111,7 @@ export function CustomTemplatePreviewPage() {
 
       const blob = await PDFGenerator.generateBlob({
         content,
+        formattedParagraphs: paragraphs,
         title: template.name,
         fileName,
         language,
