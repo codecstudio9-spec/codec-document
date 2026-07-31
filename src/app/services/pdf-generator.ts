@@ -850,18 +850,19 @@ export class PDFGenerator {
    * bold) is decided here, not copied verbatim from the source.
    */
   private processFormattedParagraphs(paragraphs: DocxParagraph[]) {
-    // Compact institutional-contract scale — the previous pass (17/11.5/10pt,
-    // 1.15 leading, 3-3.5mm inter-block gaps) rendered this same content at
-    // ~6 pages against a 2-page reference. Every metric below is cut
-    // proportionally rather than just shrinking the body font, per explicit
-    // direction: font size, leading, and inter-block spacing all compound
-    // across ~40+ paragraphs, so trimming only one of them barely moves
-    // the page count.
-    const FIELD_SIZE = 10;   // labels/values ("Apellidos: NOMBRE")
+    // Calibrated directly against the reference institutional PDF (same
+    // contract, rendered by the org's own converter): the title is only
+    // modestly bigger than body text (not a dramatic jump), and section
+    // headers ("DATOS TITULAR DEL CONTRATO", "CLAUSULAS.", etc.) are PLAIN
+    // regular weight at the SAME size as body text — left-aligned and
+    // isolated by blank-line spacing, never bold, never a bigger font.
+    // Only the title itself and the very next line (the "Fecha: ...
+    // Número de Contrato: ..." subtitle) are centered.
+    const FIELD_SIZE = 10;   // labels/values ("Apellidos: NOMBRE") + section headers
     const CLAUSE_SIZE = 9;   // clause headings + justified legal prose
-    const SECTION_SIZE = 11;
-    const TITLE_SIZE = 16;
+    const TITLE_SIZE = 12;
     let titleAssigned = false;
+    let centerNextFieldLine = false;
 
     for (const para of paragraphs) {
       if (para.runs.length === 0) {
@@ -873,12 +874,15 @@ export class PDFGenerator {
 
       if (role === 'title') {
         titleAssigned = true;
+        centerNextFieldLine = true; // the "Fecha: ... Número de Contrato: ..." line right after the title is centered too
         this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.05, spaceBefore: 0, spaceAfter: 2 });
         continue;
       }
 
       if (role === 'section') {
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: SECTION_SIZE }], SECTION_SIZE, 'left', { leading: 1.05, spaceBefore: 1.6, spaceAfter: 0.6 });
+        // Plain — same weight/size as body, not a "heading" at all, just
+        // its own isolated line (matches the reference exactly).
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: false, sizePt: FIELD_SIZE }], FIELD_SIZE, 'left', { leading: 1.05, spaceBefore: 1.8, spaceAfter: 0.8 });
         continue;
       }
 
@@ -900,12 +904,14 @@ export class PDFGenerator {
       }
 
       // Plain body / field-value line — keep the source's own per-word
-      // bold (this is where "Label: **VALUE**" lives) but always left, and
-      // long prose paragraphs (no colon at all) are legal-text density
-      // (9pt/1.0) same as a clause body rather than form-field size.
+      // bold (this is where "Label: **VALUE**" lives). Long prose
+      // paragraphs (no colon at all) are legal-text density (9pt/1.0)
+      // same as a clause body rather than form-field size. The line
+      // immediately after the title (date/contract number) centers once.
       const isFieldLine = text.includes(':');
       const size = isFieldLine ? FIELD_SIZE : CLAUSE_SIZE;
-      const align: 'left' | 'justify' = isFieldLine ? 'left' : 'justify';
+      const align: 'left' | 'justify' | 'center' = isFieldLine ? (centerNextFieldLine ? 'center' : 'left') : 'justify';
+      if (isFieldLine) centerNextFieldLine = false;
       this.addMixedRuns(para.runs, size, align, { leading: isFieldLine ? 1.05 : 1.0, spaceBefore: 0, spaceAfter: isFieldLine ? 0.4 : 0.5 });
     }
   }
