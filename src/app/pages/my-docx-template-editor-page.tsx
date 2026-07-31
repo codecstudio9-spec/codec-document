@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
-  ChevronDown, Lock, ListChecks, Mail, Send, FileText, RotateCcw,
+  ChevronDown, Lock, ListChecks, Mail, Send, FileText, RotateCcw, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
 } from '../services/docx-template-service';
 import type { SecurityConfig } from '../services/sign-transaction-service';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
+import { improveClauseWithAi, AiReviewUpgradeRequiredError } from '../services/ai-review-service';
 import { SITE_URL } from '../config/site';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 
@@ -67,6 +68,11 @@ export function MyDocxTemplateEditorPage() {
   const [clauseOverrides, setClauseOverrides] = useState<Record<string, string>>({});
   const [extraClauses, setExtraClauses] = useState<ExtraClause[]>([]);
   const [clausesOpen, setClausesOpen] = useState(false);
+  // Which clause block (a detected block's paragraph index as a string, or
+  // an extra clause's id) is currently waiting on the AI "improve wording"
+  // call — null when none is in flight. Keyed by a string id either way so
+  // both lists can share one loading indicator without colliding.
+  const [improvingKey, setImprovingKey] = useState<string | null>(null);
   const [signers, setSigners] = useState<TemplateSigner[]>([{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }]);
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(DEFAULT_SECURITY);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -221,6 +227,23 @@ export function MyDocxTemplateEditorPage() {
    * override to '' — applyClauseOverrides omits any paragraph whose
    * override is empty, rather than rendering a blank line. */
   const deleteClauseBlock = (index: number) => updateClauseOverride(index, '');
+
+  const handleImproveClause = async (key: string, currentText: string, applyText: (text: string) => void) => {
+    if (!currentText.trim() || improvingKey) return;
+    setImprovingKey(key);
+    try {
+      const improved = await improveClauseWithAi(currentText, language);
+      if (improved) applyText(improved);
+    } catch (err) {
+      if (err instanceof AiReviewUpgradeRequiredError) {
+        toast.error(err.message);
+      } else {
+        toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not improve this clause.' : 'No se pudo mejorar esta cláusula.'));
+      }
+    } finally {
+      setImprovingKey(null);
+    }
+  };
 
   const addExtraClause = () => {
     setExtraClauses((prev) => [...prev, { id: crypto.randomUUID(), text: '' }]);
@@ -684,12 +707,25 @@ export function MyDocxTemplateEditorPage() {
                                 </div>
                               </div>
                               {!deleted && (
-                                <textarea
-                                  value={value}
-                                  onChange={(e) => updateClauseOverride(block.index, e.target.value)}
-                                  rows={4}
-                                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
-                                />
+                                <>
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) => updateClauseOverride(block.index, e.target.value)}
+                                    rows={4}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={improvingKey !== null}
+                                    onClick={() => void handleImproveClause(String(block.index), value, (text) => updateClauseOverride(block.index, text))}
+                                    className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                                  >
+                                    {improvingKey === String(block.index)
+                                      ? <Loader className="size-3 animate-spin" />
+                                      : <Sparkles className="size-3" />}
+                                    {language === 'en' ? 'Improve wording with AI' : 'Mejorar redacción con IA'}
+                                  </button>
+                                </>
                               )}
                             </div>
                           );
@@ -719,6 +755,19 @@ export function MyDocxTemplateEditorPage() {
                               placeholder={language === 'en' ? 'Write your new clause here…' : 'Escribe tu nueva cláusula aquí…'}
                               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
                             />
+                            {clause.text.trim() && (
+                              <button
+                                type="button"
+                                disabled={improvingKey !== null}
+                                onClick={() => void handleImproveClause(clause.id, clause.text, (text) => updateExtraClause(clause.id, text))}
+                                className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-purple-600 hover:text-purple-800 disabled:opacity-50"
+                              >
+                                {improvingKey === clause.id
+                                  ? <Loader className="size-3 animate-spin" />
+                                  : <Sparkles className="size-3" />}
+                                {language === 'en' ? 'Improve wording with AI' : 'Mejorar redacción con IA'}
+                              </button>
+                            )}
                           </div>
                         ))}
 

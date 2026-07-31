@@ -67,3 +67,31 @@ export async function reviewDocumentWithAi(content: string, language: 'en' | 'es
 
   return data as AiReviewResult;
 }
+
+/**
+ * Polishes the wording of a single clause block the template owner already
+ * wrote — the "Mejorar redacción" button in the docx template editor's
+ * clause-blocks section. See supabase/functions/ai-improve-clause/index.ts:
+ * deliberately narrow (improves existing text, never invents a new clause
+ * from scratch), gated to paid plans/admin the same way as the AI review.
+ */
+export async function improveClauseWithAi(clauseText: string, language: 'en' | 'es'): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('ai-improve-clause', {
+    body: { clauseText, language },
+  });
+
+  if (error) {
+    const context = (error as { context?: Response })?.context;
+    if (context?.status === 402) {
+      throw new AiReviewUpgradeRequiredError(
+        language === 'en' ? 'Improving clauses with AI is available on paid plans.' : 'Mejorar cláusulas con IA está disponible en planes pagos.',
+      );
+    }
+    throw new Error(await extractEdgeFunctionErrorMessage(
+      error,
+      language === 'en' ? 'Could not improve this clause.' : 'No se pudo mejorar esta cláusula.',
+    ));
+  }
+
+  return String((data as { improvedText?: string })?.improvedText ?? '');
+}

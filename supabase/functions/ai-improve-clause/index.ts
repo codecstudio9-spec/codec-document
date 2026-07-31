@@ -1,0 +1,147 @@
+// Supabase Edge Function — polishes the wording of a clause block the
+// template owner already wrote, for the "Mejorar redacción" button in the
+// docx template editor's clause-blocks section. Deliberately narrow scope:
+// it improves EXISTING text (grammar, clarity, formal legal tone), it does
+// NOT invent a new clause from a one-line description — that's a much
+// higher-risk "generate legal text from scratch" feature the user
+// explicitly deferred. Same Deno.serve/service-role/Groq pattern as
+// ai-document-review, gated the same way (paid plan or admin).
+//
+// Deploy:
+//   supabase functions deploy ai-improve-clause --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
+// Secrets: reuses the same GROQ_API_KEY already set for ai-document-review.
+
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+
+const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const MAX_CLAUSE_CHARS = 4000;
+
+function corsHeaders(origin: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin ?? '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+}
+
+function buildPrompt(clauseText: string, language: 'en' | 'es'): string {
+  const lang = language === 'en' ? 'English' : 'Spanish';
+  return [
+    `You are a legal-document copy editor. Rewrite the following contract clause to be clearer and more formally worded in ${lang}, WITHOUT changing its legal meaning, without adding new obligations or removing existing ones, and without inventing facts, names, or numbers that aren't already in the text.`,
+    `Keep roughly the same length. Respond with ONLY the rewritten clause text — no markdown, no quotes, no explanation, no preamble.`,
+    ``,
+    `CLAUSE TEXT:`,
+    clauseText,
+  ].join('\n');
+}
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders(origin) });
+  }
+
+  try {
+    if (!GROQ_API_KEY) {
+      return new Response(JSON.stringify({ error: 'AI clause improvement is not configured on the server yet.' }), {
+        status: 500, headers: corsHeaders(origin),
+      });
+    }
+
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const jwt = authHeader.replace(/^Bearer\s+/i, '');
+    if (!jwt) {
+      return new Response(JSON.stringify({ error: 'Authentication required.' }), {
+        status: 401, headers: corsHeaders(origin),
+      });
+    }
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
+    const authedUser = userData?.user;
+    if (userErr || !authedUser) {
+      return new Response(JSON.stringify({ error: 'Invalid session.' }), {
+        status: 401, headers: corsHeaders(origin),
+      });
+    }
+
+    // ── Gate: paid plan OR admin — same rule as ai-document-review ────────
+    const email = (authedUser.email ?? '').toLowerCase().trim();
+    const isAdmin = ADMIN_EMAILS.includes(email);
+
+    if (!isAdmin) {
+      const { data: profile } = await admin
+        .from('users')
+        .select('plan_status, plan_expires_at, role')
+        .eq('id', authedUser.id)
+        .maybeSingle();
+
+      const notExpired = !profile?.plan_expires_at || new Date(profile.plan_expires_at as string) > new Date();
+      const planActive = profile?.plan_status === 'active' && notExpired;
+      const dbAdmin = profile?.role === 'admin';
+
+      if (!planActive && !dbAdmin) {
+        return new Response(JSON.stringify({
+          error: 'Improving clauses with AI is available on paid plans.',
+          code: 'UPGRADE_REQUIRED',
+        }), { status: 402, headers: corsHeaders(origin) });
+      }
+    }
+
+    const body = (await req.json()) as { clauseText?: string; language?: 'en' | 'es' };
+    const clauseText = String(body.clauseText ?? '').trim();
+    const language: 'en' | 'es' = body.language === 'en' ? 'en' : 'es';
+
+    if (!clauseText) {
+      return new Response(JSON.stringify({ error: 'No clause text provided.' }), {
+        status: 400, headers: corsHeaders(origin),
+      });
+    }
+
+    const truncated = clauseText.slice(0, MAX_CLAUSE_CHARS);
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: buildPrompt(truncated, language) }],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!groqRes.ok) {
+      const errText = await groqRes.text().catch(() => '');
+      console.error('[ai-improve-clause] Groq request failed:', groqRes.status, errText);
+      return new Response(JSON.stringify({ error: 'AI clause improvement is temporarily unavailable.' }), {
+        status: 502, headers: corsHeaders(origin),
+      });
+    }
+
+    const groqJson = await groqRes.json();
+    const improvedText = String(groqJson?.choices?.[0]?.message?.content ?? '').trim();
+
+    if (!improvedText) {
+      return new Response(JSON.stringify({ error: 'AI returned an empty response.' }), {
+        status: 502, headers: corsHeaders(origin),
+      });
+    }
+
+    return new Response(JSON.stringify({ improvedText }), { headers: corsHeaders(origin) });
+  } catch (err) {
+    console.error('[ai-improve-clause] error:', err);
+    return new Response(JSON.stringify({ error: (err as Error).message ?? 'Unexpected error' }), {
+      status: 500,
+      headers: corsHeaders(origin),
+    });
+  }
+});
