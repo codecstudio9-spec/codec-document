@@ -191,7 +191,7 @@ export function MyTemplatesPage() {
                           </p>
                           {t.userId !== user.id && (
                             <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
-                              <Building2 className="size-2.5" /> {language === 'en' ? 'Shared by your company' : 'Compartida por tu empresa'}
+                              <Building2 className="size-2.5" /> {language === 'en' ? 'Shared with you' : 'Compartida contigo'}
                             </span>
                           )}
                         </div>

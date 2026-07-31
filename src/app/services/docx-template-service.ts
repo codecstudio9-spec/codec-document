@@ -198,6 +198,50 @@ export async function deleteDocxTemplate(templateId: string): Promise<void> {
   if (error) throw new Error(`deleteDocxTemplate: ${error.message}`);
 }
 
+/**
+ * Email-based template sharing (see supabase/migrations/
+ * 20260730005000_add_template_email_shares.sql) — lets the owner share a
+ * template with another account by email, no company required. The
+ * recipient's own listDocxTemplates() query then returns this same row
+ * automatically (RLS: templates_select_email_shared), so it shows up
+ * identical — same fields, signers, security config, instructions — with
+ * zero extra code on the read side.
+ */
+export interface TemplateShare {
+  id: string;
+  sharedWithEmail: string;
+  createdAt: string;
+}
+
+export async function listTemplateShares(templateId: string): Promise<TemplateShare[]> {
+  const { data, error } = await supabase
+    .from('template_shares')
+    .select('id, shared_with_email, created_at')
+    .eq('template_id', templateId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return (data as { id: string; shared_with_email: string; created_at: string }[]).map((r) => ({
+    id: r.id, sharedWithEmail: r.shared_with_email, createdAt: r.created_at,
+  }));
+}
+
+export async function shareDocxTemplateByEmail(templateId: string, email: string): Promise<void> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes('@')) throw new Error('Ingresa un correo válido.');
+  const { error } = await supabase
+    .from('template_shares')
+    .insert({ template_id: templateId, shared_with_email: normalized });
+  if (error) {
+    if (error.code === '23505') throw new Error('Ya compartiste esta plantilla con ese correo.');
+    throw new Error(`shareDocxTemplateByEmail: ${error.message}`);
+  }
+}
+
+export async function unshareDocxTemplate(shareId: string): Promise<void> {
+  const { error } = await supabase.from('template_shares').delete().eq('id', shareId);
+  if (error) throw new Error(`unshareDocxTemplate: ${error.message}`);
+}
+
 /** Public, anonymous-safe lookup for the /t/:slug fill page — goes
  * through the SECURITY DEFINER RPC, never a direct table SELECT. */
 export async function getTemplateBySlugPublic(slug: string): Promise<PublicDocxTemplate | null> {

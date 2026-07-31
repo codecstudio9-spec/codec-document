@@ -34,6 +34,7 @@ import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
+import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
 
 type FlowStep = 'form' | 'sign' | 'verify';
 
@@ -505,6 +506,24 @@ export function DocumentGeneratorPage() {
     [template],
   );
 
+  // Field memory — same "remember what I typed last time, by label, until
+  // browser data is cleared" behavior as the Word-template forms
+  // (DynamicDocForm/field-memory.ts), applied here too so it's not
+  // limited to one form system. Only fills genuinely empty fields, once
+  // each, and never overwrites a value already restored from a draft.
+  const prefilledFromMemory = useRef(new Set<string>());
+  useEffect(() => {
+    for (const field of visibleFields) {
+      if (prefilledFromMemory.current.has(field.id)) continue;
+      prefilledFromMemory.current.add(field.id);
+      if (!formData[field.id]) {
+        const remembered = recallFieldValue(field.label);
+        if (remembered) setFormData((prev) => ({ ...prev, [field.id]: remembered }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleFields]);
+
   const handleStateChange = (state: string) => {
     setSelectedState(state);
     sessionStorage.setItem('selectedState', state);
@@ -543,6 +562,8 @@ export function DocumentGeneratorPage() {
       setSelectedState(str);
       sessionStorage.setItem('selectedState', str);
     }
+    const field = visibleFields.find((f) => f.id === fieldId);
+    if (field && typeof value === 'string') rememberFieldValue(field.label, value);
   };
 
   const requiredFields = useMemo(

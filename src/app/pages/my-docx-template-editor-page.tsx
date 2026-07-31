@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
-  ChevronDown, Lock, ListChecks,
+  ChevronDown, Lock, ListChecks, Mail, Send,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -12,7 +12,8 @@ import { useCompany } from '../hooks/useCompany';
 import { detectFields, detectBoldFields, type DetectedField, type DetectedFieldType } from '../../lib/docxTemplateEngine';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
-  type TemplateSigner,
+  listTemplateShares, shareDocxTemplateByEmail, unshareDocxTemplate,
+  type TemplateSigner, type TemplateShare,
 } from '../services/docx-template-service';
 import type { SecurityConfig } from '../services/sign-transaction-service';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
@@ -61,6 +62,9 @@ export function MyDocxTemplateEditorPage() {
   const [instructionsEn, setInstructionsEn] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [shares, setShares] = useState<TemplateShare[]>([]);
+  const [shareEmail, setShareEmail] = useState('');
+  const [sharing, setSharing] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,6 +92,7 @@ export function MyDocxTemplateEditorPage() {
       setInstructionsEs(t.instructionsEs);
       setInstructionsEn(t.instructionsEn);
       setLoading(false);
+      listTemplateShares(id).then(setShares).catch(() => {});
     }).catch(() => { setError(language === 'en' ? 'Could not load the template.' : 'No se pudo cargar la plantilla.'); setLoading(false); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditMode]);
@@ -189,6 +194,31 @@ export function MyDocxTemplateEditorPage() {
     const f = fields.find((x) => x.key === key);
     if (!f) return;
     updateField(key, { options: (f.options ?? []).filter((_, i) => i !== idx) });
+  };
+
+  const handleShare = async () => {
+    if (!id || !shareEmail.trim()) return;
+    setSharing(true);
+    try {
+      await shareDocxTemplateByEmail(id, shareEmail);
+      setShareEmail('');
+      setShares(await listTemplateShares(id));
+      toast.success(language === 'en' ? 'Template shared!' : '¡Plantilla compartida!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not share the template.' : 'No se pudo compartir la plantilla.'));
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleUnshare = async (shareId: string) => {
+    setShares((prev) => prev.filter((s) => s.id !== shareId));
+    try {
+      await unshareDocxTemplate(shareId);
+    } catch {
+      toast.error(language === 'en' ? 'Could not remove access.' : 'No se pudo quitar el acceso.');
+      if (id) setShares(await listTemplateShares(id));
+    }
   };
 
   const addFixedSigner = () => {
@@ -576,6 +606,56 @@ export function MyDocxTemplateEditorPage() {
                 <Plus className="size-3.5" /> {language === 'en' ? 'Add fixed signer' : 'Agregar firmante fijo'}
               </button>
             </section>
+
+            {/* Share by email — lets the owner give another account
+                (identified only by email, no company needed) the exact
+                same template: same fields, signers, security config,
+                instructions. Only meaningful once the template actually
+                has an id (isEditMode) — a brand-new unsaved template has
+                nothing to share yet. */}
+            {isEditMode && (
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 className="mb-1 flex items-center gap-1.5 text-sm font-black uppercase tracking-wide text-slate-400">
+                  <Mail className="size-4" /> {language === 'en' ? 'Share with another account' : 'Compartir con otra cuenta'}
+                </h2>
+                <p className="mb-3 text-xs text-slate-400">
+                  {language === 'en'
+                    ? "Give another account the exact same template by email — no company needed. It'll appear in their My Templates, identical to yours."
+                    : 'Dale a otra cuenta esta misma plantilla por correo — sin necesidad de empresa. Le aparecerá en Mis Plantillas, idéntica a la tuya.'}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={shareEmail}
+                    onChange={(e) => setShareEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void handleShare(); }}
+                    placeholder={language === 'en' ? 'their@email.com' : 'su@correo.com'}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  />
+                  <button
+                    type="button"
+                    disabled={sharing || !shareEmail.trim()}
+                    onClick={() => void handleShare()}
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {sharing ? <Loader className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                    {language === 'en' ? 'Share' : 'Compartir'}
+                  </button>
+                </div>
+                {shares.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {shares.map((s) => (
+                      <div key={s.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                        <span className="truncate text-slate-700">{s.sharedWithEmail}</span>
+                        <button type="button" onClick={() => void handleUnshare(s.id)} className="shrink-0 text-slate-300 hover:text-red-600">
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Security & Verification — deliberately the most visually
                 prominent section on this page (gradient border + icon

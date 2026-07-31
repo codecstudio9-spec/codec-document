@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { DetectedField } from '../../../lib/docxTemplateEngine';
+import { rememberFieldValue, recallFieldValue } from '../../utils/field-memory';
 
 interface DynamicDocFormProps {
   fields: DetectedField[];
@@ -11,24 +12,6 @@ interface DynamicDocFormProps {
    * exactly which required fields are still empty instead of only a
    * generic toast. */
   invalidKeys?: Set<string>;
-}
-
-const MEMORY_KEY_PREFIX = 'codec_field_memory:';
-
-/** Keys by the field's LABEL (normalized), not its {{tag}} key — the
- * point is "the last time I typed a phone number/email/name into ANY
- * template, remember it", not per-exact-template memory. */
-function memoryKey(label: string): string {
-  return MEMORY_KEY_PREFIX + label.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-
-function rememberValue(label: string, value: string) {
-  if (!value.trim()) return;
-  try { localStorage.setItem(memoryKey(label), value); } catch { /* storage full/blocked — non-fatal */ }
-}
-
-function recalledValue(label: string): string {
-  try { return localStorage.getItem(memoryKey(label)) ?? ''; } catch { return ''; }
 }
 
 /**
@@ -58,7 +41,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
       if (f.type === 'section' || prefilled.current.has(f.key)) continue;
       prefilled.current.add(f.key);
       if (!values[f.key]?.trim()) {
-        const remembered = recalledValue(f.label);
+        const remembered = recallFieldValue(f.label);
         if (remembered) onChange(f.key, remembered);
       }
     }
@@ -92,7 +75,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
               <select
                 value={values[f.key] ?? ''}
                 onChange={(e) => onChange(f.key, e.target.value)}
-                onBlur={() => rememberValue(f.label, values[f.key] ?? '')}
+                onBlur={() => rememberFieldValue(f.label, values[f.key] ?? '')}
                 className={fieldClass}
               >
                 <option value="">{language === 'en' ? 'Select...' : 'Selecciona...'}</option>
@@ -103,7 +86,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
                 type={f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}
                 value={values[f.key] ?? ''}
                 onChange={(e) => onChange(f.key, e.target.value)}
-                onBlur={(e) => rememberValue(f.label, e.target.value)}
+                onBlur={(e) => rememberFieldValue(f.label, e.target.value)}
                 className={fieldClass}
               />
             )}
