@@ -267,6 +267,65 @@ export function extractFormattedParagraphs(docxArrayBuffer: ArrayBuffer): DocxPa
   return paragraphs;
 }
 
+/** One "clause block" the template owner can freely rewrite — a large
+ * paragraph of fixed legal prose baked into the source .docx, as opposed
+ * to a small {{tag}} field value. `index` is this paragraph's position in
+ * the array extractFormattedParagraphs() returns, which is what
+ * clause_overrides is keyed by (see the migration for why that's stable
+ * across renders). */
+export interface ClauseBlock {
+  index: number;
+  originalText: string;
+}
+
+const MIN_CLAUSE_WORDS = 12;
+
+/** A short "Label: value" line (a field-line, or a short section/title
+ * header) should never be offered as an editable "clause block" — only
+ * genuine multi-sentence prose paragraphs should be. */
+function looksLikeShortLine(text: string, wordCount: number): boolean {
+  const isAllCapsHeader = text === text.toUpperCase() && text.length < 100;
+  const isFieldLine = (text.match(/:\s*\S/g) ?? []).length >= 1 && wordCount < MIN_CLAUSE_WORDS;
+  return isAllCapsHeader || isFieldLine;
+}
+
+/** Scans a template's paragraphs for the large fixed-text clause blocks a
+ * template owner might want to rewrite entirely (add/remove/replace),
+ * distinct from the small {{tag}} fields already configurable in the
+ * "detected fields" editor. Call this on the RAW (unmerged) template — a
+ * paragraph that still has a live {{tag}} in it is EXCLUDED on purpose
+ * (even if it's long): a "summary" paragraph like "Apellidos: {{apellido}}
+ * Nombres: {{nombre}} ..." can rack up plenty of words from all the field
+ * labels, but it's still form data wired to real {{tags}}, not prose — an
+ * owner freely rewriting it as plain text would destroy those tags. */
+export function detectEditableClauseBlocks(paragraphs: DocxParagraph[]): ClauseBlock[] {
+  const blocks: ClauseBlock[] = [];
+  paragraphs.forEach((para, index) => {
+    if (para.runs.length === 0) return;
+    const text = para.runs.map((r) => r.text).join('').trim();
+    if (!text) return;
+    if (text.includes('{{')) return;
+    const wordCount = text.split(/\s+/).length;
+    if (wordCount < MIN_CLAUSE_WORDS) return;
+    if (looksLikeShortLine(text, wordCount)) return;
+    blocks.push({ index, originalText: text });
+  });
+  return blocks;
+}
+
+/** Splices the template owner's rewritten clause text back into a
+ * paragraph array right before rendering — the paragraph's own alignment
+ * is kept, but its runs collapse to a single plain (non-bold) run since a
+ * free-text rewrite has no per-word bold information to preserve. */
+export function applyClauseOverrides(paragraphs: DocxParagraph[], overrides?: Record<string, string> | null): DocxParagraph[] {
+  if (!overrides || Object.keys(overrides).length === 0) return paragraphs;
+  return paragraphs.map((para, index) => {
+    const override = overrides[String(index)];
+    if (override === undefined) return para;
+    return { ...para, runs: [{ text: override, bold: false }] };
+  });
+}
+
 export async function fetchDocxArrayBuffer(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`No se pudo descargar el archivo de plantilla (${res.status})`);

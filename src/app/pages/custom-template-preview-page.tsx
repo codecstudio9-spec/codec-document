@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getDocxTemplateForOwner } from '../services/docx-template-service';
-import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, type DocxParagraph } from '../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, applyClauseOverrides, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import { PDFGenerator } from '../services/pdf-generator';
 import { saveDocumentRecord } from '../services/documents-service';
 import { triggerDownload } from '../utils/download';
@@ -68,7 +68,7 @@ export function CustomTemplatePreviewPage() {
       try {
         const docxBytes = await fetchDocxArrayBuffer(t.docxFileUrl);
         const mergedBytes = renderDocxTemplate(docxBytes, parsed.values ?? {});
-        const paragraphs = extractFormattedParagraphs(mergedBytes);
+        const paragraphs = applyClauseOverrides(extractFormattedParagraphs(mergedBytes), t.clauseOverrides);
         setFormattedParagraphs(paragraphs);
         setResolvedContent(paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n'));
       } catch {
@@ -91,7 +91,7 @@ export function CustomTemplatePreviewPage() {
       const paragraphs = formattedParagraphs ?? await (async () => {
         const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
         const mergedBytes = renderDocxTemplate(docxBytes, savedData.values ?? {});
-        return extractFormattedParagraphs(mergedBytes);
+        return applyClauseOverrides(extractFormattedParagraphs(mergedBytes), template.clauseOverrides);
       })();
       const content = paragraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
 

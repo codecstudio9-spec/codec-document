@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
-  ChevronDown, Lock, ListChecks, Mail, Send,
+  ChevronDown, Lock, ListChecks, Mail, Send, FileText, RotateCcw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { useCompany } from '../hooks/useCompany';
-import { detectFields, detectBoldFields, type DetectedField, type DetectedFieldType } from '../../lib/docxTemplateEngine';
+import {
+  detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks,
+  fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock,
+} from '../../lib/docxTemplateEngine';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
   listTemplateShares, shareDocxTemplateByEmail, unshareDocxTemplate,
@@ -55,6 +58,14 @@ export function MyDocxTemplateEditorPage() {
   const [templateName, setTemplateName] = useState('');
   const [fields, setFields] = useState<DetectedField[]>([]);
   const [fieldsOpen, setFieldsOpen] = useState(false);
+  // Large fixed clause paragraphs the owner can rewrite entirely — distinct
+  // from `fields` above (small {{tag}} values). clauseBlocks is what got
+  // DETECTED in the source .docx (stable original text + paragraph index);
+  // clauseOverrides is only the paragraphs the owner actually rewrote,
+  // keyed by that same index (see docxTemplateEngine.ts).
+  const [clauseBlocks, setClauseBlocks] = useState<ClauseBlock[]>([]);
+  const [clauseOverrides, setClauseOverrides] = useState<Record<string, string>>({});
+  const [clausesOpen, setClausesOpen] = useState(false);
   const [signers, setSigners] = useState<TemplateSigner[]>([{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }]);
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(DEFAULT_SECURITY);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -82,7 +93,7 @@ export function MyDocxTemplateEditorPage() {
 
   useEffect(() => {
     if (!isEditMode || !id) return;
-    getDocxTemplateForOwner(id).then((t) => {
+    getDocxTemplateForOwner(id).then(async (t) => {
       if (!t) { setError(language === 'en' ? 'Template not found.' : 'Plantilla no encontrada.'); setLoading(false); return; }
       setTemplateName(t.name);
       setDocxFileUrl(t.docxFileUrl);
@@ -91,8 +102,16 @@ export function MyDocxTemplateEditorPage() {
       setSecurityConfig(t.securityConfig);
       setInstructionsEs(t.instructionsEs);
       setInstructionsEn(t.instructionsEn);
+      setClauseOverrides(t.clauseOverrides);
       setLoading(false);
       listTemplateShares(id).then(setShares).catch(() => {});
+      try {
+        const buffer = await fetchDocxArrayBuffer(t.docxFileUrl);
+        setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(buffer)));
+      } catch {
+        // Non-fatal — the fields/signers/security sections above still work
+        // fine; the clause-blocks section will just show nothing to edit.
+      }
     }).catch(() => { setError(language === 'en' ? 'Could not load the template.' : 'No se pudo cargar la plantilla.'); setLoading(false); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditMode]);
@@ -141,6 +160,13 @@ export function MyDocxTemplateEditorPage() {
       setFields(detected);
       setFieldsOpen(true);
       setDocxFile(fileForUpload);
+      try {
+        const finalBuffer = fileForUpload === file ? buffer : await fileForUpload.arrayBuffer();
+        setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(finalBuffer)));
+      } catch {
+        setClauseBlocks([]);
+      }
+      setClauseOverrides({});
       // Object URL only for the "file selected" UI state below — the real
       // stored URL comes from uploadDocxTemplateFile on save.
       setDocxFileUrl(URL.createObjectURL(fileForUpload));
@@ -175,6 +201,17 @@ export function MyDocxTemplateEditorPage() {
     setFields((prev) => {
       const next = [...prev];
       next.splice(index, 0, section);
+      return next;
+    });
+  };
+
+  const updateClauseOverride = (index: number, text: string) => {
+    setClauseOverrides((prev) => ({ ...prev, [String(index)]: text }));
+  };
+  const restoreClauseOriginal = (index: number) => {
+    setClauseOverrides((prev) => {
+      const next = { ...prev };
+      delete next[String(index)];
       return next;
     });
   };
@@ -255,6 +292,7 @@ export function MyDocxTemplateEditorPage() {
         await updateDocxTemplate(id, {
           name: templateName.trim(), detectedFields: fields, signers, securityConfig,
           instructionsEs: instructionsEs.trim(), instructionsEn: instructionsEn.trim(),
+          clauseOverrides,
         });
         toast.success(language === 'en' ? 'Template updated!' : '¡Plantilla actualizada!');
         navigate('/my-templates');
@@ -265,6 +303,7 @@ export function MyDocxTemplateEditorPage() {
         userId: user.id, name: templateName.trim(), docxFileUrl: fileUrl,
         detectedFields: fields, signers, securityConfig,
         instructionsEs: instructionsEs.trim(), instructionsEn: instructionsEn.trim(),
+        clauseOverrides,
       });
       setSavedSlug(created.publicSlug);
       toast.success(language === 'en' ? 'Template saved!' : '¡Plantilla guardada!');
@@ -544,6 +583,85 @@ export function MyDocxTemplateEditorPage() {
                 )}
               </AnimatePresence>
             </section>
+
+            {/* Clause text blocks — the large fixed legal-prose paragraphs
+                baked into the .docx (as opposed to small {{tag}} fields
+                above). Editing one here doesn't touch the original .docx
+                file; it stores a per-paragraph override that's spliced in
+                every time this template renders a document. */}
+            {clauseBlocks.length > 0 && (
+              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setClausesOpen((v) => !v)}
+                  className="flex w-full items-center justify-between gap-3 p-5 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-600">
+                      <FileText className="size-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+                        {language === 'en' ? `Clause text blocks (${clauseBlocks.length})` : `Bloques de texto de cláusulas (${clauseBlocks.length})`}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        {language === 'en'
+                          ? 'The fixed legal paragraphs of your document — clear one and write your own.'
+                          : 'Los párrafos legales fijos de tu documento — borra uno y escribe el tuyo.'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${clausesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {clausesOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div className="space-y-3 px-5 pb-5">
+                        {clauseBlocks.map((block, i) => {
+                          const overridden = clauseOverrides[String(block.index)] !== undefined;
+                          const value = clauseOverrides[String(block.index)] ?? block.originalText;
+                          return (
+                            <div key={block.index} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+                              <div className="mb-1.5 flex items-center justify-between">
+                                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                  {language === 'en' ? `Block ${i + 1}` : `Bloque ${i + 1}`}
+                                  {overridden && (
+                                    <span className="ml-1.5 rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-600">
+                                      {language === 'en' ? 'edited' : 'editado'}
+                                    </span>
+                                  )}
+                                </span>
+                                {overridden && (
+                                  <button
+                                    type="button"
+                                    onClick={() => restoreClauseOriginal(block.index)}
+                                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-indigo-600"
+                                  >
+                                    <RotateCcw className="size-3" /> {language === 'en' ? 'Restore original' : 'Restaurar original'}
+                                  </button>
+                                )}
+                              </div>
+                              <textarea
+                                value={value}
+                                onChange={(e) => updateClauseOverride(block.index, e.target.value)}
+                                rows={4}
+                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </section>
+            )}
 
             {/* Signers */}
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

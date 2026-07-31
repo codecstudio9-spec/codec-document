@@ -21,7 +21,7 @@ import { getDocumentTranslation } from '../data/document-translations';
 import { enrichDocumentDataWithDates } from './document-dates';
 import { normalizeCorruptedText, normalizeLanguageSensitiveFields } from '../pages/preview-page';
 import { getDocxTemplateByIdPublic } from '../services/docx-template-service';
-import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, type DocxParagraph } from '../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, applyClauseOverrides, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import type { SignTransaction } from '../services/sign-transaction-service';
 import type { DocumentData } from '../types/document';
 
@@ -62,7 +62,7 @@ async function interpolateCustomTemplate(documentData: { templateId?: string; va
 
   const docxBytes = await fetchDocxArrayBuffer(template.docxFileUrl);
   const mergedBytes = renderDocxTemplate(docxBytes, documentData.values ?? {});
-  const formattedParagraphs = extractFormattedParagraphs(mergedBytes);
+  const formattedParagraphs = applyClauseOverrides(extractFormattedParagraphs(mergedBytes), template.clauseOverrides);
   const content = formattedParagraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
   return { content, title: template.name, formattedParagraphs };
 }
