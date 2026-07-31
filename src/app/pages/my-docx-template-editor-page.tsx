@@ -11,7 +11,7 @@ import { useLanguage } from '../contexts/language-context';
 import { useCompany } from '../hooks/useCompany';
 import {
   detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks,
-  fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock,
+  fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock, type ExtraClause,
 } from '../../lib/docxTemplateEngine';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
@@ -65,6 +65,7 @@ export function MyDocxTemplateEditorPage() {
   // keyed by that same index (see docxTemplateEngine.ts).
   const [clauseBlocks, setClauseBlocks] = useState<ClauseBlock[]>([]);
   const [clauseOverrides, setClauseOverrides] = useState<Record<string, string>>({});
+  const [extraClauses, setExtraClauses] = useState<ExtraClause[]>([]);
   const [clausesOpen, setClausesOpen] = useState(false);
   const [signers, setSigners] = useState<TemplateSigner[]>([{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }]);
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(DEFAULT_SECURITY);
@@ -103,6 +104,7 @@ export function MyDocxTemplateEditorPage() {
       setInstructionsEs(t.instructionsEs);
       setInstructionsEn(t.instructionsEn);
       setClauseOverrides(t.clauseOverrides);
+      setExtraClauses(t.extraClauses);
       setLoading(false);
       listTemplateShares(id).then(setShares).catch(() => {});
       try {
@@ -215,6 +217,20 @@ export function MyDocxTemplateEditorPage() {
       return next;
     });
   };
+  /** Deleting an existing (detected-from-the-.docx) block is just an
+   * override to '' — applyClauseOverrides omits any paragraph whose
+   * override is empty, rather than rendering a blank line. */
+  const deleteClauseBlock = (index: number) => updateClauseOverride(index, '');
+
+  const addExtraClause = () => {
+    setExtraClauses((prev) => [...prev, { id: crypto.randomUUID(), text: '' }]);
+  };
+  const updateExtraClause = (id: string, text: string) => {
+    setExtraClauses((prev) => prev.map((c) => (c.id === id ? { ...c, text } : c)));
+  };
+  const removeExtraClause = (id: string) => {
+    setExtraClauses((prev) => prev.filter((c) => c.id !== id));
+  };
 
   const addOption = (key: string) => {
     const f = fields.find((x) => x.key === key);
@@ -292,7 +308,7 @@ export function MyDocxTemplateEditorPage() {
         await updateDocxTemplate(id, {
           name: templateName.trim(), detectedFields: fields, signers, securityConfig,
           instructionsEs: instructionsEs.trim(), instructionsEn: instructionsEn.trim(),
-          clauseOverrides,
+          clauseOverrides, extraClauses,
         });
         toast.success(language === 'en' ? 'Template updated!' : '¡Plantilla actualizada!');
         navigate('/my-templates');
@@ -303,7 +319,7 @@ export function MyDocxTemplateEditorPage() {
         userId: user.id, name: templateName.trim(), docxFileUrl: fileUrl,
         detectedFields: fields, signers, securityConfig,
         instructionsEs: instructionsEs.trim(), instructionsEn: instructionsEn.trim(),
-        clauseOverrides,
+        clauseOverrides, extraClauses,
       });
       setSavedSlug(created.publicSlug);
       toast.success(language === 'en' ? 'Template saved!' : '¡Plantilla guardada!');
@@ -586,10 +602,12 @@ export function MyDocxTemplateEditorPage() {
 
             {/* Clause text blocks — the large fixed legal-prose paragraphs
                 baked into the .docx (as opposed to small {{tag}} fields
-                above). Editing one here doesn't touch the original .docx
-                file; it stores a per-paragraph override that's spliced in
-                every time this template renders a document. */}
-            {clauseBlocks.length > 0 && (
+                above), PLUS brand-new blocks the owner adds that aren't
+                tied to the source file at all. Editing/deleting/adding
+                here never touches the original .docx; it's all stored
+                separately and spliced in every time this template renders
+                a document (see clause_overrides / extra_clauses). */}
+            {(clauseBlocks.length > 0 || extraClauses.length > 0 || docxFileUrl) && (
               <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                 <button
                   type="button"
@@ -602,12 +620,12 @@ export function MyDocxTemplateEditorPage() {
                     </div>
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-slate-500">
-                        {language === 'en' ? `Clause text blocks (${clauseBlocks.length})` : `Bloques de texto de cláusulas (${clauseBlocks.length})`}
+                        {language === 'en' ? `Clause text blocks (${clauseBlocks.length + extraClauses.length})` : `Bloques de texto de cláusulas (${clauseBlocks.length + extraClauses.length})`}
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-400">
                         {language === 'en'
-                          ? 'The fixed legal paragraphs of your document — clear one and write your own.'
-                          : 'Los párrafos legales fijos de tu documento — borra uno y escribe el tuyo.'}
+                          ? 'The fixed legal paragraphs of your document — edit, delete, or add your own.'
+                          : 'Los párrafos legales fijos de tu documento — edita, elimina o agrega los tuyos.'}
                       </p>
                     </div>
                   </div>
@@ -624,10 +642,12 @@ export function MyDocxTemplateEditorPage() {
                     >
                       <div className="space-y-3 px-5 pb-5">
                         {clauseBlocks.map((block, i) => {
-                          const overridden = clauseOverrides[String(block.index)] !== undefined;
-                          const value = clauseOverrides[String(block.index)] ?? block.originalText;
+                          const rawOverride = clauseOverrides[String(block.index)];
+                          const deleted = rawOverride !== undefined && rawOverride.trim() === '';
+                          const overridden = rawOverride !== undefined && !deleted;
+                          const value = rawOverride ?? block.originalText;
                           return (
-                            <div key={block.index} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+                            <div key={block.index} className={`rounded-2xl border p-3 ${deleted ? 'border-red-100 bg-red-50/40' : 'border-slate-100 bg-slate-50/60'}`}>
                               <div className="mb-1.5 flex items-center justify-between">
                                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
                                   {language === 'en' ? `Block ${i + 1}` : `Bloque ${i + 1}`}
@@ -636,26 +656,85 @@ export function MyDocxTemplateEditorPage() {
                                       {language === 'en' ? 'edited' : 'editado'}
                                     </span>
                                   )}
+                                  {deleted && (
+                                    <span className="ml-1.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
+                                      {language === 'en' ? 'deleted' : 'eliminado'}
+                                    </span>
+                                  )}
                                 </span>
-                                {overridden && (
-                                  <button
-                                    type="button"
-                                    onClick={() => restoreClauseOriginal(block.index)}
-                                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-indigo-600"
-                                  >
-                                    <RotateCcw className="size-3" /> {language === 'en' ? 'Restore original' : 'Restaurar original'}
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-3">
+                                  {(overridden || deleted) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => restoreClauseOriginal(block.index)}
+                                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-indigo-600"
+                                    >
+                                      <RotateCcw className="size-3" /> {language === 'en' ? 'Restore original' : 'Restaurar original'}
+                                    </button>
+                                  )}
+                                  {!deleted && (
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteClauseBlock(block.index)}
+                                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600"
+                                    >
+                                      <Trash2 className="size-3" /> {language === 'en' ? 'Delete' : 'Eliminar'}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <textarea
-                                value={value}
-                                onChange={(e) => updateClauseOverride(block.index, e.target.value)}
-                                rows={4}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
-                              />
+                              {!deleted && (
+                                <textarea
+                                  value={value}
+                                  onChange={(e) => updateClauseOverride(block.index, e.target.value)}
+                                  rows={4}
+                                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
+                                />
+                              )}
                             </div>
                           );
                         })}
+
+                        {extraClauses.map((clause, i) => (
+                          <div key={clause.id} className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                {language === 'en' ? `New block ${i + 1}` : `Bloque nuevo ${i + 1}`}
+                                <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">
+                                  {language === 'en' ? 'added' : 'agregado'}
+                                </span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeExtraClause(clause.id)}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600"
+                              >
+                                <Trash2 className="size-3" /> {language === 'en' ? 'Remove' : 'Quitar'}
+                              </button>
+                            </div>
+                            <textarea
+                              value={clause.text}
+                              onChange={(e) => updateExtraClause(clause.id, e.target.value)}
+                              rows={4}
+                              placeholder={language === 'en' ? 'Write your new clause here…' : 'Escribe tu nueva cláusula aquí…'}
+                              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-indigo-400"
+                            />
+                          </div>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={addExtraClause}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-3 py-2 text-xs font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600"
+                        >
+                          <Plus className="size-3.5" /> {language === 'en' ? 'Add clause block' : 'Agregar bloque de cláusula'}
+                        </button>
+
+                        <p className="text-[11px] text-slate-400">
+                          {language === 'en'
+                            ? 'New blocks are added at the end of the document — reordering isn’t supported yet.'
+                            : 'Los bloques nuevos se agregan al final del documento — aún no se puede reordenar.'}
+                        </p>
                       </div>
                     </motion.div>
                   )}

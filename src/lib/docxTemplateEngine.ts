@@ -316,14 +316,41 @@ export function detectEditableClauseBlocks(paragraphs: DocxParagraph[]): ClauseB
 /** Splices the template owner's rewritten clause text back into a
  * paragraph array right before rendering — the paragraph's own alignment
  * is kept, but its runs collapse to a single plain (non-bold) run since a
- * free-text rewrite has no per-word bold information to preserve. */
+ * free-text rewrite has no per-word bold information to preserve. An
+ * override of '' (empty/whitespace-only) means the owner deleted that
+ * block entirely — the paragraph is omitted from the result rather than
+ * rendered as an awkward blank line. */
 export function applyClauseOverrides(paragraphs: DocxParagraph[], overrides?: Record<string, string> | null): DocxParagraph[] {
   if (!overrides || Object.keys(overrides).length === 0) return paragraphs;
-  return paragraphs.map((para, index) => {
-    const override = overrides[String(index)];
-    if (override === undefined) return para;
-    return { ...para, runs: [{ text: override, bold: false }] };
+  const result: DocxParagraph[] = [];
+  paragraphs.forEach((para, index) => {
+    const key = String(index);
+    if (!(key in overrides)) { result.push(para); return; }
+    const override = overrides[key];
+    if (override.trim() === '') return; // deleted by the owner — omit
+    result.push({ ...para, runs: [{ text: override, bold: false }] });
   });
+  return result;
+}
+
+/** A brand-new clause block the owner added — not tied to any paragraph
+ * in the source .docx (unlike clause_overrides, which only rewrites
+ * EXISTING ones), so it's stored separately and appended at the end of
+ * the rendered document. */
+export interface ExtraClause {
+  id: string;
+  text: string;
+}
+
+export function applyExtraClauses(paragraphs: DocxParagraph[], extraClauses?: ExtraClause[] | null): DocxParagraph[] {
+  const nonEmpty = (extraClauses ?? []).filter((c) => c.text.trim() !== '');
+  if (nonEmpty.length === 0) return paragraphs;
+  const appended: DocxParagraph[] = [];
+  nonEmpty.forEach((clause) => {
+    appended.push({ runs: [], align: 'left' });
+    appended.push({ runs: [{ text: clause.text, bold: false }], align: 'left' });
+  });
+  return [...paragraphs, ...appended];
 }
 
 export async function fetchDocxArrayBuffer(url: string): Promise<ArrayBuffer> {

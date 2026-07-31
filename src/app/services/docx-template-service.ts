@@ -10,7 +10,7 @@
  */
 import { supabase } from '../../lib/supabase';
 import type { SecurityConfig } from './sign-transaction-service';
-import type { DetectedField } from '../../lib/docxTemplateEngine';
+import type { DetectedField, ExtraClause } from '../../lib/docxTemplateEngine';
 
 export type SignerRole = 'variable' | 'fixed';
 
@@ -41,6 +41,9 @@ export interface DocxTemplate {
   /** Owner-rewritten clause text, keyed by paragraph index — see
    * detectEditableClauseBlocks/applyClauseOverrides in docxTemplateEngine.ts. */
   clauseOverrides: Record<string, string>;
+  /** Brand-new clause blocks the owner added, not tied to any paragraph
+   * in the source .docx — see applyExtraClauses in docxTemplateEngine.ts. */
+  extraClauses: ExtraClause[];
 }
 
 /** Public-safe subset — exactly what get_template_by_slug_public returns.
@@ -103,7 +106,7 @@ interface DocxTemplateRow {
   id: string; user_id: string; name: string; docx_file_url: string;
   detected_fields: unknown; signers: unknown; security_config: unknown;
   public_slug: string; instructions_en: string | null; instructions_es: string | null;
-  created_at: string; clause_overrides: unknown;
+  created_at: string; clause_overrides: unknown; extra_clauses: unknown;
 }
 
 function rowToTemplate(row: DocxTemplateRow): DocxTemplate {
@@ -122,16 +125,17 @@ function rowToTemplate(row: DocxTemplateRow): DocxTemplate {
     clauseOverrides: (row.clause_overrides && typeof row.clause_overrides === 'object')
       ? (row.clause_overrides as Record<string, string>)
       : {},
+    extraClauses: Array.isArray(row.extra_clauses) ? (row.extra_clauses as ExtraClause[]) : [],
   };
 }
 
-const ROW_COLUMNS = 'id, user_id, name, docx_file_url, detected_fields, signers, security_config, public_slug, instructions_en, instructions_es, created_at, clause_overrides';
+const ROW_COLUMNS = 'id, user_id, name, docx_file_url, detected_fields, signers, security_config, public_slug, instructions_en, instructions_es, created_at, clause_overrides, extra_clauses';
 
 export async function createDocxTemplate(params: {
   userId: string; name: string; docxFileUrl: string;
   detectedFields: DetectedField[]; signers: TemplateSigner[];
   securityConfig: SecurityConfig; instructionsEn: string; instructionsEs: string;
-  clauseOverrides?: Record<string, string>;
+  clauseOverrides?: Record<string, string>; extraClauses?: ExtraClause[];
 }): Promise<DocxTemplate> {
   const publicSlug = await generateUniqueSlug(params.name);
   const { data, error } = await supabase
@@ -148,6 +152,7 @@ export async function createDocxTemplate(params: {
       instructions_en: params.instructionsEn,
       instructions_es: params.instructionsEs,
       clause_overrides: params.clauseOverrides ?? {},
+      extra_clauses: params.extraClauses ?? [],
       public_slug: publicSlug,
     })
     .select(ROW_COLUMNS)
@@ -159,7 +164,7 @@ export async function createDocxTemplate(params: {
 export async function updateDocxTemplate(templateId: string, updates: Partial<{
   name: string; detectedFields: DetectedField[]; signers: TemplateSigner[];
   securityConfig: SecurityConfig; instructionsEn: string; instructionsEs: string;
-  clauseOverrides: Record<string, string>;
+  clauseOverrides: Record<string, string>; extraClauses: ExtraClause[];
 }>): Promise<void> {
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (updates.name !== undefined) patch.name = updates.name;
@@ -169,6 +174,7 @@ export async function updateDocxTemplate(templateId: string, updates: Partial<{
   if (updates.instructionsEn !== undefined) patch.instructions_en = updates.instructionsEn;
   if (updates.instructionsEs !== undefined) patch.instructions_es = updates.instructionsEs;
   if (updates.clauseOverrides !== undefined) patch.clause_overrides = updates.clauseOverrides;
+  if (updates.extraClauses !== undefined) patch.extra_clauses = updates.extraClauses;
   const { error } = await supabase.from('templates').update(patch).eq('id', templateId);
   if (error) throw new Error(`updateDocxTemplate: ${error.message}`);
 }
@@ -264,15 +270,16 @@ export async function getTemplateBySlugPublic(slug: string): Promise<PublicDocxT
 /** Public, anonymous-safe lookup by id (not slug) — used by the guest
  * "download my copy" button on /sign/:transactionId, which only has
  * document_data.templateId to go on, not the original public_slug. */
-export async function getDocxTemplateByIdPublic(templateId: string): Promise<{ id: string; name: string; docxFileUrl: string; clauseOverrides: Record<string, string> } | null> {
+export async function getDocxTemplateByIdPublic(templateId: string): Promise<{ id: string; name: string; docxFileUrl: string; clauseOverrides: Record<string, string>; extraClauses: ExtraClause[] } | null> {
   const { data, error } = await supabase.rpc('get_docx_template_by_id_public', { p_id: templateId }).maybeSingle();
   if (error || !data) return null;
-  const row = data as { id: string; name: string; docx_file_url: string; clause_overrides: unknown };
+  const row = data as { id: string; name: string; docx_file_url: string; clause_overrides: unknown; extra_clauses: unknown };
   return {
     id: row.id,
     name: row.name,
     docxFileUrl: row.docx_file_url,
     clauseOverrides: (row.clause_overrides && typeof row.clause_overrides === 'object') ? (row.clause_overrides as Record<string, string>) : {},
+    extraClauses: Array.isArray(row.extra_clauses) ? (row.extra_clauses as ExtraClause[]) : [],
   };
 }
 

@@ -245,65 +245,85 @@ export function parseIdEvidencePayload(value?: string): { front?: string; back?:
  * compilation step for a transaction that completed after the sender
  * left — the common case, since nothing else notifies them it happened.
  */
+/** Each sessionStorage write happens on its own — NOT one big try/catch
+ * around the whole function. sessionStorage has a real per-origin quota
+ * (a scanned ID photo alone can be 300-500KB of base64 text), and a single
+ * shared try/catch meant one QuotaExceededError partway through (e.g. on
+ * the ID photo) silently aborted every write AFTER it too — biometric
+ * verification and the "isPurchased" flag included — even though each of
+ * those individually would have fit fine. This was the actual cause of
+ * signed documents downloading without their selfie/ID/biometric evidence
+ * despite that evidence being safely stored in the database the whole
+ * time (verified directly against real transaction rows).
+ */
+function safeSessionStorageSet(key: string, value: string): void {
+  try { sessionStorage.setItem(key, value); } catch { /* quota — this one item just won't stash, others still can */ }
+}
+function safeSessionStorageRemove(key: string): void {
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
+
 export function stashSignedTransactionForDownload(tx: SignTransaction, language: 'en' | 'es'): void {
-  try {
-    sessionStorage.setItem('documentData', JSON.stringify(tx.document_data));
-    sessionStorage.setItem('documentType', tx.document_type);
-    sessionStorage.removeItem('documentBranding');
+  safeSessionStorageSet('documentData', JSON.stringify(tx.document_data));
+  safeSessionStorageSet('documentType', tx.document_type);
+  safeSessionStorageRemove('documentBranding');
 
-    if (tx.recipient_signature) {
-      const recipientAsSigner = [{
-        id: 'recipient',
-        name: language === 'en' ? 'Recipient' : 'Destinatario',
-        role: language === 'en' ? 'Signer' : 'Firmante',
-        token: '',
-        sigDataUrl: tx.recipient_signature,
-        placement: tx.recipient_signature_placement ?? null,
-      }];
-      sessionStorage.setItem('coSigners', JSON.stringify(recipientAsSigner));
+  if (tx.recipient_signature) {
+    const recipientAsSigner = [{
+      id: 'recipient',
+      name: language === 'en' ? 'Recipient' : 'Destinatario',
+      role: language === 'en' ? 'Signer' : 'Firmante',
+      token: '',
+      sigDataUrl: tx.recipient_signature,
+      placement: tx.recipient_signature_placement ?? null,
+    }];
+    safeSessionStorageSet('coSigners', JSON.stringify(recipientAsSigner));
+  } else {
+    safeSessionStorageRemove('coSigners');
+  }
+
+  if (tx.sender_signature) {
+    safeSessionStorageSet('userSignatureDataUrl', tx.sender_signature);
+  } else {
+    safeSessionStorageRemove('userSignatureDataUrl');
+  }
+
+  if (tx.recipient_selfie) {
+    safeSessionStorageSet('identitySelfie', tx.recipient_selfie);
+  } else {
+    safeSessionStorageRemove('identitySelfie');
+  }
+
+  if (tx.recipient_id_photo) {
+    const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
+    if (parsedId.front) {
+      // Only ONE copy now (identityIdDocFront) — identityIdDoc used to
+      // duplicate the exact same image under a second key purely for a
+      // legacy fallback (preview-page.tsx still reads it if
+      // identityIdDocFront is missing), doubling the quota this single
+      // photo needed for no benefit now that every reader prefers
+      // identityIdDocFront first.
+      safeSessionStorageSet('identityIdDocFront', parsedId.front);
     } else {
-      sessionStorage.removeItem('coSigners');
+      safeSessionStorageRemove('identityIdDocFront');
     }
+    if (parsedId.back) safeSessionStorageSet('identityIdDocBack', parsedId.back);
+    else safeSessionStorageRemove('identityIdDocBack');
+  } else {
+    safeSessionStorageRemove('identityIdDocFront');
+    safeSessionStorageRemove('identityIdDocBack');
+  }
+  safeSessionStorageRemove('identityIdDoc');
 
-    if (tx.sender_signature) {
-      sessionStorage.setItem('userSignatureDataUrl', tx.sender_signature);
-    } else {
-      sessionStorage.removeItem('userSignatureDataUrl');
-    }
+  if (tx.recipient_biometric_verified_at && tx.recipient_biometric_device_label) {
+    safeSessionStorageSet('identityBiometric', JSON.stringify({
+      deviceLabel: tx.recipient_biometric_device_label,
+      verifiedAt: tx.recipient_biometric_verified_at,
+      credentialIdHash: (tx.recipient_biometric_credential_id ?? '').slice(0, 16),
+    }));
+  } else {
+    safeSessionStorageRemove('identityBiometric');
+  }
 
-    if (tx.recipient_selfie) {
-      sessionStorage.setItem('identitySelfie', tx.recipient_selfie);
-    } else {
-      sessionStorage.removeItem('identitySelfie');
-    }
-
-    if (tx.recipient_id_photo) {
-      const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
-      if (parsedId.front) {
-        sessionStorage.setItem('identityIdDocFront', parsedId.front);
-        sessionStorage.setItem('identityIdDoc', parsedId.front);
-      } else {
-        sessionStorage.removeItem('identityIdDocFront');
-        sessionStorage.removeItem('identityIdDoc');
-      }
-      if (parsedId.back) sessionStorage.setItem('identityIdDocBack', parsedId.back);
-      else sessionStorage.removeItem('identityIdDocBack');
-    } else {
-      sessionStorage.removeItem('identityIdDocFront');
-      sessionStorage.removeItem('identityIdDocBack');
-      sessionStorage.removeItem('identityIdDoc');
-    }
-
-    if (tx.recipient_biometric_verified_at && tx.recipient_biometric_device_label) {
-      sessionStorage.setItem('identityBiometric', JSON.stringify({
-        deviceLabel: tx.recipient_biometric_device_label,
-        verifiedAt: tx.recipient_biometric_verified_at,
-        credentialIdHash: (tx.recipient_biometric_credential_id ?? '').slice(0, 16),
-      }));
-    } else {
-      sessionStorage.removeItem('identityBiometric');
-    }
-
-    sessionStorage.setItem('isPurchased', 'true');
-  } catch { /* sessionStorage quota */ }
+  safeSessionStorageSet('isPurchased', 'true');
 }
