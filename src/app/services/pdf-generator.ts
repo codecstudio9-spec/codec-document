@@ -1592,6 +1592,18 @@ export class PDFGenerator {
     this.currentY = cards.length > 0 ? photoSectionY + cardHeight + 16 : photoSectionY;
 
     if (biometric) {
+      // The biometric box is a fixed 26mm tall — without this check it
+      // could land right up against (or past) the page's bottom margin,
+      // and since the document-chrome footer is stamped on every page
+      // AFTER all content is drawn (addDocumentChrome), a box placed too
+      // low visually crowds/overlaps the footer line instead of leaving
+      // it room, which is what made this page look "montado"/cramped.
+      const BIOMETRIC_BOX_HEIGHT = 26;
+      const FOOTER_RESERVE = 12;
+      if (this.currentY + BIOMETRIC_BOX_HEIGHT + FOOTER_RESERVE > this.pageHeight - M) {
+        this.doc.addPage();
+        this.currentY = M;
+      }
       this.currentY = this.addBiometricVerificationBlock(M, this.currentY, PW - M * 2, biometric, language) + 10;
     }
 
@@ -2262,6 +2274,12 @@ export class PDFGenerator {
     }
 
     if (identityBiometric) {
+      const BIOMETRIC_BOX_HEIGHT = 26;
+      const FOOTER_RESERVE = 12;
+      if (this.currentY + BIOMETRIC_BOX_HEIGHT + FOOTER_RESERVE > this.pageHeight - this.margin) {
+        this.doc.addPage();
+        this.currentY = this.margin;
+      }
       this.currentY = this.addBiometricVerificationBlock(leftX, this.currentY, this.maxWidth, identityBiometric, language) + 6;
       this.doc.setTextColor(0, 0, 0);
     }
