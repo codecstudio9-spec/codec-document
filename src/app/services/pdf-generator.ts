@@ -850,14 +850,22 @@ export class PDFGenerator {
    * bold) is decided here, not copied verbatim from the source.
    */
   private processFormattedParagraphs(paragraphs: DocxParagraph[]) {
-    const BODY_SIZE = 10;
-    const SECTION_SIZE = 11.5;
-    const TITLE_SIZE = 17;
+    // Compact institutional-contract scale — the previous pass (17/11.5/10pt,
+    // 1.15 leading, 3-3.5mm inter-block gaps) rendered this same content at
+    // ~6 pages against a 2-page reference. Every metric below is cut
+    // proportionally rather than just shrinking the body font, per explicit
+    // direction: font size, leading, and inter-block spacing all compound
+    // across ~40+ paragraphs, so trimming only one of them barely moves
+    // the page count.
+    const FIELD_SIZE = 10;   // labels/values ("Apellidos: NOMBRE")
+    const CLAUSE_SIZE = 9;   // clause headings + justified legal prose
+    const SECTION_SIZE = 11;
+    const TITLE_SIZE = 16;
     let titleAssigned = false;
 
     for (const para of paragraphs) {
       if (para.runs.length === 0) {
-        this.addSpacing(0.25);
+        this.addSpacing(0.12); // a Word blank line ≠ a real paragraph gap
         continue;
       }
       const text = para.runs.map((r) => r.text).join('');
@@ -865,12 +873,12 @@ export class PDFGenerator {
 
       if (role === 'title') {
         titleAssigned = true;
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.15, spaceBefore: 0, spaceAfter: 3.5 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.05, spaceBefore: 0, spaceAfter: 2 });
         continue;
       }
 
       if (role === 'section') {
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: SECTION_SIZE }], SECTION_SIZE, 'left', { leading: 1.15, spaceBefore: 3, spaceAfter: 1.5 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: SECTION_SIZE }], SECTION_SIZE, 'left', { leading: 1.05, spaceBefore: 1.6, spaceAfter: 0.6 });
         continue;
       }
 
@@ -887,15 +895,18 @@ export class PDFGenerator {
         const runs = splitAt > 0
           ? this.collapseParagraphChars(chars.map((c, i) => (i < splitAt ? { ...c, bold: true } : c)))
           : para.runs;
-        this.addMixedRuns(runs, BODY_SIZE, 'justify', { leading: 1.15, spaceBefore: 0, spaceAfter: 1.5 });
+        this.addMixedRuns(runs, CLAUSE_SIZE, 'justify', { leading: 1.0, spaceBefore: 0, spaceAfter: 0.5 });
         continue;
       }
 
       // Plain body / field-value line — keep the source's own per-word
       // bold (this is where "Label: **VALUE**" lives) but always left, and
-      // long prose paragraphs (no colon at all) read better justified.
-      const align: 'left' | 'justify' = text.includes(':') ? 'left' : 'justify';
-      this.addMixedRuns(para.runs, BODY_SIZE, align, { leading: 1.15, spaceBefore: 0, spaceAfter: 1.2 });
+      // long prose paragraphs (no colon at all) are legal-text density
+      // (9pt/1.0) same as a clause body rather than form-field size.
+      const isFieldLine = text.includes(':');
+      const size = isFieldLine ? FIELD_SIZE : CLAUSE_SIZE;
+      const align: 'left' | 'justify' = isFieldLine ? 'left' : 'justify';
+      this.addMixedRuns(para.runs, size, align, { leading: isFieldLine ? 1.05 : 1.0, spaceBefore: 0, spaceAfter: isFieldLine ? 0.4 : 0.5 });
     }
   }
 
@@ -939,7 +950,7 @@ export class PDFGenerator {
     layout?: { leading?: number; spaceBefore?: number; spaceAfter?: number },
   ) {
     this.doc.setTextColor(0, 0, 0);
-    const leading = layout?.leading ?? 1.15;
+    const leading = layout?.leading ?? 1.05;
 
     type Word = { text: string; bold: boolean; size: number };
     const words: Word[] = [];
@@ -2343,7 +2354,7 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
-    if (opts.formattedParagraphs) generator.setMargin(15);
+    if (opts.formattedParagraphs) generator.setMargin(13);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
@@ -2456,7 +2467,7 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
-    if (opts.formattedParagraphs) generator.setMargin(15);
+    if (opts.formattedParagraphs) generator.setMargin(13);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
