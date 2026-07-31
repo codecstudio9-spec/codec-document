@@ -803,33 +803,118 @@ export class PDFGenerator {
   }
 
   /**
+   * Reduces the page margin for the formatted-paragraphs (custom Word
+   * template) rendering path only — must be called right after
+   * construction, before any letterhead/content is drawn, so the header
+   * and body share the same tighter margin. Never touches the default
+   * (25.4mm) used by every other document type.
+   */
+  private setMargin(mm: number) {
+    this.margin = mm;
+    this.maxWidth = this.pageWidth - this.margin * 2;
+  }
+
+  /**
+   * Classifies a docx paragraph by its editorial ROLE (title / section
+   * header / numbered clause heading / body text) so a fixed, professional
+   * typography rule applies per role — matching a real institutional
+   * contract's layout — instead of literally copying whatever size/
+   * alignment/bold the source .docx happened to have on that paragraph
+   * (which is what processFormattedParagraphs did before this: correct
+   * per-word bold, but titles/headers could still end up styled however
+   * the original Word author happened to format them).
+   */
+  private classifyParagraphRole(
+    text: string,
+    titleAssigned: boolean,
+  ): 'title' | 'section' | 'clauseHeading' | 'body' {
+    const t = text.trim();
+    const isAllCaps = t.length > 0 && t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(t);
+    const looksLikeFieldLine = (t.match(/:\s*\S/g) ?? []).length >= 2; // 2+ "Label: value" pairs on one line
+
+    if (!titleAssigned && isAllCaps && t.length >= 15 && !looksLikeFieldLine) return 'title';
+    if (isAllCaps && t.length < 70 && !looksLikeFieldLine) return 'section';
+    if (/^(PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|S[ÉE]PTIMA|OCTAVA|NOVENA|D[ÉE]CIMA(\s+\p{L}+)?|PAR[ÁA]GRAFO(\s+\p{L}+)?)\s*[\-:]/iu.test(t)) return 'clauseHeading';
+    return 'body';
+  }
+
+  /**
    * Renders a custom Word template's real paragraph structure — see
-   * DocxParagraph in lib/docxTemplateEngine.ts. Each paragraph keeps its
-   * own alignment and per-run bold/size straight from the source .docx,
-   * so "Label: **VALUE**" renders with only VALUE bold (matching the
-   * original document) instead of processContent()'s pattern-based
-   * guessing bolding whole lines/paragraphs it shouldn't.
+   * DocxParagraph in lib/docxTemplateEngine.ts — through a fixed
+   * institutional-contract typography system (Arial/Helvetica throughout,
+   * centered ALL-CAPS title, left-aligned bold section headers, bolded
+   * "PRIMERA-" style clause headings immediately followed by justified
+   * body text, tight ~1.15 leading). Per-word bold from the source .docx
+   * is still respected within a line (so "Label: **VALUE**" keeps only
+   * the VALUE bold) — only the paragraph-level role (size/align/forced
+   * bold) is decided here, not copied verbatim from the source.
    */
   private processFormattedParagraphs(paragraphs: DocxParagraph[]) {
-    const BASE_SIZE = 10;
+    const BODY_SIZE = 10;
+    const SECTION_SIZE = 11.5;
+    const TITLE_SIZE = 17;
+    let titleAssigned = false;
+
     for (const para of paragraphs) {
       if (para.runs.length === 0) {
-        this.addSpacing(0.4);
+        this.addSpacing(0.25);
         continue;
       }
-      const allBold = para.runs.every((r) => r.bold);
-      const allPlain = para.runs.every((r) => !r.bold);
-      const uniformSize = para.runs.every((r) => (r.sizePt ?? BASE_SIZE) === (para.runs[0].sizePt ?? BASE_SIZE));
+      const text = para.runs.map((r) => r.text).join('');
+      const role = this.classifyParagraphRole(text, titleAssigned);
 
-      if ((allBold || allPlain) && uniformSize) {
-        const text = para.runs.map((r) => r.text).join('');
-        const size = para.runs[0].sizePt ?? BASE_SIZE;
-        this.addMixedRuns([{ text, bold: allBold, sizePt: size }], BASE_SIZE, para.align);
-      } else {
-        this.addMixedRuns(para.runs, BASE_SIZE, para.align);
+      if (role === 'title') {
+        titleAssigned = true;
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.15, spaceBefore: 0, spaceAfter: 3.5 });
+        continue;
       }
-      this.addSpacing(0.3);
+
+      if (role === 'section') {
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: SECTION_SIZE }], SECTION_SIZE, 'left', { leading: 1.15, spaceBefore: 3, spaceAfter: 1.5 });
+        continue;
+      }
+
+      if (role === 'clauseHeading') {
+        // Bold only up to (and including) the separator after the ordinal
+        // word — "PRIMERA-NATURALEZA DEL CONTRATO:" — so the heading reads
+        // as inline-bold immediately followed by regular justified body,
+        // never a giant standalone heading. Forces the heading bold
+        // regardless of the source run's own bold flag (an opinionated
+        // design-system rule, not a source-fidelity one).
+        const headingMatch = text.match(/^([^:]{0,90}:)/);
+        const splitAt = headingMatch ? headingMatch[1].length : 0;
+        const chars = this.expandParagraphChars(para);
+        const runs = splitAt > 0
+          ? this.collapseParagraphChars(chars.map((c, i) => (i < splitAt ? { ...c, bold: true } : c)))
+          : para.runs;
+        this.addMixedRuns(runs, BODY_SIZE, 'justify', { leading: 1.15, spaceBefore: 0, spaceAfter: 1.5 });
+        continue;
+      }
+
+      // Plain body / field-value line — keep the source's own per-word
+      // bold (this is where "Label: **VALUE**" lives) but always left, and
+      // long prose paragraphs (no colon at all) read better justified.
+      const align: 'left' | 'justify' = text.includes(':') ? 'left' : 'justify';
+      this.addMixedRuns(para.runs, BODY_SIZE, align, { leading: 1.15, spaceBefore: 0, spaceAfter: 1.2 });
     }
+  }
+
+  private expandParagraphChars(para: DocxParagraph): { ch: string; bold: boolean; size?: number }[] {
+    const out: { ch: string; bold: boolean; size?: number }[] = [];
+    for (const r of para.runs) {
+      for (const ch of r.text) out.push({ ch, bold: r.bold, size: r.sizePt });
+    }
+    return out;
+  }
+
+  private collapseParagraphChars(chars: { ch: string; bold: boolean; size?: number }[]): DocxRun[] {
+    const runs: DocxRun[] = [];
+    for (const c of chars) {
+      const last = runs[runs.length - 1];
+      if (last && last.bold === c.bold && last.sizePt === c.size) last.text += c.ch;
+      else runs.push({ text: c.ch, bold: c.bold, sizePt: c.size });
+    }
+    return runs;
   }
 
   /**
@@ -841,9 +926,20 @@ export class PDFGenerator {
    * Unicode font-registration cascade elsewhere in this class) for a
    * predictable, guaranteed sans-serif result — Spanish accented
    * characters (á é í ó ú ñ) are within Helvetica's Latin-1 coverage.
+   *
+   * `justify` distributes the leftover width of every line EXCEPT the
+   * paragraph's last one across its inter-word gaps (real justification,
+   * not jsPDF's `align:'justify'` — which this codebase never actually
+   * implemented; it silently fell back to left).
    */
-  private addMixedRuns(runs: DocxRun[], baseFontSize: number, align: 'left' | 'center' | 'right') {
+  private addMixedRuns(
+    runs: DocxRun[],
+    baseFontSize: number,
+    align: 'left' | 'center' | 'right' | 'justify',
+    layout?: { leading?: number; spaceBefore?: number; spaceAfter?: number },
+  ) {
     this.doc.setTextColor(0, 0, 0);
+    const leading = layout?.leading ?? 1.15;
 
     type Word = { text: string; bold: boolean; size: number };
     const words: Word[] = [];
@@ -877,25 +973,36 @@ export class PDFGenerator {
     }
     if (current.length > 0) lines.push(current);
 
-    for (const lineWords of lines) {
-      if (this.currentY + this.lineHeight > this.pageHeight - this.margin) {
+    if (layout?.spaceBefore) this.addSpacing(layout.spaceBefore / (this.lineHeight || 5.2));
+
+    lines.forEach((lineWords, li) => {
+      const lineHeightMm = Math.max(...lineWords.map((w) => w.size)) * 0.352 * leading;
+      if (this.currentY + lineHeightMm > this.pageHeight - this.margin) {
         this.doc.addPage();
         this.currentY = this.margin + 6;
       }
-      const lineWidth = lineWords.reduce((sum, w) => sum + measure(w), 0);
-      let x = this.margin;
-      if (align === 'center') x = (this.pageWidth - lineWidth) / 2;
-      else if (align === 'right') x = this.pageWidth - this.margin - lineWidth;
+      const naturalWidth = lineWords.reduce((sum, w) => sum + measure(w), 0);
+      const isLastLine = li === lines.length - 1;
 
-      let maxSize = baseFontSize;
+      let x = this.margin;
+      if (align === 'center') x = (this.pageWidth - naturalWidth) / 2;
+      else if (align === 'right') x = this.pageWidth - this.margin - naturalWidth;
+
+      let extraPerSpace = 0;
+      if (align === 'justify' && !isLastLine) {
+        const spaceCount = lineWords.filter((w) => /^\s+$/.test(w.text)).length;
+        if (spaceCount > 0) extraPerSpace = Math.max(0, (this.maxWidth - naturalWidth) / spaceCount);
+      }
+
       for (const w of lineWords) {
         try { this.doc.setFontSize(w.size); this.doc.setFont('helvetica', w.bold ? 'bold' : 'normal'); } catch {}
         this.safeText(w.text, x, this.currentY);
-        x += this.safeGetTextWidth(w.text);
-        maxSize = Math.max(maxSize, w.size);
+        x += this.safeGetTextWidth(w.text) + (/^\s+$/.test(w.text) ? extraPerSpace : 0);
       }
-      this.currentY += Math.max(this.lineHeight, maxSize * 0.352 * 1.38);
-    }
+      this.currentY += lineHeightMm;
+    });
+
+    if (layout?.spaceAfter) this.addSpacing(layout.spaceAfter / (this.lineHeight || 5.2));
   }
 
   /**
@@ -2235,11 +2342,9 @@ export class PDFGenerator {
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
+    generator.language = opts.language ?? 'en';
+    if (opts.formattedParagraphs) generator.setMargin(15);
     await generator.ensureUnicodeFont();
-    // set generator language so addText and other helpers can prefer Unicode font when needed
-    generator.language = opts.language ?? 'en';
-    // set generator language so addText and other helpers can prefer Unicode font when needed
-    generator.language = opts.language ?? 'en';
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
     generator.addLetterhead(opts.letterhead, opts.language);
@@ -2350,6 +2455,8 @@ export class PDFGenerator {
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
+    generator.language = opts.language ?? 'en';
+    if (opts.formattedParagraphs) generator.setMargin(15);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
 
@@ -2357,7 +2464,29 @@ export class PDFGenerator {
     generator.applyBrandingTopSpacing(opts.branding);
     generator.addPremiumFirstPageHeader(opts.title, opts.branding);
 
-    if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+    if (opts.formattedParagraphs) {
+      generator.processFormattedParagraphs(opts.formattedParagraphs);
+      if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
+        generator.addSignatureMirrorBlock(
+          opts.leftSig,
+          opts.rightSig,
+          opts.mirrorLanguage ?? opts.language,
+          opts.identitySelfie,
+          opts.identityIdDocFront ?? opts.identityIdDoc,
+          opts.identityIdDocBack,
+          opts.identityBiometric,
+        );
+      } else if (opts.signatures?.length) {
+        generator.addEmbeddedSignatures(opts.signatures, opts.language);
+      } else {
+        generator.addEmbeddedSignature(
+          opts.auditLog?.signatureDataUrl,
+          opts.auditLog?.signerName,
+          opts.auditLog?.guestSignedAt,
+          opts.language
+        );
+      }
+    } else if (opts.mirrorLayout && (opts.leftSig || opts.rightSig)) {
       const { before, after } = generator.splitAtSignatureBlock(cleanContent);
       generator.processContent(before);
       generator.addSignatureMirrorBlock(
