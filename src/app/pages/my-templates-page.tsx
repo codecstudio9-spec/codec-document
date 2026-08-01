@@ -10,12 +10,21 @@ import {
   type DocxTemplate, type PublicExampleTemplate,
 } from '../services/docx-template-service';
 import { GenerateSendModal } from '../components/templates/GenerateSendModal';
+import { DesktopAppShell } from '../components/desktop/DesktopAppShell';
+import { useIsMobile } from '../hooks/use-is-mobile';
 import { SITE_URL } from '../config/site';
 
 export function MyTemplatesPage() {
   const { user } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  // Desktop visitors get this wrapped in the same sidebar/header shell as
+  // every other /dashboard/* screen (it's linked from that sidebar's own
+  // "Mis Plantillas" item) instead of jumping to a bare full-page view
+  // with the sidebar gone. Mobile keeps its existing plain-page + back
+  // button, since MobileAppShell's bottom-nav doesn't have an entry for
+  // this page the way the sidebar does.
+  const isMobile = useIsMobile();
   const [templates, setTemplates] = useState<CustomTemplate[] | null>(null);
   const [docxTemplates, setDocxTemplates] = useState<DocxTemplate[] | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -100,17 +109,18 @@ export function MyTemplatesPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
-      <div className="mx-auto max-w-5xl">
+  const pageContent = (
+    <div className="mx-auto max-w-5xl">
+      {isMobile && (
         <button
           type="button"
-          onClick={() => navigate(window.matchMedia('(max-width: 767px)').matches ? '/app' : '/dashboard')}
+          onClick={() => navigate('/app')}
           className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
         >
           <ArrowLeft className="size-4" />
           {language === 'en' ? 'Back' : 'Volver'}
         </button>
+      )}
 
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -411,7 +421,11 @@ export function MyTemplatesPage() {
             ))
           )}
         </div>
-      </div>
     </div>
   );
+
+  if (isMobile) {
+    return <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">{pageContent}</div>;
+  }
+  return <DesktopAppShell>{pageContent}</DesktopAppShell>;
 }
