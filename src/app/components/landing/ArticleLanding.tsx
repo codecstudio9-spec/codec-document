@@ -10,6 +10,8 @@ import { ARTICLES, type Article } from '../../data/article-content';
 const T = {
   en: {
     freeBadge: 'Free to use — no credit card required',
+    freeQuota: 'Up to 18 free documents & signatures a month',
+    freeQuotaSub: '2 documents + 2 signatures every 72 hours, no limit on how many cycles you use.',
     ctaButton: 'Try it free',
     faqHeading: 'Frequently asked questions',
     relatedHeading: 'Keep reading',
@@ -23,6 +25,8 @@ const T = {
   },
   es: {
     freeBadge: 'Gratis — no necesitas tarjeta de crédito',
+    freeQuota: 'Hasta 18 documentos y firmas gratis al mes',
+    freeQuotaSub: '2 documentos + 2 firmas cada 72 horas, sin límite de veces que los uses.',
     ctaButton: 'Probar gratis',
     faqHeading: 'Preguntas frecuentes',
     relatedHeading: 'Sigue leyendo',
@@ -36,6 +40,16 @@ const T = {
   },
 };
 
+/** Same gradient-heading recipe established on the homepage
+ * (modern-home-page.tsx) — leading-snug + py-1 avoids clipping tall
+ * glyphs/descenders under background-clip:text. */
+const GRADIENT_TEXT_STYLE = {
+  backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)',
+  WebkitBackgroundClip: 'text' as const,
+  backgroundClip: 'text' as const,
+  color: 'transparent',
+};
+
 /** Small, repeatable "this is free" banner — dropped once mid-article and
  * once at the end, since the whole point of this content push is to make
  * Codec Document itself the visible answer to "how do I actually do this",
@@ -43,19 +57,29 @@ const T = {
 function InlineCta({ article }: { article: Article }) {
   const t = T[article.language];
   return (
-    <div className="my-10 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-blue-50 p-6 sm:p-8">
-      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="relative my-10 overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-blue-50 to-white p-6 sm:p-8">
+      <div
+        className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full opacity-40 blur-2xl"
+        style={{ background: 'radial-gradient(circle, #93c5fd 0%, transparent 70%)' }}
+      />
+      <div className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
             <CheckCircle2 className="size-3.5" />
             {t.freeBadge}
           </p>
-          <p className="mt-2 max-w-md text-sm font-semibold text-slate-700">{article.ctaBody}</p>
+          <p className="mt-3 text-lg font-black leading-snug text-slate-900">{t.freeQuota}</p>
+          <p className="mt-1 max-w-md text-sm text-slate-600">{t.freeQuotaSub}</p>
         </div>
         <a
           href={article.ctaHref}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
+          className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl px-5 py-3.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+          style={{
+            background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%)',
+            boxShadow: '0 4px 0 #1e3a8a, 0 8px 20px rgba(29,78,216,0.4)',
+          }}
         >
+          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
           {t.ctaButton}
           <ArrowRight className="size-4" />
         </a>
@@ -221,13 +245,17 @@ export function ArticleLanding({ data }: { data: Article }) {
         </div>
 
         {/* Header */}
-        <header className="border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-14">
-          <div className="container mx-auto px-4">
+        <header className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-14">
+          <div
+            className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full opacity-30 blur-3xl"
+            style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }}
+          />
+          <div className="container relative mx-auto px-4">
             <div className="mx-auto max-w-3xl">
               <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-indigo-700">
                 {data.category}
               </span>
-              <h1 className="mt-4 text-3xl font-black leading-tight text-slate-900 md:text-4xl">{data.title}</h1>
+              <h1 className="mt-4 py-1 text-3xl font-black leading-snug md:text-4xl" style={GRADIENT_TEXT_STYLE}>{data.title}</h1>
               <div className="mt-4 flex items-center gap-4 text-xs font-semibold text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="size-3.5" />
@@ -252,7 +280,7 @@ export function ArticleLanding({ data }: { data: Article }) {
                     src={data.heroImage.src}
                     alt={data.heroImage.alt}
                     loading="lazy"
-                    className="w-full rounded-2xl object-cover"
+                    className="w-full rounded-3xl object-cover shadow-xl shadow-slate-900/10"
                     style={{ maxHeight: 420 }}
                   />
                   {data.heroImage.credit && (
@@ -406,13 +434,28 @@ export function ArticleLanding({ data }: { data: Article }) {
               )}
 
               {/* Closing CTA */}
-              <div className="mt-14 rounded-3xl bg-gradient-to-br from-slate-900 to-indigo-950 p-8 text-center sm:p-10">
-                <h3 className="text-2xl font-black text-white">{data.ctaHeading}</h3>
-                <p className="mx-auto mt-2 max-w-md text-sm text-white/60">{data.ctaBody}</p>
+              <div className="relative mt-14 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-indigo-950 p-8 text-center sm:p-10">
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-32"
+                  style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.35), transparent)' }}
+                />
+                <p className="relative inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-indigo-200">
+                  <CheckCircle2 className="size-3.5" />
+                  {t.freeQuota}
+                </p>
+                <h3 className="relative mt-4 py-1 text-2xl font-black leading-snug" style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 55%, #c4b5fd 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+                  {data.ctaHeading}
+                </h3>
+                <p className="relative mx-auto mt-2 max-w-md text-sm text-white/60">{data.ctaBody}</p>
                 <a
                   href={data.ctaHref}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
+                  className="group relative mt-6 inline-flex items-center gap-2 overflow-hidden rounded-xl px-6 py-3.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                  style={{
+                    background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%)',
+                    boxShadow: '0 4px 0 #1e3a8a, 0 8px 24px rgba(29,78,216,0.45)',
+                  }}
                 >
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   {data.ctaLabel}
                   <ArrowRight className="size-4" />
                 </a>

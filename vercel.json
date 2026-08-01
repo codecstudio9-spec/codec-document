@@ -1,4 +1,18 @@
 {
+  "redirects": [
+    { "source": "/landing/residential-lease/texas", "destination": "/lease-agreement-texas", "permanent": true },
+    { "source": "/landing/residential-lease/florida", "destination": "/lease-agreement-florida", "permanent": true },
+    { "source": "/landing/nda/california", "destination": "/nda-california", "permanent": true },
+    { "source": "/landing/nda/new-york", "destination": "/nda-new-york", "permanent": true },
+    { "source": "/landing/independent-contractor/texas", "destination": "/independent-contractor-texas", "permanent": true },
+    { "source": "/landing/independent-contractor/california", "destination": "/independent-contractor-california", "permanent": true },
+    { "source": "/landing/service-agreement/florida", "destination": "/service-agreement-florida", "permanent": true },
+    { "source": "/landing/service-agreement/texas", "destination": "/service-agreement-texas", "permanent": true },
+    { "source": "/landing/promissory-note/california", "destination": "/promissory-note-california", "permanent": true },
+    { "source": "/landing/promissory-note/florida", "destination": "/promissory-note-florida", "permanent": true },
+    { "source": "/landing/bill-of-sale-vehicle/california", "destination": "/vehicle-bill-of-sale-california", "permanent": true },
+    { "source": "/landing/bill-of-sale-vehicle/texas", "destination": "/vehicle-bill-of-sale-texas", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/).*)",

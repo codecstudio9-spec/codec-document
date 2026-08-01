@@ -438,6 +438,10 @@ export const ARTICLES: Article[] = [
     metaDescription: 'What the ESIGN Act and UETA actually require for an electronic signature to be legally binding, what courts look for, and the exceptions to know.',
     keywords: 'ESIGN Act, UETA, electronic signature legal validity, is e-signature legally binding',
     dateLabel: 'July 2026',
+    heroImage: {
+      src: '/blog/esign-act-legal-validity-us.jpg',
+      alt: 'Close-up of a hand signing a document next to an open laptop, representing a legally binding electronic signature',
+    },
     readMinutes: 7,
     intro: [
       'The single most common question about electronic signatures is also the easiest one to answer with certainty: yes, they are legally binding in the United States, and have been for over two decades. The more useful question is what actually makes one enforceable, because not every electronic mark on a document automatically qualifies.',
