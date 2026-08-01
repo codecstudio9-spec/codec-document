@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette, Building2, Contact, Receipt } from 'lucide-react';
+import { Globe, Bell, ShieldCheck, FileText, Mail, ChevronRight, LogOut, LayoutTemplate, Palette, Building2, Contact, Receipt, Download, Share, PlusSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
+import { useInstallPrompt } from '../../hooks/use-install-prompt';
 import { SUPPORT_EMAIL } from '../../config/site';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
@@ -18,6 +20,8 @@ function SettingsContent() {
   const { logout } = useAuth();
   const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
+  const { canInstall, isIOS, isStandalone, promptInstall } = useInstallPrompt();
+  const [showIosHelp, setShowIosHelp] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -61,6 +65,43 @@ function SettingsContent() {
             </div>
           </div>
         </div>
+
+        {/* Install app */}
+        {!isStandalone && (
+          <div>
+            <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">{language === 'en' ? 'App' : 'Aplicación'}</p>
+            <button
+              type="button"
+              onClick={() => { if (isIOS) setShowIosHelp((v) => !v); else void promptInstall(); }}
+              disabled={!isIOS && !canInstall}
+              className="flex w-full items-center gap-3 bg-white p-5 text-left disabled:opacity-50"
+              style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+            >
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50"><Download className="size-4 text-slate-500" /></div>
+              <div className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-slate-800">{language === 'en' ? 'Install app' : 'Instalar app'}</span>
+                <span className="block text-xs text-slate-400">
+                  {isIOS
+                    ? (language === 'en' ? 'Show install instructions for iPhone' : 'Ver instrucciones de instalación para iPhone')
+                    : canInstall
+                      ? (language === 'en' ? 'Add Codec Document to your device' : 'Agrega Codec Document a tu dispositivo')
+                      : (language === 'en' ? 'Not available in this browser yet' : 'Aún no disponible en este navegador')}
+                </span>
+              </div>
+              <ChevronRight className="size-4 text-slate-300" />
+            </button>
+            {showIosHelp && (
+              <div className="mt-2.5 flex items-start gap-3 bg-slate-900 p-5" style={{ borderRadius: CARD_RADIUS }}>
+                <Share className="mt-0.5 size-4 shrink-0 text-indigo-400" />
+                <p className="text-xs leading-relaxed text-slate-300">
+                  {language === 'en'
+                    ? <>Tap Share, then <span className="inline-flex items-center gap-1 font-semibold text-white"><PlusSquare className="size-3.5" /> Add to Home Screen</span>.</>
+                    : <>Toca Compartir y luego <span className="inline-flex items-center gap-1 font-semibold text-white"><PlusSquare className="size-3.5" /> Agregar a inicio</span>.</>}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Custom templates & branding */}
         <div>

@@ -1,21 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Share, PlusSquare, X, Download } from 'lucide-react';
 import { useIsMobile } from '../hooks/use-is-mobile';
+import { useInstallPrompt, isIOSDevice, isStandaloneDisplay } from '../hooks/use-install-prompt';
 
 const COOKIE_CONSENT_KEY = 'codec_cookie_consent_v1';
 const IOS_DISMISS_KEY = 'codec_ios_install_dismissed_at';
 const IOS_DISMISS_DAYS = 14;
-
-function isIOSDevice(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
-}
-
-function isStandaloneDisplay(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-}
+const ANDROID_DISMISS_KEY = 'codec_android_install_dismissed';
+const ANDROID_POS_KEY = 'codec_android_install_pos';
 
 /**
  * iOS has no equivalent of Chrome/Android's automatic "install this app"
@@ -39,7 +31,8 @@ function isStandaloneDisplay(): boolean {
  */
 export function InstallAppPrompt() {
   const [showIOSBanner, setShowIOSBanner] = useState(false);
-  const [androidPromptEvent, setAndroidPromptEvent] = useState<Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> } | null>(null);
+  const [androidDismissed, setAndroidDismissed] = useState(() => sessionStorage.getItem(ANDROID_DISMISS_KEY) === '1');
+  const { canInstall, promptInstall } = useInstallPrompt();
   const isMobile = useIsMobile();
   // MobileAppShell renders a fixed 72px bottom tab bar (+ safe-area inset)
   // on every /app/* route on a real mobile viewport — same collision this
@@ -57,15 +50,7 @@ export function InstallAppPrompt() {
       const dismissedAt = Number(localStorage.getItem(IOS_DISMISS_KEY) || 0);
       const daysSinceDismiss = (Date.now() - dismissedAt) / (1000 * 60 * 60 * 24);
       if (!dismissedAt || daysSinceDismiss > IOS_DISMISS_DAYS) setShowIOSBanner(true);
-      return;
     }
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setAndroidPromptEvent(e as Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> });
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const dismissIOS = () => {
@@ -73,22 +58,46 @@ export function InstallAppPrompt() {
     setShowIOSBanner(false);
   };
 
-  const handleAndroidInstall = async () => {
-    if (!androidPromptEvent) return;
-    androidPromptEvent.prompt();
-    await androidPromptEvent.userChoice;
-    setAndroidPromptEvent(null);
+  // Closing the Android/desktop button only hides it for this browser
+  // session (sessionStorage, not localStorage) — it keeps showing up on
+  // the main page on a later visit, it's just closable in the moment
+  // instead of permanently glued to the screen.
+  const dismissAndroid = () => {
+    sessionStorage.setItem(ANDROID_DISMISS_KEY, '1');
+    setAndroidDismissed(true);
   };
 
-  if (androidPromptEvent) {
+  const defaultBottom = clearsBottomNav ? 96 : 16;
+  const drag = useDraggablePosition(ANDROID_POS_KEY);
+
+  if (canInstall && !androidDismissed) {
+    const style: React.CSSProperties = drag.pos
+      ? { left: drag.pos.left, top: drag.pos.top, bottom: 'auto' }
+      : { left: 16, bottom: defaultBottom };
     return (
-      <button
-        type="button"
-        onClick={() => void handleAndroidInstall()}
-        className={`fixed left-4 z-[9980] flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition hover:bg-indigo-500 active:scale-95 ${clearsBottomNav ? 'bottom-24' : 'bottom-4'}`}
+      <div
+        className="fixed z-[9980] flex items-center gap-1 rounded-full bg-indigo-600 pl-4 pr-1.5 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30"
+        style={{ ...style, touchAction: 'none' }}
+        onPointerDown={drag.onPointerDown}
+        onPointerMove={drag.onPointerMove}
+        onPointerUp={drag.onPointerUp}
       >
-        <Download className="size-4" /> Instalar app
-      </button>
+        <button
+          type="button"
+          onClick={() => { if (!drag.wasDragged()) void promptInstall(); }}
+          className="flex items-center gap-2 py-1 active:scale-95"
+        >
+          <Download className="size-4" /> Instalar app
+        </button>
+        <button
+          type="button"
+          onClick={dismissAndroid}
+          aria-label="Cerrar"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
     );
   }
 
@@ -124,4 +133,64 @@ export function InstallAppPrompt() {
   }
 
   return null;
+}
+
+/** Lets the user drag the floating install button somewhere it isn't
+ * blocking content, and remembers where they left it (per browser,
+ * across sessions). A tap that never moves past a small threshold still
+ * falls through as a normal click; a real drag suppresses it, mirroring
+ * the same "swallow the click after a real gesture" trick used for
+ * long-press elsewhere in the app (see use-long-press.ts). */
+function useDraggablePosition(storageKey: string) {
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const draggingRef = useRef(false);
+  const movedRef = useRef(false);
+  const startRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved) as { left: number; top: number };
+      if (typeof parsed.left === 'number' && typeof parsed.top === 'number') setPos(parsed);
+    } catch { /* ignore malformed value */ }
+  }, [storageKey]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    draggingRef.current = true;
+    movedRef.current = false;
+    startRef.current = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (!draggingRef.current) return;
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
+    if (!movedRef.current && Math.hypot(dx, dy) > 6) movedRef.current = true;
+    if (!movedRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const left = Math.min(Math.max(startRef.current.left + dx, 8), window.innerWidth - rect.width - 8);
+    const top = Math.min(Math.max(startRef.current.top + dy, 8), window.innerHeight - rect.height - 8);
+    setPos({ left, top });
+  };
+
+  const onPointerUp = () => {
+    draggingRef.current = false;
+    if (movedRef.current) {
+      setPos((current) => {
+        if (current) localStorage.setItem(storageKey, JSON.stringify(current));
+        return current;
+      });
+    }
+  };
+
+  return {
+    pos,
+    wasDragged: () => movedRef.current,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  };
 }
