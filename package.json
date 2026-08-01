@@ -6,7 +6,10 @@
   "scripts": {
     "validate:legal": "node scripts/validate-legal-content.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
-    "build": "npm run validate:legal && vite build && npm run generate:sitemap",
+    "generate:seo-manifest": "tsx scripts/generate-seo-manifest.mts",
+    "generate:seo-shells": "node scripts/generate-seo-shells.mjs",
+    "sync:vercel-rewrites": "node scripts/sync-vercel-rewrites.mjs",
+    "build": "npm run validate:legal && npm run generate:seo-manifest && vite build && npm run generate:sitemap && npm run generate:seo-shells",
     "verify:fonts": "node scripts/verify-unicode-fonts.mjs",
     "dev": "vite",
     "dev:server": "npm run dev --prefix server",

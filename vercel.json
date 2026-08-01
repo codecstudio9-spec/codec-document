@@ -1,19 +1,779 @@
 {
   "redirects": [
-    { "source": "/landing/residential-lease/texas", "destination": "/lease-agreement-texas", "permanent": true },
-    { "source": "/landing/residential-lease/florida", "destination": "/lease-agreement-florida", "permanent": true },
-    { "source": "/landing/nda/california", "destination": "/nda-california", "permanent": true },
-    { "source": "/landing/nda/new-york", "destination": "/nda-new-york", "permanent": true },
-    { "source": "/landing/independent-contractor/texas", "destination": "/independent-contractor-texas", "permanent": true },
-    { "source": "/landing/independent-contractor/california", "destination": "/independent-contractor-california", "permanent": true },
-    { "source": "/landing/service-agreement/florida", "destination": "/service-agreement-florida", "permanent": true },
-    { "source": "/landing/service-agreement/texas", "destination": "/service-agreement-texas", "permanent": true },
-    { "source": "/landing/promissory-note/california", "destination": "/promissory-note-california", "permanent": true },
-    { "source": "/landing/promissory-note/florida", "destination": "/promissory-note-florida", "permanent": true },
-    { "source": "/landing/bill-of-sale-vehicle/california", "destination": "/vehicle-bill-of-sale-california", "permanent": true },
-    { "source": "/landing/bill-of-sale-vehicle/texas", "destination": "/vehicle-bill-of-sale-texas", "permanent": true }
+    {
+      "source": "/landing/residential-lease/texas",
+      "destination": "/lease-agreement-texas",
+      "permanent": true
+    },
+    {
+      "source": "/landing/residential-lease/florida",
+      "destination": "/lease-agreement-florida",
+      "permanent": true
+    },
+    {
+      "source": "/landing/nda/california",
+      "destination": "/nda-california",
+      "permanent": true
+    },
+    {
+      "source": "/landing/nda/new-york",
+      "destination": "/nda-new-york",
+      "permanent": true
+    },
+    {
+      "source": "/landing/independent-contractor/texas",
+      "destination": "/independent-contractor-texas",
+      "permanent": true
+    },
+    {
+      "source": "/landing/independent-contractor/california",
+      "destination": "/independent-contractor-california",
+      "permanent": true
+    },
+    {
+      "source": "/landing/service-agreement/florida",
+      "destination": "/service-agreement-florida",
+      "permanent": true
+    },
+    {
+      "source": "/landing/service-agreement/texas",
+      "destination": "/service-agreement-texas",
+      "permanent": true
+    },
+    {
+      "source": "/landing/promissory-note/california",
+      "destination": "/promissory-note-california",
+      "permanent": true
+    },
+    {
+      "source": "/landing/promissory-note/florida",
+      "destination": "/promissory-note-florida",
+      "permanent": true
+    },
+    {
+      "source": "/landing/bill-of-sale-vehicle/california",
+      "destination": "/vehicle-bill-of-sale-california",
+      "permanent": true
+    },
+    {
+      "source": "/landing/bill-of-sale-vehicle/texas",
+      "destination": "/vehicle-bill-of-sale-texas",
+      "permanent": true
+    }
   ],
   "rewrites": [
+    {
+      "source": "/blog/acuerdos-voluntariado-ongs-contratos",
+      "destination": "/blog/acuerdos-voluntariado-ongs-contratos.html"
+    },
+    {
+      "source": "/blog/ahorrar-horas-eliminando-papel-en-tu-empresa",
+      "destination": "/blog/ahorrar-horas-eliminando-papel-en-tu-empresa.html"
+    },
+    {
+      "source": "/blog/carta-de-intencion-antes-de-contrato",
+      "destination": "/blog/carta-de-intencion-antes-de-contrato.html"
+    },
+    {
+      "source": "/blog/cartas-oferta-empleo-firma-el-mismo-dia",
+      "destination": "/blog/cartas-oferta-empleo-firma-el-mismo-dia.html"
+    },
+    {
+      "source": "/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador",
+      "destination": "/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador.html"
+    },
+    {
+      "source": "/blog/como-automatizar-contratos-en-una-inmobiliaria-pequena",
+      "destination": "/blog/como-automatizar-contratos-en-una-inmobiliaria-pequena.html"
+    },
+    {
+      "source": "/blog/como-enviar-documento-para-firma-online",
+      "destination": "/blog/como-enviar-documento-para-firma-online.html"
+    },
+    {
+      "source": "/blog/como-evitar-perder-ventas-por-demoras-en-firma",
+      "destination": "/blog/como-evitar-perder-ventas-por-demoras-en-firma.html"
+    },
+    {
+      "source": "/blog/como-organizar-documentos-legales-de-tu-empresa",
+      "destination": "/blog/como-organizar-documentos-legales-de-tu-empresa.html"
+    },
+    {
+      "source": "/blog/como-protegerse-como-contratista-independiente",
+      "destination": "/blog/como-protegerse-como-contratista-independiente.html"
+    },
+    {
+      "source": "/blog/como-verificar-identidad-de-un-firmante",
+      "destination": "/blog/como-verificar-identidad-de-un-firmante.html"
+    },
+    {
+      "source": "/blog/consentimiento-informado-digital-clinicas",
+      "destination": "/blog/consentimiento-informado-digital-clinicas.html"
+    },
+    {
+      "source": "/blog/consultor-independiente-blindar-honorarios-contrato",
+      "destination": "/blog/consultor-independiente-blindar-honorarios-contrato.html"
+    },
+    {
+      "source": "/blog/contrato-de-sociedad-antes-de-emprender",
+      "destination": "/blog/contrato-de-sociedad-antes-de-emprender.html"
+    },
+    {
+      "source": "/blog/contratos-matricula-escuelas-academias",
+      "destination": "/blog/contratos-matricula-escuelas-academias.html"
+    },
+    {
+      "source": "/blog/contratos-proveedores-ecommerce",
+      "destination": "/blog/contratos-proveedores-ecommerce.html"
+    },
+    {
+      "source": "/blog/contratos-proveedores-restaurantes-sin-papeleo",
+      "destination": "/blog/contratos-proveedores-restaurantes-sin-papeleo.html"
+    },
+    {
+      "source": "/blog/contratos-transporte-logistica-disputas",
+      "destination": "/blog/contratos-transporte-logistica-disputas.html"
+    },
+    {
+      "source": "/blog/costo-oculto-del-papel-en-empresas",
+      "destination": "/blog/costo-oculto-del-papel-en-empresas.html"
+    },
+    {
+      "source": "/blog/digital-signatures-for-hr-onboarding",
+      "destination": "/blog/digital-signatures-for-hr-onboarding.html"
+    },
+    {
+      "source": "/blog/e-signatures-for-banks-financial-institutions",
+      "destination": "/blog/e-signatures-for-banks-financial-institutions.html"
+    },
+    {
+      "source": "/blog/e-signatures-for-real-estate",
+      "destination": "/blog/e-signatures-for-real-estate.html"
+    },
+    {
+      "source": "/blog/electronic-signature-vs-digital-signature",
+      "destination": "/blog/electronic-signature-vs-digital-signature.html"
+    },
+    {
+      "source": "/blog/errores-comunes-al-redactar-un-nda",
+      "destination": "/blog/errores-comunes-al-redactar-un-nda.html"
+    },
+    {
+      "source": "/blog/errores-comunes-en-contrato-de-arrendamiento",
+      "destination": "/blog/errores-comunes-en-contrato-de-arrendamiento.html"
+    },
+    {
+      "source": "/blog/errores-vender-auto-usado-sin-contrato",
+      "destination": "/blog/errores-vender-auto-usado-sin-contrato.html"
+    },
+    {
+      "source": "/blog/esign-act-legal-validity-us",
+      "destination": "/blog/esign-act-legal-validity-us.html"
+    },
+    {
+      "source": "/blog/exencion-responsabilidad-gimnasios-eventos",
+      "destination": "/blog/exencion-responsabilidad-gimnasios-eventos.html"
+    },
+    {
+      "source": "/blog/firma-digital-empresas-2026",
+      "destination": "/blog/firma-digital-empresas-2026.html"
+    },
+    {
+      "source": "/blog/firma-electronica-gratis-para-pymes",
+      "destination": "/blog/firma-electronica-gratis-para-pymes.html"
+    },
+    {
+      "source": "/blog/firma-electronica-para-bancos",
+      "destination": "/blog/firma-electronica-para-bancos.html"
+    },
+    {
+      "source": "/blog/firma-electronica-para-inmobiliarias",
+      "destination": "/blog/firma-electronica-para-inmobiliarias.html"
+    },
+    {
+      "source": "/blog/firma-electronica-para-recursos-humanos",
+      "destination": "/blog/firma-electronica-para-recursos-humanos.html"
+    },
+    {
+      "source": "/blog/firma-electronica-vs-firma-digital",
+      "destination": "/blog/firma-electronica-vs-firma-digital.html"
+    },
+    {
+      "source": "/blog/free-e-signature-software-small-business",
+      "destination": "/blog/free-e-signature-software-small-business.html"
+    },
+    {
+      "source": "/blog/hidden-cost-of-paper-contracts",
+      "destination": "/blog/hidden-cost-of-paper-contracts.html"
+    },
+    {
+      "source": "/blog/how-freelancers-can-protect-themselves-with-a-contract",
+      "destination": "/blog/how-freelancers-can-protect-themselves-with-a-contract.html"
+    },
+    {
+      "source": "/blog/how-to-screen-tenants-and-draft-leases",
+      "destination": "/blog/how-to-screen-tenants-and-draft-leases.html"
+    },
+    {
+      "source": "/blog/how-to-send-document-for-signature-online",
+      "destination": "/blog/how-to-send-document-for-signature-online.html"
+    },
+    {
+      "source": "/blog/how-to-vet-a-client-before-signing-a-contract",
+      "destination": "/blog/how-to-vet-a-client-before-signing-a-contract.html"
+    },
+    {
+      "source": "/blog/how-to-write-a-service-agreement-that-protects-you",
+      "destination": "/blog/how-to-write-a-service-agreement-that-protects-you.html"
+    },
+    {
+      "source": "/blog/independent-contractor-vs-employee-paperwork",
+      "destination": "/blog/independent-contractor-vs-employee-paperwork.html"
+    },
+    {
+      "source": "/blog/nda-unilateral-vs-bilateral",
+      "destination": "/blog/nda-unilateral-vs-bilateral.html"
+    },
+    {
+      "source": "/blog/pagare-prestamo-entre-particulares",
+      "destination": "/blog/pagare-prestamo-entre-particulares.html"
+    },
+    {
+      "source": "/blog/poder-notarial-firma-electronica",
+      "destination": "/blog/poder-notarial-firma-electronica.html"
+    },
+    {
+      "source": "/blog/que-es-un-nda-acuerdo-confidencialidad",
+      "destination": "/blog/que-es-un-nda-acuerdo-confidencialidad.html"
+    },
+    {
+      "source": "/blog/que-pasa-si-rompen-un-nda",
+      "destination": "/blog/que-pasa-si-rompen-un-nda.html"
+    },
+    {
+      "source": "/blog/real-cost-of-no-written-contract",
+      "destination": "/blog/real-cost-of-no-written-contract.html"
+    },
+    {
+      "source": "/blog/reducir-tiempo-firma-contratos",
+      "destination": "/blog/reducir-tiempo-firma-contratos.html"
+    },
+    {
+      "source": "/blog/simple-document-workflow-small-company",
+      "destination": "/blog/simple-document-workflow-small-company.html"
+    },
+    {
+      "source": "/blog/stop-losing-sales-because-of-slow-contracts",
+      "destination": "/blog/stop-losing-sales-because-of-slow-contracts.html"
+    },
+    {
+      "source": "/blog/validez-legal-firma-electronica-latinoamerica",
+      "destination": "/blog/validez-legal-firma-electronica-latinoamerica.html"
+    },
+    {
+      "source": "/blog/what-happens-if-someone-breaks-an-nda",
+      "destination": "/blog/what-happens-if-someone-breaks-an-nda.html"
+    },
+    {
+      "source": "/blog/what-is-an-nda",
+      "destination": "/blog/what-is-an-nda.html"
+    },
+    {
+      "source": "/blog/what-to-know-before-signing-commercial-lease",
+      "destination": "/blog/what-to-know-before-signing-commercial-lease.html"
+    },
+    {
+      "source": "/blog/why-digital-signatures-matter-2026",
+      "destination": "/blog/why-digital-signatures-matter-2026.html"
+    },
+    {
+      "source": "/business-estimate-generator",
+      "destination": "/business-estimate-generator.html"
+    },
+    {
+      "source": "/certificar-documentos-online",
+      "destination": "/certificar-documentos-online.html"
+    },
+    {
+      "source": "/commercial-proposal-generator",
+      "destination": "/commercial-proposal-generator.html"
+    },
+    {
+      "source": "/cotizacion-profesional",
+      "destination": "/cotizacion-profesional.html"
+    },
+    {
+      "source": "/cotizador-online",
+      "destination": "/cotizador-online.html"
+    },
+    {
+      "source": "/crear-cotizacion",
+      "destination": "/crear-cotizacion.html"
+    },
+    {
+      "source": "/crear-documentos-online-gratis",
+      "destination": "/crear-documentos-online-gratis.html"
+    },
+    {
+      "source": "/documentos-legales-gratis",
+      "destination": "/documentos-legales-gratis.html"
+    },
+    {
+      "source": "/firma-digital-gratis",
+      "destination": "/firma-digital-gratis.html"
+    },
+    {
+      "source": "/firma-electronica-argentina",
+      "destination": "/firma-electronica-argentina.html"
+    },
+    {
+      "source": "/firma-electronica-chile",
+      "destination": "/firma-electronica-chile.html"
+    },
+    {
+      "source": "/firma-electronica-colombia",
+      "destination": "/firma-electronica-colombia.html"
+    },
+    {
+      "source": "/firma-electronica-ecuador",
+      "destination": "/firma-electronica-ecuador.html"
+    },
+    {
+      "source": "/firma-electronica-gratis",
+      "destination": "/firma-electronica-gratis.html"
+    },
+    {
+      "source": "/firma-electronica-mexico",
+      "destination": "/firma-electronica-mexico.html"
+    },
+    {
+      "source": "/firma-electronica-para-abogados",
+      "destination": "/firma-electronica-para-abogados.html"
+    },
+    {
+      "source": "/firma-electronica-para-constructores",
+      "destination": "/firma-electronica-para-constructores.html"
+    },
+    {
+      "source": "/firma-electronica-para-consultores",
+      "destination": "/firma-electronica-para-consultores.html"
+    },
+    {
+      "source": "/firma-electronica-para-contadores",
+      "destination": "/firma-electronica-para-contadores.html"
+    },
+    {
+      "source": "/firma-electronica-para-empresas",
+      "destination": "/firma-electronica-para-empresas.html"
+    },
+    {
+      "source": "/firma-electronica-para-freelancers",
+      "destination": "/firma-electronica-para-freelancers.html"
+    },
+    {
+      "source": "/firma-electronica-para-inmobiliarias",
+      "destination": "/firma-electronica-para-inmobiliarias.html"
+    },
+    {
+      "source": "/firma-electronica-para-recursos-humanos",
+      "destination": "/firma-electronica-para-recursos-humanos.html"
+    },
+    {
+      "source": "/firma-electronica-peru",
+      "destination": "/firma-electronica-peru.html"
+    },
+    {
+      "source": "/firmar-documentos-online-gratis",
+      "destination": "/firmar-documentos-online-gratis.html"
+    },
+    {
+      "source": "/firmar-pdf-gratis",
+      "destination": "/firmar-pdf-gratis.html"
+    },
+    {
+      "source": "/generador-de-cotizaciones",
+      "destination": "/generador-de-cotizaciones.html"
+    },
+    {
+      "source": "/independent-contractor-california",
+      "destination": "/independent-contractor-california.html"
+    },
+    {
+      "source": "/independent-contractor-florida",
+      "destination": "/independent-contractor-florida.html"
+    },
+    {
+      "source": "/independent-contractor-georgia",
+      "destination": "/independent-contractor-georgia.html"
+    },
+    {
+      "source": "/independent-contractor-illinois",
+      "destination": "/independent-contractor-illinois.html"
+    },
+    {
+      "source": "/independent-contractor-michigan",
+      "destination": "/independent-contractor-michigan.html"
+    },
+    {
+      "source": "/independent-contractor-new-jersey",
+      "destination": "/independent-contractor-new-jersey.html"
+    },
+    {
+      "source": "/independent-contractor-new-york",
+      "destination": "/independent-contractor-new-york.html"
+    },
+    {
+      "source": "/independent-contractor-north-carolina",
+      "destination": "/independent-contractor-north-carolina.html"
+    },
+    {
+      "source": "/independent-contractor-ohio",
+      "destination": "/independent-contractor-ohio.html"
+    },
+    {
+      "source": "/independent-contractor-pennsylvania",
+      "destination": "/independent-contractor-pennsylvania.html"
+    },
+    {
+      "source": "/independent-contractor-san-jose-california",
+      "destination": "/independent-contractor-san-jose-california.html"
+    },
+    {
+      "source": "/independent-contractor-texas",
+      "destination": "/independent-contractor-texas.html"
+    },
+    {
+      "source": "/independent-contractor-virginia",
+      "destination": "/independent-contractor-virginia.html"
+    },
+    {
+      "source": "/lease-agreement-california",
+      "destination": "/lease-agreement-california.html"
+    },
+    {
+      "source": "/lease-agreement-florida",
+      "destination": "/lease-agreement-florida.html"
+    },
+    {
+      "source": "/lease-agreement-georgia",
+      "destination": "/lease-agreement-georgia.html"
+    },
+    {
+      "source": "/lease-agreement-illinois",
+      "destination": "/lease-agreement-illinois.html"
+    },
+    {
+      "source": "/lease-agreement-michigan",
+      "destination": "/lease-agreement-michigan.html"
+    },
+    {
+      "source": "/lease-agreement-new-jersey",
+      "destination": "/lease-agreement-new-jersey.html"
+    },
+    {
+      "source": "/lease-agreement-new-york",
+      "destination": "/lease-agreement-new-york.html"
+    },
+    {
+      "source": "/lease-agreement-north-carolina",
+      "destination": "/lease-agreement-north-carolina.html"
+    },
+    {
+      "source": "/lease-agreement-ohio",
+      "destination": "/lease-agreement-ohio.html"
+    },
+    {
+      "source": "/lease-agreement-pennsylvania",
+      "destination": "/lease-agreement-pennsylvania.html"
+    },
+    {
+      "source": "/lease-agreement-san-jose-california",
+      "destination": "/lease-agreement-san-jose-california.html"
+    },
+    {
+      "source": "/lease-agreement-texas",
+      "destination": "/lease-agreement-texas.html"
+    },
+    {
+      "source": "/lease-agreement-virginia",
+      "destination": "/lease-agreement-virginia.html"
+    },
+    {
+      "source": "/legal-documents-california",
+      "destination": "/legal-documents-california.html"
+    },
+    {
+      "source": "/legal-documents-florida",
+      "destination": "/legal-documents-florida.html"
+    },
+    {
+      "source": "/legal-documents-georgia",
+      "destination": "/legal-documents-georgia.html"
+    },
+    {
+      "source": "/legal-documents-illinois",
+      "destination": "/legal-documents-illinois.html"
+    },
+    {
+      "source": "/legal-documents-michigan",
+      "destination": "/legal-documents-michigan.html"
+    },
+    {
+      "source": "/legal-documents-new-jersey",
+      "destination": "/legal-documents-new-jersey.html"
+    },
+    {
+      "source": "/legal-documents-new-york",
+      "destination": "/legal-documents-new-york.html"
+    },
+    {
+      "source": "/legal-documents-north-carolina",
+      "destination": "/legal-documents-north-carolina.html"
+    },
+    {
+      "source": "/legal-documents-ohio",
+      "destination": "/legal-documents-ohio.html"
+    },
+    {
+      "source": "/legal-documents-pennsylvania",
+      "destination": "/legal-documents-pennsylvania.html"
+    },
+    {
+      "source": "/legal-documents-texas",
+      "destination": "/legal-documents-texas.html"
+    },
+    {
+      "source": "/legal-documents-virginia",
+      "destination": "/legal-documents-virginia.html"
+    },
+    {
+      "source": "/nda-california",
+      "destination": "/nda-california.html"
+    },
+    {
+      "source": "/nda-florida",
+      "destination": "/nda-florida.html"
+    },
+    {
+      "source": "/nda-georgia",
+      "destination": "/nda-georgia.html"
+    },
+    {
+      "source": "/nda-illinois",
+      "destination": "/nda-illinois.html"
+    },
+    {
+      "source": "/nda-michigan",
+      "destination": "/nda-michigan.html"
+    },
+    {
+      "source": "/nda-new-jersey",
+      "destination": "/nda-new-jersey.html"
+    },
+    {
+      "source": "/nda-new-york",
+      "destination": "/nda-new-york.html"
+    },
+    {
+      "source": "/nda-north-carolina",
+      "destination": "/nda-north-carolina.html"
+    },
+    {
+      "source": "/nda-ohio",
+      "destination": "/nda-ohio.html"
+    },
+    {
+      "source": "/nda-pennsylvania",
+      "destination": "/nda-pennsylvania.html"
+    },
+    {
+      "source": "/nda-san-jose-california",
+      "destination": "/nda-san-jose-california.html"
+    },
+    {
+      "source": "/nda-texas",
+      "destination": "/nda-texas.html"
+    },
+    {
+      "source": "/nda-virginia",
+      "destination": "/nda-virginia.html"
+    },
+    {
+      "source": "/professional-quote-template",
+      "destination": "/professional-quote-template.html"
+    },
+    {
+      "source": "/promissory-note-california",
+      "destination": "/promissory-note-california.html"
+    },
+    {
+      "source": "/promissory-note-florida",
+      "destination": "/promissory-note-florida.html"
+    },
+    {
+      "source": "/promissory-note-georgia",
+      "destination": "/promissory-note-georgia.html"
+    },
+    {
+      "source": "/promissory-note-illinois",
+      "destination": "/promissory-note-illinois.html"
+    },
+    {
+      "source": "/promissory-note-michigan",
+      "destination": "/promissory-note-michigan.html"
+    },
+    {
+      "source": "/promissory-note-new-jersey",
+      "destination": "/promissory-note-new-jersey.html"
+    },
+    {
+      "source": "/promissory-note-new-york",
+      "destination": "/promissory-note-new-york.html"
+    },
+    {
+      "source": "/promissory-note-north-carolina",
+      "destination": "/promissory-note-north-carolina.html"
+    },
+    {
+      "source": "/promissory-note-ohio",
+      "destination": "/promissory-note-ohio.html"
+    },
+    {
+      "source": "/promissory-note-pennsylvania",
+      "destination": "/promissory-note-pennsylvania.html"
+    },
+    {
+      "source": "/promissory-note-san-jose-california",
+      "destination": "/promissory-note-san-jose-california.html"
+    },
+    {
+      "source": "/promissory-note-texas",
+      "destination": "/promissory-note-texas.html"
+    },
+    {
+      "source": "/promissory-note-virginia",
+      "destination": "/promissory-note-virginia.html"
+    },
+    {
+      "source": "/proposal-generator",
+      "destination": "/proposal-generator.html"
+    },
+    {
+      "source": "/propuesta-comercial",
+      "destination": "/propuesta-comercial.html"
+    },
+    {
+      "source": "/quote-generator",
+      "destination": "/quote-generator.html"
+    },
+    {
+      "source": "/san-jose-california",
+      "destination": "/san-jose-california.html"
+    },
+    {
+      "source": "/service-agreement-california",
+      "destination": "/service-agreement-california.html"
+    },
+    {
+      "source": "/service-agreement-florida",
+      "destination": "/service-agreement-florida.html"
+    },
+    {
+      "source": "/service-agreement-georgia",
+      "destination": "/service-agreement-georgia.html"
+    },
+    {
+      "source": "/service-agreement-illinois",
+      "destination": "/service-agreement-illinois.html"
+    },
+    {
+      "source": "/service-agreement-michigan",
+      "destination": "/service-agreement-michigan.html"
+    },
+    {
+      "source": "/service-agreement-new-jersey",
+      "destination": "/service-agreement-new-jersey.html"
+    },
+    {
+      "source": "/service-agreement-new-york",
+      "destination": "/service-agreement-new-york.html"
+    },
+    {
+      "source": "/service-agreement-north-carolina",
+      "destination": "/service-agreement-north-carolina.html"
+    },
+    {
+      "source": "/service-agreement-ohio",
+      "destination": "/service-agreement-ohio.html"
+    },
+    {
+      "source": "/service-agreement-pennsylvania",
+      "destination": "/service-agreement-pennsylvania.html"
+    },
+    {
+      "source": "/service-agreement-san-jose-california",
+      "destination": "/service-agreement-san-jose-california.html"
+    },
+    {
+      "source": "/service-agreement-texas",
+      "destination": "/service-agreement-texas.html"
+    },
+    {
+      "source": "/service-agreement-virginia",
+      "destination": "/service-agreement-virginia.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-california",
+      "destination": "/vehicle-bill-of-sale-california.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-florida",
+      "destination": "/vehicle-bill-of-sale-florida.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-georgia",
+      "destination": "/vehicle-bill-of-sale-georgia.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-illinois",
+      "destination": "/vehicle-bill-of-sale-illinois.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-michigan",
+      "destination": "/vehicle-bill-of-sale-michigan.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-new-jersey",
+      "destination": "/vehicle-bill-of-sale-new-jersey.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-new-york",
+      "destination": "/vehicle-bill-of-sale-new-york.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-north-carolina",
+      "destination": "/vehicle-bill-of-sale-north-carolina.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-ohio",
+      "destination": "/vehicle-bill-of-sale-ohio.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-pennsylvania",
+      "destination": "/vehicle-bill-of-sale-pennsylvania.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-san-jose-california",
+      "destination": "/vehicle-bill-of-sale-san-jose-california.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-texas",
+      "destination": "/vehicle-bill-of-sale-texas.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-virginia",
+      "destination": "/vehicle-bill-of-sale-virginia.html"
+    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"

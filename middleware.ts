@@ -14,6 +14,13 @@
 // the same values once React mounts, but this header is what protects
 // non-JS-executing consumers (Bing, most social-preview bots, etc.).
 //
+// NOTE: this middleware deliberately does NOT touch the response BODY
+// (title/meta description) — Vercel Edge Middleware's `next()` returns a
+// sentinel "continue" Response, not the actual origin HTML, so there is no
+// body here to rewrite (unlike Cloudflare Workers' HTMLRewriter model).
+// Per-route title/description in the raw HTML is handled by a separate,
+// build-time mechanism instead — see scripts/generate-seo-shells.mjs.
+//
 // Deploy: this file is picked up automatically by Vercel on every deploy —
 // no separate deploy step, just part of the normal `vercel deploy` /
 // git-push-triggered build for this project.
