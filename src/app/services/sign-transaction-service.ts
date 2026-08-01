@@ -191,6 +191,21 @@ export async function updateSignTransaction(
   await supabase.from('sign_transactions').update(updates).eq('id', id);
 }
 
+/** Deletes a sign transaction the caller created — scoped by the
+ * "tx_delete_own" RLS policy (auth.uid()::text = creator_id), see
+ * 20260731050000_add_sign_transactions_delete_policy.sql. Only removes the
+ * request from the sender's own Firmas list; it never touches the
+ * `documents`/`profile_documents` rows a completed signature may also have
+ * produced. */
+export async function deleteSignTransaction(id: string): Promise<void> {
+  const { error, count } = await supabase
+    .from('sign_transactions')
+    .delete({ count: 'exact' })
+    .eq('id', id);
+  if (error) throw new Error(`deleteSignTransaction: ${error.message}`);
+  if (!count) throw new Error('deleteSignTransaction: not found, or not yours');
+}
+
 export function subscribeToTransaction(
   txId: string,
   onChange: (tx: SignTransaction) => void,

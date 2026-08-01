@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { PenLine, Clock, CheckCircle2, Copy } from 'lucide-react';
+import { PenLine, Clock, CheckCircle2, Copy, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
+import { BulkSelectionBar } from '../../components/BulkSelectionBar';
+import { useLongPress } from '../../hooks/use-long-press';
 import { fetchMySignTransactions } from '../../services/mobile-dashboard-service';
-import { isActiveTxStatus, stashSignedTransactionForDownload, markTransactionViewed, type SignTransaction } from '../../services/sign-transaction-service';
+import {
+  isActiveTxStatus, stashSignedTransactionForDownload, markTransactionViewed, deleteSignTransaction,
+  type SignTransaction,
+} from '../../services/sign-transaction-service';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT, BLUE_GRADIENT } from '../../styles/mobile-theme';
 
 const DOC_TYPE_LABEL_ES: Record<string, string> = {
@@ -42,6 +47,10 @@ function SignaturesContent() {
   const { language } = useLanguage();
   const [tab, setTab] = useState<'pending' | 'signed'>('pending');
   const [txs, setTxs] = useState<SignTransaction[] | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -52,6 +61,49 @@ function SignaturesContent() {
   const signed = (txs ?? []).filter((t) => t.status === 'completed');
   const list = tab === 'pending' ? pending : signed;
   const docTypeLabel = language === 'en' ? DOC_TYPE_LABEL_EN : DOC_TYPE_LABEL_ES;
+
+  const changeTab = (t: 'pending' | 'signed') => {
+    setTab(t);
+    setSelectMode(false);
+    setSelected(new Set());
+    setBulkConfirming(false);
+  };
+  const enterSelectMode = (id: string) => {
+    setSelectMode(true);
+    setSelected(new Set([id]));
+  };
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+    setBulkConfirming(false);
+  };
+  const allSelected = list.length > 0 && selected.size === list.length;
+  const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(list.map((t) => t.id)));
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const targets = list.filter((t) => selected.has(t.id));
+    const results = await Promise.allSettled(targets.map((t) => deleteSignTransaction(t.id).then(() => t.id)));
+    const deletedIds = new Set(
+      results.filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled').map((r) => r.value),
+    );
+    setTxs((prev) => prev?.filter((t) => !deletedIds.has(t.id)) ?? prev);
+    const failedCount = results.length - deletedIds.size;
+    if (failedCount > 0) {
+      toast.error(language === 'en' ? `${failedCount} could not be deleted` : `${failedCount} no se pudieron eliminar`);
+    } else {
+      toast.success(language === 'en' ? 'Deleted' : 'Eliminado');
+    }
+    setBulkDeleting(false);
+    exitSelectMode();
+  };
 
   if (!user) {
     return (
@@ -83,7 +135,7 @@ function SignaturesContent() {
       <div className="-mt-5 flex gap-2 bg-white p-1.5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
         <button
           type="button"
-          onClick={() => setTab('pending')}
+          onClick={() => changeTab('pending')}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
           style={tab === 'pending' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
         >
@@ -91,7 +143,7 @@ function SignaturesContent() {
         </button>
         <button
           type="button"
-          onClick={() => setTab('signed')}
+          onClick={() => changeTab('signed')}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition"
           style={tab === 'signed' ? { background: '#2563EB', color: '#fff' } : { color: '#6B7280' }}
         >
@@ -99,24 +151,43 @@ function SignaturesContent() {
         </button>
       </div>
 
+      {selectMode && (
+        <div className="mt-4">
+          <BulkSelectionBar
+            language={language}
+            selectedCount={selected.size}
+            allSelected={allSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onCancel={exitSelectMode}
+            confirming={bulkConfirming}
+            onRequestDelete={() => setBulkConfirming(true)}
+            onConfirmDelete={() => void handleBulkDelete()}
+            onCancelConfirm={() => setBulkConfirming(false)}
+            deleting={bulkDeleting}
+          />
+        </div>
+      )}
+
       {/* "Solo firmar" — distinct from creating a template-based document
           below: this is for a PDF you already have, that you (and/or
           someone else) just need to sign, no form-filling involved. */}
-      <motion.button
-        whileTap={{ scale: 0.98 }}
-        type="button"
-        onClick={() => navigate('/firma-electronica')}
-        className="mt-4 flex w-full items-center gap-3 p-4 text-left text-white"
-        style={{ borderRadius: CARD_RADIUS, background: BLUE_GRADIENT, boxShadow: '0 14px 28px rgba(37,99,235,0.30)' }}
-      >
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-          <PenLine className="size-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">{language === 'en' ? 'Sign a document' : 'Firmar un documento'}</p>
-          <p className="mt-0.5 text-xs text-blue-100">{language === 'en' ? 'Upload a PDF and sign it yourself, or send it out for signature' : 'Sube un PDF y fírmalo tú, o envíalo a firmar'}</p>
-        </div>
-      </motion.button>
+      {!selectMode && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          type="button"
+          onClick={() => navigate('/firma-electronica')}
+          className="mt-4 flex w-full items-center gap-3 p-4 text-left text-white"
+          style={{ borderRadius: CARD_RADIUS, background: BLUE_GRADIENT, boxShadow: '0 14px 28px rgba(37,99,235,0.30)' }}
+        >
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+            <PenLine className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold">{language === 'en' ? 'Sign a document' : 'Firmar un documento'}</p>
+            <p className="mt-0.5 text-xs text-blue-100">{language === 'en' ? 'Upload a PDF and sign it yourself, or send it out for signature' : 'Sube un PDF y fírmalo tú, o envíalo a firmar'}</p>
+          </div>
+        </motion.button>
+      )}
 
       {/* List */}
       <div className="mt-4 space-y-2.5">
@@ -146,79 +217,19 @@ function SignaturesContent() {
             </button>
           </div>
         ) : (
-          list.map((tx) => {
-            const isSigned = tx.status === 'completed';
-            const label = docTypeLabel[tx.document_type] || tx.document_type;
-            const handleTap = () => {
-              if (isSigned) {
-                // The recipient's signature only ever gets stamped onto the
-                // final document here — nothing notifies the sender when
-                // it happens, so this is the actual "open it and see the
-                // signed result" entry point, not /sign/:id (that page is
-                // the recipient's own signing flow).
-                if (!tx.viewed_at) void markTransactionViewed(tx.id);
-                stashSignedTransactionForDownload(tx, language);
-                navigate(`/preview/${tx.document_type}`);
-                return;
-              }
-              // Open the document exactly as the recipient would see it —
-              // lets the sender preview it and copy/share the link from
-              // there (Copy button below is a shortcut for "just the link").
-              navigate(`/sign/${tx.id}`);
-            };
-            const handleCopyLink = (e: React.MouseEvent) => {
-              e.stopPropagation();
-              const link = `${window.location.origin}/sign/${tx.id}`;
-              navigator.clipboard.writeText(link).then(() => {
-                toast.success(language === 'en' ? 'Signing link copied' : 'Enlace de firma copiado');
-              }).catch(() => {
-                toast.error(language === 'en' ? "Couldn't copy the link" : 'No se pudo copiar el enlace');
-              });
-            };
-            return (
-              <motion.button
-                key={tx.id}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={handleTap}
-                className="flex w-full items-center gap-3 bg-white p-4 text-left"
-                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
-              >
-                <div
-                  className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-                  style={{ background: isSigned ? '#ECFDF5' : '#FFFBEB' }}
-                >
-                  <PenLine className="size-5" style={{ color: isSigned ? '#10B981' : '#F59E0B' }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-900">{label}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {language === 'en'
-                      ? `${isSigned ? 'Signed' : 'Sent'} on ${new Date(tx.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
-                      : `${isSigned ? 'Firmado' : 'Enviado'} el ${new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`}
-                  </p>
-                </div>
-                {isSigned ? (
-                  <span
-                    className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
-                    style={{ color: '#10B981', background: '#ECFDF5' }}
-                  >
-                    {language === 'en' ? 'Signed' : 'Firmado'}
-                  </span>
-                ) : (
-                  <motion.span
-                    whileTap={{ scale: 0.9 }}
-                    role="button"
-                    onClick={handleCopyLink}
-                    className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
-                    style={{ color: '#F59E0B', background: '#FFFBEB' }}
-                  >
-                    <Copy className="size-3" /> {language === 'en' ? 'Pending' : 'Pendiente'}
-                  </motion.span>
-                )}
-              </motion.button>
-            );
-          })
+          list.map((tx) => (
+            <MobileSigRow
+              key={tx.id}
+              tx={tx}
+              language={language}
+              navigate={navigate}
+              selectMode={selectMode}
+              selected={selected.has(tx.id)}
+              onEnterSelectMode={enterSelectMode}
+              onToggleSelected={toggleSelected}
+              docTypeLabel={docTypeLabel}
+            />
+          ))
         )}
       </div>
       </div>
@@ -228,7 +239,7 @@ function SignaturesContent() {
           the recipient already signed in a Fill/Send/Co-Sign flow) is one
           tap away instead of having to open the Pendientes list and find
           it. Only shown when there's actually something pending. */}
-      {pending.length > 0 && (
+      {!selectMode && pending.length > 0 && (
         <motion.button
           whileTap={{ scale: 0.9 }}
           type="button"
@@ -249,19 +260,129 @@ function SignaturesContent() {
       )}
 
       {/* Floating action — start a new signature request */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        type="button"
-        onClick={() => navigate('/app/templates')}
-        className="fixed flex items-center justify-center text-white"
-        style={{
-          bottom: 96, right: 20, width: 56, height: 56, borderRadius: 18,
-          background: BLUE_GRADIENT,
-          boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
-        }}
-      >
-        <PenLine className="size-5" />
-      </motion.button>
+      {!selectMode && (
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          type="button"
+          onClick={() => navigate('/app/templates')}
+          className="fixed flex items-center justify-center text-white"
+          style={{
+            bottom: 96, right: 20, width: 56, height: 56, borderRadius: 18,
+            background: BLUE_GRADIENT,
+            boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
+          }}
+        >
+          <PenLine className="size-5" />
+        </motion.button>
+      )}
     </div>
+  );
+}
+
+interface MobileSigRowProps {
+  tx: SignTransaction;
+  language: 'en' | 'es';
+  navigate: ReturnType<typeof useNavigate>;
+  selectMode: boolean;
+  selected: boolean;
+  onEnterSelectMode: (id: string) => void;
+  onToggleSelected: (id: string) => void;
+  docTypeLabel: Record<string, string>;
+}
+
+function MobileSigRow({
+  tx, language, navigate, selectMode, selected,
+  onEnterSelectMode, onToggleSelected, docTypeLabel,
+}: MobileSigRowProps) {
+  const isSigned = tx.status === 'completed';
+  const label = docTypeLabel[tx.document_type] || tx.document_type;
+
+  const openTx = () => {
+    if (isSigned) {
+      // The recipient's signature only ever gets stamped onto the final
+      // document here — nothing notifies the sender when it happens, so
+      // this is the actual "open it and see the signed result" entry
+      // point, not /sign/:id (that page is the recipient's own signing
+      // flow).
+      if (!tx.viewed_at) void markTransactionViewed(tx.id);
+      stashSignedTransactionForDownload(tx, language);
+      navigate(`/preview/${tx.document_type}`);
+      return;
+    }
+    // Open the document exactly as the recipient would see it — lets the
+    // sender preview it and copy/share the link from there (Copy button
+    // below is a shortcut for "just the link").
+    navigate(`/sign/${tx.id}`);
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const link = `${window.location.origin}/sign/${tx.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      toast.success(language === 'en' ? 'Signing link copied' : 'Enlace de firma copiado');
+    }).catch(() => {
+      toast.error(language === 'en' ? "Couldn't copy the link" : 'No se pudo copiar el enlace');
+    });
+  };
+
+  const longPress = useLongPress({
+    onLongPress: () => onEnterSelectMode(tx.id),
+    onTap: () => (selectMode ? onToggleSelected(tx.id) : openTx()),
+  });
+
+  return (
+    <motion.button
+      whileTap={{ scale: 0.98 }}
+      type="button"
+      {...longPress}
+      className="flex w-full items-center gap-3 bg-white p-4 text-left"
+      style={{
+        borderRadius: CARD_RADIUS,
+        boxShadow: CARD_SHADOW,
+        outline: selected ? '2px solid #2563EB' : undefined,
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+    >
+      {selectMode && (
+        <span className="flex size-6 shrink-0 items-center justify-center">
+          {selected ? <CheckCircle2 className="size-5 text-blue-600" /> : <Circle className="size-5 text-slate-300" />}
+        </span>
+      )}
+      <div
+        className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
+        style={{ background: isSigned ? '#ECFDF5' : '#FFFBEB' }}
+      >
+        <PenLine className="size-5" style={{ color: isSigned ? '#10B981' : '#F59E0B' }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-slate-900">{label}</p>
+        <p className="mt-0.5 text-xs text-slate-400">
+          {language === 'en'
+            ? `${isSigned ? 'Signed' : 'Sent'} on ${new Date(tx.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
+            : `${isSigned ? 'Firmado' : 'Enviado'} el ${new Date(tx.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`}
+        </p>
+      </div>
+      {!selectMode && (
+        isSigned ? (
+          <span
+            className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
+            style={{ color: '#10B981', background: '#ECFDF5' }}
+          >
+            {language === 'en' ? 'Signed' : 'Firmado'}
+          </span>
+        ) : (
+          <motion.span
+            whileTap={{ scale: 0.9 }}
+            role="button"
+            onClick={handleCopyLink}
+            className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
+            style={{ color: '#F59E0B', background: '#FFFBEB' }}
+          >
+            <Copy className="size-3" /> {language === 'en' ? 'Pending' : 'Pendiente'}
+          </motion.span>
+        )
+      )}
+    </motion.button>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent } from '../ui/dialog';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
@@ -28,7 +28,7 @@ function GlassLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegisterOpenChange }: Props) {
-  const { signIn, signUp, signInWithMagicLink } = useAuth();
+  const { user, signIn, signUp, signInWithMagicLink } = useAuth();
 
   const [tab, setTab] = useState<LoginTab>('magic');
   const [email, setEmail] = useState('');
@@ -43,6 +43,17 @@ export function AuthModals({ loginOpen, registerOpen, onLoginOpenChange, onRegis
     setEmail('');
     setPassword('');
   };
+
+  // A magic-link/Google sign-in can complete in the background (email link
+  // clicked in another tab, or the auth listener picking up the session a
+  // moment after the OAuth redirect) without ever going through onLogin()'s
+  // own close() call — the modal was staying stuck open on top of the app
+  // even after `user` was already set, most noticeable on mobile where it
+  // blocks the whole screen. Closing it the instant a session appears
+  // covers every sign-in path uniformly.
+  useEffect(() => {
+    if (user && (loginOpen || registerOpen)) close();
+  }, [user]);
 
   const onMagicLink = async () => {
     if (!email.trim() || !email.includes('@')) { toast.error('Ingresa un email válido'); return; }

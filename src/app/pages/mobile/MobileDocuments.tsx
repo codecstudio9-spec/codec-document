@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2, Pencil } from 'lucide-react';
+import { Plus, FileText, Download, Check, Clock, FileEdit, Trash2, Pencil, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { DocumentEditModal } from '../../components/DocumentEditModal';
+import { BulkSelectionBar } from '../../components/BulkSelectionBar';
+import { useLongPress } from '../../hooks/use-long-press';
 import {
   fetchUserDocuments, fetchAssociatedDocuments, deleteDocumentRecord, deleteAssociatedDocument,
   updateUserDocumentDetails, updateAssociatedDocumentDetails, getSignedDocumentExpiry,
@@ -53,6 +55,10 @@ function DocumentsContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingDoc, setEditingDoc] = useState<UnifiedDoc | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -107,6 +113,45 @@ function DocumentsContent() {
 
   const filtered = (docs ?? []).filter((d) => filter === 'all' || classify(d.status) === filter);
 
+  const enterSelectMode = (id: string) => {
+    setSelectMode(true);
+    setSelected(new Set([id]));
+  };
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+    setBulkConfirming(false);
+  };
+  const allSelected = filtered.length > 0 && selected.size === filtered.length;
+  const toggleSelectAll = () => setSelected(allSelected ? new Set() : new Set(filtered.map((d) => d.id)));
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const targets = filtered.filter((d) => selected.has(d.id));
+    const results = await Promise.allSettled(
+      targets.map((d) => (d.kind === 'own' ? deleteDocumentRecord(d.id) : deleteAssociatedDocument(d.id)).then(() => d.id)),
+    );
+    const deletedIds = new Set(
+      results.filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled').map((r) => r.value),
+    );
+    setDocs((prev) => prev?.filter((d) => !deletedIds.has(d.id)) ?? prev);
+    const failedCount = results.length - deletedIds.size;
+    if (failedCount > 0) {
+      toast.error(language === 'en' ? `${failedCount} could not be deleted` : `${failedCount} no se pudieron eliminar`);
+    } else {
+      toast.success(language === 'en' ? 'Documents deleted' : 'Documentos eliminados');
+    }
+    setBulkDeleting(false);
+    exitSelectMode();
+  };
+
   const FILTERS: Array<{ key: Filter; label: string }> = [
     { key: 'all', label: language === 'en' ? 'All' : 'Todos' },
     { key: 'draft', label: language === 'en' ? 'Drafts' : 'Borradores' },
@@ -130,6 +175,21 @@ function DocumentsContent() {
   return (
     <div className="relative px-4 pt-5">
       <h1 className="text-xl font-black text-slate-900">{language === 'en' ? 'Documents' : 'Documentos'}</h1>
+
+      {selectMode && (
+        <BulkSelectionBar
+          language={language}
+          selectedCount={selected.size}
+          allSelected={allSelected}
+          onToggleSelectAll={toggleSelectAll}
+          onCancel={exitSelectMode}
+          confirming={bulkConfirming}
+          onRequestDelete={() => setBulkConfirming(true)}
+          onConfirmDelete={() => void handleBulkDelete()}
+          onCancelConfirm={() => setBulkConfirming(false)}
+          deleting={bulkDeleting}
+        />
+      )}
 
       {/* Filters */}
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -193,91 +253,44 @@ function DocumentsContent() {
               );
             }
 
-            const c = classify(doc.status);
-            const style = c === 'signed'
-              ? { color: '#10B981', bg: '#ECFDF5', label: language === 'en' ? 'Signed' : 'Firmado' }
-              : c === 'draft'
-                ? { color: '#6B7280', bg: '#F1F5F9', label: language === 'en' ? 'Draft' : 'Borrador' }
-                : { color: '#F59E0B', bg: '#FFFBEB', label: language === 'en' ? 'Pending' : 'Pendiente' };
-            const openDoc = () => {
-              if (!doc.href) return;
-              if (doc.href.startsWith('http')) {
-                window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
-              } else {
-                navigate(doc.href);
-              }
-            };
             return (
-              <motion.div
+              <MobileDocRow
                 key={doc.id}
-                whileTap={{ scale: 0.99 }}
-                className="flex items-center gap-2 bg-white p-4"
-                style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW, borderLeft: doc.color ? `4px solid ${doc.color}` : undefined }}
-              >
-                <button type="button" onClick={openDoc} disabled={!doc.href} className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-70">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50" style={doc.color ? { background: `${doc.color}1a` } : undefined}>
-                    <FileText className="size-5 text-indigo-500" style={doc.color ? { color: doc.color } : undefined} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {style.label} · {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      {doc.daysLeft !== null && (
-                        <> · {language === 'en' ? `expires in ${doc.daysLeft}d` : `vence en ${doc.daysLeft}d`}</>
-                      )}
-                    </p>
-                  </div>
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>
-                    {c === 'signed'
-                      ? <Check className="size-3.5" style={{ color: style.color }} />
-                      : c === 'draft'
-                        ? <FileEdit className="size-3.5" style={{ color: style.color }} />
-                        : <Clock className="size-3.5" style={{ color: style.color }} />}
-                  </span>
-                  {doc.href && (
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
-                      <Download className="size-4 text-slate-500" />
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingDoc(doc)}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
-                >
-                  <Pencil className="size-4 text-slate-400" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingId(doc.id)}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
-                >
-                  <Trash2 className="size-4 text-slate-400" />
-                </button>
-              </motion.div>
+                doc={doc}
+                language={language}
+                navigate={navigate}
+                selectMode={selectMode}
+                selected={selected.has(doc.id)}
+                onEnterSelectMode={enterSelectMode}
+                onToggleSelected={toggleSelected}
+                onEdit={() => setEditingDoc(doc)}
+                onDeleteRequest={() => setConfirmingId(doc.id)}
+              />
             );
           })
         )}
       </div>
 
       {/* Floating create button */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        type="button"
-        onClick={() => navigate('/app/templates')}
-        className="fixed flex items-center justify-center text-white"
-        style={{
-          bottom: 96,
-          right: 20,
-          width: 56,
-          height: 56,
-          borderRadius: 18,
-          background: BLUE_GRADIENT,
-          boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
-        }}
-      >
-        <Plus className="size-6" />
-      </motion.button>
+      {!selectMode && (
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          type="button"
+          onClick={() => navigate('/app/templates')}
+          className="fixed flex items-center justify-center text-white"
+          style={{
+            bottom: 96,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: 18,
+            background: BLUE_GRADIENT,
+            boxShadow: '0 14px 28px rgba(37,99,235,0.4)',
+          }}
+        >
+          <Plus className="size-6" />
+        </motion.button>
+      )}
 
       <DocumentEditModal
         open={editingDoc !== null}
@@ -288,5 +301,109 @@ function DocumentsContent() {
         onSave={(name, color) => void handleSaveEdit(name, color)}
       />
     </div>
+  );
+}
+
+interface MobileDocRowProps {
+  doc: UnifiedDoc;
+  language: 'en' | 'es';
+  navigate: ReturnType<typeof useNavigate>;
+  selectMode: boolean;
+  selected: boolean;
+  onEnterSelectMode: (id: string) => void;
+  onToggleSelected: (id: string) => void;
+  onEdit: () => void;
+  onDeleteRequest: () => void;
+}
+
+function MobileDocRow({
+  doc, language, navigate, selectMode, selected,
+  onEnterSelectMode, onToggleSelected, onEdit, onDeleteRequest,
+}: MobileDocRowProps) {
+  const c = classify(doc.status);
+  const style = c === 'signed'
+    ? { color: '#10B981', bg: '#ECFDF5', label: language === 'en' ? 'Signed' : 'Firmado' }
+    : c === 'draft'
+      ? { color: '#6B7280', bg: '#F1F5F9', label: language === 'en' ? 'Draft' : 'Borrador' }
+      : { color: '#F59E0B', bg: '#FFFBEB', label: language === 'en' ? 'Pending' : 'Pendiente' };
+
+  const openDoc = () => {
+    if (!doc.href) return;
+    if (doc.href.startsWith('http')) {
+      window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(doc.href);
+    }
+  };
+
+  const longPress = useLongPress({
+    onLongPress: () => onEnterSelectMode(doc.id),
+    onTap: () => (selectMode ? onToggleSelected(doc.id) : openDoc()),
+  });
+
+  return (
+    <motion.div
+      whileTap={{ scale: 0.99 }}
+      {...longPress}
+      className="flex items-center gap-2 bg-white p-4"
+      style={{
+        borderRadius: CARD_RADIUS,
+        boxShadow: CARD_SHADOW,
+        borderLeft: doc.color ? `4px solid ${doc.color}` : undefined,
+        outline: selected ? '2px solid #2563EB' : undefined,
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+    >
+      {selectMode && (
+        <span className="flex size-6 shrink-0 items-center justify-center">
+          {selected ? <CheckCircle2 className="size-5 text-blue-600" /> : <Circle className="size-5 text-slate-300" />}
+        </span>
+      )}
+      <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50" style={doc.color ? { background: `${doc.color}1a` } : undefined}>
+          <FileText className="size-5 text-indigo-500" style={doc.color ? { color: doc.color } : undefined} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-slate-900">{doc.name}</p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            {style.label} · {new Date(doc.date).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {doc.daysLeft !== null && (
+              <> · {language === 'en' ? `expires in ${doc.daysLeft}d` : `vence en ${doc.daysLeft}d`}</>
+            )}
+          </p>
+        </div>
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full" style={{ background: style.bg }}>
+          {c === 'signed'
+            ? <Check className="size-3.5" style={{ color: style.color }} />
+            : c === 'draft'
+              ? <FileEdit className="size-3.5" style={{ color: style.color }} />
+              : <Clock className="size-3.5" style={{ color: style.color }} />}
+        </span>
+        {!selectMode && doc.href && (
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
+            <Download className="size-4 text-slate-500" />
+          </span>
+        )}
+      </div>
+      {!selectMode && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
+          >
+            <Pencil className="size-4 text-slate-400" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDeleteRequest(); }}
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 active:scale-90"
+          >
+            <Trash2 className="size-4 text-slate-400" />
+          </button>
+        </>
+      )}
+    </motion.div>
   );
 }
