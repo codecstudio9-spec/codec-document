@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck, CreditCard, Smartphone, FileCheck, Fingerprint, Search, X, type LucideIcon } from 'lucide-react';
+import { Shield, Star, QrCode, FileText, BadgeCheck, User, ChevronDown, FolderOpen, PenLine, LogOut, Settings, Camera, Download, Mail, Check, CheckCircle2, ArrowRight, Building2, Receipt, Sparkles, Briefcase, CalendarClock, MessageCircle, Layers, Send, Volume2, ShieldCheck, CreditCard, Smartphone, FileCheck, Fingerprint, Search, X, Home, Users, HardHat, Calculator, Scale, type LucideIcon } from 'lucide-react';
 import { EnterpriseLeadModal } from '../components/EnterpriseLeadModal';
 import { documentTemplates } from '../data/templates';
 import { useLanguage } from '../contexts/language-context';
@@ -50,7 +50,7 @@ export function ModernHomePage() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showDocumentsMenu, setShowDocumentsMenu] = useState(false);
   const [showPlatformMenu, setShowPlatformMenu] = useState(false);
-  // Single reusable "explain this" popup — driven by whichever security
+  // Single reusable "explain this" popup, driven by whichever security
   // feature or compliance/law badge the visitor clicked. One modal instead
   // of one-per-card keeps this simple: image-forward (big icon), 1-2 short
   // sentences, no wall of text.
@@ -80,7 +80,7 @@ export function ModernHomePage() {
   const featuredDocuments = documentTemplates.slice(0, 6);
   const [scrolled, setScrolled] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  // Contextual message shown in the signup popup — set right before opening
+  // Contextual message shown in the signup popup, set right before opening
   // it from a spot other than the generic "Try free" header button, so the
   // popup explains WHY it appeared (clicked "Sign now" or a free template
   // card while signed out) instead of always showing the default intro.
@@ -93,19 +93,38 @@ export function ModernHomePage() {
     setOnboardingContext(language === 'en' ? 'Register free to create your document' : 'Regístrate gratis para crear tu documento');
     setOnboardingOpen(true);
   };
+  // Generic "log in, then land on X" — stash the intended destination before
+  // opening the auth modal; consumed by the effect below once `user` goes
+  // truthy (works even if that happens in another tab via magic link, since
+  // Supabase's auth listener syncs session state across tabs of the same
+  // browser, same mechanism AuthModals already relies on to auto-close).
+  const goToTemplatesAfterAuth = () => {
+    if (user) { navigate('/dashboard/templates'); return; }
+    localStorage.setItem('codec_post_auth_redirect', '/dashboard/templates');
+    setOnboardingContext(language === 'en' ? 'Register free to see all templates' : 'Regístrate gratis para ver todas las plantillas');
+    setOnboardingOpen(true);
+  };
+  useEffect(() => {
+    if (!user) return;
+    const target = localStorage.getItem('codec_post_auth_redirect');
+    if (target) {
+      localStorage.removeItem('codec_post_auth_redirect');
+      navigate(target);
+    }
+  }, [user, navigate]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Geolocation-aware home: a visitor detected outside the US sees the
   // LatAm hero (4 universal actions, same moving-card/background style
   // as ModernHero) and the US document-template grid is hidden entirely
-  // — confirmed explicitly with the user (see conversation). US or
+  //, confirmed explicitly with the user (see conversation). US or
   // undetected visitors keep the exact original experience.
   const [visitorIsLatam, setVisitorIsLatam] = useState(false);
-  // Real detected country code (e.g. 'CO', 'MX') — kept separate from the
+  // Real detected country code (e.g. 'CO', 'MX'), kept separate from the
   // market override below so the compliance strip can still show the
   // visitor's actual local law even when ?market=latam is only overriding
   // which hero/section layout renders, not the underlying geo fact.
   const [visitorCountryCode, setVisitorCountryCode] = useState<string | null>(null);
-  // Manual override — ?market=us / ?market=latam in the URL — so anyone
+  // Manual override, ?market=us / ?market=latam in the URL, so anyone
   // (not just an account whose real IP happens to geolocate to the other
   // market) can preview either home experience on demand. Wins over the
   // real geo-detection below when present; the footer link that sets this
@@ -124,7 +143,7 @@ export function ModernHomePage() {
 
   // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
   // not) gets the bottom-nav app shell instead of the long-scroll landing
-  // page — this traditional landing below stays desktop-only + a dedicated
+  // page, this traditional landing below stays desktop-only + a dedicated
   // marketing/SEO surface, per the explicit "no more scroll-based landing
   // on mobile" requirement. MobileAppShell/MobileDashboardHome handle the
   // signed-out state themselves (compact intro instead of real stats).
@@ -134,7 +153,7 @@ export function ModernHomePage() {
   }, [isMobile, navigate]);
 
   // Mundo 1 (marketing, public) vs Mundo 2 (product, private): a signed-in
-  // desktop visitor should never see this landing either — straight into
+  // desktop visitor should never see this landing either, straight into
   // the real dashboard, same as mobile above. Anonymous desktop visitors
   // are completely unaffected, landing stays exactly as-is for SEO/marketing.
   useEffect(() => {
@@ -172,7 +191,7 @@ export function ModernHomePage() {
       avatar: 'https://i.pravatar.cc/120?img=54'
     },
     {
-      quote: "Best DocuSign alternative I've found. Full template editor, not just a PDF uploader — and it's free to start.",
+      quote: "Best DocuSign alternative I've found. Full template editor, not just a PDF uploader, and it's free to start.",
       author: 'Jennifer K.',
       role: 'Small Business Owner · Los Angeles, CA',
       stars: 5,
@@ -218,15 +237,15 @@ export function ModernHomePage() {
     ? [
         {
           q: 'Is Codec Document free to use?',
-          a: 'Yes. Our Free Plan gives you 18 structured intelligent documents and 18 free ESIGN-compliant digital signatures per month — no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
+          a: 'Yes. Our Free Plan gives you 18 structured intelligent documents and 18 free ESIGN-compliant digital signatures per month, no credit card required. Unlike platforms that only let you sign flat PDFs you upload from elsewhere, Codec Document builds NDA, lease agreements, and service contracts from scratch for free. Premium plans unlock unlimited documents, co-signer QR links, identity verification, and priority support.'
         },
         {
           q: 'How does Codec Document compare to DocuSign or PandaDoc?',
-          a: 'Codec Document gives you a free intelligent template editor — not just a flat PDF signer. You build professional legal documents from scratch, customize every field, apply your logo, and e-sign with ESIGN Act compliance. Plus, our native selfie + ID biometric verification creates an embedded audit trail that traditional platforms charge extra for. Premium plans start at $29.99/month.'
+          a: 'Codec Document gives you a free intelligent template editor, not just a flat PDF signer. You build professional legal documents from scratch, customize every field, apply your logo, and e-sign with ESIGN Act compliance. Plus, our native selfie + ID biometric verification creates an embedded audit trail that traditional platforms charge extra for. Premium plans start at $29.99/month.'
         },
         {
           q: 'Are e-signatures legally valid in the USA?',
-          a: 'Yes. All signatures on Codec Document are fully compliant with the US Federal ESIGN Act (15 U.S.C. § 7001) and UETA (Uniform Electronic Transactions Act). Every document receives a SHA-256 cryptographic fingerprint, IP logging, timestamp, and an immutable audit trail — making them court-admissible in all 50 states.'
+          a: 'Yes. All signatures on Codec Document are fully compliant with the US Federal ESIGN Act (15 U.S.C. § 7001) and UETA (Uniform Electronic Transactions Act). Every document receives a SHA-256 cryptographic fingerprint, IP logging, timestamp, and an immutable audit trail, making them court-admissible in all 50 states.'
         },
         {
           q: 'Are these documents valid in all 50 U.S. states?',
@@ -234,7 +253,7 @@ export function ModernHomePage() {
         },
         {
           q: 'What is identity verification and how does it work?',
-          a: 'After signing, you can optionally capture a live selfie and a photo of your government ID directly through the browser. These images are embedded as a biometric audit block directly inside the signed PDF — no external app required. This adds an additional layer of identity assurance beyond the digital signature itself.'
+          a: 'After signing, you can optionally capture a live selfie and a photo of your government ID directly through the browser. These images are embedded as a biometric audit block directly inside the signed PDF, no external app required. This adds an additional layer of identity assurance beyond the digital signature itself.'
         },
         {
           q: 'Can I preview the full document before paying?',
@@ -242,7 +261,7 @@ export function ModernHomePage() {
         },
         {
           q: 'What is the SHA-256 audit trail?',
-          a: 'Every signed document receives a SHA-256 cryptographic hash — a unique fingerprint proving the document has not been altered since the moment of signing. This creates a tamper-evident, court-admissible record satisfying both the ESIGN Act and UETA requirements. The hash is embedded in the document footer and included in the audit certificate page.'
+          a: 'Every signed document receives a SHA-256 cryptographic hash, a unique fingerprint proving the document has not been altered since the moment of signing. This creates a tamper-evident, court-admissible record satisfying both the ESIGN Act and UETA requirements. The hash is embedded in the document footer and included in the audit certificate page.'
         },
       ]
     : [
@@ -256,7 +275,7 @@ export function ModernHomePage() {
         },
         {
           q: '¿Las firmas electrónicas son legalmente válidas en EE. UU.?',
-          a: 'Sí. Todas las firmas son conformes con la Ley Federal ESIGN (15 U.S.C. § 7001) y la UETA. Cada documento recibe un hash SHA-256, registro de IP, marca de tiempo biométrica y pista de auditoría inmutable — admisibles en tribunales de los 50 estados.'
+          a: 'Sí. Todas las firmas son conformes con la Ley Federal ESIGN (15 U.S.C. § 7001) y la UETA. Cada documento recibe un hash SHA-256, registro de IP, marca de tiempo biométrica y pista de auditoría inmutable, admisibles en tribunales de los 50 estados.'
         },
         {
           q: '¿Estos documentos son válidos en todos los estados de EE. UU.?',
@@ -264,7 +283,7 @@ export function ModernHomePage() {
         },
         {
           q: '¿Qué es la verificación de identidad biométrica?',
-          a: 'Después de firmar, puedes capturar una selfie en vivo y una foto de tu documento de identidad directamente desde el navegador. Estas imágenes se embeben como un bloque de auditoría biométrica dentro del PDF firmado — sin necesidad de app externa. Esto añade una capa adicional de seguridad más allá de la firma digital.'
+          a: 'Después de firmar, puedes capturar una selfie en vivo y una foto de tu documento de identidad directamente desde el navegador. Estas imágenes se embeben como un bloque de auditoría biométrica dentro del PDF firmado, sin necesidad de app externa. Esto añade una capa adicional de seguridad más allá de la firma digital.'
         },
         {
           q: '¿Puedo ver una vista previa antes de pagar?',
@@ -322,7 +341,7 @@ export function ModernHomePage() {
       setGoogleError(null);
       setGoogleReady(true);
 
-      // One Tap — floating card appears automatically if user has active Google session
+      // One Tap, floating card appears automatically if user has active Google session
       googleApi.accounts.id.prompt();
     };
 
@@ -604,7 +623,7 @@ export function ModernHomePage() {
     setSignatureMarker({ page: pageNumber, x: safeX, y: safeY });
   };
 
-  // Mobile visitors never see this page's body — they're redirected to
+  // Mobile visitors never see this page's body, they're redirected to
   // /app by the effect above. Returning null here (instead of rendering
   // the full landing then redirecting) avoids a flash of the desktop
   // landing/hero on a phone before the redirect fires.
@@ -614,8 +633,8 @@ export function ModernHomePage() {
     <div className="min-h-screen bg-white" style={{ scrollBehavior: 'smooth' }}>
       <SEOHead
         title={language === 'en'
-          ? 'Codec Document — Free Legal Documents & E-Signatures | ESIGN Act Compliant'
-          : 'Codec Document — Documentos Legales Gratis y Firma Electrónica | Conforme ESIGN'}
+          ? 'Codec Document | Free Legal Documents & E-Signatures | ESIGN Act Compliant'
+          : 'Codec Document | Documentos Legales Gratis y Firma Electrónica | Conforme ESIGN'}
         description={language === 'en'
           ? 'Generate, customize, and e-sign legal documents for free. NDA, residential lease agreements, service contracts for all 50 US states. Free intelligent editor + 2 free e-signatures/day. No credit card required. ESIGN Act & UETA compliant, SHA-256 audit trail.'
           : 'Genera, personaliza y firma digitalmente documentos legales gratis. NDA, contratos de arrendamiento, acuerdos de servicios para los 50 estados de EE. UU. Editor inteligente gratuito + 2 firmas gratis al día. Sin tarjeta de crédito. Conforme ESIGN y UETA.'}
@@ -635,7 +654,7 @@ export function ModernHomePage() {
             : 'border-b border-transparent bg-white',
         ].join(' ')}
       >
-        {/* Top accent line — the logo's own gradient, thin */}
+        {/* Top accent line, the logo's own gradient, thin */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
 
         <div className="container mx-auto px-4">
@@ -700,7 +719,7 @@ export function ModernHomePage() {
                 </AnimatePresence>
               </div>
 
-              {/* Platform showcase — hover/click reveals the full process
+              {/* Platform showcase, hover/click reveals the full process
                   (create → send → validate → sign → follow-up) plus the
                   voice-guide and security/certification highlights, to
                   build trust before asking anyone to sign up. Replaces the
@@ -712,7 +731,7 @@ export function ModernHomePage() {
                   // Opening the info popup mounts a fixed full-screen overlay
                   // right on top of the cursor, which makes the browser fire
                   // a native mouseleave on this wrapper even though the user
-                  // never actually moved off it — without this guard, the
+                  // never actually moved off it, without this guard, the
                   // whole Platform panel would vanish behind the popup the
                   // instant a security-feature or law card was clicked.
                   if (infoModal) return;
@@ -774,7 +793,7 @@ export function ModernHomePage() {
                       </motion.div>
 
                       {/* Security & permissions the client can turn on per document
-                          — the real SecurityConfig flags (sign-transaction-service.ts),
+                         , the real SecurityConfig flags (sign-transaction-service.ts),
                           each its own color so it reads as "look how much is already
                           built", not one generic checklist line. */}
                       <p className="mb-3 mt-7 text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -791,7 +810,7 @@ export function ModernHomePage() {
                             descEn: 'The signer draws or types their signature directly on the document before sending it.',
                             descEs: 'El firmante dibuja o escribe su firma directamente sobre el documento antes de enviarlo.' },
                           { icon: Camera, en: 'Selfie', es: 'Selfie', color: '#4f46e5',
-                            descEn: 'The signer takes a selfie at the moment of signing, confirming a real person signed — not just a typed name.',
+                            descEn: 'The signer takes a selfie at the moment of signing, confirming a real person signed, not just a typed name.',
                             descEs: 'Se le pide al firmante tomarse una selfie justo al firmar, para confirmar que es una persona real y no solo un nombre escrito.' },
                           { icon: CreditCard, en: 'ID Photo', es: 'Foto de Identificación', color: '#7c3aed',
                             descEn: 'The signer is asked to photograph their ID so it stays attached to the signed document as proof of identity.',
@@ -837,7 +856,7 @@ export function ModernHomePage() {
                           );
                         })}
 
-                        {/* Voice guide — its own bigger, more prominent card
+                        {/* Voice guide, its own bigger, more prominent card
                             instead of a thin footnote line. Clicking it
                             actually demos the assistant instead of just
                             describing it, using the exact same
@@ -872,13 +891,13 @@ export function ModernHomePage() {
                             <p className="text-[11px] leading-tight text-slate-500">
                               {voiceDemoPlaying
                                 ? (language === 'en' ? 'Speaking now…' : 'Hablando ahora…')
-                                : (language === 'en' ? 'Walks every signer through each step, out loud — click to hear it' : 'Acompaña a cada firmante paso a paso, en voz alta — clic para escucharlo')}
+                                : (language === 'en' ? 'Walks every signer through each step, out loud, click to hear it' : 'Acompaña a cada firmante paso a paso, en voz alta, clic para escucharlo')}
                             </p>
                           </div>
                         </motion.button>
                       </motion.div>
 
-                      {/* Where it's available — same markets as the SEO pages */}
+                      {/* Where it's available, same markets as the SEO pages */}
                       <p className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                         {language === 'en' ? 'Available in' : 'Disponible en'}
                       </p>
@@ -897,7 +916,7 @@ export function ModernHomePage() {
                         ))}
                       </div>
 
-                      {/* Compliance strip — geolocation-aware: a visitor
+                      {/* Compliance strip, geolocation-aware: a visitor
                           detected in one of the 6 LatAm countries sees THAT
                           country's real law badge instead of the US ESIGN
                           Act/UETA claims, which don't apply outside the US
@@ -911,7 +930,7 @@ export function ModernHomePage() {
                               onClick={() => setInfoModal({
                                 icon: ShieldCheck, color: '#059669',
                                 title: matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.lawBadgeEn : matchedLatamCountry.lawBadgeEs) : (language === 'en' ? 'Local E-Signature Law' : 'Ley Local de Firma Electrónica'),
-                                desc: matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.highlights[0]?.factEn ?? '' : matchedLatamCountry.highlights[0]?.factEs ?? '') : (language === 'en' ? 'Electronic signatures are legally recognized across Latin America — Codec Document adapts the certificate to each country\'s real law.' : 'Las firmas electrónicas tienen reconocimiento legal en toda Latinoamérica — Codec Document adapta el certificado a la ley real de cada país.'),
+                                desc: matchedLatamCountry ? (language === 'en' ? matchedLatamCountry.highlights[0]?.factEn ?? '' : matchedLatamCountry.highlights[0]?.factEs ?? '') : (language === 'en' ? 'Electronic signatures are legally recognized across Latin America, Codec Document adapts the certificate to each country\'s real law.' : 'Las firmas electrónicas tienen reconocimiento legal en toda Latinoamérica, Codec Document adapta el certificado a la ley real de cada país.'),
                               })}
                               className="flex items-center gap-1.5 transition hover:opacity-70"
                             >
@@ -971,7 +990,7 @@ export function ModernHomePage() {
                 {language === 'en' ? 'Signatures' : 'Firmas'}
               </a>
 
-              {/* Pricing — its own page now */}
+              {/* Pricing, its own page now */}
               <Link
                 to="/pricing"
                 className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
@@ -982,7 +1001,7 @@ export function ModernHomePage() {
 
             {/* ── Right actions ─────────────────────────────────────────── */}
             <div className="flex items-center gap-2">
-              {/* Talk to sales — mirrors the ZapSign-style "Hablar con ventas"
+              {/* Talk to sales, mirrors the ZapSign-style "Hablar con ventas"
                   ghost button, wired to the real Calendar/Meet booking link. */}
               <a
                 href={MEETING_LINK}
@@ -994,7 +1013,7 @@ export function ModernHomePage() {
                 {language === 'en' ? 'Talk to sales' : 'Hablar con ventas'}
               </a>
 
-              {/* Signature CTA — signed-out visitors get the signup popup
+              {/* Signature CTA, signed-out visitors get the signup popup
                   (with a "you must register to sign" context message)
                   instead of landing on /firma-electronica with no account. */}
               <a
@@ -1091,7 +1110,7 @@ export function ModernHomePage() {
 
               <LanguageToggle />
 
-              {/* Hamburger — mobile only */}
+              {/* Hamburger, mobile only */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((p) => !p)}
@@ -1204,10 +1223,10 @@ export function ModernHomePage() {
       </header>
 
       {/* This whole page is desktop-only now (mobile redirects to /app
-          above), so the hero always renders — no mobile branching left. */}
+          above), so the hero always renders, no mobile branching left. */}
       {effectiveIsLatam ? <LatamHero onRequireAuth={requireAuthToUseTemplate} /> : <ModernHero onRequireAuth={requireAuthToUseTemplate} />}
 
-      {/* US document templates — hidden entirely for a visitor detected
+      {/* US document templates, hidden entirely for a visitor detected
           outside the US (LatamHero above is their actual home experience),
           since these templates mean nothing for a Colombian rental or an
           Argentine NDA. Exception: the account owner's own admin email
@@ -1220,13 +1239,16 @@ export function ModernHomePage() {
               <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
                 {language === 'en' ? 'For property or business in the US' : 'Para propiedades o negocios en EE. UU.'}
               </span>
-              <h2 className="mx-auto max-w-xl px-4 text-2xl font-black text-slate-900 md:text-3xl">
+              <h2
+                className="mx-auto max-w-xl bg-clip-text px-4 py-1 text-2xl font-black leading-snug text-transparent md:text-3xl"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+              >
                 {language === 'en' ? 'Legal Documents for the United States' : 'Documentos Legales para Estados Unidos'}
               </h2>
               <p className="mx-auto mt-2 max-w-lg px-4 text-sm text-slate-500">
                 {language === 'en'
-                  ? 'State-specific templates for NDAs, leases, contracts and more — for property or business you have in the US.'
-                  : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más — para propiedades o negocios que tengas en EE. UU.'}
+                  ? 'State-specific templates for NDAs, leases, contracts and more, for property or business you have in the US.'
+                  : 'Plantillas específicas por estado para NDA, arrendamientos, contratos y más, para propiedades o negocios que tengas en EE. UU.'}
               </p>
             </div>
           )}
@@ -1234,7 +1256,7 @@ export function ModernHomePage() {
         </section>
       )}
 
-      {/* How It Works — 4 steps matching the app flow */}
+      {/* How It Works, 4 steps matching the app flow */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40 py-16 md:py-28">
         {/* Subtle grid background */}
         <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -1245,24 +1267,26 @@ export function ModernHomePage() {
               <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
                 {language === 'en' ? 'Simple Process' : 'Proceso Simple'}
               </span>
-              <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
+              <h2
+                className="bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+              >
                 {language === 'en' ? 'Ready in 4 Steps' : 'Listo en 4 Pasos'}
               </h2>
               <p className="mt-3 text-base text-slate-500 max-w-2xl mx-auto md:text-lg">
                 {language === 'en'
-                  ? 'From blank form to legally binding signed document — in under 5 minutes.'
-                  : 'Del formulario en blanco al documento firmado con validez legal — en menos de 5 minutos.'}
+                  ? 'From blank form to legally binding signed document, in under 5 minutes.'
+                  : 'Del formulario en blanco al documento firmado con validez legal, en menos de 5 minutos.'}
               </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 md:gap-6">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4 md:gap-6">
               {[
                 {
                   step: '01',
                   icon: FileText,
-                  colorClass: 'from-blue-500 to-indigo-600',
-                  bgClass: 'bg-blue-50',
-                  borderClass: 'border-blue-100',
+                  grad: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 45%, #1d4ed8 100%)',
+                  ledge: '#1e3a8a', glowRgba: 'rgba(37,99,235,0.45)',
                   titleEn: 'Fill the Form',
                   titleEs: 'Llena el Formulario',
                   descEn: "Select your template and fill in the parties' details. Get a real-time preview of your legal document.",
@@ -1271,9 +1295,8 @@ export function ModernHomePage() {
                 {
                   step: '02',
                   icon: PenLine,
-                  colorClass: 'from-indigo-500 to-violet-600',
-                  bgClass: 'bg-indigo-50',
-                  borderClass: 'border-indigo-100',
+                  grad: 'linear-gradient(180deg, #a5b4fc 0%, #6366f1 45%, #4338ca 100%)',
+                  ledge: '#312e81', glowRgba: 'rgba(99,102,241,0.45)',
                   titleEn: 'Sign Digitally',
                   titleEs: 'Firma Digitalmente',
                   descEn: 'Draw your e-signature or send a unique QR link to co-signers. Sign from any device, anywhere.',
@@ -1282,9 +1305,8 @@ export function ModernHomePage() {
                 {
                   step: '03',
                   icon: Camera,
-                  colorClass: 'from-violet-500 to-purple-600',
-                  bgClass: 'bg-violet-50',
-                  borderClass: 'border-violet-100',
+                  grad: 'linear-gradient(180deg, #c4b5fd 0%, #9333ea 45%, #6b21a8 100%)',
+                  ledge: '#581c87', glowRgba: 'rgba(147,51,234,0.45)',
                   titleEn: 'Verify Identity',
                   titleEs: 'Verifica Identidad',
                   descEn: 'Capture a live selfie + ID photo. Biometric proof is embedded directly inside your signed PDF.',
@@ -1293,13 +1315,12 @@ export function ModernHomePage() {
                 {
                   step: '04',
                   icon: Download,
-                  colorClass: 'from-emerald-500 to-teal-600',
-                  bgClass: 'bg-emerald-50',
-                  borderClass: 'border-emerald-100',
+                  grad: 'linear-gradient(180deg, #6ee7b7 0%, #10b981 45%, #047857 100%)',
+                  ledge: '#065f46', glowRgba: 'rgba(16,185,129,0.45)',
                   titleEn: 'Download PDF',
                   titleEs: 'Descarga el PDF',
-                  descEn: 'Receive a clean, watermark-free PDF with SHA-256 audit trail — court-admissible in all 50 states.',
-                  descEs: 'Recibe un PDF limpio con pista de auditoría SHA-256 — admisible en tribunales de los 50 estados.',
+                  descEn: 'Receive a clean, watermark-free PDF with SHA-256 audit trail, court-admissible in all 50 states.',
+                  descEs: 'Recibe un PDF limpio con pista de auditoría SHA-256, admisible en tribunales de los 50 estados.',
                 },
               ].map((s, idx) => {
                 const StepIcon = s.icon;
@@ -1310,17 +1331,28 @@ export function ModernHomePage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-30px' }}
                     transition={{ duration: 0.5, delay: idx * 0.1 }}
-                    className={['relative border-2 rounded-2xl p-5 pt-9 md:rounded-3xl md:p-7 md:pt-10 transition-all hover:-translate-y-1 hover:shadow-xl', s.bgClass, s.borderClass].join(' ')}
+                    className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 pt-8 shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-1.5 hover:shadow-[0_16px_36px_rgba(15,23,42,0.12)]"
                   >
-                    {/* Step badge */}
-                    <div className={['absolute -top-5 left-6 flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br text-sm font-black text-white shadow-lg', s.colorClass].join(' ')}>
-                      {s.step}
-                    </div>
+                    {/* Accent bar */}
+                    <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: s.grad }} />
                     {/* Connector dashes between steps */}
                     {idx < 3 && (
                       <div className="absolute -right-3 top-1/2 z-10 hidden h-px w-6 -translate-y-1/2 border-t-2 border-dashed border-slate-300 lg:block" />
                     )}
-                    <StepIcon className="mb-4 size-7 text-slate-700" />
+                    <div className="mb-4 flex items-center gap-3">
+                      <div
+                        className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-110"
+                        style={{ background: s.grad, boxShadow: `0 4px 0 ${s.ledge}, 0 8px 20px ${s.glowRgba}` }}
+                      >
+                        <StepIcon className="size-5" />
+                      </div>
+                      <span
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
+                        style={{ background: s.grad, boxShadow: `0 2px 0 ${s.ledge}, 0 4px 10px ${s.glowRgba}` }}
+                      >
+                        {s.step}
+                      </span>
+                    </div>
                     <h3 className="mb-2 text-lg font-black text-slate-900">
                       {language === 'en' ? s.titleEn : s.titleEs}
                     </h3>
@@ -1346,17 +1378,321 @@ export function ModernHomePage() {
         </div>
       </section>
 
-      {/* Custom templates promo — drives signed-in AND anonymous visitors
+      {/* Why Codec Document, educational + sales case, photo-led. Each
+          card uses one of the "pointing"/portrait studio photos with a
+          caption overlaid directly on the photo (not a slideshow, all 3
+          render at once, side by side). The third card also carries the
+          new shield logo mark as a small floating badge, since that's the
+          "why trust us" card. */}
+      <section className="relative overflow-hidden bg-white pb-0 pt-16 md:pt-28">
+        {/* Same soft gradient + glow the "Plantillas Prediseñadas" section
+            below uses, the two sections share one continuous background
+            (no bg-white → bg-white seam with a hard edge between them),
+            so they read as one flowing chapter instead of stacked cards. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-white to-blue-50/60" />
+        <div className="pointer-events-none absolute right-1/4 bottom-0 size-[26rem] translate-y-1/3 rounded-full bg-violet-400/15 blur-[110px]" />
+        <div className="container relative mx-auto px-4 pb-10 md:pb-16">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-14 text-center">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+                {language === 'en' ? 'Why Codec Document' : 'Por Qué Codec Document'}
+              </span>
+              <h2
+                className="bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+              >
+                {language === 'en' ? 'Why sign digitally with us?' : '¿Por qué firmar digital con nosotros?'}
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-base text-slate-500 md:text-lg">
+                {language === 'en'
+                  ? 'Everything you need to know about creating, signing and verifying legal documents, in one place.'
+                  : 'Todo lo que necesitas saber sobre crear, firmar y verificar documentos legales, en un mismo lugar.'}
+              </p>
+            </div>
+
+            <div className="space-y-20 md:space-y-28">
+              {[
+                {
+                  image: '/images/home/why-1-pointing.jpg',
+                  grad: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 45%, #1d4ed8 100%)',
+                  ledge: '#1e3a8a', glowRgba: 'rgba(37,99,235,0.45)', accent: '#2563eb',
+                  kickerEn: 'What we do', kickerEs: 'Qué hacemos',
+                  captionEn: 'One platform, start to finish', captionEs: 'Una sola plataforma, de principio a fin',
+                  titleEn: 'Your whole legal workflow, in one place',
+                  titleEs: 'Todo el proceso legal, en un solo lugar',
+                  bodyEn: "We generate the document, collect every party's e-signature, and verify the signer's identity, no printing, scanning, or chasing paperwork.",
+                  bodyEs: 'Generamos el documento, recogemos la firma electrónica de todas las partes y verificamos la identidad del firmante, sin imprimir, escanear ni perseguir papeles.',
+                  pointsEn: ['Ready-made legal templates', 'Real-time document preview'],
+                  pointsEs: ['Plantillas legales ya redactadas', 'Previsualización en tiempo real'],
+                },
+                {
+                  image: '/images/home/why-2-pointing.jpg',
+                  grad: 'linear-gradient(180deg, #c4b5fd 0%, #9333ea 45%, #6b21a8 100%)',
+                  ledge: '#581c87', glowRgba: 'rgba(147,51,234,0.45)', accent: '#9333ea',
+                  kickerEn: 'Why e-sign', kickerEs: 'Por qué la firma digital',
+                  captionEn: 'Same validity. More proof.', captionEs: 'Misma validez. Más evidencia.',
+                  titleEn: 'Just as valid as pen and paper, with more evidence',
+                  titleEs: 'Tan válida como firmar en papel, pero con más evidencia',
+                  bodyEn: 'The ESIGN Act and UETA recognize electronic signatures as legally binding across the US. Every signature carries an audit trail, geolocation and biometric verification, something a pen never gives you.',
+                  bodyEs: 'La Ley ESIGN y UETA reconocen la firma electrónica como vinculante en EE. UU. Cada firma incluye auditoría, geolocalización y verificación biométrica, algo que un bolígrafo nunca podrá darte.',
+                  pointsEn: ['SHA-256 audit trail on every signature', 'Geolocation + biometric proof'],
+                  pointsEs: ['Pista de auditoría SHA-256 en cada firma', 'Geolocalización + prueba biométrica'],
+                },
+                {
+                  image: '/images/home/why-3-confident.jpg',
+                  grad: 'linear-gradient(180deg, #6ee7b7 0%, #10b981 45%, #047857 100%)',
+                  ledge: '#065f46', glowRgba: 'rgba(16,185,129,0.45)', accent: '#059669',
+                  kickerEn: 'Why Codec Document', kickerEs: 'Por qué Codec Document',
+                  captionEn: 'Your best option, end to end', captionEs: 'Tu mejor opción, de punta a punta',
+                  titleEn: 'The most complete way to sign and verify',
+                  titleEs: 'La opción más completa para firmar y verificar',
+                  bodyEn: 'Ready-to-use legal templates, identity verification, biometric evidence and support in Spanish and English, all integrated, without juggling separate tools.',
+                  bodyEs: 'Plantillas legales listas para usar, verificación de identidad, evidencia biométrica y soporte en español e inglés, todo integrado, sin depender de herramientas sueltas.',
+                  pointsEn: ['Support in Spanish and English', 'Everything integrated, nothing to piece together'],
+                  pointsEs: ['Soporte en español e inglés', 'Todo integrado, nada que armar por separado'],
+                },
+              ].map((c, idx) => {
+                const reversed = idx % 2 === 1;
+                return (
+                  <div
+                    key={c.titleEn}
+                    className={`flex flex-col items-center gap-10 md:gap-16 ${reversed ? 'md:flex-row-reverse' : 'md:flex-row'}`}
+                  >
+                    {/* Image side */}
+                    <motion.div
+                      initial={{ opacity: 0, x: reversed ? 40 : -40 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: '-60px' }}
+                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                      className="relative w-full md:w-1/2"
+                    >
+                      <div className="pointer-events-none absolute -inset-4 rounded-[2rem] opacity-30 blur-2xl" style={{ background: c.grad }} />
+                      <div className="group relative overflow-hidden rounded-3xl shadow-xl shadow-slate-900/10">
+                        <img
+                          src={c.image}
+                          alt=""
+                          className="aspect-[4/3] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-5">
+                          <span
+                            className="mb-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white"
+                            style={{ background: c.grad, boxShadow: `0 2px 0 ${c.ledge}, 0 4px 10px ${c.glowRgba}` }}
+                          >
+                            {language === 'en' ? c.kickerEn : c.kickerEs}
+                          </span>
+                          <p className="text-base font-black leading-snug text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] sm:text-lg">
+                            {language === 'en' ? c.captionEn : c.captionEs}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Text side */}
+                    <motion.div
+                      initial={{ opacity: 0, x: reversed ? -40 : 40 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: '-60px' }}
+                      transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                      className="w-full md:w-1/2"
+                    >
+                      <span
+                        className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white"
+                        style={{ background: c.grad, boxShadow: `0 3px 0 ${c.ledge}, 0 6px 16px ${c.glowRgba}` }}
+                      >
+                        {language === 'en' ? c.kickerEn : c.kickerEs}
+                      </span>
+                      <h3 className="mb-3 text-2xl font-black leading-tight md:text-3xl">
+                        <span style={{ color: c.accent }}>{(language === 'en' ? c.titleEn : c.titleEs).split(' ').slice(0, 2).join(' ')}</span>
+                        {' '}
+                        <span className="text-slate-900">{(language === 'en' ? c.titleEn : c.titleEs).split(' ').slice(2).join(' ')}</span>
+                      </h3>
+                      <p className="text-base leading-relaxed text-slate-600">
+                        {language === 'en' ? c.bodyEn : c.bodyEs}
+                      </p>
+                      <ul className="mt-5 space-y-2.5">
+                        {(language === 'en' ? c.pointsEn : c.pointsEs).map((point) => (
+                          <li key={point} className="flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+                            <span
+                              className="flex size-5 shrink-0 items-center justify-center rounded-full"
+                              style={{ background: c.grad, boxShadow: `0 2px 0 ${c.ledge}` }}
+                            >
+                              <Check className="size-3 text-white" />
+                            </span>
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pre-made templates for every industry, real photo + copy on a
+          light, layered-glow background (kept light on purpose: the "Do
+          more" section right below is already dark, so two dark bands in
+          a row would blend together with no separation), then a
+          monochrome infinite marquee of the real sector landing pages
+          this site already has (profession-seo-content.ts). */}
+      <section className="relative overflow-hidden bg-white pb-20 pt-10 md:pb-28 md:pt-16">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/70 via-white to-violet-50/60" />
+        <div className="pointer-events-none absolute left-1/4 top-0 size-[28rem] -translate-y-1/2 rounded-full bg-blue-400/20 blur-[110px]" />
+        <div className="pointer-events-none absolute right-1/4 bottom-0 size-[28rem] translate-y-1/2 rounded-full bg-violet-400/20 blur-[110px]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(15,23,42,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+
+        <div className="container relative mx-auto px-4">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2 md:gap-16">
+            {/* Photo side, on the right on desktop, opposite of the last
+                "Why Codec Document" row right above it, so the two
+                sections don't read as a stacked repeat of the same layout. */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="relative md:order-2"
+            >
+              <div className="relative overflow-hidden rounded-3xl shadow-2xl shadow-slate-900/15">
+                <img
+                  src="/images/home/templates-meeting.jpg"
+                  alt=""
+                  className="aspect-[4/3] w-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <span className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm">
+                    {language === 'en' ? 'Ready-made templates' : 'Plantillas Prediseñadas'}
+                  </span>
+                  <p className="text-lg font-black leading-snug text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] sm:text-xl">
+                    {language === 'en' ? 'Contracts ready for any agreement, in minutes' : 'Contratos listos para cualquier acuerdo, en minutos'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Text side */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="md:order-1"
+            >
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
+                {language === 'en' ? 'Ready-made templates' : 'Plantillas Prediseñadas'}
+              </span>
+              <h2
+                className="bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+              >
+                {language === 'en' ? 'A template for every kind of business' : 'Una plantilla para cada tipo de negocio'}
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-slate-600 md:text-lg">
+                {language === 'en'
+                  ? 'Leases, NDAs, service agreements, vehicle bills of sale and promissory notes, pre-written and ready to fill in, whatever industry you work in.'
+                  : 'Arrendamientos, acuerdos de confidencialidad, contratos de servicios, compraventas de vehículos y pagarés, ya redactados y listos para llenar, sin importar tu industria.'}
+              </p>
+              <button
+                type="button"
+                onClick={goToTemplatesAfterAuth}
+                className="group relative mt-6 inline-flex items-center gap-2.5 overflow-hidden rounded-2xl px-6 py-3.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                style={{ background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%)', boxShadow: '0 4px 0 #1e3a8a, 0 8px 24px rgba(29,78,216,0.45)' }}
+              >
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                {language === 'en' ? 'Browse all templates' : 'Ver todas las plantillas'}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </motion.div>
+          </div>
+
+          <style>{`
+            @keyframes industryScroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+          <div
+            className="relative mt-16 -mx-4 overflow-hidden px-4"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%)',
+            }}
+          >
+            <div
+              className="flex gap-4 py-2"
+              style={{ width: 'max-content', animation: 'industryScroll 42s linear infinite' }}
+              onMouseEnter={(e) => { e.currentTarget.style.animationPlayState = 'paused'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.animationPlayState = 'running'; }}
+            >
+              {(() => {
+                const SECTORS = [
+                  { icon: Scale, en: 'Lawyers & Law Firms', es: 'Abogados y Firmas Legales' },
+                  { icon: Home, en: 'Real Estate', es: 'Inmobiliarias' },
+                  { icon: CreditCard, en: 'Banks & Lenders', es: 'Bancos y Financieras' },
+                  { icon: HardHat, en: 'Construction', es: 'Constructores y Contratistas' },
+                  { icon: Building2, en: 'Companies', es: 'Empresas' },
+                  { icon: Users, en: 'Human Resources', es: 'Recursos Humanos' },
+                  { icon: Briefcase, en: 'Freelancers', es: 'Freelancers' },
+                  { icon: Calculator, en: 'Accountants', es: 'Contadores' },
+                  { icon: MessageCircle, en: 'Consultants', es: 'Consultores' },
+                ];
+                return [...SECTORS, ...SECTORS].map((s, i) => {
+                  const SectorIcon = s.icon;
+                  return (
+                    <div
+                      key={i}
+                      className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200/70 bg-white/80 py-3 pl-3 pr-5 shadow-sm backdrop-blur-sm"
+                    >
+                      <span
+                        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-white"
+                        style={{ background: 'linear-gradient(180deg, #94a3b8 0%, #475569 50%, #1e293b 100%)', boxShadow: '0 2px 0 #0f172a, 0 4px 10px rgba(15,23,42,0.35)' }}
+                      >
+                        <SectorIcon className="size-4" />
+                      </span>
+                      <span className="whitespace-nowrap text-sm font-bold text-slate-700">
+                        {language === 'en' ? s.en : s.es}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Custom templates promo, drives signed-in AND anonymous visitors
           toward /my-templates; unauthenticated clicks open the same
           onboarding modal the header's "Get Started Free" button uses,
           instead of a silent bounce back to "/" via ProtectedRoute. */}
-      {/* ── Do more with Codec Document — Smart Quotes / Upload templates /
+      {/* Do more with Codec Document: Smart Quotes / Upload templates /
           Enterprise used to be 3 separate full-bleed sections, each with
           its own mismatched dark gradient. Consolidated into one section
-          with 3 horizontal cards on a single, consistent background —
+          with 3 horizontal cards on a single, consistent background,
           same functionality (each card's CTA goes to exactly what it did
-          before), just visually unified. ─────────────────────────────── */}
+          before), just visually unified. */}
       <section className="relative overflow-hidden py-16 md:py-28" style={{ background: 'radial-gradient(ellipse 90% 60% at 50% 0%, #0f172a 0%, #1e1b4b 45%, #0f172a 100%)' }}>
+        {/* Soft entry blend from the light section above, instead of a
+            hard light→dark cut. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 md:h-36" style={{ background: 'linear-gradient(to bottom, rgba(237,233,254,0.9), transparent)' }} />
+        {/* Muted looping background video (office footage), the only
+            video used on the page, deliberately NOT in the hero per
+            instruction. Sits under a dark scrim so the white cards/text
+            on top stay fully readable; the radial gradient above is the
+            fallback background while the video loads. */}
+        <video
+          className="pointer-events-none absolute inset-0 size-full object-cover opacity-25"
+          src="/videos/office-loop.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 90% 60% at 50% 0%, rgba(15,23,42,0.75) 0%, rgba(30,27,75,0.85) 45%, rgba(15,23,42,0.92) 100%)' }} />
         {/* Tech-grid texture + ambient glows for a premium, "this platform
             has depth" feel instead of a flat white row of boxes. */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
@@ -1368,7 +1704,10 @@ export function ModernHomePage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
               <Sparkles className="size-3" /> {language === 'en' ? 'Do more' : 'Haz más'}
             </span>
-            <h2 className="mt-4 text-3xl font-black text-white md:text-4xl">
+            <h2
+              className="mt-4 bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-4xl"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 55%, #c4b5fd 100%)' }}
+            >
               {language === 'en' ? 'One platform, every workflow' : 'Una plataforma, todos tus flujos'}
             </h2>
           </div>
@@ -1381,11 +1720,11 @@ export function ModernHomePage() {
                 gradient: 'from-blue-500 to-blue-700',
                 title: { en: 'Smart Quotes', es: 'Cotizaciones Inteligentes' },
                 desc: {
-                  en: 'Build a professional quote with live totals and get it accepted with a real electronic signature — a full agreement, not just a PDF.',
-                  es: 'Crea una cotización profesional con totales en tiempo real y logra que la acepte con una firma electrónica real — un acuerdo completo, no solo un PDF.',
+                  en: 'Build a professional quote with live totals and get it accepted with a real electronic signature, a full agreement, not just a PDF.',
+                  es: 'Crea una cotización profesional con totales en tiempo real y logra que la acepte con una firma electrónica real, un acuerdo completo, no solo un PDF.',
                 },
                 bullets: [
-                  { en: 'Live totals — quantity, discount and tax as you type', es: 'Totales en vivo — cantidad, descuento e impuesto mientras escribes' },
+                  { en: 'Live totals, quantity, discount and tax as you type', es: 'Totales en vivo, cantidad, descuento e impuesto mientras escribes' },
                   { en: '4 professional designs: Corporate, Modern, Executive, Minimal', es: '4 diseños profesionales: Corporate, Modern, Executive, Minimal' },
                   { en: 'Know when your client opens it, and get it signed online', es: 'Sabe cuándo tu cliente la abre, y logra que la firme en línea' },
                 ],
@@ -1403,7 +1742,7 @@ export function ModernHomePage() {
                 },
                 bullets: [
                   { en: 'Upload a PDF and mark the fields yourself, no guesswork', es: 'Sube un PDF y marca los campos tú mismo, sin adivinar' },
-                  { en: 'Fill it in as many times as you need — it stays saved', es: 'Llénalo las veces que necesites — queda guardado' },
+                  { en: 'Fill it in as many times as you need, it stays saved', es: 'Llénalo las veces que necesites, queda guardado' },
                   { en: 'Your logo, colors and branding, automatically', es: 'Tu logo, colores y marca, de forma automática' },
                 ],
                 cta: { en: 'Create my first template', es: 'Crear mi primera plantilla' },
@@ -1477,22 +1816,27 @@ export function ModernHomePage() {
       </section>
       <EnterpriseLeadModal open={enterpriseModalOpen} onOpenChange={setEnterpriseModalOpen} />
 
-      {/* ── Pricing teaser — full plans + checkout now live on their own
+      {/* ── Pricing teaser, full plans + checkout now live on their own
           page (/pricing), so a second pricing model has somewhere to go
           later without turning the home page into a second pricing page
           too. PricingSection itself still backs /pricing unchanged. ──── */}
-      <section className="bg-white py-16 md:py-20">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative overflow-hidden bg-white py-16 md:py-20">
+        {/* Soft entry blend from the dark section above. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 md:h-36" style={{ background: 'linear-gradient(to bottom, rgba(15,23,42,0.5), transparent)' }} />
+        <div className="container relative mx-auto px-4 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600">
             {language === 'en' ? 'Pricing' : 'Precios'}
           </span>
-          <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black text-slate-900 md:text-4xl">
+          <h2
+            className="mx-auto mt-4 max-w-2xl bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-4xl"
+            style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+          >
             {language === 'en' ? 'Simple, transparent pricing' : 'Precios simples y transparentes'}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-500">
             {language === 'en'
-              ? 'Start with our Free Plan — 18 documents and 18 signatures per month, no credit card required. Upgrade anytime for unlimited access.'
-              : 'Empieza con nuestro Plan Gratuito — 18 documentos y 18 firmas al mes, sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
+              ? 'Start with our Free Plan, 18 documents and 18 signatures per month, no credit card required. Upgrade anytime for unlimited access.'
+              : 'Empieza con nuestro Plan Gratuito, 18 documentos y 18 firmas al mes, sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
           </p>
           <Link
             to="/pricing"
@@ -1506,6 +1850,8 @@ export function ModernHomePage() {
 
       {/* ── Testimonials ──────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-slate-950 py-16 text-white md:py-28">
+        {/* Soft entry blend from the white section above. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 md:h-36" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.55), transparent)' }} />
         {/* Radial glow */}
         <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(99,102,241,0.14), transparent)' }} />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
@@ -1515,7 +1861,10 @@ export function ModernHomePage() {
             <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
               {language === 'en' ? 'Verified Reviews' : 'Reseñas Verificadas'}
             </span>
-            <h2 className="mt-3 text-3xl font-black text-white md:text-5xl">
+            <h2
+              className="mt-3 bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 55%, #c4b5fd 100%)' }}
+            >
               {language === 'en' ? 'Trusted by U.S. Professionals' : 'Confiado por Profesionales en EE. UU.'}
             </h2>
             <p className="mt-3 text-slate-400">
@@ -1525,7 +1874,7 @@ export function ModernHomePage() {
             </p>
           </div>
 
-          {/* Slow infinite scroll instead of a static grid — same
+          {/* Slow infinite scroll instead of a static grid, same
               duplicated-list + CSS keyframe technique used elsewhere on
               this page, paused on hover so a review stays readable. */}
           <style>{`
@@ -1590,12 +1939,17 @@ export function ModernHomePage() {
 
 
       {/* ── FAQ ── details/summary for native accordion + JSON-LD for Google ── */}
-      <section className="relative bg-slate-50 py-16 md:py-28">
-        <div className="container mx-auto px-4">
+      <section className="relative overflow-hidden bg-slate-50 py-16 md:py-28">
+        {/* Soft entry blend from the dark testimonials section above. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 md:h-36" style={{ background: 'linear-gradient(to bottom, rgba(15,23,42,0.45), transparent)' }} />
+        <div className="container relative mx-auto px-4">
           <div className="mx-auto max-w-3xl">
             <div className="mb-14 text-center">
               <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600">FAQ</span>
-              <h2 className="text-3xl font-black text-slate-900 md:text-5xl">
+              <h2
+                className="bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+              >
                 {language === 'en' ? 'Common Questions' : 'Preguntas Frecuentes'}
               </h2>
               <p className="mt-3 text-slate-500">
@@ -1660,7 +2014,7 @@ export function ModernHomePage() {
 
       {/* Footer */}
       <footer className="relative overflow-hidden bg-slate-950 text-slate-400">
-        {/* Pre-footer CTA strip — soft light-blue gradient with diagonal
+        {/* Pre-footer CTA strip, soft light-blue gradient with diagonal
             ribbon streaks and dark navy text, instead of a flat solid
             blue-to-indigo bar. Same "elegant, techy, trustworthy" feel
             requested for the rest of the page, without copying ZapSign's
@@ -1678,7 +2032,10 @@ export function ModernHomePage() {
           </div>
 
           <div className="container relative mx-auto px-4 text-center">
-            <h3 className="mx-auto max-w-2xl text-3xl font-black leading-tight text-slate-900 sm:text-4xl md:text-5xl">
+            <h3
+              className="mx-auto max-w-2xl bg-clip-text py-1 text-3xl font-black leading-snug text-transparent sm:text-4xl md:text-5xl"
+              style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+            >
               {language === 'en' ? 'Start closing deals securely, today' : 'Empieza a cerrar negocios de forma segura hoy'}
             </h3>
 
@@ -1737,8 +2094,8 @@ export function ModernHomePage() {
                 <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-4">
                   <p className="text-xs italic leading-relaxed text-slate-400">
                     {language === 'en'
-                      ? '"So do not fear, for I am with you; do not be dismayed, for I am your God." — Isaiah 41:10'
-                      : '"Así que no temas, porque yo estoy contigo; no te angusties, porque yo soy tu Dios." — Isaías 41:10'}
+                      ? '"So do not fear, for I am with you; do not be dismayed, for I am your God." (Isaiah 41:10)'
+                      : '"Así que no temas, porque yo estoy contigo; no te angusties, porque yo soy tu Dios." (Isaías 41:10)'}
                   </p>
                 </div>
               </div>
@@ -1821,7 +2178,7 @@ export function ModernHomePage() {
               </div>
             </div>
 
-            {/* Direct contact channels — general inquiries + business/sales,
+            {/* Direct contact channels, general inquiries + business/sales,
                 plus WhatsApp for the LatAm market only (no US number yet). */}
             <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/8 pt-6 text-sm">
               <a href={`mailto:${INFO_EMAIL}`} className="inline-flex items-center gap-2 text-slate-400 transition hover:text-white">
@@ -1844,7 +2201,7 @@ export function ModernHomePage() {
               )}
             </div>
 
-            {/* Popular states + LatAm countries — same internal-linking
+            {/* Popular states + LatAm countries, same internal-linking
                 rows LandingFooter already shows on every SEO landing page,
                 added here too so the home page reads with the same depth
                 and trust signal as the rest of the site. */}
@@ -1871,18 +2228,18 @@ export function ModernHomePage() {
               ))}
             </div>
 
-            {/* Manual market preview — lets anyone (not just a visitor whose
+            {/* Manual market preview, lets anyone (not just a visitor whose
                 real IP happens to geolocate to the other market) see the
                 other home experience on demand, via the ?market= override
                 above. */}
             <div className="mb-6 text-xs text-slate-500">
               {effectiveIsLatam ? (
                 <a href="/?market=us" className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-white">
-                  🇺🇸 {language === 'en' ? 'Viewing the LatAm experience — see the US version' : 'Viendo la experiencia LatAm — ver la versión para Estados Unidos'}
+                  🇺🇸 {language === 'en' ? 'Viewing the LatAm experience, see the US version' : 'Viendo la experiencia LatAm, ver la versión para Estados Unidos'}
                 </a>
               ) : (
                 <a href="/?market=latam" className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-white">
-                  🌎 {language === 'en' ? 'Viewing the US experience — see the Latin America version' : 'Viendo la experiencia de EE. UU. — ver la versión para Latinoamérica'}
+                  🌎 {language === 'en' ? 'Viewing the US experience, see the Latin America version' : 'Viendo la experiencia de EE. UU., ver la versión para Latinoamérica'}
                 </a>
               )}
             </div>
@@ -1910,11 +2267,11 @@ export function ModernHomePage() {
       </footer>
 
 
-      {/* ── Floating Action Buttons — this page is desktop-only now, mobile
+      {/* ── Floating Action Buttons, this page is desktop-only now, mobile
           always redirects into the /app bottom-nav shell above. ────────── */}
       <div className="fixed bottom-6 right-4 z-50 flex flex-col items-end gap-3">
 
-        {/* FAB: Verificar un documento — stacked just above WhatsApp
+        {/* FAB: Verificar un documento, stacked just above WhatsApp
             (WhatsApp stays the primary, bottom-most FAB). Links straight
             to the public authenticity verifier built earlier. */}
         <motion.div
@@ -1935,7 +2292,7 @@ export function ModernHomePage() {
           </Link>
         </motion.div>
 
-        {/* FAB 3: WhatsApp — LatAm only, no US number yet */}
+        {/* FAB 3: WhatsApp, LatAm only, no US number yet */}
         {language === 'es' && (
           <motion.div
             initial={{ opacity: 0, x: 60 }}
@@ -1965,7 +2322,7 @@ export function ModernHomePage() {
         contextMessage={onboardingContext}
       />
 
-      {/* Info popup — explains whichever security feature or compliance/law
+      {/* Info popup, explains whichever security feature or compliance/law
           badge was clicked. Image-forward (big icon), 1-2 short sentences,
           no wall of text, per explicit feedback on the Platform menu. */}
       <AnimatePresence>
