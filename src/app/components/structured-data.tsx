@@ -83,13 +83,12 @@ export function StructuredData({ language = 'en', country }: StructuredDataProps
           eligibleRegion: { '@type': 'Country', name: countryName },
         },
       ],
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '214',
-        bestRating: '5',
-        worstRating: '1',
-      },
+      // No aggregateRating here on purpose — there is no real review
+      // collection system anywhere in this app to back one. Google's
+      // structured-data guidelines treat a fabricated AggregateRating/
+      // Review as a policy violation (manual action risk: rich results get
+      // suppressed sitewide). Only add this back once genuine, verifiable
+      // customer reviews exist to source the numbers from.
     };
 
     // ── Product Schema ────────────────────────────────────────────────────────
@@ -113,11 +112,8 @@ export function StructuredData({ language = 'en', country }: StructuredDataProps
         highPrice: '251.99',
         offerCount: '4',
       },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.8',
-        reviewCount: '189',
-      },
+      // See the SoftwareApplication schema above for why aggregateRating
+      // is intentionally absent here too.
     };
 
     // ── WebSite ───────────────────────────────────────────────────────────────
