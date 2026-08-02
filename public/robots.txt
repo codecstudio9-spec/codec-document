@@ -4,10 +4,42 @@
 User-agent: *
 Allow: /
 
+# ── AI assistants / LLM crawlers ────────────────────────────────────────
+# Explicitly allowed (not just covered by the wildcard above) so intent is
+# unambiguous to every major AI crawler that can browse, cite, or recommend
+# this site in ChatGPT, Gemini, Perplexity, and Claude answers.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
 # Sitemap location
 Sitemap: https://www.codecdocument.com/sitemap.xml
 
-# Crawl-delay for polite crawling
+# Crawl-delay for polite crawling (ignored by Google/Bing, respected by
+# some smaller/AI crawlers — kept low so it never meaningfully throttles them)
 Crawl-delay: 1
 
 # Allow indexing of all pages

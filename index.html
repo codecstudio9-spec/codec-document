@@ -58,8 +58,11 @@
          crawler, JS or not) and reinforced client-side by SEOHead.tsx
          (src/app/components/seo-head.tsx) once React mounts. -->
 
-    <!-- ═══ Preconnect for performance ════════════════════════════════════════ -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- ═══ Preconnect for performance ════════════════════════════════════════
+         No Google Fonts preconnect here on purpose — src/styles/fonts.css is
+         empty, the whole app uses the system font stack, so a Google Fonts
+         preconnect would just be a wasted DNS+TLS handshake competing with
+         resources that actually matter for LCP. -->
     <link rel="preconnect" href="https://accounts.google.com" />
     <link rel="dns-prefetch" href="https://www.paypal.com" />
 

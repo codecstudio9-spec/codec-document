@@ -279,9 +279,18 @@ export function ArticleLanding({ data }: { data: Article }) {
                   <img
                     src={data.heroImage.src}
                     alt={data.heroImage.alt}
-                    loading="lazy"
-                    className="w-full rounded-3xl object-cover shadow-xl shadow-slate-900/10"
-                    style={{ maxHeight: 420 }}
+                    // Eager + high priority, NOT lazy: this renders near the
+                    // top of the article and is almost always the page's LCP
+                    // candidate — lazy-loading it delays the very fetch
+                    // Google measures for Largest Contentful Paint. The
+                    // aspect-ratio (matching how these photos are cropped in
+                    // scripts/*.py) reserves the box before the image loads
+                    // so it can't cause a layout shift either.
+                    loading="eager"
+                    fetchPriority="high"
+                    width={1600}
+                    height={1067}
+                    className="aspect-[3/2] w-full rounded-3xl object-cover shadow-xl shadow-slate-900/10"
                   />
                   {data.heroImage.credit && (
                     <figcaption className="mt-1.5 text-right text-[11px] text-slate-400">{data.heroImage.credit}</figcaption>
