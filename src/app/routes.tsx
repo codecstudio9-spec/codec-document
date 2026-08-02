@@ -127,6 +127,66 @@ const VehicleBillOfSaleNorthCarolina = lazy(() => import("./pages/landings/vehic
 const VehicleBillOfSaleMichigan = lazy(() => import("./pages/landings/vehicle-bill-of-sale-michigan"));
 const VehicleBillOfSaleNewJersey = lazy(() => import("./pages/landings/vehicle-bill-of-sale-new-jersey"));
 const VehicleBillOfSaleVirginia = lazy(() => import("./pages/landings/vehicle-bill-of-sale-virginia"));
+const NdaWashington = lazy(() => import("./pages/landings/nda-washington"));
+const NdaArizona = lazy(() => import("./pages/landings/nda-arizona"));
+const NdaMassachusetts = lazy(() => import("./pages/landings/nda-massachusetts"));
+const NdaTennessee = lazy(() => import("./pages/landings/nda-tennessee"));
+const NdaIndiana = lazy(() => import("./pages/landings/nda-indiana"));
+const NdaMissouri = lazy(() => import("./pages/landings/nda-missouri"));
+const NdaMaryland = lazy(() => import("./pages/landings/nda-maryland"));
+const NdaWisconsin = lazy(() => import("./pages/landings/nda-wisconsin"));
+const NdaColorado = lazy(() => import("./pages/landings/nda-colorado"));
+const NdaMinnesota = lazy(() => import("./pages/landings/nda-minnesota"));
+const LeaseAgreementWashington = lazy(() => import("./pages/landings/lease-agreement-washington"));
+const LeaseAgreementArizona = lazy(() => import("./pages/landings/lease-agreement-arizona"));
+const LeaseAgreementMassachusetts = lazy(() => import("./pages/landings/lease-agreement-massachusetts"));
+const LeaseAgreementTennessee = lazy(() => import("./pages/landings/lease-agreement-tennessee"));
+const LeaseAgreementIndiana = lazy(() => import("./pages/landings/lease-agreement-indiana"));
+const LeaseAgreementMissouri = lazy(() => import("./pages/landings/lease-agreement-missouri"));
+const LeaseAgreementMaryland = lazy(() => import("./pages/landings/lease-agreement-maryland"));
+const LeaseAgreementWisconsin = lazy(() => import("./pages/landings/lease-agreement-wisconsin"));
+const LeaseAgreementColorado = lazy(() => import("./pages/landings/lease-agreement-colorado"));
+const LeaseAgreementMinnesota = lazy(() => import("./pages/landings/lease-agreement-minnesota"));
+const IndependentContractorWashington = lazy(() => import("./pages/landings/independent-contractor-washington"));
+const IndependentContractorArizona = lazy(() => import("./pages/landings/independent-contractor-arizona"));
+const IndependentContractorMassachusetts = lazy(() => import("./pages/landings/independent-contractor-massachusetts"));
+const IndependentContractorTennessee = lazy(() => import("./pages/landings/independent-contractor-tennessee"));
+const IndependentContractorIndiana = lazy(() => import("./pages/landings/independent-contractor-indiana"));
+const IndependentContractorMissouri = lazy(() => import("./pages/landings/independent-contractor-missouri"));
+const IndependentContractorMaryland = lazy(() => import("./pages/landings/independent-contractor-maryland"));
+const IndependentContractorWisconsin = lazy(() => import("./pages/landings/independent-contractor-wisconsin"));
+const IndependentContractorColorado = lazy(() => import("./pages/landings/independent-contractor-colorado"));
+const IndependentContractorMinnesota = lazy(() => import("./pages/landings/independent-contractor-minnesota"));
+const ServiceAgreementWashington = lazy(() => import("./pages/landings/service-agreement-washington"));
+const ServiceAgreementArizona = lazy(() => import("./pages/landings/service-agreement-arizona"));
+const ServiceAgreementMassachusetts = lazy(() => import("./pages/landings/service-agreement-massachusetts"));
+const ServiceAgreementTennessee = lazy(() => import("./pages/landings/service-agreement-tennessee"));
+const ServiceAgreementIndiana = lazy(() => import("./pages/landings/service-agreement-indiana"));
+const ServiceAgreementMissouri = lazy(() => import("./pages/landings/service-agreement-missouri"));
+const ServiceAgreementMaryland = lazy(() => import("./pages/landings/service-agreement-maryland"));
+const ServiceAgreementWisconsin = lazy(() => import("./pages/landings/service-agreement-wisconsin"));
+const ServiceAgreementColorado = lazy(() => import("./pages/landings/service-agreement-colorado"));
+const ServiceAgreementMinnesota = lazy(() => import("./pages/landings/service-agreement-minnesota"));
+const PromissoryNoteWashington = lazy(() => import("./pages/landings/promissory-note-washington"));
+const PromissoryNoteArizona = lazy(() => import("./pages/landings/promissory-note-arizona"));
+const PromissoryNoteMassachusetts = lazy(() => import("./pages/landings/promissory-note-massachusetts"));
+const PromissoryNoteTennessee = lazy(() => import("./pages/landings/promissory-note-tennessee"));
+const PromissoryNoteIndiana = lazy(() => import("./pages/landings/promissory-note-indiana"));
+const PromissoryNoteMissouri = lazy(() => import("./pages/landings/promissory-note-missouri"));
+const PromissoryNoteMaryland = lazy(() => import("./pages/landings/promissory-note-maryland"));
+const PromissoryNoteWisconsin = lazy(() => import("./pages/landings/promissory-note-wisconsin"));
+const PromissoryNoteColorado = lazy(() => import("./pages/landings/promissory-note-colorado"));
+const PromissoryNoteMinnesota = lazy(() => import("./pages/landings/promissory-note-minnesota"));
+const VehicleBillOfSaleWashington = lazy(() => import("./pages/landings/vehicle-bill-of-sale-washington"));
+const VehicleBillOfSaleArizona = lazy(() => import("./pages/landings/vehicle-bill-of-sale-arizona"));
+const VehicleBillOfSaleMassachusetts = lazy(() => import("./pages/landings/vehicle-bill-of-sale-massachusetts"));
+const VehicleBillOfSaleTennessee = lazy(() => import("./pages/landings/vehicle-bill-of-sale-tennessee"));
+const VehicleBillOfSaleIndiana = lazy(() => import("./pages/landings/vehicle-bill-of-sale-indiana"));
+const VehicleBillOfSaleMissouri = lazy(() => import("./pages/landings/vehicle-bill-of-sale-missouri"));
+const VehicleBillOfSaleMaryland = lazy(() => import("./pages/landings/vehicle-bill-of-sale-maryland"));
+const VehicleBillOfSaleWisconsin = lazy(() => import("./pages/landings/vehicle-bill-of-sale-wisconsin"));
+const VehicleBillOfSaleColorado = lazy(() => import("./pages/landings/vehicle-bill-of-sale-colorado"));
+const VehicleBillOfSaleMinnesota = lazy(() => import("./pages/landings/vehicle-bill-of-sale-minnesota"));
 const FirmaElectronicaColombia = lazy(() => import("./pages/landings/firma-electronica-colombia"));
 const FirmaElectronicaMexico = lazy(() => import("./pages/landings/firma-electronica-mexico"));
 const FirmaElectronicaChile = lazy(() => import("./pages/landings/firma-electronica-chile"));
@@ -720,6 +780,66 @@ export const router = createBrowserRouter([
   { path: "/vehicle-bill-of-sale-michigan", Component: VehicleBillOfSaleMichigan, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-new-jersey", Component: VehicleBillOfSaleNewJersey, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-virginia", Component: VehicleBillOfSaleVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-washington", Component: NdaWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-arizona", Component: NdaArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-massachusetts", Component: NdaMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-tennessee", Component: NdaTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-indiana", Component: NdaIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-missouri", Component: NdaMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-maryland", Component: NdaMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-wisconsin", Component: NdaWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-colorado", Component: NdaColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-minnesota", Component: NdaMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-washington", Component: LeaseAgreementWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-arizona", Component: LeaseAgreementArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-massachusetts", Component: LeaseAgreementMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-tennessee", Component: LeaseAgreementTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-indiana", Component: LeaseAgreementIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-missouri", Component: LeaseAgreementMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-maryland", Component: LeaseAgreementMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-wisconsin", Component: LeaseAgreementWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-colorado", Component: LeaseAgreementColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-minnesota", Component: LeaseAgreementMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-washington", Component: IndependentContractorWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-arizona", Component: IndependentContractorArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-massachusetts", Component: IndependentContractorMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-tennessee", Component: IndependentContractorTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-indiana", Component: IndependentContractorIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-missouri", Component: IndependentContractorMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-maryland", Component: IndependentContractorMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-wisconsin", Component: IndependentContractorWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-colorado", Component: IndependentContractorColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-minnesota", Component: IndependentContractorMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-washington", Component: ServiceAgreementWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-arizona", Component: ServiceAgreementArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-massachusetts", Component: ServiceAgreementMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-tennessee", Component: ServiceAgreementTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-indiana", Component: ServiceAgreementIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-missouri", Component: ServiceAgreementMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-maryland", Component: ServiceAgreementMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-wisconsin", Component: ServiceAgreementWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-colorado", Component: ServiceAgreementColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-minnesota", Component: ServiceAgreementMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-washington", Component: PromissoryNoteWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-arizona", Component: PromissoryNoteArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-massachusetts", Component: PromissoryNoteMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-tennessee", Component: PromissoryNoteTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-indiana", Component: PromissoryNoteIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-missouri", Component: PromissoryNoteMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-maryland", Component: PromissoryNoteMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-wisconsin", Component: PromissoryNoteWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-colorado", Component: PromissoryNoteColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-minnesota", Component: PromissoryNoteMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-washington", Component: VehicleBillOfSaleWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-arizona", Component: VehicleBillOfSaleArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-massachusetts", Component: VehicleBillOfSaleMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-tennessee", Component: VehicleBillOfSaleTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-indiana", Component: VehicleBillOfSaleIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-missouri", Component: VehicleBillOfSaleMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-maryland", Component: VehicleBillOfSaleMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-wisconsin", Component: VehicleBillOfSaleWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-colorado", Component: VehicleBillOfSaleColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-minnesota", Component: VehicleBillOfSaleMinnesota, errorElement: <RouteErrorBoundary /> },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",

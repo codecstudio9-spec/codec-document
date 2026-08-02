@@ -3,19 +3,28 @@
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/(icons|images|videos|blog)/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
       ]
     },
     {
       "source": "/(favicon.ico|logo.png|manifest.json)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
       ]
     }
   ],
@@ -415,8 +424,16 @@
       "destination": "/generador-de-cotizaciones.html"
     },
     {
+      "source": "/independent-contractor-arizona",
+      "destination": "/independent-contractor-arizona.html"
+    },
+    {
       "source": "/independent-contractor-california",
       "destination": "/independent-contractor-california.html"
+    },
+    {
+      "source": "/independent-contractor-colorado",
+      "destination": "/independent-contractor-colorado.html"
     },
     {
       "source": "/independent-contractor-florida",
@@ -431,8 +448,28 @@
       "destination": "/independent-contractor-illinois.html"
     },
     {
+      "source": "/independent-contractor-indiana",
+      "destination": "/independent-contractor-indiana.html"
+    },
+    {
+      "source": "/independent-contractor-maryland",
+      "destination": "/independent-contractor-maryland.html"
+    },
+    {
+      "source": "/independent-contractor-massachusetts",
+      "destination": "/independent-contractor-massachusetts.html"
+    },
+    {
       "source": "/independent-contractor-michigan",
       "destination": "/independent-contractor-michigan.html"
+    },
+    {
+      "source": "/independent-contractor-minnesota",
+      "destination": "/independent-contractor-minnesota.html"
+    },
+    {
+      "source": "/independent-contractor-missouri",
+      "destination": "/independent-contractor-missouri.html"
     },
     {
       "source": "/independent-contractor-new-jersey",
@@ -459,6 +496,10 @@
       "destination": "/independent-contractor-san-jose-california.html"
     },
     {
+      "source": "/independent-contractor-tennessee",
+      "destination": "/independent-contractor-tennessee.html"
+    },
+    {
       "source": "/independent-contractor-texas",
       "destination": "/independent-contractor-texas.html"
     },
@@ -467,8 +508,24 @@
       "destination": "/independent-contractor-virginia.html"
     },
     {
+      "source": "/independent-contractor-washington",
+      "destination": "/independent-contractor-washington.html"
+    },
+    {
+      "source": "/independent-contractor-wisconsin",
+      "destination": "/independent-contractor-wisconsin.html"
+    },
+    {
+      "source": "/lease-agreement-arizona",
+      "destination": "/lease-agreement-arizona.html"
+    },
+    {
       "source": "/lease-agreement-california",
       "destination": "/lease-agreement-california.html"
+    },
+    {
+      "source": "/lease-agreement-colorado",
+      "destination": "/lease-agreement-colorado.html"
     },
     {
       "source": "/lease-agreement-florida",
@@ -483,8 +540,28 @@
       "destination": "/lease-agreement-illinois.html"
     },
     {
+      "source": "/lease-agreement-indiana",
+      "destination": "/lease-agreement-indiana.html"
+    },
+    {
+      "source": "/lease-agreement-maryland",
+      "destination": "/lease-agreement-maryland.html"
+    },
+    {
+      "source": "/lease-agreement-massachusetts",
+      "destination": "/lease-agreement-massachusetts.html"
+    },
+    {
       "source": "/lease-agreement-michigan",
       "destination": "/lease-agreement-michigan.html"
+    },
+    {
+      "source": "/lease-agreement-minnesota",
+      "destination": "/lease-agreement-minnesota.html"
+    },
+    {
+      "source": "/lease-agreement-missouri",
+      "destination": "/lease-agreement-missouri.html"
     },
     {
       "source": "/lease-agreement-new-jersey",
@@ -511,12 +588,24 @@
       "destination": "/lease-agreement-san-jose-california.html"
     },
     {
+      "source": "/lease-agreement-tennessee",
+      "destination": "/lease-agreement-tennessee.html"
+    },
+    {
       "source": "/lease-agreement-texas",
       "destination": "/lease-agreement-texas.html"
     },
     {
       "source": "/lease-agreement-virginia",
       "destination": "/lease-agreement-virginia.html"
+    },
+    {
+      "source": "/lease-agreement-washington",
+      "destination": "/lease-agreement-washington.html"
+    },
+    {
+      "source": "/lease-agreement-wisconsin",
+      "destination": "/lease-agreement-wisconsin.html"
     },
     {
       "source": "/legal-documents-california",
@@ -567,8 +656,16 @@
       "destination": "/legal-documents-virginia.html"
     },
     {
+      "source": "/nda-arizona",
+      "destination": "/nda-arizona.html"
+    },
+    {
       "source": "/nda-california",
       "destination": "/nda-california.html"
+    },
+    {
+      "source": "/nda-colorado",
+      "destination": "/nda-colorado.html"
     },
     {
       "source": "/nda-florida",
@@ -583,8 +680,28 @@
       "destination": "/nda-illinois.html"
     },
     {
+      "source": "/nda-indiana",
+      "destination": "/nda-indiana.html"
+    },
+    {
+      "source": "/nda-maryland",
+      "destination": "/nda-maryland.html"
+    },
+    {
+      "source": "/nda-massachusetts",
+      "destination": "/nda-massachusetts.html"
+    },
+    {
       "source": "/nda-michigan",
       "destination": "/nda-michigan.html"
+    },
+    {
+      "source": "/nda-minnesota",
+      "destination": "/nda-minnesota.html"
+    },
+    {
+      "source": "/nda-missouri",
+      "destination": "/nda-missouri.html"
     },
     {
       "source": "/nda-new-jersey",
@@ -611,6 +728,10 @@
       "destination": "/nda-san-jose-california.html"
     },
     {
+      "source": "/nda-tennessee",
+      "destination": "/nda-tennessee.html"
+    },
+    {
       "source": "/nda-texas",
       "destination": "/nda-texas.html"
     },
@@ -619,12 +740,28 @@
       "destination": "/nda-virginia.html"
     },
     {
+      "source": "/nda-washington",
+      "destination": "/nda-washington.html"
+    },
+    {
+      "source": "/nda-wisconsin",
+      "destination": "/nda-wisconsin.html"
+    },
+    {
       "source": "/professional-quote-template",
       "destination": "/professional-quote-template.html"
     },
     {
+      "source": "/promissory-note-arizona",
+      "destination": "/promissory-note-arizona.html"
+    },
+    {
       "source": "/promissory-note-california",
       "destination": "/promissory-note-california.html"
+    },
+    {
+      "source": "/promissory-note-colorado",
+      "destination": "/promissory-note-colorado.html"
     },
     {
       "source": "/promissory-note-florida",
@@ -639,8 +776,28 @@
       "destination": "/promissory-note-illinois.html"
     },
     {
+      "source": "/promissory-note-indiana",
+      "destination": "/promissory-note-indiana.html"
+    },
+    {
+      "source": "/promissory-note-maryland",
+      "destination": "/promissory-note-maryland.html"
+    },
+    {
+      "source": "/promissory-note-massachusetts",
+      "destination": "/promissory-note-massachusetts.html"
+    },
+    {
       "source": "/promissory-note-michigan",
       "destination": "/promissory-note-michigan.html"
+    },
+    {
+      "source": "/promissory-note-minnesota",
+      "destination": "/promissory-note-minnesota.html"
+    },
+    {
+      "source": "/promissory-note-missouri",
+      "destination": "/promissory-note-missouri.html"
     },
     {
       "source": "/promissory-note-new-jersey",
@@ -667,12 +824,24 @@
       "destination": "/promissory-note-san-jose-california.html"
     },
     {
+      "source": "/promissory-note-tennessee",
+      "destination": "/promissory-note-tennessee.html"
+    },
+    {
       "source": "/promissory-note-texas",
       "destination": "/promissory-note-texas.html"
     },
     {
       "source": "/promissory-note-virginia",
       "destination": "/promissory-note-virginia.html"
+    },
+    {
+      "source": "/promissory-note-washington",
+      "destination": "/promissory-note-washington.html"
+    },
+    {
+      "source": "/promissory-note-wisconsin",
+      "destination": "/promissory-note-wisconsin.html"
     },
     {
       "source": "/proposal-generator",
@@ -691,8 +860,16 @@
       "destination": "/san-jose-california.html"
     },
     {
+      "source": "/service-agreement-arizona",
+      "destination": "/service-agreement-arizona.html"
+    },
+    {
       "source": "/service-agreement-california",
       "destination": "/service-agreement-california.html"
+    },
+    {
+      "source": "/service-agreement-colorado",
+      "destination": "/service-agreement-colorado.html"
     },
     {
       "source": "/service-agreement-florida",
@@ -707,8 +884,28 @@
       "destination": "/service-agreement-illinois.html"
     },
     {
+      "source": "/service-agreement-indiana",
+      "destination": "/service-agreement-indiana.html"
+    },
+    {
+      "source": "/service-agreement-maryland",
+      "destination": "/service-agreement-maryland.html"
+    },
+    {
+      "source": "/service-agreement-massachusetts",
+      "destination": "/service-agreement-massachusetts.html"
+    },
+    {
       "source": "/service-agreement-michigan",
       "destination": "/service-agreement-michigan.html"
+    },
+    {
+      "source": "/service-agreement-minnesota",
+      "destination": "/service-agreement-minnesota.html"
+    },
+    {
+      "source": "/service-agreement-missouri",
+      "destination": "/service-agreement-missouri.html"
     },
     {
       "source": "/service-agreement-new-jersey",
@@ -735,6 +932,10 @@
       "destination": "/service-agreement-san-jose-california.html"
     },
     {
+      "source": "/service-agreement-tennessee",
+      "destination": "/service-agreement-tennessee.html"
+    },
+    {
       "source": "/service-agreement-texas",
       "destination": "/service-agreement-texas.html"
     },
@@ -743,8 +944,24 @@
       "destination": "/service-agreement-virginia.html"
     },
     {
+      "source": "/service-agreement-washington",
+      "destination": "/service-agreement-washington.html"
+    },
+    {
+      "source": "/service-agreement-wisconsin",
+      "destination": "/service-agreement-wisconsin.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-arizona",
+      "destination": "/vehicle-bill-of-sale-arizona.html"
+    },
+    {
       "source": "/vehicle-bill-of-sale-california",
       "destination": "/vehicle-bill-of-sale-california.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-colorado",
+      "destination": "/vehicle-bill-of-sale-colorado.html"
     },
     {
       "source": "/vehicle-bill-of-sale-florida",
@@ -759,8 +976,28 @@
       "destination": "/vehicle-bill-of-sale-illinois.html"
     },
     {
+      "source": "/vehicle-bill-of-sale-indiana",
+      "destination": "/vehicle-bill-of-sale-indiana.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-maryland",
+      "destination": "/vehicle-bill-of-sale-maryland.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-massachusetts",
+      "destination": "/vehicle-bill-of-sale-massachusetts.html"
+    },
+    {
       "source": "/vehicle-bill-of-sale-michigan",
       "destination": "/vehicle-bill-of-sale-michigan.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-minnesota",
+      "destination": "/vehicle-bill-of-sale-minnesota.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-missouri",
+      "destination": "/vehicle-bill-of-sale-missouri.html"
     },
     {
       "source": "/vehicle-bill-of-sale-new-jersey",
@@ -787,12 +1024,24 @@
       "destination": "/vehicle-bill-of-sale-san-jose-california.html"
     },
     {
+      "source": "/vehicle-bill-of-sale-tennessee",
+      "destination": "/vehicle-bill-of-sale-tennessee.html"
+    },
+    {
       "source": "/vehicle-bill-of-sale-texas",
       "destination": "/vehicle-bill-of-sale-texas.html"
     },
     {
       "source": "/vehicle-bill-of-sale-virginia",
       "destination": "/vehicle-bill-of-sale-virginia.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-washington",
+      "destination": "/vehicle-bill-of-sale-washington.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-wisconsin",
+      "destination": "/vehicle-bill-of-sale-wisconsin.html"
     },
     {
       "source": "/((?!api/).*)",
