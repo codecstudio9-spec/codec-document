@@ -2,56 +2,133 @@ import { useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { PlacedSignature } from './types';
 
+interface PageOffset {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 interface SimpleDraggableSignatureProps {
   sig: PlacedSignature;
+  /** Pixel position/size of sig's current page, relative to the same
+   * positioned ancestor this component renders into (the whole scrollable
+   * content stack, not just one page) — lets this render as a single
+   * persistent overlay instead of living inside one page's DOM subtree. */
+  pageOffset: PageOffset;
+  /** Current page's own container — only used for the resize handle, which
+   * never needs to cross pages. */
   getContainer: () => HTMLDivElement | null;
+  /** Hit-tests a viewport Y coordinate against every page's current
+   * bounding rect (falls back to the nearest one if between pages), so a
+   * drag can walk from page to page instead of clamping at the page it
+   * started on. */
+  resolvePageAt: (clientY: number) => { pageNum: number; rect: DOMRect } | null;
+  /** The scrollable viewport — dragging near its top/bottom edge auto-scrolls it. */
+  getScrollContainer: () => HTMLDivElement | null;
   onChange: (updates: Partial<PlacedSignature>) => void;
   onDelete: () => void;
 }
 
 const clamp = (min: number, max: number, v: number) => Math.max(min, Math.min(max, v));
 
+// How close to the scroll viewport's edge (in px) triggers auto-scroll, and
+// how fast (px/frame) it scrolls right at the very edge.
+const AUTOSCROLL_EDGE_PX = 64;
+const AUTOSCROLL_MAX_SPEED = 16;
+
 /**
  * Adobe/DocuSign-style signature field: just the signature image, nothing
  * else — no branded header bar, no "FIRMA DIGITAL" label, no name/role
- * signing block. Touch the image itself to drag it anywhere on the page;
- * a small corner handle resizes it. This is deliberately a *different*,
- * simpler component from DraggableSignature (not a shared one) — that one
- * is still used elsewhere (preview-page.tsx, PdfSignatureEditor.tsx) where
- * the fuller "professional signing block" look is still wanted; this one
- * is only for the guest tap-to-place flow, where the ask was explicitly
- * "just move the signature, nothing else."
+ * signing block. Touch the image itself to drag it anywhere in the
+ * document — including onto a different page, auto-scrolling the document
+ * as you drag near the top/bottom edge — a small corner handle resizes it.
+ * This is deliberately a *different*, simpler component from
+ * DraggableSignature (not a shared one) — that one is still used elsewhere
+ * (preview-page.tsx, PdfSignatureEditor.tsx) where the fuller "professional
+ * signing block" look is still wanted; this one is only for the guest
+ * tap-to-place flow, where the ask was explicitly "just move the signature,
+ * nothing else."
  */
-export function SimpleDraggableSignature({ sig, getContainer, onChange, onDelete }: SimpleDraggableSignatureProps) {
+export function SimpleDraggableSignature({
+  sig, pageOffset, getContainer, resolvePageAt, getScrollContainer, onChange, onDelete,
+}: SimpleDraggableSignatureProps) {
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
 
-  const drag = useRef({ startX: 0, startY: 0, startFX: 0, startFY: 0 });
+  // Mirrors `dragging` but read inside the requestAnimationFrame loop,
+  // which closes over whatever render created it — a plain state read
+  // there would see a stale "not dragging yet" on the very first frame.
+  const draggingRef = useRef(false);
+  const lastPointer = useRef({ clientX: 0, clientY: 0 });
+  const autoScrollFrame = useRef<number | null>(null);
+
   const resize = useRef({ startX: 0, startY: 0, startWF: 0, startHF: 0 });
   const dragHandleRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
+
+  const applyPointerPosition = (clientX: number, clientY: number) => {
+    const target = resolvePageAt(clientY);
+    if (!target) return;
+    const { pageNum, rect } = target;
+    const x = (clientX - rect.left) / rect.width;
+    const y = (clientY - rect.top) / rect.height;
+    onChange({
+      page: pageNum,
+      xFraction: clamp(sig.widthFraction / 2, 1 - sig.widthFraction / 2, x),
+      yFraction: clamp(sig.heightFraction / 2, 1 - sig.heightFraction / 2, y),
+    });
+  };
+
+  const stopAutoScroll = () => {
+    if (autoScrollFrame.current != null) {
+      cancelAnimationFrame(autoScrollFrame.current);
+      autoScrollFrame.current = null;
+    }
+  };
+
+  const autoScrollTick = () => {
+    if (!draggingRef.current) { stopAutoScroll(); return; }
+    const container = getScrollContainer();
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const { clientY } = lastPointer.current;
+      let speed = 0;
+      if (clientY < rect.top + AUTOSCROLL_EDGE_PX) {
+        speed = -AUTOSCROLL_MAX_SPEED * clamp(0, 1, (rect.top + AUTOSCROLL_EDGE_PX - clientY) / AUTOSCROLL_EDGE_PX);
+      } else if (clientY > rect.bottom - AUTOSCROLL_EDGE_PX) {
+        speed = AUTOSCROLL_MAX_SPEED * clamp(0, 1, (clientY - (rect.bottom - AUTOSCROLL_EDGE_PX)) / AUTOSCROLL_EDGE_PX);
+      }
+      if (speed !== 0) {
+        container.scrollBy({ top: speed });
+        // Document moved under a stationary finger — re-resolve what's now underneath it.
+        applyPointerPosition(lastPointer.current.clientX, lastPointer.current.clientY);
+      }
+    }
+    autoScrollFrame.current = requestAnimationFrame(autoScrollTick);
+  };
 
   const onDragPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     dragHandleRef.current?.setPointerCapture(e.pointerId);
-    drag.current = { startX: e.clientX, startY: e.clientY, startFX: sig.xFraction, startFY: sig.yFraction };
+    lastPointer.current = { clientX: e.clientX, clientY: e.clientY };
+    draggingRef.current = true;
     setDragging(true);
+    autoScrollFrame.current = requestAnimationFrame(autoScrollTick);
   };
 
   const onDragPointerMove = (e: React.PointerEvent) => {
-    if (!dragging) return;
-    const rect = getContainer()?.getBoundingClientRect();
-    if (!rect) return;
-    const dx = (e.clientX - drag.current.startX) / rect.width;
-    const dy = (e.clientY - drag.current.startY) / rect.height;
-    onChange({
-      xFraction: clamp(sig.widthFraction / 2, 1 - sig.widthFraction / 2, drag.current.startFX + dx),
-      yFraction: clamp(sig.heightFraction / 2, 1 - sig.heightFraction / 2, drag.current.startFY + dy),
-    });
+    if (!draggingRef.current) return;
+    lastPointer.current = { clientX: e.clientX, clientY: e.clientY };
+    applyPointerPosition(e.clientX, e.clientY);
   };
 
-  const onDragPointerUp = () => setDragging(false);
+  const onDragPointerUp = () => {
+    draggingRef.current = false;
+    setDragging(false);
+    stopAutoScroll();
+  };
 
   const onResizePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -81,9 +158,9 @@ export function SimpleDraggableSignature({ sig, getContainer, onChange, onDelete
     <div
       className="absolute select-none"
       style={{
-        left: `${sig.xFraction * 100}%`,
-        top: `${sig.yFraction * 100}%`,
-        width: `${sig.widthFraction * 100}%`,
+        left: `${pageOffset.left + sig.xFraction * pageOffset.width}px`,
+        top: `${pageOffset.top + sig.yFraction * pageOffset.height}px`,
+        width: `${sig.widthFraction * pageOffset.width}px`,
         transform: 'translate(-50%, -50%)',
         zIndex: isActive ? 50 : 20,
         touchAction: 'none',

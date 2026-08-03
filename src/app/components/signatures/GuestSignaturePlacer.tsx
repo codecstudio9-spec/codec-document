@@ -89,6 +89,7 @@ export function GuestSignaturePlacer({
   const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const renderedPagesRef = useRef<Set<number>>(new Set());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{ startDist: number; startZoom: number } | null>(null);
   // Real width/height of the drawn ink (SignaturePad already trims
   // transparent margins, so this is the actual stroke's proportions, not
@@ -183,6 +184,21 @@ export function GuestSignaturePlacer({
     pageContainerRefs.current.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [pdfLoading, pageCount]);
+
+  // Hit-tests a viewport Y against every page's current bounding rect, so a
+  // drag can walk across page boundaries instead of clamping at whichever
+  // page the signature started on. Falls back to the nearest page when the
+  // pointer is in the gap between pages (the space-y-4 stacking gutter).
+  const resolvePageAt = (clientY: number): { pageNum: number; rect: DOMRect } | null => {
+    let fallback: { pageNum: number; rect: DOMRect; dist: number } | null = null;
+    for (const [pageNum, el] of pageContainerRefs.current) {
+      const rect = el.getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) return { pageNum, rect };
+      const dist = clientY < rect.top ? rect.top - clientY : clientY - rect.bottom;
+      if (!fallback || dist < fallback.dist) fallback = { pageNum, rect, dist };
+    }
+    return fallback ? { pageNum: fallback.pageNum, rect: fallback.rect } : null;
+  };
 
   const scrollToPage = (pageNum: number) => {
     pageContainerRefs.current.get(pageNum)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -375,9 +391,8 @@ export function GuestSignaturePlacer({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="space-y-4 pb-2">
+            <div ref={contentRef} className="relative space-y-4 pb-2">
               {Array.from({ length: pageCount }, (_, i) => i + 1).map((pageNum) => {
-                const pagePlacement = placement?.page === pageNum ? placement : null;
                 return (
                   <div
                     key={pageNum}
@@ -402,7 +417,7 @@ export function GuestSignaturePlacer({
                         />
                       )}
 
-                      {!pagePlacement && !placement && !pdfLoading && pageNum === 1 && (
+                      {!placement && !pdfLoading && pageNum === 1 && (
                         <div className="pointer-events-none absolute inset-0 flex items-end justify-end p-6 sm:items-center sm:justify-center">
                           <div className="relative">
                             <span className="absolute -inset-1.5 animate-pulse rounded-xl bg-amber-400/50 blur-sm" />
@@ -417,19 +432,39 @@ export function GuestSignaturePlacer({
                           </div>
                         </div>
                       )}
-
-                      {pagePlacement && (
-                        <SimpleDraggableSignature
-                          sig={pagePlacement}
-                          getContainer={() => pageContainerRefs.current.get(pageNum) ?? null}
-                          onChange={(updates) => setPlacement((prev) => (prev ? { ...prev, ...updates } : prev))}
-                          onDelete={() => setPlacement(null)}
-                        />
-                      )}
                     </div>
                   </div>
                 );
               })}
+
+              {/* Rendered once, outside any single page's DOM subtree, so a
+                  drag that crosses a page boundary repositions this same
+                  element instead of unmounting/remounting it (which would
+                  drop pointer capture mid-gesture and cancel the drag). */}
+              {placement && (() => {
+                const pageDiv = pageContainerRefs.current.get(placement.page);
+                const contentDiv = contentRef.current;
+                if (!pageDiv || !contentDiv) return null;
+                const pageRect = pageDiv.getBoundingClientRect();
+                const contentRect = contentDiv.getBoundingClientRect();
+                const pageOffset = {
+                  top: pageRect.top - contentRect.top,
+                  left: pageRect.left - contentRect.left,
+                  width: pageRect.width,
+                  height: pageRect.height,
+                };
+                return (
+                  <SimpleDraggableSignature
+                    sig={placement}
+                    pageOffset={pageOffset}
+                    getContainer={() => pageContainerRefs.current.get(placement.page) ?? null}
+                    resolvePageAt={resolvePageAt}
+                    getScrollContainer={() => scrollContainerRef.current}
+                    onChange={(updates) => setPlacement((prev) => (prev ? { ...prev, ...updates } : prev))}
+                    onDelete={() => setPlacement(null)}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>
