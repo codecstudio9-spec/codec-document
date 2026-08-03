@@ -12,6 +12,11 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+    <!-- Google's favicon crawler requires an icon that's a multiple of 48px
+         (see developers.google.com/search/docs/appearance/favicon) — the
+         32x32/16x16 above don't qualify, so it was falling back to a
+         generic globe in search results. Reusing the existing PWA icon. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
