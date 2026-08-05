@@ -7,7 +7,7 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { CountryLawHighlights } from './CountryLawHighlights';
-import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion } from './LandingSections';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, PhotoProofSection } from './LandingSections';
 import { LATAM_COUNTRIES, LATAM_GENERAL_FAQ, type LatamCountryConfig } from '../../data/latam-signature-seo-content';
 
 /** Cross-links to the other 5 LatAm country pages — same reasoning as
@@ -134,6 +134,14 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
       />
 
       <CountryLawHighlights countryName={country.name} countryNameEs={country.nameEs} highlights={country.highlights} />
+
+      <PhotoProofSection
+        image="/images/seo/tablet-sign-business.jpg"
+        captionEn="Sign from your computer, tablet, or phone — anytime."
+        captionEs="Firma desde tu computadora, tablet o celular — en cualquier momento."
+        pointsEn={['Nothing to install', 'Legally valid signature', 'Identity verified on every signature']}
+        pointsEs={['Sin instalar nada', 'Firma con validez legal', 'Identidad verificada en cada firma']}
+      />
 
       <BenefitCards
         items={[

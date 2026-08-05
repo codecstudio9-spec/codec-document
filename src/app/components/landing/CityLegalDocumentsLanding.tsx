@@ -7,7 +7,7 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { StateLawHighlights } from './StateLawHighlights';
-import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ, PhotoProofSection } from './LandingSections';
 import type { CitySeoConfig } from '../../data/city-seo-content';
 
 /** City hub page (first: San Jose, California) — same section layout as
@@ -84,6 +84,13 @@ function CityLegalDocumentsLandingContent({ city }: { city: CitySeoConfig }) {
 
       <StateLawHighlights stateName={state.name} stateNameEs={state.nameEs} highlights={state.highlights} />
 
+      <PhotoProofSection
+        image="/images/seo/app-woman-tech-blue.jpg"
+        captionEn="All your documents and signatures, in one dashboard."
+        captionEs="Todos tus documentos y firmas, en un solo panel."
+        pointsEn={['Track every signature status', 'Reuse your own templates', 'Available in English and Spanish']}
+        pointsEs={['Rastrea el estado de cada firma', 'Reutiliza tus propias plantillas', 'Disponible en español e inglés']}
+      />
       <BenefitCards />
       <HowItWorksTimeline />
       <SocialProofBand />

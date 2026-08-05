@@ -6,7 +6,7 @@ import { useLanguage, FixedLanguageProvider } from '../../contexts/language-cont
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
-import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ, PhotoProofSection } from './LandingSections';
 import { STATES, type DocType, type DocTypeState } from '../../data/doctype-state-seo-content';
 
 const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
@@ -108,6 +108,13 @@ function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
         items={data.facts}
       />
 
+      <PhotoProofSection
+        image="/images/seo/app-woman-blue.jpg"
+        captionEn="Fill it out, sign it, done — right from your phone."
+        captionEs="Complétalo, fírmalo, listo — desde tu teléfono."
+        pointsEn={['No printing or scanning', 'Signed PDF ready in minutes', 'Works on any device']}
+        pointsEs={['Sin imprimir ni escanear', 'PDF firmado en minutos', 'Funciona en cualquier dispositivo']}
+      />
       <BenefitCards />
       <HowItWorksTimeline />
       <SocialProofBand />

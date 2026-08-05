@@ -107,6 +107,69 @@ export function IncludedCards({
   );
 }
 
+// ── Real photo + short proof points — breaks up the icon/card-heavy
+// sections with an actual photo of the product in someone's hands, same
+// idea as the Home page's "Why Codec Document" rows (modern-home-page.tsx),
+// just a single compact row sized for the SEO template pages. ──
+export function PhotoProofSection({
+  image, imageAlt, flip, captionEn, captionEs, pointsEn, pointsEs, color = '#2563eb',
+}: {
+  image: string;
+  imageAlt?: string;
+  /** Puts the photo on the right instead of the left. */
+  flip?: boolean;
+  captionEn: string;
+  captionEs: string;
+  pointsEn: string[];
+  pointsEs: string[];
+  color?: string;
+}) {
+  const { language } = useLanguage();
+  return (
+    <section className="relative overflow-hidden bg-white py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto grid max-w-5xl items-center gap-10 md:gap-14 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, x: flip ? 30 : -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ duration: 0.5 }}
+            className={flip ? 'lg:order-2' : undefined}
+          >
+            <img
+              src={image}
+              alt={imageAlt ?? ''}
+              className="aspect-[4/3] w-full rounded-3xl object-cover shadow-xl shadow-slate-900/10"
+              loading="lazy"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: flip ? -30 : 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className={flip ? 'lg:order-1' : undefined}
+          >
+            <p className="mb-5 text-xl font-black leading-snug text-slate-900 md:text-2xl">
+              {language === 'en' ? captionEn : captionEs}
+            </p>
+            <ul className="space-y-2.5">
+              {(language === 'en' ? pointsEn : pointsEs).map((point) => (
+                <li key={point} className="flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full" style={{ background: color }}>
+                    <Check className="size-3 text-white" />
+                  </span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── How it works — same 4-step timeline copy already used on the Home page ──
 const STEPS = [
   {

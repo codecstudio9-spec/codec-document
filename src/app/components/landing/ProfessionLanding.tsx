@@ -5,7 +5,7 @@ import { SITE_URL } from '../../config/site';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
-import { BenefitCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, type FaqItem } from './LandingSections';
+import { BenefitCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, PhotoProofSection, type FaqItem } from './LandingSections';
 import { PROFESSION_PAGES, type ProfessionConfig } from '../../data/profession-seo-content';
 
 /** Cross-links to the other 7 profession pages — same "complete the
@@ -110,6 +110,14 @@ export function ProfessionLanding({ profession }: { profession: ProfessionConfig
         </div>
       </section>
 
+      <PhotoProofSection
+        image="/images/seo/tablet-review-woman.jpg"
+        captionEn="Revisa, firma y envía documentos sin salir de tu negocio."
+        captionEs="Revisa, firma y envía documentos sin salir de tu negocio."
+        pointsEn={['Tu marca en cada documento', 'Firma desde el celular', 'Sin papeleo físico']}
+        pointsEs={['Tu marca en cada documento', 'Firma desde el celular', 'Sin papeleo físico']}
+        color={profession.color}
+      />
       <BenefitCards />
       <HowItWorksTimeline
         headingEn="Cómo firmar un documento online" headingEs="Cómo firmar un documento online"

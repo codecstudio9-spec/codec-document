@@ -5,7 +5,7 @@ import { SITE_URL } from '../../config/site';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
-import { BenefitCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, type FaqItem } from './LandingSections';
+import { BenefitCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, PhotoProofSection, type FaqItem } from './LandingSections';
 import { FREE_FEATURE_PAGES, FREE_PLAN_FACTS_ES, type FreeFeatureConfig } from '../../data/free-feature-seo-content';
 import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
 
@@ -147,6 +147,14 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         </div>
       </section>
 
+      <PhotoProofSection
+        image="/images/home/why-1-pointing.jpg"
+        captionEn="Así de simple: abre la app, completa, firma."
+        captionEs="Así de simple: abre la app, completa, firma."
+        pointsEn={['Sin tarjeta de crédito', 'Plan gratuito todos los días', 'Acceso inmediato']}
+        pointsEs={['Sin tarjeta de crédito', 'Plan gratuito todos los días', 'Acceso inmediato']}
+        color={page.color}
+      />
       <BenefitCards />
       <HowItWorksTimeline
         headingEn="Cómo firmar un documento online" headingEs="Cómo firmar un documento online"

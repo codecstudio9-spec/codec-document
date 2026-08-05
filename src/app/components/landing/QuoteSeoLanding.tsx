@@ -5,7 +5,7 @@ import { SITE_URL } from '../../config/site';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
-import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ, PhotoProofSection } from './LandingSections';
 import type { QuoteSeoPageConfig } from '../../data/quote-seo-content';
 
 /** Shared template for the 10 Smart Quotes SEO landing pages (5 US
@@ -47,6 +47,14 @@ export function QuoteSeoLanding({ page }: { page: QuoteSeoPageConfig }) {
         items={page.includedItems.map((item) => ({ en: item, es: item }))}
       />
 
+      <PhotoProofSection
+        image="/images/seo/office-tablet-woman.jpg"
+        captionEn="Build the quote, send it, get it signed — no separate tools."
+        captionEs="Arma la cotización, envíala y consigue la firma — sin herramientas sueltas."
+        pointsEn={['Professional PDF in minutes', 'Client signs from their phone', 'Everything in one place']}
+        pointsEs={['PDF profesional en minutos', 'El cliente firma desde su celular', 'Todo en un solo lugar']}
+        color="#4338CA"
+      />
       <BenefitCards />
       <HowItWorksTimeline />
       <SocialProofBand />

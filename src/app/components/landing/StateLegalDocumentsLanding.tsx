@@ -7,7 +7,7 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { StateLawHighlights } from './StateLawHighlights';
-import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ } from './LandingSections';
+import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ, PhotoProofSection } from './LandingSections';
 import type { StateSeoConfig } from '../../data/state-seo-content';
 import { STATES } from '../../data/doctype-state-seo-content';
 
@@ -151,6 +151,13 @@ function StateLegalDocumentsLandingContent({ state }: { state: StateSeoConfig })
       <StateLawHighlights stateName={state.name} stateNameEs={state.nameEs} highlights={state.highlights} />
       <DocTypeLinks state={state} />
 
+      <PhotoProofSection
+        image="/images/seo/dashboard-desk.jpg"
+        captionEn="All your documents and signatures, in one dashboard."
+        captionEs="Todos tus documentos y firmas, en un solo panel."
+        pointsEn={['Track every signature status', 'Reuse your own templates', 'Available in English and Spanish']}
+        pointsEs={['Rastrea el estado de cada firma', 'Reutiliza tus propias plantillas', 'Disponible en español e inglés']}
+      />
       <BenefitCards />
       <HowItWorksTimeline />
       <SocialProofBand />
