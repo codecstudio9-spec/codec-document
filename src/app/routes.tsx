@@ -187,6 +187,20 @@ const VehicleBillOfSaleMaryland = lazy(() => import("./pages/landings/vehicle-bi
 const VehicleBillOfSaleWisconsin = lazy(() => import("./pages/landings/vehicle-bill-of-sale-wisconsin"));
 const VehicleBillOfSaleColorado = lazy(() => import("./pages/landings/vehicle-bill-of-sale-colorado"));
 const VehicleBillOfSaleMinnesota = lazy(() => import("./pages/landings/vehicle-bill-of-sale-minnesota"));
+const NdaSouthCarolina = lazy(() => import("./pages/landings/nda-south-carolina"));
+const LeaseAgreementSouthCarolina = lazy(() => import("./pages/landings/lease-agreement-south-carolina"));
+const IndependentContractorSouthCarolina = lazy(() => import("./pages/landings/independent-contractor-south-carolina"));
+const ServiceAgreementSouthCarolina = lazy(() => import("./pages/landings/service-agreement-south-carolina"));
+const PromissoryNoteSouthCarolina = lazy(() => import("./pages/landings/promissory-note-south-carolina"));
+const VehicleBillOfSaleSouthCarolina = lazy(() => import("./pages/landings/vehicle-bill-of-sale-south-carolina"));
+const NdaAlabama = lazy(() => import("./pages/landings/nda-alabama"));
+const LeaseAgreementAlabama = lazy(() => import("./pages/landings/lease-agreement-alabama"));
+const IndependentContractorAlabama = lazy(() => import("./pages/landings/independent-contractor-alabama"));
+const ServiceAgreementAlabama = lazy(() => import("./pages/landings/service-agreement-alabama"));
+const PromissoryNoteAlabama = lazy(() => import("./pages/landings/promissory-note-alabama"));
+const VehicleBillOfSaleAlabama = lazy(() => import("./pages/landings/vehicle-bill-of-sale-alabama"));
+const SouthCarolinaLegalDocuments = lazy(() => import("./pages/landings/south-carolina-legal-documents"));
+const AlabamaLegalDocuments = lazy(() => import("./pages/landings/alabama-legal-documents"));
 const FirmaElectronicaColombia = lazy(() => import("./pages/landings/firma-electronica-colombia"));
 const FirmaElectronicaMexico = lazy(() => import("./pages/landings/firma-electronica-mexico"));
 const FirmaElectronicaChile = lazy(() => import("./pages/landings/firma-electronica-chile"));
@@ -880,6 +894,20 @@ export const router = createBrowserRouter([
   { path: "/vehicle-bill-of-sale-wisconsin", Component: VehicleBillOfSaleWisconsin, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-colorado", Component: VehicleBillOfSaleColorado, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-minnesota", Component: VehicleBillOfSaleMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-south-carolina", Component: NdaSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-south-carolina", Component: LeaseAgreementSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-south-carolina", Component: IndependentContractorSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-south-carolina", Component: ServiceAgreementSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-south-carolina", Component: PromissoryNoteSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-south-carolina", Component: VehicleBillOfSaleSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/nda-alabama", Component: NdaAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/lease-agreement-alabama", Component: LeaseAgreementAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/independent-contractor-alabama", Component: IndependentContractorAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/service-agreement-alabama", Component: ServiceAgreementAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/promissory-note-alabama", Component: PromissoryNoteAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/vehicle-bill-of-sale-alabama", Component: VehicleBillOfSaleAlabama, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-south-carolina", Component: SouthCarolinaLegalDocuments, errorElement: <RouteErrorBoundary /> },
+  { path: "/legal-documents-alabama", Component: AlabamaLegalDocuments, errorElement: <RouteErrorBoundary /> },
   {
     // Generator is open to all — auth/payment is gated at preview/download
     path: "/generator/:documentType",

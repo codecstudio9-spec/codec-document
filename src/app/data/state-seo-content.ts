@@ -401,4 +401,68 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
     faqAnswerEn: 'Yes. Virginia\'s Uniform Electronic Transactions Act (Va. Code §59.1-479), together with the Federal ESIGN Act, makes electronic signatures legally binding for leases, NDAs, and most business agreements. Codec Document adds a SHA-256 audit trail and identity verification to every signature.',
     faqAnswerEs: 'Sí. La Ley Uniforme de Transacciones Electrónicas de Virginia (Código de Virginia §59.1-479), junto con la Ley Federal ESIGN, hace que las firmas electrónicas sean legalmente vinculantes para arrendamientos, NDA y la mayoría de los acuerdos comerciales. Codec Document agrega una pista de auditoría SHA-256 y verificación de identidad a cada firma.',
   },
+  {
+    slug: 'south-carolina',
+    name: 'South Carolina',
+    nameEs: 'Carolina del Sur',
+    abbreviation: 'SC',
+    highlights: [
+      {
+        titleEn: 'Lease Agreements', titleEs: 'Contratos de Arrendamiento',
+        factEn: 'South Carolina sets no statutory cap on security deposits (S.C. Code §27-40-410), but requires an itemized statement and refund within 30 days of lease termination — bad-faith withholding can cost the landlord up to 3x the amount plus attorney fees.',
+        factEs: 'Carolina del Sur no fija un límite legal para depósitos de garantía (S.C. Code §27-40-410), pero exige un estado detallado y el reembolso dentro de 30 días de terminado el contrato — retener de mala fe puede costarle al arrendador hasta 3 veces el monto más honorarios de abogado.',
+      },
+      {
+        titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
+        factEn: 'South Carolina requires a 5-day notice to pay rent before an eviction case can be filed for non-payment, unless the lease already contains the specific statutory notice language (S.C. Code §27-40-710(B)).',
+        factEs: 'Carolina del Sur exige un aviso de 5 días para pagar la renta antes de poder presentar un caso de desalojo por falta de pago, a menos que el contrato ya incluya el lenguaje de aviso estatutario específico (S.C. Code §27-40-710(B)).',
+      },
+      {
+        titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
+        factEn: 'Unlike most states, South Carolina does not require most LLCs to file an annual report or pay a franchise tax — the main exception is LLCs that elect S-corp or C-corp tax treatment.',
+        factEs: 'A diferencia de la mayoría de los estados, Carolina del Sur no exige que la mayoría de las LLC presenten un informe anual o paguen impuesto de franquicia — la principal excepción son las LLC que eligen tributar como S-corp o C-corp.',
+      },
+      {
+        titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
+        factEn: 'South Carolina requires two witnesses for a valid will and does not recognize purely holographic (handwritten, unwitnessed) wills. It is not a community property state — assets are divided under equitable distribution rules.',
+        factEs: 'Carolina del Sur requiere dos testigos para un testamento válido y no reconoce testamentos puramente ológrafos (escritos a mano, sin testigos). No es un estado de bienes gananciales — los bienes se dividen bajo reglas de distribución equitativa.',
+      },
+    ],
+    faqEn: 'Are electronic signatures legal in South Carolina?',
+    faqEs: '¿Las firmas electrónicas son legales en Carolina del Sur?',
+    faqAnswerEn: 'Yes. South Carolina\'s Uniform Electronic Transactions Act (S.C. Code Ann. §26-6-10 et seq.), together with the Federal ESIGN Act, makes electronic signatures legally binding for leases, NDAs, and most business agreements. Codec Document adds a SHA-256 audit trail and identity verification to every signature.',
+    faqAnswerEs: 'Sí. La Ley Uniforme de Transacciones Electrónicas de Carolina del Sur (S.C. Code Ann. §26-6-10 y siguientes), junto con la Ley Federal ESIGN, hace que las firmas electrónicas sean legalmente vinculantes para arrendamientos, NDA y la mayoría de los acuerdos comerciales. Codec Document agrega una pista de auditoría SHA-256 y verificación de identidad a cada firma.',
+  },
+  {
+    slug: 'alabama',
+    name: 'Alabama',
+    nameEs: 'Alabama',
+    abbreviation: 'AL',
+    highlights: [
+      {
+        titleEn: 'Lease Agreements', titleEs: 'Contratos de Arrendamiento',
+        factEn: 'Alabama sets no statutory cap on security deposit amounts, but requires the deposit be returned within 60 days of move-out (Ala. Code §35-9A-201) — a landlord who misses the deadline owes double the original amount.',
+        factEs: 'Alabama no fija un límite legal para el monto del depósito de garantía, pero exige que se devuelva dentro de 60 días tras la mudanza (Ala. Code §35-9A-201) — un arrendador que no cumple el plazo debe el doble del monto original.',
+      },
+      {
+        titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
+        factEn: 'Alabama requires a 7-day written notice for non-payment of rent, giving the tenant a chance to pay before the lease can be terminated (Ala. Code §35-9A-421(b)).',
+        factEs: 'Alabama exige un aviso escrito de 7 días por falta de pago de renta, dándole al inquilino la oportunidad de pagar antes de poder terminar el contrato (Ala. Code §35-9A-421(b)).',
+      },
+      {
+        titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
+        factEn: 'Alabama LLCs don\'t file a separate annual report, but must file a yearly Business Privilege Tax return (minimum $50 tax, waived if the calculated amount is $100 or less).',
+        factEs: 'Las LLC de Alabama no presentan un informe anual separado, pero deben presentar una declaración anual de Impuesto de Privilegio Comercial (impuesto mínimo de $50, exento si el monto calculado es $100 o menos).',
+      },
+      {
+        titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
+        factEn: 'Alabama requires two witnesses for a valid will and does not recognize an unwitnessed handwritten (holographic) will executed in-state. It is not a community property state — each spouse\'s assets are separately titled.',
+        factEs: 'Alabama requiere dos testigos para un testamento válido y no reconoce un testamento manuscrito sin testigos (ológrafo) otorgado dentro del estado. No es un estado de bienes gananciales — los bienes de cada cónyuge se registran por separado.',
+      },
+    ],
+    faqEn: 'Are electronic signatures legal in Alabama?',
+    faqEs: '¿Las firmas electrónicas son legales en Alabama?',
+    faqAnswerEn: 'Yes. Alabama\'s Uniform Electronic Transactions Act (Ala. Code §8-1A-1 et seq.), together with the Federal ESIGN Act, makes electronic signatures legally binding for leases, NDAs, and most business agreements. Codec Document adds a SHA-256 audit trail and identity verification to every signature.',
+    faqAnswerEs: 'Sí. La Ley Uniforme de Transacciones Electrónicas de Alabama (Ala. Code §8-1A-1 y siguientes), junto con la Ley Federal ESIGN, hace que las firmas electrónicas sean legalmente vinculantes para arrendamientos, NDA y la mayoría de los acuerdos comerciales. Codec Document agrega una pista de auditoría SHA-256 y verificación de identidad a cada firma.',
+  },
 ];

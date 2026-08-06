@@ -14,7 +14,7 @@ import { LatamHero } from '../components/latam-hero';
 import { DocumentBentoGrid } from '../components/document-bento-grid';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { isAdminEmail } from '../utils/admin-access';
-import { STATES } from '../data/doctype-state-seo-content';
+import { STATE_SEO_CONFIGS } from '../data/state-seo-content';
 import { LATAM_COUNTRIES } from '../data/latam-signature-seo-content';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
@@ -2207,7 +2207,7 @@ export function ModernHomePage() {
                 and trust signal as the rest of the site. */}
             <div className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-slate-500">
               <span className="font-semibold text-slate-600">{language === 'en' ? 'Popular states:' : 'Estados populares:'}</span>
-              {STATES.map((s, i, arr) => (
+              {STATE_SEO_CONFIGS.map((s, i, arr) => (
                 <span key={s.slug}>
                   <a href={`/legal-documents-${s.slug}`} className="transition hover:text-white">{language === 'en' ? s.name : s.nameEs}</a>
                   {i < arr.length - 1 && <span className="text-slate-700">,</span>}

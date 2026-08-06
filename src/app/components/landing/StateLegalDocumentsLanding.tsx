@@ -8,15 +8,17 @@ import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
 import { StateLawHighlights } from './StateLawHighlights';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, DEFAULT_FAQ, PhotoProofSection } from './LandingSections';
-import type { StateSeoConfig } from '../../data/state-seo-content';
-import { STATES } from '../../data/doctype-state-seo-content';
+import { STATE_SEO_CONFIGS, type StateSeoConfig } from '../../data/state-seo-content';
 
 /** Cross-links to the other state hub pages — completes the cluster so a
  * visitor comparing states, or Google crawling the cluster, can move
- * between every state hub without going back through the sitemap. */
+ * between every state hub without going back through the sitemap. Pulls
+ * from STATE_SEO_CONFIGS (states with an actual hub page), NOT the wider
+ * STATES list (every state with doc-type pages) — linking to a hub that
+ * doesn't exist yet 404s. */
 function OtherStateHubs({ current }: { current: string }) {
   const { language } = useLanguage();
-  const others = STATES.filter((s) => s.slug !== current);
+  const others = STATE_SEO_CONFIGS.filter((s) => s.slug !== current);
   return (
     <section className="relative border-t border-slate-100 bg-white py-14">
       <div className="container mx-auto px-4">
