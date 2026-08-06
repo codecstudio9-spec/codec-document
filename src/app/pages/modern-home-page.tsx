@@ -21,11 +21,24 @@ import { toast } from 'sonner';
 import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestStatus } from '../services/paypal-service';
 import { voiceAssistant } from '../services/voice-assistant-service';
 import { QRCodeSVG } from 'qrcode.react';
-import * as pdfjsLib from 'pdfjs-dist';
 import { OnboardingModal } from '../components/auth/OnboardingModal';
 import { useIsMobile } from '../hooks/use-is-mobile';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+// pdfjs-dist is ~136KB and only ever needed if a visitor actually uploads
+// a PDF to sign right from the home page — loading it eagerly on every
+// home page visit (including everyone who never touches that feature)
+// was showing up as unused JS in Lighthouse. Loaded on first use instead,
+// cached so a second upload in the same session doesn't refetch it.
+let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
+function loadPdfjs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import('pdfjs-dist').then((mod) => {
+      mod.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+      return mod;
+    });
+  }
+  return pdfjsPromise;
+}
 
 const waitForNextPaint = async () => {
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -428,6 +441,7 @@ export function ModernHomePage() {
           }
 
           // Validar/cargar el PDF directamente desde memoria (sin URL/path)
+          const pdfjsLib = await loadPdfjs();
           await pdfjsLib.getDocument({ data: typedarray }).promise;
 
           setUploadPdfBytes(typedarray);
@@ -457,6 +471,7 @@ export function ModernHomePage() {
       if (uploadPreviewKind !== 'pdf' || !uploadPdfBytes) return;
       const currentRenderJob = ++pdfRenderJobRef.current;
       try {
+        const pdfjsLib = await loadPdfjs();
         const pdf = await pdfjsLib
           .getDocument({
             data: uploadPdfBytes,
