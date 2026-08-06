@@ -209,7 +209,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // signup apart from every ordinary login re-firing SIGNED_IN.
           .select('id')
           .then(({ data }) => {
-            if (data && data.length > 0) markVisitorFunnelStep('registered');
+            if (data && data.length > 0) {
+              markVisitorFunnelStep('registered');
+              // Meta Pixel conversion event for ad campaigns — only fires
+              // if MetaPixel.tsx already loaded a pixel ID (fbq is a no-op
+              // stub otherwise, so this is safe even with no pixel set).
+              window.fbq?.('track', 'CompleteRegistration');
+            }
           });
         // Grant admin plan in DB so server-side checks also pass. Plan
         // status lives on `users.plan_type`/`plan_status`/`plan_expires_at`

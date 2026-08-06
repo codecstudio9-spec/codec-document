@@ -7,6 +7,7 @@ import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useInstallPrompt } from '../../hooks/use-install-prompt';
 import { SUPPORT_EMAIL } from '../../config/site';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { AdminMarketingSettings } from '../../components/settings/AdminMarketingSettings';
 
 export function DesktopSettings() {
   return (
@@ -191,6 +192,8 @@ function SettingsContent() {
             <ChevronRight className="size-4 text-slate-300" />
           </button>
         </div>
+
+        <AdminMarketingSettings />
 
         {/* Security & support */}
         <div>

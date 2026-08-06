@@ -9,6 +9,7 @@ import { MobileSignInPrompt } from '../../components/mobile/MobileSignInPrompt';
 import { useInstallPrompt } from '../../hooks/use-install-prompt';
 import { SUPPORT_EMAIL } from '../../config/site';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
+import { AdminMarketingSettings } from '../../components/settings/AdminMarketingSettings';
 
 export function MobileSettings() {
   return (
@@ -169,6 +170,8 @@ function SettingsContent() {
             </button>
           </div>
         </div>
+
+        <AdminMarketingSettings />
 
         {/* Legal + support */}
         <div>
