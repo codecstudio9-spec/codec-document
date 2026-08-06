@@ -235,8 +235,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Mobile-specific gap: tapping a magic link from the Mail app opens it
+    // in a NEW browser tab, leaving the original tab (where the login
+    // modal is still open) to pick up the new session via Supabase's
+    // cross-tab `storage` event listener. Mobile browsers routinely freeze
+    // a backgrounded tab, and a `storage` event that fires while frozen is
+    // not queued/replayed — so the original tab can come back to the
+    // foreground still showing `user: null` and the login modal stuck
+    // open, even though the other tab did sign in. Re-checking the
+    // session directly whenever the tab regains visibility/focus closes
+    // that gap without waiting on a storage event that may never arrive.
+    const recheckSession = () => {
+      if (document.visibilityState !== 'visible') return;
+      supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    };
+    document.addEventListener('visibilitychange', recheckSession);
+    window.addEventListener('focus', recheckSession);
+
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', recheckSession);
+      window.removeEventListener('focus', recheckSession);
     };
   }, []);
 

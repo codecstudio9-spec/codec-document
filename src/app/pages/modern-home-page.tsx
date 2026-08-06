@@ -1831,12 +1831,12 @@ export function ModernHomePage() {
             className="mx-auto mt-4 max-w-2xl bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-4xl"
             style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
           >
-            {language === 'en' ? 'Simple, transparent pricing' : 'Precios simples y transparentes'}
+            {language === 'en' ? 'Plans that fit wherever you are' : 'Planes que se adaptan a ti'}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-500">
             {language === 'en'
-              ? 'Start with our Free Plan, 18 documents and 18 signatures per month, no credit card required. Upgrade anytime for unlimited access.'
-              : 'Empieza con nuestro Plan Gratuito, 18 documentos y 18 firmas al mes, sin tarjeta de crédito. Actualiza cuando quieras para acceso ilimitado.'}
+              ? "Our free plan is built for entrepreneurs who need that initial push, no credit card required. As your business grows, upgrade your plan anytime."
+              : 'Nuestro plan gratuito está diseñado para emprendedores que necesitan ese empujón, sin tarjeta de crédito. Si tu negocio crece, mejora tu plan cuando quieras.'}
           </p>
           <Link
             to="/pricing"

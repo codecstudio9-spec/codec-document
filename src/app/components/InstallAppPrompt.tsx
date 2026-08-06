@@ -92,6 +92,7 @@ export function InstallAppPrompt() {
         <button
           type="button"
           onClick={dismissAndroid}
+          onPointerDown={(e) => e.stopPropagation()}
           aria-label="Cerrar"
           className="flex size-7 shrink-0 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
         >
