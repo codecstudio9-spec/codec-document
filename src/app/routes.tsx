@@ -308,6 +308,26 @@ const BlogCartaDeIntencionAntesDeContrato = lazy(() => import("./pages/landings/
 const BlogClausulasNoCompetenciaQuePuedePedirTuEmpleador = lazy(() => import("./pages/landings/blog-clausulas-no-competencia-que-puede-pedir-tu-empleador"));
 const BlogConsultorIndependienteBlindarHonorariosContrato = lazy(() => import("./pages/landings/blog-consultor-independiente-blindar-honorarios-contrato"));
 const BlogAcuerdosVoluntariadoOngsContratos = lazy(() => import("./pages/landings/blog-acuerdos-voluntariado-ongs-contratos"));
+const BlogEquipmentRentalAgreement = lazy(() => import("./pages/landings/blog-equipment-rental-agreement"));
+const BlogReferralPartnerAgreement = lazy(() => import("./pages/landings/blog-referral-partner-agreement"));
+const BlogSubcontractorAgreementGuide = lazy(() => import("./pages/landings/blog-subcontractor-agreement-guide"));
+const BlogNonSolicitationClauseExplained = lazy(() => import("./pages/landings/blog-non-solicitation-clause-explained"));
+const BlogSeveranceAgreementBasics = lazy(() => import("./pages/landings/blog-severance-agreement-basics"));
+const BlogAuthorizedSignerCompanyContracts = lazy(() => import("./pages/landings/blog-authorized-signer-company-contracts"));
+const BlogContractRenewalAutoRenewalClauses = lazy(() => import("./pages/landings/blog-contract-renewal-auto-renewal-clauses"));
+const BlogIndemnificationClausePlainEnglish = lazy(() => import("./pages/landings/blog-indemnification-clause-plain-english"));
+const BlogHowLongToKeepSignedContracts = lazy(() => import("./pages/landings/blog-how-long-to-keep-signed-contracts"));
+const BlogESignatureForInternationalClients = lazy(() => import("./pages/landings/blog-e-signature-for-international-clients"));
+const BlogContratoDeSubarriendo = lazy(() => import("./pages/landings/blog-contrato-de-subarriendo"));
+const BlogClausulaDeNoSolicitacionEmpleados = lazy(() => import("./pages/landings/blog-clausula-de-no-solicitacion-empleados"));
+const BlogCartaDeAutorizacionRepresentacion = lazy(() => import("./pages/landings/blog-carta-de-autorizacion-representacion"));
+const BlogContratoDeSubcontratista = lazy(() => import("./pages/landings/blog-contrato-de-subcontratista"));
+const BlogQuienPuedeFirmarContratosANombreDeUnaEmpresa = lazy(() => import("./pages/landings/blog-quien-puede-firmar-contratos-a-nombre-de-una-empresa"));
+const BlogClausulaRenovacionAutomaticaContratos = lazy(() => import("./pages/landings/blog-clausula-renovacion-automatica-contratos"));
+const BlogClausulaDeIndemnizacionExplicada = lazy(() => import("./pages/landings/blog-clausula-de-indemnizacion-explicada"));
+const BlogCuantoTiempoGuardarContratosFirmados = lazy(() => import("./pages/landings/blog-cuanto-tiempo-guardar-contratos-firmados"));
+const BlogFirmarContratosConClientesInternacionales = lazy(() => import("./pages/landings/blog-firmar-contratos-con-clientes-internacionales"));
+const BlogContratoDeAlquilerDeEquipos = lazy(() => import("./pages/landings/blog-contrato-de-alquiler-de-equipos"));
 
 function ProtectedMyDocumentsPage() {
   return (
@@ -641,6 +661,26 @@ export const router = createBrowserRouter([
   { path: "/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador", Component: BlogClausulasNoCompetenciaQuePuedePedirTuEmpleador, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/consultor-independiente-blindar-honorarios-contrato", Component: BlogConsultorIndependienteBlindarHonorariosContrato, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/acuerdos-voluntariado-ongs-contratos", Component: BlogAcuerdosVoluntariadoOngsContratos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/equipment-rental-agreement", Component: BlogEquipmentRentalAgreement, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/referral-partner-agreement", Component: BlogReferralPartnerAgreement, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/subcontractor-agreement-guide", Component: BlogSubcontractorAgreementGuide, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/non-solicitation-clause-explained", Component: BlogNonSolicitationClauseExplained, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/severance-agreement-basics", Component: BlogSeveranceAgreementBasics, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/authorized-signer-company-contracts", Component: BlogAuthorizedSignerCompanyContracts, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contract-renewal-auto-renewal-clauses", Component: BlogContractRenewalAutoRenewalClauses, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/indemnification-clause-plain-english", Component: BlogIndemnificationClausePlainEnglish, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/how-long-to-keep-signed-contracts", Component: BlogHowLongToKeepSignedContracts, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/e-signature-for-international-clients", Component: BlogESignatureForInternationalClients, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contrato-de-subarriendo", Component: BlogContratoDeSubarriendo, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/clausula-de-no-solicitacion-empleados", Component: BlogClausulaDeNoSolicitacionEmpleados, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/carta-de-autorizacion-representacion", Component: BlogCartaDeAutorizacionRepresentacion, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contrato-de-subcontratista", Component: BlogContratoDeSubcontratista, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/quien-puede-firmar-contratos-a-nombre-de-una-empresa", Component: BlogQuienPuedeFirmarContratosANombreDeUnaEmpresa, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/clausula-renovacion-automatica-contratos", Component: BlogClausulaRenovacionAutomaticaContratos, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/clausula-de-indemnizacion-explicada", Component: BlogClausulaDeIndemnizacionExplicada, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/cuanto-tiempo-guardar-contratos-firmados", Component: BlogCuantoTiempoGuardarContratosFirmados, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/firmar-contratos-con-clientes-internacionales", Component: BlogFirmarContratosConClientesInternacionales, errorElement: <RouteErrorBoundary /> },
+  { path: "/blog/contrato-de-alquiler-de-equipos", Component: BlogContratoDeAlquilerDeEquipos, errorElement: <RouteErrorBoundary /> },
   // Smart Quotes -- SEO
   { path: "/quote-generator", Component: QuoteGeneratorLanding, errorElement: <RouteErrorBoundary /> },
   { path: "/proposal-generator", Component: ProposalGeneratorLanding, errorElement: <RouteErrorBoundary /> },
