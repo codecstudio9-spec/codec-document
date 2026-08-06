@@ -1,7 +1,19 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
+  /* Fluid root font-size — nearly every Tailwind utility (text-*, p-*,
+     gap-*, size-*, rounded-*, etc.) is defined in rem, which resolves
+     against this value. Below ~1536px CSS viewport width (typical laptop,
+     including this project's 13.5"/15" reference devices) it stays flat
+     at 16px, matching how the site has always looked there. Past that, it
+     scales up smoothly to 20px at 2560px+ — the CSS-viewport-width range
+     covered by external/desktop monitors like a 21" 1080p display running
+     at 100% OS scaling, which otherwise renders every rem-based size at
+     the same physical dimensions as a much smaller screen and reads as
+     "everything is tiny" even though nothing is actually broken. One
+     variable change scales the whole UI proportionally instead of only
+     widening the empty margins around a fixed-size layout. */
+  --font-size: clamp(16px, 10px + 0.39vw, 20px);
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
