@@ -125,6 +125,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Why e-signatures went from a nice-to-have to a competitive necessity in 2026, and what changes for businesses that still rely on paper and ink.',
     keywords: 'digital signatures 2026, electronic signature business, why e-signatures matter, paperless business',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/why-digital-signatures-matter-2026.jpg', alt: 'Silhouettes of business people shaking hands in a modern office at sunset', credit: 'Photo: AdobeStock' },
     readMinutes: 7,
     intro: [
       'Five years ago, asking a client to sign electronically was a courtesy. In 2026, it is closer to a baseline expectation — the same way a broken link or a slow-loading page quietly tells a customer that a business is behind. The shift did not happen because e-signatures became more legal (they have been fully enforceable in the US since the ESIGN Act passed in 2000). It happened because the volume, speed, and geography of business documents changed faster than most companies\' internal processes did.',
@@ -190,6 +191,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Electronic signature and digital signature are not the same thing. Here is the real technical and legal difference, explained without the jargon.',
     keywords: 'electronic signature vs digital signature, what is a digital signature, e-signature meaning',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/electronic-signature-vs-digital-signature.jpg', alt: 'Close-up of a hand signing with a stylus on a digital tablet', credit: 'Photo: Karola G / Pexels' },
     readMinutes: 6,
     intro: [
       'These two terms get used interchangeably so often that most people assume they mean the same thing. They do not, and the difference actually matters if you are trying to understand what you are legally agreeing to, or what a piece of software is actually doing when it says a document was "signed."',
@@ -248,6 +250,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'What a non-disclosure agreement actually covers, mutual vs one-way NDAs, when you need one, and the mistakes that make them unenforceable.',
     keywords: 'what is an NDA, non-disclosure agreement, mutual NDA, one-way NDA, NDA template',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/what-is-an-nda.jpg', alt: 'Close-up of a hand signing a document with a fountain pen', credit: 'Photo: Pixabay / Pexels' },
     readMinutes: 6,
     intro: [
       'An NDA — non-disclosure agreement, sometimes called a confidentiality agreement — is one of the most commonly signed business documents, and also one of the most commonly misunderstood. Most people know they exist without ever having read one closely, which becomes a problem the first time they actually need to enforce or rely on one.',
@@ -312,6 +315,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'How real estate agents and brokers use electronic signatures to speed up leases, offers, and disclosures without losing deals to slow paperwork.',
     keywords: 'e-signature real estate, electronic signature lease agreement, real estate contracts online',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/e-signatures-for-real-estate.jpg', alt: 'Real estate agent and client shaking hands outdoors after closing a deal', credit: 'Photo: Pexels' },
     readMinutes: 6,
     intro: [
       'Real estate runs on paperwork more than almost any other industry — leases, offers, counteroffers, disclosures, addenda — and every one of those documents used to mean a fax machine, a scanner, or a client driving across town to sign in person. Agents who adopted e-signatures early did not do it to look modern; they did it because a slow signature is a lost deal in a market that moves fast.',
@@ -375,6 +379,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Why banks and financial institutions rely on e-signatures for loan documents and account opening, and how the audit trail supports compliance.',
     keywords: 'e-signature banking, financial institution electronic signature, loan document signing, compliance audit trail',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/e-signatures-for-banks-financial-institutions.jpg', alt: 'A hand pointing at financial charts on paper next to an open laptop', credit: 'Photo: AdobeStock' },
     readMinutes: 7,
     intro: [
       'Financial institutions were, for a long time, some of the most cautious adopters of electronic signatures — understandably, given the regulatory scrutiny and fraud risk involved in every loan, account opening, and disclosure they process. That caution has not disappeared, but it has shifted: the question is no longer whether e-signatures are secure enough for banking, but which platform provides the audit trail regulators and auditors expect.',
@@ -505,6 +510,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'How small businesses and startups cut costs with free e-signature tools instead of expensive enterprise contracts, and what to look for in a free plan.',
     keywords: 'free e-signature software, small business e-signature, startup document signing, free document signing tool',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/free-e-signature-software-small-business.jpg', alt: 'Woman working on a laptop in a small business office', credit: 'Photo: Pexels' },
     readMinutes: 6,
     intro: [
       'A lot of small businesses still assume e-signature software means a monthly enterprise contract with a per-seat license, because that is how the category was originally sold. That assumption costs them money and slows them down, because a genuinely capable free tier now exists for exactly the volume most small businesses actually need.',
@@ -561,6 +567,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Printing, shipping, storage, and lost documents add up to a real cost that most companies never actually measure. Here is what paper contracts really cost.',
     keywords: 'cost of paper contracts, paperless business, cost of printing documents, document storage cost',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/hidden-cost-of-paper-contracts.jpg', alt: 'Two colleagues reviewing paper documents together in a meeting', credit: 'Photo: Kampus Production / Pexels' },
     readMinutes: 6,
     intro: [
       'Nobody puts "printing and mailing contracts" on a budget line by itself, which is exactly why the cost stays invisible for so long. Once you actually add up paper, ink, courier fees, physical storage, and the staff time spent chasing signatures, the number is almost always higher than people expect — and it is a cost most businesses could eliminate entirely.',
@@ -622,6 +629,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'A practical, step-by-step guide to sending any PDF for electronic signature online, tracking its status, and downloading the signed copy.',
     keywords: 'how to send document for signature, e-signature step by step, send PDF for signature online',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/how-to-send-document-for-signature-online.jpg', alt: 'Businessman signing a document on a tablet with a stylus', credit: 'Photo: Pexels' },
     readMinutes: 5,
     intro: [
       'Sending a document for electronic signature is genuinely simple once you have done it once, but the first time is where most people hesitate — not because it is complicated, but because they are not sure what actually happens after they click send. Here is the full process from upload to signed copy.',
@@ -682,6 +690,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'How HR teams use e-signatures to speed up offer letters, employment contracts, and policy acknowledgments for faster, fully remote onboarding.',
     keywords: 'e-signature HR onboarding, offer letter e-signature, employment contract electronic signature',
     dateLabel: 'July 2026',
+    heroImage: { src: '/blog/digital-signatures-for-hr-onboarding.jpg', alt: 'Diverse group of coworkers shaking hands and greeting each other in an office', credit: 'Photo: Pexels' },
     readMinutes: 6,
     intro: [
       'A new hire\'s first real interaction with a company is almost always paperwork — an offer letter, an employment contract, a stack of policy acknowledgments. How smoothly that paperwork goes sets the tone before the person has even started their first day, which is exactly why HR teams have become some of the heaviest users of e-signature tools.',
@@ -746,6 +755,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Por qué la firma electrónica dejó de ser un lujo y se convirtió en una necesidad competitiva para las empresas en Latinoamérica en 2026.',
     keywords: 'firma digital empresas 2026, firma electronica importancia, digitalizacion empresas latinoamerica',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-digital-empresas-2026.jpg', alt: 'Siluetas de empresarios dándose la mano en una oficina moderna al atardecer', credit: 'Foto: AdobeStock' },
     readMinutes: 7,
     intro: [
       'Hace cinco años, pedirle a un cliente que firmara electrónicamente era una cortesía, casi una novedad. En 2026 es prácticamente lo contrario: una empresa que todavía exige firma en papel para cerrar un contrato transmite, sin querer, que va un paso atrás. Este cambio no ocurrió porque la firma electrónica se volviera "más legal" — en países como Colombia es válida desde 1999 — sino porque el volumen, la velocidad y la geografía de los negocios cambiaron más rápido que los procesos internos de muchas empresas.',
@@ -811,6 +821,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Firma electrónica y firma digital no son lo mismo. Aquí está la diferencia técnica y legal real, explicada sin tecnicismos innecesarios.',
     keywords: 'firma electronica vs firma digital, diferencia firma digital y electronica, que es firma digital',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-electronica-vs-firma-digital.jpg', alt: 'Primer plano de una mano firmando con lápiz óptico en una tablet digital', credit: 'Foto: Karola G / Pexels' },
     readMinutes: 6,
     intro: [
       'Estos dos términos se usan como sinónimos con tanta frecuencia que la mayoría asume que significan lo mismo. No es así, y la diferencia importa si quieres entender exactamente qué estás firmando legalmente, o qué está haciendo en realidad un software cuando dice que un documento fue "firmado".',
@@ -869,6 +880,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Qué cubre realmente un acuerdo de confidencialidad (NDA), NDA mutuo vs unilateral, cuándo se necesita uno y los errores que lo hacen inexigible.',
     keywords: 'que es un NDA, acuerdo de confidencialidad, NDA mutuo, NDA unilateral, plantilla NDA',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/que-es-un-nda-acuerdo-confidencialidad.jpg', alt: 'Primer plano de una mano firmando un documento con una pluma fuente', credit: 'Foto: Pixabay / Pexels' },
     readMinutes: 6,
     intro: [
       'Un NDA — acuerdo de confidencialidad, o "acuerdo de no divulgación" — es uno de los documentos empresariales que más se firma, y también uno de los más malentendidos. Casi todo el mundo sabe que existen sin haber leído nunca uno con atención, lo cual se convierte en un problema la primera vez que realmente necesitan hacerlo valer.',
@@ -933,6 +945,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Cómo las inmobiliarias y agentes usan la firma electrónica para agilizar arrendamientos, promesas de compraventa y cierres con clientes remotos.',
     keywords: 'firma electronica inmobiliarias, contrato de arrendamiento firma electronica, cierre inmobiliario digital',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-electronica-para-inmobiliarias.jpg', alt: 'Agente inmobiliario y cliente dándose la mano al aire libre tras cerrar un trato', credit: 'Foto: Pexels' },
     readMinutes: 6,
     intro: [
       'El sector inmobiliario depende del papeleo más que casi cualquier otra industria — contratos de arrendamiento, promesas de compraventa, contraofertas, anexos — y cada uno de esos documentos antes significaba un fax, un escáner o un cliente atravesando la ciudad para firmar en persona. Las inmobiliarias que adoptaron la firma electrónica temprano no lo hicieron por moda; lo hicieron porque una firma lenta es un negocio perdido en un mercado que se mueve rápido.',
@@ -996,6 +1009,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Por qué bancos y entidades financieras en Latinoamérica confían en la firma electrónica para créditos y apertura de cuentas, y cómo respalda el cumplimiento normativo.',
     keywords: 'firma electronica bancos, entidad financiera firma electronica, firma digital creditos, cumplimiento normativo firma',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-electronica-para-bancos.jpg', alt: 'Una mano señalando gráficos financieros en papel junto a una laptop abierta', credit: 'Foto: AdobeStock' },
     readMinutes: 7,
     intro: [
       'Las entidades financieras fueron, durante mucho tiempo, de las más cautelosas al adoptar la firma electrónica — con razón, dado el escrutinio regulatorio y el riesgo de fraude que rodea cada crédito, apertura de cuenta y divulgación que procesan. Esa cautela no ha desaparecido, pero ha cambiado de forma: la pregunta ya no es si la firma electrónica es suficientemente segura para el sector financiero, sino qué plataforma ofrece el rastro de auditoría que reguladores y auditores esperan ver.',
@@ -1059,6 +1073,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Qué exige realmente cada país de Latinoamérica para que una firma electrónica sea legalmente válida: Colombia, México, Chile, Perú y Argentina.',
     keywords: 'validez legal firma electronica latinoamerica, firma electronica colombia, firma electronica mexico, ley 527',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/validez-legal-firma-electronica-latinoamerica.jpg', alt: 'Mujer revisando documentos legales en una tablet en la oficina', credit: 'Foto: Sandro Tavares / Pexels' },
     readMinutes: 7,
     intro: [
       'La pregunta más común sobre la firma electrónica también es la más fácil de responder con certeza: sí, es legalmente válida en la gran mayoría de países de Latinoamérica, y lo ha sido durante más de dos décadas en varios de ellos. La pregunta más útil es qué hace válida a una firma en cada país específico, porque no toda marca electrónica en un documento califica automáticamente.',
@@ -1122,6 +1137,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Cómo las pequeñas y medianas empresas reducen costos usando herramientas de firma electrónica gratuitas en vez de contratos empresariales costosos.',
     keywords: 'firma electronica gratis pymes, firma electronica gratuita, ahorro pymes firma digital',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-electronica-gratis-para-pymes.jpg', alt: 'Mujer trabajando en una laptop en la oficina de un pequeño negocio', credit: 'Foto: Pexels' },
     readMinutes: 6,
     intro: [
       'Muchas pymes todavía asumen que el software de firma electrónica implica un contrato empresarial mensual con licencia por usuario, porque así se vendía originalmente esta categoría de producto. Esa suposición les cuesta dinero y las hace más lentas, porque hoy existe un plan gratuito genuinamente capaz para exactamente el volumen que la mayoría de las pymes necesita.',
@@ -1178,6 +1194,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Impresión, mensajería, almacenamiento y documentos perdidos suman un costo real que la mayoría de las empresas nunca mide. Esto es lo que realmente cuesta el papel.',
     keywords: 'costo oculto del papel, empresa sin papel, costo de imprimir documentos, digitalizar contratos',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/costo-oculto-del-papel-en-empresas.jpg', alt: 'Dos colegas revisando documentos en papel juntos en una reunión', credit: 'Foto: Kampus Production / Pexels' },
     readMinutes: 6,
     intro: [
       'Nadie pone "imprimir y enviar contratos por correo" como una línea propia en el presupuesto, y precisamente por eso el costo permanece invisible tanto tiempo. Cuando realmente se suma el papel, la tinta, la mensajería, el almacenamiento físico y el tiempo del personal persiguiendo firmas, el número casi siempre es más alto de lo esperado — y es un costo que las empresas podrían eliminar por completo.',
@@ -1239,6 +1256,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Guía práctica paso a paso para enviar cualquier PDF a firma electrónica en línea, monitorear su estado y descargar la copia firmada.',
     keywords: 'como enviar documento para firma, firma electronica paso a paso, enviar PDF para firmar online',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/como-enviar-documento-para-firma-online.jpg', alt: 'Empresario firmando un documento en una tablet con lápiz óptico', credit: 'Foto: Pexels' },
     readMinutes: 5,
     intro: [
       'Enviar un documento para firma electrónica es genuinamente simple una vez que lo haces la primera vez, pero esa primera vez es donde la mayoría duda — no porque sea complicado, sino porque no están seguros de qué ocurre realmente después de hacer clic en enviar. Aquí está el proceso completo, desde subir el documento hasta obtener la copia firmada.',
@@ -1299,6 +1317,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Cómo los equipos de RRHH usan la firma electrónica para agilizar cartas de oferta, contratos laborales y el proceso de onboarding remoto.',
     keywords: 'firma electronica recursos humanos, carta oferta firma electronica, contrato laboral firma digital, onboarding remoto',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/firma-electronica-para-recursos-humanos.jpg', alt: 'Grupo diverso de compañeros de trabajo dándose la mano y saludándose en la oficina', credit: 'Foto: Pexels' },
     readMinutes: 6,
     intro: [
       'La primera interacción real de un nuevo empleado con una empresa casi siempre es papeleo — una carta de oferta, un contrato laboral, una pila de acuses de recibo de políticas. Qué tan fluido resulte ese papeleo marca el tono antes incluso de que la persona haya empezado su primer día, y por eso los equipos de RRHH se han convertido en algunos de los usuarios más frecuentes de las herramientas de firma electrónica.',
@@ -1363,6 +1382,7 @@ export const ARTICLES: Article[] = [
     metaDescription: 'Por qué un contrato tarda una semana en firmarse y cómo una empresa pequeña puede llevar ese mismo proceso a menos de 24 horas, paso a paso.',
     keywords: 'reducir tiempo de firma de contratos, firma electronica rapida, agilizar contratos, cerrar contratos mas rapido, firma electronica para empresas',
     dateLabel: 'Julio 2026',
+    heroImage: { src: '/blog/reducir-tiempo-firma-contratos.jpg', alt: 'Hombre relajado en su silla de oficina tras terminar su trabajo', credit: 'Foto: AdobeStock' },
     isoDate: '2026-07-20',
     readMinutes: 12,
     topicCluster: 'velocidad-contratos',
