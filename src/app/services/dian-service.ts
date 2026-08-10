@@ -295,6 +295,46 @@ export async function obtenerTotales(): Promise<TotalesPanel> {
   };
 }
 
+/** Trae todo lo necesario para el reporte de 4 hojas.
+ *
+ *  Se piden las tres tablas por separado y se cruzan en memoria en vez de
+ *  usar un select anidado: PostgREST devolvería un JSON con las líneas y los
+ *  impuestos embebidos en cada documento, y para miles de documentos eso es
+ *  un payload mucho mayor y más lento de recorrer que tres listas planas. */
+export async function datosParaReporte(f: FiltrosDocumentos = {}) {
+  let q = supabase.from('ed_documents').select('*').order('issue_date', { ascending: false });
+  if (f.desde) q = q.gte('issue_date', f.desde);
+  if (f.hasta) q = q.lte('issue_date', f.hasta);
+  if (f.tipo) q = q.eq('doc_type', f.tipo);
+  if (f.estado) q = q.eq('status', f.estado);
+
+  const { data: docs, error } = await q;
+  if (error) throw new Error(error.message);
+
+  const ids = (docs ?? []).map((d: { id: string }) => d.id);
+  if (ids.length === 0) return { documentos: [], lineas: [], impuestos: [] };
+
+  // Se pide por lotes: una lista con miles de UUID en un solo `in` supera el
+  // largo máximo de URL que acepta PostgREST.
+  const lotes: string[][] = [];
+  for (let i = 0; i < ids.length; i += 200) lotes.push(ids.slice(i, i + 200));
+
+  const lineas: unknown[] = [];
+  const impuestos: unknown[] = [];
+  for (const lote of lotes) {
+    const [l, t] = await Promise.all([
+      supabase.from('ed_document_lines').select('*').in('document_id', lote),
+      supabase.from('ed_document_taxes').select('*').in('document_id', lote),
+    ]);
+    if (l.error) throw new Error(l.error.message);
+    if (t.error) throw new Error(t.error.message);
+    lineas.push(...(l.data ?? []));
+    impuestos.push(...(t.data ?? []));
+  }
+
+  return { documentos: docs ?? [], lineas, impuestos };
+}
+
 /** Detalle completo para el panel lateral. */
 export async function obtenerDocumento(id: string) {
   const [doc, lineas, impuestos, excepciones] = await Promise.all([

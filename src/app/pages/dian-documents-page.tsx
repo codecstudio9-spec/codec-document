@@ -24,9 +24,10 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { isAdminEmail } from '../utils/admin-access';
 import {
-  importarArchivos, listarDocumentos, obtenerTotales,
+  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
+import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
 
 const pesos = (n: number) =>
   n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
@@ -100,6 +101,37 @@ export default function DianDocumentsPage() {
     } finally {
       setCargando(false);
       setProgreso(null);
+    }
+  };
+
+  const [exportando, setExportando] = useState(false);
+
+  const descargarExcel = async () => {
+    setExportando(true);
+    try {
+      const { documentos: docs, lineas, impuestos } = await datosParaReporte({
+        estado: filtroEstado || undefined,
+      });
+      if (docs.length === 0) { toast.error('No hay documentos para exportar'); return; }
+
+      const bytes = construirReporte(
+        docs as DocumentoReporte[],
+        lineas as LineaReporte[],
+        impuestos as ImpuestoReporte[],
+      );
+      const url = URL.createObjectURL(
+        new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Reporte documentos electronicos ${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${docs.length} documento(s) exportados en 4 hojas`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setExportando(false);
     }
   };
 
@@ -348,11 +380,19 @@ export default function DianDocumentsPage() {
             </select>
             <button
               type="button"
+              onClick={() => void descargarExcel()}
+              disabled={exportando}
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {exportando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              Descargar Excel
+            </button>
+            <button
+              type="button"
               onClick={descargarCsv}
               className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
-              <Download className="size-4" />
-              Exportar
+              CSV
             </button>
           </div>
 
