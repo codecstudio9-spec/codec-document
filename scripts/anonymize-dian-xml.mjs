@@ -289,6 +289,12 @@ function reglaPara(pila) {
   return null;
 }
 
+/** Elementos cuyo contenido es un número de negocio, no un identificador.
+ *  Una cadena de dígitos que reaparece aquí es coincidencia, no fuga: en
+ *  pesos colombianos los importes son cifras largas y redondas, así que
+ *  chocan a menudo con NIT, teléfonos y consecutivos. */
+const CONTEXTO_NUMERICO = /(Amount|Quantity|Percent|Numeric|Rate|Units|BaseUnitMeasure)$/;
+
 // ─────────────────────────────────────────────────────────────────────────
 // Tokenizador con reemplazo en sitio
 // ─────────────────────────────────────────────────────────────────────────
@@ -413,7 +419,31 @@ function transformarTexto(bruto, pila, informe, factorMonto) {
   }
 
   const kind = reglaPara(pila);
-  if (!kind) return bruto;
+
+  // Sin regla estructurada: es un campo de forma libre. Cada proveedor
+  // tecnológico añade sus propias extensiones (sts: de la DIAN, cdt: y
+  // carvajal: de Carvajal, y las que traiga el siguiente) y ahí reaparecen
+  // datos ya sustituidos: el QR es una URL con el CUFE y el número
+  // dentro, y las extensiones de contacto repiten teléfonos.
+  //
+  // Enumerar esos nodos uno por uno sería perseguir un blanco móvil. En su
+  // lugar, sobre cualquier texto sin regla se barren los valores ya
+  // conocidos, con umbral bajo (5) porque aquí no hay cifras de negocio
+  // que corromper — los importes y cantidades viven en campos con nombre
+  // propio, que quedan excluidos por CONTEXTO_NUMERICO.
+  if (!kind) {
+    if (CONTEXTO_NUMERICO.test(local)) return bruto;
+    let salida = bruto;
+    for (const [tipo, dicc] of Object.entries(mapa)) {
+      for (const [real, falso] of Object.entries(dicc)) {
+        if (real.length < 5 || !salida.includes(real)) continue;
+        salida = salida.split(real).join(falso);
+        informe.barridos++;
+        void tipo;
+      }
+    }
+    return salida;
+  }
 
   const valor = bruto.trim();
   const nuevo = sustituir(kind, valor);
@@ -548,11 +578,6 @@ function escanearContenido(texto, informe) {
 // falsos positivos.
 const KINDS_IDENTIFICADORES = ['nit', 'razon', 'nombre', 'persona', 'email', 'tel', 'dir', 'cufe', 'docnum', 'uuid'];
 
-/** Elementos cuyo contenido es un número de negocio, no un identificador.
- *  Una cadena de dígitos que reaparece aquí es coincidencia, no fuga: en
- *  pesos colombianos los importes son cifras largas y redondas, así que
- *  chocan a menudo con NIT, teléfonos y consecutivos. */
-const CONTEXTO_NUMERICO = /(Amount|Quantity|Percent|Numeric|Rate|Units|BaseUnitMeasure)$/;
 
 /** Relee la salida y confirma que ningún valor original sobrevivió. Si algo
  *  se escapó, el archivo no se escribe. Es preferible fallar a filtrar.
