@@ -3,31 +3,43 @@ import { Megaphone, Check, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
+import { isAdminEmail } from '../../utils/admin-access';
 import { getAppSetting, setAppSetting, META_PIXEL_ID_KEY } from '../../services/app-settings-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
-/** Admin-only "Marketing" settings card — currently just the Meta/Facebook
+/** Owner-only "Marketing" settings card — currently just the Meta/Facebook
  * Pixel ID, editable without a code deploy so ad campaigns can be turned
  * on/off or repointed at a different pixel directly from Settings. Reused
- * by both DesktopSettings and MobileSettings; renders nothing for a
- * non-admin, so both pages can drop it in unconditionally. */
+ * by both DesktopSettings and MobileSettings; renders nothing when it
+ * shouldn't, so both pages can drop it in unconditionally.
+ *
+ * Gated on isAdminEmail(), NOT on the broader isAdmin flag, deliberately.
+ * isAdmin is also granted by the DB `role` column (see auth-context.tsx's
+ * refreshSubscription) so admins can be added without a deploy — but the
+ * app_settings RLS policies are guarded by is_admin_user(), which resolves
+ * to this one hardcoded address and nothing else. A DB-flagged admin was
+ * therefore seeing a field whose Save could only ever fail with an RLS
+ * error. Matching the client gate to the server gate hides it from them
+ * instead. If more people should manage the pixel later, widen
+ * is_admin_user() and this check together — never just this one. */
 export function AdminMarketingSettings() {
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
   const { language } = useLanguage();
+  const canManage = isAdminEmail(user?.email);
   const [pixelId, setPixelId] = useState('');
   const [savedPixelId, setSavedPixelId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canManage) return;
     getAppSetting(META_PIXEL_ID_KEY)
       .then((value) => { setPixelId(value ?? ''); setSavedPixelId(value ?? ''); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isAdmin]);
+  }, [canManage]);
 
-  if (!isAdmin) return null;
+  if (!canManage) return null;
 
   const dirty = pixelId.trim() !== savedPixelId;
 
@@ -47,7 +59,7 @@ export function AdminMarketingSettings() {
   return (
     <div>
       <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-400">
-        {language === 'en' ? 'Marketing (admin only)' : 'Marketing (solo admin)'}
+        {language === 'en' ? 'Marketing (owner only)' : 'Marketing (solo propietario)'}
       </p>
       <div className="bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
         <div className="flex items-center gap-3">
