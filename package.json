@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "anonymize:dian": "node scripts/anonymize-dian-xml.mjs",
     "validate:legal": "node scripts/validate-legal-content.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:seo-manifest": "tsx scripts/generate-seo-manifest.mts",

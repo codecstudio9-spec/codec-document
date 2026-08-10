@@ -45,3 +45,13 @@ coverage/
 
 # Supabase CLI local cache (project-ref link, not repo state)
 supabase/.temp/
+
+# Documentos electrónicos DIAN — datos tributarios de terceros.
+# Los XML reales NUNCA se comitean. El mapa de anonimización contiene los
+# valores originales (NIT, razón social, correos) y es aún más sensible que
+# los propios XML: es la llave para revertir la anonimización.
+# Ver scripts/anonymize-dian-xml.mjs
+fixtures-dian/
+_mapa-PRIVADO-no-compartir.json
+*_mapa-PRIVADO*.json
+xml-dian-reales/
