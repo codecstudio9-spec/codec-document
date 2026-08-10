@@ -463,10 +463,21 @@ function ProtectedSignaturePage() {
   );
 }
 
+// Módulo DIAN (Colombia). La página se gatea a sí misma por correo
+// (isAdminEmail): existe y se ve como la vería un contador, pero por ahora
+// sólo la abre el propietario. Excluida de sitemap y de middleware.ts —
+// ver EXCLUDED_EXACT en ambos.
+const DianDocumentsPage = lazy(() => import("./pages/dian-documents-page"));
+
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: ModernHomePage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/documentos-electronicos",
+    Component: DianDocumentsPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

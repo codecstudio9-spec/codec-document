@@ -38,7 +38,10 @@ const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|dashboard|app|sign|
 // One-off routes whose path looks like a marketing landing but is actually
 // the authenticated in-app tool (both point at ProtectedSignaturePage —
 // verified by reading routes.tsx). A prefix rule can't catch these.
-const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures']);
+// '/documentos-electronicos' es el módulo DIAN: herramienta autenticada en
+// pruebas cerradas, sin identidad SEO propia todavía. Mantener en sync con
+// EXCLUDE_EXACT de scripts/generate-sitemap.mjs.
+const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures', '/documentos-electronicos']);
 
 export default function middleware(request: Request) {
   const url = new URL(request.url);

@@ -27,7 +27,9 @@ const EXCLUDE_PREFIXES = ['/generator', '/preview', '/my-', '/admin', '/sign', '
 // the authenticated in-app tool (verified by reading routes.tsx — both
 // point at ProtectedSignaturePage). Add to this list if another such alias
 // is ever introduced; a path-prefix rule alone can't catch these.
-const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '*', '']);
+// '/documentos-electronicos' es el módulo DIAN: herramienta autenticada en
+// pruebas cerradas. Mantener en sync con EXCLUDED_EXACT de middleware.ts.
+const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '/documentos-electronicos', '*', '']);
 
 function isExcluded(p) {
   if (EXCLUDE_EXACT.has(p)) return true;
