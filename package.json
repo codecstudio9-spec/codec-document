@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "anonymize:dian": "node scripts/anonymize-dian-xml.mjs",
+    "check:dian": "tsx scripts/dian-parse-check.mts",
+    "check:dian-security": "tsx scripts/dian-security-check.mts",
     "validate:legal": "node scripts/validate-legal-content.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:seo-manifest": "tsx scripts/generate-seo-manifest.mts",
