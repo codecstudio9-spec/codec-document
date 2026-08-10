@@ -187,6 +187,24 @@ const generadores = {
   cufe(real) {
     return hashHex('cufe', real, real.length);
   },
+  // Numeración autorizada por la DIAN: sts:InvoiceAuthorization (el número
+  // de resolución) y el rango sts:From/sts:To. Identifican al contribuyente
+  // tanto como el NIT, así que se sustituyen — y de paso se evita que un
+  // rango coincida por casualidad con un teléfono y dispare un falso
+  // positivo en el verificador de fugas, que fue justo lo que pasó al
+  // probar contra documentos reales.
+  rango(real) {
+    const h = hashInt('rango', real);
+    return String(h % 10 ** real.length).padStart(real.length, '0');
+  },
+  // sts:SoftwareID es un UUID con guiones; se conserva el patrón exacto para
+  // que un parser que valide el formato siga midiendo lo mismo.
+  uuid(real) {
+    const h = hashHex('uuid', real, real.length);
+    let out = '';
+    for (let i = 0; i < real.length; i++) out += /[0-9a-fA-F]/.test(real[i]) ? h[i] : real[i];
+    return out;
+  },
   docnum(real) {
     // Conserva el prefijo alfabético (FE, SETP, POS...) y cambia el consecutivo.
     const m = String(real).match(/^([A-Za-z]*)(\d+)$/);
@@ -211,7 +229,7 @@ const generadores = {
 };
 
 // Diccionario real → falso, compartido por todos los archivos del lote.
-const mapa = { nit: {}, razon: {}, nombre: {}, persona: {}, email: {}, tel: {}, dir: {}, cufe: {}, docnum: {} };
+const mapa = { nit: {}, razon: {}, nombre: {}, persona: {}, email: {}, tel: {}, dir: {}, cufe: {}, docnum: {}, uuid: {}, rango: {} };
 
 function sustituir(kind, real) {
   const limpio = String(real).trim();
@@ -233,6 +251,21 @@ const ultimo = (p) => p[p.length - 1];
 const padre = (p) => p[p.length - 2];
 
 const REGLAS = [
+  // Extensión propia de la DIAN (namespace dian:gov:co:facturaelectronica:
+  // Structures-2-1). Confirmado contra documentos reales:
+  //   sts:DianExtensions
+  //     sts:InvoiceControl → InvoiceAuthorization · AuthorizedInvoices(Prefix/From/To)
+  //     sts:SoftwareProvider → ProviderID (NIT) · SoftwareID (UUID)
+  //     sts:SoftwareSecurityCode (96 hex)
+  //     sts:AuthorizationProvider → AuthorizationProviderID (NIT de la DIAN)
+  //     sts:QRCode (URL que lleva el CUFE embebido — la limpia el barrido final)
+  { kind: 'nit', test: (p) => ['ProviderID', 'AuthorizationProviderID'].includes(ultimo(p)) },
+  { kind: 'rango', test: (p) => ultimo(p) === 'InvoiceAuthorization' || (['From', 'To'].includes(ultimo(p)) && padre(p) === 'AuthorizedInvoices') },
+  { kind: 'uuid', test: (p) => ultimo(p) === 'SoftwareID' },
+  { kind: 'cufe', test: (p) => ultimo(p) === 'SoftwareSecurityCode' },
+  // ApplicationResponse (acuses y eventos RADIAN) nombra al validador aquí.
+  { kind: 'razon', test: (p) => ultimo(p) === 'ValidatorID' },
+
   { kind: 'nit', test: (p) => ultimo(p) === 'CompanyID' || (ultimo(p) === 'ID' && padre(p) === 'PartyIdentification') },
   { kind: 'razon', test: (p) => ultimo(p) === 'RegistrationName' },
   { kind: 'nombre', test: (p) => ultimo(p) === 'Name' && padre(p) === 'PartyName' },
@@ -241,10 +274,13 @@ const REGLAS = [
   { kind: 'tel', test: (p) => ['Telephone', 'Telefax'].includes(ultimo(p)) },
   { kind: 'dir', test: (p) => ultimo(p) === 'Line' && padre(p) === 'AddressLine' },
   { kind: 'cufe', test: (p) => ultimo(p) === 'UUID' },
-  // Sólo el ID que cuelga directamente de la raíz es el número del documento.
-  // Más abajo, <cbc:ID> es el número de línea o el código de un impuesto.
+  // <cbc:ID> es ambiguo: en la raíz es el número del documento, pero más
+  // abajo es el número de línea o el código de un impuesto. Se cubren los
+  // dos sitios donde sí es un número de documento — la raíz y las
+  // referencias cruzadas (un ApplicationResponse apunta así a su factura).
   { kind: 'docnum', test: (p) => ultimo(p) === 'ID' && p.length === 2 },
-  { kind: 'docnum', test: (p) => ['ParentDocumentID', 'DocumentReference'].includes(ultimo(p)) && p.length === 2 },
+  { kind: 'docnum', test: (p) => ultimo(p) === 'ID' && ['DocumentReference', 'BillingReference', 'InvoiceDocumentReference', 'DespatchDocumentReference', 'ReceiptDocumentReference', 'AdditionalDocumentReference', 'OrderReference'].includes(padre(p)) },
+  { kind: 'docnum', test: (p) => ['ParentDocumentID', 'ReferenceID'].includes(ultimo(p)) },
   { kind: 'b64', test: (p) => ['X509Certificate', 'SignatureValue', 'DigestValue', 'Modulus', 'Exponent', 'X509SerialNumber', 'X509IssuerName', 'X509SubjectName'].includes(ultimo(p)) },
 ];
 
@@ -391,6 +427,43 @@ function transformarTexto(bruto, pila, informe, factorMonto) {
  *  positivo. Se corrige en una segunda pasada, sobre el texto ya
  *  transformado, porque durante el recorrido el atributo se lee antes que
  *  el contenido del elemento — todavía no se sabe cuál será el NIT falso. */
+/** Barrido final: reemplaza cualquier valor real que haya sobrevivido, esté
+ *  donde esté.
+ *
+ *  Las reglas por nodo cubren los campos estructurados, pero los datos
+ *  vuelven a aparecer en sitios de forma libre que ninguna regla puede
+ *  anticipar: <sts:QRCode> es una URL con el CUFE embebido, las notas
+ *  suelen traer el nombre del cliente, y los documentos de referencia
+ *  repiten números. Antes esto bloqueaba el archivo; ahora se limpia.
+ *
+ *  Se corre después de las reglas, no en vez de ellas: el paso estructurado
+ *  es el que sabe QUÉ es cada dato (y por tanto qué falso generar y cómo
+ *  contarlo); esto sólo propaga la decisión ya tomada.
+ *
+ *  Sólo actúa sobre valores de 8 o más caracteres. Por debajo, la
+ *  probabilidad de que una cadena coincida por casualidad con un dato
+ *  estructural (un rango de numeración, una cantidad) supera al riesgo que
+ *  evita. Los valores cortos siguen cubiertos por el verificador de fugas,
+ *  que ahí sí prefiere bloquear el archivo. */
+function barridoFinal(texto, informe) {
+  const pares = [];
+  for (const dicc of Object.values(mapa)) {
+    for (const [real, falso] of Object.entries(dicc)) {
+      if (real.length >= 8) pares.push([real, falso]);
+    }
+  }
+  // De más largo a más corto: evita que un valor corto rompa a la mitad uno
+  // largo que lo contiene (un NIT dentro del CUFE, por ejemplo).
+  pares.sort((a, b) => b[0].length - a[0].length);
+
+  for (const [real, falso] of pares) {
+    if (!texto.includes(real)) continue;
+    informe.barridos += texto.split(real).length - 1;
+    texto = texto.split(real).join(falso);
+  }
+  return texto;
+}
+
 function corregirDigitosVerificacion(texto, informe) {
   return texto.replace(
     /<((?:[A-Za-z0-9_.-]+:)?(?:CompanyID|ID))([^>]*?schemeID\s*=\s*")(\d{1,2})("[^>]*)>(\s*)(\d{5,15})(\s*)<\/\1>/g,
@@ -412,7 +485,7 @@ function corregirDigitosVerificacion(texto, informe) {
 
 function informeVacio() {
   return {
-    archivos: 0, cdataAnidado: 0, doctype: 0, notas: 0, dvRecalculado: 0,
+    archivos: 0, cdataAnidado: 0, doctype: 0, notas: 0, dvRecalculado: 0, barridos: 0,
     reemplazos: {}, tiposRaiz: {}, tiposDocumento: {}, codigosImpuesto: {},
     namespaces: {}, monedas: {}, formasPago: {}, lineasPorDoc: [],
     elementosVistos: new Set(), fugas: [],
@@ -468,16 +541,48 @@ function escanearContenido(texto, informe) {
 // Verificación anti-fuga
 // ─────────────────────────────────────────────────────────────────────────
 
+// Qué se verifica de verdad. `rango` queda fuera a propósito: un rango de
+// numeración autorizada no identifica a nadie por sí solo (se sustituye por
+// higiene, no por necesidad), y al ser un número redondo de 7 u 8 cifras
+// coincide constantemente con importes en pesos. Verificarlo produce sólo
+// falsos positivos.
+const KINDS_IDENTIFICADORES = ['nit', 'razon', 'nombre', 'persona', 'email', 'tel', 'dir', 'cufe', 'docnum', 'uuid'];
+
+/** Elementos cuyo contenido es un número de negocio, no un identificador.
+ *  Una cadena de dígitos que reaparece aquí es coincidencia, no fuga: en
+ *  pesos colombianos los importes son cifras largas y redondas, así que
+ *  chocan a menudo con NIT, teléfonos y consecutivos. */
+const CONTEXTO_NUMERICO = /(Amount|Quantity|Percent|Numeric|Rate|Units|BaseUnitMeasure)$/;
+
 /** Relee la salida y confirma que ningún valor original sobrevivió. Si algo
- *  se escapó, el archivo no se escribe. Es preferible fallar a filtrar. */
+ *  se escapó, el archivo no se escribe. Es preferible fallar a filtrar.
+ *
+ *  Reporta el elemento que envuelve cada fuga, no el valor: con eso se sabe
+ *  qué regla falta sin tener que mirar datos reales. */
 function verificarSinFugas(salida, nombreArchivo) {
   const fugas = [];
-  for (const [kind, dicc] of Object.entries(mapa)) {
-    for (const real of Object.keys(dicc)) {
-      // Los valores muy cortos generan falsos positivos (un "1" aparece en
-      // cualquier parte). Sólo se verifican los que identifican de verdad.
+  for (const kind of KINDS_IDENTIFICADORES) {
+    for (const real of Object.keys(mapa[kind] ?? {})) {
+      // Por debajo de 6 caracteres cualquier cadena aparece en cualquier
+      // parte; sólo se verifica lo que identifica de verdad.
       if (real.length < 6) continue;
-      if (salida.includes(real)) fugas.push({ archivo: nombreArchivo, kind, valor: real });
+      const soloDigitos = /^\d+$/.test(real);
+      let i = -1;
+      while ((i = salida.indexOf(real, i + 1)) !== -1) {
+        const antes = salida.slice(Math.max(0, i - 200), i);
+        const tag = [...antes.matchAll(/<([A-Za-z0-9_:.-]+)/g)].pop()?.[1] ?? '(desconocido)';
+        const dentroDeAtributo = /[A-Za-z0-9_:.-]+\s*=\s*"[^"]*$/.test(antes);
+
+        // Un valor puramente numérico dentro de un campo numérico es
+        // coincidencia. Una razón social ahí dentro seguiría siendo fuga.
+        if (soloDigitos && CONTEXTO_NUMERICO.test(tag)) continue;
+
+        fugas.push({
+          archivo: nombreArchivo,
+          kind,
+          donde: `<${tag}>${dentroDeAtributo ? ' (atributo)' : ''}`,
+        });
+      }
     }
   }
   return fugas;
@@ -549,7 +654,11 @@ entradas.forEach((entrada, indice) => {
 
   let salida;
   try {
-    salida = corregirDigitosVerificacion(transformar(entrada.contenido, informe, factorMonto), informe);
+    // Orden: reglas por nodo → barrido de lo que se escapó → DV coherente.
+    // El DV va último porque necesita ver el NIT falso ya definitivo.
+    salida = transformar(entrada.contenido, informe, factorMonto);
+    salida = barridoFinal(salida, informe);
+    salida = corregirDigitosVerificacion(salida, informe);
   } catch (err) {
     console.error(`  ✕ ${entrada.nombre} — error al procesar: ${err.message}`);
     return;
@@ -626,6 +735,7 @@ ${lista(informe.namespaces)}
 ${lista(informe.reemplazos)}
 
   Valores únicos          ${Object.values(mapa).reduce((a, d) => a + Object.keys(d).length, 0)}
+  Barrido final           ${informe.barridos} (campos libres: QR, notas, referencias)
   Notas conservadas       ${informe.notas}${SCRUB_NOTES ? ' (vaciadas)' : ' — texto libre, conviene revisarlas a ojo'}
   DOCTYPE encontrados     ${informe.doctype}${informe.doctype ? '  ⚠ vector de XXE: el parser de producción debe rechazarlo' : ''}
   Montos                  ${SCALE_AMOUNTS ? 'escalados por documento' : 'conservados'}
@@ -634,7 +744,14 @@ ${lista(informe.reemplazos)}
 
   ${fugasTotales.length === 0
     ? 'Sin fugas. Ningún valor original sobrevive en la salida.'
-    : `⚠ ${fugasTotales.length} fuga(s). Esos archivos NO se escribieron.`}
+    : `⚠ ${fugasTotales.length} fuga(s). Esos archivos NO se escribieron.
+
+  Dónde quedó cada una (falta una regla para estos nodos):
+${lista(fugasTotales.reduce((acc, f) => {
+      const k = `${f.donde}  ·  ${f.kind}`;
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {}))}`}
 
   ═══════════════════════════════════════════════════════════════
 `;
