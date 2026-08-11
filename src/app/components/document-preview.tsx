@@ -45,7 +45,22 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
     });
   };
 
+  // Separador horizontal. Las plantillas lo escriben con guiones o con una
+  // fila de comillas —la convención que ya venía del catálogo—, y hasta ahora
+  // sólo se reconocía la de guiones: la de comillas caía en la rama de título
+  // en mayúsculas y se imprimía tal cual, una banda de setenta y cinco
+  // comillas centrada y en negrita en mitad del contrato.
+  const DIVIDER_RE = /^(-{5,}|"{5,})$/;
+
+  // Ojo con el orden: esto se comprueba DESPUÉS del separador, porque una
+  // línea de guiones no debe confundirse con un renglón de firma.
   const SIG_LINE_RE = /_{5,}|Signature\s*:|Firma\s*:/i;
+
+  // El título del documento es la primera línea centrada. Se le da más cuerpo
+  // que a los encabezados de cláusula, que también van centrados: sin esa
+  // diferencia el documento empieza sin jerarquía, con el título del mismo
+  // tamaño que la cláusula primera.
+  let tituloEmitido = false;
   const LEGAL_TERMS = [
     'WITNESSETH', 'WHEREAS', 'NOW THEREFORE', 'IN WITNESS WHEREOF',
     'CONSIDERANDO', 'POR LO TANTO', 'EN TESTIMONIO DE LO CUAL',
@@ -55,7 +70,7 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
 
   // ── Normal single-line renderer ───────────────────────────────────────────────
   function renderLine(trimmedLine: string, key: string, gapClass: string, inSigBlock: boolean): React.ReactNode {
-    if (/^-{5,}$/.test(trimmedLine)) return renderSolidDivider(key);
+    if (DIVIDER_RE.test(trimmedLine)) return renderSolidDivider(key);
 
     if (SIG_LINE_RE.test(trimmedLine)) {
       const label = trimmedLine.replace(/_{5,}/g, '').replace(/Signature\s*:/i, '').replace(/Firma\s*:/i, '').trim();
@@ -82,13 +97,37 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
       );
     }
 
+    // Debajo del renglón de firma van el nombre, el documento y el teléfono.
+    // Con el tratamiento de párrafo normal salían sangrados y justificados,
+    // que es lo contrario de lo que se espera ahí: un bloque de firma se lee
+    // en columna, pegado al margen.
+    //
+    // Va ANTES de la rama de mayúsculas, y no después, porque «C.C. 1.045.223»
+    // y «311 272 6359» son sólo letras mayúsculas, cifras y puntos: la rama de
+    // mayúsculas los reclamaba y los centraba como si fueran encabezados.
+    if (inSigBlock) {
+      return (
+        <div key={key} className={`text-[10px] leading-[1.35] ${gapClass}`}>
+          {renderTokens(trimmedLine, `sig-${key}`)}
+        </div>
+      );
+    }
+
     if (
       /^[A-Z0-9\sÀ-ſ\-–—()&,.'"]+$/.test(trimmedLine) &&
       trimmedLine.length > 3 && trimmedLine.length <= 80 &&
       !/[:;]/.test(trimmedLine)
     ) {
+      const esTitulo = !tituloEmitido;
+      tituloEmitido = true;
       return (
-        <div key={key} className={`text-center font-bold uppercase tracking-[0.05em] text-[10.5px] leading-tight ${gapClass}`} style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+        <div
+          key={key}
+          className={`text-center font-bold uppercase leading-tight ${
+            esTitulo ? 'text-[13px] tracking-[0.08em] mt-[0.2em] mb-[0.9em]' : 'text-[10.5px] tracking-[0.05em]'
+          } ${gapClass}`}
+          style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+        >
           {renderTokens(trimmedLine, `title-${key}`)}
         </div>
       );
@@ -127,6 +166,22 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
         <div key={key} className={`text-[10px] leading-[1.2] ${gapClass}`}>
           <span className="font-semibold">{label}:</span>
           {renderTokens(rest, `lbl-${key}`)}
+        </div>
+      );
+    }
+
+    // Enumeraciones «a) …», «b) …». La sangría de primera línea las rompía:
+    // sangraba la letra y dejaba el resto del texto pegado al margen. Con
+    // sangría francesa la letra queda fuera y el párrafo alineado bajo sí
+    // mismo, que es como se compone una enumeración.
+    if (/^[a-z]\)\s/.test(trimmedLine) || /^[•·]\s/.test(trimmedLine)) {
+      return (
+        <div
+          key={key}
+          className={`text-[10px] text-justify leading-[1.2] ${gapClass}`}
+          style={{ paddingLeft: '1.4em', textIndent: '-1.4em' }}
+        >
+          {renderTokens(trimmedLine, `item-${key}`)}
         </div>
       );
     }
@@ -259,10 +314,24 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
   type FlexBlock = { startIdx: number; endIdx: number; leftParas: Para[]; rightParas: Para[] };
   const flexBlocks: FlexBlock[] = [];
 
+  /** ¿Hay una línea divisoria entre estos dos párrafos? Un separador es una
+   *  frontera visual explícita: lo que queda a cada lado pertenece a partes
+   *  distintas del documento y no puede fundirse en una misma fila.
+   *
+   *  Sin esta comprobación, en la carta de renuncia la firma de quien renuncia
+   *  se maquetaba en dos columnas junto al «Recibido por» de la constancia de
+   *  recibido, que va después del separador y es de otra persona. */
+  const hayDivisorEntre = (desde: number, hasta: number): boolean => {
+    for (let j = desde + 1; j < hasta; j++) {
+      if (paragraphs[j].lines.length === 1 && DIVIDER_RE.test(paragraphs[j].lines[0].trim())) return true;
+    }
+    return false;
+  };
+
   for (let k = 0; k < sigIndices.length - 1; k++) {
     const leftSig  = sigIndices[k];
     const rightSig = sigIndices[k + 1];
-    if (rightSig - leftSig <= 3) {
+    if (rightSig - leftSig <= 3 && !hayDivisorEntre(leftSig, rightSig)) {
       const leftHeader  = leftSig  > 0 && !paragraphs[leftSig  - 1].isSig ? leftSig  - 1 : leftSig;
       const rightHeader = rightSig > 0 && !paragraphs[rightSig - 1].isSig ? rightSig - 1 : rightSig;
       const leftParas  = leftHeader  < leftSig  ? [paragraphs[leftHeader],  paragraphs[leftSig]]  : [paragraphs[leftSig]];
@@ -296,6 +365,11 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
       i = fb.endIdx + 1;
     } else {
       const p = paragraphs[i];
+      // Un título encabeza el documento o no existe. Una carta empieza por la
+      // ciudad y la fecha y no lleva ninguno, y sin este corte el primer
+      // renglón en mayúsculas que apareciera —el «C.C. 1.045.223» de debajo de
+      // la firma— se ascendía a título y se imprimía en grande al final.
+      if (p.pidx > 2) tituloEmitido = true;
       result.push(
         <div key={`para-${p.pidx}`}>
           {renderParaLines(p.lines, `p-${p.pidx}`)}

@@ -498,33 +498,25 @@ The parties will try in good faith to resolve any difference by direct conversat
 In witness whereof, the parties sign in {{governing_city}} on {{current_date}}.
 
 
-
+THE PLANNER
 
 _______________________________________
 {{planner_name}}
 ID {{planner_id}}
 {{planner_phone}}{{#if planner_email}}
 {{planner_email}}{{/if}}
-THE PLANNER
 
-
-
+THE CLIENT
 
 _______________________________________
 {{client_name}}
 ID {{client_id}}
 {{client_phone}}{{#if client_email}}
-{{client_email}}{{/if}}
-THE CLIENT
-{{#if partner_name}}
-
-
-
+{{client_email}}{{/if}}{{#if partner_name}}
 _______________________________________
-{{partner_name}}
-{{/if}}
+{{partner_name}}{{/if}}
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+---------------------------------------------------------------------------
 
 NOTE FOR THE SIGNER — not part of the agreement
 

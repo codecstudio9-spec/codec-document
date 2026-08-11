@@ -498,33 +498,25 @@ Las partes intentarán resolver de buena fe cualquier diferencia mediante conver
 En señal de aceptación, las partes firman en {{governing_city}}, el {{current_date}}.
 
 
-
+LA PLANNER
 
 _______________________________________
 {{planner_name}}
 Documento {{planner_id}}
 {{planner_phone}}{{#if planner_email}}
 {{planner_email}}{{/if}}
-LA PLANNER
 
-
-
+EL CLIENTE
 
 _______________________________________
 {{client_name}}
 Documento {{client_id}}
 {{client_phone}}{{#if client_email}}
-{{client_email}}{{/if}}
-EL CLIENTE
-{{#if partner_name}}
-
-
-
+{{client_email}}{{/if}}{{#if partner_name}}
 _______________________________________
-{{partner_name}}
-{{/if}}
+{{partner_name}}{{/if}}
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+---------------------------------------------------------------------------
 
 NOTA PARA QUIEN FIRMA — no forma parte del contrato
 
