@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles } from 'lucide-react';
+import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { isAdminEmail } from '../../utils/admin-access';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
@@ -55,6 +56,7 @@ export function MobileDashboardHome() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const verDian = isAdminEmail(user?.email);
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -203,6 +205,29 @@ function DashboardContent() {
         >
           <Upload className="size-4" /> {language === 'en' ? 'Sign a document' : 'Firmar documento'}
         </motion.button>
+
+        {/* Módulo DIAN (Colombia). Sólo lo ve el propietario mientras esté en
+            pruebas cerradas — mismo guardia que usa la propia página, así no
+            queda un acceso visible a una pantalla que rechaza al usuario. */}
+        {verDian && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            type="button"
+            onClick={() => navigate('/documentos-electronicos')}
+            className="relative flex w-full items-center justify-center gap-2 overflow-hidden text-white"
+            style={{
+              borderRadius: 16, height: 52, fontWeight: 700, fontSize: 14,
+              background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
+              boxShadow: '0 10px 22px rgba(4,120,87,0.30)',
+            }}
+          >
+            <FileSpreadsheet className="size-4" />
+            {language === 'en' ? 'DIAN Documents' : 'Documentos DIAN'}
+            <span className="absolute right-3 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+              {language === 'en' ? 'Beta' : 'Beta'}
+            </span>
+          </motion.button>
+        )}
 
         <motion.button
           whileTap={{ scale: 0.97 }}

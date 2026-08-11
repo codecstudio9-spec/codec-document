@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, PenLine, Clock, LayoutTemplate, Plus, Receipt, Upload, FolderOpen, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { FileText, PenLine, Clock, LayoutTemplate, Plus, Receipt, Upload, FolderOpen, Check, ArrowRight, Sparkles, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
+import { isAdminEmail } from '../../utils/admin-access';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { fetchDashboardStats, type DashboardStats } from '../../services/mobile-dashboard-service';
@@ -44,6 +45,7 @@ export function DesktopDashboardHome() {
 
 function DashboardHomeContent() {
   const { user } = useAuth();
+  const verDian = isAdminEmail(user?.email);
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -82,12 +84,23 @@ function DashboardHomeContent() {
       </div>
 
       {/* Quick actions */}
-      <div className="mt-6 grid grid-cols-4 gap-4">
+      <div className={`mt-6 grid gap-4 ${verDian ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {[
           { icon: Plus, label: language === 'en' ? 'Create Document' : 'Crear Documento', onClick: () => navigate('/dashboard/templates'), variant: 'primary' as const },
           { icon: Receipt, label: language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes', onClick: () => navigate('/my-quotes'), variant: 'quotes' as const },
           { icon: Upload, label: language === 'en' ? 'Sign Document' : 'Firmar Documento', onClick: () => navigate('/firma-electronica'), variant: 'default' as const },
           { icon: FolderOpen, label: language === 'en' ? 'View Templates' : 'Ver Plantillas', onClick: () => navigate('/dashboard/templates'), variant: 'default' as const },
+          // Módulo DIAN (Colombia). Sólo lo ve el propietario mientras esté
+          // en pruebas cerradas — mismo guardia que usa la propia página, así
+          // no queda un acceso visible a una pantalla que rechaza al usuario.
+          ...(verDian
+            ? [{
+                icon: FileSpreadsheet,
+                label: language === 'en' ? 'DIAN Documents' : 'Documentos DIAN',
+                onClick: () => navigate('/documentos-electronicos'),
+                variant: 'default' as const,
+              }]
+            : []),
         ].map(({ icon: Icon, label, onClick, variant }) => (
           <motion.button
             key={label}
