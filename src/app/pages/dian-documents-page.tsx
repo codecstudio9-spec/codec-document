@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { Logo } from '../components/brand/Logo';
+import { PlantillaContable } from '../components/dian/PlantillaContable';
 import {
   CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT, DARK_GRADIENT,
   MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT,
@@ -819,6 +820,18 @@ export default function DianDocumentsPage() {
             ))}
           </section>
         )}
+
+        <PlantillaContable
+          cargarDatos={async () => {
+            const { documentos: docs, lineas } = await datosParaReporte({
+              estado: filtroEstado || undefined,
+            });
+            return {
+              documentos: docs as Record<string, unknown>[],
+              lineas: lineas as Record<string, unknown>[],
+            };
+          }}
+        />
 
         {/* ── Tabla ───────────────────────────────────────────────────── */}
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>

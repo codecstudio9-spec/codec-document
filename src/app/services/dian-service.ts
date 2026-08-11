@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { parseDianXml } from '../../lib/dian/parser';
 import { mapearDocumento, type PayloadDocumento } from '../../lib/dian/mapper';
 import { leerZipSeguro, sha256Hex, ZipError, type EntradaZip } from '../../lib/dian/zip';
+import { base64ABytes } from '../../lib/dian/xlsx-relleno';
 
 export interface ResumenImportacion {
   importId: string;
@@ -520,4 +521,86 @@ export async function listarFeedback() {
     .from('ed_feedback').select('*').order('created_at', { ascending: false }).limit(500);
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+
+// ── Plantillas contables del contador ─────────────────────────────────────
+//
+// El contador sube su plantilla vacia (Siigo, Alegra, World Office, Helisa
+// o la que use) y guardamos el archivo junto al emparejamiento de columnas.
+// Los meses siguientes elige el perfil y descarga: no vuelve a configurar.
+
+export interface PerfilPlantilla {
+  id: string;
+  slug: string;
+  name: string;
+  target: string;
+  date_format: string;
+  granularity: 'documento' | 'linea';
+  sheet_path: string;
+  sheet_name: string;
+  header_row: number;
+  template_filename: string;
+  columns: unknown;
+}
+
+// El archivo va en base64 porque una plantilla vacia pesa poco (5-30 KB) y
+// asi no hace falta administrar politicas de un bucket aparte para algo que
+// siempre se lee junto con su fila. La conversion vive en el motor.
+export { bytesABase64, base64ABytes } from '../../lib/dian/xlsx-relleno';
+
+export async function listarPerfiles(): Promise<PerfilPlantilla[]> {
+  const { data, error } = await supabase
+    .from('ed_export_profiles')
+    .select('id,slug,name,target,date_format,granularity,sheet_path,sheet_name,header_row,template_filename,columns')
+    .not('template_b64', 'is', null)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PerfilPlantilla[];
+}
+
+export async function guardarPerfil(p: {
+  nombre: string;
+  programa: string;
+  formatoFecha: string;
+  granularidad: 'documento' | 'linea';
+  rutaHoja: string;
+  nombreHoja: string;
+  filaEncabezados: number;
+  nombreArchivo: string;
+  plantillaB64: string;
+  columnas: unknown;
+}): Promise<void> {
+  const slug = `${p.programa}-${p.nombre}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60);
+  const { error } = await supabase.from('ed_export_profiles').upsert({
+    slug,
+    name: p.nombre,
+    target: p.programa,
+    date_format: p.formatoFecha,
+    granularity: p.granularidad,
+    sheet_path: p.rutaHoja,
+    sheet_name: p.nombreHoja,
+    header_row: p.filaEncabezados,
+    template_filename: p.nombreArchivo,
+    template_b64: p.plantillaB64,
+    columns: p.columnas,
+    file_format: 'xlsx',
+  }, { onConflict: 'owner_user_id,slug' });
+  if (error) throw new Error(error.message);
+}
+
+/** Trae el archivo original del perfil para rellenarlo. Se pide aparte del
+ *  listado porque es lo unico pesado de la fila. */
+export async function obtenerPlantilla(perfilId: string): Promise<Uint8Array> {
+  const { data, error } = await supabase
+    .from('ed_export_profiles').select('template_b64').eq('id', perfilId).single();
+  if (error) throw new Error(error.message);
+  const b64 = (data as { template_b64: string | null }).template_b64;
+  if (!b64) throw new Error('Ese perfil no tiene plantilla guardada.');
+  return base64ABytes(b64);
+}
+
+export async function borrarPerfil(perfilId: string): Promise<void> {
+  const { error } = await supabase.from('ed_export_profiles').delete().eq('id', perfilId);
+  if (error) throw new Error(error.message);
 }
