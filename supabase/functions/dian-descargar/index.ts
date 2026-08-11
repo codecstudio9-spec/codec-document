@@ -106,10 +106,29 @@ async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { erro
       headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
     });
     const cookie = extraerCookies(res);
-    if (!res.ok || !cookie) {
+
+    // Comprobado contra el portal real: cuando el token esta vencido o ya
+    // se uso, la DIAN NO devuelve un error. Responde 200, entrega cookies
+    // igual, y redirige a /User/Login. Fiarse del codigo de estado haria
+    // que el contador viera "el enlace funciona", lanzara 2000 descargas y
+    // recibiera 2000 fallos.
+    //
+    // La senal fiable es la URL final: si acabo en el login, no hay sesion.
+    const acaboEnLogin = /\/User\/(Login|AuthToken)/i.test(res.url);
+
+    // Y la cookie de sesion tiene que estar viva: la DIAN a veces la emite
+    // y la borra en la misma respuesta (expires en 1970).
+    const crudas = res.headers.getSetCookie?.() ?? [];
+    const sesionViva = crudas.some((c) =>
+      /AspNet\.ApplicationCookie=/i.test(c)
+      && !/expires=[^;]*1970/i.test(c)
+      && c.split(';')[0].split('=').slice(1).join('=').length > 20
+    );
+
+    if (!res.ok || !cookie || acaboEnLogin || !sesionViva) {
       return {
-        error: res.ok
-          ? 'La DIAN no devolvió una sesión. Es probable que el enlace ya se haya usado o que el token venciera.'
+        error: acaboEnLogin || !sesionViva
+          ? 'La DIAN no aceptó el enlace: te devolvió a la pantalla de acceso. El token dura 60 minutos y solo sirve una vez — solicita uno nuevo y pega el enlace recién llegado.'
           : `La DIAN respondió ${res.status} al abrir la sesión.`,
       };
     }
