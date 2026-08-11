@@ -23,10 +23,10 @@
  * IP para todos los clientes a la vez.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Download, FolderOpen, Loader2, X, CheckCircle2, XCircle, AlertTriangle,
-  Play, Square, Link2,
+  Play, Square, Link2, Volume2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { descargarDeDian, probarEnlaceDian, type EventoDescarga } from '../../services/dian-descarga-service';
@@ -47,6 +47,19 @@ interface Props {
 
 type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: string };
 
+/** El recorrido completo, en el orden en que hay que hacerlo.
+ *
+ *  Se guarda como texto y no en linea porque el boton de repetir tiene que
+ *  poder decir exactamente lo mismo: alguien que se pierde a mitad
+ *  necesita oir la version entera otra vez, no un resumen distinto.
+ *
+ *  Es largo a proposito. La parte manual de este proceso es justo la que
+ *  confunde, y un contador que no sabe de donde sale el token abandona
+ *  antes de llegar a la parte automatica. */
+const GUION_ES = 'Esta herramienta baja los documentos de la DIAN por ti, pero hay una parte que tienes que hacer tu, porque necesita tus claves. Te la explico. Primero, entra al portal de la DIAN y solicita un token. La DIAN te manda un correo con el asunto Token Acceso DIAN. En ese correo hay un boton que dice Ingrese aqui. No le des clic todavia: haz clic derecho encima y elige Copiar direccion del enlace. Ese enlace lo pegas aqui en el primer campo, y le das al boton Probar para confirmar que sirve. Ojo con esto: el token vence a los sesenta minutos y solo funciona una vez. Segundo, abre ese mismo enlace en otra pestana, entra a Documentos, exporta el listado del periodo que necesites, y abre el Excel que te descarga. Ahi viene una columna que se llama CUFE. Copia esa columna completa y pegala aqui abajo. Tercero, elige la carpeta de tu computador donde quieres que te deje los archivos, y dale a Iniciar descarga. A partir de ahi yo hago el resto. Voy despacio a proposito, para que la DIAN no nos bloquee, asi que si son muchos documentos tomate un cafe. Cuando termine, arrastras esa carpeta a la pantalla de atras y yo leo todo y te armo la tabla y el Excel.';
+
+const GUION_EN = 'This tool downloads your DIAN documents, but there is one part you have to do yourself because it needs your credentials. First, go to the DIAN portal and request a token. DIAN emails you a link. Right-click it and choose Copy link address, then paste it in the first field here and hit Test. The token expires in sixty minutes and works only once. Second, open that same link in another tab, export the listing for your period, open the spreadsheet and copy the CUFE column. Paste it below. Third, pick the folder on your computer where you want the files, and hit Start download. I go slowly on purpose so DIAN does not block us.';
+
 export function DescargarDeDian({ narrar, onCerrar }: Props) {
   const [urlDian, setUrlDian] = useState('');
   const [endpoint, setEndpoint] = useState(ENDPOINT_POR_DEFECTO);
@@ -60,6 +73,14 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
   const [registro, setRegistro] = useState<Entrada[]>([]);
   const cancelar = useRef(false);
 
+  // El guion completo al abrir. Si el contador tiene la guia apagada,
+  // narrar() no hace nada, asi que no hay que consultar su estado.
+  useEffect(() => {
+    narrar?.(GUION_ES, GUION_EN);
+    // Solo al abrir el panel.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const soportaCarpetas = typeof (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
 
   const elegirCarpeta = async () => {
@@ -68,6 +89,10 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
         showDirectoryPicker: (o?: { mode?: string }) => Promise<FileSystemDirectoryHandle>;
       }).showDirectoryPicker({ mode: 'readwrite' });
       setCarpeta(dir);
+      narrar?.(
+        `Voy a guardar todo en la carpeta ${dir.name}. Recuérdala, porque al terminar tienes que arrastrarla a la pantalla de atrás para que yo lea los documentos.`,
+        `I will save everything to the folder ${dir.name}. Remember it: when I finish you need to drag it to the previous screen so I can read the documents.`,
+      );
     } catch {
       // El usuario canceló el diálogo: no es un error que reportar.
     }
@@ -87,7 +112,19 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
       );
     } catch (e) {
       setEnlaceOk(false);
-      toast.error((e as Error).message, { duration: 9000 });
+      const msg = (e as Error).message;
+      toast.error(msg, { duration: 9000 });
+      // El fallo casi siempre es el mismo y tiene una salida concreta.
+      // Decírsela en voz alta evita que se quede mirando un error rojo sin
+      // saber que solo tiene que pedir otro token.
+      narrar?.(
+        msg.includes('acceso') || msg.includes('token')
+          ? 'Ese enlace ya no sirve. El token de la DIAN dura sesenta minutos y solo funciona una vez, así que si ya lo abriste o pasó de una hora, hay que pedir otro. Vuelve al portal, solicita un token nuevo, y copia el enlace del correo recién llegado.'
+          : `No pude conectar con la DIAN. ${msg}`,
+        msg.includes('acceso') || msg.includes('token')
+          ? 'That link no longer works. The DIAN token lasts sixty minutes and works only once. Request a new one and copy the link from the fresh email.'
+          : `I could not reach DIAN. ${msg}`,
+      );
     } finally {
       setProbando(false);
     }
@@ -176,6 +213,18 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
             Pega tus CUFEs y te dejo los archivos en la carpeta que elijas
           </p>
         </div>
+        {/* Repetir las instrucciones. El guion es largo y la parte manual
+            tiene varios pasos en otra pestaña: quien vuelve tras hacerlos
+            necesita oírlo entero otra vez, no adivinar por dónde iba. */}
+        <button
+          type="button"
+          onClick={() => narrar?.(GUION_ES, GUION_EN)}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+          title="Escuchar las instrucciones"
+        >
+          <Volume2 className="size-4" />
+          Explícame
+        </button>
         <button type="button" onClick={onCerrar} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100">
           <X className="size-5" />
         </button>
@@ -213,6 +262,14 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
             <input
               value={urlDian}
               onChange={(e) => { setUrlDian(e.target.value); setEnlaceOk(null); }}
+              onPaste={() => {
+                // Al pegar, no al teclear: nadie escribe una URL de la DIAN
+                // a mano, y narrar en cada pulsacion seria insufrible.
+                setTimeout(() => narrar?.(
+                  'Ya pegaste el enlace. Dale al boton Probar que esta al lado, y te confirmo si todavia sirve antes de que empieces.',
+                  'You pasted the link. Hit the Test button next to it and I will confirm whether it still works before you start.',
+                ), 250);
+              }}
               placeholder="https://catalogo-vpfe.dian.gov.co/…&rk=…&token=…"
               className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-xs outline-none transition focus:border-sky-400 focus:bg-white"
             />
@@ -260,6 +317,21 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
           <textarea
             value={textoCufes}
             onChange={(e) => setTextoCufes(e.target.value)}
+            onPaste={() => {
+              // Tras el pegado, no durante: el estado todavía no se ha
+              // actualizado cuando se dispara el evento.
+              setTimeout(() => {
+                const n = cufesDeTexto().length;
+                narrar?.(
+                  n > 0
+                    ? 'Ya tengo tus CUFEs. Ahora elige la carpeta donde quieres los archivos y dale a Iniciar descarga.'
+                    : 'Pegaste algo, pero no reconocí ningún CUFE. Un CUFE son noventa y seis caracteres, entre números y letras de la a a la efe. Revisa que hayas copiado la columna completa del Excel de la DIAN, sin el encabezado.',
+                  n > 0
+                    ? 'I have your CUFEs. Now pick the folder where you want the files and hit Start download.'
+                    : 'I could not recognize any CUFE. A CUFE is ninety-six characters. Make sure you copied the whole column from the DIAN spreadsheet.',
+                );
+              }, 350);
+            }}
             rows={6}
             placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"
             className="mt-1.5 block w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-[11px] outline-none transition focus:border-sky-400 focus:bg-white"
