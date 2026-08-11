@@ -186,7 +186,11 @@ function hojaDetallado(docs: DocumentoReporte[], lineas: LineaReporte[], impuest
       n(l.line_total),
       n(l.tax_total),
       imp ? n(imp.rate) : 0,
-      imp?.tax_name ?? '',
+      // Una celda en blanco no distingue "falta el dato" de "no aplica".
+      // Una linea sin impuesto en un documento DIAN esta excluida o no
+      // gravada, y el contador necesita verlo escrito para no ir a
+      // buscarlo al XML.
+      imp?.tax_name ?? 'Excluido / no gravado',
       imp ? n(imp.taxable_base) : 0,
     ] as ValorCelda[];
   });
@@ -209,7 +213,7 @@ function hojaDocumentos(docs: DocumentoReporte[]): Hoja {
     d.full_number ?? '',
     ETIQUETA_TIPO[d.doc_type] ?? d.doc_type,
     d.issue_date ?? '',
-    d.due_date ?? '',
+    d.due_date ?? 'Sin vencimiento',
     d.issuer_nit ?? '',
     d.issuer_dv ?? '',
     d.issuer_name ?? '',
@@ -270,6 +274,16 @@ function hojaRetenciones(docs: DocumentoReporte[], impuestos: ImpuestoReporte[])
         n(i.amount),
       ] as ValorCelda[];
     });
+
+  // Una hoja con solo encabezados parece un fallo. Si de verdad no hubo
+  // retenciones en el periodo, hay que decirlo: es informacion, no un
+  // hueco.
+  if (filas.length === 0) {
+    filas.push([
+      'Sin retenciones en los documentos de este periodo',
+      '', '', '', '', '', '', '', '', '', '', 0, 0, 0,
+    ] as ValorCelda[]);
+  }
 
   return {
     nombre: 'Reporte Retenciones',
