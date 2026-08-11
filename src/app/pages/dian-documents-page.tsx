@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { Logo } from '../components/brand/Logo';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { PlantillaContable } from '../components/dian/PlantillaContable';
 import { AuditorFiscal } from '../components/dian/AuditorFiscal';
 import type { DocumentoDian } from '../../lib/dian/auditoria';
@@ -69,7 +70,7 @@ const ESTADO: Record<string, { texto: string; clase: string }> = {
 };
 
 export default function DianDocumentsPage() {
-  const { user, loading: cargandoSesion } = useAuth();
+  const { user, loading: cargandoSesion, signInWithMagicLink } = useAuth();
   const permitido = Boolean(user);
   const ilimitado = isAdminEmail(user?.email);
 
@@ -85,6 +86,28 @@ export default function DianDocumentsPage() {
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
   const [panelPlantilla, setPanelPlantilla] = useState(false);
+  const [correo, setCorreo] = useState('');
+  const [enviandoEnlace, setEnviandoEnlace] = useState(false);
+  const [enlaceEnviado, setEnlaceEnviado] = useState(false);
+
+  const pedirEnlace = async () => {
+    const e = correo.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) {
+      toast.error('Escribe un correo válido');
+      return;
+    }
+    setEnviandoEnlace(true);
+    try {
+      // Vuelve a ESTA pantalla, no al destino por defecto: quien llegó por
+      // un enlace compartido a la herramienta espera aterrizar en ella.
+      await signInWithMagicLink(e, '/documentos-electronicos');
+      setEnlaceEnviado(true);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setEnviandoEnlace(false);
+    }
+  };
   const [panelAuditor, setPanelAuditor] = useState(false);
 
   /** Atajo para narrar. El asistente decide solo si suena: si el contador
@@ -423,13 +446,92 @@ export default function DianDocumentsPage() {
 
   if (!permitido) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
-          <Lock className="mx-auto mb-4 size-8 text-slate-300" />
-          <h1 className="mb-2 text-lg font-semibold text-slate-800">Documentos Electrónicos</h1>
-          <p className="text-sm text-slate-500">
-            Inicia sesión con tu correo para procesar tus documentos
-            electrónicos de la DIAN.
+      <div className="flex min-h-screen items-center justify-center px-4 py-10" style={{ background: MOBILE_BG_GRADIENT }}>
+        <div className="w-full max-w-md">
+          <div className="mb-6 flex justify-center">
+            <Logo size="sm" tagline="Documentos electrónicos · DIAN" href="/" />
+          </div>
+
+          <div className="overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+            <div className="relative px-7 pb-6 pt-7 text-white" style={{ background: DARK_GRADIENT }}>
+              <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
+              <h1 className="relative text-xl font-black tracking-tight">Documentos Electrónicos</h1>
+              <p className="relative mt-1.5 text-sm leading-relaxed text-white/70">
+                Suelta el ZIP de la DIAN y te devuelvo el Excel armado, con los duplicados
+                detectados y solo los documentos que necesitas revisar.
+              </p>
+            </div>
+
+            <div className="px-7 py-6">
+              {enlaceEnviado ? (
+                <div className="text-center">
+                  <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-500" />
+                  <p className="text-sm font-bold text-slate-900">Revisa tu correo</p>
+                  <p className="mx-auto mt-1.5 max-w-xs text-xs leading-relaxed text-slate-500">
+                    Te envié un enlace a <strong className="text-slate-700">{correo.trim()}</strong>.
+                    Ábrelo <strong>desde este mismo dispositivo</strong> y entras directo, sin
+                    contraseña.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEnlaceEnviado(false)}
+                    className="mt-4 text-xs font-semibold text-slate-400 underline"
+                  >
+                    Usar otro correo
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="mb-4 text-center text-sm font-semibold text-slate-800">
+                    Entra para empezar. Es gratis.
+                  </p>
+
+                  {/* Google primero: es un clic y no exige recordar nada. */}
+                  <div className="flex justify-center">
+                    <GoogleSignInButton width={300} />
+                  </div>
+
+                  <div className="my-5 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-slate-100" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">o</span>
+                    <span className="h-px flex-1 bg-slate-100" />
+                  </div>
+
+                  <label className="block text-xs font-semibold text-slate-600">
+                    Con tu correo, sin contraseña
+                    <input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={correo}
+                      onChange={(e) => setCorreo(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') void pedirEnlace(); }}
+                      placeholder="tucorreo@ejemplo.com"
+                      className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => void pedirEnlace()}
+                    disabled={enviandoEnlace}
+                    className="mt-3 flex w-full items-center justify-center gap-2 py-3 text-sm font-bold text-white transition disabled:opacity-50"
+                    style={{ background: BLUE_GRADIENT, borderRadius: 14, boxShadow: '0 12px 24px rgba(37,99,235,0.28)' }}
+                  >
+                    {enviandoEnlace ? <Loader2 className="size-4 animate-spin" /> : null}
+                    Enviarme el enlace de acceso
+                  </button>
+                  <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
+                    Te llega un enlace al correo. Lo abres y ya estás dentro — no hay que
+                    crear contraseña ni recordar nada.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <p className="mt-5 text-center text-xs leading-relaxed text-slate-400">
+            Pedimos el correo para guardar tus documentos separados de los de otros contadores.
+            Nada de lo que subas es visible para nadie más.
           </p>
         </div>
       </div>

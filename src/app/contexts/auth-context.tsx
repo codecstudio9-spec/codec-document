@@ -26,7 +26,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleToken: (idToken: string) => Promise<void>;
-  signInWithMagicLink: (email: string) => Promise<void>;
+  signInWithMagicLink: (email: string, destino?: string) => Promise<void>;
   refreshSubscription: () => Promise<void>;
   refreshPurchasedDocuments: (tokenOverride?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -119,10 +119,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signInWithMagicLink = async (email: string) => {
+  /** `destino` permite volver a la pantalla desde la que se pidió el enlace
+   *  en vez de al destino por defecto. Sin esto, quien entra por un enlace
+   *  compartido a una herramienta concreta aterriza en otro sitio y tiene
+   *  que volver a buscarla. Omitirlo conserva el comportamiento anterior. */
+  const signInWithMagicLink = async (email: string, destino?: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}${postLoginPath()}` },
+      options: { emailRedirectTo: `${window.location.origin}${destino ?? postLoginPath()}` },
     });
     if (error) throw error;
   };
