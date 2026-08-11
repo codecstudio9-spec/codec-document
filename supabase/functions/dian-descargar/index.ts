@@ -41,8 +41,86 @@ const HOSTS_PERMITIDOS = [
  *  impide que una respuesta inesperada agote la memoria de la función. */
 const MAX_BYTES = 25 * 1024 * 1024;
 const TIMEOUT_MS = 30_000;
+const UA = 'CodecDocument/1.0 (+https://www.codecdocument.com)';
 
 const CUFE_RE = /^[0-9a-fA-F]{90,100}$/;
+
+/**
+ * Sesiones abiertas con la DIAN, en memoria de la función.
+ *
+ * El enlace que llega al correo ("Token Acceso DIAN" → "Ingrese aquí") NO
+ * descarga nada: AUTENTICA. Al pedirlo, la DIAN responde con una cookie de
+ * sesión, y es esa cookie la que autoriza las descargas siguientes.
+ *
+ * Por eso el proceso son dos pasos y no uno. Abrir sesión en cada CUFE
+ * multiplicaría por dos las peticiones contra la DIAN para no obtener nada
+ * nuevo — justo lo que hay que evitar.
+ *
+ * Se guarda por token y no por usuario: el token es lo que caduca (60
+ * minutos), y así dos pestañas del mismo contador reutilizan la sesión.
+ */
+const sesiones = new Map<string, { cookie: string; creada: number }>();
+const SESION_TTL_MS = 55 * 60 * 1000; // algo menos que los 60 del token
+
+function limpiarSesiones() {
+  const ahora = Date.now();
+  for (const [k, v] of sesiones) {
+    if (ahora - v.creada > SESION_TTL_MS) sesiones.delete(k);
+  }
+}
+
+/** Junta las cookies de un Set-Cookie múltiple en una cabecera Cookie. */
+function extraerCookies(res: Response): string {
+  const crudas = res.headers.getSetCookie?.() ?? [];
+  const pares = crudas
+    .map((c) => c.split(';')[0].trim())
+    .filter((c) => c.includes('='));
+  return pares.join('; ');
+}
+
+/**
+ * Abre sesión con la URL del correo y devuelve la cookie.
+ *
+ * Se cachea: el token dura una hora y una descarga de 2000 documentos
+ * tarda media, así que la misma sesión sirve para todo el lote.
+ */
+async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { error: string }> {
+  limpiarSesiones();
+  const clave = urlAuth;
+  const guardada = sesiones.get(clave);
+  if (guardada && Date.now() - guardada.creada < SESION_TTL_MS) {
+    return { cookie: guardada.cookie };
+  }
+
+  let url: URL;
+  try { url = new URL(urlAuth); } catch { return { error: 'La URL de la DIAN no es válida.' }; }
+  const problema = validarHost(url);
+  if (problema) return { error: problema };
+
+  const control = new AbortController();
+  const alarma = setTimeout(() => control.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url.toString(), {
+      signal: control.signal,
+      redirect: 'follow',
+      headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
+    });
+    const cookie = extraerCookies(res);
+    if (!res.ok || !cookie) {
+      return {
+        error: res.ok
+          ? 'La DIAN no devolvió una sesión. Es probable que el enlace ya se haya usado o que el token venciera.'
+          : `La DIAN respondió ${res.status} al abrir la sesión.`,
+      };
+    }
+    sesiones.set(clave, { cookie, creada: Date.now() });
+    return { cookie };
+  } catch {
+    return { error: 'No se pudo abrir sesión con la DIAN.' };
+  } finally {
+    clearTimeout(alarma);
+  }
+}
 
 function cors(origin: string | null) {
   return {
@@ -113,20 +191,65 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: auth } },
   });
 
-  let cuerpo: { url?: string; cufe?: string; param?: string; diagnostico?: boolean };
+  let cuerpo: {
+    /** Enlace del correo "Token Acceso DIAN". Autentica; no descarga. */
+    url?: string;
+    /** Endpoint de descarga, si se conoce. Si falta, se usa `url`. */
+    urlDescarga?: string;
+    cufe?: string;
+    param?: string;
+    diagnostico?: boolean;
+    /** Sólo abre sesión y reporta. Permite validar el enlace del contador
+     *  antes de lanzar 2000 descargas, y averiguar qué responde la DIAN
+     *  sin conocer todavía el endpoint de descarga. */
+    soloSesion?: boolean;
+  };
   try {
     cuerpo = await req.json();
   } catch {
     return json({ error: 'Cuerpo inválido' }, 400, origin);
   }
 
-  const { url: base, cufe, param = 'documentKey', diagnostico = false } = cuerpo;
-  if (!base || !cufe) return json({ error: 'Faltan url o cufe' }, 400, origin);
+  const { url: base, urlDescarga, cufe, param = 'documentKey', diagnostico = false, soloSesion = false } = cuerpo;
+  if (!base) return json({ error: 'Falta la URL de la DIAN' }, 400, origin);
+
+  // El host se valida ANTES de pedir turno: rechazar una URL ajena no debe
+  // gastar una ficha del gobernador, y así el error que ve el usuario es el
+  // de verdad ("esa no es una dirección de la DIAN") y no uno de ritmo.
+  try {
+    const problemaBase = validarHost(new URL(base));
+    if (problemaBase) return json({ error: problemaBase }, 400, origin);
+  } catch {
+    return json({ error: 'La URL de la DIAN no es válida.' }, 400, origin);
+  }
+
+  // Paso 1: abrir sesión. El enlace del correo autentica, no descarga.
+  // Se pide turno también para esto: es una petición real a la DIAN.
+  const { data: permisoSesion, error: errPS } = await supabase.rpc('ed_dian_permiso');
+  if (errPS) return json({ error: errPS.message }, 403, origin);
+  if (permisoSesion && !permisoSesion.permitido) {
+    return json({ espera: true, esperar_ms: permisoSesion.esperar_ms, motivo: permisoSesion.motivo }, 429, origin);
+  }
+
+  const sesion = await abrirSesion(base);
+  if ('error' in sesion) {
+    await supabase.rpc('ed_dian_resultado', { p_ok: false });
+    return json({ error: sesion.error }, 502, origin);
+  }
+  await supabase.rpc('ed_dian_resultado', { p_ok: true });
+
+  if (soloSesion) {
+    // No se devuelve la cookie: identifica la sesión del contador con la
+    // DIAN y no tiene por qué salir de aquí.
+    return json({ ok: true, sesion: true, cookies: sesion.cookie.split(';').length }, 200, origin);
+  }
+
+  if (!cufe) return json({ error: 'Falta el cufe' }, 400, origin);
   if (!CUFE_RE.test(cufe)) return json({ error: 'El CUFE no tiene el formato esperado' }, 400, origin);
 
   let destino: URL;
   try {
-    destino = construirUrl(base, cufe, param);
+    destino = construirUrl(urlDescarga || base, cufe, param);
   } catch {
     return json({ error: 'La URL de la DIAN no es válida' }, 400, origin);
   }
@@ -153,8 +276,10 @@ Deno.serve(async (req) => {
       headers: {
         // Identificarse es lo correcto: permite a la DIAN distinguir un
         // cliente legítimo y contactarnos antes que bloquearnos.
-        'User-Agent': 'CodecDocument/1.0 (+https://www.codecdocument.com)',
+        'User-Agent': UA,
         Accept: '*/*',
+        // La cookie del paso 1 es lo que autoriza la descarga.
+        Cookie: sesion.cookie,
       },
     });
 
