@@ -155,6 +155,16 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
       `Starting to download ${cufes.length} documents. I go at a moderate pace so DIAN does not block us, so it may take a while. Do not close this tab.`,
     );
 
+    // Los totales se llevan aquí y no leyéndolos del estado.
+    //
+    // Antes se hacía dentro de un setProgreso(p => …) para "aprovechar" el
+    // valor actual, y eso tumbaba la página entera: el actualizador de
+    // estado de React tiene que ser una función PURA, y ahí dentro se
+    // estaba llamando al asistente de voz. React lo puede ejecutar dos
+    // veces o en otro momento, y el efecto secundario revienta el render.
+    let ok = 0;
+    let errores = 0;
+
     try {
       await descargarDeDian({
         urlDian: urlDian.trim(),
@@ -163,12 +173,13 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
         carpeta,
         cancelado: () => cancelar.current,
         onEvento: (e: EventoDescarga) => {
-          setProgreso((p) => ({
-            hechos: e.hechos,
-            total: e.total,
-            ok: e.ok ? p.ok + 1 : p.ok,
-            errores: e.ok ? p.errores : p.errores + 1,
-          }));
+          if (e.ok) ok++; else errores++;
+          const hechos = e.hechos;
+          const total = e.total;
+          const okActual = ok;
+          const erroresActual = errores;
+          setProgreso({ hechos, total, ok: okActual, errores: erroresActual });
+
           const entrada: Entrada = {
             cufe: e.cufe,
             estado: e.ok ? 'ok' : 'error',
@@ -178,20 +189,26 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
         },
       });
 
-      setProgreso((p) => {
-        narrar?.(
-          p.errores === 0
-            ? `Listo. Descargué ${p.ok} documentos en tu carpeta. Ahora arrastra esa carpeta a la sección de arriba y yo los leo.`
-            : `Terminé. ${p.ok} documentos descargados y ${p.errores} con problema. Arrastra la carpeta a la sección de arriba para procesar los que sí bajaron.`,
-          p.errores === 0
-            ? `Done. I downloaded ${p.ok} documents to your folder. Now drag that folder to the section above.`
-            : `Finished. ${p.ok} downloaded, ${p.errores} failed.`,
-        );
-        return p;
-      });
+      narrar?.(
+        errores === 0
+          ? `Listo. Descargué ${ok} documentos en tu carpeta. Ahora arrastra esa carpeta a la pantalla de atrás y yo los leo.`
+          : `Terminé. ${ok} documentos descargados y ${errores} con problema. Arrastra la carpeta a la pantalla de atrás para procesar los que sí bajaron.`,
+        errores === 0
+          ? `Done. I downloaded ${ok} documents to your folder. Now drag that folder to the previous screen.`
+          : `Finished. ${ok} downloaded, ${errores} failed.`,
+      );
       toast.success('Descarga terminada. Arrastra la carpeta a Documentos DIAN.');
     } catch (e) {
-      toast.error((e as Error).message, { duration: 9000 });
+      // Nada de lo que pase aquí dentro puede tumbar la pantalla. Una
+      // descarga que falla es un contratiempo; perder la página con los
+      // CUFEs ya pegados y la carpeta ya elegida obliga a repetirlo todo.
+      const msg = e instanceof Error ? e.message : 'Ocurrió un problema durante la descarga.';
+      console.error('[dian-descarga]', e);
+      toast.error(msg, { duration: 9000 });
+      narrar?.(
+        `Se interrumpió la descarga. ${ok > 0 ? `Alcancé a bajar ${ok} documentos, que ya están en tu carpeta.` : ''} Puedes volver a darle a Iniciar: no repito lo que ya se descargó.`,
+        `The download stopped. ${ok > 0 ? `I managed to get ${ok} documents.` : ''} You can hit Start again: I skip what is already downloaded.`,
+      );
     } finally {
       setCorriendo(false);
     }

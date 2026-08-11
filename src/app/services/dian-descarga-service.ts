@@ -72,6 +72,12 @@ export interface OpcionesDescarga {
 export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
   let hechos = 0;
 
+  // El aviso de progreso es cosmetico: si algo falla al pintarlo, no puede
+  // llevarse por delante una descarga de 2000 documentos.
+  const avisar = (e: EventoDescarga) => {
+    try { o.onEvento(e); } catch (err) { console.error('[dian-descarga] onEvento', err); }
+  };
+
   for (const cufe of o.cufes) {
     if (o.cancelado()) return;
 
@@ -82,7 +88,7 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
     try {
       await o.carpeta.getFileHandle(nombre);
       hechos++;
-      o.onEvento({ cufe, ok: true, detalle: 'ya estaba', hechos, total: o.cufes.length });
+      avisar({ cufe, ok: true, detalle: 'ya estaba', hechos, total: o.cufes.length });
       continue;
     } catch {
       // No existe: hay que descargarlo.
@@ -115,7 +121,7 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
       if (!res.ok || !j.ok) {
         if (intentos >= 3) {
           hechos++;
-          o.onEvento({
+          avisar({
             cufe, ok: false, hechos, total: o.cufes.length,
             detalle: j.error ?? `error ${res.status}`,
           });
@@ -134,11 +140,11 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
         await w.close();
 
         hechos++;
-        o.onEvento({ cufe, ok: true, hechos, total: o.cufes.length });
+        avisar({ cufe, ok: true, hechos, total: o.cufes.length });
         listo = true;
       } catch (e) {
         hechos++;
-        o.onEvento({
+        avisar({
           cufe, ok: false, hechos, total: o.cufes.length,
           detalle: `no se pudo guardar: ${(e as Error).message}`,
         });
