@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
-  Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale,
+  Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -31,6 +31,7 @@ import { Logo } from '../components/brand/Logo';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { PlantillaContable } from '../components/dian/PlantillaContable';
 import { AuditorFiscal } from '../components/dian/AuditorFiscal';
+import { DescargarDeDian } from '../components/dian/DescargarDeDian';
 import type { DocumentoDian } from '../../lib/dian/auditoria';
 import {
   CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT, DARK_GRADIENT,
@@ -109,6 +110,7 @@ export default function DianDocumentsPage() {
     }
   };
   const [panelAuditor, setPanelAuditor] = useState(false);
+  const [panelDescarga, setPanelDescarga] = useState(false);
 
   /** Atajo para narrar. El asistente decide solo si suena: si el contador
    *  tiene la guía apagada, speak() no hace nada, así que no hay que
@@ -576,6 +578,20 @@ export default function DianDocumentsPage() {
           {/* Acción de salida. Va en el encabezado y no enterrada entre las
               secciones porque es el final del recorrido del contador: lo que
               vino a buscar es llevarse los datos a su programa. */}
+          <button
+            type="button"
+            onClick={() => setPanelDescarga(true)}
+            className="relative mr-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
+              borderRadius: 14,
+              boxShadow: '0 12px 26px rgba(2,132,199,0.35)',
+            }}
+          >
+            <CloudDownload className="size-4" />
+            Descargar XML de la DIAN
+          </button>
+
           <button
             type="button"
             onClick={() => setPanelPlantilla(true)}
@@ -1366,6 +1382,14 @@ export default function DianDocumentsPage() {
                 Ahora no
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {panelDescarga && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelDescarga(false)}>
+          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
+            <DescargarDeDian onCerrar={() => setPanelDescarga(false)} narrar={narrar} />
           </div>
         </div>
       )}
