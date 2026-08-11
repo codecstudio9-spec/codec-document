@@ -193,6 +193,41 @@ export function analizarPlantilla(datos: ArrayBuffer | Uint8Array): HojaDetectad
   return hojas;
 }
 
+/** Lee las filas de datos de una hoja, por debajo del encabezado.
+ *
+ *  Se usa para el auditor: el contador sube el reporte de su programa
+ *  contable y hay que leer lo que ya registró. Reutiliza el mismo lector
+ *  que la subida de plantillas — es el mismo problema, leer un Excel que
+ *  no escribimos nosotros. */
+export function leerFilasDatos(
+  datos: ArrayBuffer | Uint8Array,
+  rutaHoja: string,
+  filaEncabezados: number,
+  maxFilas = 20000,
+): string[][] {
+  const zip = new PizZip(datos);
+  const archivo = zip.file(rutaHoja);
+  if (!archivo) throw new XlsxRellenoError('No encontré la hoja dentro del archivo.', 'HOJA_NO_ENCONTRADA');
+
+  const compartidas = leerSharedStrings(zip);
+  const xml = archivo.asText();
+  const salida: string[][] = [];
+
+  for (const m of xml.matchAll(/<row([^>]*)>([\s\S]*?)<\/row>/g)) {
+    const r = Number(m[1].match(/r="(\d+)"/)?.[1] ?? 0);
+    if (r <= filaEncabezados) continue;
+    if (salida.length >= maxFilas) break;
+
+    const celdas = leerFila(m[2], compartidas);
+    if (celdas.length === 0) continue;
+    const ancho = Math.max(...celdas.map((c) => c.col)) + 1;
+    const fila = new Array<string>(ancho).fill('');
+    for (const c of celdas) fila[c.col] = c.valor;
+    salida.push(fila);
+  }
+  return salida;
+}
+
 function celdaXml(ref: string, valor: ValorCelda): string {
   if (valor === null || valor === undefined || valor === '') return '';
   if (typeof valor === 'number' && Number.isFinite(valor)) return `<c r="${ref}"><v>${valor}</v></c>`;

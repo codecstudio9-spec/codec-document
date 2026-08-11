@@ -22,13 +22,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
-  Trash2, Inbox, CheckCheck, FileSpreadsheet,
+  Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { Logo } from '../components/brand/Logo';
 import { PlantillaContable } from '../components/dian/PlantillaContable';
+import { AuditorFiscal } from '../components/dian/AuditorFiscal';
+import type { DocumentoDian } from '../../lib/dian/auditoria';
 import {
   CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT, DARK_GRADIENT,
   MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT,
@@ -83,6 +85,7 @@ export default function DianDocumentsPage() {
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
   const [panelPlantilla, setPanelPlantilla] = useState(false);
+  const [panelAuditor, setPanelAuditor] = useState(false);
 
   /** Atajo para narrar. El asistente decide solo si suena: si el contador
    *  tiene la guía apagada, speak() no hace nada, así que no hay que
@@ -140,6 +143,18 @@ export default function DianDocumentsPage() {
     xml_manuales: '', clientes: '', precio: '', falta: '', sistema_contable: '',
   });
   const [encuestaEnviada, setEncuestaEnviada] = useState(false);
+  // Se recuerda el cierre para no volver a interrumpirlo en cada
+  // importación. El enlace de abajo queda siempre, por si cambia de idea.
+  const [encuestaAbierta, setEncuestaAbierta] = useState(false);
+  const [encuestaCerrada, setEncuestaCerrada] = useState(
+    () => localStorage.getItem('codec_dian_encuesta') === 'cerrada',
+  );
+
+  const cerrarEncuesta = () => {
+    setEncuestaAbierta(false);
+    setEncuestaCerrada(true);
+    localStorage.setItem('codec_dian_encuesta', 'cerrada');
+  };
   const [enviandoEncuesta, setEnviandoEncuesta] = useState(false);
 
   const mandarEncuesta = async () => {
@@ -304,6 +319,11 @@ export default function DianDocumentsPage() {
       });
       setResumen(r);
       setAyudaAbierta(false);
+      if (!encuestaEnviada && !encuestaCerrada) {
+        // Un respiro tras el resumen: abrirla encima del resultado le
+        // taparía justo lo que acaba de esperar.
+        setTimeout(() => setEncuestaAbierta(true), 2500);
+      }
       toast.success(`${r.procesados} documento(s) procesados`);
 
       // Se narra el resultado en el lenguaje del contador. Lo importante no
@@ -466,6 +486,16 @@ export default function DianDocumentsPage() {
           >
             <FileSpreadsheet className="size-4" />
             Llevar a mi programa contable
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPanelAuditor(true)}
+            className="relative ml-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
+            style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 14 }}
+          >
+            <Scale className="size-4" />
+            Comparar con mi contabilidad
           </button>
         </header>
 
@@ -882,89 +912,29 @@ export default function DianDocumentsPage() {
         )}
 
 
-        {/* ── Encuesta ─────────────────────────────────────────────────
-            Aparece sólo después de la primera importación: ahí el contador
-            ya vio el resultado y su opinión vale algo. */}
+        {/* Llamado anclado: si cerró la encuesta, el acceso no desaparece.
+            Pedir opinión una vez y rendirse deja fuera a quien la habría
+            dado más tarde, cuando ya usó la herramienta de verdad. */}
         {resumen && !encuestaEnviada && (
-          <section className="mb-6 p-6 text-white" style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-            <h2 className="text-lg font-black">Ayúdanos a terminarla</h2>
-            <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/60">
-              Acabas de ver lo que hace. Cinco preguntas de treinta segundos y las leemos todas.
-            </p>
-
-            <div className="mt-5 space-y-5">
-              <div>
-                <p className="mb-2 text-sm font-semibold">¿Cuántos XML pasas a Excel a mano cada mes?</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Menos de 100', '100 a 500', '500 a 2.000', 'Más de 2.000'].map((o) => (
-                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, xml_manuales: o }))}
-                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.xml_manuales === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-semibold">¿Cuántas empresas o clientes manejas?</p>
-                <div className="flex flex-wrap gap-2">
-                  {['1 a 5', '6 a 20', '21 a 50', 'Más de 50'].map((o) => (
-                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, clientes: o }))}
-                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.clientes === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-1 text-sm font-semibold">¿Cuánto pagarías al mes por esta herramienta, ilimitada?</p>
-                <p className="mb-2 text-xs text-white/50">Sin límite de documentos ni de empresas.</p>
-                <div className="flex flex-wrap gap-2">
-                  {['$50.000', '$60.000', '$70.000', '$80.000', 'Más de $80.000', 'No pagaría'].map((o) => (
-                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, precio: o }))}
-                      className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${encuesta.precio === o ? 'bg-emerald-400 text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-semibold">¿Qué programa contable usas?</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Siigo', 'Alegra', 'World Office', 'Helisa', 'ContaPyme', 'Otro'].map((o) => (
-                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, sistema_contable: o }))}
-                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.sistema_contable === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-semibold">¿Qué le falta para que la uses todos los meses?</p>
-                <textarea rows={3} value={encuesta.falta}
-                  onChange={(e) => setEncuesta((p) => ({ ...p, falta: e.target.value }))}
-                  placeholder="Lo que sea. Mientras más concreto, mejor."
-                  className="w-full resize-y rounded-xl bg-white/10 px-3.5 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:bg-white/15" />
-              </div>
-
-              <button type="button" onClick={() => void mandarEncuesta()} disabled={enviandoEncuesta}
-                className="px-6 py-3 text-sm font-bold text-slate-900 transition disabled:opacity-50"
-                style={{ background: '#34D399', borderRadius: 14 }}>
-                {enviandoEncuesta ? 'Enviando…' : 'Enviar'}
-              </button>
+          <button
+            type="button"
+            onClick={() => setEncuestaAbierta(true)}
+            className="mb-6 flex w-full items-center gap-3 bg-white px-5 py-4 text-left transition hover:bg-slate-50"
+            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ background: BLUE_GRADIENT }}>
+              <MessageSquare className="size-4 text-white" />
             </div>
-          </section>
-        )}
-
-        {encuestaEnviada && (
-          <section className="mb-6 bg-white p-5 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-            <CheckCircle2 className="mx-auto mb-2 size-7 text-emerald-500" />
-            <p className="text-sm font-semibold text-slate-800">Gracias. Tu respuesta ya está con nosotros.</p>
-            <p className="mt-1 text-xs text-slate-500">Con esto decidimos qué construir después.</p>
-          </section>
+            <div className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-slate-900">Ayúdame con esta encuesta</span>
+              <span className="block text-xs text-slate-500">
+                Cinco preguntas de treinta segundos. Decides qué construimos después.
+              </span>
+            </div>
+            <span className="shrink-0 rounded-xl px-3.5 py-2 text-xs font-bold text-white" style={{ background: BLUE_GRADIENT }}>
+              Responder
+            </span>
+          </button>
         )}
 
         {/* ── Tarjetas ────────────────────────────────────────────────── */}
@@ -1200,6 +1170,119 @@ export default function DianDocumentsPage() {
         </section>
       </div>
 
+
+      {/* ── Encuesta ─────────────────────────────────────────────────────
+          En modal y no en la página: pedirla en línea la volvía una sección
+          más entre otras, y se saltaba sin verla. */}
+      {encuestaAbierta && !encuestaEnviada && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4" onClick={cerrarEncuesta}>
+          <div
+            className="max-h-[88vh] w-full max-w-lg overflow-y-auto bg-white"
+            style={{ borderRadius: 22, boxShadow: '0 30px 60px rgba(15,23,42,0.30)' }}
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div className="relative px-7 pb-5 pt-7 text-white" style={{ background: DARK_GRADIENT }}>
+              <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
+              <button
+                type="button"
+                onClick={cerrarEncuesta}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white"
+                aria-label="Cerrar"
+              >
+                <X className="size-4" />
+              </button>
+              <h2 className="relative text-xl font-black tracking-tight">Ayúdanos a terminarla</h2>
+              <p className="relative mt-1 text-sm leading-relaxed text-white/60">
+                Acabas de ver lo que hace. Cinco preguntas de treinta segundos —
+                las leemos todas y deciden qué construimos después.
+              </p>
+            </div>
+
+            <div className="space-y-6 px-7 py-6">
+              <Pregunta
+                n={1}
+                titulo="¿Cuántos XML pasas a Excel a mano cada mes?"
+                opciones={['Menos de 100', '100 a 500', '500 a 2.000', 'Más de 2.000']}
+                valor={encuesta.xml_manuales}
+                onElegir={(v) => setEncuesta((p) => ({ ...p, xml_manuales: v }))}
+              />
+              <Pregunta
+                n={2}
+                titulo="¿Cuántas empresas o clientes manejas?"
+                opciones={['1 a 5', '6 a 20', '21 a 50', 'Más de 50']}
+                valor={encuesta.clientes}
+                onElegir={(v) => setEncuesta((p) => ({ ...p, clientes: v }))}
+              />
+              <Pregunta
+                n={3}
+                titulo="¿Cuánto pagarías al mes por esta herramienta?"
+                ayuda="Ilimitada: sin límite de documentos ni de empresas."
+                opciones={['$50.000', '$60.000', '$70.000', '$80.000', 'Más de $80.000', 'No pagaría']}
+                valor={encuesta.precio}
+                onElegir={(v) => setEncuesta((p) => ({ ...p, precio: v }))}
+                destacada
+              />
+              <Pregunta
+                n={4}
+                titulo="¿Qué programa contable usas?"
+                opciones={['Siigo', 'Alegra', 'World Office', 'Helisa', 'ContaPyme', 'Otro']}
+                valor={encuesta.sistema_contable}
+                onElegir={(v) => setEncuesta((p) => ({ ...p, sistema_contable: v }))}
+              />
+
+              <div>
+                <p className="mb-2 flex items-baseline gap-2 text-sm font-bold text-slate-900">
+                  <span className="text-xs font-black text-slate-300">05</span>
+                  ¿Qué le falta para que la uses todos los meses?
+                </p>
+                <textarea
+                  rows={3}
+                  value={encuesta.falta}
+                  onChange={(e) => setEncuesta((p) => ({ ...p, falta: e.target.value }))}
+                  placeholder="Lo que sea. Mientras más concreto, mejor."
+                  className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-t border-slate-100 px-7 py-5">
+              <button
+                type="button"
+                onClick={() => void mandarEncuesta()}
+                disabled={enviandoEncuesta}
+                className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-white transition disabled:opacity-50"
+                style={{ background: BLUE_GRADIENT, borderRadius: 14, boxShadow: '0 12px 24px rgba(37,99,235,0.28)' }}
+              >
+                {enviandoEncuesta ? <Loader2 className="size-4 animate-spin" /> : null}
+                Enviar respuestas
+              </button>
+              <button
+                type="button"
+                onClick={cerrarEncuesta}
+                className="text-sm font-semibold text-slate-400 transition hover:text-slate-600"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {panelAuditor && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelAuditor(false)}>
+          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
+            <AuditorFiscal
+              onCerrar={() => setPanelAuditor(false)}
+              narrar={narrar}
+              cargarDocumentos={async () => {
+                const { documentos: docs } = await datosParaReporte({});
+                return docs as unknown as DocumentoDian[];
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {panelPlantilla && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelPlantilla(false)}>
           <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
@@ -1330,6 +1413,52 @@ function DetalleDocumento({ datos, onCerrar }: { datos: any; onCerrar: () => voi
         <Fila k="Resolucion" v={d.dian_resolution} />
         <Fila k="Rango" v={d.dian_range_from ? `${d.dian_range_from} – ${d.dian_range_to}` : ''} />
         <div className="h-8" />
+      </div>
+    </div>
+  );
+}
+
+/** Una pregunta de opción múltiple de la encuesta. Se extrae porque las
+ *  cuatro son iguales salvo el contenido, y repetir el marcado haría el
+ *  modal ilegible. */
+function Pregunta({
+  n, titulo, ayuda, opciones, valor, onElegir, destacada,
+}: {
+  n: number;
+  titulo: string;
+  ayuda?: string;
+  opciones: string[];
+  valor: string;
+  onElegir: (v: string) => void;
+  destacada?: boolean;
+}) {
+  return (
+    <div>
+      <p className="mb-1 flex items-baseline gap-2 text-sm font-bold text-slate-900">
+        <span className="text-xs font-black text-slate-300">{String(n).padStart(2, '0')}</span>
+        {titulo}
+      </p>
+      {ayuda && <p className="mb-2 pl-6 text-xs text-slate-400">{ayuda}</p>}
+      <div className={`flex flex-wrap gap-2 ${ayuda ? '' : 'mt-2'}`}>
+        {opciones.map((o) => {
+          const activa = valor === o;
+          return (
+            <button
+              key={o}
+              type="button"
+              onClick={() => onElegir(o)}
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold ring-1 transition ${
+                activa
+                  ? destacada
+                    ? 'bg-blue-600 text-white ring-blue-600'
+                    : 'bg-slate-900 text-white ring-slate-900'
+                  : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300'
+              }`}
+            >
+              {o}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
