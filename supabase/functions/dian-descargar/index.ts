@@ -113,8 +113,10 @@ async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { erro
     // que el contador viera "el enlace funciona", lanzara 2000 descargas y
     // recibiera 2000 fallos.
     //
-    // La senal fiable es la URL final: si acabo en el login, no hay sesion.
-    const acaboEnLogin = /\/User\/(Login|AuthToken)/i.test(res.url);
+    // Se comprueba sólo la pantalla de acceso, no AuthToken: ésa es la URL
+    // de PARTIDA, así que si la DIAN autenticara sin redirigir estaríamos
+    // marcando como fallo una sesión perfectamente buena.
+    const acaboEnLogin = res.url.toLowerCase().includes('/user/login');
 
     // Y la cookie de sesion tiene que estar viva: la DIAN a veces la emite
     // y la borra en la misma respuesta (expires en 1970).
