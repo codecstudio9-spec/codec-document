@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
-  Search, Download, HelpCircle, ChevronRight, Lock, Sparkles,
+  Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -30,6 +30,7 @@ import { isAdminEmail } from '../utils/admin-access';
 import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
+  cruzarCufes, obtenerDocumento, type CruceCufes,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
@@ -72,6 +73,41 @@ export default function DianDocumentsPage() {
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
+
+  // Panel de CUFEs
+  const [panelCufes, setPanelCufes] = useState(false);
+  const [textoCufes, setTextoCufes] = useState('');
+  const [cruce, setCruce] = useState<CruceCufes | null>(null);
+  const [cruzando, setCruzando] = useState(false);
+
+  // Detalle del documento
+  const [detalle, setDetalle] = useState<Awaited<ReturnType<typeof obtenerDocumento>> | null>(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+
+  const abrirDetalle = async (id: string) => {
+    setCargandoDetalle(true);
+    try { setDetalle(await obtenerDocumento(id)); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setCargandoDetalle(false); }
+  };
+
+  const ejecutarCruce = async () => {
+    if (!textoCufes.trim()) { toast.error('Pega primero la lista de CUFEs'); return; }
+    setCruzando(true);
+    try {
+      const r = await cruzarCufes(textoCufes);
+      setCruce(r);
+      speak({
+        es: r.faltantes.length === 0
+          ? `Revisé ${r.encontrados.length} documentos y los tienes todos.`
+          : `De tu lista, tienes ${r.encontrados.length} documentos y te faltan ${r.faltantes.length}.`,
+        en: r.faltantes.length === 0
+          ? `I checked ${r.encontrados.length} documents and you have all of them.`
+          : `From your list, you have ${r.encontrados.length} documents and ${r.faltantes.length} are missing.`,
+      });
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setCruzando(false); }
+  };
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refrescar = useCallback(async () => {
@@ -432,6 +468,114 @@ export default function DianDocumentsPage() {
           </section>
         )}
 
+        {/* ── Verificar por lista de CUFEs ─────────────────────────────
+            Responde la pregunta que el contador resuelve hoy a mano: de lo
+            que la DIAN dice que tengo, ¿qué ya está cargado y qué me falta?
+            No descarga nada de la DIAN: cruza contra lo que ya está aquí. */}
+        <section className="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <button
+            type="button"
+            onClick={() => setPanelCufes((v) => !v)}
+            className="flex w-full items-center gap-3 px-5 py-4 text-left"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+              <ListChecks className="size-4 text-emerald-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-slate-800">Verificar una lista de CUFEs</span>
+              <span className="block text-xs text-slate-400">
+                Pega la columna del Excel de la DIAN y te digo cuáles ya tienes y cuáles te faltan
+              </span>
+            </div>
+            <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${panelCufes ? 'rotate-90' : ''}`} />
+          </button>
+
+          {panelCufes && (
+            <div className="border-t border-slate-100 px-5 py-5">
+              <textarea
+                value={textoCufes}
+                onChange={(e) => setTextoCufes(e.target.value)}
+                rows={5}
+                placeholder="Pega aquí los CUFEs, uno por línea. También funciona copiando la columna directamente del Excel."
+                className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-xs outline-none transition focus:border-emerald-400 focus:bg-white"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void ejecutarCruce()}
+                  disabled={cruzando}
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {cruzando ? 'Verificando…' : 'Verificar'}
+                </button>
+                {cruce && (
+                  <button
+                    type="button"
+                    onClick={() => { setCruce(null); setTextoCufes(''); }}
+                    className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              {cruce && (
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[
+                      { l: 'En tu lista', v: cruce.total, c: 'text-slate-900' },
+                      { l: 'Ya los tienes', v: cruce.encontrados.length, c: 'text-emerald-600' },
+                      { l: 'Te faltan', v: cruce.faltantes.length, c: 'text-amber-600' },
+                      { l: 'Mal copiados', v: cruce.invalidos.length, c: 'text-rose-600' },
+                    ].map((x) => (
+                      <div key={x.l} className="rounded-xl bg-slate-50 px-3 py-3">
+                        <div className={`text-xl font-bold tabular-nums ${x.c}`}>{x.v}</div>
+                        <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{x.l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {cruce.repetidosEnLista > 0 && (
+                    <p className="mt-3 text-xs text-slate-500">
+                      {cruce.repetidosEnLista} estaban repetidos en tu lista; se contaron una sola vez.
+                    </p>
+                  )}
+
+                  {cruce.faltantes.length > 0 && (
+                    <div className="mt-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700">Los que te faltan</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(cruce.faltantes.join(String.fromCharCode(10)));
+                            toast.success('Copiados. Búscalos en el portal de la DIAN y súbelos aquí.');
+                          }}
+                          className="flex items-center gap-1 text-xs font-semibold text-emerald-600"
+                        >
+                          <Copy className="size-3" /> Copiar los {cruce.faltantes.length}
+                        </button>
+                      </div>
+                      <div className="max-h-40 overflow-y-auto rounded-xl bg-slate-50 p-3">
+                        {cruce.faltantes.map((c) => (
+                          <div key={c} className="truncate font-mono text-[11px] text-slate-500">{c}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cruce.invalidos.length > 0 && (
+                    <p className="mt-3 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-relaxed text-rose-700 ring-1 ring-rose-200">
+                      {cruce.invalidos.length} línea(s) no tienen forma de CUFE. Un CUFE son 96 caracteres
+                      entre números y letras de la a a la f. Revisa que copiaste la columna completa.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         <section
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); void procesar(e.dataTransfer.files); }}
@@ -609,7 +753,7 @@ export default function DianDocumentsPage() {
                   {documentos.map((d) => {
                     const e = ESTADO[d.status] ?? { texto: d.status, clase: 'bg-slate-100 text-slate-600 ring-slate-200' };
                     return (
-                      <tr key={d.id} className="border-b border-slate-50 transition hover:bg-slate-50/60">
+                      <tr key={d.id} onClick={() => void abrirDetalle(d.id)} className="cursor-pointer border-b border-slate-50 transition hover:bg-slate-50/60">
                         <td className="px-4 py-3 text-slate-600">{ETIQUETA_TIPO[d.doc_type] ?? d.doc_type}</td>
                         <td className="px-4 py-3 font-semibold text-slate-800">{d.full_number}</td>
                         <td className="px-4 py-3 tabular-nums text-slate-500">{d.issue_date}</td>
@@ -633,6 +777,118 @@ export default function DianDocumentsPage() {
             </div>
           )}
         </section>
+      </div>
+
+      {(detalle || cargandoDetalle) && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setDetalle(null)}>
+          <div className="h-full w-full max-w-lg overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
+            {cargandoDetalle || !detalle ? (
+              <div className="flex h-full items-center justify-center"><Loader2 className="size-6 animate-spin text-slate-300" /></div>
+            ) : (
+              <DetalleDocumento datos={detalle} onCerrar={() => setDetalle(null)} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Panel de detalle. Muestra el modelo ya normalizado, no el XML: el
+ *  contador no tiene por que leer namespaces. Se separa del componente
+ *  principal para que el cuerpo de la pagina siga siendo legible. */
+function DetalleDocumento({ datos, onCerrar }: { datos: any; onCerrar: () => void }) {
+  const d = datos.documento as Record<string, any>;
+  const lineas = (datos.lineas ?? []) as Array<Record<string, any>>;
+  const impuestos = (datos.impuestos ?? []) as Array<Record<string, any>>;
+  const excepciones = (datos.excepciones ?? []) as Array<Record<string, any>>;
+  const e = ESTADO[d.status] ?? { texto: d.status, clase: 'bg-slate-100 text-slate-600 ring-slate-200' };
+
+  const Fila = ({ k, v }: { k: string; v: React.ReactNode }) => (
+    <div className="flex justify-between gap-4 border-b border-slate-50 py-2 text-sm">
+      <span className="shrink-0 text-slate-400">{k}</span>
+      <span className="min-w-0 break-words text-right font-medium text-slate-800">{v || '—'}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-100 bg-white px-5 py-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="truncate text-lg font-bold text-slate-900">{d.full_number}</h2>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${e.clase}`}>{e.texto}</span>
+          </div>
+          <p className="mt-0.5 text-xs text-slate-400">{ETIQUETA_TIPO[d.doc_type] ?? d.doc_type} · {d.issue_date}</p>
+        </div>
+        <button type="button" onClick={onCerrar} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100">
+          <X className="size-5" />
+        </button>
+      </div>
+
+      <div className="px-5 py-4">
+        {excepciones.length > 0 && (
+          <div className="mb-5 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-amber-700">Que debes revisar</p>
+            {excepciones.map((x, i) => (
+              <p key={x.id ?? i} className="text-sm leading-relaxed text-amber-900">
+                {x.message}
+                {x.expected && (
+                  <span className="mt-0.5 block text-xs text-amber-700">
+                    El documento dice {x.expected}; segun sus propias cifras deberia ser {x.found}.
+                  </span>
+                )}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Proveedor</h3>
+        <Fila k="Razon social" v={d.issuer_name} />
+        <Fila k="NIT" v={d.issuer_dv ? `${d.issuer_nit}-${d.issuer_dv}` : d.issuer_nit} />
+        <Fila k="Cliente" v={d.receiver_name} />
+
+        <h3 className="mb-1 mt-6 text-xs font-bold uppercase tracking-wide text-slate-400">Documento</h3>
+        <Fila k="Emision" v={d.issue_date} />
+        <Fila k="Vencimiento" v={d.due_date} />
+        <Fila k="Validado por la DIAN" v={d.dian_validated ? `Si, ${d.dian_validated_at ?? ''}` : 'No viene el acuse'} />
+        <Fila k="CUFE" v={<span className="font-mono text-[10px] leading-tight">{d.cufe}</span>} />
+
+        <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wide text-slate-400">Lineas ({lineas.length})</h3>
+        <div className="space-y-2">
+          {lineas.map((l, i) => (
+            <div key={l.id ?? i} className="rounded-xl bg-slate-50 px-3.5 py-3">
+              <p className="text-sm font-medium text-slate-800">{l.description || 'Sin descripcion'}</p>
+              <p className="mt-1 text-xs tabular-nums text-slate-500">
+                {Number(l.quantity)} × {pesos(Number(l.unit_price))} = {pesos(Number(l.line_total))}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="mb-1 mt-6 text-xs font-bold uppercase tracking-wide text-slate-400">Impuestos</h3>
+        {impuestos.filter((t) => t.scope === 'document').map((t, i) => (
+          <Fila
+            key={t.id ?? i}
+            k={`${t.tax_name || t.tax_code}${Number(t.rate) ? ` ${Number(t.rate)}%` : ''}${t.is_withholding ? ' (retencion)' : ''}`}
+            v={pesos(Number(t.amount))}
+          />
+        ))}
+
+        <h3 className="mb-1 mt-6 text-xs font-bold uppercase tracking-wide text-slate-400">Totales</h3>
+        <Fila k="Subtotal" v={pesos(Number(d.line_total))} />
+        <Fila k="Base gravable" v={pesos(Number(d.taxable_base))} />
+        <Fila k="IVA" v={pesos(Number(d.total_iva))} />
+        {Number(d.total_retenciones) > 0 && <Fila k="Retenciones" v={pesos(Number(d.total_retenciones))} />}
+        <div className="mt-2 flex justify-between border-t-2 border-slate-900 pt-2">
+          <span className="text-sm font-bold text-slate-900">Total</span>
+          <span className="text-base font-bold tabular-nums text-slate-900">{pesos(Number(d.total))}</span>
+        </div>
+
+        <h3 className="mb-1 mt-6 text-xs font-bold uppercase tracking-wide text-slate-400">Autorizacion DIAN</h3>
+        <Fila k="Resolucion" v={d.dian_resolution} />
+        <Fila k="Rango" v={d.dian_range_from ? `${d.dian_range_from} – ${d.dian_range_to}` : ''} />
+        <div className="h-8" />
       </div>
     </div>
   );

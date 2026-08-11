@@ -419,6 +419,66 @@ export async function datosParaReporte(f: FiltrosDocumentos = {}) {
   return { documentos: docs ?? [], lineas, impuestos };
 }
 
+/** Resultado de cruzar una lista de CUFEs contra lo ya importado. */
+export interface CruceCufes {
+  total: number;
+  invalidos: string[];
+  repetidosEnLista: number;
+  encontrados: DocumentoListado[];
+  faltantes: string[];
+}
+
+/** Un CUFE/CUDE es SHA-384 en hexadecimal: 96 caracteres. Se valida el
+ *  formato antes de consultar para no mandar basura a la base y, sobre
+ *  todo, para poder decirle al contador exactamente cuáles pegó mal —
+ *  copiar una columna de Excel arrastra espacios, saltos y celdas vacías. */
+const CUFE_VALIDO = /^[0-9a-f]{96}$/i;
+
+/** Cruza una lista pegada por el contador contra sus documentos.
+ *
+ *  Responde la pregunta que hoy resuelve a mano: de los documentos que la
+ *  DIAN dice que tengo, ¿cuáles ya están cargados y cuáles me faltan? */
+export async function cruzarCufes(texto: string): Promise<CruceCufes> {
+  // Se acepta lo que salga de copiar una columna de Excel: separados por
+  // salto de línea, coma, punto y coma, tabulación o espacios.
+  const crudos = texto.split(/[\s,;]+/).map((c) => c.trim()).filter(Boolean);
+
+  const invalidos: string[] = [];
+  const vistos = new Set<string>();
+  let repetidosEnLista = 0;
+
+  for (const c of crudos) {
+    if (!CUFE_VALIDO.test(c)) { invalidos.push(c); continue; }
+    const k = c.toLowerCase();
+    if (vistos.has(k)) { repetidosEnLista++; continue; }
+    vistos.add(k);
+  }
+
+  const lista = [...vistos];
+  const encontrados: DocumentoListado[] = [];
+
+  // Por lotes: una lista con miles de CUFE de 96 caracteres en un solo `in`
+  // supera con creces el largo máximo de URL que acepta PostgREST.
+  for (let i = 0; i < lista.length; i += 100) {
+    const lote = lista.slice(i, i + 100);
+    const { data, error } = await supabase
+      .from('ed_documents')
+      .select('id,doc_type,full_number,issue_date,issuer_nit,issuer_name,line_total,total_iva,total_retenciones,total,status,cufe')
+      .in('cufe', lote);
+    if (error) throw new Error(error.message);
+    encontrados.push(...((data ?? []) as DocumentoListado[]));
+  }
+
+  const hallados = new Set(encontrados.map((d) => (d.cufe ?? '').toLowerCase()));
+  return {
+    total: crudos.length,
+    invalidos,
+    repetidosEnLista,
+    encontrados,
+    faltantes: lista.filter((c) => !hallados.has(c)),
+  };
+}
+
 /** Detalle completo para el panel lateral. */
 export async function obtenerDocumento(id: string) {
   const [doc, lineas, impuestos, excepciones] = await Promise.all([
