@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
+  Trash2, Inbox, CheckCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -38,6 +39,7 @@ import {
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, type Feedback,
+  listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
@@ -80,6 +82,50 @@ export default function DianDocumentsPage() {
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
+
+  // Bandeja de excepciones y limpieza
+  const [vista, setVista] = useState<'documentos' | 'revision'>('documentos');
+  const [excepciones, setExcepciones] = useState<ExcepcionListada[] | null>(null);
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [borrando, setBorrando] = useState(false);
+
+  const cargarExcepciones = useCallback(async () => {
+    try { setExcepciones(await listarExcepciones()); }
+    catch (e) { toast.error((e as Error).message); }
+  }, []);
+
+  const resolver = async (ex: ExcepcionListada) => {
+    try {
+      await resolverExcepcion(ex.id);
+      await Promise.all([cargarExcepciones(), refrescar()]);
+      toast.success('Marcada como revisada');
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const alternarSeleccion = (id: string) => {
+    setSeleccion((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+  };
+
+  const borrar = async (ids?: string[]) => {
+    const cuantos = ids ? ids.length : documentos.length;
+    const mensaje = ids
+      ? `¿Borrar ${cuantos} documento(s)? No se puede deshacer.`
+      : '¿Borrar TODOS tus documentos? No se puede deshacer.';
+    if (!window.confirm(mensaje)) return;
+
+    setBorrando(true);
+    try {
+      const n = await borrarDocumentos(ids);
+      setSeleccion(new Set());
+      await Promise.all([refrescar(), cargarExcepciones()]);
+      toast.success(`${n} documento(s) borrados`);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBorrando(false); }
+  };
 
   // Encuesta. Se muestra tras la primera importación: es el momento en que
   // el contador acaba de ver el resultado y sabe si le sirvió — preguntarle
@@ -159,6 +205,7 @@ export default function DianDocumentsPage() {
   }, [permitido, busqueda, filtroEstado, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+  useEffect(() => { if (vista === 'revision') void cargarExcepciones(); }, [vista, cargarExcepciones]);
 
   // Bienvenida hablada, una sola vez por visita. El asistente decide solo
   // si suena: si el usuario tiene la guía apagada, speak() no hace nada.
@@ -835,6 +882,34 @@ export default function DianDocumentsPage() {
 
         {/* ── Tabla ───────────────────────────────────────────────────── */}
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+          <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
+            {([
+              ['documentos', 'Documentos', documentos.length],
+              ['revision', 'Requieren revisión', totales?.revision ?? 0],
+            ] as const).map(([v, l, n]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setVista(v)}
+                className={`flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
+                  vista === v
+                    ? 'border-slate-900 text-slate-900'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {v === 'revision' && <Inbox className="size-4" />}
+                {l}
+                {n > 0 && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                    v === 'revision' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {n}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -871,9 +946,84 @@ export default function DianDocumentsPage() {
             >
               CSV
             </button>
+            {seleccion.size > 0 && (
+              <button
+                type="button"
+                onClick={() => void borrar([...seleccion])}
+                disabled={borrando}
+                className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                <Trash2 className="size-4" />
+                Borrar {seleccion.size}
+              </button>
+            )}
+            {documentos.length > 0 && seleccion.size === 0 && (
+              <button
+                type="button"
+                onClick={() => void borrar()}
+                disabled={borrando}
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200 px-3.5 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
+              >
+                <Trash2 className="size-4" />
+                Borrar todo
+              </button>
+            )}
           </div>
 
-          {documentos.length === 0 ? (
+          {vista === 'revision' ? (
+            excepciones === null ? (
+              <div className="flex justify-center py-16"><Loader2 className="size-6 animate-spin text-slate-300" /></div>
+            ) : excepciones.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <CheckCheck className="mx-auto mb-3 size-8 text-emerald-400" />
+                <p className="text-sm font-semibold text-slate-700">No hay nada que revisar</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Codec no encontró observaciones en tus documentos.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50">
+                {excepciones.map((ex) => (
+                  <div key={ex.id} className="flex flex-wrap items-start gap-3 px-4 py-4">
+                    <AlertTriangle className={`mt-0.5 size-4 shrink-0 ${ex.severity === 'error' ? 'text-rose-500' : 'text-amber-500'}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {ex.documento?.full_number && (
+                          <button
+                            type="button"
+                            onClick={() => ex.document_id && void abrirDetalle(ex.document_id)}
+                            className="text-sm font-bold text-slate-900 underline decoration-slate-300 underline-offset-2"
+                          >
+                            {ex.documento.full_number}
+                          </button>
+                        )}
+                        {ex.documento?.issuer_name && (
+                          <span className="truncate text-xs text-slate-500">{ex.documento.issuer_name}</span>
+                        )}
+                        {ex.documento?.issue_date && (
+                          <span className="text-xs tabular-nums text-slate-400">{ex.documento.issue_date}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-700">{ex.message}</p>
+                      {ex.expected && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          El documento dice <strong className="tabular-nums">{ex.expected}</strong>;
+                          según sus propias cifras debería ser <strong className="tabular-nums">{ex.found}</strong>.
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void resolver(ex)}
+                      className="shrink-0 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Ya la revisé
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : documentos.length === 0 ? (
             <div className="px-6 py-16 text-center">
               <FileText className="mx-auto mb-3 size-8 text-slate-200" />
               <p className="text-sm font-semibold text-slate-700">Todavía no hay documentos</p>
@@ -883,9 +1033,18 @@ export default function DianDocumentsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[880px] text-sm" translate="no">
+              <table className="w-full min-w-[940px] text-sm" translate="no">
                 <thead>
                   <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Seleccionar todos"
+                        checked={documentos.length > 0 && seleccion.size === documentos.length}
+                        onChange={(e) => setSeleccion(e.target.checked ? new Set(documentos.map((d) => d.id)) : new Set())}
+                        className="size-4 accent-slate-900"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left font-bold">Tipo</th>
                     <th className="px-4 py-3 text-left font-bold">Número</th>
                     <th className="px-4 py-3 text-left font-bold">Fecha</th>
@@ -901,6 +1060,15 @@ export default function DianDocumentsPage() {
                     const e = ESTADO[d.status] ?? { texto: d.status, clase: 'bg-slate-100 text-slate-600 ring-slate-200' };
                     return (
                       <tr key={d.id} onClick={() => void abrirDetalle(d.id)} className="cursor-pointer border-b border-slate-50 transition hover:bg-slate-50/60">
+                        <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Seleccionar ${d.full_number ?? ''}`}
+                            checked={seleccion.has(d.id)}
+                            onChange={() => alternarSeleccion(d.id)}
+                            className="size-4 accent-slate-900"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-slate-600">{ETIQUETA_TIPO[d.doc_type] ?? d.doc_type}</td>
                         <td className="px-4 py-3 font-semibold text-slate-800">{d.full_number}</td>
                         <td className="px-4 py-3 tabular-nums text-slate-500">{d.issue_date}</td>

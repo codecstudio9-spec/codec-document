@@ -604,3 +604,59 @@ export async function borrarPerfil(perfilId: string): Promise<void> {
   const { error } = await supabase.from('ed_export_profiles').delete().eq('id', perfilId);
   if (error) throw new Error(error.message);
 }
+
+
+// ── Excepciones y limpieza ────────────────────────────────────────────────
+
+export interface ExcepcionListada {
+  id: number;
+  document_id: string | null;
+  code: string;
+  severity: string;
+  message: string;
+  field: string | null;
+  expected: string | null;
+  found: string | null;
+  created_at: string;
+  documento: {
+    full_number: string | null;
+    doc_type: string;
+    issue_date: string | null;
+    issuer_name: string | null;
+    issuer_nit: string | null;
+    total: number;
+    status: string;
+  } | null;
+}
+
+/** Las que el contador todavia tiene que mirar. Es su lista de tareas: si
+ *  no se vacia a medida que trabaja, deja de servir. */
+export async function listarExcepciones(incluirResueltas = false): Promise<ExcepcionListada[]> {
+  let q = supabase
+    .from('ed_exceptions')
+    .select('id,document_id,code,severity,message,field,expected,found,created_at,documento:ed_documents(full_number,doc_type,issue_date,issuer_name,issuer_nit,total,status)')
+    .order('created_at', { ascending: false })
+    .limit(300);
+  if (!incluirResueltas) q = q.is('resolved_at', null);
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as ExcepcionListada[];
+}
+
+export async function resolverExcepcion(id: number, nota?: string): Promise<void> {
+  const { error } = await supabase.rpc('ed_resolver_excepcion', { p_id: id, p_nota: nota ?? null });
+  if (error) throw new Error(error.message);
+}
+
+/** Borra documentos propios. Sin ids, borra todos.
+ *
+ *  Las lineas, impuestos, archivos y excepciones caen por CASCADE. Las
+ *  importaciones NO: son el historico que sostiene la cuota, y ademas el
+ *  contador debe seguir viendo que ese dia importo 5.284 documentos aunque
+ *  luego los haya limpiado. */
+export async function borrarDocumentos(ids?: string[]): Promise<number> {
+  const { data, error } = await supabase.rpc('ed_borrar_documentos', { p_ids: ids ?? null });
+  if (error) throw new Error(error.message);
+  return Number(data ?? 0);
+}
