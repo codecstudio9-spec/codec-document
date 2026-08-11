@@ -36,6 +36,7 @@ import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   cruzarCufes, obtenerDocumento, type CruceCufes,
+  enviarFeedback, type Feedback,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
@@ -78,6 +79,29 @@ export default function DianDocumentsPage() {
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
+
+  // Encuesta. Se muestra tras la primera importación: es el momento en que
+  // el contador acaba de ver el resultado y sabe si le sirvió — preguntarle
+  // antes sería pedirle una opinión que todavía no tiene.
+  const [encuesta, setEncuesta] = useState<Feedback>({
+    xml_manuales: '', clientes: '', precio: '', falta: '', sistema_contable: '',
+  });
+  const [encuestaEnviada, setEncuestaEnviada] = useState(false);
+  const [enviandoEncuesta, setEnviandoEncuesta] = useState(false);
+
+  const mandarEncuesta = async () => {
+    if (!encuesta.precio && !encuesta.falta.trim()) {
+      toast.error('Cuéntanos al menos cuánto pagarías o qué te falta');
+      return;
+    }
+    setEnviandoEncuesta(true);
+    try {
+      await enviarFeedback(encuesta, user?.email);
+      setEncuestaEnviada(true);
+      toast.success('¡Gracias! Lo leemos todo.');
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setEnviandoEncuesta(false); }
+  };
 
   // Panel de CUFEs
   // Abierta por defecto: verificar por CUFEs es la mitad del trabajo del
@@ -688,6 +712,92 @@ export default function DianDocumentsPage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+
+        {/* ── Encuesta ─────────────────────────────────────────────────
+            Aparece sólo después de la primera importación: ahí el contador
+            ya vio el resultado y su opinión vale algo. */}
+        {resumen && !encuestaEnviada && (
+          <section className="mb-6 p-6 text-white" style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+            <h2 className="text-lg font-black">Ayúdanos a terminarla</h2>
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/60">
+              Acabas de ver lo que hace. Cinco preguntas de treinta segundos y las leemos todas.
+            </p>
+
+            <div className="mt-5 space-y-5">
+              <div>
+                <p className="mb-2 text-sm font-semibold">¿Cuántos XML pasas a Excel a mano cada mes?</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Menos de 100', '100 a 500', '500 a 2.000', 'Más de 2.000'].map((o) => (
+                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, xml_manuales: o }))}
+                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.xml_manuales === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold">¿Cuántas empresas o clientes manejas?</p>
+                <div className="flex flex-wrap gap-2">
+                  {['1 a 5', '6 a 20', '21 a 50', 'Más de 50'].map((o) => (
+                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, clientes: o }))}
+                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.clientes === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-1 text-sm font-semibold">¿Cuánto pagarías al mes por esta herramienta, ilimitada?</p>
+                <p className="mb-2 text-xs text-white/50">Sin límite de documentos ni de empresas.</p>
+                <div className="flex flex-wrap gap-2">
+                  {['$50.000', '$60.000', '$70.000', '$80.000', 'Más de $80.000', 'No pagaría'].map((o) => (
+                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, precio: o }))}
+                      className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${encuesta.precio === o ? 'bg-emerald-400 text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold">¿Qué programa contable usas?</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Siigo', 'Alegra', 'World Office', 'Helisa', 'ContaPyme', 'Otro'].map((o) => (
+                    <button key={o} type="button" onClick={() => setEncuesta((p) => ({ ...p, sistema_contable: o }))}
+                      className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${encuesta.sistema_contable === o ? 'bg-white text-slate-900' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-semibold">¿Qué le falta para que la uses todos los meses?</p>
+                <textarea rows={3} value={encuesta.falta}
+                  onChange={(e) => setEncuesta((p) => ({ ...p, falta: e.target.value }))}
+                  placeholder="Lo que sea. Mientras más concreto, mejor."
+                  className="w-full resize-y rounded-xl bg-white/10 px-3.5 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:bg-white/15" />
+              </div>
+
+              <button type="button" onClick={() => void mandarEncuesta()} disabled={enviandoEncuesta}
+                className="px-6 py-3 text-sm font-bold text-slate-900 transition disabled:opacity-50"
+                style={{ background: '#34D399', borderRadius: 14 }}>
+                {enviandoEncuesta ? 'Enviando…' : 'Enviar'}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {encuestaEnviada && (
+          <section className="mb-6 bg-white p-5 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+            <CheckCircle2 className="mx-auto mb-2 size-7 text-emerald-500" />
+            <p className="text-sm font-semibold text-slate-800">Gracias. Tu respuesta ya está con nosotros.</p>
+            <p className="mt-1 text-xs text-slate-500">Con esto decidimos qué construir después.</p>
           </section>
         )}
 

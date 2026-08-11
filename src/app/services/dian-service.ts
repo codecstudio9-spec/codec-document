@@ -495,3 +495,29 @@ export async function obtenerDocumento(id: string) {
     excepciones: excepciones.data ?? [],
   };
 }
+
+
+// ── Opiniones de la beta ──────────────────────────────────────────────────
+
+export interface Feedback {
+  xml_manuales: string;
+  clientes: string;
+  precio: string;
+  falta: string;
+  sistema_contable: string;
+}
+
+export async function enviarFeedback(f: Feedback, email?: string): Promise<void> {
+  const { error } = await supabase.from('ed_feedback').insert({ ...f, email: email ?? null });
+  if (error) throw new Error(error.message);
+}
+
+/** Sólo devuelve filas si quien pregunta es el propietario: la política
+ *  ed_feedback_admin es la que abre la lectura completa. Para cualquier
+ *  otro usuario esto devuelve únicamente lo que él mismo escribió. */
+export async function listarFeedback() {
+  const { data, error } = await supabase
+    .from('ed_feedback').select('*').order('created_at', { ascending: false }).limit(500);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
