@@ -28,8 +28,8 @@ import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { isAdminEmail } from '../utils/admin-access';
 import {
-  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte, estadoCuota,
-  LimiteAlcanzadoError, type EstadoCuota,
+  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
+  estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
@@ -70,7 +70,7 @@ export default function DianDocumentsPage() {
   const [resumen, setResumen] = useState<ResumenImportacion | null>(null);
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
-  const [cuota, setCuota] = useState<EstadoCuota | null>(null);
+  const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -80,11 +80,11 @@ export default function DianDocumentsPage() {
       const [t, d, c] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
-        estadoCuota(ilimitado),
+        estadoBeta(),
       ]);
       setTotales(t);
       setDocumentos(d);
-      setCuota(c);
+      setBeta(c);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -113,7 +113,7 @@ export default function DianDocumentsPage() {
       const r = await importarArchivos(Array.from(archivos), (e) => {
         setProgreso(e);
         if (e.ultimo) setFeed((prev) => [e.ultimo!, ...prev].slice(0, 8));
-      }, ilimitado);
+      });
       setResumen(r);
       setAyudaAbierta(false);
       toast.success(`${r.procesados} documento(s) procesados`);
@@ -141,7 +141,7 @@ export default function DianDocumentsPage() {
     } catch (e) {
       // El límite no es un fallo del sistema: se explica, no se reporta
       // como error rojo genérico.
-      if (e instanceof LimiteAlcanzadoError) toast.error(e.message, { duration: 8000 });
+      if (e instanceof BetaCerradaError) toast.error(e.message, { duration: 9000 });
       else toast.error((e as Error).message);
     } finally {
       setCargando(false);
@@ -234,15 +234,15 @@ export default function DianDocumentsPage() {
             <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-indigo-600 ring-1 ring-indigo-100">
               Beta
             </span>
-            {cuota && !cuota.ilimitado && (
+            {beta && !beta.ilimitado && (
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums ring-1 ${
-                cuota.restantes === 0
+                beta.restantesPersona === 0
                   ? 'bg-rose-50 text-rose-700 ring-rose-200'
-                  : cuota.restantes <= 40
+                  : beta.restantesPersona <= 20
                     ? 'bg-amber-50 text-amber-700 ring-amber-200'
                     : 'bg-slate-100 text-slate-600 ring-slate-200'
               }`}>
-                {cuota.restantes} de {cuota.limite} documentos este mes
+                {beta.restantesPersona} de {beta.limitePersona} documentos disponibles
               </span>
             )}
           </div>
@@ -310,11 +310,134 @@ export default function DianDocumentsPage() {
           )}
         </section>
 
-        {/* ── Importar ────────────────────────────────────────────────── */}
+        {/* ── Panel del propietario: medir la prueba y ajustar los topes ──
+          Va aquí y no en la sección de analítica porque es donde el
+          propietario ya está mirando la herramienta; si el consumo se
+          dispara, lo ve en el mismo sitio donde puede subir el tope. */}
+      {beta?.ilimitado && (
+        <section className="mb-6 rounded-2xl bg-slate-900 p-5 text-white">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-bold">Control de la prueba</h2>
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/60">
+              solo tú ves esto
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { l: 'Documentos generados', v: `${beta.usadosGlobal} / ${beta.limiteGlobal}` },
+              { l: 'Contadores que la usaron', v: String(beta.personas) },
+              { l: 'Cupo por persona', v: String(beta.limitePersona) },
+              {
+                l: 'La prueba cierra',
+                v: beta.cierre
+                  ? new Date(beta.cierre).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
+                  : 'sin fecha',
+              },
+            ].map((x) => (
+              <div key={x.l} className="rounded-xl bg-white/5 px-3 py-3">
+                <div className="truncate text-base font-bold tabular-nums">{x.v}</div>
+                <div className="mt-0.5 text-[11px] leading-tight text-white/50">{x.l}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className={`h-full rounded-full transition-all ${
+                beta.usadosGlobal / beta.limiteGlobal > 0.85 ? 'bg-rose-400' : 'bg-emerald-400'
+              }`}
+              style={{ width: `${Math.min(100, (beta.usadosGlobal / Math.max(1, beta.limiteGlobal)) * 100)}%` }}
+            />
+          </div>
+          {beta.llena && (
+            <p className="mt-2 text-xs font-semibold text-rose-300">
+              Tope alcanzado. La herramienta está bloqueada para todos hasta que lo subas.
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-end gap-2">
+            <label className="text-xs text-white/60">
+              Tope global
+              <input
+                type="number"
+                defaultValue={beta.limiteGlobal}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (!v || Number(v) === beta.limiteGlobal) return;
+                  void configurarBeta('dian_beta_limite_global', v)
+                    .then(() => { toast.success(`Tope global: ${v}`); void refrescar(); })
+                    .catch((err) => toast.error(err.message));
+                }}
+                className="mt-1 block w-28 rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white outline-none focus:bg-white/15"
+              />
+            </label>
+            <label className="text-xs text-white/60">
+              Cupo por persona
+              <input
+                type="number"
+                defaultValue={beta.limitePersona}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (!v || Number(v) === beta.limitePersona) return;
+                  void configurarBeta('dian_beta_limite_persona', v)
+                    .then(() => { toast.success(`Cupo por persona: ${v}`); void refrescar(); })
+                    .catch((err) => toast.error(err.message));
+                }}
+                className="mt-1 block w-28 rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white outline-none focus:bg-white/15"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date();
+                d.setDate(d.getDate() + 3);
+                void configurarBeta('dian_beta_cierre', d.toISOString())
+                  .then(() => { toast.success('Prueba extendida 3 días más'); void refrescar(); })
+                  .catch((err) => toast.error(err.message));
+              }}
+              className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20"
+            >
+              +3 días
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void configurarBeta('dian_beta_cierre', new Date().toISOString())
+                  .then(() => { toast.success('Prueba cerrada'); void refrescar(); })
+                  .catch((err) => toast.error(err.message));
+              }}
+              className="rounded-lg bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-200 transition hover:bg-rose-500/30"
+            >
+              Cerrar ahora
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-white/40">
+            Los cambios aplican de inmediato para todos, sin desplegar nada.
+          </p>
+        </section>
+      )}
+
+      {/* ── Importar ────────────────────────────────────────────────── */}
+        {beta && !beta.ilimitado && (beta.cerrada || beta.llena) && (
+          <section className="mb-6 rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
+            <Lock className="mx-auto mb-3 size-7 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-800">
+              {beta.cerrada ? 'El periodo de prueba terminó' : 'La prueba alcanzó su capacidad'}
+            </p>
+            <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+              Gracias por participar. Tus documentos siguen aquí y puedes consultarlos
+              y exportarlos; sólo no se pueden procesar nuevos por ahora.
+            </p>
+          </section>
+        )}
+
         <section
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); void procesar(e.dataTransfer.files); }}
-          className="mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-indigo-300"
+          className={`mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-indigo-300 ${
+            beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
+          }`}
         >
           <input
             ref={inputRef}
@@ -379,8 +502,8 @@ export default function DianDocumentsPage() {
             {resumen.sinProcesarPorCuota > 0 && (
               <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
                 Quedaron <strong>{resumen.sinProcesarPorCuota}</strong> documento(s) sin procesar
-                porque llegaste al límite de {cuota?.limite ?? 200} de este mes. No se perdieron:
-                vuelve a subir el mismo archivo cuando actives tu plan y Codec continúa donde quedó.
+                porque llegaste a tu cupo de {beta?.limitePersona ?? 100}. No se perdieron:
+                vuelve a subir el mismo archivo cuando tengas cupo y Codec continúa donde quedó.
               </p>
             )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

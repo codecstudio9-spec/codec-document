@@ -48,61 +48,66 @@ export interface DocumentoListado {
   cufe: string | null;
 }
 
-/** Documentos por persona y por mes calendario.
+/** Estado de la beta: cupos, consumo y fecha de cierre.
  *
- *  500 es el cupo de la BETA abierta: suficiente para que un contador
- *  pruebe con un periodo real y opine con criterio, y acotado para que 700
- *  probadores no disparen el costo de la base de datos.
- *
- *  Al pasar a cobro este número baja al del plan gratuito (200) y el resto
- *  queda detrás del pago. Conviene entonces moverlo a `app_settings` —la
- *  tabla que ya usa el Meta Pixel— para poder ajustarlo desde Configuración
- *  sin desplegar. Mientras dure la beta, una constante es suficiente. */
-export const LIMITE_MENSUAL_GRATIS = 500;
-
-export interface EstadoCuota {
-  usados: number;
-  limite: number;
-  restantes: number;
+ *  Todo viene de la función `ed_beta_estado()` en la base. Tiene que ser
+ *  así: el tope GLOBAL no se puede calcular desde el cliente, porque las
+ *  políticas RLS de ed_documents sólo dejan ver lo propio y un usuario
+ *  contando filas obtendría su propio número, no el de la plataforma.
+ *  La función es SECURITY DEFINER y devuelve sólo cifras agregadas. */
+export interface EstadoBeta {
+  limitePersona: number;
+  limiteGlobal: number;
+  cierre: string | null;
+  usadosPersona: number;
+  usadosGlobal: number;
+  personas: number;
+  cerrada: boolean;
+  llena: boolean;
   ilimitado: boolean;
+  restantesPersona: number;
+  restantesGlobal: number;
 }
 
-/** Cuenta los documentos guardados por el usuario en el mes en curso.
- *
- *  Se cuenta sobre ed_documents y no sobre una tabla de contadores aparte
- *  porque así el número es siempre el real: no hay forma de que el
- *  contador y los datos se desincronicen, ni de inflarlo reintentando una
- *  importación fallida. Un documento que no se guardó no consume cuota,
- *  que es exactamente lo que espera el usuario.
- *
- *  Los duplicados tampoco consumen: no crean fila. */
-export async function estadoCuota(ilimitado = false): Promise<EstadoCuota> {
-  const inicioMes = new Date();
-  inicioMes.setDate(1);
-  inicioMes.setHours(0, 0, 0, 0);
-
-  const { count, error } = await supabase
-    .from('ed_documents')
-    .select('id', { count: 'exact', head: true })
-    .gte('created_at', inicioMes.toISOString());
-
+export async function estadoBeta(): Promise<EstadoBeta> {
+  const { data, error } = await supabase.rpc('ed_beta_estado');
   if (error) throw new Error(error.message);
-  const usados = count ?? 0;
+  const d = (data ?? {}) as Record<string, unknown>;
+
+  const limitePersona = Number(d.limite_persona ?? 100);
+  const limiteGlobal = Number(d.limite_global ?? 2000);
+  const usadosPersona = Number(d.usados_persona ?? 0);
+  const usadosGlobal = Number(d.usados_global ?? 0);
+
   return {
-    usados,
-    limite: LIMITE_MENSUAL_GRATIS,
-    restantes: Math.max(0, LIMITE_MENSUAL_GRATIS - usados),
-    ilimitado,
+    limitePersona, limiteGlobal,
+    cierre: (d.cierre as string) ?? null,
+    usadosPersona, usadosGlobal,
+    personas: Number(d.personas ?? 0),
+    cerrada: Boolean(d.cerrada),
+    llena: Boolean(d.llena),
+    ilimitado: Boolean(d.ilimitado),
+    restantesPersona: Math.max(0, limitePersona - usadosPersona),
+    restantesGlobal: Math.max(0, limiteGlobal - usadosGlobal),
   };
 }
 
-export class LimiteAlcanzadoError extends Error {
-  constructor(readonly cuota: EstadoCuota) {
+/** Sólo el propietario. El guardia real está dentro de la función SQL. */
+export async function configurarBeta(clave: string, valor: string): Promise<void> {
+  const { error } = await supabase.rpc('ed_beta_configurar', { p_clave: clave, p_valor: valor });
+  if (error) throw new Error(error.message);
+}
+
+export class BetaCerradaError extends Error {
+  constructor(motivo: 'cerrada' | 'llena' | 'cupo') {
     super(
-      `Llegaste al límite de ${cuota.limite} documentos de este mes. ` +
-      'Escríbenos si necesitas procesar más durante la prueba.',
+      motivo === 'cerrada'
+        ? 'El periodo de prueba terminó. Gracias por participar — te escribiremos con las novedades.'
+        : motivo === 'llena'
+          ? 'La prueba alcanzó su capacidad. Escríbenos y te damos acceso ampliado.'
+          : 'Llegaste a tu cupo de documentos de la prueba. Escríbenos si necesitas procesar más.',
     );
-    this.name = 'LimiteAlcanzadoError';
+    this.name = 'BetaCerradaError';
   }
 }
 
@@ -130,7 +135,6 @@ async function extraerEntradas(archivo: File): Promise<EntradaZip[]> {
 export async function importarArchivos(
   archivos: File[],
   onProgreso: (e: EventoProgreso) => void,
-  ilimitado = false,
 ): Promise<ResumenImportacion> {
   onProgreso({ fase: 'leyendo', total: 0, hechos: 0 });
 
@@ -144,9 +148,19 @@ export async function importarArchivos(
   // Se comprueba ANTES de crear la importación y de parsear nada: procesar
   // 5.000 documentos para luego decir "no cabían" sería tiempo perdido del
   // contador y trabajo pagado por nosotros.
-  const cuota = await estadoCuota(ilimitado);
-  if (!ilimitado && cuota.restantes <= 0) throw new LimiteAlcanzadoError(cuota);
-  const tope = ilimitado ? entradas.length : Math.min(entradas.length, cuota.restantes);
+  //
+  // Tres barreras, en orden de gravedad: la prueba terminó, la plataforma
+  // llegó a su tope global, o esta persona agotó su cupo. Las dos primeras
+  // detienen; la tercera procesa hasta donde alcance.
+  const beta = await estadoBeta();
+  if (!beta.ilimitado) {
+    if (beta.cerrada) throw new BetaCerradaError('cerrada');
+    if (beta.llena) throw new BetaCerradaError('llena');
+    if (beta.restantesPersona <= 0) throw new BetaCerradaError('cupo');
+  }
+  const tope = beta.ilimitado
+    ? entradas.length
+    : Math.min(entradas.length, beta.restantesPersona, beta.restantesGlobal);
 
   const { data: imp, error: errImp } = await supabase
     .from('ed_imports')
