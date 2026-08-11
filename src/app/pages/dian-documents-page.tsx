@@ -75,7 +75,9 @@ export default function DianDocumentsPage() {
   const { speak } = useVoiceSpeak();
 
   // Panel de CUFEs
-  const [panelCufes, setPanelCufes] = useState(false);
+  // Abierta por defecto: verificar por CUFEs es la mitad del trabajo del
+  // contador, no un extra. Plegada, casi nadie la encontraba.
+  const [panelCufes, setPanelCufes] = useState(true);
   const [textoCufes, setTextoCufes] = useState('');
   const [cruce, setCruce] = useState<CruceCufes | null>(null);
   const [cruzando, setCruzando] = useState(false);
@@ -135,8 +137,8 @@ export default function DianDocumentsPage() {
     if (!permitido || bienvenidaDada.current) return;
     bienvenidaDada.current = true;
     speak({
-      es: 'Bienvenido a Documentos Electrónicos. Descarga tus documentos del portal de la DIAN y suelta aquí el archivo comprimido, tal como te lo entregó la DIAN. Yo lo leo, organizo la información y te aviso si algo necesita tu revisión.',
-      en: 'Welcome to Electronic Documents. Download your documents from the DIAN portal and drop the ZIP file here, just as DIAN gave it to you. I will read it, organize the information and let you know if anything needs your review.',
+      es: 'Bienvenido a Codec Document para contadores. Puedes trabajar de dos formas. La primera: suelta aquí el archivo comprimido tal como te lo entregó la DIAN, y yo lo leo y organizo la información. La segunda: si tienes el Excel de la DIAN, copia la columna de CUFEs y pégala en el recuadro verde de arriba; te digo al instante cuáles documentos ya tienes cargados y cuáles te faltan, sin que revises uno por uno.',
+      en: 'Welcome to Codec Document for accountants. You can work in two ways. First: drop the ZIP file here, just as DIAN gave it to you, and I will read it and organize the information. Second: if you have the DIAN spreadsheet, copy the CUFE column and paste it in the green box above; I will tell you right away which documents you already have and which ones are missing, without checking them one by one.',
     });
   }, [permitido, speak]);
 
@@ -472,26 +474,32 @@ export default function DianDocumentsPage() {
             Responde la pregunta que el contador resuelve hoy a mano: de lo
             que la DIAN dice que tengo, ¿qué ya está cargado y qué me falta?
             No descarga nada de la DIAN: cruza contra lo que ya está aquí. */}
-        <section className="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="mb-6 overflow-hidden rounded-2xl bg-emerald-50/40 shadow-sm ring-2 ring-emerald-200">
           <button
             type="button"
             onClick={() => setPanelCufes((v) => !v)}
             className="flex w-full items-center gap-3 px-5 py-4 text-left"
           >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-              <ListChecks className="size-4 text-emerald-600" />
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600">
+              <ListChecks className="size-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-slate-800">Verificar una lista de CUFEs</span>
-              <span className="block text-xs text-slate-400">
-                Pega la columna del Excel de la DIAN y te digo cuáles ya tienes y cuáles te faltan
+              <span className="flex flex-wrap items-center gap-2 text-base font-bold text-slate-900">
+                ¿Te faltan documentos? Pega aquí tus CUFEs
+                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  Nuevo
+                </span>
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-600">
+                Copia la columna de CUFEs del Excel de la DIAN y te digo al instante cuáles ya
+                tienes cargados y cuáles te faltan. Sin revisar uno por uno.
               </span>
             </div>
             <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${panelCufes ? 'rotate-90' : ''}`} />
           </button>
 
           {panelCufes && (
-            <div className="border-t border-slate-100 px-5 py-5">
+            <div className="border-t border-emerald-200 bg-white px-5 py-5">
               <textarea
                 value={textoCufes}
                 onChange={(e) => setTextoCufes(e.target.value)}
