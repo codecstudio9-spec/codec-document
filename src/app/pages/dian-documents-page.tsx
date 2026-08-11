@@ -248,6 +248,46 @@ export default function DianDocumentsPage() {
     });
   }, [permitido, speak]);
 
+  /** Saca los archivos de lo que el usuario soltó, incluidas las carpetas.
+   *
+   *  Arrastrar la carpeta con los treinta comprimidos dentro es el gesto
+   *  natural, pero `dataTransfer.files` viene VACÍO para una carpeta: hay
+   *  que recorrerla con la API de entradas. Sin esto, soltar una carpeta no
+   *  hacía absolutamente nada y parecía que la herramienta estaba rota. */
+  const archivosDeSoltar = async (dt: DataTransfer): Promise<File[]> => {
+    const items = Array.from(dt.items ?? []);
+    const raices = items
+      .map((i) => (typeof i.webkitGetAsEntry === 'function' ? i.webkitGetAsEntry() : null))
+      .filter(Boolean) as FileSystemEntry[];
+
+    if (raices.length === 0) return Array.from(dt.files);
+
+    const salida: File[] = [];
+    const recorrer = async (entry: FileSystemEntry): Promise<void> => {
+      if (entry.isFile) {
+        const f = await new Promise<File | null>((res) =>
+          (entry as FileSystemFileEntry).file((x) => res(x), () => res(null)),
+        );
+        if (f) salida.push(f);
+        return;
+      }
+      if (!entry.isDirectory) return;
+      const lector = (entry as FileSystemDirectoryEntry).createReader();
+      // readEntries devuelve por tandas: hay que insistir hasta que venga
+      // vacío, o una carpeta con muchos archivos se lee a medias.
+      for (;;) {
+        const tanda = await new Promise<FileSystemEntry[]>((res) =>
+          lector.readEntries((e) => res(e), () => res([])),
+        );
+        if (tanda.length === 0) break;
+        for (const e of tanda) await recorrer(e);
+      }
+    };
+
+    for (const r of raices) await recorrer(r);
+    return salida;
+  };
+
   const procesar = async (archivos: FileList | File[] | null) => {
     if (!archivos || archivos.length === 0) return;
     setCargando(true);
@@ -735,7 +775,10 @@ export default function DianDocumentsPage() {
 
         <section
           onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); void procesar(e.dataTransfer.files); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            void archivosDeSoltar(e.dataTransfer).then((fs) => procesar(fs));
+          }}
           className={`mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-indigo-300 ${
             beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
           }`}
@@ -755,7 +798,9 @@ export default function DianDocumentsPage() {
               <p className="mb-1 text-sm font-semibold text-slate-800">
                 Arrastra aquí el ZIP de la DIAN
               </p>
-              <p className="mb-4 text-xs text-slate-400">o los XML sueltos, si los tienes por separado</p>
+              <p className="mb-4 text-xs text-slate-400">
+                Puedes soltar varios a la vez, o la carpeta entera. También sirven los XML sueltos.
+              </p>
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
@@ -801,6 +846,17 @@ export default function DianDocumentsPage() {
         {resumen && (
           <section className="mb-6 bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <h2 className="mb-3 text-sm font-semibold text-slate-800">Resultado</h2>
+            {resumen.rechazados.length > 0 && (
+              <div className="mb-3 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-relaxed text-rose-800 ring-1 ring-rose-200">
+                <p className="mb-1 font-bold">
+                  {resumen.rechazados.length} archivo(s) no se pudieron abrir. El resto sí se procesó.
+                </p>
+                {resumen.rechazados.slice(0, 6).map((r) => (
+                  <p key={r.nombre} className="truncate">· {r.nombre} — {r.motivo}</p>
+                ))}
+                {resumen.rechazados.length > 6 && <p>· y {resumen.rechazados.length - 6} más</p>}
+              </div>
+            )}
             {resumen.sinProcesarPorCuota > 0 && (
               <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
                 Quedaron <strong>{resumen.sinProcesarPorCuota}</strong> documento(s) sin procesar

@@ -25,6 +25,7 @@ export interface ResumenImportacion {
   errores: number;
   porTipo: Record<string, number>;
   sinProcesarPorCuota: number;
+  rechazados: ArchivoRechazado[];
 }
 
 export interface EventoProgreso {
@@ -124,6 +125,38 @@ async function extraerEntradas(archivo: File): Promise<EntradaZip[]> {
   throw new ZipError(`${archivo.name} no es un XML ni un ZIP`, 'ZIP_ILEGIBLE');
 }
 
+export interface ArchivoRechazado { nombre: string; motivo: string }
+
+/** Abre todos los archivos que soltó el contador, aislando los fallos.
+ *
+ *  Un ZIP corrupto, protegido con contrasena o sin XML dentro NO puede
+ *  tumbar el lote entero: quien arrastra treinta comprimidos de la DIAN no
+ *  tiene por que perder los veintinueve buenos por culpa de uno. Los que
+ *  fallan se devuelven aparte para poder nombrarlos en pantalla. */
+async function abrirTodos(archivos: File[]): Promise<{ entradas: EntradaZip[]; rechazados: ArchivoRechazado[] }> {
+  const entradas: EntradaZip[] = [];
+  const rechazados: ArchivoRechazado[] = [];
+
+  for (const a of archivos) {
+    try {
+      const e = await extraerEntradas(a);
+      if (e.length === 0) rechazados.push({ nombre: a.name, motivo: 'no trae ningún XML dentro' });
+      else entradas.push(...e);
+    } catch (err) {
+      const z = err as ZipError;
+      rechazados.push({
+        nombre: a.name,
+        motivo: z.code === 'SIN_XML'
+          ? 'no trae ningún XML dentro'
+          : z.code === 'ZIP_ILEGIBLE'
+            ? 'no se pudo abrir (¿está dañado o tiene contraseña?)'
+            : (z.message || 'no se pudo leer'),
+      });
+    }
+  }
+  return { entradas, rechazados };
+}
+
 /**
  * Procesa uno o varios archivos y guarda el resultado.
  *
@@ -139,8 +172,14 @@ export async function importarArchivos(
 ): Promise<ResumenImportacion> {
   onProgreso({ fase: 'leyendo', total: 0, hechos: 0 });
 
-  const entradas: EntradaZip[] = [];
-  for (const a of archivos) entradas.push(...(await extraerEntradas(a)));
+  const { entradas, rechazados } = await abrirTodos(archivos);
+  if (entradas.length === 0) {
+    throw new Error(
+      rechazados.length > 0
+        ? `No pude leer ningún documento. ${rechazados[0].nombre}: ${rechazados[0].motivo}.`
+        : 'No encontré ningún XML en lo que subiste.',
+    );
+  }
 
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
@@ -184,6 +223,7 @@ export async function importarArchivos(
     // Cuántos quedaron fuera por cuota. No es un error: es información que
     // el contador necesita para saber que su carpeta no se procesó entera.
     sinProcesarPorCuota: Math.max(0, entradas.length - tope),
+    rechazados,
   };
 
   onProgreso({ fase: 'procesando', total: tope, hechos: 0 });
