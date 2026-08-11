@@ -695,11 +695,19 @@ export function getTemplatesByCategory(category: string): DocumentTemplate[] {
   return documentTemplates.filter(template => template.category === category);
 }
 
+/** Categorías del catálogo.
+ *
+ *  Una plantilla cuya categoría NO figure aquí queda invisible bajo todos
+ *  los filtros: aparece en «Todas» y en ningún otro sitio. Al añadir una
+ *  plantilla con categoría nueva hay que registrarla también aquí y en
+ *  CATEGORIAS de categories-meta.ts, que es donde vive su nombre en
+ *  español y su icono. */
 export const categories = [
-  'Estate Planning & Personal',
+  'Employment & HR',
   'Real Estate & Property',
   'Business Contracts',
-  'Business Formation',
   'Financial & Lending',
+  'Estate Planning & Personal',
+  'Business Formation',
   'Digital & Website',
 ];
