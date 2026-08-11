@@ -55,3 +55,5 @@ fixtures-dian/
 _mapa-PRIVADO-no-compartir.json
 *_mapa-PRIVADO*.json
 xml-dian-reales/
+.vercel
+.env*
