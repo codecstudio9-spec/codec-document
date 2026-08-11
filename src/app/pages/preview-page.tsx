@@ -16,6 +16,7 @@ import { useLanguage } from '../contexts/language-context';
 import { getDocumentTranslation } from '../data/document-translations';
 import { spanishTemplates } from '../data/templates-es';
 import { getStateSpecificTemplate, STATE_NAMES_ES } from '../data/state-variations';
+import { getCountrySpecificResignation } from '../data/resignation-country-variations';
 import { PDFGenerator } from '../services/pdf-generator';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction } from '../data/signature-jurisdictions';
@@ -727,6 +728,17 @@ export function PreviewPage() {
         templateToUse = getStateSpecificTemplate(templateToUse, template.id, state, language);
       }
 
+      // La carta de renuncia se adapta al pais elegido en el propio
+      // formulario: cedula o DNI, liquidacion o finiquito. El pais nunca
+      // aparece escrito en el documento, solo decide el vocabulario.
+      if (template.id === 'resignation-letter') {
+        templateToUse = getCountrySpecificResignation(
+          templateToUse,
+          String(data.country ?? ''),
+          language,
+        );
+      }
+
       let content = templateToUse;
       
       const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(data, language), language);
@@ -800,6 +812,16 @@ export function PreviewPage() {
       templateForExport = getStateSpecificTemplate(templateForExport, template.id, selectedState, exportLanguage);
     }
 
+    // Igual que en la vista previa: sin esto, el PDF exportado saldria con
+    // los marcadores {{__documento}} en crudo.
+    if (template.id === 'resignation-letter') {
+      templateForExport = getCountrySpecificResignation(
+        templateForExport,
+        String(documentData.country ?? ''),
+        exportLanguage,
+      );
+    }
+
     let content = templateForExport;
     const enrichedData = normalizeLanguageSensitiveFields(
       enrichDocumentDataWithDates(documentData, exportLanguage),
@@ -859,6 +881,16 @@ export function PreviewPage() {
     // Apply state-specific variations
     if (selectedState) {
       templateForExport = getStateSpecificTemplate(templateForExport, template.id, selectedState, exportLanguage);
+    }
+
+    // Igual que en la vista previa: sin esto, el PDF exportado saldria con
+    // los marcadores {{__documento}} en crudo.
+    if (template.id === 'resignation-letter') {
+      templateForExport = getCountrySpecificResignation(
+        templateForExport,
+        String(documentData.country ?? ''),
+        exportLanguage,
+      );
     }
 
     let exportContent = templateForExport;

@@ -8,6 +8,7 @@ import { independentContractorTemplateES } from './independent-contractor-es';
 import { billOfSaleVehicleTemplateES } from './bill-of-sale-vehicle-es';
 import { serviceAgreementTemplateES } from './service-agreement-es';
 import { promissoryNoteTemplateES } from './promissory-note-es';
+import { resignationLetterTemplateES } from './resignation-letter-es';
 
 export const spanishTemplates: Record<string, string> = {
   // Documentos reales disponibles
@@ -17,6 +18,7 @@ export const spanishTemplates: Record<string, string> = {
   'bill-of-sale-vehicle': billOfSaleVehicleTemplateES.template,
   'service-agreement': serviceAgreementTemplateES.template,
   'promissory-note': promissoryNoteTemplateES.template,
+  'resignation-letter': resignationLetterTemplateES.template,
   
 
 };

@@ -5,6 +5,7 @@ import { independentContractorTemplate } from './independent-contractor-template
 import { billOfSaleVehicleTemplate } from './bill-of-sale-vehicle-template';
 import { serviceAgreementTemplate } from './service-agreement-template';
 import { promissoryNoteTemplate } from './promissory-note-template';
+import { resignationLetterTemplate } from './resignation-letter-template';
 
 export const documentTemplates: DocumentTemplate[] = [
   // Real documents available
@@ -14,6 +15,7 @@ export const documentTemplates: DocumentTemplate[] = [
   billOfSaleVehicleTemplate,
   serviceAgreementTemplate,
   promissoryNoteTemplate,
+  resignationLetterTemplate,
   
   // Estate Planning & Personal
   {
