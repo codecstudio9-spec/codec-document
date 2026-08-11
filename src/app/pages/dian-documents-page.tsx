@@ -26,6 +26,11 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
+import { Logo } from '../components/brand/Logo';
+import {
+  CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT, DARK_GRADIENT,
+  MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT,
+} from '../styles/mobile-theme';
 import { isAdminEmail } from '../utils/admin-access';
 import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
@@ -263,34 +268,43 @@ export default function DianDocumentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen pb-24" style={{ background: MOBILE_BG_GRADIENT }}>
       <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
 
-        <header className="mb-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Documentos Electrónicos</h1>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-indigo-600 ring-1 ring-indigo-100">
+        <div className="mb-6 flex items-center justify-between pt-2">
+          <Logo size="sm" tagline="Documentos electrónicos · DIAN" href="/dashboard" />
+        </div>
+
+        <header
+          className="relative mb-6 overflow-hidden px-6 py-6 text-white"
+          style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+        >
+          <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
+          <div className="relative flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-black tracking-tight">Documentos Electrónicos</h1>
+            <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white/90">
               Beta
             </span>
             {beta && !beta.ilimitado && (
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums ring-1 ${
                 beta.restantesPersona === 0
-                  ? 'bg-rose-50 text-rose-700 ring-rose-200'
+                  ? 'bg-rose-500/20 text-rose-200 ring-rose-400/30'
                   : beta.restantesPersona <= 20
-                    ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                    : 'bg-slate-100 text-slate-600 ring-slate-200'
+                    ? 'bg-amber-500/20 text-amber-100 ring-amber-400/30'
+                    : 'bg-white/10 text-white/70 ring-white/15'
               }`}>
                 {beta.restantesPersona} de {beta.limitePersona} documentos disponibles
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="relative mt-1.5 max-w-xl text-sm leading-relaxed text-white/70">
             Convierte los XML de la DIAN en información contable lista para usar.
+            Sin abrir archivos, sin copiar CUFEs, sin armar el Excel a mano.
           </p>
         </header>
 
         {/* ── Guía paso a paso, dentro de la propia herramienta ───────── */}
-        <section className="mb-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="mb-6 overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <button
             type="button"
             onClick={() => setAyudaAbierta((v) => !v)}
@@ -353,7 +367,7 @@ export default function DianDocumentsPage() {
           propietario ya está mirando la herramienta; si el consumo se
           dispara, lo ve en el mismo sitio donde puede subir el tope. */}
       {beta?.ilimitado && (
-        <section className="mb-6 rounded-2xl bg-slate-900 p-5 text-white">
+        <section className="mb-6 p-5 text-white" style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-bold">Control de la prueba</h2>
             <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/60">
@@ -474,7 +488,8 @@ export default function DianDocumentsPage() {
             Responde la pregunta que el contador resuelve hoy a mano: de lo
             que la DIAN dice que tengo, ¿qué ya está cargado y qué me falta?
             No descarga nada de la DIAN: cruza contra lo que ya está aquí. */}
-        <section className="mb-6 overflow-hidden rounded-2xl bg-emerald-50/40 shadow-sm ring-2 ring-emerald-200">
+        <section className="mb-6 overflow-hidden bg-emerald-50/50 ring-2 ring-emerald-200"
+          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <button
             type="button"
             onClick={() => setPanelCufes((v) => !v)}
@@ -610,7 +625,8 @@ export default function DianDocumentsPage() {
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700"
+                className="px-6 py-3 text-sm font-bold text-white transition"
+                style={{ background: BLUE_GRADIENT, borderRadius: 14, boxShadow: '0 12px 24px rgba(37,99,235,0.30)' }}
               >
                 Seleccionar archivos
               </button>
@@ -649,7 +665,7 @@ export default function DianDocumentsPage() {
 
         {/* ── Resultado de la última importación ──────────────────────── */}
         {resumen && (
-          <section className="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <section className="mb-6 bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <h2 className="mb-3 text-sm font-semibold text-slate-800">Resultado</h2>
             {resumen.sinProcesarPorCuota > 0 && (
               <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
@@ -686,7 +702,7 @@ export default function DianDocumentsPage() {
               { l: 'IVA', v: pesos(totales.iva) },
               { l: 'Retenciones', v: pesos(totales.retenciones) },
             ].map((c) => (
-              <div key={c.l} className="rounded-2xl bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
+              <div key={c.l} className="bg-white px-4 py-3.5" style={{ borderRadius: 18, boxShadow: CARD_SHADOW }}>
                 <div className="truncate text-lg font-bold tabular-nums text-slate-900">{c.v}</div>
                 <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{c.l}</div>
               </div>
@@ -695,7 +711,7 @@ export default function DianDocumentsPage() {
         )}
 
         {/* ── Tabla ───────────────────────────────────────────────────── */}
-        <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
