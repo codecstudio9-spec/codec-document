@@ -9,6 +9,7 @@ import { billOfSaleVehicleTemplateES } from './bill-of-sale-vehicle-es';
 import { serviceAgreementTemplateES } from './service-agreement-es';
 import { promissoryNoteTemplateES } from './promissory-note-es';
 import { resignationLetterTemplateES } from './resignation-letter-es';
+import { weddingPlannerTemplateES } from './wedding-planner-es';
 
 export const spanishTemplates: Record<string, string> = {
   // Documentos reales disponibles
@@ -19,6 +20,7 @@ export const spanishTemplates: Record<string, string> = {
   'service-agreement': serviceAgreementTemplateES.template,
   'promissory-note': promissoryNoteTemplateES.template,
   'resignation-letter': resignationLetterTemplateES.template,
+  'wedding-planner': weddingPlannerTemplateES.template,
   
 
 };

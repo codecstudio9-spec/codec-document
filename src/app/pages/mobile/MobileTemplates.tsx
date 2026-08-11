@@ -1,21 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, Home, Briefcase, Building2, DollarSign, Globe, ArrowRight } from 'lucide-react';
+import { Search, FileText, ArrowRight, LayoutGrid } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
-import { documentTemplates, categories } from '../../data/templates';
+import { documentTemplates } from '../../data/templates';
+import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
 import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
-
-const CATEGORY_ICON: Record<string, typeof FileText> = {
-  'Estate Planning & Personal': FileText,
-  'Real Estate & Property': Home,
-  'Business Contracts': Briefcase,
-  'Business Formation': Building2,
-  'Financial & Lending': DollarSign,
-  'Digital & Website': Globe,
-};
 
 export function MobileTemplates() {
   return (
@@ -34,7 +26,7 @@ function TemplatesContent() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return documentTemplates.filter((t) => {
-      const matchesCategory = !activeCategory || t.category === activeCategory;
+      const matchesCategory = !activeCategory || claveCategoria(t.category) === activeCategory;
       const matchesQuery = !q || t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
@@ -61,35 +53,49 @@ function TemplatesContent() {
       </div>
 
       <div className="px-4 pt-4">
-      {/* Category chips */}
+      {/* Secciones. Mismo menú que en escritorio, en tira horizontal porque
+          en un teléfono no caben en dos filas. Los nombres salían en inglés
+          («Real Estate & Property») y el icono de cada tarjeta se sacaba de
+          una segunda lista que ni siquiera tenía Empleo. Todo eso vive ahora
+          en categories-meta.ts, una sola vez. */}
       <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         <button
           type="button"
           onClick={() => setActiveCategory(null)}
-          className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
+          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
           style={
             activeCategory === null
-              ? { background: '#2563EB', color: '#fff' }
+              ? { background: '#0F172A', color: '#fff' }
               : { background: '#fff', color: '#374151', border: '1px solid #E5E7EB' }
           }
         >
+          <LayoutGrid className="size-3.5" />
           {language === 'en' ? 'All' : 'Todas'}
+          <span className="tabular-nums opacity-60">{documentTemplates.length}</span>
         </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setActiveCategory(cat)}
-            className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
-            style={
-              activeCategory === cat
-                ? { background: '#2563EB', color: '#fff' }
-                : { background: '#fff', color: '#374151', border: '1px solid #E5E7EB' }
-            }
-          >
-            {cat}
-          </button>
-        ))}
+        {CATEGORIAS.map((c) => {
+          const cuantas = documentTemplates.filter((t) => claveCategoria(t.category) === c.id).length;
+          if (cuantas === 0) return null;
+          const activa = activeCategory === c.id;
+          const Icono = c.icono;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setActiveCategory(activa ? null : c.id)}
+              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
+              style={
+                activa
+                  ? { background: c.color, color: '#fff' }
+                  : { background: '#fff', color: '#374151', border: '1px solid #E5E7EB' }
+              }
+            >
+              <Icono className="size-3.5" style={{ color: activa ? '#fff' : c.color }} />
+              {nombreCategoria(c.id, language)}
+              <span className="tabular-nums opacity-60">{cuantas}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Template cards */}
@@ -101,7 +107,9 @@ function TemplatesContent() {
           </div>
         ) : (
           filtered.map((t) => {
-            const Icon = CATEGORY_ICON[t.category] ?? FileText;
+            const meta = metaCategoria(claveCategoria(t.category));
+            const Icon = meta?.icono ?? FileText;
+            const acento = meta?.color ?? '#4F46E5';
             const name = getDocumentTranslation(t.id, 'name', language) || t.name;
             const description = getDocumentTranslation(t.id, 'desc', language) || t.description;
             return (
@@ -113,8 +121,8 @@ function TemplatesContent() {
                 className="flex w-full items-center gap-3 bg-white p-4 text-left"
                 style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
-                  <Icon className="size-5 text-indigo-600" />
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: acento + '14' }}>
+                  <Icon className="size-5" style={{ color: acento }} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{name}</p>

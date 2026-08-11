@@ -6,9 +6,11 @@ import { billOfSaleVehicleTemplate } from './bill-of-sale-vehicle-template';
 import { serviceAgreementTemplate } from './service-agreement-template';
 import { promissoryNoteTemplate } from './promissory-note-template';
 import { resignationLetterTemplate } from './resignation-letter-template';
+import { weddingPlannerTemplate } from './wedding-planner-template';
 
 export const documentTemplates: DocumentTemplate[] = [
   // Real documents available
+  weddingPlannerTemplate,
   residentialLeaseTemplate,
   ndaTemplate,
   independentContractorTemplate,
@@ -703,6 +705,7 @@ export function getTemplatesByCategory(category: string): DocumentTemplate[] {
  *  CATEGORIAS de categories-meta.ts, que es donde vive su nombre en
  *  español y su icono. */
 export const categories = [
+  'Events & Celebrations',
   'Employment & HR',
   'Real Estate & Property',
   'Business Contracts',

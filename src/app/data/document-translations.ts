@@ -1,3 +1,9 @@
+import type { DocumentTemplate } from '../types/document';
+import { resignationLetterTemplate } from './resignation-letter-template';
+import { resignationLetterTemplateES } from './resignation-letter-es';
+import { weddingPlannerTemplate } from './wedding-planner-template';
+import { weddingPlannerTemplateES } from './wedding-planner-es';
+
 export const documentTranslations = {
   en: {
     // Last Will and Testament
@@ -170,6 +176,23 @@ export const documentTranslations = {
     'privacy-policy.desc': 'Política de privacidad conforme a GDPR y CCPA para recopilación de datos y derechos de usuario.',
   },
 };
+
+// ── Plantillas con archivo español propio ───────────────────────────────────
+//
+// El nombre y la descripción ya están escritos en `x-es.ts`. Se registran
+// desde ahí en vez de copiarlos, por lo mismo que en field-translations.ts: la
+// copia es lo que se queda desactualizado. Sin este registro la tarjeta del
+// catálogo aparece en inglés aunque el documento se genere en español.
+function registrarPareja(en: DocumentTemplate, es: DocumentTemplate): void {
+  const t = documentTranslations as Record<'en' | 'es', Record<string, string>>;
+  t.en[`${en.id}.name`] = en.name;
+  t.en[`${en.id}.desc`] = en.description;
+  t.es[`${en.id}.name`] = es.name;
+  t.es[`${en.id}.desc`] = es.description;
+}
+
+registrarPareja(resignationLetterTemplate, resignationLetterTemplateES);
+registrarPareja(weddingPlannerTemplate, weddingPlannerTemplateES);
 
 export function getDocumentTranslation(documentId: string, field: 'name' | 'desc', language: 'en' | 'es'): string {
   const key = `${documentId}.${field}`;

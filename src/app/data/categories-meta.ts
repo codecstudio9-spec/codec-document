@@ -12,7 +12,7 @@
  */
 
 import {
-  Briefcase, Home, FileSignature, Landmark, Scale, Building2, Globe,
+  Briefcase, Home, FileSignature, Landmark, Scale, Building2, Globe, PartyPopper,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -27,6 +27,10 @@ export interface CategoriaMeta {
 }
 
 export const CATEGORIAS: CategoriaMeta[] = [
+  // Bodas, quince años, grados. No es «contratos comerciales»: quien busca un
+  // contrato para su boda no entra a mirar ahí, y quien busca uno de negocios
+  // no quiere tropezarse con el de la boda.
+  { id: 'Events & Celebrations', es: 'Eventos y Celebraciones', en: 'Events & Celebrations', icono: PartyPopper, color: '#DB2777' },
   { id: 'Employment & HR', es: 'Empleo y RR. HH.', en: 'Employment & HR', icono: Briefcase, color: '#0891B2' },
   { id: 'Real Estate & Property', es: 'Inmobiliaria', en: 'Real Estate', icono: Home, color: '#2563EB' },
   { id: 'Business Contracts', es: 'Contratos', en: 'Contracts', icono: FileSignature, color: '#7C3AED' },
@@ -52,6 +56,7 @@ export function metaCategoria(id: string): CategoriaMeta | undefined {
  *  traducida en su propio archivo, a la clave en inglés con la que se
  *  filtra. Sin esto, una plantilla ES quedaría fuera de su propio filtro. */
 const ALIAS_ES: Record<string, string> = {
+  'Eventos y Celebraciones': 'Events & Celebrations',
   'Empleo y Recursos Humanos': 'Employment & HR',
   'Inmobiliaria y Propiedad': 'Real Estate & Property',
   'Contratos Comerciales': 'Business Contracts',

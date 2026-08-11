@@ -69,6 +69,34 @@ function getNdaTermDescription(data: DocumentData, language: Language, baseDate:
     : 'As per the confidentiality term agreed by the Parties.';
 }
 
+/**
+ * Convierte las fechas que el usuario eligió en el calendario a la forma en
+ * que se escriben en un documento.
+ *
+ * Los campos `type: 'date'` llegan como `2020-03-15`, y así es como salían
+ * impresas: «trabajo aquí desde 2020-03-15» no es lenguaje de una carta
+ * formal, y en países que escriben día/mes se lee además como una fecha
+ * distinta a la elegida.
+ *
+ * Sólo se tocan los valores con forma exacta de fecha ISO. Un número de
+ * cédula, un importe o un texto libre no coinciden con ese patrón y pasan
+ * intactos. Se construye con `new Date(a, m-1, d)` y no parseando la cadena:
+ * `new Date('2020-03-15')` es medianoche UTC, que al oeste de Greenwich cae
+ * en el día anterior y restaría un día a cada fecha.
+ */
+function humanizarFechasISO(data: DocumentData, language: Language): DocumentData {
+  const salida: DocumentData = { ...data };
+  for (const [clave, valor] of Object.entries(salida)) {
+    if (typeof valor !== 'string') continue;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor.trim());
+    if (!m) continue;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (Number.isNaN(d.getTime())) continue;
+    salida[clave] = formatDateLong(d, language);
+  }
+  return salida;
+}
+
 export function enrichDocumentDataWithDates(data: DocumentData, language: Language): DocumentData {
   const now = new Date();
   const day = now.getDate();
@@ -86,10 +114,15 @@ export function enrichDocumentDataWithDates(data: DocumentData, language: Langua
   }
 
   return {
-    ...data,
+    ...humanizarFechasISO(data, language),
     current_day: String(day),
     current_month: month,
     current_year: String(year),
+    // La fecha de hoy escrita entera. Sin esto, toda plantilla con
+    // {{current_date}} —la carta de renuncia entre ellas— se imprimía con la
+    // ciudad y una coma suelta, sin fecha, porque los marcadores que no se
+    // resuelven se sustituyen por nada.
+    current_date: formatDateLong(now, language),
     effective_date: formatDateLong(now, language),
     effective_date_formal: formatFormalEffectiveDate(now, language),
     term_description: getNdaTermDescription(data, language, now),

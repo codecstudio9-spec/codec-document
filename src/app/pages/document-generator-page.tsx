@@ -35,6 +35,7 @@ import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
+import { DictadoYMejora } from '../components/DictadoYMejora';
 
 type FlowStep = 'form' | 'sign' | 'verify';
 
@@ -497,10 +498,18 @@ export function DocumentGeneratorPage() {
   // Use optional chaining so these are safe when template is null (early-return case).
   const visibleFields = useMemo(
     () =>
+      // Se ocultan los campos de fecha que el sistema pone solo: la fecha
+      // efectiva es siempre la de hoy, la de la firma.
+      //
+      // `start_date` NO va en esta lista aunque lo estuvo. Nadie la rellena
+      // automáticamente —no sale de enrichDocumentDataWithDates— así que
+      // ocultarla no la resolvía, la dejaba vacía: el contrato de servicios y
+      // el de contratista salían con «comenzará el ␣ y continuará», y la
+      // carta de renuncia con «trabajo aquí desde ␣». Es un dato del pasado
+      // que sólo conoce quien firma; hay que preguntarlo.
       (template?.fields ?? []).filter(
         (field) =>
           field.id !== 'effective_date' &&
-          field.id !== 'start_date' &&
           field.id !== 'effective_date_of_agreement',
       ),
     [template],
@@ -523,6 +532,43 @@ export function DocumentGeneratorPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleFields]);
+
+  // ── Rellenar con los datos de la cuenta ──────────────────────────────────
+  // Quien entró con Google ya nos dio su nombre y su correo; volver a
+  // pedírselos es trabajo repetido. Se rellena sólo lo que está vacío, y el
+  // campo sigue siendo editable: el nombre de Google puede ser un apodo, y en
+  // una carta de renuncia tiene que ir el de la cédula.
+  //
+  // La lista es corta a propósito. Sólo campos que sin ninguna duda son de la
+  // persona que está firmando; en un contrato hay dos partes, y meter el
+  // nombre del usuario en la del otro sería peor que dejarlo vacío.
+  const CAMPOS_DEL_USUARIO: Record<string, 'name' | 'email'> = {
+    employee_name: 'name',
+    employee_email: 'email',
+  };
+  const [camposAutorrellenados, setCamposAutorrellenados] = useState<string[]>([]);
+  const yaAutorrellenado = useRef(false);
+  useEffect(() => {
+    if (yaAutorrellenado.current || !user) return;
+    const puestos: string[] = [];
+    setFormData((prev) => {
+      const next = { ...prev };
+      for (const field of visibleFields) {
+        const cual = CAMPOS_DEL_USUARIO[field.id];
+        if (!cual || next[field.id]) continue;
+        const valor = cual === 'name' ? (user.name ?? '') : (user.email ?? '');
+        if (!valor.trim()) continue;
+        next[field.id] = valor;
+        puestos.push(field.id);
+      }
+      return puestos.length ? next : prev;
+    });
+    if (puestos.length) {
+      yaAutorrellenado.current = true;
+      setCamposAutorrellenados(puestos);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, visibleFields]);
 
   const handleStateChange = (state: string) => {
     setSelectedState(state);
@@ -569,6 +615,9 @@ export function DocumentGeneratorPage() {
   const handleInputChange = (fieldId: string, value: string | number | boolean) => {
     setActiveFieldId(fieldId);
     setFormData(prev => ({ ...prev, [fieldId]: value }));
+    // En cuanto lo tocan deja de ser «lo tomamos de tu cuenta»: el aviso
+    // sobraría y encima sería falso.
+    setCamposAutorrellenados((prev) => (prev.includes(fieldId) ? prev.filter((id) => id !== fieldId) : prev));
     // Bidirectional sync: if user edits the inline 'state' field, keep Step 1 selector in sync
     if (fieldId === 'state') {
       const str = String(value);
@@ -1060,7 +1109,18 @@ export function DocumentGeneratorPage() {
           </div>
         )}
         {field.type === 'textarea' && (
-          <Textarea id={field.id} placeholder={placeholder} value={String(formData[field.id] ?? '')} onChange={(e) => handleInputChange(field.id, e.target.value)} onFocus={() => setActiveFieldId(field.id)} required={field.required} rows={4} className={inputCls} />
+          <>
+            <Textarea id={field.id} placeholder={placeholder} value={String(formData[field.id] ?? '')} onChange={(e) => handleInputChange(field.id, e.target.value)} onFocus={() => setActiveFieldId(field.id)} required={field.required} rows={4} className={inputCls} />
+            {/* Dictar y mejorar sólo en los campos largos: son los únicos
+                donde escribir cuesta y donde la redacción importa. En un
+                nombre o una ciudad estos botones sólo estorbarían. */}
+            <DictadoYMejora
+              valor={String(formData[field.id] ?? '')}
+              onCambio={(v) => handleInputChange(field.id, v)}
+              language={language}
+              contexto={getFieldTranslation(template.id, field.id, 'label', language) || field.label}
+            />
+          </>
         )}
         {field.type === 'checkbox' && (
           <Label className="flex items-center gap-2">
@@ -1092,6 +1152,15 @@ export function DocumentGeneratorPage() {
               <ChevronDown className="size-4 text-slate-400" />
             </span>
           </div>
+        )}
+
+        {camposAutorrellenados.includes(field.id) && (
+          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+            <User className="size-3.5 shrink-0" />
+            {language === 'en'
+              ? 'Taken from your account — edit it if it should read differently.'
+              : 'Lo tomamos de tu cuenta. Puedes cambiarlo si debe aparecer distinto.'}
+          </p>
         )}
       </div>
     );

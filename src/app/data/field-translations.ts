@@ -1,6 +1,12 @@
 // Field translations for document forms - COMPLETE
 // This file contains translations for ALL form field labels, placeholders, and help text
 
+import type { DocumentTemplate } from '../types/document';
+import { resignationLetterTemplate } from './resignation-letter-template';
+import { resignationLetterTemplateES } from './resignation-letter-es';
+import { weddingPlannerTemplate } from './wedding-planner-template';
+import { weddingPlannerTemplateES } from './wedding-planner-es';
+
 type Language = 'en' | 'es';
 type FieldPart = 'label' | 'placeholder' | 'help';
 
@@ -1287,3 +1293,48 @@ export function getFieldOptionTranslation(
 ): string {
   return fieldOptionTranslations[documentId]?.[fieldId]?.[option]?.[language] || option;
 }
+
+// ── Plantillas que ya tienen su gemela en español ───────────────────────────
+//
+// Las plantillas nuevas se escriben dos veces: `x-template.ts` en inglés y
+// `x-es.ts` en español, ambas con sus campos, etiquetas y ayudas completas.
+// El formulario, en cambio, siempre lee los campos de la versión en inglés y
+// busca aquí la traducción, así que sin registrarla el usuario en español
+// veía el formulario entero en inglés aunque el documento saliera traducido.
+//
+// Copiar esas etiquetas a mano a este archivo sería una tercera copia de lo
+// mismo, y la tercera copia es la que se queda vieja. Se derivan del archivo
+// español, que es donde ya están escritas.
+function registrarPareja(en: DocumentTemplate, es: DocumentTemplate): void {
+  const campos: Record<string, Record<FieldPart, Record<Language, string>>> = {};
+  const opciones: Record<string, Record<string, Record<Language, string>>> = {};
+
+  for (const campoEn of en.fields) {
+    const campoEs = es.fields.find((f) => f.id === campoEn.id);
+    if (!campoEs) continue;
+
+    campos[campoEn.id] = {
+      label: { en: campoEn.label, es: campoEs.label },
+      placeholder: { en: campoEn.placeholder ?? '', es: campoEs.placeholder ?? '' },
+      help: { en: campoEn.helpText ?? '', es: campoEs.helpText ?? '' },
+    };
+
+    // Las opciones se emparejan por posición, que es lo único que las une:
+    // son cadenas distintas en cada idioma. Si las dos listas no tienen el
+    // mismo tamaño el emparejamiento sería incorrecto —traduciría una opción
+    // como otra— y es preferible dejarlas sin traducir.
+    const a = campoEn.options ?? [];
+    const b = campoEs.options ?? [];
+    if (a.length > 0 && a.length === b.length && a.some((v, i) => v !== b[i])) {
+      opciones[campoEn.id] = Object.fromEntries(
+        a.map((valor, i) => [valor, { en: valor, es: b[i] }]),
+      );
+    }
+  }
+
+  fieldTranslations[en.id] = campos;
+  if (Object.keys(opciones).length > 0) fieldOptionTranslations[en.id] = opciones;
+}
+
+registrarPareja(resignationLetterTemplate, resignationLetterTemplateES);
+registrarPareja(weddingPlannerTemplate, weddingPlannerTemplateES);
