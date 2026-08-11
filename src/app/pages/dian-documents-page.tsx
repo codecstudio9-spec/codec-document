@@ -578,19 +578,30 @@ export default function DianDocumentsPage() {
           {/* Acción de salida. Va en el encabezado y no enterrada entre las
               secciones porque es el final del recorrido del contador: lo que
               vino a buscar es llevarse los datos a su programa. */}
-          <button
-            type="button"
-            onClick={() => setPanelDescarga(true)}
-            className="relative mr-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
-            style={{
-              background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
-              borderRadius: 14,
-              boxShadow: '0 12px 26px rgba(2,132,199,0.35)',
-            }}
-          >
-            <CloudDownload className="size-4" />
-            Descargar XML de la DIAN
-          </button>
+          {/* Descargar XML de la DIAN — oculta hasta que el propietario la
+              publique. El endpoint de descarga por documento todavía no se
+              ha confirmado contra el portal real, y abrirla antes daría
+              fallos justo en la función que el contador más espera, que es
+              la peor primera impresión posible.
+              Al publicarla hay que quitar el guardia AQUÍ y en el panel. */}
+          {ilimitado && (
+            <button
+              type="button"
+              onClick={() => setPanelDescarga(true)}
+              className="relative mr-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
+              style={{
+                background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
+                borderRadius: 14,
+                boxShadow: '0 12px 26px rgba(2,132,199,0.35)',
+              }}
+            >
+              <CloudDownload className="size-4" />
+              Descargar XML de la DIAN
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+                solo tú
+              </span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -1386,7 +1397,7 @@ export default function DianDocumentsPage() {
         </div>
       )}
 
-      {panelDescarga && (
+      {panelDescarga && ilimitado && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelDescarga(false)}>
           <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
             <DescargarDeDian onCerrar={() => setPanelDescarga(false)} narrar={narrar} />
