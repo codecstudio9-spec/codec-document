@@ -39,6 +39,8 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
   const [hojaSel, setHojaSel] = useState(0);
   const [mapa, setMapa] = useState<Record<string, number>>({});
   const [resultado, setResultado] = useState<ResultadoAuditoria | null>(null);
+  const [muestra, setMuestra] = useState<string[][]>([]);
+  const [esReporteCodec, setEsReporteCodec] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,16 +67,41 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
     return m;
   };
 
+  /** Carga la vista previa de una hoja: sin ver lo que se leyó, el contador
+   *  no tiene forma de saber si señaló bien las columnas. */
+  const verHoja = (bytes: Uint8Array, todas: HojaDetectada[], i: number) => {
+    setHojaSel(i);
+    setMapa(auto(todas[i].encabezados));
+    try {
+      setMuestra(leerFilasDatos(bytes, todas[i].ruta, todas[i].filaEncabezados, 3));
+    } catch { setMuestra([]); }
+  };
+
   const elegir = async (f: File | undefined) => {
     if (!f) return;
     try {
       const bytes = new Uint8Array(await f.arrayBuffer());
       const detectadas = analizarPlantilla(bytes);
+
+      // El reporte que genera Codec trae estas hojas. Compararlo consigo
+      // mismo no dice nada, y es un error facil de cometer porque acaba de
+      // descargarlo.
+      const nombres = detectadas.map((h) => h.nombre);
+      const propio = nombres.includes('Reporte General') && nombres.includes('Reporte Detallado');
+      setEsReporteCodec(propio);
+
+      // Se elige la hoja que mas parece una lista de documentos: la de mas
+      // columnas. Quedarse con la primera cae en la hoja de resumen, que
+      // solo tiene Concepto y Valor y no sirve para cruzar nada.
+      let mejor = 0;
+      detectadas.forEach((h, i) => {
+        if (h.encabezados.filter(Boolean).length > detectadas[mejor].encabezados.filter(Boolean).length) mejor = i;
+      });
+
       setArchivo({ nombre: f.name, bytes });
       setHojas(detectadas);
-      setHojaSel(0);
-      setMapa(auto(detectadas[0].encabezados));
       setResultado(null);
+      verHoja(bytes, detectadas, mejor);
     } catch (e) {
       toast.error((e as XlsxRellenoError).message, { duration: 7000 });
     }
@@ -210,10 +237,15 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
               onChange={(e) => { void elegir(e.target.files?.[0]); e.target.value = ''; }}
             />
             <Upload className="mx-auto mb-2 size-6 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-800">Sube el reporte de tu contabilidad</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-slate-500">
-              El listado de compras o de documentos del mismo periodo, exportado a Excel desde
-              Siigo, Alegra o el programa que uses. No hace falta que traiga el CUFE.
+            <p className="text-sm font-semibold text-slate-800">Sube el reporte de TU programa contable</p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
+              Entra a Siigo, Alegra, World Office o el que uses, saca el listado de compras
+              o de documentos del mismo periodo, y expórtalo a Excel. Eso es lo que va aquí.
+            </p>
+            <p className="mx-auto mt-2 max-w-md rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-relaxed text-amber-800">
+              <strong>No subas el Excel que te dio Codec.</strong> Ese lo generé yo con los datos
+              de la DIAN; compararlo consigo mismo no diría nada. Necesito el de tu contabilidad
+              para poder cruzarlos.
             </p>
             <button
               type="button"
@@ -225,6 +257,17 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
           </div>
         ) : (
           <>
+            {esReporteCodec && (
+              <div className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  <strong>Este es el reporte que generó Codec</strong>, no el de tu contabilidad.
+                  Si lo comparo, todo va a cuadrar porque son los mismos datos. Sube el listado
+                  que exportas desde Siigo, Alegra o el programa que uses.
+                </span>
+              </div>
+            )}
+
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <CheckCircle2 className="size-4 text-emerald-500" />
               <span className="text-sm font-semibold text-slate-800">{archivo.nombre}</span>
@@ -239,20 +282,65 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
 
             {hojas.length > 1 && (
               <label className="mb-4 block text-xs font-semibold text-slate-600">
-                Hoja
+                ¿En qué hoja está la lista de documentos?
                 <select
                   value={hojaSel}
-                  onChange={(e) => {
-                    const i = Number(e.target.value);
-                    setHojaSel(i);
-                    setMapa(auto(hojas[i].encabezados));
-                  }}
+                  onChange={(e) => archivo && verHoja(archivo.bytes, hojas, Number(e.target.value))}
                   className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:bg-white"
                 >
-                  {hojas.map((h, i) => <option key={h.ruta} value={i}>{h.nombre}</option>)}
+                  {hojas.map((h, i) => (
+                    <option key={h.ruta} value={i}>
+                      {h.nombre} — {h.encabezados.filter(Boolean).length} columnas, {h.filasConDatos} filas
+                    </option>
+                  ))}
                 </select>
               </label>
             )}
+
+            {/* Sin ver lo leído, el contador no puede saber si la hoja o la
+                fila de encabezados son las correctas. Antes se le pedía
+                señalar columnas a ciegas. */}
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                Esto es lo que leí
+              </p>
+              {hojas[hojaSel]?.encabezados.filter(Boolean).length < 3 ? (
+                <div className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
+                  Solo encontré {hojas[hojaSel]?.encabezados.filter(Boolean).length ?? 0} columna(s)
+                  en esta hoja. Seguramente es un resumen y no la lista de documentos —
+                  {hojas.length > 1 ? ' prueba con otra hoja arriba.' : ' revisa que el archivo traiga el listado detallado.'}
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-[11px]" translate="no">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        {hojas[hojaSel].encabezados.map((h, i) => (
+                          <th key={i} className="whitespace-nowrap border-b border-slate-200 px-2.5 py-2 text-left font-bold text-slate-600">
+                            {h || <span className="text-slate-300">(vacía)</span>}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {muestra.length === 0 ? (
+                        <tr><td colSpan={99} className="px-2.5 py-3 text-slate-400">Sin filas de datos debajo del encabezado.</td></tr>
+                      ) : muestra.map((fila, f) => (
+                        <tr key={f} className="border-b border-slate-100 last:border-0">
+                          {hojas[hojaSel].encabezados.map((_, i) => (
+                            <td key={i} className="max-w-[160px] truncate px-2.5 py-1.5 text-slate-600">{fila[i] ?? ''}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                Hoja «{hojas[hojaSel]?.nombre}», encabezados en la fila {hojas[hojaSel]?.filaEncabezados}.
+                {hojas.length > 1 && ' Si no es la correcta, cámbiala arriba.'}
+              </p>
+            </div>
 
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
               ¿Dónde está cada dato?
