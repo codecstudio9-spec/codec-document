@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
-import { isAdminEmail } from '../../utils/admin-access';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { Logo } from '../../components/brand/Logo';
@@ -56,7 +55,9 @@ export function MobileDashboardHome() {
 
 function DashboardContent() {
   const { user } = useAuth();
-  const verDian = isAdminEmail(user?.email);
+  // Modulo DIAN: abierto a todo usuario autenticado; la cuota es la que
+  // limita, no el correo.
+  const verDian = Boolean(user);
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);

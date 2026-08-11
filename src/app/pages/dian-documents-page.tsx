@@ -1,11 +1,14 @@
 /**
  * Documentos Electrónicos — módulo DIAN para contadores (Colombia).
  *
- * ── Visibilidad ─────────────────────────────────────────────────────────
- * Publicado en acceso restringido: la ruta existe y se ve exactamente como
- * la vería un contador, pero sólo la abre el propietario (isAdminEmail).
- * Cualquier otro usuario ve la pantalla de "no disponible" en vez de un
- * 404, para poder enseñarla sin exponerla.
+ * ── Acceso y cuota ──────────────────────────────────────────────────────
+ * Abierta a cualquier usuario autenticado. Quien limita no es el correo
+ * sino la cuota: 200 documentos por mes calendario en el plan gratuito.
+ * El propietario (isAdminEmail) va sin límite.
+ *
+ * La cuota se cuenta sobre las filas realmente guardadas, así que un
+ * duplicado o un archivo que falló no la consumen — que es lo que el
+ * contador espera.
  *
  * ── Por qué se procesa en el navegador ──────────────────────────────────
  * En esta etapa el parseo corre aquí y no en el servidor: no depende de
@@ -22,9 +25,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { isAdminEmail } from '../utils/admin-access';
 import {
-  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
+  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte, estadoCuota,
+  LimiteAlcanzadoError, type EstadoCuota,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
@@ -53,7 +58,8 @@ const ESTADO: Record<string, { texto: string; clase: string }> = {
 
 export default function DianDocumentsPage() {
   const { user, loading: cargandoSesion } = useAuth();
-  const permitido = isAdminEmail(user?.email);
+  const permitido = Boolean(user);
+  const ilimitado = isAdminEmail(user?.email);
 
   const [totales, setTotales] = useState<TotalesPanel | null>(null);
   const [documentos, setDocumentos] = useState<DocumentoListado[]>([]);
@@ -64,23 +70,39 @@ export default function DianDocumentsPage() {
   const [resumen, setResumen] = useState<ResumenImportacion | null>(null);
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
+  const [cuota, setCuota] = useState<EstadoCuota | null>(null);
+  const { speak } = useVoiceSpeak();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refrescar = useCallback(async () => {
     if (!permitido) return;
     try {
-      const [t, d] = await Promise.all([
+      const [t, d, c] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
+        estadoCuota(ilimitado),
       ]);
       setTotales(t);
       setDocumentos(d);
+      setCuota(c);
     } catch (e) {
       toast.error((e as Error).message);
     }
-  }, [permitido, busqueda, filtroEstado]);
+  }, [permitido, busqueda, filtroEstado, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+
+  // Bienvenida hablada, una sola vez por visita. El asistente decide solo
+  // si suena: si el usuario tiene la guía apagada, speak() no hace nada.
+  const bienvenidaDada = useRef(false);
+  useEffect(() => {
+    if (!permitido || bienvenidaDada.current) return;
+    bienvenidaDada.current = true;
+    speak({
+      es: 'Bienvenido a Documentos Electrónicos. Descarga tus documentos del portal de la DIAN y suelta aquí el archivo comprimido, tal como te lo entregó la DIAN. Yo lo leo, organizo la información y te aviso si algo necesita tu revisión.',
+      en: 'Welcome to Electronic Documents. Download your documents from the DIAN portal and drop the ZIP file here, just as DIAN gave it to you. I will read it, organize the information and let you know if anything needs your review.',
+    });
+  }, [permitido, speak]);
 
   const procesar = async (archivos: FileList | File[] | null) => {
     if (!archivos || archivos.length === 0) return;
@@ -91,13 +113,36 @@ export default function DianDocumentsPage() {
       const r = await importarArchivos(Array.from(archivos), (e) => {
         setProgreso(e);
         if (e.ultimo) setFeed((prev) => [e.ultimo!, ...prev].slice(0, 8));
-      });
+      }, ilimitado);
       setResumen(r);
       setAyudaAbierta(false);
       toast.success(`${r.procesados} documento(s) procesados`);
+
+      // Se narra el resultado en el lenguaje del contador. Lo importante no
+      // es cuántos se procesaron sino cuántos necesitan que él intervenga:
+      // ése es el trabajo que le queda.
+      const pendientes = r.revision + r.errores;
+      speak({
+        es: `Listo. Procesé ${r.procesados} documentos.`
+          + (r.duplicados > 0 ? ` ${r.duplicados} ya los tenías.` : '')
+          + (pendientes > 0
+              ? ` ${pendientes} necesitan que los revises. Los encuentras filtrando por Requiere revisión.`
+              : ' Todos quedaron correctos, no hay nada que revisar.')
+          + ' Puedes descargar el reporte en Excel cuando quieras.',
+        en: `Done. I processed ${r.procesados} documents.`
+          + (r.duplicados > 0 ? ` ${r.duplicados} were already here.` : '')
+          + (pendientes > 0
+              ? ` ${pendientes} need your review. Filter by Needs review to find them.`
+              : ' All of them are correct, nothing to review.')
+          + ' You can download the Excel report whenever you want.',
+      });
+
       await refrescar();
     } catch (e) {
-      toast.error((e as Error).message);
+      // El límite no es un fallo del sistema: se explica, no se reporta
+      // como error rojo genérico.
+      if (e instanceof LimiteAlcanzadoError) toast.error(e.message, { duration: 8000 });
+      else toast.error((e as Error).message);
     } finally {
       setCargando(false);
       setProgreso(null);
@@ -171,8 +216,8 @@ export default function DianDocumentsPage() {
           <Lock className="mx-auto mb-4 size-8 text-slate-300" />
           <h1 className="mb-2 text-lg font-semibold text-slate-800">Documentos Electrónicos</h1>
           <p className="text-sm text-slate-500">
-            Esta herramienta está en pruebas con un grupo cerrado de contadores.
-            Escríbenos si quieres participar.
+            Inicia sesión con tu correo para procesar tus documentos
+            electrónicos de la DIAN.
           </p>
         </div>
       </div>
@@ -187,8 +232,19 @@ export default function DianDocumentsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Documentos Electrónicos</h1>
             <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-indigo-600 ring-1 ring-indigo-100">
-              Vista previa privada
+              Beta
             </span>
+            {cuota && !cuota.ilimitado && (
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums ring-1 ${
+                cuota.restantes === 0
+                  ? 'bg-rose-50 text-rose-700 ring-rose-200'
+                  : cuota.restantes <= 40
+                    ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                    : 'bg-slate-100 text-slate-600 ring-slate-200'
+              }`}>
+                {cuota.restantes} de {cuota.limite} documentos este mes
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-slate-500">
             Convierte los XML de la DIAN en información contable lista para usar.
@@ -320,6 +376,13 @@ export default function DianDocumentsPage() {
         {resumen && (
           <section className="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
             <h2 className="mb-3 text-sm font-semibold text-slate-800">Resultado</h2>
+            {resumen.sinProcesarPorCuota > 0 && (
+              <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
+                Quedaron <strong>{resumen.sinProcesarPorCuota}</strong> documento(s) sin procesar
+                porque llegaste al límite de {cuota?.limite ?? 200} de este mes. No se perdieron:
+                vuelve a subir el mismo archivo cuando actives tu plan y Codec continúa donde quedó.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               {[
                 { l: 'Encontrados', v: resumen.encontrados, c: 'text-slate-900' },

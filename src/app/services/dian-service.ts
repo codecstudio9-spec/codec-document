@@ -23,6 +23,7 @@ export interface ResumenImportacion {
   revision: number;
   errores: number;
   porTipo: Record<string, number>;
+  sinProcesarPorCuota: number;
 }
 
 export interface EventoProgreso {
@@ -45,6 +46,64 @@ export interface DocumentoListado {
   total: number;
   status: string;
   cufe: string | null;
+}
+
+/** Documentos por persona y por mes calendario.
+ *
+ *  500 es el cupo de la BETA abierta: suficiente para que un contador
+ *  pruebe con un periodo real y opine con criterio, y acotado para que 700
+ *  probadores no disparen el costo de la base de datos.
+ *
+ *  Al pasar a cobro este número baja al del plan gratuito (200) y el resto
+ *  queda detrás del pago. Conviene entonces moverlo a `app_settings` —la
+ *  tabla que ya usa el Meta Pixel— para poder ajustarlo desde Configuración
+ *  sin desplegar. Mientras dure la beta, una constante es suficiente. */
+export const LIMITE_MENSUAL_GRATIS = 500;
+
+export interface EstadoCuota {
+  usados: number;
+  limite: number;
+  restantes: number;
+  ilimitado: boolean;
+}
+
+/** Cuenta los documentos guardados por el usuario en el mes en curso.
+ *
+ *  Se cuenta sobre ed_documents y no sobre una tabla de contadores aparte
+ *  porque así el número es siempre el real: no hay forma de que el
+ *  contador y los datos se desincronicen, ni de inflarlo reintentando una
+ *  importación fallida. Un documento que no se guardó no consume cuota,
+ *  que es exactamente lo que espera el usuario.
+ *
+ *  Los duplicados tampoco consumen: no crean fila. */
+export async function estadoCuota(ilimitado = false): Promise<EstadoCuota> {
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+
+  const { count, error } = await supabase
+    .from('ed_documents')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', inicioMes.toISOString());
+
+  if (error) throw new Error(error.message);
+  const usados = count ?? 0;
+  return {
+    usados,
+    limite: LIMITE_MENSUAL_GRATIS,
+    restantes: Math.max(0, LIMITE_MENSUAL_GRATIS - usados),
+    ilimitado,
+  };
+}
+
+export class LimiteAlcanzadoError extends Error {
+  constructor(readonly cuota: EstadoCuota) {
+    super(
+      `Llegaste al límite de ${cuota.limite} documentos de este mes. ` +
+      'Escríbenos si necesitas procesar más durante la prueba.',
+    );
+    this.name = 'LimiteAlcanzadoError';
+  }
 }
 
 /** Extrae los XML de lo que el usuario suelte: un .xml suelto o un .zip. */
@@ -71,6 +130,7 @@ async function extraerEntradas(archivo: File): Promise<EntradaZip[]> {
 export async function importarArchivos(
   archivos: File[],
   onProgreso: (e: EventoProgreso) => void,
+  ilimitado = false,
 ): Promise<ResumenImportacion> {
   onProgreso({ fase: 'leyendo', total: 0, hechos: 0 });
 
@@ -80,6 +140,13 @@ export async function importarArchivos(
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
   if (!userId) throw new Error('Necesitas iniciar sesión para importar documentos.');
+
+  // Se comprueba ANTES de crear la importación y de parsear nada: procesar
+  // 5.000 documentos para luego decir "no cabían" sería tiempo perdido del
+  // contador y trabajo pagado por nosotros.
+  const cuota = await estadoCuota(ilimitado);
+  if (!ilimitado && cuota.restantes <= 0) throw new LimiteAlcanzadoError(cuota);
+  const tope = ilimitado ? entradas.length : Math.min(entradas.length, cuota.restantes);
 
   const { data: imp, error: errImp } = await supabase
     .from('ed_imports')
@@ -99,11 +166,14 @@ export async function importarArchivos(
   const resumen: ResumenImportacion = {
     importId, encontrados: entradas.length,
     procesados: 0, duplicados: 0, revision: 0, errores: 0, porTipo: {},
+    // Cuántos quedaron fuera por cuota. No es un error: es información que
+    // el contador necesita para saber que su carpeta no se procesó entera.
+    sinProcesarPorCuota: Math.max(0, entradas.length - tope),
   };
 
-  onProgreso({ fase: 'procesando', total: entradas.length, hechos: 0 });
+  onProgreso({ fase: 'procesando', total: tope, hechos: 0 });
 
-  for (let i = 0; i < entradas.length; i++) {
+  for (let i = 0; i < tope; i++) {
     const entrada = entradas[i];
     let evento: EventoProgreso['ultimo'];
 
@@ -145,7 +215,7 @@ export async function importarArchivos(
       evento = { nombre: entrada.nombre, estado: 'error', detalle: msg };
     }
 
-    onProgreso({ fase: 'procesando', total: entradas.length, hechos: i + 1, ultimo: evento });
+    onProgreso({ fase: 'procesando', total: tope, hechos: i + 1, ultimo: evento });
   }
 
   await supabase
@@ -162,7 +232,7 @@ export async function importarArchivos(
     })
     .eq('id', importId);
 
-  onProgreso({ fase: 'listo', total: entradas.length, hechos: entradas.length });
+  onProgreso({ fase: 'listo', total: tope, hechos: tope });
   return resumen;
 }
 
