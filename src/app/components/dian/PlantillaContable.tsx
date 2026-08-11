@@ -15,8 +15,8 @@
  * convierte la función en una razón para volver cada mes.
  */
 
-import { useRef, useState } from 'react';
-import { FileSpreadsheet, Upload, Loader2, Check, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { FileSpreadsheet, Upload, Loader2, Check, Trash2, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { analizarPlantilla, rellenarPlantilla, bytesABase64, XlsxRellenoError, type HojaDetectada } from '../../../lib/dian/xlsx-relleno';
 import {
@@ -39,10 +39,13 @@ const FORMATOS_FECHA = [
 interface Props {
   /** Devuelve los documentos y líneas ya filtrados que hay que exportar. */
   cargarDatos: () => Promise<{ documentos: Record<string, unknown>[]; lineas: Record<string, unknown>[] }>;
+  /** Narración del asistente. Se recibe del padre para que el componente no
+   *  dependa del contexto de idioma ni del servicio de voz. */
+  narrar?: (es: string, en: string) => void;
+  onCerrar: () => void;
 }
 
-export function PlantillaContable({ cargarDatos }: Props) {
-  const [abierto, setAbierto] = useState(false);
+export function PlantillaContable({ cargarDatos, narrar, onCerrar }: Props) {
   const [perfiles, setPerfiles] = useState<PerfilPlantilla[] | null>(null);
   const [trabajando, setTrabajando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,14 +60,15 @@ export function PlantillaContable({ cargarDatos }: Props) {
   const [formatoFecha, setFormatoFecha] = useState('DD/MM/YYYY');
   const [mapeo, setMapeo] = useState<Emparejamiento[]>([]);
 
-  const abrir = async () => {
-    const nuevo = !abierto;
-    setAbierto(nuevo);
-    if (nuevo && perfiles === null) {
-      try { setPerfiles(await listarPerfiles()); }
-      catch { setPerfiles([]); }
-    }
-  };
+  useEffect(() => {
+    listarPerfiles().then(setPerfiles).catch(() => setPerfiles([]));
+    narrar?.(
+      'Aquí llevas tus documentos a tu programa contable. Si es la primera vez, sube la plantilla vacía que usas para cargar en Siigo, Alegra o el programa que tengas. Yo leo sus columnas y te devuelvo ese mismo archivo con la información puesta.',
+      'Here you take your documents to your accounting software. If this is your first time, upload the blank template you use to load into Siigo, Alegra or whichever program you have. I read its columns and give you back that same file with the information filled in.',
+    );
+    // Sólo al abrir el panel: repetirlo en cada cambio sería insufrible.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const elegirArchivo = async (f: File | undefined) => {
     if (!f) return;
@@ -136,6 +140,10 @@ export function PlantillaContable({ cargarDatos }: Props) {
       setArchivo(null);
       setHojas([]);
       toast.success(`${filas.length} fila(s) escritas. La plantilla quedó guardada para el mes siguiente.`);
+      narrar?.(
+        `Listo. Escribí ${filas.length} filas en tu plantilla y ya se está descargando. La guardé, así que el mes que viene solo tienes que elegirla y darle a descargar, sin volver a configurar nada.`,
+        `Done. I wrote ${filas.length} rows into your template and it is downloading. I saved it, so next month you just pick it and hit download, no setup needed.`,
+      );
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -158,6 +166,10 @@ export function PlantillaContable({ cargarDatos }: Props) {
       );
       descargar(rellenarPlantilla(bytes, p.sheet_path, filas), `${p.name} - lleno.xlsx`);
       toast.success(`${filas.length} fila(s) escritas en tu plantilla de ${p.target}`);
+      narrar?.(
+        `Listo. Tu plantilla de ${p.target} quedó con ${filas.length} filas y se está descargando.`,
+        `Done. Your ${p.target} template has ${filas.length} rows and is downloading.`,
+      );
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -177,22 +189,23 @@ export function PlantillaContable({ cargarDatos }: Props) {
   const sinAsignar = mapeo.filter((m) => m.encabezado && !m.campo).length;
 
   return (
-    <section className="mb-6 overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-      <button type="button" onClick={() => void abrir()} className="flex w-full items-center gap-3 px-5 py-4 text-left">
+    <div>
+      <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-100 bg-white px-5 py-4">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-600">
           <FileSpreadsheet className="size-5 text-white" />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-slate-900">Llevar a tu programa contable</span>
-          <span className="mt-0.5 block text-xs text-slate-500">
-            Sube la plantilla de Siigo, Alegra, World Office o el que uses, y te la devolvemos llena
-          </span>
+          <h2 className="text-lg font-bold text-slate-900">Llevar a tu programa contable</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Sube tu plantilla de Siigo, Alegra, World Office o la que uses, y te la devolvemos llena
+          </p>
         </div>
-        <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${abierto ? 'rotate-90' : ''}`} />
-      </button>
+        <button type="button" onClick={onCerrar} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100">
+          <X className="size-5" />
+        </button>
+      </div>
 
-      {abierto && (
-        <div className="border-t border-slate-100 px-5 py-5">
+      <div className="px-5 py-5">
           {/* ── Plantillas ya configuradas ─────────────────────────── */}
           {perfiles === null ? (
             <Loader2 className="size-5 animate-spin text-slate-300" />
@@ -399,8 +412,7 @@ export function PlantillaContable({ cargarDatos }: Props) {
               </p>
             </div>
           )}
-        </div>
-      )}
-    </section>
+      </div>
+    </div>
   );
 }

@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
-  Trash2, Inbox, CheckCheck,
+  Trash2, Inbox, CheckCheck, FileSpreadsheet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -82,6 +82,12 @@ export default function DianDocumentsPage() {
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const { speak } = useVoiceSpeak();
+  const [panelPlantilla, setPanelPlantilla] = useState(false);
+
+  /** Atajo para narrar. El asistente decide solo si suena: si el contador
+   *  tiene la guía apagada, speak() no hace nada, así que no hay que
+   *  consultar su estado en cada llamada. */
+  const narrar = useCallback((es: string, en: string) => speak({ es, en }), [speak]);
 
   // Bandeja de excepciones y limpieza
   const [vista, setVista] = useState<'documentos' | 'revision'>('documentos');
@@ -164,7 +170,23 @@ export default function DianDocumentsPage() {
 
   const abrirDetalle = async (id: string) => {
     setCargandoDetalle(true);
-    try { setDetalle(await obtenerDocumento(id)); }
+    try {
+      const d = await obtenerDocumento(id);
+      setDetalle(d);
+      const doc = d.documento as Record<string, unknown>;
+      const obs = (d.excepciones ?? []).length;
+      if (obs > 0) {
+        narrar(
+          `Este documento tiene ${obs === 1 ? 'una observación' : `${obs} observaciones`}. Te las puse arriba del todo, explicadas con las cifras del propio documento.`,
+          `This document has ${obs === 1 ? 'one issue' : `${obs} issues`}. I put them at the top, explained with the document's own figures.`,
+        );
+      } else {
+        narrar(
+          `Factura ${String(doc.full_number ?? '')} de ${String(doc.issuer_name ?? '')}. Está correcta: los totales cuadran con sus líneas y sus impuestos.`,
+          `Invoice ${String(doc.full_number ?? '')} from ${String(doc.issuer_name ?? '')}. It is correct: the totals match its lines and taxes.`,
+        );
+      }
+    }
     catch (e) { toast.error((e as Error).message); }
     finally { setCargandoDetalle(false); }
   };
@@ -205,7 +227,14 @@ export default function DianDocumentsPage() {
   }, [permitido, busqueda, filtroEstado, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
-  useEffect(() => { if (vista === 'revision') void cargarExcepciones(); }, [vista, cargarExcepciones]);
+  useEffect(() => {
+    if (vista !== 'revision') return;
+    void cargarExcepciones();
+    narrar(
+      'Estos son los documentos donde encontré algo que no cuadra. Son los únicos que necesitas mirar: el resto ya quedó listo. Cuando revises uno, dale a Ya la revisé y desaparece de la lista.',
+      'These are the documents where I found something that does not add up. They are the only ones you need to look at; the rest are done. When you check one, click I reviewed it and it disappears from the list.',
+    );
+  }, [vista, cargarExcepciones, narrar]);
 
   // Bienvenida hablada, una sola vez por visita. El asistente decide solo
   // si suena: si el usuario tiene la guía apagada, speak() no hace nada.
@@ -224,6 +253,10 @@ export default function DianDocumentsPage() {
     setCargando(true);
     setResumen(null);
     setFeed([]);
+    narrar(
+      'Voy a leer tus documentos. No cierres esta pestaña; te aviso en cuanto termine.',
+      'I am going to read your documents. Do not close this tab; I will let you know as soon as I finish.',
+    );
     try {
       const r = await importarArchivos(Array.from(archivos), (e) => {
         setProgreso(e);
@@ -288,6 +321,10 @@ export default function DianDocumentsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`${docs.length} documento(s) exportados en 4 hojas`);
+      narrar(
+        `Tu Excel se está descargando con ${docs.length} documentos. Trae cuatro hojas: un resumen con los totales del periodo, el detalle línea por línea de cada producto, una hoja con un renglón por documento, y las retenciones aparte. Ábrelo con Excel y ya lo puedes trabajar.`,
+        `Your Excel is downloading with ${docs.length} documents. It has four sheets: a summary with the period totals, the line by line detail of each product, one row per document, and withholdings separately. Open it in Excel and it is ready to work with.`,
+      );
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -373,6 +410,23 @@ export default function DianDocumentsPage() {
             Convierte los XML de la DIAN en información contable lista para usar.
             Sin abrir archivos, sin copiar CUFEs, sin armar el Excel a mano.
           </p>
+
+          {/* Acción de salida. Va en el encabezado y no enterrada entre las
+              secciones porque es el final del recorrido del contador: lo que
+              vino a buscar es llevarse los datos a su programa. */}
+          <button
+            type="button"
+            onClick={() => setPanelPlantilla(true)}
+            className="relative mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
+              borderRadius: 14,
+              boxShadow: '0 12px 26px rgba(124,58,237,0.35)',
+            }}
+          >
+            <FileSpreadsheet className="size-4" />
+            Llevar a mi programa contable
+          </button>
         </header>
 
         {/* ── Guía paso a paso, dentro de la propia herramienta ───────── */}
@@ -590,6 +644,14 @@ export default function DianDocumentsPage() {
               <textarea
                 value={textoCufes}
                 onChange={(e) => setTextoCufes(e.target.value)}
+                onPaste={() => {
+                  // Al pegar, no al teclear: narrar en cada pulsación sería
+                  // insufrible, y pegar es el gesto real del contador.
+                  setTimeout(() => narrar(
+                    'Ya tengo tu lista. Dale al botón Verificar y te digo cuáles de esos documentos ya están cargados aquí y cuáles te faltan por subir.',
+                    'I have your list. Click Verify and I will tell you which of those documents are already loaded here and which ones you still need to upload.',
+                  ), 250);
+                }}
                 rows={5}
                 placeholder="Pega aquí los CUFEs, uno por línea. También funciona copiando la columna directamente del Excel."
                 className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-xs outline-none transition focus:border-emerald-400 focus:bg-white"
@@ -868,18 +930,6 @@ export default function DianDocumentsPage() {
           </section>
         )}
 
-        <PlantillaContable
-          cargarDatos={async () => {
-            const { documentos: docs, lineas } = await datosParaReporte({
-              estado: filtroEstado || undefined,
-            });
-            return {
-              documentos: docs as Record<string, unknown>[],
-              lineas: lineas as Record<string, unknown>[],
-            };
-          }}
-        />
-
         {/* ── Tabla ───────────────────────────────────────────────────── */}
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
@@ -1093,6 +1143,26 @@ export default function DianDocumentsPage() {
           )}
         </section>
       </div>
+
+      {panelPlantilla && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelPlantilla(false)}>
+          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
+            <PlantillaContable
+              onCerrar={() => setPanelPlantilla(false)}
+              narrar={narrar}
+              cargarDatos={async () => {
+                const { documentos: docs, lineas } = await datosParaReporte({
+                  estado: filtroEstado || undefined,
+                });
+                return {
+                  documentos: docs as Record<string, unknown>[],
+                  lineas: lineas as Record<string, unknown>[],
+                };
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {(detalle || cargandoDetalle) && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setDetalle(null)}>
