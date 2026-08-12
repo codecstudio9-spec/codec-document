@@ -17,6 +17,9 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import { listMySentTransactions, type SignTransaction } from './sign-transaction-service';
+import { getTemplateById } from '../data/templates';
+import { nombrePersonaDeValores, tituloDeDocumento } from '../utils/nombre-del-documento';
 
 export interface UserDocument {
   id: string;
@@ -153,9 +156,54 @@ export interface AssociatedDocument {
   created_at: string;
   role: string;
   color: string | null;
+  /** A dónde lleva al abrirlo, cuando no hay un PDF guardado que abrir — los
+   *  documentos enviados a firmar se arman en su propia pantalla. */
+  href?: string;
 }
 
 const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at, color';
+
+/**
+ * Los documentos enviados a firmar, con la forma que ya renderizan las listas.
+ *
+ * Es la tercera fuente de «Mis documentos», y la que faltaba. Las otras dos
+ * —`user_documents` y `documents`— sólo se escriben en momentos concretos del
+ * recorrido, así que un documento enviado a firmar no aparecía en ninguna: el
+ * caso más común del producto era justo el que no dejaba rastro.
+ *
+ * Se leen de `sign_transactions`, que es donde el documento existe de verdad.
+ * Eso hace aparecer también los de días anteriores, sin migrar ni rellenar
+ * nada: la fila siempre estuvo ahí, nadie la estaba mirando.
+ *
+ * El `id` lleva prefijo porque estas filas se mezclan con las de `documents` en
+ * la misma lista y podrían colisionar en la clave de React.
+ */
+export async function fetchSignTransactionsAsDocuments(userId: string): Promise<AssociatedDocument[]> {
+  if (!userId) return [];
+  const txs = await listMySentTransactions(userId, 60).catch((err) => {
+    console.error('fetchSignTransactionsAsDocuments:', err);
+    return [] as SignTransaction[];
+  });
+
+  return txs.map((tx) => {
+    const datos = (tx.document_data ?? {}) as Record<string, string | number | boolean>;
+    const nombrePlantilla = getTemplateById(tx.document_type)?.name ?? tx.document_type;
+    return {
+      id: `tx:${tx.id}`,
+      name: tituloDeDocumento(nombrePlantilla, nombrePersonaDeValores(datos), 'es'),
+      status: tx.status,
+      original_pdf_url: null,
+      // No hay PDF guardado: el documento se arma al abrirlo. La pantalla de
+      // firma es la que sabe hacerlo, y sirve tanto para verlo como para
+      // descargarlo.
+      signed_pdf_url: null,
+      created_at: tx.created_at,
+      role: 'owner',
+      color: null,
+      href: `/sign/${tx.id}`,
+    } as AssociatedDocument & { href: string };
+  });
+}
 
 // Signed documents are kept for 30 days from creation, then dropped from
 // the dashboard list — long enough to download/share, short enough that
@@ -175,9 +223,13 @@ export function getSignedDocumentExpiry(doc: { status: string; created_at: strin
 }
 
 export async function fetchAssociatedDocuments(userId: string): Promise<AssociatedDocument[]> {
-  const [ownedRes, linksRes] = await Promise.all([
+  const [ownedRes, linksRes, enviados] = await Promise.all([
     supabase.from('documents').select(DOC_COLUMNS).eq('user_id', userId),
     supabase.from('profile_documents').select('document_id, role, associated_at').eq('profile_id', userId),
+    // Los enviados a firmar entran AQUÍ y no en cada pantalla: media docena de
+    // vistas llaman a esta función, y añadirlos una por una dejaría el mismo
+    // hueco abierto en la siguiente que se escriba.
+    fetchSignTransactionsAsDocuments(userId),
   ]);
 
   // A query error here (e.g. a column the frontend expects doesn't exist
@@ -194,6 +246,8 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
   for (const d of (ownedRes.data as Array<Omit<AssociatedDocument, 'role'>>) ?? []) {
     merged.set(d.id, { ...d, role: 'owner' });
   }
+
+  for (const d of enviados) merged.set(d.id, d);
 
   const links = linksRes.data ?? [];
   if (!linksRes.error && links.length > 0) {

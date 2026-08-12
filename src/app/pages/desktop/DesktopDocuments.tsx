@@ -60,7 +60,7 @@ function DocumentsContent() {
     ]).then(([own, associated]) => {
       const unified: UnifiedDoc[] = [
         ...own.map((d) => ({ id: d.id, kind: 'own' as const, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}`, color: d.color, daysLeft: null })),
-        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null })),
+        ...associated.map((d) => ({ id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url || d.href || null, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null })),
       ];
       setDocs(unified);
     });

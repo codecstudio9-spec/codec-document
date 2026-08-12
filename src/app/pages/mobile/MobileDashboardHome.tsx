@@ -77,7 +77,7 @@ function DashboardContent() {
     ]).then(([own, associated]) => {
       const combined: RecentItem[] = [
         ...own.map((d) => ({ id: d.id, name: d.document_name, status: 'draft', date: d.created_at, href: `/preview/${d.template_id}` })),
-        ...associated.map((d) => ({ id: d.id, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url || '' })),
+        ...associated.map((d) => ({ id: d.id, name: d.name, status: d.status, date: d.created_at, href: d.signed_pdf_url || d.original_pdf_url || d.href || '' })),
       ]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);

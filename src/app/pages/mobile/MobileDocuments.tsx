@@ -73,7 +73,7 @@ function DocumentsContent() {
         })),
         ...associated.map((d) => ({
           id: d.id, kind: 'associated' as const, name: d.name, status: d.status, date: d.created_at,
-          href: d.signed_pdf_url || d.original_pdf_url, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null,
+          href: d.signed_pdf_url || d.original_pdf_url || d.href || null, color: d.color, daysLeft: getSignedDocumentExpiry(d)?.daysLeft ?? null,
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setDocs(unified);
