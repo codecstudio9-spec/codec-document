@@ -10,7 +10,7 @@ import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Label } from '../components/ui/label';
-import { ArrowLeft, Download, Edit, Lock, ShieldCheck, CreditCard, CheckCircle2, MapPin, FileText, X, GripHorizontal, ChevronLeft, ChevronRight, BookOpen, BadgeCheck, Mail, MessageCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Lock, ShieldCheck, CreditCard, CheckCircle2, MapPin, FileText, X, GripHorizontal, ChevronLeft, ChevronRight, BookOpen, BadgeCheck, Mail, MessageCircle, RotateCcw, Link2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
 import { getDocumentTranslation } from '../data/document-translations';
@@ -32,6 +32,7 @@ import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } f
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 import { SITE_HOSTNAME, SITE_URL } from '../config/site';
+import { createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl } from '../../lib/signatureService';
 
 export function normalizeCorruptedText(input: string): string {
   if (!input) return input;
@@ -1191,6 +1192,80 @@ Generado con Codec Document — ${SITE_URL}`
 Generated with Codec Document — ${SITE_URL}`;
   };
 
+  /** Enlace público al PDF, una vez subido. Se guarda para no volver a subir
+   *  el mismo archivo si el usuario comparte por dos vías distintas. */
+  const [enlaceCompartir, setEnlaceCompartir] = useState('');
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
+
+  /**
+   * Deja el PDF publicado y devuelve su enlace.
+   *
+   * Compartir «el documento» sin un enlace obliga a que el receptor tenga el
+   * archivo, y por WhatsApp Web o por correo eso no siempre se puede. Con un
+   * enlace, quien lo recibe abre el PDF desde cualquier dispositivo.
+   *
+   * Se genera el mismo PDF certificado de la descarga —no una versión aparte—
+   * y se sube una sola vez: las tres formas de compartir usan el mismo enlace.
+   */
+  const obtenerEnlace = async (): Promise<string> => {
+    if (enlaceCompartir) return enlaceCompartir;
+    if (!ultimoPdf.current) await handleDownload();
+    const guardado = ultimoPdf.current;
+    if (!guardado) throw new Error('No se pudo generar el PDF');
+
+    const documentId = await createDocumentRecord({
+      name: guardado.fileName.replace(/\.pdf$/i, ''),
+      userId: user?.id ?? null,
+    });
+    const url = await uploadPdfToStorage(documentId, guardado.blob, 'compartido.pdf');
+    await updateDocumentPdfUrl(documentId, url).catch(() => { /* el enlace ya sirve */ });
+    setEnlaceCompartir(url);
+    return url;
+  };
+
+  const compartirPorWhatsApp = async () => {
+    setCompartiendo(true);
+    try {
+      const url = await obtenerEnlace();
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${textoParaCompartir()}
+
+${url}`)}`, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('compartirPorWhatsApp:', err);
+      toast.error(language === 'es' ? 'No se pudo preparar el enlace.' : 'Could not prepare the link.');
+    } finally { setCompartiendo(false); }
+  };
+
+  const compartirPorCorreo = async () => {
+    setCompartiendo(true);
+    try {
+      const url = await obtenerEnlace();
+      const nombre = getDocumentTranslation(template?.id ?? '', 'name', language) || template?.name || '';
+      const asunto = encodeURIComponent(nombre);
+      const cuerpo = encodeURIComponent(`${textoParaCompartir()}
+
+${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
+      window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+    } catch (err) {
+      console.error('compartirPorCorreo:', err);
+      toast.error(language === 'es' ? 'No se pudo preparar el enlace.' : 'Could not prepare the link.');
+    } finally { setCompartiendo(false); }
+  };
+
+  const copiarEnlace = async () => {
+    setCompartiendo(true);
+    try {
+      const url = await obtenerEnlace();
+      await navigator.clipboard.writeText(url);
+      setEnlaceCopiado(true);
+      setTimeout(() => setEnlaceCopiado(false), 2500);
+      toast.success(language === 'es' ? 'Enlace copiado' : 'Link copied');
+    } catch (err) {
+      console.error('copiarEnlace:', err);
+      toast.error(language === 'es' ? 'No se pudo copiar el enlace.' : 'Could not copy the link.');
+    } finally { setCompartiendo(false); }
+  };
+
   /**
    * Comparte el PDF por el menú del sistema (WhatsApp, correo, AirDrop…).
    *
@@ -1713,42 +1788,70 @@ Generated with Codec Document — ${SITE_URL}`;
             </Button>
           </div>
 
-          {/* ── Share / Send options ──────────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
+          {/* ── Compartir ────────────────────────────────────────────────
+              Tres vías, sobre un mismo enlace público al PDF. Antes había un
+              botón que abría WhatsApp con un texto que decía «te comparto este
+              documento» sin adjuntar nada y sin enlace: quien lo recibía no
+              tenía forma de llegar al documento. Con enlace, se abre desde
+              cualquier dispositivo sin depender de que el archivo viaje. */}
+          <div className="pb-8">
+            <p className="mb-3 text-center text-xs font-semibold text-slate-500">
+              {language === 'es' ? 'Compartir este documento' : 'Share this document'}
+            </p>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => void compartirPorWhatsApp()}
+                disabled={compartiendo || isDownloading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-[#25D366] bg-[#25D366]/10 px-4 py-2.5 text-sm font-semibold text-[#128C7E] transition-colors hover:bg-[#25D366]/20 disabled:opacity-60"
+              >
+                <MessageCircle className="size-4" />
+                WhatsApp
+              </button>
 
-            {/* Compartir el DOCUMENTO, no una frase que habla de él. El botón
-                anterior abría WhatsApp con un texto que decía «te comparto este
-                documento» sin adjuntar nada y sin ningún enlace: quien lo
-                recibía no tenía forma de llegar al documento. */}
-            <button
-              type="button"
-              onClick={() => void compartirDocumento()}
-              disabled={compartiendo || isDownloading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-[#25D366] bg-[#25D366]/10 px-4 py-2.5 text-sm font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors shadow-sm disabled:opacity-60"
-            >
-              {compartiendo
-                ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#128C7E]/40 border-t-[#128C7E]" />
-                : <MessageCircle className="size-4" />}
-              {language === 'es' ? 'Compartir documento' : 'Share document'}
-            </button>
+              <button
+                type="button"
+                onClick={() => void compartirPorCorreo()}
+                disabled={compartiendo || isDownloading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+              >
+                <Mail className="size-4" />
+                {language === 'es' ? 'Correo' : 'Email'}
+              </button>
 
-            {/* Email */}
-            <a
-              href={`mailto:?subject=${encodeURIComponent(
-                getDocumentTranslation(template.id, 'name', language) || (language === 'es' ? 'Documento Legal Certificado' : 'Certified Legal Document')
-              )}&body=${encodeURIComponent(
-                // Decía «adjunto el documento» en un borrador donde no hay
-                // ningún adjunto: un enlace mailto no puede adjuntar archivos.
-                // Ahora recuerda adjuntarlo y dice de dónde salió el documento.
-                language === 'es'
-                  ? `Hola,\n\nTe comparto el documento: ${getDocumentTranslation(template.id, 'name', 'es')}.\n\nRecuerda adjuntar el PDF antes de enviar este correo — se descargó en tu dispositivo.\n\nDocumento generado con Codec Document, plataforma de documentos legales y firma electrónica: ${SITE_URL}`
-                  : `Hello,\n\nSharing this document with you: ${getDocumentTranslation(template.id, 'name', 'en')}.\n\nRemember to attach the PDF before sending this email — it was downloaded to your device.\n\nDocument generated with Codec Document, legal document and e-signature platform: ${SITE_URL}`
-              )}`}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
-            >
-              <Mail className="size-4" />
-              {language === 'es' ? 'Enviar por Correo' : 'Send via Email'}
-            </a>
+              <button
+                type="button"
+                onClick={() => void copiarEnlace()}
+                disabled={compartiendo || isDownloading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+              >
+                {enlaceCopiado ? <Check className="size-4 text-emerald-600" /> : <Link2 className="size-4" />}
+                {enlaceCopiado
+                  ? (language === 'es' ? 'Copiado' : 'Copied')
+                  : (language === 'es' ? 'Copiar enlace' : 'Copy link')}
+              </button>
+
+              {/* Compartir el ARCHIVO por el menú del sistema. Sólo donde el
+                  navegador lo permite —móvil, sobre todo—: en escritorio esa
+                  API no existe y el botón sería una promesa vacía. */}
+              {typeof navigator !== 'undefined' && 'share' in navigator && (
+                <button
+                  type="button"
+                  onClick={() => void compartirDocumento()}
+                  disabled={compartiendo || isDownloading}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+                >
+                  <Download className="size-4" />
+                  {language === 'es' ? 'Enviar archivo' : 'Send file'}
+                </button>
+              )}
+            </div>
+
+            {compartiendo && (
+              <p className="mt-3 text-center text-xs text-slate-400">
+                {language === 'es' ? 'Preparando el documento…' : 'Preparing the document…'}
+              </p>
+            )}
           </div>
 
         </div>

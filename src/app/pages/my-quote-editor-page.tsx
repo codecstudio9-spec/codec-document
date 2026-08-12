@@ -118,16 +118,16 @@ export function MyQuoteEditorPage() {
   // que los textos largos se pueden dictar. Cada sección se narra al llegar.
   const seccionesDeVoz = useMemo(() => ({
     proyecto: {
-      es: 'Datos del proyecto. El resumen ejecutivo, el objetivo y el alcance los puedes dictar con el micrófono que está debajo de cada uno, y pulsar «Mejorar con IA» para que quede bien redactado.',
-      en: 'Project details. You can dictate the executive summary, the objective and the scope with the microphone under each one, and press "Improve with AI" to polish the wording.',
+      es: 'Datos del proyecto. El resumen, el objetivo y el alcance me los puedes dictar con el micrófono de abajo, y yo te los dejo bien escritos sin cambiar lo que quisiste decir.',
+      en: 'Project details. You can dictate the summary, the objective and the scope with the microphone below each one, and I’ll tidy them up without changing what you meant.',
     },
     items: {
-      es: 'Productos y servicios. Añade cada ítem con su cantidad y su precio; el total se calcula solo.',
+      es: 'Productos y servicios. Añade cada ítem con su cantidad y su precio, que del total me encargo yo.',
       en: 'Products and services. Add each item with its quantity and price; the total is worked out for you.',
     },
     propuesta: {
-      es: 'Propuesta comercial. Son secciones opcionales: activa las que necesites. Cada una se puede dictar y mejorar con inteligencia artificial.',
-      en: 'Commercial proposal. These sections are optional: turn on the ones you need. Each one can be dictated and polished with AI.',
+      es: 'Propuesta comercial. Son secciones opcionales: activa solo las que necesites. Cualquiera me la puedes dictar y yo te la dejo bien redactada.',
+      en: 'Commercial proposal. These sections are optional: turn on only the ones you need. You can dictate any of them and I’ll tidy up the wording.',
     },
   }), []);
 

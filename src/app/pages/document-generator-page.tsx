@@ -611,8 +611,8 @@ function ContenidoGenerador() {
 
   const guionesSeccion = useMemo(() => {
     const dictado = {
-      es: ' Y si prefieres, dícale los datos a la inteligencia artificial con el botón «Dicta el documento» y los llena por ti.',
-      en: ' And if you prefer, tell the details to the AI with the "Dictate the document" button and it fills them in for you.',
+      es: ' Y si prefieres no escribir, cuéntamelo con el botón «Dicta el documento» y yo lo voy llenando.',
+      en: ' And if you would rather not type, tell me with the "Dictate the document" button and I’ll fill it in.',
     };
     return {
       parties: {
@@ -624,8 +624,8 @@ function ContenidoGenerador() {
         en: `Agreement details. The dates and terms of ${nombreDelDocumento}.${dictado.en}`,
       },
       variables: {
-        es: `Variables específicas: los datos propios de ${nombreDelDocumento}. En los campos de texto largo tienes un micrófono para dictarlos y un botón para que la inteligencia artificial mejore la redacción.`,
-        en: `Specific variables: the details particular to ${nombreDelDocumento}. The long text fields have a microphone to dictate them and a button for the AI to polish the wording.`,
+        es: `Variables específicas: los datos propios de ${nombreDelDocumento}. En los campos de texto largo hay un micrófono: díctamelos y yo te los dejo bien redactados, con tus mismas palabras.`,
+        en: `Specific variables: the details particular to ${nombreDelDocumento}. The long text fields have a microphone: dictate them and I’ll tidy up the wording for you, keeping your own words.`,
       },
     };
   }, [nombreDelDocumento]);

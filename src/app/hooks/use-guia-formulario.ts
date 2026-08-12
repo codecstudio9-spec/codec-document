@@ -88,12 +88,12 @@ export function useGuiaFormulario({
       ? { es: ' Completa los campos y continúa.', en: ' Fill in the fields and continue.' }
       : tienePremium
       ? {
-          es: ' Para ahorrarte escribirlos, pulsa el botón azul que dice «Dicta el documento» y cuéntame los datos en voz alta: la inteligencia artificial los reparte en los campos por ti, y antes de aplicar nada te muestro qué entendí para que lo revises.',
-          en: ' To save yourself the typing, press the blue button that says "Dictate the document" and tell me the details out loud: the AI spreads them across the fields for you, and before applying anything it shows you what it understood so you can check it.',
+          es: ' Si quieres, no escribas nada: pulsa el botón azul que dice «Dicta el documento» y cuéntamelo con tus palabras, sin prisa. Yo te lo voy repartiendo en los campos, y antes de tocar nada te muestro lo que entendí para que lo revises con calma.',
+          en: ' If you like, don’t type a thing: press the blue button that says "Dictate the document" and tell me in your own words, take your time. I’ll place it in the fields for you, and before I touch anything I’ll show you what I understood so you can check it calmly.',
         }
       : {
-          es: ' Con el plan premium puedes dictar el formulario completo en voz alta y la inteligencia artificial lo rellena por ti, en vez de escribir campo por campo.',
-          en: ' With the premium plan you can dictate the whole form out loud and the AI fills it in for you, instead of typing field by field.',
+          es: ' Con el plan premium puedes contármelo en voz alta y yo lo lleno por ti, en vez de que escribas campo por campo. Muchos lo usan justo para eso.',
+          en: ' With the premium plan you can just tell me out loud and I’ll fill it in for you, instead of typing field by field.',
         };
 
     speak({
