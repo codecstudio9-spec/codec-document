@@ -122,13 +122,6 @@ export const resignationLetterTemplateES: DocumentTemplate = {
       helpText: 'Va dentro de la carta, con tu voz. Dícta lo que quieras decir y pulsa «Mejorar con IA»: corrige la redacción y le da tono de carta formal sin cambiar lo que dijiste. Es opcional, y no estás obligado a explicar por qué te vas.',
     },
     {
-      id: 'include_thanks',
-      label: 'Añadir un párrafo de agradecimiento estándar',
-      type: 'checkbox',
-      required: false,
-      helpText: 'Si ya escribiste tu propio mensaje arriba, déjalo desactivado: diría dos veces lo mismo.',
-    },
-    {
       id: 'include_handover',
       label: 'Ofrecer entrega formal del cargo',
       type: 'checkbox',
@@ -172,8 +165,6 @@ Mi último día laborado fue el {{last_day}}, fecha a partir de la cual quedó t
 {{#if reason}}{{reason}}
 
 {{/if}}{{#if include_handover}}Durante el tiempo que resta me comprometo a entregar de manera ordenada y documentada los asuntos a mi cargo, así como a acompañar el empalme con la persona que la empresa designe, con el fin de que mi retiro no afecte la continuidad de las labores.
-
-{{/if}}{{#if include_thanks}}Aprovecho para expresar mi agradecimiento por la oportunidad y la experiencia adquirida durante este tiempo, me llevo aprendizajes valiosos y el mejor recuerdo del equipo de trabajo.
 
 {{/if}}Solicito respetuosamente que se proceda con la {{__liquidacion}} y demás conceptos laborales a los que haya lugar, y que se me expida la {{__certificado}} correspondiente.
 

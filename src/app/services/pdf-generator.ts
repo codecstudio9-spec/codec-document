@@ -5,6 +5,14 @@ import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
 
 interface PDFGeneratorOptions {
   content: string;
+  /** Los valores que el usuario escribió en el formulario.
+   *
+   *  Sirven para una sola cosa, pero importante: distinguir el texto de la
+   *  plantilla del texto de la persona. Un dato escrito por el usuario nunca
+   *  es un encabezado ni un título, aunque venga en mayúsculas, y sin esta
+   *  lista el maquetador no tiene forma de saberlo — para él todo es una
+   *  cadena más. */
+  userValues?: Array<string | number | boolean>;
   /** When set (custom Word-template documents only), rendered INSTEAD of
    * `content` via processFormattedParagraphs() — real per-run bold/size and
    * per-paragraph alignment straight from the source .docx XML, instead of
@@ -94,6 +102,8 @@ export class PDFGenerator {
   private topReservedSpace: number = 0;
   private unicodeFontReady: Promise<void> | null = null;
   private language: 'en' | 'es' = 'en';
+  /** Valores del formulario, en mayúsculas, para reconocerlos al maquetar. */
+  private datosDelUsuario = new Set<string>();
   private jurisdiction: SignatureJurisdiction = DEFAULT_JURISDICTION;
 
   private static getAuditLocale(language: 'en' | 'es'): string {
@@ -668,11 +678,29 @@ export class PDFGenerator {
   /**
    * Detect legal emphasis terms.
    */
+  /**
+   * ¿Es este renglón un encabezado de los que van en negrita entera?
+   *
+   * Antes bastaba con que la línea CONTUVIERA el término en cualquier parte,
+   * comparando subcadenas. Con «TERM» en la lista, cualquier párrafo con la
+   * palabra «terminada» salía entero en negrita: en la carta de renuncia eran
+   * dos párrafos seguidos, y el documento parecía gritar sin motivo. «PAGO»
+   * hacía lo mismo con «pagos», «FIRMA» con «confirmar», «NOTA» con
+   * «anotación».
+   *
+   * Dos condiciones ahora. El término tiene que aparecer como palabra
+   * completa, y el renglón tiene que ser corto: estas palabras marcan
+   * encabezados como «EN TESTIMONIO DE LO CUAL», y un párrafo de doscientos
+   * caracteres no es un encabezado por mucho que mencione un pago.
+   */
   private containsLegalTerms(line: string): boolean {
-    for (const term of this.legalTerms) {
-      if (line.toUpperCase().includes(term.toUpperCase())) return true;
-    }
-    return false;
+    if (line.length > 70) return false;
+    const texto = line.toUpperCase();
+    const letra = 'A-ZÁÉÍÓÚÜÑ0-9';
+    return this.legalTerms.some((term) => {
+      const patron = term.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(^|[^${letra}])${patron}($|[^${letra}])`).test(texto);
+    });
   }
 
   /**
@@ -710,15 +738,27 @@ export class PDFGenerator {
     const BODY_SIZE = 9.5;
     const lines = content.split('\n');
     let titleAssigned = false;
+    // Líneas en blanco seguidas pendientes de convertir en espacio. Se
+    // acumulan y se aplican de una vez sobre el renglón siguiente: dos saltos
+    // en la plantilla tienen que separar más que uno, y antes cada uno sumaba
+    // 0,12 de renglón —dos milímetros— así que el PDF salía como un bloque
+    // continuo sin aire entre la fecha, el destinatario y los párrafos.
+    let blancos = 0;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = this.normalizeLegalLine(line);
 
-      // Skip empty lines (but add minimal spacing)
       if (trimmedLine === '') {
-        this.addSpacing(0.12);
+        blancos++;
         continue;
+      }
+
+      if (blancos > 0) {
+        // Se topa: una plantilla con cinco saltos seguidos quiere sitio para
+        // firmar, no una página en blanco.
+        this.addSpacing(Math.min(blancos, 3) * 0.62);
+        blancos = 0;
       }
 
       // Professional divider lines (hyphen-only lines from templates)
@@ -738,6 +778,16 @@ export class PDFGenerator {
       // Detect main/section headers (all caps lines under 100 chars) --
       // first one is the document title (centered, bold), the rest are
       // section headers (left-aligned), mirroring classifyParagraphRole.
+      // Un dato escrito por el usuario nunca es un encabezado, aunque est\u00E9 en
+      // may\u00FAsculas. Quien escribi\u00F3 \u00ABCENTRO DE IDIOMAS UNIVERSAL\u00BB en el campo
+      // del nombre de la empresa se encontraba con su empresa centrada, en
+      // negrita y a tama\u00F1o de t\u00EDtulo en mitad de la carta, como si fuera el
+      // encabezamiento del documento.
+      if (this.datosDelUsuario.has(trimmedLine.toUpperCase())) {
+        this.addMixedRuns(this.parseInlineBold(trimmedLine), BODY_SIZE, 'left', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.4 });
+        continue;
+      }
+
       if (/^[A-Z\s\u00C0-\u017F]+$/.test(trimmedLine) && trimmedLine.length > 0 && trimmedLine.length < 100) {
         if (!titleAssigned) {
           titleAssigned = true;
@@ -2392,6 +2442,14 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
+    generator.datosDelUsuario = new Set(
+      (opts.userValues ?? [])
+        .map((v) => String(v ?? '').trim().toUpperCase())
+        // Se descartan los valores muy cortos: un «SÍ» o un número suelto
+        // coincidiría con demasiadas cosas y desactivaría el formato de
+        // renglones que sí son estructura.
+        .filter((v) => v.length >= 4),
+    );
     if (opts.formattedParagraphs) generator.setMargin(18);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);
@@ -2505,6 +2563,14 @@ export class PDFGenerator {
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
     generator.language = opts.language ?? 'en';
+    generator.datosDelUsuario = new Set(
+      (opts.userValues ?? [])
+        .map((v) => String(v ?? '').trim().toUpperCase())
+        // Se descartan los valores muy cortos: un «SÍ» o un número suelto
+        // coincidiría con demasiadas cosas y desactivaría el formato de
+        // renglones que sí son estructura.
+        .filter((v) => v.length >= 4),
+    );
     if (opts.formattedParagraphs) generator.setMargin(18);
     await generator.ensureUnicodeFont();
     const cleanContent = generator.sanitizePremiumPlaceholders(opts.content);

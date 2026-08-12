@@ -10,7 +10,7 @@ import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Label } from '../components/ui/label';
-import { ArrowLeft, Download, Edit, Lock, ShieldCheck, CreditCard, CheckCircle2, MapPin, FileText, X, GripHorizontal, ChevronLeft, ChevronRight, BookOpen, BadgeCheck, Mail, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Lock, ShieldCheck, CreditCard, CheckCircle2, MapPin, FileText, X, GripHorizontal, ChevronLeft, ChevronRight, BookOpen, BadgeCheck, Mail, MessageCircle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
 import { getDocumentTranslation } from '../data/document-translations';
@@ -515,6 +515,19 @@ export function PreviewPage() {
   const [documentBranding, setDocumentBranding] = useState<DocumentBranding>({});
   const [editedContent, setEditedContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  /**
+   * ¿El usuario reescribió el documento a mano?
+   *
+   * Sin esta bandera, editar no servía de nada: al salir del editor la vista
+   * se reconstruía desde la plantilla y los datos del formulario, y lo escrito
+   * desaparecía. El PDF hacía lo mismo. Y encima salía un aviso de «cambios
+   * guardados» que no era cierto.
+   *
+   * Con ella, el texto editado manda: se muestra, se descarga y sobrevive a
+   * recargar la página. Deja de mandar sólo si se pulsa «descartar cambios».
+   */
+  const [edicionManual, setEdicionManual] = useState(false);
+  const CLAVE_EDICION = `codec_doc_editado_${documentType ?? 'desconocido'}`;
   const [isPurchased, setIsPurchased] = useState(false);
   const [exportLanguage, setExportLanguage] = useState<'en' | 'es'>('en');
   const [placedSignatures, setPlacedSignatures] = useState<PlacedSig[]>([]);
@@ -672,6 +685,21 @@ export function PreviewPage() {
     checkPersistentPurchase();
   }, [documentType, navigate, template, purchasedDocumentIds]);
 
+  // Restaurar una edición manual anterior. Va en su propio efecto y depende
+  // sólo del documento: si se recupera después de que updatePreviewContent
+  // haya escrito la versión generada, la pisa —que es lo correcto, porque la
+  // edición del usuario manda sobre la plantilla.
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem(CLAVE_EDICION);
+      if (guardado && guardado.trim()) {
+        setEditedContent(guardado);
+        setEdicionManual(true);
+      }
+    } catch { /* sin localStorage: se sigue sin edición guardada */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentType]);
+
   // Update preview when language changes
   useEffect(() => {
     if (template && Object.keys(documentData).length > 0) {
@@ -728,6 +756,17 @@ export function PreviewPage() {
   }, [isPurchased, unlimitedActive, subscriptionActive, isAdmin]);
 
   const updatePreviewContent = (data: DocumentData, state: string) => {
+    // Recalcular desde la plantilla borraría lo que el usuario escribió a
+    // mano. Cambiar de idioma o de estado ya no le pisa la edición; si quiere
+    // volver a la versión generada, tiene el botón de descartar.
+    if (edicionManual) return;
+    updatePreviewContentForzado(data, state);
+  };
+
+  /** Reconstruye el documento desde la plantilla y los datos, sin mirar si
+   *  hay una edición manual. La usa «descartar cambios», que es justo cuando
+   *  hay que pisarla. */
+  const updatePreviewContentForzado = (data: DocumentData, state: string) => {
     if (!template) return;
 
     try {
@@ -816,7 +855,36 @@ export function PreviewPage() {
    * get real document text without duplicating a payment-relevant flow or
    * waiting on a download click. Pure/no side effects, safe to call as
    * often as the panel re-renders. */
+
+  /**
+   * La plantilla que ve la vista previa, con las variantes de país ya
+   * aplicadas.
+   *
+   * Antes se le pasaba la plantilla en crudo, así que los marcadores
+   * `{{__documento}}`, `{{__liquidacion}}` y `{{__certificado}}` no los
+   * resolvía nadie y el componente los pintaba como campos vacíos: la carta
+   * decía «identificado con ______ número 1022925002» y «se proceda con la
+   * ______ y demás conceptos». En el PDF salían bien, porque ésa es otra ruta
+   * que sí los procesa — la vista previa y el documento descargado no
+   * coincidían.
+   */
+  const plantillaParaVista = (() => {
+    let base = exportLanguage === 'es' && spanishTemplates[template.id]
+      ? spanishTemplates[template.id]
+      : template.template;
+    if (selectedState) base = getStateSpecificTemplate(base, template.id, selectedState, exportLanguage);
+    if (template.id === 'resignation-letter') {
+      base = getCountrySpecificResignation(base, String(documentData.country ?? ''), exportLanguage);
+    }
+    return base;
+  })();
+
   const computeExportContent = (): string => {
+    // Lo que el usuario reescribió es el documento. Antes el PDF se rearmaba
+    // desde la plantilla y descartaba la edición sin avisar, así que lo que se
+    // veía en pantalla y lo que se descargaba eran dos documentos distintos.
+    if (edicionManual && editedContent.trim()) return editedContent;
+
     let templateForExport = exportLanguage === 'es' && spanishTemplates[template.id]
       ? spanishTemplates[template.id]
       : template.template;
@@ -1018,6 +1086,11 @@ export function PreviewPage() {
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || enrichedAudit?.country || null);
       const blob = await PDFGenerator.generateBlob({
         content:      exportContent,
+        // Para que el maquetador sepa qué renglones son datos de la persona y
+        // no estructura del documento. Sin esto, un nombre de empresa escrito
+        // en mayúsculas se imprimía centrado y en negrita como si fuera el
+        // título del documento.
+        userValues:   Object.values(documentData),
         title:        getDocumentTranslation(template.id, 'name', exportLanguage),
         fileName,
         language:     exportLanguage,
@@ -1072,10 +1145,24 @@ export function PreviewPage() {
   };
 
   const handleEdit = () => {
-    setIsEditing(!isEditing);
     if (isEditing) {
+      // Se sale del editor: lo escrito pasa a ser el documento.
+      setEdicionManual(true);
+      try { localStorage.setItem(CLAVE_EDICION, editedContent); } catch { /* sin espacio: se mantiene en memoria */ }
+      setIsEditing(false);
       toast.success(t('preview.changesSaved'));
+    } else {
+      setIsEditing(true);
     }
+  };
+
+  /** Vuelve al documento generado desde el formulario. */
+  const descartarEdicion = () => {
+    setEdicionManual(false);
+    try { localStorage.removeItem(CLAVE_EDICION); } catch { /* nada que borrar */ }
+    updatePreviewContentForzado(documentData, selectedState);
+    setIsEditing(false);
+    toast.success(language === 'en' ? 'Back to the generated document.' : 'Se volvió al documento generado.');
   };
 
   const scrollToPage = (page: number) => {
@@ -1370,9 +1457,35 @@ export function PreviewPage() {
                       : (language === 'es' ? 'Editar Contrato' : 'Edit Contract')}
                   </Button>
                 )}
+
+                {/* Salida de la edición manual. Sin ella, quien edita queda
+                    atrapado: cambiar un campo del formulario ya no actualiza
+                    el documento, y sin forma de volver atrás eso parecería un
+                    fallo en vez de una decisión suya. */}
+                {canEditDocument && edicionManual && !isEditing && (
+                  <Button
+                    variant="ghost"
+                    onClick={descartarEdicion}
+                    className="gap-2 text-slate-500 hover:text-slate-800"
+                  >
+                    <RotateCcw className="size-4" />
+                    {language === 'es' ? 'Descartar cambios' : 'Discard changes'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
+
+          {edicionManual && (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+              <Edit className="size-4 shrink-0 text-amber-500" />
+              <span>
+                {language === 'es'
+                  ? 'Estás usando tu versión editada. El PDF se descargará con estos cambios y los campos del formulario ya no la modifican.'
+                  : 'You are using your edited version. The PDF will download with these changes, and the form fields no longer alter it.'}
+              </span>
+            </div>
+          )}
 
           {/* State banner */}
           {selectedState && (
@@ -1441,10 +1554,13 @@ export function PreviewPage() {
                   {/* Capture wrapper — html2canvas captures doc + injected sigs together */}
                   <div ref={captureWrapperRef} className="relative">
                     <div ref={documentCanvasRef}>
+                      {/* Con edición manual el texto YA está sustituido: se
+                          pasa como plantilla y sin datos, para que no se
+                          vuelva a interpretar nada sobre él. */}
                       <DocumentPreview
-                        template={exportLanguage === 'es' && spanishTemplates[template.id] ? spanishTemplates[template.id] : template.template}
+                        template={edicionManual ? editedContent : plantillaParaVista}
                         templateId={template.id}
-                        data={documentData}
+                        data={edicionManual ? {} : documentData}
                         showWatermark={false}
                         leftSignatureUrl={placedSignatures.find(s => s.id === 'owner')?.dataUrl}
                         rightSignatureUrl={placedSignatures.find(s => s.id !== 'owner')?.dataUrl}

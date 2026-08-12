@@ -109,13 +109,6 @@ export const resignationLetterTemplate: DocumentTemplate = {
       helpText: 'It goes inside the letter, in your own voice. Dictate whatever you want to say and press "Improve with AI": it fixes the writing and gives it the register of a formal letter without changing what you said. Optional — you are not required to explain why you are leaving.',
     },
     {
-      id: 'include_thanks',
-      label: 'Add a standard thank-you paragraph',
-      type: 'checkbox',
-      required: false,
-      helpText: 'If you already wrote your own message above, leave this off: it would say the same thing twice.',
-    },
-    {
       id: 'include_handover',
       label: 'Offer a formal handover',
       type: 'checkbox',
@@ -156,8 +149,6 @@ My last working day was {{last_day}}, the date on which our employment relations
 {{#if reason}}{{reason}}
 
 {{/if}}{{#if include_handover}}During the remaining time I commit to handing over my responsibilities in an orderly and documented manner, and to supporting the transition with whoever the company appoints, so that my departure does not disrupt ongoing work.
-
-{{/if}}{{#if include_thanks}}I would like to thank you for the opportunity and for the experience gained during this time; I leave with valuable lessons and the best memories of the team.
 
 {{/if}}I respectfully request that my {{__liquidacion}} and any other amounts owed be processed, and that the corresponding {{__certificado}} be issued.
 
