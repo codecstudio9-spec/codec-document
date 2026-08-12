@@ -601,29 +601,43 @@ function ContenidoGenerador() {
   }, [user, visibleFields]);
 
   // ── Guía por voz ─────────────────────────────────────────────────────────
-  // Presenta el documento, cuenta cuántos campos tiene, explica el dictado y
-  // va narrando cada sección conforme el usuario baja. Ver use-guia-formulario.
-  const guionesSeccion = useMemo(() => ({
-    parties: {
-      es: 'Información de las partes. Aquí van los nombres, documentos y datos de contacto de quienes intervienen.',
-      en: 'Party information. Names, ID numbers and contact details of everyone involved.',
-    },
-    agreement: {
-      es: 'Detalles del acuerdo. Aquí van las fechas y las condiciones que rigen el documento.',
-      en: 'Agreement details. The dates and the terms that govern the document.',
-    },
-    variables: {
-      es: 'Variables específicas. Son los datos propios de este documento. En los campos de texto largo tienes un micrófono para dictarlos y un botón para que la inteligencia artificial mejore la redacción.',
-      en: 'Specific variables. The details particular to this document. The long text fields have a microphone to dictate them and a button for the AI to polish the wording.',
-    },
-  }), []);
+  //
+  // Los guiones nombran el documento y recuerdan el dictado en cada sección.
+  // Repetirlo no es redundancia: quien llega a la tercera sección lleva un rato
+  // escribiendo campo por campo y ya no se acuerda de que podía dictarlo.
+  const nombreDelDocumento = getDocumentTranslation(template?.id ?? '', 'name', language) || template?.name || '';
+
+  const guionesSeccion = useMemo(() => {
+    const dictado = {
+      es: ' Y si prefieres, dícale los datos a la inteligencia artificial con el botón «Dicta el documento» y los llena por ti.',
+      en: ' And if you prefer, tell the details to the AI with the "Dictate the document" button and it fills them in for you.',
+    };
+    return {
+      parties: {
+        es: `Aquí se llenan tus datos para ${nombreDelDocumento}: nombres, documentos de identidad y datos de contacto de quienes intervienen.${dictado.es}`,
+        en: `This is where your details for ${nombreDelDocumento} go: names, ID numbers and contact details of everyone involved.${dictado.en}`,
+      },
+      agreement: {
+        es: `Detalles del acuerdo. Aquí van las fechas y las condiciones de ${nombreDelDocumento}.${dictado.es}`,
+        en: `Agreement details. The dates and terms of ${nombreDelDocumento}.${dictado.en}`,
+      },
+      variables: {
+        es: `Variables específicas: los datos propios de ${nombreDelDocumento}. En los campos de texto largo tienes un micrófono para dictarlos y un botón para que la inteligencia artificial mejore la redacción.`,
+        en: `Specific variables: the details particular to ${nombreDelDocumento}. The long text fields have a microphone to dictate them and a button for the AI to polish the wording.`,
+      },
+    };
+  }, [nombreDelDocumento]);
 
   useGuiaFormulario({
-    nombreDocumento: getDocumentTranslation(template?.id ?? '', 'name', language) || template?.name || '',
+    nombreDocumento: nombreDelDocumento,
     cuantosCampos: visibleFields.length,
     tienePremium: Boolean(unlimitedActive || subscriptionActive || isAdmin),
     secciones: guionesSeccion,
-    activo: flowStep === 'form',
+    // Callada mientras hay un modal encima. El de «cómo vas a usar este
+    // documento» tiene su propia narración, y las dos arrancaban a la vez: como
+    // cada frase cancela la anterior, una de las dos se perdía siempre y
+    // parecía que el modal no hablaba.
+    activo: flowStep === 'form' && !intentModalOpen && !securityModalOpen,
   });
 
   // ── Dictar el formulario ──────────────────────────────────────────────────

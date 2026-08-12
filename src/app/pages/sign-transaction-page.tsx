@@ -24,6 +24,7 @@ import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, parseIdEv
 import { PDFGenerator } from '../services/pdf-generator';
 import { triggerDownload } from '../utils/download';
 import { buildGuestDocumentContent } from '../utils/guest-document-content';
+import { nombreDeArchivo } from '../utils/nombre-del-documento';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 import { markVisitorActivity } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
@@ -422,7 +423,9 @@ export default function SignTransactionPage() {
       const { content, title, formattedParagraphs } = await buildGuestDocumentContent(tx, language);
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
       const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
-      const fileName = `${title.replace(/[^a-z0-9]+/gi, '-')}.pdf`;
+      // Conserva tildes y espacios: la limpieza anterior dejaba
+      // «Matr-cula-de-Valentina-G-mez.pdf».
+      const fileName = nombreDeArchivo(title);
 
       const blob = await PDFGenerator.generateBlob({
         content,

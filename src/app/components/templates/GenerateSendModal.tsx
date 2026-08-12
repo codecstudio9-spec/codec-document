@@ -9,6 +9,8 @@ import { SecurityConfigModal } from '../SecurityConfigModal';
 import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
 import { useAuth } from '../../contexts/auth-context';
+import { saveDocumentRecord } from '../../services/documents-service';
+import { nombrePersonaDeValores, tituloDeDocumento } from '../../utils/nombre-del-documento';
 
 interface GenerateSendModalProps {
   template: DocxTemplate | null;
@@ -31,7 +33,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   // Quién está llenando esto es el dueño de la plantilla, con sesión: aquí el
   // dictado con IA sí funciona, y lo único que cambia según el plan es cómo se
   // lo cuenta la guía por voz.
-  const { unlimitedActive, subscriptionActive, isAdmin } = useAuth();
+  const { user, unlimitedActive, subscriptionActive, isAdmin } = useAuth();
   const tienePremium = Boolean(unlimitedActive || subscriptionActive || isAdmin);
   const [values, setValues] = useState<Record<string, string>>({});
   const [securityOverride, setSecurityOverride] = useState<SecurityConfig | null>(null);
@@ -67,6 +69,24 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
         intent: 'fill_send',
       });
       setResultLink(`${SITE_URL}/sign/${txId}`);
+
+      // Queda en «Mis documentos» y en los recientes del inicio, con el nombre
+      // de la persona de la que es.
+      //
+      // Antes no quedaba en ningún sitio: enviar a firmar desde una plantilla
+      // de Word era el único camino del producto que no dejaba rastro en la
+      // lista de documentos, así que un colegio con cincuenta matrículas
+      // enviadas veía esa lista vacía.
+      if (user?.id) {
+        const titulo = tituloDeDocumento(
+          template.name,
+          nombrePersonaDeValores(values, template.detectedFields),
+          language,
+        );
+        saveDocumentRecord(user.id, template.id, titulo).catch((err) => {
+          console.error('saveDocumentRecord (plantilla Word):', err);
+        });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate the link.' : 'No se pudo generar el enlace.'));
     } finally {

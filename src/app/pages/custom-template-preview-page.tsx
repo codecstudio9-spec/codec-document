@@ -31,6 +31,7 @@ import { getDocxTemplateForOwner } from '../services/docx-template-service';
 import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, applyClauseOverrides, applyExtraClauses, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import { PDFGenerator } from '../services/pdf-generator';
 import { saveDocumentRecord } from '../services/documents-service';
+import { nombrePersonaDeValores, tituloDeDocumento, nombreDeArchivo } from '../utils/nombre-del-documento';
 import { triggerDownload } from '../utils/download';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction } from '../data/signature-jurisdictions';
@@ -107,12 +108,20 @@ export function CustomTemplatePreviewPage() {
       const identityBiometric = identityBiometricRaw ? JSON.parse(identityBiometricRaw) : undefined;
 
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
-      const fileName = `${template.name.replace(/[^a-z0-9]+/gi, '-')}.pdf`;
+
+      // El documento se llama por la persona de la que es. Treinta matrículas
+      // descargadas como «Matricula.pdf» son indistinguibles sin abrirlas.
+      const titulo = tituloDeDocumento(
+        template.name,
+        nombrePersonaDeValores(savedData.values ?? {}, template.detectedFields),
+        language,
+      );
+      const fileName = nombreDeArchivo(titulo);
 
       const blob = await PDFGenerator.generateBlob({
         content,
         formattedParagraphs: paragraphs,
-        title: template.name,
+        title: titulo,
         fileName,
         language,
         showWatermark: false,
@@ -131,7 +140,7 @@ export function CustomTemplatePreviewPage() {
       setStatus('done');
       toast.success(language === 'en' ? 'Document downloaded!' : '¡Documento descargado!');
 
-      saveDocumentRecord(user.id, savedData.templateId, template.name).catch((err) => {
+      saveDocumentRecord(user.id, savedData.templateId, titulo).catch((err) => {
         console.error('saveDocumentRecord failed:', err);
       });
     } catch (err) {

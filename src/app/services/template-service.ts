@@ -57,11 +57,31 @@ function rowToTemplate(row: {
   };
 }
 
+/**
+ * Las plantillas de PDF con casillas del usuario.
+ *
+ * El filtro por `kind` no es un detalle de rendimiento: la tabla `templates`
+ * guarda DOS cosas distintas —estas y las plantillas de Word, que van con
+ * `kind = 'docx_variables'`— y sin filtrar salían también las de Word.
+ *
+ * Se veían como duplicados inútiles: las de Word no tienen `fields_metadata`,
+ * así que aparecían con «0 campos» y el nombre repetido en dos secciones de la
+ * misma pantalla.
+ *
+ * Y había algo peor que el desorden. Cada una de esas tarjetas traía su botón
+ * de eliminar, que llama a `deleteTemplate` y borra la fila entera: pulsarlo
+ * para «limpiar los duplicados» habría borrado la plantilla de Word de verdad,
+ * con su archivo, sus campos y su enlace público.
+ */
 export async function listTemplates(userId: string): Promise<CustomTemplate[]> {
   const { data, error } = await supabase
     .from('templates')
     .select('id, user_id, name, file_url, fields_metadata, created_at')
     .eq('user_id', userId)
+    // `neq` a secas NO sirve: en SQL, `kind <> 'docx_variables'` con kind nulo
+    // da NULL, no verdadero, y las plantillas de PDF se guardan SIN kind. Un
+    // simple `neq` habría escondido justamente las que esta lista debe mostrar.
+    .or('kind.is.null,kind.neq.docx_variables')
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return data.map(rowToTemplate);

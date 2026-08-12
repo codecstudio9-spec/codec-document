@@ -111,6 +111,13 @@ export function useGuiaFormulario({
     const tarjetas = Array.from(document.querySelectorAll<HTMLElement>('[data-seccion-voz]'));
     if (tarjetas.length === 0) return;
 
+    // El observador dispara una primera vez nada más engancharse, con lo que ya
+    // está en pantalla. Esa pasada NO narra: coincidiría con la presentación
+    // —que acaba de empezar— y como cada frase cancela la anterior, la
+    // presentación se perdería entera. La primera sección queda anotada como
+    // vista, y a partir de ahí sí se narra al cambiar.
+    let primeraPasada = true;
+
     const observador = new IntersectionObserver(
       (entradas) => {
         // La sección «actual» es la MÁS visible, no la primera que asome: con
@@ -125,6 +132,8 @@ export function useGuiaFormulario({
         // tarjetas repetiría la frase sin parar.
         if (!clave || clave === seccionNarrada.current) return;
         seccionNarrada.current = clave;
+
+        if (primeraPasada) { primeraPasada = false; return; }
 
         const guion = secciones[clave];
         if (guion) speak(guion);

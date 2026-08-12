@@ -24,6 +24,7 @@ import { getDocxTemplateByIdPublic } from '../services/docx-template-service';
 import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, applyClauseOverrides, applyExtraClauses, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import type { SignTransaction } from '../services/sign-transaction-service';
 import type { DocumentData } from '../types/document';
+import { nombrePersonaDeValores, tituloDeDocumento } from './nombre-del-documento';
 
 function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Record<string, unknown>, language: 'en' | 'es'): { content: string; title: string } {
   const template = getTemplateById(documentType);
@@ -55,7 +56,7 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   };
 }
 
-async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }): Promise<{ content: string; title: string; formattedParagraphs: DocxParagraph[] }> {
+async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }, idioma: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs: DocxParagraph[] }> {
   if (!documentData.templateId) throw new Error('Missing templateId');
   const template = await getDocxTemplateByIdPublic(documentData.templateId);
   if (!template) throw new Error('Template not found');
@@ -64,12 +65,24 @@ async function interpolateCustomTemplate(documentData: { templateId?: string; va
   const mergedBytes = renderDocxTemplate(docxBytes, documentData.values ?? {});
   const formattedParagraphs = applyExtraClauses(applyClauseOverrides(extractFormattedParagraphs(mergedBytes), template.clauseOverrides), template.extraClauses);
   const content = formattedParagraphs.map((p) => p.runs.map((r) => r.text).join('')).join('\n');
-  return { content, title: template.name, formattedParagraphs };
+  // El título lleva a la persona del documento: es lo que distingue una
+  // matrícula de otra cuando se descargan treinta.
+  //
+  // Sin la lista de campos: el RPC público no la expone, y no hace falta
+  // pedirla. Las claves de las variables del Word ya son descriptivas
+  // —`nombre_estudiante`, `client_name`— y el buscador sabe leerlas cuando no
+  // recibe etiquetas.
+  const titulo = tituloDeDocumento(
+    template.name,
+    nombrePersonaDeValores(documentData.values ?? {}),
+    idioma,
+  );
+  return { content, title: titulo, formattedParagraphs };
 }
 
 export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[] }> {
   if (tx.document_type === 'custom-template') {
-    return interpolateCustomTemplate(tx.document_data as { templateId?: string; values?: Record<string, string> });
+    return interpolateCustomTemplate(tx.document_data as { templateId?: string; values?: Record<string, string> }, language);
   }
   return interpolateBuiltInTemplate(tx.document_type, tx.document_data, language);
 }
