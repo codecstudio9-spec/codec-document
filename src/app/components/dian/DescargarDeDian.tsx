@@ -197,7 +197,7 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
           ? `Done. I downloaded ${ok} documents to your folder. Now drag that folder to the previous screen.`
           : `Finished. ${ok} downloaded, ${errores} failed.`,
       );
-      toast.success('Descarga terminada. Arrastra la carpeta a Documentos DIAN.');
+      toast.success('Descarga terminada. Arrastra la carpeta a la pantalla principal.');
     } catch (e) {
       // Nada de lo que pase aquí dentro puede tumbar la pantalla. Una
       // descarga que falla es un contratiempo; perder la página con los

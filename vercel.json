@@ -100,12 +100,32 @@
       "destination": "/blog/ahorrar-horas-eliminando-papel-en-tu-empresa.html"
     },
     {
+      "source": "/blog/authorized-signer-company-contracts",
+      "destination": "/blog/authorized-signer-company-contracts.html"
+    },
+    {
+      "source": "/blog/carta-de-autorizacion-representacion",
+      "destination": "/blog/carta-de-autorizacion-representacion.html"
+    },
+    {
       "source": "/blog/carta-de-intencion-antes-de-contrato",
       "destination": "/blog/carta-de-intencion-antes-de-contrato.html"
     },
     {
       "source": "/blog/cartas-oferta-empleo-firma-el-mismo-dia",
       "destination": "/blog/cartas-oferta-empleo-firma-el-mismo-dia.html"
+    },
+    {
+      "source": "/blog/clausula-de-indemnizacion-explicada",
+      "destination": "/blog/clausula-de-indemnizacion-explicada.html"
+    },
+    {
+      "source": "/blog/clausula-de-no-solicitacion-empleados",
+      "destination": "/blog/clausula-de-no-solicitacion-empleados.html"
+    },
+    {
+      "source": "/blog/clausula-renovacion-automatica-contratos",
+      "destination": "/blog/clausula-renovacion-automatica-contratos.html"
     },
     {
       "source": "/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador",
@@ -144,8 +164,24 @@
       "destination": "/blog/consultor-independiente-blindar-honorarios-contrato.html"
     },
     {
+      "source": "/blog/contract-renewal-auto-renewal-clauses",
+      "destination": "/blog/contract-renewal-auto-renewal-clauses.html"
+    },
+    {
+      "source": "/blog/contrato-de-alquiler-de-equipos",
+      "destination": "/blog/contrato-de-alquiler-de-equipos.html"
+    },
+    {
       "source": "/blog/contrato-de-sociedad-antes-de-emprender",
       "destination": "/blog/contrato-de-sociedad-antes-de-emprender.html"
+    },
+    {
+      "source": "/blog/contrato-de-subarriendo",
+      "destination": "/blog/contrato-de-subarriendo.html"
+    },
+    {
+      "source": "/blog/contrato-de-subcontratista",
+      "destination": "/blog/contrato-de-subcontratista.html"
     },
     {
       "source": "/blog/contratos-matricula-escuelas-academias",
@@ -168,8 +204,16 @@
       "destination": "/blog/costo-oculto-del-papel-en-empresas.html"
     },
     {
+      "source": "/blog/cuanto-tiempo-guardar-contratos-firmados",
+      "destination": "/blog/cuanto-tiempo-guardar-contratos-firmados.html"
+    },
+    {
       "source": "/blog/digital-signatures-for-hr-onboarding",
       "destination": "/blog/digital-signatures-for-hr-onboarding.html"
+    },
+    {
+      "source": "/blog/e-signature-for-international-clients",
+      "destination": "/blog/e-signature-for-international-clients.html"
     },
     {
       "source": "/blog/e-signatures-for-banks-financial-institutions",
@@ -182,6 +226,10 @@
     {
       "source": "/blog/electronic-signature-vs-digital-signature",
       "destination": "/blog/electronic-signature-vs-digital-signature.html"
+    },
+    {
+      "source": "/blog/equipment-rental-agreement",
+      "destination": "/blog/equipment-rental-agreement.html"
     },
     {
       "source": "/blog/errores-comunes-al-redactar-un-nda",
@@ -228,6 +276,10 @@
       "destination": "/blog/firma-electronica-vs-firma-digital.html"
     },
     {
+      "source": "/blog/firmar-contratos-con-clientes-internacionales",
+      "destination": "/blog/firmar-contratos-con-clientes-internacionales.html"
+    },
+    {
       "source": "/blog/free-e-signature-software-small-business",
       "destination": "/blog/free-e-signature-software-small-business.html"
     },
@@ -238,6 +290,10 @@
     {
       "source": "/blog/how-freelancers-can-protect-themselves-with-a-contract",
       "destination": "/blog/how-freelancers-can-protect-themselves-with-a-contract.html"
+    },
+    {
+      "source": "/blog/how-long-to-keep-signed-contracts",
+      "destination": "/blog/how-long-to-keep-signed-contracts.html"
     },
     {
       "source": "/blog/how-to-screen-tenants-and-draft-leases",
@@ -256,12 +312,20 @@
       "destination": "/blog/how-to-write-a-service-agreement-that-protects-you.html"
     },
     {
+      "source": "/blog/indemnification-clause-plain-english",
+      "destination": "/blog/indemnification-clause-plain-english.html"
+    },
+    {
       "source": "/blog/independent-contractor-vs-employee-paperwork",
       "destination": "/blog/independent-contractor-vs-employee-paperwork.html"
     },
     {
       "source": "/blog/nda-unilateral-vs-bilateral",
       "destination": "/blog/nda-unilateral-vs-bilateral.html"
+    },
+    {
+      "source": "/blog/non-solicitation-clause-explained",
+      "destination": "/blog/non-solicitation-clause-explained.html"
     },
     {
       "source": "/blog/pagare-prestamo-entre-particulares",
@@ -280,6 +344,10 @@
       "destination": "/blog/que-pasa-si-rompen-un-nda.html"
     },
     {
+      "source": "/blog/quien-puede-firmar-contratos-a-nombre-de-una-empresa",
+      "destination": "/blog/quien-puede-firmar-contratos-a-nombre-de-una-empresa.html"
+    },
+    {
       "source": "/blog/real-cost-of-no-written-contract",
       "destination": "/blog/real-cost-of-no-written-contract.html"
     },
@@ -288,12 +356,24 @@
       "destination": "/blog/reducir-tiempo-firma-contratos.html"
     },
     {
+      "source": "/blog/referral-partner-agreement",
+      "destination": "/blog/referral-partner-agreement.html"
+    },
+    {
+      "source": "/blog/severance-agreement-basics",
+      "destination": "/blog/severance-agreement-basics.html"
+    },
+    {
       "source": "/blog/simple-document-workflow-small-company",
       "destination": "/blog/simple-document-workflow-small-company.html"
     },
     {
       "source": "/blog/stop-losing-sales-because-of-slow-contracts",
       "destination": "/blog/stop-losing-sales-because-of-slow-contracts.html"
+    },
+    {
+      "source": "/blog/subcontractor-agreement-guide",
+      "destination": "/blog/subcontractor-agreement-guide.html"
     },
     {
       "source": "/blog/validez-legal-firma-electronica-latinoamerica",
@@ -342,6 +422,10 @@
     {
       "source": "/crear-documentos-online-gratis",
       "destination": "/crear-documentos-online-gratis.html"
+    },
+    {
+      "source": "/documentos-electronicos",
+      "destination": "/documentos-electronicos.html"
     },
     {
       "source": "/documentos-legales-gratis",
@@ -424,6 +508,10 @@
       "destination": "/generador-de-cotizaciones.html"
     },
     {
+      "source": "/independent-contractor-alabama",
+      "destination": "/independent-contractor-alabama.html"
+    },
+    {
       "source": "/independent-contractor-arizona",
       "destination": "/independent-contractor-arizona.html"
     },
@@ -496,6 +584,10 @@
       "destination": "/independent-contractor-san-jose-california.html"
     },
     {
+      "source": "/independent-contractor-south-carolina",
+      "destination": "/independent-contractor-south-carolina.html"
+    },
+    {
       "source": "/independent-contractor-tennessee",
       "destination": "/independent-contractor-tennessee.html"
     },
@@ -514,6 +606,10 @@
     {
       "source": "/independent-contractor-wisconsin",
       "destination": "/independent-contractor-wisconsin.html"
+    },
+    {
+      "source": "/lease-agreement-alabama",
+      "destination": "/lease-agreement-alabama.html"
     },
     {
       "source": "/lease-agreement-arizona",
@@ -588,6 +684,10 @@
       "destination": "/lease-agreement-san-jose-california.html"
     },
     {
+      "source": "/lease-agreement-south-carolina",
+      "destination": "/lease-agreement-south-carolina.html"
+    },
+    {
       "source": "/lease-agreement-tennessee",
       "destination": "/lease-agreement-tennessee.html"
     },
@@ -606,6 +706,10 @@
     {
       "source": "/lease-agreement-wisconsin",
       "destination": "/lease-agreement-wisconsin.html"
+    },
+    {
+      "source": "/legal-documents-alabama",
+      "destination": "/legal-documents-alabama.html"
     },
     {
       "source": "/legal-documents-california",
@@ -648,12 +752,20 @@
       "destination": "/legal-documents-pennsylvania.html"
     },
     {
+      "source": "/legal-documents-south-carolina",
+      "destination": "/legal-documents-south-carolina.html"
+    },
+    {
       "source": "/legal-documents-texas",
       "destination": "/legal-documents-texas.html"
     },
     {
       "source": "/legal-documents-virginia",
       "destination": "/legal-documents-virginia.html"
+    },
+    {
+      "source": "/nda-alabama",
+      "destination": "/nda-alabama.html"
     },
     {
       "source": "/nda-arizona",
@@ -728,6 +840,10 @@
       "destination": "/nda-san-jose-california.html"
     },
     {
+      "source": "/nda-south-carolina",
+      "destination": "/nda-south-carolina.html"
+    },
+    {
       "source": "/nda-tennessee",
       "destination": "/nda-tennessee.html"
     },
@@ -750,6 +866,10 @@
     {
       "source": "/professional-quote-template",
       "destination": "/professional-quote-template.html"
+    },
+    {
+      "source": "/promissory-note-alabama",
+      "destination": "/promissory-note-alabama.html"
     },
     {
       "source": "/promissory-note-arizona",
@@ -824,6 +944,10 @@
       "destination": "/promissory-note-san-jose-california.html"
     },
     {
+      "source": "/promissory-note-south-carolina",
+      "destination": "/promissory-note-south-carolina.html"
+    },
+    {
       "source": "/promissory-note-tennessee",
       "destination": "/promissory-note-tennessee.html"
     },
@@ -858,6 +982,10 @@
     {
       "source": "/san-jose-california",
       "destination": "/san-jose-california.html"
+    },
+    {
+      "source": "/service-agreement-alabama",
+      "destination": "/service-agreement-alabama.html"
     },
     {
       "source": "/service-agreement-arizona",
@@ -932,6 +1060,10 @@
       "destination": "/service-agreement-san-jose-california.html"
     },
     {
+      "source": "/service-agreement-south-carolina",
+      "destination": "/service-agreement-south-carolina.html"
+    },
+    {
       "source": "/service-agreement-tennessee",
       "destination": "/service-agreement-tennessee.html"
     },
@@ -950,6 +1082,10 @@
     {
       "source": "/service-agreement-wisconsin",
       "destination": "/service-agreement-wisconsin.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-alabama",
+      "destination": "/vehicle-bill-of-sale-alabama.html"
     },
     {
       "source": "/vehicle-bill-of-sale-arizona",
@@ -1022,6 +1158,10 @@
     {
       "source": "/vehicle-bill-of-sale-san-jose-california",
       "destination": "/vehicle-bill-of-sale-san-jose-california.html"
+    },
+    {
+      "source": "/vehicle-bill-of-sale-south-carolina",
+      "destination": "/vehicle-bill-of-sale-south-carolina.html"
     },
     {
       "source": "/vehicle-bill-of-sale-tennessee",

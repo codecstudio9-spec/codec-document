@@ -41,7 +41,7 @@ const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|dashboard|app|sign|
 // '/documentos-electronicos' es el módulo DIAN: herramienta autenticada en
 // pruebas cerradas, sin identidad SEO propia todavía. Mantener en sync con
 // EXCLUDE_EXACT de scripts/generate-sitemap.mjs.
-const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures', '/documentos-electronicos']);
+const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures']);
 
 export default function middleware(request: Request) {
   const url = new URL(request.url);

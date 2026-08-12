@@ -81,7 +81,7 @@ const ESTADO: Record<string, { texto: string; clase: string }> = {
  */
 export default function DianDocumentsPage() {
   return (
-    <ErrorBoundary zona="Documentos DIAN">
+    <ErrorBoundary zona="Automatización para Contadores">
       <ContenidoDian />
     </ErrorBoundary>
   );
@@ -540,13 +540,13 @@ function ContenidoDian() {
       <div className="flex min-h-screen items-center justify-center px-4 py-10" style={{ background: MOBILE_BG_GRADIENT }}>
         <div className="w-full max-w-md">
           <div className="mb-6 flex justify-center">
-            <Logo size="sm" tagline="Documentos electrónicos · DIAN" href="/" />
+            <Logo size="sm" tagline="Automatización para contadores · DIAN" href="/" />
           </div>
 
           <div className="overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <div className="relative px-7 pb-6 pt-7 text-white" style={{ background: DARK_GRADIENT }}>
               <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
-              <h1 className="relative text-xl font-black tracking-tight">Documentos Electrónicos</h1>
+              <h1 className="relative text-xl font-black tracking-tight">Automatización para Contadores</h1>
               <p className="relative mt-1.5 text-sm leading-relaxed text-white/70">
                 Suelta el ZIP de la DIAN y te devuelvo el Excel armado, con los duplicados
                 detectados y solo los documentos que necesitas revisar.
@@ -634,7 +634,7 @@ function ContenidoDian() {
       <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
 
         <div className="mb-6 flex items-center justify-between pt-2">
-          <Logo size="sm" tagline="Documentos electrónicos · DIAN" href="/dashboard" />
+          <Logo size="sm" tagline="Automatización para contadores · DIAN" href="/dashboard" />
         </div>
 
         <header
@@ -643,7 +643,7 @@ function ContenidoDian() {
         >
           <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
           <div className="relative flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight">Documentos Electrónicos</h1>
+            <h1 className="text-2xl font-black tracking-tight">Automatización para Contadores</h1>
             <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white/90">
               Beta
             </span>

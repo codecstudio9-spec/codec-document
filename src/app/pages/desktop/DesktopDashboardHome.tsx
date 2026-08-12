@@ -99,7 +99,7 @@ function DashboardHomeContent() {
           ...(verDian
             ? [{
                 icon: FileSpreadsheet,
-                label: language === 'en' ? 'DIAN Documents' : 'Documentos DIAN',
+                label: language === 'en' ? 'Accounting Automation' : 'Automatización Contable',
                 onClick: () => navigate('/documentos-electronicos'),
                 variant: 'default' as const,
               }]

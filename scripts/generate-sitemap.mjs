@@ -29,7 +29,11 @@ const EXCLUDE_PREFIXES = ['/generator', '/preview', '/my-', '/admin', '/sign', '
 // is ever introduced; a path-prefix rule alone can't catch these.
 // '/documentos-electronicos' es el módulo DIAN: herramienta autenticada en
 // pruebas cerradas. Mantener en sync con EXCLUDED_EXACT de middleware.ts.
-const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '/documentos-electronicos', '*', '']);
+// '/documentos-electronicos' ya NO se excluye: la herramienta se abrió a todos
+// y su enlace se comparte con contadores, así que tiene que poder encontrarse
+// en Google. Pide sesión para usarla, pero la pantalla previa explica qué hace
+// —que es justo lo que el buscador debe indexar.
+const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '*', '']);
 
 function isExcluded(p) {
   if (EXCLUDE_EXACT.has(p)) return true;

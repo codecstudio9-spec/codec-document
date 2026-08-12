@@ -36,6 +36,8 @@ import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
+import { saveDocumentRecord } from '../services/documents-service';
+import { nombrePersonaDeValores, tituloDeDocumento } from '../utils/nombre-del-documento';
 import { DictadoYMejora } from '../components/DictadoYMejora';
 import { DictarFormulario } from '../components/DictarFormulario';
 import { BotonDictado } from '../components/BotonDictado';
@@ -686,6 +688,30 @@ function ContenidoGenerador() {
     toast.success(language === 'en' ? 'Restored.' : 'Se restauró lo que tenías.');
   };
 
+  /**
+   * Deja el documento en «Mis documentos» y en los recientes del inicio.
+   *
+   * Se llama al crear el enlace de firma, no sólo al descargar el PDF. Ése era
+   * el hueco: un documento enviado a firmar no quedaba en ninguna de las dos
+   * tablas de la lista, así que quien envía a firmar —el caso más común— no
+   * volvía a ver ese documento en ningún sitio.
+   *
+   * El nombre lleva a la persona del documento cuando se puede identificar, y
+   * el servicio evita el duplicado si además se descarga después.
+   */
+  const registrarEnMisDocumentos = () => {
+    const uid = session?.user?.id;
+    if (!uid || !template) return;
+    const titulo = tituloDeDocumento(
+      getDocumentTranslation(template.id, 'name', language) || template.name,
+      nombrePersonaDeValores(formData),
+      language,
+    );
+    saveDocumentRecord(uid, template.id, titulo).catch((err) => {
+      console.error('registrarEnMisDocumentos:', err);
+    });
+  };
+
   const handleStateChange = (state: string) => {
     setSelectedState(state);
     sessionStorage.setItem('selectedState', state);
@@ -859,6 +885,7 @@ function ContenidoGenerador() {
         });
         const shareUrl = `${window.location.origin}/sign/${txId}`;
         setTxShareData({ txId, shareUrl, config });
+        registrarEnMisDocumentos();
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('Error creating sign_transaction INSERT:', msg);
@@ -911,6 +938,7 @@ function ContenidoGenerador() {
         });
         const shareUrl = `${window.location.origin}/sign/${txId}`;
         setTxShareData({ txId, shareUrl, config: pendingSecConfig });
+        registrarEnMisDocumentos();
         setPendingSecConfig(null);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

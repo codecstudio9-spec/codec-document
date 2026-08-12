@@ -223,7 +223,7 @@ function DashboardContent() {
             }}
           >
             <FileSpreadsheet className="size-4" />
-            {language === 'en' ? 'DIAN Documents' : 'Documentos DIAN'}
+            {language === 'en' ? 'Accounting Automation' : 'Automatización Contable'}
             <span className="absolute right-3 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
               {language === 'en' ? 'Beta' : 'Beta'}
             </span>

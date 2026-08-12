@@ -36,16 +36,43 @@ export const DOCUMENT_COLORS = [
   '#EA580C', '#D97706', '#16A34A', '#0891B2',
 ] as const;
 
+/**
+ * Deja constancia de un documento generado, para «Mis documentos» y para los
+ * recientes del inicio.
+ *
+ * Se llama desde varios momentos del recorrido —al enviar a firmar, al
+ * descargar el PDF— y el mismo documento pasa por más de uno. De ahí la
+ * comprobación previa: sin ella, generar y luego descargar dejaba la misma
+ * carta dos veces en la lista. La ventana de seis horas acota la búsqueda a la
+ * sesión de trabajo actual; alguien que genere el mismo documento la semana
+ * siguiente sí quiere verlo aparecer otra vez.
+ *
+ * El error se registra en consola. Antes se descartaba en silencio —ni
+ * comprobación ni log— así que un fallo de permisos dejaba la lista vacía sin
+ * ninguna pista de por qué.
+ */
 export async function saveDocumentRecord(
   userId: string,
   templateId: string,
   documentName: string,
 ): Promise<void> {
-  await supabase.from('user_documents').insert({
+  const desde = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data: yaEsta } = await supabase
+    .from('user_documents')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('template_id', templateId)
+    .eq('document_name', documentName)
+    .gte('created_at', desde)
+    .limit(1);
+  if (yaEsta && yaEsta.length > 0) return;
+
+  const { error } = await supabase.from('user_documents').insert({
     user_id: userId,
     template_id: templateId,
     document_name: documentName,
   });
+  if (error) console.error('saveDocumentRecord: no se pudo guardar:', error);
 }
 
 export async function fetchUserDocuments(userId: string): Promise<UserDocument[]> {

@@ -107,6 +107,23 @@ for (const p of QUOTE_SEO_PAGES) {
   add(`/${p.slug}`, p.titleTag, p.metaDescription);
 }
 
+// ── Automatización para Contadores (módulo DIAN, sólo Colombia) ─────────
+//
+// Entra al manifiesto aunque sea una herramienta con sesión, y por una razón
+// concreta: es el enlace que se comparte por WhatsApp con los contadores. Sin
+// título ni descripción propios, la vista previa del enlace mostraba el texto
+// genérico del sitio —«Codec Document · Documentos legales»— que no dice nada
+// a un contador y hace que el enlace parezca publicidad.
+//
+// El texto va en español de Colombia y con las palabras que un contador
+// escribe en Google: XML, DIAN, facturas, Excel, Siigo. «Documentos
+// electrónicos» es como se llama la norma, no como se busca el problema.
+add(
+  '/documentos-electronicos',
+  'Descargar XML de la DIAN y pasarlos a Excel — Automatización para Contadores | Codec Document',
+  'Convierte los XML de la DIAN en información contable lista para usar: arrastra los ZIP y obtén el Excel con IVA, retenciones y totales cuadrados. Cruza lo reportado en la DIAN contra tu contabilidad y detecta las facturas que faltan. Hecho en Colombia para contadores.',
+);
+
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');
 fs.writeFileSync(outFile, JSON.stringify(manifest), 'utf-8');
 console.log(`seo-manifest.json written with ${Object.keys(manifest).length} routes`);
