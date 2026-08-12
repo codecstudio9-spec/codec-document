@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
+import ContadorDianLanding from './components/landing/ContadorDianLanding';
 
 // Lazy-loaded route components -- each page's JS downloads only when
 // that route is actually visited, instead of bundling all ~150 pages
@@ -540,6 +541,71 @@ export const router = createBrowserRouter([
   {
     path: "/firma-electronica-ecuador",
     Component: FirmaElectronicaEcuador,
+    errorElement: <RouteErrorBoundary />,
+  },
+
+  // Automatizacion para Contadores (modulo DIAN) -- 12 ciudades de Colombia.
+  // Todas apuntan al MISMO componente, que resuelve su contenido desde la
+  // ruta: doce archivos identicos serian doce sitios donde arreglar el mismo
+  // fallo. Ver contador-dian-seo-content.ts.
+  {
+    path: "/descargar-xml-dian-bogota",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-medellin",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-cali",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-barranquilla",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-cartagena",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-bucaramanga",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-pereira",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-manizales",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-cucuta",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-ibague",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-santa-marta",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-villavicencio",
+    Component: ContadorDianLanding,
     errorElement: <RouteErrorBoundary />,
   },
   // Fase 3 -- SEO "gratis" (7 paginas, cada una con un angulo distinto,

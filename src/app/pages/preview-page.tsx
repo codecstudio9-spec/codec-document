@@ -31,7 +31,7 @@ import { saveDocumentRecord } from '../services/documents-service';
 import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } from '../services/analytics-service';
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
-import { SITE_HOSTNAME } from '../config/site';
+import { SITE_HOSTNAME, SITE_URL } from '../config/site';
 
 export function normalizeCorruptedText(input: string): string {
   if (!input) return input;
@@ -1138,6 +1138,7 @@ export function PreviewPage() {
         identityBiometric,
       });
 
+      ultimoPdf.current = { blob, fileName };
       await triggerDownload(blob, fileName);
     }
 
@@ -1166,6 +1167,74 @@ export function PreviewPage() {
   } finally {
     setIsDownloading(false);
   }
+  };
+
+  /**
+   * El último PDF generado, para poder compartir EL DOCUMENTO y no una frase
+   * que habla de él.
+   *
+   * Compartir construía un mensaje de WhatsApp que decía «te comparto este
+   * documento» sin adjuntar nada y sin ningún enlace: quien lo recibía no tenía
+   * forma de llegar al documento. Ahora se comparte el archivo de verdad.
+   */
+  const ultimoPdf = useRef<{ blob: Blob; fileName: string } | null>(null);
+  const [compartiendo, setCompartiendo] = useState(false);
+
+  const textoParaCompartir = () => {
+    const nombre = getDocumentTranslation(template?.id ?? '', 'name', language) || template?.name || '';
+    return language === 'es'
+      ? `Te comparto el documento: ${nombre}.
+
+Generado con Codec Document — ${SITE_URL}`
+      : `Sharing this document with you: ${nombre}.
+
+Generated with Codec Document — ${SITE_URL}`;
+  };
+
+  /**
+   * Comparte el PDF por el menú del sistema (WhatsApp, correo, AirDrop…).
+   *
+   * Si el documento aún no se ha generado, se genera primero: compartir tiene
+   * que producir el mismo archivo certificado que la descarga, no una versión
+   * distinta armada aparte.
+   *
+   * `navigator.share` con archivos sólo existe en móvil y en algunos
+   * escritorios. Donde no está, se descarga el PDF y se abre WhatsApp con el
+   * texto: el archivo queda en el dispositivo listo para adjuntar, que es lo
+   * máximo que un navegador permite hacer sin su ayuda.
+   */
+  const compartirDocumento = async () => {
+    setCompartiendo(true);
+    try {
+      if (!ultimoPdf.current) await handleDownload();
+      const guardado = ultimoPdf.current;
+
+      if (guardado) {
+        const archivo = new File([guardado.blob], guardado.fileName, { type: 'application/pdf' });
+        const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+        if (nav.share && nav.canShare?.({ files: [archivo] })) {
+          await nav.share({
+            files: [archivo],
+            title: guardado.fileName.replace(/\.pdf$/i, ''),
+            text: textoParaCompartir(),
+          });
+          return;
+        }
+      }
+
+      window.open(`https://wa.me/?text=${encodeURIComponent(textoParaCompartir())}`, '_blank', 'noopener,noreferrer');
+      toast.info(language === 'es'
+        ? 'El PDF quedó descargado en tu dispositivo: adjúntalo en el chat que se abrió.'
+        : 'The PDF was downloaded to your device: attach it in the chat that just opened.');
+    } catch (err) {
+      // Cancelar el menú de compartir lanza AbortError, y eso no es un fallo.
+      if ((err as Error)?.name !== 'AbortError') {
+        console.error('compartirDocumento:', err);
+        toast.error(language === 'es' ? 'No se pudo compartir el documento.' : 'Could not share the document.');
+      }
+    } finally {
+      setCompartiendo(false);
+    }
   };
 
   const handleEdit = () => {
@@ -1646,29 +1715,34 @@ export function PreviewPage() {
 
           {/* ── Share / Send options ──────────────────────────────────────── */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-8">
-            {/* WhatsApp */}
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(
-                language === 'es'
-                  ? `Hola, te comparto este documento legal: ${getDocumentTranslation(template.id, 'name', 'es')}. Descárgalo usando Codec Document.`
-                  : `Hello, I'm sharing this legal document with you: ${getDocumentTranslation(template.id, 'name', 'en')}. Download it via Codec Document.`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-[#25D366] bg-[#25D366]/10 px-4 py-2.5 text-sm font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors shadow-sm"
+
+            {/* Compartir el DOCUMENTO, no una frase que habla de él. El botón
+                anterior abría WhatsApp con un texto que decía «te comparto este
+                documento» sin adjuntar nada y sin ningún enlace: quien lo
+                recibía no tenía forma de llegar al documento. */}
+            <button
+              type="button"
+              onClick={() => void compartirDocumento()}
+              disabled={compartiendo || isDownloading}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-[#25D366] bg-[#25D366]/10 px-4 py-2.5 text-sm font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors shadow-sm disabled:opacity-60"
             >
-              <MessageCircle className="size-4" />
-              {language === 'es' ? 'Enviar por WhatsApp' : 'Share via WhatsApp'}
-            </a>
+              {compartiendo
+                ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#128C7E]/40 border-t-[#128C7E]" />
+                : <MessageCircle className="size-4" />}
+              {language === 'es' ? 'Compartir documento' : 'Share document'}
+            </button>
 
             {/* Email */}
             <a
               href={`mailto:?subject=${encodeURIComponent(
                 getDocumentTranslation(template.id, 'name', language) || (language === 'es' ? 'Documento Legal Certificado' : 'Certified Legal Document')
               )}&body=${encodeURIComponent(
+                // Decía «adjunto el documento» en un borrador donde no hay
+                // ningún adjunto: un enlace mailto no puede adjuntar archivos.
+                // Ahora recuerda adjuntarlo y dice de dónde salió el documento.
                 language === 'es'
-                  ? `Hola,\n\nAdjunto o comparto contigo el documento legal: ${getDocumentTranslation(template.id, 'name', 'es')}.\n\nDescárgalo y ábrelo con cualquier visor de PDF.\n\nGenerado con Codec Document.`
-                  : `Hello,\n\nPlease find the legal document attached: ${getDocumentTranslation(template.id, 'name', 'en')}.\n\nOpen the attached PDF with any PDF viewer.\n\nGenerated with Codec Document.`
+                  ? `Hola,\n\nTe comparto el documento: ${getDocumentTranslation(template.id, 'name', 'es')}.\n\nRecuerda adjuntar el PDF antes de enviar este correo — se descargó en tu dispositivo.\n\nDocumento generado con Codec Document, plataforma de documentos legales y firma electrónica: ${SITE_URL}`
+                  : `Hello,\n\nSharing this document with you: ${getDocumentTranslation(template.id, 'name', 'en')}.\n\nRemember to attach the PDF before sending this email — it was downloaded to your device.\n\nDocument generated with Codec Document, legal document and e-signature platform: ${SITE_URL}`
               )}`}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
             >

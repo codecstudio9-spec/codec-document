@@ -30,6 +30,7 @@ import { LATAM_COUNTRIES } from '../src/app/data/latam-signature-seo-content';
 import { PROFESSION_PAGES } from '../src/app/data/profession-seo-content';
 import { FREE_FEATURE_PAGES } from '../src/app/data/free-feature-seo-content';
 import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
+import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
 
 const manifest: Record<string, { title: string; description: string }> = {};
 
@@ -123,6 +124,11 @@ add(
   'Descargar XML de la DIAN y pasarlos a Excel — Automatización para Contadores | Codec Document',
   'Convierte los XML de la DIAN en información contable lista para usar: arrastra los ZIP y obtén el Excel con IVA, retenciones y totales cuadrados. Cruza lo reportado en la DIAN contra tu contabilidad y detecta las facturas que faltan. Hecho en Colombia para contadores.',
 );
+
+// ── Automatizacion para Contadores por ciudad (12 paginas, solo Colombia) ─
+for (const c of CIUDADES_CONTADOR) {
+  add(`/${c.slug}`, c.titleTag, c.metaDescription);
+}
 
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');
 fs.writeFileSync(outFile, JSON.stringify(manifest), 'utf-8');
