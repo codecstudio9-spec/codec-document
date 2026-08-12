@@ -2160,55 +2160,56 @@ export class PDFGenerator {
       this.currentY += 8;
     }
 
+    // Una sola firma NO se maqueta en dos columnas.
+    //
+    // El bloque pintaba siempre dos renglones, así que un documento con un
+    // único firmante —una carta de renuncia, por ejemplo— salía con una
+    // segunda línea vacía rotulada «FIRMANTE», invitando a firmar a una
+    // persona que no existe en ese documento. Con un solo firmante se pinta
+    // una sola línea, del ancho de una columna y alineada al margen.
+    const soloUno = !leftSig !== !rightSig;
+    const unico   = leftSig ?? rightSig;
+
     const colW   = (this.maxWidth - 12) / 2;
     const leftX  = this.margin;
     const rightX = this.margin + colW + 12;
     const imgH   = 22;
 
-    // ── Signature images ──────────────────────────────────────────────────
-    if (leftSig?.dataUrl) {
-      try {
-        this.addImageContain(leftSig.dataUrl, leftX, this.currentY, colW, imgH);
-      } catch { /* skip broken image */ }
-    }
-    if (rightSig?.dataUrl) {
-      try {
-        this.addImageContain(rightSig.dataUrl, rightX, this.currentY, colW, imgH);
-      } catch { /* skip broken image */ }
-    }
+    const columna = (
+      sig: { dataUrl: string; name: string } | undefined,
+      x: number,
+      lineY: number,
+    ) => {
+      if (sig?.dataUrl) {
+        try { this.addImageContain(sig.dataUrl, x, this.currentY, colW, imgH); }
+        catch { /* imagen rota: la línea se pinta igual */ }
+      }
+      this.doc.setDrawColor(0, 0, 0);
+      this.doc.setLineWidth(0.5);
+      this.doc.line(x, lineY, x + colW, lineY);
+
+      // El rótulo es el nombre de quien firma. Si no se conoce, se rotula la
+      // línea por lo que es —«Firma»— en vez de inventar un nombre.
+      const rotulo = sig?.name?.trim()
+        ? sig.name.trim().toUpperCase()
+        : (language === 'es' ? 'FIRMA' : 'SIGNATURE');
+
+      setFontSafe('helvetica', 'bold');
+      this.doc.setFontSize(8.5);
+      this.doc.setTextColor(0, 0, 0);
+      safeText(rotulo, x + colW / 2, lineY + 4, { align: 'center' });
+    };
 
     const lineY = this.currentY + imgH + 1;
 
-    // ── Signature lines ───────────────────────────────────────────────────
-    this.doc.setDrawColor(0, 0, 0);
-    this.doc.setLineWidth(0.5);
-    this.doc.line(leftX,  lineY, leftX  + colW, lineY);
-    this.doc.line(rightX, lineY, rightX + colW, lineY);
-
-    // ── Role labels ───────────────────────────────────────────────────────
-    // Use actual signer display names when available instead of legacy role labels
-    const leftDisplay = leftSig?.name ? String(leftSig.name).toUpperCase() : (language === 'es' ? 'FIRMANTE' : 'SIGNATORY');
-    const rightDisplay = rightSig?.name ? String(rightSig.name).toUpperCase() : (language === 'es' ? 'FIRMANTE' : 'SIGNATORY');
-
-    setFontSafe('helvetica', 'bold');
-    this.doc.setFontSize(8.5);
-    this.doc.setTextColor(0, 0, 0);
-    // Present the signer's display name (or generic Signatory) instead of hardcoded role labels
-    safeText(leftDisplay, leftX + colW / 2, lineY + 4, { align: 'center' });
-    safeText(rightDisplay, rightX + colW / 2, lineY + 4, { align: 'center' });
-
-    // ── Signer names ──────────────────────────────────────────────────────
-    setFontSafe('helvetica', 'normal');
-    this.doc.setFontSize(8);
-    this.doc.setTextColor(60, 60, 60);
-    if (leftSig?.name) {
-      safeText(leftSig.name, leftX + colW / 2, lineY + 9, { align: 'center' });
-    }
-    if (rightSig?.name) {
-      safeText(rightSig.name, rightX + colW / 2, lineY + 9, { align: 'center' });
+    if (soloUno) {
+      columna(unico, leftX, lineY);
+    } else {
+      columna(leftSig, leftX, lineY);
+      columna(rightSig, rightX, lineY);
     }
 
-    this.currentY = lineY + 14;
+    this.currentY = lineY + 10;
 
     // ── Identity Verification Strip (inline, no new page) ─────────────────
     if (!hasIdentity) return;

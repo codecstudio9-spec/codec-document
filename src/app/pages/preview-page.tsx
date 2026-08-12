@@ -602,7 +602,20 @@ export function PreviewPage() {
         if (ownerSigUrl) {
           allSigs.push({
             id: 'owner',
-            name: String(parsed.landlord_name || parsed.owner_name || parsed.party_one || 'Owner'),
+            // Quién firma, buscado entre los campos con los que cada plantilla
+            // llama a su parte principal.
+            //
+            // Antes sólo se miraban tres —landlord_name, owner_name,
+            // party_one— y cualquier documento que no fuera un arriendo caía
+            // en el literal 'Owner'. La carta de renuncia salía firmada por
+            // «OWNER / Owner»: un rol interno del sistema impreso como si
+            // fuera el nombre de una persona.
+            name: String(
+              parsed.employee_name || parsed.landlord_name || parsed.owner_name
+              || parsed.seller_name || parsed.client_name || parsed.testator_name
+              || parsed.planner_name || parsed.borrower_name || parsed.contractor_name
+              || parsed.disclosing_party_name || parsed.party_one || '',
+            ).trim(),
             dataUrl: ownerSigUrl,
             xPct: sigX > 0 ? sigX : 18,
             yPct: sigY > 0 ? sigY : 82,

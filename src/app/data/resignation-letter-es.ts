@@ -104,14 +104,6 @@ export const resignationLetterTemplateES: DocumentTemplate = {
       // pinta nada dentro del documento que va a entregar.
       helpText: 'Cuenta el preaviso desde hoy; el plazo que te obliga es el de tu contrato o convenio. Ojo: una renuncia voluntaria normalmente no da derecho a indemnización por despido — si te vas por incumplimientos de la empresa, consulta con un abogado laboral antes de firmar, porque hay figuras distintas a la renuncia simple.',
     },
-    {
-      id: 'time_worked',
-      label: 'Tiempo que llevas en la empresa',
-      type: 'text',
-      required: false,
-      placeholder: '2 años y 4 meses',
-      helpText: 'Opcional. Si lo dejas vacío, la carta solo menciona las fechas.',
-    },
 
     // ── Contenido ──────────────────────────────────────────────────────
     {
@@ -152,60 +144,62 @@ export const resignationLetterTemplateES: DocumentTemplate = {
     },
   ],
 
-  // El encabezado sigue el orden de una carta formal colombiana: ciudad y
-  // fecha, un espacio, y el destinatario en bloque —empresa en mayúsculas,
-  // persona, cargo, «Ciudad»—. Las condicionales van pegadas al final de la
-  // línea anterior y NO en un renglón propio: si estuvieran solas, al no
-  // cumplirse dejarían una línea en blanco que parte el bloque del
-  // destinatario en dos y le abre un hueco en medio.
+  // Cada bloque va separado por una línea en blanco, y eso es deliberado: en
+  // una carta el destinatario, el asunto y cada párrafo se leen como unidades
+  // sueltas, no como un muro de texto. El maquetador convierte esa línea en
+  // blanco en separación real (ver `separacion` en document-preview.tsx).
+  //
+  // Las condicionales van pegadas al final de la línea anterior: solas, al no
+  // cumplirse, dejarían un hueco doble donde debería haber uno.
   template: `{{letter_city}}, {{current_date}}
 
-
 Señores
-{{company_name_mayus}}{{#if recipient_name}}
-{{recipient_name}}{{/if}}{{#if recipient_title}}
-{{recipient_title}}{{/if}}
-Ciudad
 
+{{company_name}}{{#if recipient_name}}
+
+{{recipient_name}}{{/if}}{{#if recipient_title}}
+
+{{recipient_title}}{{/if}}
+
+Ciudad
 
 ASUNTO: Renuncia voluntaria al cargo de {{employee_position}}
 
+Yo, {{employee_name}}, mayor de edad, identificado(a) con {{__documento}} número {{employee_id}}, por medio de la presente me permito comunicar de manera libre, voluntaria e irrevocable mi decisión de renunciar al cargo de {{employee_position}}, que vengo desempeñando en {{company_name}} desde el {{start_date}}{{#if tiempo_servicio}}, completando a la fecha {{tiempo_servicio}} de servicio{{/if}}.
 
-Respetados señores:
-
-Yo, {{employee_name}}, mayor de edad, identificado(a) con {{__documento}} número {{employee_id}}, por medio de la presente me permito comunicar de manera libre, voluntaria e irrevocable mi decisión de renunciar al cargo de {{employee_position}}, que vengo desempeñando en {{company_name}} desde el {{start_date}}{{#if time_worked}}, completando a la fecha {{time_worked}} de servicio{{/if}}.
-
-Mi último día de labores será el {{last_day}}, fecha a partir de la cual quedará terminada la relación laboral que nos vincula.
+Mi último día laborado fue el {{last_day}}, fecha a partir de la cual quedó terminada la relación laboral que nos vincula.
 
 {{#if reason}}{{reason}}
 
 {{/if}}{{#if include_handover}}Durante el tiempo que resta me comprometo a entregar de manera ordenada y documentada los asuntos a mi cargo, así como a acompañar el empalme con la persona que la empresa designe, con el fin de que mi retiro no afecte la continuidad de las labores.
 
-{{/if}}{{#if include_thanks}}Aprovecho para expresar mi agradecimiento a {{company_name}} por la oportunidad y por la experiencia adquirida durante este tiempo. Me llevo aprendizajes valiosos y el mejor recuerdo del equipo de trabajo.
+{{/if}}{{#if include_thanks}}Aprovecho para expresar mi agradecimiento por la oportunidad y la experiencia adquirida durante este tiempo, me llevo aprendizajes valiosos y el mejor recuerdo del equipo de trabajo.
 
-{{/if}}Solicito respetuosamente que se proceda con la {{__liquidacion}} y demás conceptos laborales a que haya lugar, y que se me expida la {{__certificado}} correspondiente una vez terminada la relación.
+{{/if}}Solicito respetuosamente que se proceda con la {{__liquidacion}} y demás conceptos laborales a los que haya lugar, y que se me expida la {{__certificado}} correspondiente.
 
 Quedo atento(a) a cualquier comunicación en los datos de contacto que registro al pie.
 
-
 Cordialmente,
 
-
-
-
-_______________________________________
 {{employee_name}}
-{{__documento_corto}} {{employee_id}}
-{{employee_phone}}{{#if employee_email}}
-{{employee_email}}{{/if}}{{#if include_receipt}}
 
+{{__documento_corto}} {{employee_id}}
+
+Teléfono: {{employee_phone}}{{#if employee_email}}
+
+Correo: {{employee_email}}{{/if}}
+
+Firma: _______________________________{{#if include_receipt}}
 
 ---------------------------------------------------------------------------
 
 CONSTANCIA DE RECIBIDO
 
 Recibido por: _______________________________________
+
 Cargo: ______________________________________________
+
 Fecha: ______________________________________________
+
 Firma: ______________________________________________{{/if}}`,
 };

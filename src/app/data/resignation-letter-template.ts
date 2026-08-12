@@ -93,13 +93,6 @@ export const resignationLetterTemplate: DocumentTemplate = {
       // signer has no place inside the document they hand in.
       helpText: 'Count the notice period from today; the term that binds you is the one in your contract or collective agreement. Note that resigning voluntarily usually does not entitle you to severance — if you are leaving because of the employer’s breaches, talk to an employment lawyer first, there are legal routes other than a plain resignation.',
     },
-    {
-      id: 'time_worked',
-      label: 'How long you have been there',
-      type: 'text',
-      required: false,
-      placeholder: '2 years and 4 months',
-    },
 
     {
       id: 'letter_city',
@@ -137,57 +130,60 @@ export const resignationLetterTemplate: DocumentTemplate = {
     },
   ],
 
-  // The heading follows a formal letter block: city and date, a blank line,
-  // then the addressee — company in capitals, person, job title. The
-  // conditionals hang off the END of the previous line rather than sitting on
-  // one of their own: alone, an unmet condition would leave a blank line that
-  // splits the addressee block in two and opens a gap in the middle of it.
+  // Every block is separated by a blank line, on purpose: in a letter the
+  // addressee, the subject and each paragraph read as separate units, not as
+  // a wall of text. The renderer turns that blank line into real spacing (see
+  // `separacion` in document-preview.tsx).
+  //
+  // Conditionals hang off the END of the previous line: on a line of their
+  // own, an unmet condition would leave a double gap where there should be one.
   template: `{{letter_city}}, {{current_date}}
 
+To
 
-{{company_name_mayus}}{{#if recipient_name}}
+{{company_name}}{{#if recipient_name}}
+
 {{recipient_name}}{{/if}}{{#if recipient_title}}
-{{recipient_title}}{{/if}}
 
+{{recipient_title}}{{/if}}
 
 SUBJECT: Voluntary resignation from the position of {{employee_position}}
 
+I, {{employee_name}}, holder of {{__documento}} number {{employee_id}}, hereby give formal notice of my voluntary and irrevocable decision to resign from the position of {{employee_position}}, which I have held at {{company_name}} since {{start_date}}{{#if tiempo_servicio}}, completing {{tiempo_servicio}} of service{{/if}}.
 
-Dear Sir or Madam,
-
-I, {{employee_name}}, holder of {{__documento}} number {{employee_id}}, hereby give formal notice of my voluntary and irrevocable decision to resign from the position of {{employee_position}}, which I have held at {{company_name}} since {{start_date}}{{#if time_worked}}, completing {{time_worked}} of service{{/if}}.
-
-My last working day will be {{last_day}}, after which our employment relationship will come to an end.
+My last working day was {{last_day}}, the date on which our employment relationship came to an end.
 
 {{#if reason}}{{reason}}
 
 {{/if}}{{#if include_handover}}During the remaining time I commit to handing over my responsibilities in an orderly and documented manner, and to supporting the transition with whoever the company appoints, so that my departure does not disrupt ongoing work.
 
-{{/if}}{{#if include_thanks}}I would like to thank {{company_name}} for the opportunity and for everything I have learned during this time. I leave with valuable experience and the best memories of the team.
+{{/if}}{{#if include_thanks}}I would like to thank you for the opportunity and for the experience gained during this time; I leave with valuable lessons and the best memories of the team.
 
-{{/if}}I respectfully request that my {{__liquidacion}} and any other amounts owed be processed, and that the corresponding {{__certificado}} be issued once the relationship ends.
+{{/if}}I respectfully request that my {{__liquidacion}} and any other amounts owed be processed, and that the corresponding {{__certificado}} be issued.
 
 I remain available at the contact details below.
 
-
 Sincerely,
 
-
-
-
-_______________________________________
 {{employee_name}}
-{{__documento_corto}} {{employee_id}}
-{{employee_phone}}{{#if employee_email}}
-{{employee_email}}{{/if}}{{#if include_receipt}}
 
+{{__documento_corto}} {{employee_id}}
+
+Phone: {{employee_phone}}{{#if employee_email}}
+
+Email: {{employee_email}}{{/if}}
+
+Signature: ___________________________{{#if include_receipt}}
 
 ---------------------------------------------------------------------------
 
 ACKNOWLEDGEMENT OF RECEIPT
 
 Received by: ________________________________________
+
 Title: ______________________________________________
+
 Date: _______________________________________________
+
 Signature: __________________________________________{{/if}}`,
 };

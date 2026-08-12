@@ -127,27 +127,64 @@ function traducirOpciones(data: DocumentData, language: Language, templateId?: s
 }
 
 /**
- * Por cada campo de texto, una versión en mayúsculas con el sufijo `_mayus`.
+ * Cuánto duró la relación laboral, en años, meses y días.
  *
- * En una carta formal el destinatario va en mayúsculas —«Señores / CENTRO DE
- * IDIOMAS UNIVERSAL»— mientras que en el cuerpo esa misma empresa se nombra
- * con su grafía normal. Es el mismo dato escrito de dos maneras según dónde
- * aparece, así que la plantilla pide `{{company_name_mayus}}` arriba y
- * `{{company_name}}` en el texto, y quien rellena el formulario lo escribe
- * una sola vez.
+ * Es un dato que se pedía a mano —«Tiempo que llevas en la empresa»— y que se
+ * puede calcular exactamente a partir de dos fechas que el formulario ya
+ * tiene. Pedirlo era, además, dónde se colaba el error: al dictar, la carta
+ * acabó diciendo «completando a la fecha 1022925002 de servicio», que era el
+ * número de cédula.
  *
- * Sólo añade claves; ninguna existente se toca. Y no colisiona con la
- * sustitución normal porque `{{company_name}}` exige las llaves justo después
- * del nombre, así que nunca coincide dentro de `{{company_name_mayus}}`.
+ * Se cuenta como se cuenta el tiempo entre dos fechas del calendario, no
+ * dividiendo días entre 30: del 12 de febrero al 8 de agosto son 5 meses y 27
+ * días, porque desde el 12 de julio hasta el 8 de agosto faltan 27 días
+ * contando los 31 de julio. Dividir daría 5 meses y 26, o 5,9 meses.
  */
-function agregarMayusculas(data: DocumentData): DocumentData {
-  const salida: DocumentData = { ...data };
-  for (const [clave, valor] of Object.entries(data)) {
-    if (typeof valor !== 'string' || !valor.trim()) continue;
-    if (clave.endsWith('_mayus')) continue;
-    salida[`${clave}_mayus`] = valor.toLocaleUpperCase('es');
-  }
-  return salida;
+function duracionEntreFechas(desde: string, hasta: string, language: Language): string {
+  const leer = (v: string): Date | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v ?? '').trim());
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  const a = leer(desde);
+  const b = leer(hasta);
+  if (!a || !b || b <= a) return '';
+
+  // Primero cuántos meses completos caben, y luego los días sueltos medidos
+  // sobre el calendario de verdad.
+  //
+  // Restar los días y corregir de una pasada no basta: del 31 de enero al 1 de
+  // marzo hay que retroceder al 31 de febrero, que no existe. Ese cálculo
+  // quedaba con días negativos, y como sólo se imprimen los días positivos el
+  // resultado salía como «1 mes», perdiendo un día sin avisar.
+  let anios = b.getFullYear() - a.getFullYear();
+  let meses = b.getMonth() - a.getMonth();
+  if (b.getDate() < a.getDate()) meses--; // el último mes no se completó
+  if (meses < 0) { anios--; meses += 12; }
+
+  // El ancla es la fecha de inicio avanzada esos años y meses. Se recorta al
+  // último día del mes cuando el día no existe ahí —31 de enero + 1 mes es el
+  // 28 de febrero, no el 3 de marzo, que es lo que haría Date por su cuenta—.
+  const mesAncla = new Date(a.getFullYear() + anios, a.getMonth() + meses, 1);
+  const ultimoDelMes = new Date(mesAncla.getFullYear(), mesAncla.getMonth() + 1, 0).getDate();
+  const ancla = new Date(mesAncla.getFullYear(), mesAncla.getMonth(), Math.min(a.getDate(), ultimoDelMes));
+
+  // Redondeado, no truncado: un cambio de horario de verano entre las dos
+  // fechas deja la diferencia en 26,96 días en vez de 27.
+  const dias = Math.round((b.getTime() - ancla.getTime()) / 86_400_000);
+
+  const es = language === 'es';
+  const partes: string[] = [];
+  if (anios > 0) partes.push(es ? `${anios} ${anios === 1 ? 'año' : 'años'}` : `${anios} ${anios === 1 ? 'year' : 'years'}`);
+  if (meses > 0) partes.push(es ? `${meses} ${meses === 1 ? 'mes' : 'meses'}` : `${meses} ${meses === 1 ? 'month' : 'months'}`);
+  if (dias > 0) partes.push(es ? `${dias} ${dias === 1 ? 'día' : 'días'}` : `${dias} ${dias === 1 ? 'day' : 'days'}`);
+
+  if (partes.length === 0) return '';
+  if (partes.length === 1) return partes[0];
+  const union = es ? ' y ' : ' and ';
+  return partes.slice(0, -1).join(', ') + union + partes[partes.length - 1];
 }
 
 export function enrichDocumentDataWithDates(
@@ -172,8 +209,18 @@ export function enrichDocumentDataWithDates(
     }
   }
 
+  // Se calcula ANTES de humanizar las fechas: aquí `start_date` todavía es
+  // «2026-02-12», que es lo que la función sabe leer. Después ya sería
+  // «12 de febrero de 2026».
+  const tiempoServicio = duracionEntreFechas(
+    String(data.start_date ?? ''),
+    String(data.last_day ?? ''),
+    language,
+  );
+
   return {
-    ...agregarMayusculas(humanizarFechasISO(traducirOpciones(data, language, templateId), language)),
+    ...humanizarFechasISO(traducirOpciones(data, language, templateId), language),
+    ...(tiempoServicio ? { tiempo_servicio: tiempoServicio } : {}),
     current_day: String(day),
     current_month: month,
     current_year: String(year),
