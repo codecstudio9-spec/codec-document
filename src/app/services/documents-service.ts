@@ -187,7 +187,12 @@ export async function fetchSignTransactionsAsDocuments(userId: string): Promise<
 
   return txs.map((tx) => {
     const datos = (tx.document_data ?? {}) as Record<string, string | number | boolean>;
-    const nombrePlantilla = getTemplateById(tx.document_type)?.name ?? tx.document_type;
+    // Una plantilla de Word no está en el catálogo propio: su nombre vive en
+    // la fila de la plantilla, que aquí no se consulta. Antes de mostrar el
+    // identificador interno «custom-template», es preferible una etiqueta que
+    // al menos diga qué es.
+    const nombrePlantilla = getTemplateById(tx.document_type)?.name
+      ?? (tx.document_type === 'custom-template' ? 'Documento de plantilla propia' : tx.document_type);
     return {
       id: `tx:${tx.id}`,
       name: tituloDeDocumento(nombrePlantilla, nombrePersonaDeValores(datos), 'es'),

@@ -52,6 +52,14 @@ export interface CiudadContadorSeo {
   dolores: Array<{ titulo: string; texto: string }>;
   /** Cómo responde la herramienta a ESE trabajo. */
   respuesta: string;
+  /** Un caso concreto de esa ciudad, con cifras. No es un testimonio
+   *  inventado: es la aritmética del trabajo, que cualquier contador puede
+   *  contrastar con su propio mes. */
+  caso: { titulo: string; texto: string; antes: string; despues: string };
+  /** Foto de cabecera. Se reparten entre las ciudades para que doce páginas
+   *  del mismo servicio no se vean como la misma página. */
+  foto: string;
+  fotoAlt: string;
   faq: Array<{ q: string; a: string }>;
 }
 

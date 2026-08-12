@@ -825,6 +825,15 @@ function ContenidoGenerador() {
       sessionStorage.setItem('documentBranding', JSON.stringify(branding));
       sessionStorage.setItem('documentType', documentType || '');
     } catch { /* sessionStorage quota exceeded — proceed anyway */ }
+
+    // Aquí es donde el documento pasa a existir: el formulario está completo y
+    // el usuario avanzó. Registrarlo sólo al enviarlo a firmar o al descargar
+    // el PDF dejaba fuera al que llena la carta, la revisa y la firma él mismo
+    // —que es el recorrido más natural—, y ese documento no aparecía en
+    // ninguna lista. El servicio evita el duplicado si además se envía o se
+    // descarga después.
+    registrarEnMisDocumentos();
+
     setFlowStep('sign');
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 80);
   };
@@ -846,6 +855,7 @@ function ContenidoGenerador() {
         sessionStorage.setItem('documentBranding', JSON.stringify(branding));
         sessionStorage.setItem('documentType', documentType || '');
       } catch { /* quota */ }
+      registrarEnMisDocumentos();
       setSecurityModalOpen(true);
     } else {
       handleFormNext();
