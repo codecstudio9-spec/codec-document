@@ -44,10 +44,29 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 let written = 0;
-for (const [routePath, { title, description }] of Object.entries(manifest)) {
+for (const [routePath, { title, description, lang, hero }] of Object.entries(manifest)) {
   const escapedTitle = escapeHtml(title);
   const escapedDesc = escapeHtml(description);
+  const canonical = `https://www.codecdocument.com${routePath}`;
+  // `fetchpriority="high"` además de la precarga: sin él el navegador trata la
+  // imagen como un recurso más y la encola detrás del CSS y el JS.
+  const preloadHero = hero
+    ? `<link rel="preload" as="image" href="${escapeHtml(hero)}" fetchpriority="high" />\n    `
+    : '';
   const html = shellHtml
+    // El shell base declara lang="en" porque es un solo archivo para ~300
+    // rutas, pero un tercio son páginas en español. Aquí cada shell recibe el
+    // suyo. `translate="no"` se conserva: evita que Chrome traduzca el DOM por
+    // debajo de React, que es lo que provocaba el crash de insertBefore.
+    .replace(/<html\s+lang="[^"]*"/, `<html lang="${lang}"`)
+    // El canonical real ya lo emite middleware.ts como cabecera HTTP `Link`,
+    // que Google respeta. Se duplica aquí como etiqueta porque la cabecera es
+    // invisible para casi todas las herramientas de auditoría SEO (y para
+    // algunos rastreadores menores), y una página sin <link rel="canonical">
+    // visible se reporta como error aunque técnicamente esté bien resuelta.
+    // SEOHead.tsx busca esta misma etiqueta con querySelector y la reutiliza,
+    // así que tras hidratar React no aparece una segunda.
+    .replace(/(<title>)/, `${preloadHero}<link rel="canonical" href="${canonical}" />\n    $1`)
     .replace(/<title>[^<]*<\/title>/, `<title>${escapedTitle}</title>`)
     .replace(/(<meta\s+name="description"\s+content=")[^"]*(")/, `$1${escapedDesc}$2`)
     .replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/, `$1${escapedTitle}$2`)

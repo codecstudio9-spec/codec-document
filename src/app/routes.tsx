@@ -3,7 +3,6 @@ import { createBrowserRouter } from "react-router";
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
-import ContadorDianLanding from './components/landing/ContadorDianLanding';
 
 // Lazy-loaded route components -- each page's JS downloads only when
 // that route is actually visited, instead of bundling all ~150 pages
@@ -209,6 +208,13 @@ const FirmaElectronicaPeru = lazy(() => import("./pages/landings/firma-electroni
 const FirmaElectronicaArgentina = lazy(() => import("./pages/landings/firma-electronica-argentina"));
 const FirmaElectronicaEcuador = lazy(() => import("./pages/landings/firma-electronica-ecuador"));
 const FirmaElectronicaGratis = lazy(() => import("./pages/landings/firma-electronica-gratis"));
+
+// Diferida como todas las demas. Importada de forma estatica, el contenido de
+// las 25 paginas SEO -- mas de 60 KB de texto -- viajaba dentro del bundle
+// principal y se descargaba en CADA visita a cualquier pantalla del producto,
+// incluida la portada. Eso es peso muerto para el 99% de los visitantes y
+// castiga las Core Web Vitals, que Google usa como senal de posicionamiento.
+const ContadorDianLanding = lazy(() => import("./components/landing/ContadorDianLanding"));
 const FirmarPdfGratis = lazy(() => import("./pages/landings/firmar-pdf-gratis"));
 const FirmaDigitalGratis = lazy(() => import("./pages/landings/firma-digital-gratis"));
 const FirmarDocumentosOnlineGratis = lazy(() => import("./pages/landings/firmar-documentos-online-gratis"));

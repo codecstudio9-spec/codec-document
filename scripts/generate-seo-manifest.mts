@@ -33,10 +33,20 @@ import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
 import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
 import { NECESIDADES_CONTADOR } from '../src/app/data/contador-necesidad-seo-content';
 
-const manifest: Record<string, { title: string; description: string }> = {};
+// `lang` viaja en el manifiesto porque index.html declara `lang="en"` una sola
+// vez para las ~300 rutas, y casi un tercio de ellas son páginas en español
+// (las 6 de LATAM, las de profesión, las gratuitas y las 25 de contadores).
+// Declarar inglés sobre contenido en español es una señal contradictoria justo
+// en las páginas que queremos posicionar en búsquedas en español, y además es
+// lo que dispara el traductor automático de Chrome — el mismo que ya rompió la
+// app una vez reescribiendo el DOM bajo React. generate-seo-shells.mjs usa
+// este campo para escribir el `lang` correcto en cada shell.
+type Idioma = 'en' | 'es';
+type Entrada = { title: string; description: string; lang: Idioma; hero?: string };
+const manifest: Record<string, Entrada> = {};
 
-const add = (routePath: string, title: string, description: string) => {
-  manifest[routePath] = { title, description };
+const add = (routePath: string, title: string, description: string, lang: Idioma = 'en', hero?: string) => {
+  manifest[routePath] = hero ? { title, description, lang, hero } : { title, description, lang };
 };
 
 // ── Blog articles (ArticleLanding.tsx) ──────────────────────────────────
@@ -91,17 +101,18 @@ for (const c of LATAM_COUNTRIES) {
     `/firma-electronica-${c.slug}`,
     `Firma Electrónica en ${c.nameEs} | Válida y Legal — CodecDocument`,
     `Firma documentos electrónicamente en ${c.nameEs}, con total cumplimiento de la ley local (${c.lawBadgeEs}). Plan gratuito, verificación de identidad y pista de auditoría SHA-256 en cada firma.`,
+    'es',
   );
 }
 
 // ── Profession pages (ProfessionLanding.tsx) — Spanish only ─────────────
 for (const p of PROFESSION_PAGES) {
-  add(`/firma-electronica-para-${p.slug}`, p.titleEs, p.descEs);
+  add(`/firma-electronica-para-${p.slug}`, p.titleEs, p.descEs, 'es');
 }
 
 // ── Free-feature pages (FreeFeatureLanding.tsx) — Spanish only ──────────
 for (const p of FREE_FEATURE_PAGES) {
-  add(`/${p.slug}`, p.titleEs, p.descEs);
+  add(`/${p.slug}`, p.titleEs, p.descEs, 'es');
 }
 
 // ── Quote/proposal generator pages (QuoteSeoLanding.tsx) ────────────────
@@ -124,16 +135,23 @@ add(
   '/documentos-electronicos',
   'Descargar XML de la DIAN y pasarlos a Excel — Automatización para Contadores | Codec Document',
   'Convierte los XML de la DIAN en información contable lista para usar: arrastra los ZIP y obtén el Excel con IVA, retenciones y totales cuadrados. Cruza lo reportado en la DIAN contra tu contabilidad y detecta las facturas que faltan. Hecho en Colombia para contadores.',
+  'es',
 );
 
 // ── Automatizacion para Contadores por ciudad (12 paginas, solo Colombia) ─
+//
+// Se registra tambien la foto del hero. Es el elemento LCP de la pagina y vive
+// dentro de ContadorDianLanding, que se carga de forma diferida: sin precarga,
+// el navegador no descubre la imagen hasta que arranca React y llega el chunk,
+// asi que la descarga empieza tarde y el LCP se dispara. Con el <link
+// rel="preload"> en el shell, imagen y JavaScript viajan en paralelo.
 for (const c of CIUDADES_CONTADOR) {
-  add(`/${c.slug}`, c.titleTag, c.metaDescription);
+  add(`/${c.slug}`, c.titleTag, c.metaDescription, 'es', c.fotos[0]);
 }
 
 // ── Las mismas herramientas, por NECESIDAD en vez de por ciudad ──────────
 for (const n of NECESIDADES_CONTADOR) {
-  add(`/${n.slug}`, n.titleTag, n.metaDescription);
+  add(`/${n.slug}`, n.titleTag, n.metaDescription, 'es', n.fotos[0]);
 }
 
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');

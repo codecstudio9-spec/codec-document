@@ -173,6 +173,34 @@ export function LandingFooter() {
             ))}
           </div>
 
+          {/* Puerta de entrada al grupo de páginas de contadores (DIAN).
+              Sin esto el grupo quedaba cerrado sobre sí mismo: sus 25 páginas
+              se enlazan entre ellas, pero ninguna página pública del sitio
+              enlazaba hacia dentro, así que Google sólo las conocía por el
+              sitemap — la señal más débil que hay, y la razón habitual de que
+              una sección entera se quede sin indexar.
+
+              Se enlaza el concentrador y las cuatro consultas de más volumen,
+              no las 25: un bloque de 25 enlaces repetido en todo el sitio se
+              lee como relleno, y el concentrador ya reparte hacia el resto.
+
+              Sólo en español. Estas páginas son de Colombia y sólo existen en
+              español; ofrecérselas a quien lee una página en inglés de un
+              contrato de arrendamiento de California no ayuda a nadie y le
+              manda a Google una señal de tema incoherente. */}
+          {language !== 'en' && (
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-600">Contadores en Colombia:</span>
+              <a href="/documentos-electronicos" className="transition hover:text-white">Descargar XML de la DIAN</a>
+              <span className="text-slate-700">·</span>
+              <a href="/convertir-xml-dian-a-excel" className="transition hover:text-white">Pasar XML a Excel</a>
+              <span className="text-slate-700">·</span>
+              <a href="/descargador-masivo-dian-gratis" className="transition hover:text-white">Descarga masiva gratis</a>
+              <span className="text-slate-700">·</span>
+              <a href="/como-descargar-xml-de-la-dian" className="transition hover:text-white">Cómo descargar los XML</a>
+            </div>
+          )}
+
           <div className="flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row">
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} <span translate="no" className="notranslate">Codec Document</span>. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
