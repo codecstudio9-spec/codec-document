@@ -92,6 +92,10 @@
   ],
   "rewrites": [
     {
+      "source": "/automatizar-cierre-contable-mensual",
+      "destination": "/automatizar-cierre-contable-mensual.html"
+    },
+    {
       "source": "/blog/acuerdos-voluntariado-ongs-contratos",
       "destination": "/blog/acuerdos-voluntariado-ongs-contratos.html"
     },
@@ -408,6 +412,18 @@
       "destination": "/commercial-proposal-generator.html"
     },
     {
+      "source": "/como-descargar-xml-de-la-dian",
+      "destination": "/como-descargar-xml-de-la-dian.html"
+    },
+    {
+      "source": "/conciliar-facturas-electronicas-con-contabilidad",
+      "destination": "/conciliar-facturas-electronicas-con-contabilidad.html"
+    },
+    {
+      "source": "/convertir-xml-dian-a-excel",
+      "destination": "/convertir-xml-dian-a-excel.html"
+    },
+    {
       "source": "/cotizacion-profesional",
       "destination": "/cotizacion-profesional.html"
     },
@@ -422,6 +438,18 @@
     {
       "source": "/crear-documentos-online-gratis",
       "destination": "/crear-documentos-online-gratis.html"
+    },
+    {
+      "source": "/descargador-masivo-dian-gratis",
+      "destination": "/descargador-masivo-dian-gratis.html"
+    },
+    {
+      "source": "/descargar-facturas-electronicas-dian-masivamente",
+      "destination": "/descargar-facturas-electronicas-dian-masivamente.html"
+    },
+    {
+      "source": "/descargar-facturas-recibidas-dian",
+      "destination": "/descargar-facturas-recibidas-dian.html"
     },
     {
       "source": "/descargar-xml-dian-barranquilla",
@@ -470,6 +498,10 @@
     {
       "source": "/descargar-xml-dian-villavicencio",
       "destination": "/descargar-xml-dian-villavicencio.html"
+    },
+    {
+      "source": "/documento-soporte-electronico-dian",
+      "destination": "/documento-soporte-electronico-dian.html"
     },
     {
       "source": "/documentos-electronicos",
@@ -554,6 +586,10 @@
     {
       "source": "/generador-de-cotizaciones",
       "destination": "/generador-de-cotizaciones.html"
+    },
+    {
+      "source": "/importar-facturas-electronicas-a-siigo",
+      "destination": "/importar-facturas-electronicas-a-siigo.html"
     },
     {
       "source": "/independent-contractor-alabama",
@@ -912,6 +948,14 @@
       "destination": "/nda-wisconsin.html"
     },
     {
+      "source": "/nomina-electronica-dian-descargar-xml",
+      "destination": "/nomina-electronica-dian-descargar-xml.html"
+    },
+    {
+      "source": "/notas-credito-debito-dian-xml",
+      "destination": "/notas-credito-debito-dian-xml.html"
+    },
+    {
       "source": "/professional-quote-template",
       "destination": "/professional-quote-template.html"
     },
@@ -1024,8 +1068,16 @@
       "destination": "/propuesta-comercial.html"
     },
     {
+      "source": "/que-es-el-cufe-factura-electronica",
+      "destination": "/que-es-el-cufe-factura-electronica.html"
+    },
+    {
       "source": "/quote-generator",
       "destination": "/quote-generator.html"
+    },
+    {
+      "source": "/reporte-retenciones-facturas-electronicas",
+      "destination": "/reporte-retenciones-facturas-electronicas.html"
     },
     {
       "source": "/san-jose-california",

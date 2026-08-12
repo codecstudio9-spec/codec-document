@@ -544,6 +544,75 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
 
+  // Automatizacion para Contadores -- paginas por NECESIDAD (no por ciudad).
+  // Misma plantilla; se distinguen por su slug. Cada una responde una
+  // intencion de busqueda distinta para que no compitan entre ellas.
+  // Ver contador-necesidad-seo-content.ts.
+  {
+    path: "/como-descargar-xml-de-la-dian",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/que-es-el-cufe-factura-electronica",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/documento-soporte-electronico-dian",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-facturas-electronicas-dian-masivamente",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargador-masivo-dian-gratis",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/convertir-xml-dian-a-excel",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-facturas-recibidas-dian",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/importar-facturas-electronicas-a-siigo",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/conciliar-facturas-electronicas-con-contabilidad",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/reporte-retenciones-facturas-electronicas",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/nomina-electronica-dian-descargar-xml",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/automatizar-cierre-contable-mensual",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/notas-credito-debito-dian-xml",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
   // Automatizacion para Contadores (modulo DIAN) -- 12 ciudades de Colombia.
   // Todas apuntan al MISMO componente, que resuelve su contenido desde la
   // ruta: doce archivos identicos serian doce sitios donde arreglar el mismo

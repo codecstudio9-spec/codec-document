@@ -217,13 +217,20 @@ function DashboardContent() {
             onClick={() => navigate('/documentos-electronicos')}
             className="relative flex w-full items-center justify-center gap-2 overflow-hidden text-white"
             style={{
-              borderRadius: 16, height: 52, fontWeight: 700, fontSize: 14,
-              background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)',
-              boxShadow: '0 10px 22px rgba(4,120,87,0.30)',
+              borderRadius: 16, height: 52, fontWeight: 900, fontSize: 16, letterSpacing: '0.03em',
+              // Verde con relieve, igual que en escritorio: el claro fuera del
+              // centro, luz interior arriba y sombra dura abajo. Un degradado
+              // de dos paradas se ve plano; el volumen viene de las sombras
+              // interiores, no del degradado.
+              background: 'linear-gradient(135deg, #047857 0%, #10B981 45%, #059669 70%, #065F46 100%)',
+              boxShadow: '0 12px 26px rgba(5,150,105,0.42), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.22)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.35)',
             }}
           >
             <FileSpreadsheet className="size-4" />
-            {language === 'en' ? 'Accounting Automation' : 'Automatización Contable'}
+            {/* Sólo «DIAN»: es como el contador llama a esto, y el nombre
+                largo se partía en dos líneas dentro de un botón de 52px. */}
+            DIAN
             <span className="absolute right-3 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
               {language === 'en' ? 'Beta' : 'Beta'}
             </span>

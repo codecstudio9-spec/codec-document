@@ -99,9 +99,12 @@ function DashboardHomeContent() {
           ...(verDian
             ? [{
                 icon: FileSpreadsheet,
-                label: language === 'en' ? 'Accounting Automation' : 'Automatización Contable',
+                // Sólo «DIAN». Es como el contador llama a esto, y en un botón
+                // de cinco palabras el nombre largo se partía en dos líneas y
+                // desalineaba la fila entera.
+                label: 'DIAN',
                 onClick: () => navigate('/documentos-electronicos'),
-                variant: 'default' as const,
+                variant: 'dian' as const,
               }]
             : []),
         ].map(({ icon: Icon, label, onClick, variant }) => (
@@ -114,17 +117,40 @@ function DashboardHomeContent() {
             className="relative flex items-center gap-3 overflow-hidden p-5 text-left"
             style={{
               borderRadius: CARD_RADIUS,
-              background: variant === 'primary' ? BLUE_GRADIENT : variant === 'quotes' ? 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)' : '#FFFFFF',
-              boxShadow: variant === 'primary' ? '0 14px 28px rgba(37,99,235,0.30)' : variant === 'quotes' ? '0 14px 28px rgba(67,56,202,0.30)' : CARD_SHADOW,
+              // El verde de DIAN va con relieve: degradado con el claro fuera
+              // del centro, una luz interior arriba y una sombra proyectada del
+              // mismo tono. Eso es lo que lo hace ver como una pieza y no como
+              // un rectángulo de color plano.
+              background: variant === 'primary' ? BLUE_GRADIENT
+                : variant === 'quotes' ? 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)'
+                : variant === 'dian' ? 'linear-gradient(135deg, #047857 0%, #10B981 45%, #059669 70%, #065F46 100%)'
+                : '#FFFFFF',
+              boxShadow: variant === 'primary' ? '0 14px 28px rgba(37,99,235,0.30)'
+                : variant === 'quotes' ? '0 14px 28px rgba(67,56,202,0.30)'
+                : variant === 'dian' ? '0 14px 30px rgba(5,150,105,0.42), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.22)'
+                : CARD_SHADOW,
             }}
           >
             <div
               className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: variant === 'default' ? '#EFF6FF' : 'rgba(255,255,255,0.18)' }}
+              style={{
+                background: variant === 'default' ? '#EFF6FF' : 'rgba(255,255,255,0.18)',
+                boxShadow: variant === 'dian' ? 'inset 0 1px 0 rgba(255,255,255,0.45)' : undefined,
+              }}
             >
               <Icon className="size-4.5" style={{ color: variant === 'default' ? '#2563EB' : '#fff' }} />
             </div>
-            <span className="text-sm font-bold" style={{ color: variant === 'default' ? '#111827' : '#fff' }}>{label}</span>
+            <span
+              className={variant === 'dian' ? 'text-base font-black tracking-wide' : 'text-sm font-bold'}
+              style={{
+                color: variant === 'default' ? '#111827' : '#fff',
+                // Sombra bajo el texto: lo despega del fondo y remata el
+                // efecto de relieve.
+                textShadow: variant === 'dian' ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
+              }}
+            >
+              {label}
+            </span>
             {variant === 'quotes' && (
               <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                 <Sparkles className="size-2.5" /> {language === 'en' ? 'New' : 'Nuevo'}

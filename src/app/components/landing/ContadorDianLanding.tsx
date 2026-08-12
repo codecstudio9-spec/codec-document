@@ -42,6 +42,7 @@ import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { FAQAccordion } from './LandingSections';
 import { CIUDADES_CONTADOR, CAPACIDADES, type CiudadContadorSeo } from '../../data/contador-dian-seo-content';
+import { NECESIDADES_CONTADOR } from '../../data/contador-necesidad-seo-content';
 import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
 
 const COLOMBIA = LATAM_COUNTRIES.find((c) => c.slug === 'colombia')!;
@@ -67,6 +68,8 @@ const PASOS_MANUALES = [
 
 function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
   const url = `${SITE_URL}/${ciudad.slug}`;
+  // Las paginas por necesidad no tienen ciudad; se distingue por eso.
+  const esCiudad = Boolean(ciudad.ciudad);
   const [foto1, foto2, foto3] = ciudad.fotos;
 
   return (
@@ -425,25 +428,65 @@ function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
         }
       />
 
-      {/* ── Otras ciudades ──────────────────────────────────────────────── */}
-      <section className="border-t border-slate-200 bg-slate-50 py-14">
-        <div className="container mx-auto px-4">
-          <h2 className="text-center text-sm font-black uppercase tracking-wide text-slate-400">
-            Disponible en toda Colombia
-          </h2>
-          <div className="mx-auto mt-5 flex max-w-4xl flex-wrap justify-center gap-2">
-            {CIUDADES_CONTADOR.filter((c) => c.slug !== ciudad.slug).map((c) => (
-              <Link
-                key={c.slug}
-                to={`/${c.slug}`}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-              >
-                {c.ciudad}
-              </Link>
-            ))}
+      {/* ── Enlaces internos ────────────────────────────────────────────
+          Una página por ciudad enlaza a las otras ciudades; una por necesidad
+          enlaza a las otras necesidades Y a las ciudades. Cruzarlas al azar
+          repartiría mal la autoridad: lo que Google entiende como un grupo
+          temático son páginas que se citan entre sí porque tratan lo mismo. */}
+      {esCiudad ? (
+        <section className="border-t border-slate-200 bg-slate-50 py-14">
+          <div className="container mx-auto px-4">
+            <h2 className="text-center text-sm font-black uppercase tracking-wide text-slate-400">
+              Disponible en toda Colombia
+            </h2>
+            <div className="mx-auto mt-5 flex max-w-4xl flex-wrap justify-center gap-2">
+              {CIUDADES_CONTADOR.filter((c) => c.slug !== ciudad.slug).map((c) => (
+                <Link
+                  key={c.slug}
+                  to={`/${c.slug}`}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                >
+                  {c.ciudad}
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="border-t border-slate-200 bg-slate-50 py-14">
+          <div className="container mx-auto px-4">
+            <h2 className="text-center text-sm font-black uppercase tracking-wide text-slate-400">
+              Otras preguntas que resuelve
+            </h2>
+            <div className="mx-auto mt-5 grid max-w-4xl gap-2.5 sm:grid-cols-2">
+              {NECESIDADES_CONTADOR.filter((n) => n.slug !== ciudad.slug).slice(0, 8).map((n) => (
+                <Link
+                  key={n.slug}
+                  to={`/${n.slug}`}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                >
+                  {n.h1Accent} {n.h1Rest}
+                </Link>
+              ))}
+            </div>
+
+            <h3 className="mt-10 text-center text-sm font-black uppercase tracking-wide text-slate-400">
+              Y en tu ciudad
+            </h3>
+            <div className="mx-auto mt-4 flex max-w-4xl flex-wrap justify-center gap-2">
+              {CIUDADES_CONTADOR.map((c) => (
+                <Link
+                  key={c.slug}
+                  to={`/${c.slug}`}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                >
+                  {c.ciudad}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <LandingFooter />
     </div>
@@ -453,7 +496,12 @@ function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
 export default function ContadorDianLanding() {
   const { pathname } = useLocation();
   const slug = pathname.replace(/^\//, '').replace(/\/$/, '');
-  const ciudad = CIUDADES_CONTADOR.find((c) => c.slug === slug) ?? CIUDADES_CONTADOR[0];
+  // Las veinticuatro paginas -- doce por ciudad y doce por necesidad -- usan
+  // esta misma plantilla y se distinguen por su slug.
+  const ciudad =
+    CIUDADES_CONTADOR.find((c) => c.slug === slug)
+    ?? NECESIDADES_CONTADOR.find((n) => n.slug === slug)
+    ?? CIUDADES_CONTADOR[0];
 
   return (
     <FixedLanguageProvider defaultLanguage="es">

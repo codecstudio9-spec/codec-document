@@ -31,6 +31,7 @@ import { PROFESSION_PAGES } from '../src/app/data/profession-seo-content';
 import { FREE_FEATURE_PAGES } from '../src/app/data/free-feature-seo-content';
 import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
 import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
+import { NECESIDADES_CONTADOR } from '../src/app/data/contador-necesidad-seo-content';
 
 const manifest: Record<string, { title: string; description: string }> = {};
 
@@ -128,6 +129,11 @@ add(
 // ── Automatizacion para Contadores por ciudad (12 paginas, solo Colombia) ─
 for (const c of CIUDADES_CONTADOR) {
   add(`/${c.slug}`, c.titleTag, c.metaDescription);
+}
+
+// ── Las mismas herramientas, por NECESIDAD en vez de por ciudad ──────────
+for (const n of NECESIDADES_CONTADOR) {
+  add(`/${n.slug}`, n.titleTag, n.metaDescription);
 }
 
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');
