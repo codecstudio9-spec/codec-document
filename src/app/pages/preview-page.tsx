@@ -43,6 +43,32 @@ export function normalizeCorruptedText(input: string): string {
     .replace(/â•/g, '═').replace(/Ã/g, 'í');
 }
 
+/**
+ * Cómo se llama quien firma, en el informe de firmas.
+ *
+ * Estaba fijo a «Arrendador» y «Arrendatario» para todo. Una carta de renuncia
+ * salía firmada por el ARRENDADOR, que no es un error de traducción sino de
+ * significado: el informe de firmas es la parte del PDF que sirve como prueba
+ * de quién firmó qué, y ahí un rol inventado desmiente al documento.
+ *
+ * Sólo se nombra el rol cuando la plantilla lo tiene claro. En los demás casos
+ * «Firmante» es exacto y no afirma nada que el documento no diga.
+ */
+const ROLES_POR_PLANTILLA: Record<string, { propio: [string, string]; otro: [string, string] }> = {
+  // [es, en]
+  'residential-lease':   { propio: ['Arrendador', 'Landlord'], otro: ['Arrendatario', 'Tenant'] },
+  'resignation-letter':  { propio: ['Trabajador', 'Employee'], otro: ['Empresa', 'Employer'] },
+  'promissory-note':     { propio: ['Deudor', 'Borrower'],     otro: ['Acreedor', 'Lender'] },
+  'bill-of-sale-vehicle':{ propio: ['Vendedor', 'Seller'],     otro: ['Comprador', 'Buyer'] },
+};
+
+export function rolDeFirmante(templateId: string, esElPropio: boolean, language: 'en' | 'es'): string {
+  const roles = ROLES_POR_PLANTILLA[templateId];
+  if (!roles) return language === 'es' ? 'Firmante' : 'Signatory';
+  const par = esElPropio ? roles.propio : roles.otro;
+  return language === 'es' ? par[0] : par[1];
+}
+
 export function normalizeLanguageSensitiveFields(data: DocumentData, language: 'en' | 'es'): DocumentData {
   const next: DocumentData = { ...data };
   const specialRaw = String(next.special_provisions ?? '').trim();
@@ -1039,9 +1065,7 @@ export function PreviewPage() {
         : placedSignatures.length > 0
           ? placedSignatures.map((sig) => ({
               signerName:       sig.name,
-              signerRole:       sig.id === 'owner'
-                ? (exportLanguage === 'es' ? 'Arrendador' : 'Landlord')
-                : (exportLanguage === 'es' ? 'Arrendatario' : 'Tenant'),
+              signerRole:       rolDeFirmante(template.id, sig.id === 'owner', exportLanguage),
               signatureDataUrl: sig.dataUrl,
               guestSignedAt:    new Date().toISOString(),
               xDocPct:          sig.xPct,

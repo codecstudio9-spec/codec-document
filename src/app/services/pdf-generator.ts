@@ -1932,9 +1932,16 @@ export class PDFGenerator {
     const M   = this.margin;
 
     // ── Dark header band ───────────────────────────────────────────────────
-    const HEADER_H = 26;
+    //
+    // Empieza DEBAJO de los 10 mm que ocupa el encabezado de marca. Ese
+    // encabezado lo pinta addDocumentChrome sobre todas las páginas, y lo hace
+    // al final, cuando esta página ya está dibujada: la banda blanca caía
+    // encima de la franja oscura y le cortaba la mitad de arriba al título,
+    // que quedaba ilegible partido justo por el medio.
+    const CHROME_H = 10;
+    const HEADER_H = CHROME_H + 26;
     this.doc.setFillColor(18, 20, 33);
-    this.doc.rect(0, 0, PW, HEADER_H, 'F');
+    this.doc.rect(0, CHROME_H, PW, HEADER_H - CHROME_H, 'F');
     this.doc.setFillColor(90, 105, 233);
     this.doc.rect(0, HEADER_H - 2, PW, 2, 'F');
 
@@ -1942,7 +1949,7 @@ export class PDFGenerator {
     this.setFontForLang('bold');
     this.doc.setFontSize(13);
     this.doc.setTextColor(255, 255, 255);
-    this.safeText(reportTitle, PW / 2, 11, { align: 'center' });
+    this.safeText(reportTitle, PW / 2, CHROME_H + 11, { align: 'center' });
 
     const subtitle = language === 'es'
       ? `Documento: ${docTitle.slice(0, 60)}`
@@ -1950,7 +1957,7 @@ export class PDFGenerator {
     this.setFontForLang('normal');
     this.doc.setFontSize(7);
     this.doc.setTextColor(200, 210, 240);
-    this.safeText(subtitle, PW / 2, 18, { align: 'center' });
+    this.safeText(subtitle, PW / 2, CHROME_H + 18, { align: 'center' });
 
     // If a selfie is available, render a professional square thumbnail at top-right
     if (selfieDataUrl) {
