@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
   ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw, Activity, Globe2, PenLine,
-  Palette, SlidersHorizontal, Check,
+  Palette, SlidersHorizontal, Check, MessageCircle, Mail,
 } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
@@ -228,10 +228,67 @@ export function MyQuoteEditorPage() {
 
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [borradorRecuperado, setBorradorRecuperado] = useState(false);
+
+  // ── Borrador local ─────────────────────────────────────────────────────
+  //
+  // Todo lo escrito vivía sólo en el estado de React. Bastaba con recargar,
+  // volver atrás, o que el móvil descargara la pestaña de memoria para
+  // perder una cotización entera sin haber tocado nada — y quien la había
+  // llenado tenía que empezar de cero.
+  //
+  // Se guarda en localStorage mientras se escribe y se recupera al volver.
+  // Es local a propósito: guardar en el servidor cada tecla crearía
+  // cotizaciones a medio hacer que consumirían cupo y ensuciarían el panel.
+  const claveBorrador = `codec:cotizacion:${quoteId ?? 'nueva'}`;
+
+  useEffect(() => {
+    if (loading) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(claveBorrador, JSON.stringify({
+          clientName, clientCompany, clientPosition, clientEmail, clientPhone, clientAddress,
+          projectName, executiveSummary, projectObjective, projectScope,
+          items, blocks, template, brandColor, quoteType,
+          guardadoEn: Date.now(),
+        }));
+      } catch { /* sin espacio en disco o modo privado: no es motivo para romper el editor */ }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [
+    claveBorrador, loading, clientName, clientCompany, clientPosition, clientEmail,
+    clientPhone, clientAddress, projectName, executiveSummary, projectObjective,
+    projectScope, items, blocks, template, brandColor, quoteType,
+  ]);
 
   useEffect(() => {
     if (!isEditing) {
       detectSignerCountryCode().then(setCountryCode).catch(() => {});
+      // Al abrir una cotización nueva se mira si quedó algo a medio escribir.
+      try {
+        const crudo = localStorage.getItem('codec:cotizacion:nueva');
+        if (!crudo) return;
+        const b = JSON.parse(crudo) as Record<string, unknown> & { guardadoEn?: number };
+        // Una semana. Más allá, lo que hay guardado ya no es «lo que estaba
+        // escribiendo» sino un resto olvidado que confunde más que ayuda.
+        if (!b.guardadoEn || Date.now() - b.guardadoEn > 7 * 24 * 60 * 60 * 1000) {
+          localStorage.removeItem('codec:cotizacion:nueva');
+          return;
+        }
+        if (!String(b.clientName ?? '').trim() && !(Array.isArray(b.items) && b.items.length > 1)) return;
+
+        setClientName(String(b.clientName ?? '')); setClientCompany(String(b.clientCompany ?? ''));
+        setClientPosition(String(b.clientPosition ?? '')); setClientEmail(String(b.clientEmail ?? ''));
+        setClientPhone(String(b.clientPhone ?? '')); setClientAddress(String(b.clientAddress ?? ''));
+        setProjectName(String(b.projectName ?? '')); setExecutiveSummary(String(b.executiveSummary ?? ''));
+        setProjectObjective(String(b.projectObjective ?? '')); setProjectScope(String(b.projectScope ?? ''));
+        if (Array.isArray(b.items) && b.items.length) setItems(b.items as QuoteLineItem[]);
+        if (b.blocks && typeof b.blocks === 'object') setBlocks(b.blocks as ProposalBlocks);
+        if (b.template) setTemplate(b.template as QuoteTemplate);
+        if (typeof b.brandColor === 'string' || b.brandColor === null) setBrandColor(b.brandColor as string | null);
+        if (b.quoteType) setQuoteType(b.quoteType as QuoteType);
+        setBorradorRecuperado(true);
+      } catch { /* un borrador ilegible se ignora, no se avisa */ }
       return;
     }
     getMyQuoteFull(id!).then((full) => {
@@ -296,6 +353,10 @@ export function MyQuoteEditorPage() {
    * available) or after a successful $6.99 PayPal capture. */
   const finalizeNewQuote = async (): Promise<string> => {
     const newId = await createQuote(buildQuoteInput(), items);
+    // Ya está en el servidor: el borrador local sobra, y dejarlo haría que la
+    // próxima cotización nueva apareciera rellenada con la anterior.
+    try { localStorage.removeItem('codec:cotizacion:nueva'); } catch { /* da igual */ }
+    setBorradorRecuperado(false);
     setQuoteId(newId);
     setQuotaExceeded(false);
     navigate(`/my-quotes/${newId}`, { replace: true });
@@ -421,6 +482,22 @@ export function MyQuoteEditorPage() {
     }
   };
 
+  /** Asunto y cuerpo del envío. Se arman con lo que ya hay en el formulario
+   *  —nombre del cliente, proyecto, total— para que el mensaje diga algo, en
+   *  vez de mandar un enlace suelto. */
+  const asuntoDeEnvio = () => {
+    const quien = projectName || documentTitle;
+    return language === 'en' ? `${quien} — quote for you` : `${quien} — cotización para ti`;
+  };
+
+  const mensajeDeEnvio = () => {
+    const saludo = clientName ? (language === 'en' ? `Hi ${clientName},` : `Hola ${clientName},`) : (language === 'en' ? 'Hi,' : 'Hola,');
+    const cuerpo = language === 'en'
+      ? `here is the ${documentTitle.toLowerCase()} we prepared for you${projectName ? ` for ${projectName}` : ''}. Total: $${totals.total.toFixed(2)}.\n\nYou can review it and sign it here:`
+      : `aquí tienes la ${documentTitle.toLowerCase()} que preparamos para ti${projectName ? ` para ${projectName}` : ''}. Total: $${totals.total.toFixed(2)}.\n\nPuedes revisarla y firmarla aquí:`;
+    return `${saludo} ${cuerpo}\n${shareLink ?? ''}`;
+  };
+
   const handleCopyLink = async () => {
     if (!shareLink) return;
     await navigator.clipboard.writeText(shareLink);
@@ -449,6 +526,27 @@ export function MyQuoteEditorPage() {
             ? 'Create, send, and get this quote signed — a full agreement, not just a PDF.'
             : 'Crea, envía y logra que firmen esta cotización — un acuerdo completo, no solo un PDF.'}
         </p>
+
+        {borradorRecuperado && (
+          <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <RefreshCw className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+            <p className="text-xs leading-relaxed text-amber-800">
+              {language === 'en'
+                ? 'We brought back what you had written but had not saved yet. Keep going where you left off, or clear it and start fresh.'
+                : 'Recuperamos lo que habías escrito y aún no habías guardado. Sigue donde lo dejaste, o bórralo y empieza de nuevo.'}
+              <button
+                type="button"
+                onClick={() => {
+                  try { localStorage.removeItem('codec:cotizacion:nueva'); } catch { /* da igual */ }
+                  window.location.reload();
+                }}
+                className="ml-2 font-bold underline"
+              >
+                {language === 'en' ? 'Start fresh' : 'Empezar de nuevo'}
+              </button>
+            </p>
+          </div>
+        )}
 
         {quoteStatus && quoteStatus !== 'draft' && (
           <div className="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4">
@@ -514,6 +612,29 @@ export function MyQuoteEditorPage() {
                 {copied ? <CheckCheck className="size-3.5" /> : <Copy className="size-3.5" />}
                 {copied ? (language === 'en' ? 'Copied' : 'Copiado') : (language === 'en' ? 'Copy' : 'Copiar')}
               </button>
+            </div>
+
+            {/* Enviar por WhatsApp o correo.
+                El mensaje va ya redactado: quien acaba de armar una
+                cotización no debería tener que escribir además el mensaje
+                con el que la manda, y una cotización que llega como un enlace
+                pelado y sin contexto parece correo basura. */}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(mensajeDeEnvio())}`, '_blank', 'noopener')}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] py-2.5 text-xs font-bold text-white shadow-sm"
+              >
+                <MessageCircle className="size-4" />
+                WhatsApp
+              </button>
+              <a
+                href={`mailto:${clientEmail}?subject=${encodeURIComponent(asuntoDeEnvio())}&body=${encodeURIComponent(mensajeDeEnvio())}`}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-700 py-2.5 text-xs font-bold text-white shadow-sm"
+              >
+                <Mail className="size-4" />
+                {language === 'en' ? 'Email' : 'Correo'}
+              </a>
             </div>
           </div>
         )}

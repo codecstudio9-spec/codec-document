@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import {
   ArrowLeft, Plus, FileText, Loader, Download, Copy, Send, Trash2,
   DollarSign, TrendingUp, Eye, Pencil, FolderPlus, Folder, FolderOpen, X, Check,
+  MessageCircle, Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -136,6 +137,17 @@ export function MyQuotesPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error');
     }
+  };
+
+  /** Mensaje con el que se reenvía una cotización ya guardada. */
+  const mensajeCorto = (q: Quote) => {
+    const saludo = q.client_name
+      ? (language === 'en' ? `Hi ${q.client_name},` : `Hola ${q.client_name},`)
+      : (language === 'en' ? 'Hi,' : 'Hola,');
+    const cuerpo = language === 'en'
+      ? `here is the quote we prepared${q.project_name ? ` for ${q.project_name}` : ''}. Total: $${q.total.toFixed(2)}.`
+      : `aquí tienes la cotización que preparamos${q.project_name ? ` para ${q.project_name}` : ''}. Total: $${q.total.toFixed(2)}.`;
+    return `${saludo} ${cuerpo}\n${q.pdf_url ?? ''}`;
   };
 
   const visibles = (quotes ?? []).filter((q) => {
@@ -353,9 +365,35 @@ export function MyQuotesPage() {
                     <Send className="size-4" />
                   </button>
                   {q.pdf_url && (
-                    <a href={q.pdf_url} target="_blank" rel="noopener noreferrer" title={language === 'en' ? 'Download' : 'Descargar'} className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600">
-                      <Download className="size-4" />
-                    </a>
+                    <>
+                      <a href={q.pdf_url} target="_blank" rel="noopener noreferrer" title={language === 'en' ? 'Download' : 'Descargar'} className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600">
+                        <Download className="size-4" />
+                      </a>
+                      {/* Reenviar una cotización ya hecha. Se comparte el PDF
+                          que se guardó al enviarla, no un enlace de firma
+                          nuevo: ese ya lo tiene el cliente y generar otro
+                          crearía dos caminos vivos para el mismo documento. */}
+                      <button
+                        type="button"
+                        title="WhatsApp"
+                        onClick={() => window.open(
+                          `https://wa.me/?text=${encodeURIComponent(mensajeCorto(q))}`,
+                          '_blank', 'noopener',
+                        )}
+                        className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
+                      >
+                        <MessageCircle className="size-4" />
+                      </button>
+                      <a
+                        title={language === 'en' ? 'Email' : 'Correo'}
+                        href={`mailto:${q.client_email ?? ''}?subject=${encodeURIComponent(
+                          language === 'en' ? `${q.project_name || q.quote_number} — quote` : `${q.project_name || q.quote_number} — cotización`,
+                        )}&body=${encodeURIComponent(mensajeCorto(q))}`}
+                        className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
+                      >
+                        <Mail className="size-4" />
+                      </a>
+                    </>
                   )}
                   <button type="button" disabled={duplicating === q.id} onClick={() => void handleDuplicate(q)} title={language === 'en' ? 'Duplicate' : 'Duplicar'} className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600 disabled:opacity-40">
                     {duplicating === q.id ? <Loader className="size-4 animate-spin" /> : <Copy className="size-4" />}
