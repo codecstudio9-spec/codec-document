@@ -104,3 +104,46 @@ export async function setPromoCodeActive(code: string, active: boolean): Promise
   const { error } = await supabase.rpc('admin_set_promo_code_active', { p_code: code, p_active: active });
   if (error) throw new Error(error.message);
 }
+
+// ─── Planes de PayPal con precio rebajado ───────────────────────────────
+//
+// Un descuento parcial sobre una SUSCRIPCIÓN no se puede aplicar cambiando
+// una cifra: el importe vive dentro del Billing Plan de PayPal. Hace falta un
+// plan aparte con el precio ya rebajado, y a eso suscribir a la persona.
+//
+// Los tres productos de suscripción son los únicos que lo necesitan; un pago
+// único lleva el importe en la propia orden.
+export const PRODUCTOS_DE_SUSCRIPCION = ['sub_monthly', 'sub_semiannual', 'sub_annual'];
+
+export interface PlanRebajado {
+  product: string;
+  discountPct: number;
+  planId: string;
+  amount: number;
+}
+
+/** Crea el plan en PayPal (o devuelve el que ya existiera para esa
+ *  combinación producto+porcentaje: los planes de PayPal no se pueden
+ *  borrar, sólo desactivar, así que no se crean por duplicado). */
+export async function crearPlanRebajado(product: string, discountPct: number): Promise<{ planId: string; amount: number; reused: boolean }> {
+  const { data, error } = await supabase.functions.invoke('paypal-discount-plan', {
+    body: { product, discountPct },
+  });
+  if (error) {
+    const detalle = (data as { error?: string } | null)?.error;
+    throw new Error(detalle || error.message || 'No se pudo crear el plan en PayPal.');
+  }
+  if (!data?.planId) throw new Error(data?.error || 'PayPal no devolvió un plan.');
+  return { planId: String(data.planId), amount: Number(data.amount), reused: Boolean(data.reused) };
+}
+
+export async function listarPlanesRebajados(): Promise<PlanRebajado[]> {
+  const { data, error } = await supabase.rpc('admin_list_discount_plans');
+  if (error) return [];
+  return ((data as any[]) ?? []).map((r) => ({
+    product: r.product,
+    discountPct: Number(r.discount_pct),
+    planId: r.plan_id,
+    amount: Number(r.amount),
+  }));
+}

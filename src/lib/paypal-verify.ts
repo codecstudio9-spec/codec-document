@@ -93,6 +93,27 @@ export async function redeemPromoCode(
   return { verified: true, product: data.product };
 }
 
+/**
+ * El plan_id de PayPal con el precio ya rebajado, para suscribir a alguien
+ * que aplicó un bono parcial.
+ *
+ * Devuelve `null` si ese plan no se ha creado todavía — el administrador lo
+ * crea desde el panel al hacer el bono. Sin plan no se puede aplicar el
+ * descuento a una suscripción, y es mejor decirlo que cobrar el precio
+ * entero como si el bono no existiera.
+ */
+export async function planRebajadoDe(
+  product: PaypalProduct,
+  discountPct: number,
+): Promise<{ planId: string; amount: number } | null> {
+  const { data, error } = await supabase.rpc('discount_plan_for', {
+    p_product: product, p_discount_pct: discountPct,
+  });
+  const fila = Array.isArray(data) ? data[0] : data;
+  if (error || !fila?.plan_id) return null;
+  return { planId: String(fila.plan_id), amount: Number(fila.amount) };
+}
+
 export interface DescuentoDeBono {
   code: string;
   discountPct: number;

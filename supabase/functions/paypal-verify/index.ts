@@ -489,12 +489,50 @@ Deno.serve(async (req) => {
           status: 402, headers: corsHeaders(origin),
         });
       }
-      if (!expectedPlanId || sub.plan_id !== expectedPlanId) {
+      // El plan puede ser el oficial O uno rebajado creado por
+      // paypal-discount-plan. Un plan rebajado sólo vale si está REGISTRADO
+      // en paypal_discount_plans para este mismo producto: sin esa
+      // comprobación bastaría con crear un plan de un céntimo en cualquier
+      // cuenta de PayPal y presentarlo aquí.
+      let importeSuscripcion = SUBSCRIPTION_PLANS[product].amount;
+      let planValido = Boolean(expectedPlanId) && sub.plan_id === expectedPlanId;
+
+      if (!planValido && sub.plan_id) {
+        const { data: planRebajado } = await admin
+          .from('paypal_discount_plans')
+          .select('amount, discount_pct')
+          .eq('plan_id', sub.plan_id)
+          .eq('product', product)
+          .maybeSingle();
+        if (planRebajado) {
+          planValido = true;
+          importeSuscripcion = Number(planRebajado.amount);
+          // El bono queda apuntado igual que en un pago único, para que
+          // cuente como uso y respete su tope.
+          if (promoCode && userId) {
+            const code = promoCode.trim().toUpperCase();
+            const { data: promo } = await admin
+              .from('promo_codes')
+              .select('active, expires_at, max_redemptions, redemption_count, discount_pct')
+              .eq('code', code)
+              .maybeSingle();
+            const vigente = promo?.active
+              && (!promo.expires_at || new Date(promo.expires_at) >= new Date())
+              && (promo.max_redemptions === null || promo.redemption_count < promo.max_redemptions)
+              && Number(promo.discount_pct) === Number(planRebajado.discount_pct);
+            if (vigente) {
+              promoAplicado = { code, descuento: Number(promo!.discount_pct), conteo: promo!.redemption_count as number };
+            }
+          }
+        }
+      }
+
+      if (!planValido) {
         return new Response(JSON.stringify({ error: 'Subscription plan_id does not match the requested product' }), {
           status: 402, headers: corsHeaders(origin),
         });
       }
-      paid = { amount: SUBSCRIPTION_PLANS[product].amount, currency: 'USD' };
+      paid = { amount: importeSuscripcion, currency: 'USD' };
       ledgerId = `sub:${subscriptionId}`;
     } else {
       // ── Orders API path (one-time payment) ─────────────────────────────

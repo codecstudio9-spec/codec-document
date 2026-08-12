@@ -22,7 +22,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  listPromoCodes, createPromoCode, setPromoCodeActive, DURACIONES, type PromoCode,
+  listPromoCodes, createPromoCode, setPromoCodeActive, DURACIONES,
+  crearPlanRebajado, listarPlanesRebajados, PRODUCTOS_DE_SUSCRIPCION,
+  type PromoCode, type PlanRebajado,
 } from '../../services/promo-admin-service';
 import {
   giftDocuments, listGiftedDocuments, type AdminGiftRow,
@@ -73,6 +75,8 @@ export function BonosYRegalosTab({ language }: { language: 'en' | 'es' }) {
   const [maxUsos, setMaxUsos] = useState('');
   const [nota, setNota] = useState('');
   const [copiado, setCopiado] = useState<string | null>(null);
+  const [planes, setPlanes] = useState<PlanRebajado[]>([]);
+  const [creandoPlan, setCreandoPlan] = useState(false);
 
   // ── Regalos ────────────────────────────────────────────────────────
   const [regalos, setRegalos] = useState<AdminGiftRow[]>([]);
@@ -84,9 +88,10 @@ export function BonosYRegalosTab({ language }: { language: 'en' | 'es' }) {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      const [c, g] = await Promise.all([listPromoCodes(), listGiftedDocuments()]);
+      const [c, g, p] = await Promise.all([listPromoCodes(), listGiftedDocuments(), listarPlanesRebajados()]);
       setCodigos(c);
       setRegalos(g);
+      setPlanes(p);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo cargar.');
     } finally {
@@ -95,6 +100,11 @@ export function BonosYRegalosTab({ language }: { language: 'en' | 'es' }) {
   }, []);
 
   useEffect(() => { void recargar(); }, [recargar]);
+
+  /** Sólo las suscripciones necesitan un plan aparte, y sólo si el descuento
+   *  no es total: un bono del 100% se concede sin pasar por PayPal. */
+  const necesitaPlan = descuento < 100 && PRODUCTOS_DE_SUSCRIPCION.includes(producto);
+  const planExistente = planes.find((p) => p.product === producto && p.discountPct === descuento);
 
   const crear = async () => {
     const code = palabra.trim().toUpperCase();
@@ -113,6 +123,28 @@ export function BonosYRegalosTab({ language }: { language: 'en' | 'es' }) {
         label: nota.trim() || undefined,
       });
       toast.success(es ? `Bono ${code} creado.` : `Coupon ${code} created.`);
+
+      // Un descuento parcial sobre una suscripción necesita además un plan
+      // de PayPal con ese precio: el importe de una suscripción vive dentro
+      // del plan, no de la orden. Se crea aquí mismo para que el bono quede
+      // utilizable, en vez de dejar uno que falla al usarlo.
+      if (necesitaPlan) {
+        try {
+          const r = await crearPlanRebajado(producto, descuento);
+          toast.success(es
+            ? (r.reused
+              ? `Ya existía el plan de PayPal al ${descuento}% ($${r.amount.toFixed(2)}); el bono lo usará.`
+              : `Plan de PayPal creado al ${descuento}%: $${r.amount.toFixed(2)}.`)
+            : `PayPal plan at ${descuento}%: $${r.amount.toFixed(2)}.`);
+        } catch (err) {
+          // El bono existe igualmente; lo que falta es el plan. Se dice tal
+          // cual para que no parezca que todo salió bien.
+          toast.error(es
+            ? `El bono se creó, pero el plan de PayPal falló: ${err instanceof Error ? err.message : ''}. Sin ese plan, este bono no funcionará en suscripciones.`
+            : `Coupon created, but the PayPal plan failed: ${err instanceof Error ? err.message : ''}`);
+        }
+      }
+
       setPalabra(''); setNota(''); setMaxUsos('');
       await recargar();
     } catch (err) {
@@ -248,6 +280,53 @@ export function BonosYRegalosTab({ language }: { language: 'en' | 'es' }) {
             />
           </div>
         </div>
+
+        {/* Aviso del plan de PayPal. Aparece sólo cuando de verdad hace
+            falta: descuento parcial sobre una suscripción. */}
+        {necesitaPlan && (
+          <div className={`mt-4 rounded-2xl border px-4 py-3 text-xs ${
+            planExistente ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'
+          }`}>
+            {planExistente ? (
+              <p>
+                {es
+                  ? `Ya existe el plan de PayPal al ${descuento}% (cobra $${planExistente.amount.toFixed(2)}). El bono lo usará automáticamente.`
+                  : `A PayPal plan at ${descuento}% already exists (charges $${planExistente.amount.toFixed(2)}). The coupon will use it.`}
+              </p>
+            ) : (
+              <>
+                <p className="font-semibold">
+                  {es ? 'Este bono necesita un plan de PayPal propio.' : 'This coupon needs its own PayPal plan.'}
+                </p>
+                <p className="mt-1 leading-relaxed">
+                  {es
+                    ? 'En una suscripción el importe vive dentro del plan de PayPal, no del cobro, así que no se puede rebajar sobre la marcha. Al crear el bono se creará también el plan con el precio ya rebajado.'
+                    : "In a subscription the amount lives inside the PayPal plan, not the order, so it cannot be discounted on the fly. Creating the coupon will also create the discounted plan."}
+                </p>
+                <button
+                  type="button"
+                  disabled={creandoPlan}
+                  onClick={async () => {
+                    setCreandoPlan(true);
+                    try {
+                      const r = await crearPlanRebajado(producto, descuento);
+                      toast.success(es ? `Plan creado: $${r.amount.toFixed(2)}` : `Plan created: $${r.amount.toFixed(2)}`);
+                      setPlanes(await listarPlanesRebajados());
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : 'Error');
+                    } finally {
+                      setCreandoPlan(false);
+                    }
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                >
+                  {creandoPlan ? <Loader className="size-3 animate-spin" /> : <Plus className="size-3" />}
+                  {es ? 'Crear el plan ahora' : 'Create the plan now'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <button
           type="button"

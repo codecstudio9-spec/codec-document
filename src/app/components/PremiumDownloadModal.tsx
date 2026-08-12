@@ -11,7 +11,7 @@ import {
   PAYPAL_LEASE_SDK_CLIENT_ID,
   type PlanKey,
 } from '../config/paypal';
-import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, planRebajadoDe, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 
 // ── kept for backward compatibility with any existing import
@@ -146,6 +146,9 @@ export function PremiumDownloadModal({
   /** Bono que NO es del 100%: no libera nada por sí solo, sólo rebaja el
    *  importe del botón de PayPal. El canje se registra al pagar. */
   const [promoParcial, setPromoParcial]   = useState<DescuentoDeBono | null>(null);
+  /** Plan de PayPal con el precio rebajado, cuando el bono parcial se aplica
+   *  a una suscripción. Null = se usa el plan oficial. */
+  const [planRebajado, setPlanRebajado]   = useState<{ planId: string; amount: number } | null>(null);
   const [sdkError, setSdkError]           = useState(false);
   const [sdkLoading, setSdkLoading]       = useState(false);
 
@@ -265,8 +268,11 @@ export function PremiumDownloadModal({
           const planProductMap: Record<PlanKey, 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
             monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
           };
+          // Con bono parcial se suscribe al plan REBAJADO. paypal-verify
+          // acepta ese plan_id sólo si está registrado en
+          // paypal_discount_plans para este mismo producto.
           buttonsConfig.createSubscription = (_: unknown, actions: PayPalActions) =>
-            actions.subscription.create({ plan_id: plan.planId });
+            actions.subscription.create({ plan_id: planRebajado?.planId ?? plan.planId });
           buttonsConfig.onApprove = async (data: { subscriptionID?: string }, actions: PayPalActions) => {
             const subId = data.subscriptionID
               ?? (actions.subscription as unknown as { subscriptionID?: string }).subscriptionID
@@ -277,6 +283,7 @@ export function PremiumDownloadModal({
               await verifyPaypalOrder({
                 subscriptionId: subId,
                 product: planProductMap[selectedPlan],
+                promoCode: promoParcial?.code,
               });
               onSuccess(`SUB-${subId}`);
               onOpenChange(false);
@@ -301,7 +308,7 @@ export function PremiumDownloadModal({
     // `promoParcial` entra en las dependencias porque el botón de PayPal se
     // construye con un importe fijo: sin esto, aplicar un bono cambiaría el
     // precio en pantalla pero cobraría el original.
-  }, [open, mode, isEmailValid, selectedPlan, promoApplied, user, promoParcial]);
+  }, [open, mode, isEmailValid, selectedPlan, promoApplied, user, promoParcial, planRebajado]);
 
   // Escape key
   useEffect(() => {
@@ -335,13 +342,24 @@ export function PremiumDownloadModal({
       const info = await consultarDescuento(code, context);
 
       if (info && info.discountPct < 100) {
-        // Un descuento parcial no se puede aplicar a una suscripción de
-        // PayPal: el importe lo fija el plan (plan_id), no la orden.
+        // En una suscripción el importe no está en la orden sino dentro del
+        // Billing Plan de PayPal, así que el descuento se aplica cambiando
+        // de plan. Ese plan lo crea el administrador junto con el bono; si
+        // no existe, se dice, en vez de cobrar el precio entero en silencio
+        // como si el bono no valiera.
         if (mode !== 'single') {
-          setPromoError(language === 'en'
-            ? 'This coupon is a partial discount and only works on one-off purchases, not on subscriptions.'
-            : 'Este bono es un descuento parcial y sólo sirve para compras sueltas, no para suscripciones.');
-          setPromoParcial(null);
+          const plan = await planRebajadoDe(planProductMap[selectedPlan], info.discountPct);
+          if (!plan) {
+            setPromoError(language === 'en'
+              ? 'This coupon has no discounted plan set up for this subscription yet.'
+              : 'Este bono todavía no tiene un plan con descuento configurado para esta suscripción.');
+            setPromoParcial(null);
+            return;
+          }
+          setPlanRebajado(plan);
+          setPromoParcial(info);
+          setPromoApplied(false);
+          setPromoError('');
           return;
         }
         setPromoParcial(info);
