@@ -53,6 +53,19 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
 
   const etiqueta = (id: string) => campos.find((c) => c.id === id)?.label ?? id;
 
+  const yaTiene = (id: string) => {
+    const v = datosActuales[id];
+    return v !== undefined && v !== '' && v !== false;
+  };
+
+  // Obligatorios primero, y dentro de cada grupo los que faltan antes que los
+  // que ya están: lo que hay que decir queda arriba, donde se lee.
+  const ordenados = [...campos].sort((a, b) => {
+    const peso = (c: typeof a) => (yaTiene(c.id) ? 2 : 0) + (c.required ? 0 : 1);
+    return peso(a) - peso(b);
+  });
+  const porDecir = campos.filter((c) => !yaTiene(c.id));
+
   const analizar = async () => {
     const limpio = texto.trim();
     if (limpio.length < 10) {
@@ -86,6 +99,14 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
     onAplicar(propuesta);
     onCerrar();
   };
+
+  const faltanObligatorios = propuesta
+    ? campos.filter((c) => {
+        if (!c.required) return false;
+        const v = propuesta[c.id] ?? datosActuales[c.id];
+        return v === undefined || v === '' || v === false;
+      })
+    : [];
 
   const sobrescribe = propuesta
     ? Object.keys(propuesta).filter((id) => {
@@ -137,6 +158,48 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                   : '"My name is John Smith, ID 1045223, I work as an accounting analyst at ABC Trading since March 2020 and my last day will be August 30th."'}
               </p>
 
+              {/* Qué hay que decir, a la vista mientras se habla.
+                  Sin esta lista hay que recordar de memoria un formulario de
+                  treinta campos, y lo que se olvida hay que escribirlo a mano
+                  después — justo el trabajo que se venía a evitar.
+                  Los obligatorios van primero y marcados: son los que impiden
+                  continuar si faltan. Los que ya están escritos se muestran
+                  tachados, para no repetirlos. */}
+              <details open className="mb-3 rounded-xl bg-white ring-1 ring-slate-200">
+                <summary className="cursor-pointer select-none px-3 py-2.5 text-xs font-semibold text-slate-700">
+                  {es
+                    ? `Qué puedes decir (${porDecir.length} sin llenar de ${campos.length})`
+                    : `What you can say (${porDecir.length} still empty of ${campos.length})`}
+                </summary>
+                <div className="max-h-44 overflow-y-auto border-t border-slate-100 px-3 py-2.5">
+                  <ul className="flex flex-wrap gap-1.5">
+                    {ordenados.map((c) => {
+                      const lleno = yaTiene(c.id);
+                      return (
+                        <li
+                          key={c.id}
+                          className={`rounded-lg px-2 py-1 text-[11px] leading-tight ${
+                            lleno
+                              ? 'bg-slate-50 text-slate-400 line-through'
+                              : c.required
+                                ? 'bg-blue-50 font-semibold text-blue-800'
+                                : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {c.label}
+                          {c.required && !lleno && <span className="ml-0.5 text-red-500">*</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                    {es
+                      ? 'No hace falta decirlos todos ni en orden. Lo que no digas se queda vacío y lo escribes a mano.'
+                      : 'You do not have to say them all, or in order. Anything you skip stays empty and you type it in.'}
+                  </p>
+                </div>
+              </details>
+
               <textarea
                 value={texto + (parcial ? (texto ? ' ' : '') + parcial : '')}
                 onChange={(e) => setTexto(e.target.value)}
@@ -185,6 +248,26 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                     ? `Se descartaron ${descartados} dato(s) que no encajaban en ningún campo. Escríbelos a mano.`
                     : `${descartados} value(s) did not fit any field and were discarded. Type them in manually.`}
                 </p>
+              )}
+
+              {/* Lo que sigue faltando después de aplicar. Es la mitad útil de
+                  la respuesta: saber qué se llenó sirve de poco si no se sabe
+                  qué queda, y son exactamente los campos que van a bloquear el
+                  botón de continuar. */}
+              {faltanObligatorios.length > 0 && (
+                <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    {es ? 'Todavía faltan (obligatorios)' : 'Still missing (required)'}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    {faltanObligatorios.map((c) => c.label).join(' · ')}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-slate-400">
+                    {es
+                      ? 'Puedes volver y dictarlos, o escribirlos en el formulario.'
+                      : 'You can go back and dictate them, or type them in the form.'}
+                  </p>
+                </div>
               )}
             </>
           )}

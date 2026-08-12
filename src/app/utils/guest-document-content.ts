@@ -34,7 +34,7 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   const state = String((documentData as { state?: unknown }).state ?? '');
   if (state) templateToUse = getStateSpecificTemplate(templateToUse, template.id, state, language);
 
-  const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(documentData, language), language);
+  const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(documentData, language, template.id), language);
 
   let content = templateToUse;
   content = content.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match, fieldName, innerContent) => {

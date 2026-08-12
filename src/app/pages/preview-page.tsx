@@ -741,7 +741,7 @@ export function PreviewPage() {
 
       let content = templateToUse;
       
-      const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(data, language), language);
+      const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(data, language, template.id), language);
       
       // Process Handlebars-like conditionals {{#if field}}...{{/if}}
       // Use a safe regex that handles nested content
@@ -824,7 +824,7 @@ export function PreviewPage() {
 
     let content = templateForExport;
     const enrichedData = normalizeLanguageSensitiveFields(
-      enrichDocumentDataWithDates(documentData, exportLanguage),
+      enrichDocumentDataWithDates(documentData, exportLanguage, template.id),
       exportLanguage,
     );
 
@@ -896,7 +896,7 @@ export function PreviewPage() {
     let exportContent = templateForExport;
     
     const enrichedData = normalizeLanguageSensitiveFields(
-      enrichDocumentDataWithDates(documentData, exportLanguage),
+      enrichDocumentDataWithDates(documentData, exportLanguage, template.id),
       exportLanguage,
     );
     
@@ -1430,6 +1430,7 @@ export function PreviewPage() {
                     <div ref={documentCanvasRef}>
                       <DocumentPreview
                         template={exportLanguage === 'es' && spanishTemplates[template.id] ? spanishTemplates[template.id] : template.template}
+                        templateId={template.id}
                         data={documentData}
                         showWatermark={false}
                         leftSignatureUrl={placedSignatures.find(s => s.id === 'owner')?.dataUrl}

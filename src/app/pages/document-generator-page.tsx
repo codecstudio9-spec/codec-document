@@ -602,6 +602,26 @@ function ContenidoGenerador() {
 
   // ── Dictar el formulario ──────────────────────────────────────────────────
   const [dictadoAbierto, setDictadoAbierto] = useState(false);
+
+  /** Los campos con la etiqueta en el idioma en que se está hablando.
+   *
+   *  `field.label` en crudo siempre está en inglés —el formulario lo traduce
+   *  al pintarlo— y aquí se usa para dos cosas que lo necesitan en español:
+   *  la lista de «qué puedes decir», que si no saldría en un idioma distinto
+   *  al del resto de la pantalla, y el reparto que hace el modelo, que acierta
+   *  más si la etiqueta está en el idioma en que se le habla.
+   *
+   *  Las OPCIONES no se traducen a propósito. El valor que se guarda tiene que
+   *  ser el mismo que espera el desplegable y el que la plantilla compara en
+   *  sus condicionales; traducirlo aquí guardaría un valor que no coincide con
+   *  ninguna opción y el campo se vería vacío. */
+  const camposParaDictado = useMemo(
+    () => visibleFields.map((f) => ({
+      ...f,
+      label: getFieldTranslation(template?.id ?? '', f.id, 'label', language) || f.label,
+    })),
+    [visibleFields, template?.id, language],
+  );
   // El formulario ENTERO tal como estaba antes de que la IA lo tocara. Guardar
   // sólo los campos cambiados no bastaría: si un campo estaba vacío hay que
   // poder devolverlo a vacío, y un objeto de cambios no distingue «no lo
@@ -1302,6 +1322,7 @@ function ContenidoGenerador() {
           <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-4" data-preview-scroll-container>
             <DocumentPreview
               template={previewTemplate}
+              templateId={template.id}
               data={deferredFormData}
               activeFieldId={activeFieldId}
               showWatermark
@@ -1339,7 +1360,7 @@ function ContenidoGenerador() {
       {/* ── Dictar el formulario ─────────────────────────────────────────── */}
       {dictadoAbierto && (
         <DictarFormulario
-          campos={visibleFields}
+          campos={camposParaDictado}
           language={language}
           nombreDocumento={getDocumentTranslation(template.id, 'name', language) || template.name}
           datosActuales={formData}
@@ -1839,6 +1860,7 @@ function ContenidoGenerador() {
                   <div className="max-h-[calc(100vh-200px)] overflow-y-auto" data-preview-scroll-container>
                     <DocumentPreview
                       template={previewTemplate}
+                      templateId={template.id}
                       data={deferredFormData}
                       activeFieldId={activeFieldId}
                       showWatermark
@@ -2130,6 +2152,7 @@ function ContenidoGenerador() {
                   <div className="max-h-[calc(100vh-240px)] overflow-y-auto" data-preview-scroll-container>
                     <DocumentPreview
                       template={previewTemplate}
+                      templateId={template.id}
                       data={deferredFormData}
                       activeFieldId={activeFieldId}
                       showWatermark

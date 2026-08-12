@@ -1,4 +1,5 @@
 import { DocumentData } from '../types/document';
+import { getFieldOptionTranslation } from '../data/field-translations';
 
 type Language = 'en' | 'es';
 
@@ -97,7 +98,41 @@ function humanizarFechasISO(data: DocumentData, language: Language): DocumentDat
   return salida;
 }
 
-export function enrichDocumentDataWithDates(data: DocumentData, language: Language): DocumentData {
+/**
+ * Pasa al idioma del documento los valores que salieron de un desplegable.
+ *
+ * El formulario guarda la opción en su forma canónica, que está en inglés —
+ * tiene que ser así, porque es el valor que el `<select>` compara y el que los
+ * condicionales `{{#if}}` de la plantilla esperan. Lo que se traduce es sólo lo
+ * que se ve en la lista.
+ *
+ * Al imprimir, en cambio, ese valor se sustituye tal cual, así que un contrato
+ * en español salía con frases enteras en inglés en mitad de una cláusula:
+ * «Gastos de viaje… quedan así: Paid by the client, on top of the fee».
+ * Aquí se traduce sólo para el texto final; lo guardado no se toca.
+ *
+ * Necesita el id de la plantilla porque la traducción está indexada por
+ * plantilla y campo. Sin él —cuando quien llama no lo tiene— se devuelven los
+ * datos intactos, que es el comportamiento de antes.
+ */
+function traducirOpciones(data: DocumentData, language: Language, templateId?: string): DocumentData {
+  if (!templateId) return data;
+  const salida: DocumentData = { ...data };
+  for (const [campo, valor] of Object.entries(salida)) {
+    if (typeof valor !== 'string' || !valor) continue;
+    const traducido = getFieldOptionTranslation(templateId, campo, valor, language);
+    if (traducido && traducido !== valor) salida[campo] = traducido;
+  }
+  return salida;
+}
+
+export function enrichDocumentDataWithDates(
+  data: DocumentData,
+  language: Language,
+  /** Id de la plantilla. Al pasarlo, las opciones de los desplegables se
+   *  imprimen en el idioma del documento en vez de en su forma canónica. */
+  templateId?: string,
+): DocumentData {
   const now = new Date();
   const day = now.getDate();
   const month = language === 'es' ? monthNamesES[now.getMonth()] : monthNamesEN[now.getMonth()];
@@ -114,7 +149,7 @@ export function enrichDocumentDataWithDates(data: DocumentData, language: Langua
   }
 
   return {
-    ...humanizarFechasISO(data, language),
+    ...humanizarFechasISO(traducirOpciones(data, language, templateId), language),
     current_day: String(day),
     current_month: month,
     current_year: String(year),

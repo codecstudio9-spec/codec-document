@@ -17,6 +17,9 @@ interface DocumentPreviewProps {
   leftSignatureUrl?: string;
   /** Base64 or URL of the signature to stamp in the RIGHT column (Arrendatario / Party 2) */
   rightSignatureUrl?: string;
+  /** Id de la plantilla. Con él, las opciones elegidas en un desplegable se
+   *  muestran en el idioma del documento y no en su forma canónica inglesa. */
+  templateId?: string;
 }
 
 // US Legal Standard document formatting
@@ -382,13 +385,13 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
   return result;
 }
 
-export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl }: DocumentPreviewProps) {
+export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl, templateId }: DocumentPreviewProps) {
   const { language } = useLanguage();
   const previewContentRef = useRef<HTMLDivElement | null>(null);
 
   const enrichedData = useMemo(
-    () => enrichDocumentDataWithDates(data, language),
-    [data, language],
+    () => enrichDocumentDataWithDates(data, language, templateId),
+    [data, language, templateId],
   );
 
   const contentAfterConditionals = useMemo(() => {
