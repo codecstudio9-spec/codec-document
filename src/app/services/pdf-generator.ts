@@ -1228,20 +1228,29 @@ export class PDFGenerator {
       this.doc.saveGraphicsState();
 
       try {
-        // Caja cuadrada, imagen NO cuadrada: drawImageFit encaja el logo
-        // dentro respetando su proporción real. Antes se forzaban 82×82 y un
-        // logotipo apaisado salía estirado a lo alto en cada página.
-        const watermarkSize = 82;
-        const x = (this.pageWidth - watermarkSize) / 2;
-        const y = (this.pageHeight - watermarkSize) / 2;
+        // La caja se mide en PROPORCIÓN de la página, no en milímetros fijos.
+        // Así la marca ocupa lo mismo en A4 que en carta, en vez de quedar
+        // descentrada de tamaño según el formato del documento.
+        //
+        // 72% del ancho y 58% del alto deja la marca claramente grande y aun
+        // así dentro de los márgenes. drawImageFit encaja el logo dentro
+        // respetando su proporción real: antes se forzaban 82×82 y cualquier
+        // logotipo apaisado salía estirado a lo alto en todas las páginas.
+        const cajaW = this.pageWidth * 0.72;
+        const cajaH = this.pageHeight * 0.58;
+        const x = (this.pageWidth - cajaW) / 2;
+        const y = (this.pageHeight - cajaH) / 2;
 
-        // Apply very low opacity so watermark stays in the visual background.
+        // Al crecer la caja, la marca pasa por debajo de mucho más texto. Se
+        // baja la opacidad de 0.15 a 0.10 para compensar: un documento legal
+        // se firma y se lee entero, y el logo no puede competir con la letra
+        // que da fe de lo que se firma.
         const anyDoc = this.doc as any;
         if (typeof anyDoc.GState === 'function' && typeof anyDoc.setGState === 'function') {
-          anyDoc.setGState(new anyDoc.GState({ opacity: 0.15 }));
+          anyDoc.setGState(new anyDoc.GState({ opacity: 0.10 }));
         }
 
-        this.drawImageFit(branding.logoDataUrl, x, y, watermarkSize, watermarkSize);
+        this.drawImageFit(branding.logoDataUrl, x, y, cajaW, cajaH);
       } catch {
         // If logo watermark fails, continue generating PDF without interrupting output.
       }
