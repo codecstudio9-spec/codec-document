@@ -690,8 +690,13 @@ function ContenidoDian() {
             >
               <CloudDownload className="size-4" />
               Descargar XML de la DIAN
+              {/* La insignia dice el estado REAL, no quién eres. Decía «solo
+                  tú» a cualquiera que fuera el propietario, así que después de
+                  abrir la herramienta a todo el mundo seguía anunciando que
+                  estaba cerrada — y no había forma de saber desde la pantalla
+                  si el cambio había surtido efecto. */}
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
-                {ilimitado ? 'solo tú' : 'en pruebas'}
+                {beta?.descargaAbierta ? 'beta abierta' : ilimitado ? 'solo tú' : 'en pruebas'}
               </span>
             </button>
           )}
@@ -893,6 +898,33 @@ function ContenidoDian() {
               con un interruptor de «todos». */}
           <div className="mt-5 border-t border-white/10 pt-4">
             <h3 className="text-xs font-bold text-white/80">Acceso a «Descargar XML de la DIAN»</h3>
+
+            {/* Abrir y cerrar en un clic, sin desplegar. Todo el tráfico sale
+                por las IPs de Supabase, compartidas con el resto de la
+                plataforma: si la DIAN bloquea esa IP por abuso, la bloquea
+                para todos los clientes a la vez. */}
+            <label className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-xl bg-white/5 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={Boolean(beta.descargaAbierta)}
+                onChange={(e) => {
+                  const abrir = e.target.checked;
+                  void configurarBeta('dian_descarga_abierta', abrir ? 'true' : 'false')
+                    .then(() => { toast.success(abrir ? 'Abierta para todos' : 'Cerrada: sólo tú y los autorizados'); void refrescar(); })
+                    .catch((err) => toast.error(err.message));
+                }}
+                className="size-4 accent-emerald-400"
+              />
+              <span className="text-xs">
+                <span className="block font-bold">Abierta para todos</span>
+                <span className="block text-white/40">
+                  {beta.descargaAbierta
+                    ? 'Cualquier usuario con sesión puede descargar. Siguen vigentes el cierre por fecha, el tope global y el ritmo de 2 peticiones por segundo.'
+                    : 'Sólo tú y los correos de abajo.'}
+                </span>
+              </span>
+            </label>
+
             <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
               Escribe el correo con el que la persona entra a Codec. Tendrá acceso
               en cuanto recargue; tú siempre lo tienes.

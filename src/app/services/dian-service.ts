@@ -76,6 +76,9 @@ export interface EstadoBeta {
   /** Correos autorizados a probar la descarga. Sólo llega si quien pregunta
    *  es el propietario; para el resto es null, porque son datos de terceros. */
   descargaPermitidos: string[] | null;
+  /** Si la descarga está abierta a cualquier usuario con sesión. Cuando está
+   *  cerrada, sólo entran el propietario y los correos autorizados. */
+  descargaAbierta: boolean;
 }
 
 export async function estadoBeta(): Promise<EstadoBeta> {
@@ -102,6 +105,7 @@ export async function estadoBeta(): Promise<EstadoBeta> {
     descargaPermitidos: typeof d.descarga_permitidos === 'string'
       ? d.descarga_permitidos.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)
       : null,
+    descargaAbierta: Boolean(d.descarga_abierta),
   };
 }
 
