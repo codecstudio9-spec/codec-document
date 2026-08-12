@@ -271,7 +271,13 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
     return lines.flatMap((line, li) => {
       const trimmed = line.trim();
       if (!trimmed) { blankCount++; return [] as React.ReactNode[]; }
-      const gapClass = blankCount > 0 ? 'mt-[0.18em]' : '';
+      // Una línea en blanco en la plantilla se convertía en 0,18em, que a
+      // 10px son menos de dos píxeles: en la práctica no se veía, y el
+      // documento salía como un bloque continuo sin respiración entre la
+      // fecha y el destinatario o entre un párrafo y el siguiente. Ahora
+      // separa de verdad, y dos líneas en blanco separan el doble, que es lo
+      // que la plantilla quiere decir cuando las escribe.
+      const gapClass = blankCount >= 2 ? 'mt-[1.5em]' : blankCount === 1 ? 'mt-[0.85em]' : '';
       blankCount = 0;
       if (SIG_LINE_RE.test(trimmed)) inSigBlock = true;
       const node = renderLine(trimmed, `${baseKey}-${li}`, gapClass, inSigBlock);
@@ -290,25 +296,49 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
   }
 
   // ── Build paragraph list (blank-line-separated groups) ───────────────────────
-  type Para = { lines: string[]; pidx: number; isSig: boolean };
+  // `blancosAntes` es cuántas líneas en blanco separaban este párrafo del
+  // anterior en la plantilla.
+  //
+  // Antes se perdía: el separador consumía las líneas vacías y nadie volvía a
+  // preguntar por ellas, así que todos los párrafos quedaban pegados sin
+  // ninguna separación —el documento salía como un muro de texto, sin aire
+  // entre la fecha y el destinatario ni entre un párrafo y el siguiente—.
+  // Y una plantilla que deja tres líneas en blanco antes de la firma lo hace
+  // para reservar sitio donde firmar; esa intención también se perdía.
+  type Para = { lines: string[]; pidx: number; isSig: boolean; blancosAntes: number };
   const allLines = content.split('\n');
   const paragraphs: Para[] = [];
   let cur: string[] = [];
   let pidx = 0;
+  let blancos = 0;
+
+  const cerrar = () => {
+    if (cur.length === 0) return;
+    paragraphs.push({
+      lines: cur,
+      pidx: pidx++,
+      isSig: cur.some(l => SIG_LINE_RE.test(l.trim())),
+      blancosAntes: paragraphs.length === 0 ? 0 : blancos,
+    });
+    cur = [];
+    blancos = 0;
+  };
 
   for (const line of allLines) {
     if (line.trim() === '') {
-      if (cur.length > 0) {
-        paragraphs.push({ lines: cur, pidx: pidx++, isSig: cur.some(l => SIG_LINE_RE.test(l.trim())) });
-        cur = [];
-      }
+      cerrar();
+      blancos++;
     } else {
       cur.push(line);
     }
   }
-  if (cur.length > 0) {
-    paragraphs.push({ lines: cur, pidx: pidx++, isSig: cur.some(l => SIG_LINE_RE.test(l.trim())) });
-  }
+  cerrar();
+
+  /** El hueco antes de un párrafo, en función de cuántas líneas en blanco lo
+   *  precedían. Se topa: una plantilla con cinco saltos seguidos quiere
+   *  espacio para firmar, no media página vacía. */
+  const separacion = (n: number): string =>
+    n <= 0 ? '' : n === 1 ? 'mt-[0.9em]' : n === 2 ? 'mt-[1.6em]' : 'mt-[2.6em]';
 
   // ── Detect and pair adjacent signature sections for side-by-side layout ──────
   // Pattern: (header + sigPara) + (header + sigPara) within a gap of ≤3 paragraphs
@@ -374,7 +404,7 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
       // la firma— se ascendía a título y se imprimía en grande al final.
       if (p.pidx > 2) tituloEmitido = true;
       result.push(
-        <div key={`para-${p.pidx}`}>
+        <div key={`para-${p.pidx}`} className={separacion(p.blancosAntes)}>
           {renderParaLines(p.lines, `p-${p.pidx}`)}
         </div>
       );
@@ -468,11 +498,13 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
       onCut={handleCopy}
       onContextMenu={handleContextMenu}
     >
-      {/* US Legal standard: 1-inch margins. At typical screen scale (96 dpi × ~0.75 zoom)
-          px-[72px] ≈ 0.75 in — maintains professional legal look without excessive whitespace. */}
+      {/* Márgenes de la hoja. Estaban en 24px y el texto llegaba casi al
+          borde del papel, que es lo que más delata a un documento generado:
+          una carta o un contrato reales respiran por los cuatro lados. 44px
+          se acerca a media pulgada a esta escala sin desperdiciar hoja. */}
       <div
         ref={previewContentRef}
-        className="px-[24px] pt-[18px] pb-[24px] relative z-10"
+        className="px-[44px] pt-[34px] pb-[40px] relative z-10"
         style={{
           color: '#000000',
           userSelect: showWatermark ? 'none' : 'auto',

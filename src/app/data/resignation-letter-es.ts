@@ -99,7 +99,10 @@ export const resignationLetterTemplateES: DocumentTemplate = {
       label: 'Tu último día de trabajo',
       type: 'date',
       required: true,
-      helpText: 'Cuenta el preaviso desde hoy. Lo habitual en tu país son {{__preaviso_habitual}}, pero revisa tu contrato.',
+      // El aviso legal vive aquí, junto a la decisión que condiciona, y ya no
+      // impreso al final de la carta: una nota dirigida a quien firma no
+      // pinta nada dentro del documento que va a entregar.
+      helpText: 'Cuenta el preaviso desde hoy; el plazo que te obliga es el de tu contrato o convenio. Ojo: una renuncia voluntaria normalmente no da derecho a indemnización por despido — si te vas por incumplimientos de la empresa, consulta con un abogado laboral antes de firmar, porque hay figuras distintas a la renuncia simple.',
     },
     {
       id: 'time_worked',
@@ -140,14 +143,28 @@ export const resignationLetterTemplateES: DocumentTemplate = {
       required: false,
       helpText: 'Te compromete a dejar los pendientes en orden. Deja buena impresión.',
     },
+    {
+      id: 'include_receipt',
+      label: 'Añadir constancia de recibido al final',
+      type: 'checkbox',
+      required: false,
+      helpText: 'Un recuadro con espacio para que quien reciba la carta te la firme. Sirve si la entregas impresa y quieres prueba del día en que renunciaste. Si la firmas tú digitalmente y la envías, no hace falta.',
+    },
   ],
 
+  // El encabezado sigue el orden de una carta formal colombiana: ciudad y
+  // fecha, un espacio, y el destinatario en bloque —empresa en mayúsculas,
+  // persona, cargo, «Ciudad»—. Las condicionales van pegadas al final de la
+  // línea anterior y NO en un renglón propio: si estuvieran solas, al no
+  // cumplirse dejarían una línea en blanco que parte el bloque del
+  // destinatario en dos y le abre un hueco en medio.
   template: `{{letter_city}}, {{current_date}}
 
 
 Señores
-{{company_name}}
-{{#if recipient_name}}Atención: {{recipient_name}}{{#if recipient_title}} — {{recipient_title}}{{/if}}{{/if}}
+{{company_name_mayus}}{{#if recipient_name}}
+{{recipient_name}}{{/if}}{{#if recipient_title}}
+{{recipient_title}}{{/if}}
 Ciudad
 
 
@@ -180,7 +197,7 @@ _______________________________________
 {{employee_name}}
 {{__documento_corto}} {{employee_id}}
 {{employee_phone}}{{#if employee_email}}
-{{employee_email}}{{/if}}
+{{employee_email}}{{/if}}{{#if include_receipt}}
 
 
 ---------------------------------------------------------------------------
@@ -190,21 +207,5 @@ CONSTANCIA DE RECIBIDO
 Recibido por: _______________________________________
 Cargo: ______________________________________________
 Fecha: ______________________________________________
-Firma: ______________________________________________
-
----------------------------------------------------------------------------
-
-NOTA PARA QUIEN FIRMA — no forma parte de la carta
-
-· Entrega la carta con copia y pide que te firmen la constancia de
-  recibido. Es tu prueba de que renunciaste y de qué día lo hiciste.
-· El preaviso habitual donde trabajas es de {{__preaviso_habitual}}, pero
-  el plazo que te obliga es el de tu contrato o el de tu convenio
-  colectivo. Revísalo antes de fijar tu último día.
-· Una renuncia voluntaria normalmente no da derecho a indemnización por
-  despido. Si tu salida se debe a incumplimientos de la empresa, consulta
-  con un abogado laboral antes de firmar: existen figuras distintas a la
-  renuncia simple.
-· Este documento es un modelo general. No sustituye la asesoría de un
-  profesional del derecho laboral de tu país.`,
+Firma: ______________________________________________{{/if}}`,
 };

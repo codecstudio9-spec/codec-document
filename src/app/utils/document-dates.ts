@@ -126,6 +126,30 @@ function traducirOpciones(data: DocumentData, language: Language, templateId?: s
   return salida;
 }
 
+/**
+ * Por cada campo de texto, una versión en mayúsculas con el sufijo `_mayus`.
+ *
+ * En una carta formal el destinatario va en mayúsculas —«Señores / CENTRO DE
+ * IDIOMAS UNIVERSAL»— mientras que en el cuerpo esa misma empresa se nombra
+ * con su grafía normal. Es el mismo dato escrito de dos maneras según dónde
+ * aparece, así que la plantilla pide `{{company_name_mayus}}` arriba y
+ * `{{company_name}}` en el texto, y quien rellena el formulario lo escribe
+ * una sola vez.
+ *
+ * Sólo añade claves; ninguna existente se toca. Y no colisiona con la
+ * sustitución normal porque `{{company_name}}` exige las llaves justo después
+ * del nombre, así que nunca coincide dentro de `{{company_name_mayus}}`.
+ */
+function agregarMayusculas(data: DocumentData): DocumentData {
+  const salida: DocumentData = { ...data };
+  for (const [clave, valor] of Object.entries(data)) {
+    if (typeof valor !== 'string' || !valor.trim()) continue;
+    if (clave.endsWith('_mayus')) continue;
+    salida[`${clave}_mayus`] = valor.toLocaleUpperCase('es');
+  }
+  return salida;
+}
+
 export function enrichDocumentDataWithDates(
   data: DocumentData,
   language: Language,
@@ -149,7 +173,7 @@ export function enrichDocumentDataWithDates(
   }
 
   return {
-    ...humanizarFechasISO(traducirOpciones(data, language, templateId), language),
+    ...agregarMayusculas(humanizarFechasISO(traducirOpciones(data, language, templateId), language)),
     current_day: String(day),
     current_month: month,
     current_year: String(year),

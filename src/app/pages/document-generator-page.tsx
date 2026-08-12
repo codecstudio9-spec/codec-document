@@ -705,6 +705,19 @@ function ContenidoGenerador() {
       setSelectedState(str);
       sessionStorage.setItem('selectedState', str);
     }
+    // Mensaje personal y párrafo de agradecimiento estándar dicen lo mismo, y
+    // juntos salían los dos seguidos en la carta: «Me gustaría expresar mi
+    // agradecimiento…» y justo debajo «Aprovecho para expresar mi
+    // agradecimiento…». Dejarlo en manos de que el usuario recuerde
+    // desmarcar la casilla no funcionó, así que al escribir el mensaje propio
+    // la casilla se desmarca sola y se avisa por qué.
+    if (fieldId === 'reason' && typeof value === 'string' && value.trim() && formData.include_thanks) {
+      setFormData((prev) => ({ ...prev, include_thanks: false }));
+      toast.info(language === 'en'
+        ? 'The standard thank-you paragraph was turned off — your own message already says it.'
+        : 'Se quitó el párrafo de agradecimiento estándar: tu mensaje ya lo dice.');
+    }
+
     const field = visibleFields.find((f) => f.id === fieldId);
     if (field && typeof value === 'string') rememberFieldValue(field.label, value);
   };

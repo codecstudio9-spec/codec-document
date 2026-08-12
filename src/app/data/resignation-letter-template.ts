@@ -88,7 +88,10 @@ export const resignationLetterTemplate: DocumentTemplate = {
       label: 'Your last working day',
       type: 'date',
       required: true,
-      helpText: 'Count the notice period from today. Check your contract for the exact term.',
+      // The legal caution lives here, next to the decision it affects, and no
+      // longer printed at the end of the letter: a note addressed to the
+      // signer has no place inside the document they hand in.
+      helpText: 'Count the notice period from today; the term that binds you is the one in your contract or collective agreement. Note that resigning voluntarily usually does not entitle you to severance — if you are leaving because of the employer’s breaches, talk to an employment lawyer first, there are legal routes other than a plain resignation.',
     },
     {
       id: 'time_worked',
@@ -125,13 +128,26 @@ export const resignationLetterTemplate: DocumentTemplate = {
       type: 'checkbox',
       required: false,
     },
+    {
+      id: 'include_receipt',
+      label: 'Add an acknowledgement of receipt at the end',
+      type: 'checkbox',
+      required: false,
+      helpText: 'A box for whoever receives the letter to sign. Useful if you hand it in on paper and want proof of the date you resigned. If you sign it digitally and email it, you do not need it.',
+    },
   ],
 
+  // The heading follows a formal letter block: city and date, a blank line,
+  // then the addressee — company in capitals, person, job title. The
+  // conditionals hang off the END of the previous line rather than sitting on
+  // one of their own: alone, an unmet condition would leave a blank line that
+  // splits the addressee block in two and opens a gap in the middle of it.
   template: `{{letter_city}}, {{current_date}}
 
 
-{{company_name}}
-{{#if recipient_name}}Attention: {{recipient_name}}{{#if recipient_title}} — {{recipient_title}}{{/if}}{{/if}}
+{{company_name_mayus}}{{#if recipient_name}}
+{{recipient_name}}{{/if}}{{#if recipient_title}}
+{{recipient_title}}{{/if}}
 
 
 SUBJECT: Voluntary resignation from the position of {{employee_position}}
@@ -163,7 +179,7 @@ _______________________________________
 {{employee_name}}
 {{__documento_corto}} {{employee_id}}
 {{employee_phone}}{{#if employee_email}}
-{{employee_email}}{{/if}}
+{{employee_email}}{{/if}}{{#if include_receipt}}
 
 
 ---------------------------------------------------------------------------
@@ -173,21 +189,5 @@ ACKNOWLEDGEMENT OF RECEIPT
 Received by: ________________________________________
 Title: ______________________________________________
 Date: _______________________________________________
-Signature: __________________________________________
-
----------------------------------------------------------------------------
-
-NOTE FOR THE SIGNER — not part of the letter
-
-· Hand in the letter with a copy and ask them to sign the acknowledgement.
-  That is your proof that you resigned and on what date.
-· The customary notice period where you work is {{__preaviso_habitual}},
-  but the term that binds you is the one in your contract or collective
-  agreement. Check it before setting your last day.
-· Voluntary resignation usually does not entitle you to severance. If you
-  are leaving because of the employer's breaches, talk to an employment
-  lawyer before signing: there are legal routes other than a simple
-  resignation.
-· This is a general model and does not replace advice from an employment
-  lawyer in your country.`,
+Signature: __________________________________________{{/if}}`,
 };

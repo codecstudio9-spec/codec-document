@@ -87,6 +87,9 @@ function construirPrompt(campos: CampoEntrada[], transcripcion: string, language
     `6. checkbox fields: true or false.`,
     `7. Long text fields (textarea): write what the person said in clean, well-punctuated ${idioma}, keeping their meaning and their voice. Do not add facts they did not say.`,
     `8. Every other field: keep it short and literal, in ${idioma}. Proper names and places keep their capitalisation.`,
+    `9. A field asking for the NAME of a company, employer or organisation takes the name as spoken ("Centro de Idiomas Universal"). Never put a tax id, NIT, registration number or any bare number there, even if the person said it right next to the name.`,
+    `10. A field asking HOW LONG someone has worked somewhere takes a duration ("6 meses", "2 años y 4 meses"). Never a date, and never an ID number.`,
+    `11. Do not reuse the same number in two different fields. An ID number belongs only in the ID field; a phone number only in the phone field. If you are unsure which field a number belongs to, omit it.`,
   ].join('\n');
 }
 
@@ -139,8 +142,26 @@ function validarValor(campo: CampoEntrada, crudo: unknown): string | number | bo
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto) ? texto : null;
   }
 
+  // Una cifra sola donde se esperaba texto casi siempre es un número que el
+  // modelo colocó en la casilla equivocada. Pasó en una carta real: el NIT de
+  // la empresa acabó en «nombre de la empresa» y la cédula en «tiempo que
+  // llevas en la empresa», así que la carta decía «renuncio al cargo que vengo
+  // desempeñando en 900500536, completando a la fecha 1022925002 de servicio».
+  //
+  // Se descarta salvo que el campo sea de los que sí llevan un número escrito
+  // como texto: cédula, NIT, teléfono, códigos. Al usuario se le dice cuántos
+  // valores se descartaron para que los escriba a mano — vacío es recuperable,
+  // un dato plausible en el sitio equivocado pasa desapercibido y se firma.
+  if (PIDE_NUMERO.test(campo.id) === false && PIDE_NUMERO.test(campo.label) === false) {
+    const soloCifras = texto.replace(/[\s.\-()]/g, '');
+    if (/^\d{5,}$/.test(soloCifras)) return null;
+  }
+
   return texto;
 }
+
+/** Campos donde un número escrito como texto es exactamente lo esperado. */
+const PIDE_NUMERO = /\b(id|c[eé]dula|cedula|nit|documento|document|dni|rut|curp|rfc|tel|phone|celular|m[oó]vil|n[uú]mero|number|c[oó]digo|code|cuenta|account|matr[ií]cula|placa|vin|zip|postal)\b/i;
 
 /** El modelo devuelve JSON, pero a veces envuelto en ```json o con una frase
  *  delante. Se recorta al primer objeto equilibrado antes de parsear. */
