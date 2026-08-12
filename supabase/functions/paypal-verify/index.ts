@@ -89,6 +89,10 @@ interface RequestBody {
   orderId?: string;        // Orders API — doc_single / doc_bundle / sig_single / sig_monthly
   subscriptionId?: string; // Subscriptions API — sub_monthly / sub_semiannual / sub_annual
   promoCode?: string;      // validated against public.promo_codes — no PayPal call at all
+  /** Sólo consulta el descuento y devuelve el precio rebajado, sin canjear
+   *  ni conceder nada. Lo necesita el navegador para crear la orden de PayPal
+   *  por el importe correcto antes de que el usuario pague. */
+  preview?: boolean;
   // Required for a real payment (what's being bought). For a promoCode
   // redemption it's OPTIONAL and means something different: the checkout
   // context the code was typed into (which plan/product the user had
@@ -274,10 +278,25 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as RequestBody;
-    const { orderId, subscriptionId, promoCode, product, documentId } = body;
+    const { orderId, subscriptionId, promoCode, product, documentId, preview } = body;
 
     // ── Promo code path — no PayPal call, validated entirely server-side ──
-    if (promoCode) {
+    //
+    // Desde que los cupones pueden ser PARCIALES (40%, 60%…) esta rama tiene
+    // tres salidas distintas:
+    //
+    //   · preview:true            → dice cuánto costaría, sin canjear nada.
+    //     Es lo que necesita el navegador para crear la orden de PayPal por
+    //     el importe rebajado.
+    //   · 100% y sin orderId      → el camino de siempre: se libera gratis.
+    //   · parcial y con orderId   → NO entra aquí; sigue al cobro normal, que
+    //     más abajo recalcula el precio con descuento y comprueba que lo
+    //     pagado coincide. El canje se registra sólo si el pago fue válido.
+    //
+    // El importe rebajado nunca llega desde el cliente: se recalcula aquí a
+    // partir del porcentaje guardado en la base de datos. Si viniera del
+    // navegador, cualquiera compraría a un céntimo.
+    if (promoCode && !orderId) {
       const authHeader = req.headers.get('Authorization') ?? '';
       const jwt = authHeader.replace(/^Bearer\s+/i, '');
       if (!jwt) {
@@ -308,7 +327,7 @@ Deno.serve(async (req) => {
       const code = promoCode.trim().toUpperCase();
       const { data: promo } = await admin
         .from('promo_codes')
-        .select('code, product, active, expires_at, max_redemptions, redemption_count, unlimited_per_user')
+        .select('code, product, active, expires_at, max_redemptions, redemption_count, unlimited_per_user, discount_pct')
         .eq('code', code)
         .maybeSingle();
 
@@ -326,6 +345,38 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'This promo code has reached its redemption limit' }), {
           status: 410, headers: corsHeaders(origin),
         });
+      }
+
+      // Columna añadida después; las filas anteriores valen 100 por defecto,
+      // que es «gratis» — exactamente como se comportaban antes de existir.
+      const descuento = Number(promo.discount_pct ?? 100);
+
+      // ── Consulta de precio, sin canjear ─────────────────────────────────
+      if (preview) {
+        const contextForPreview = product && KNOWN_PRODUCTS.has(product) ? product : null;
+        const base = contextForPreview ? expectedAmountFor(contextForPreview, documentId) : null;
+        return new Response(JSON.stringify({
+          valid: true,
+          code,
+          discountPct: descuento,
+          product: contextForPreview ?? promo.product,
+          originalAmount: base,
+          // Se redondea a dos decimales porque es lo que se le va a cobrar a
+          // una tarjeta: un importe con más decimales no existe.
+          discountedAmount: base === null ? null : Math.round(base * (100 - descuento)) / 100,
+        }), { status: 200, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } });
+      }
+
+      // ── Descuento parcial sin pago ──────────────────────────────────────
+      // Un cupón del 40% no libera nada por sí solo: hay que pagar el 60%
+      // restante. Llegar aquí sin orderId significa que el navegador intentó
+      // canjearlo como si fuera gratuito.
+      if (descuento < 100) {
+        return new Response(JSON.stringify({
+          error: 'Este cupón es un descuento parcial: aplícalo en el pago, no como canje directo.',
+          code: 'PARTIAL_DISCOUNT',
+          discountPct: descuento,
+        }), { status: 409, headers: corsHeaders(origin) });
       }
 
       // A master/unlimited code (unlimited_per_user = true — e.g. the
@@ -424,6 +475,10 @@ Deno.serve(async (req) => {
     const accessToken = await getPayPalAccessToken();
     let paid: { amount: number; currency: string } | null = null;
     let ledgerId = '';
+    // Cupón parcial validado. El canje se apunta DESPUÉS de dar el pago por
+    // bueno: si se registrara antes y el importe no cuadrara, el usuario se
+    // quedaría sin cupón y sin compra.
+    let promoAplicado: { code: string; descuento: number; conteo: number } | null = null;
 
     if (usesSubscriptionApi) {
       // ── Subscriptions API path (recurring billing) ────────────────────
@@ -443,11 +498,65 @@ Deno.serve(async (req) => {
       ledgerId = `sub:${subscriptionId}`;
     } else {
       // ── Orders API path (one-time payment) ─────────────────────────────
-      const expectedAmount = expectedAmountFor(product, documentId);
-      if (expectedAmount === null) {
+      const listaBase = expectedAmountFor(product, documentId);
+      if (listaBase === null) {
         return new Response(JSON.stringify({ error: 'Unknown product / missing documentId' }), {
           status: 400, headers: corsHeaders(origin),
         });
+      }
+
+      // ── Cupón de descuento parcial aplicado sobre un pago real ─────────
+      //
+      // El porcentaje se vuelve a leer de la base de datos y el precio se
+      // recalcula aquí. El navegador manda el código, nunca el importe: si
+      // mandara la cifra, bastaría con editarla para comprar a un céntimo.
+      let expectedAmount = listaBase;
+      if (promoCode) {
+        // Un documento suelto se puede pagar sin cuenta, pero un cupón no se
+        // puede canjear sin ella: el canje se apunta contra un usuario real
+        // (promo_redemptions.user_id es NOT NULL) y es lo único que impide
+        // que el mismo cupón se use un número ilimitado de veces.
+        if (!userId) {
+          return new Response(JSON.stringify({ error: 'Inicia sesión para aplicar un cupón de descuento.' }), {
+            status: 401, headers: corsHeaders(origin),
+          });
+        }
+        const code = promoCode.trim().toUpperCase();
+        const { data: withinAttemptLimit } = await admin.rpc('check_and_log_promo_attempt', { p_user_id: userId });
+        if (!withinAttemptLimit) {
+          return new Response(JSON.stringify({ error: 'Too many promo code attempts. Please try again later.' }), {
+            status: 429, headers: corsHeaders(origin),
+          });
+        }
+
+        const { data: promo } = await admin
+          .from('promo_codes')
+          .select('code, active, expires_at, max_redemptions, redemption_count, unlimited_per_user, discount_pct')
+          .eq('code', code)
+          .maybeSingle();
+
+        const vencido = promo?.expires_at ? new Date(promo.expires_at) < new Date() : false;
+        const agotado = promo?.max_redemptions !== null && promo !== null
+          && promo.redemption_count >= (promo.max_redemptions as number);
+        if (!promo || !promo.active || vencido || agotado) {
+          return new Response(JSON.stringify({ error: 'Invalid, expired or exhausted promo code' }), {
+            status: 404, headers: corsHeaders(origin),
+          });
+        }
+        if (!promo.unlimited_per_user) {
+          const { data: yaCanjeado } = await admin
+            .from('promo_redemptions')
+            .select('id').eq('code', code).eq('user_id', userId).maybeSingle();
+          if (yaCanjeado) {
+            return new Response(JSON.stringify({ error: 'You already redeemed this promo code' }), {
+              status: 409, headers: corsHeaders(origin),
+            });
+          }
+        }
+
+        const descuento = Number(promo.discount_pct ?? 100);
+        expectedAmount = Math.round(listaBase * (100 - descuento)) / 100;
+        promoAplicado = { code, descuento, conteo: promo.redemption_count as number };
       }
       const order = await fetchOrGetPayPalOrder(orderId!, accessToken);
       const capturedPaid = extractPaidAmount(order);
@@ -475,6 +584,23 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'This payment was already processed' }), {
         status: 409, headers: corsHeaders(origin),
       });
+    }
+
+    // ── Canje del cupón parcial, una vez el pago ya está verificado ────
+    //
+    // Va después del asiento de idempotencia a propósito: ese INSERT es lo
+    // que garantiza que un mismo orderId no se procese dos veces, así que
+    // llegar hasta aquí significa que este pago es nuevo y válido. Registrar
+    // el canje antes habría gastado el cupón en intentos fallidos.
+    if (promoAplicado) {
+      const ipCupon = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || req.headers.get('x-real-ip') || null;
+      await admin.from('promo_redemptions').insert({
+        code: promoAplicado.code, user_id: userId, ip_address: ipCupon, product,
+      });
+      await admin.from('promo_codes')
+        .update({ redemption_count: promoAplicado.conteo + 1 })
+        .eq('code', promoAplicado.code);
     }
 
     // ── Perform the grant, server-side, with the service-role client ───

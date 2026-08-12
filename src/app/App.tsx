@@ -9,6 +9,7 @@ import { SignedDocumentPopup } from './components/SignedDocumentPopup';
 import { GlobalVoiceMuteButton } from './components/voice/GlobalVoiceMuteButton';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { MetaPixel } from './components/MetaPixel';
+import { AvisoDeRegalo } from './components/AvisoDeRegalo';
 import { trackVisitorSession } from './services/analytics-service';
 
 /** Shown while a lazy-loaded route's JS chunk downloads (routes.tsx) —
@@ -44,6 +45,7 @@ export default function App() {
         <GlobalVoiceMuteButton />
         <InstallAppPrompt />
         <MetaPixel />
+        <AvisoDeRegalo />
       </AuthProvider>
     </LanguageProvider>
   );

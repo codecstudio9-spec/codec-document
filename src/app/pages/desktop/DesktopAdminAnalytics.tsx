@@ -15,6 +15,7 @@ import {
 import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
 import { AnalyticsAccessManager } from '../../components/admin/AnalyticsAccessManager';
 import { VoiceAssistantAnalyticsTab } from '../../components/admin/VoiceAssistantAnalyticsTab';
+import { BonosYRegalosTab } from '../../components/admin/BonosYRegalosTab';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -47,7 +48,7 @@ export function DesktopAdminAnalytics() {
 function AdminAnalyticsContent() {
   const { isAdmin } = useAuth();
   const { language } = useLanguage();
-  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz'>('comercial');
+  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz' | 'bonos'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -119,7 +120,11 @@ function AdminAnalyticsContent() {
 
       {/* Comercial / Leads & Ventas — solo admin, ver AdminRoute en routes.tsx */}
       <div className="mt-4 flex gap-1.5 rounded-full bg-white p-1 w-fit" style={{ boxShadow: CARD_SHADOW }}>
-        {(['comercial', 'visitantes', 'voz'] as const).map((t) => (
+        {/* «Bonos y regalos» sólo para el administrador real. Un invitado con
+            acceso a analítica puede mirar métricas, pero no crear cupones ni
+            regalar documentos — eso es dar dinero. Mismo criterio que
+            AnalyticsAccessManager más abajo. */}
+        {(['comercial', 'visitantes', 'voz', ...(isAdmin ? ['bonos' as const] : [])] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -127,10 +132,15 @@ function AdminAnalyticsContent() {
             className="rounded-full px-4 py-2 text-xs font-bold transition"
             style={tab === t ? { background: '#4338CA', color: '#fff' } : { color: '#64748B' }}
           >
-            {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial') : t === 'visitantes' ? (language === 'en' ? 'Visitors' : 'Visitantes') : (language === 'en' ? 'Voice Assistant' : 'Asistente de Voz')}
+            {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial')
+              : t === 'visitantes' ? (language === 'en' ? 'Visitors' : 'Visitantes')
+              : t === 'bonos' ? (language === 'en' ? 'Coupons & gifts' : 'Bonos y regalos')
+              : (language === 'en' ? 'Voice Assistant' : 'Asistente de Voz')}
           </button>
         ))}
       </div>
+
+      {tab === 'bonos' && isAdmin && <div className="mt-6"><BonosYRegalosTab language={language} /></div>}
 
       {tab === 'comercial' && (
         <div className="mt-6 space-y-6">

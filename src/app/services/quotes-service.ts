@@ -68,6 +68,10 @@ export interface Quote {
   tax_total: number;
   total: number;
   template: 'corporate' | 'modern' | 'executive' | 'minimal';
+  /** Rótulo que le pone su dueño («Kevin Hernández», «Agendas diciembre»).
+   *  Sólo para encontrarla en el panel — nunca aparece en el PDF. */
+  name: string | null;
+  folder_id: string | null;
   pdf_url: string | null;
   signed: boolean;
   signature_transaction_id: string | null;
@@ -163,6 +167,63 @@ export async function getMyQuoteFull(id: string): Promise<{ quote: Quote; items:
 export async function deleteQuote(id: string): Promise<void> {
   const { error } = await supabase.rpc('delete_quote', { p_id: id });
   if (error) throw new Error(`deleteQuote: ${error.message}`);
+}
+
+// ─── Nombre y carpetas ──────────────────────────────────────────────────
+//
+// Una cotización se distinguía sólo por su número («Q-20260812-a3f1») y el
+// nombre del cliente, así que quien manda varias al mes no encontraba la que
+// quería reutilizar. `name` es un rótulo interno: NO sale en el PDF.
+
+export interface QuoteFolder {
+  id: string;
+  name: string;
+  color: string;
+  quoteCount: number;
+}
+
+export async function listMyQuoteFolders(): Promise<QuoteFolder[]> {
+  const { data, error } = await supabase.rpc('list_my_quote_folders');
+  if (error || !data) return [];
+  return (data as any[]).map((r) => ({
+    id: r.id, name: r.name, color: r.color ?? '#4338CA', quoteCount: Number(r.quote_count ?? 0),
+  }));
+}
+
+export async function createQuoteFolder(name: string, color?: string): Promise<string> {
+  const { data, error } = await supabase.rpc('create_quote_folder', { p_name: name, p_color: color ?? '#4338CA' });
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
+export async function renameQuoteFolder(id: string, name: string, color?: string): Promise<void> {
+  const { error } = await supabase.rpc('rename_quote_folder', { p_id: id, p_name: name, p_color: color ?? null });
+  if (error) throw new Error(error.message);
+}
+
+/** Borrar una carpeta NO borra lo que hay dentro: esas cotizaciones vuelven a
+ *  «sin carpeta» (ON DELETE SET NULL en la migración). */
+export async function deleteQuoteFolder(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_quote_folder', { p_id: id });
+  if (error) throw new Error(error.message);
+}
+
+export async function setQuoteFolder(quoteId: string, folderId: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_quote_folder', { p_quote_id: quoteId, p_folder_id: folderId });
+  if (error) throw new Error(error.message);
+}
+
+export async function setQuoteName(quoteId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('set_quote_name', { p_quote_id: quoteId, p_name: name });
+  if (error) throw new Error(error.message);
+}
+
+/** Copia la cotización con todos sus productos. Nace como borrador con número
+ *  nuevo — no hereda el estado de envío, ni el PDF, ni la firma del original. */
+export async function duplicateQuote(id: string, name?: string): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_quote', { p_id: id, p_name: name ?? null });
+  if (error) throw new Error(error.message);
+  return data as string;
 }
 
 export async function getQuotesSummary(): Promise<{

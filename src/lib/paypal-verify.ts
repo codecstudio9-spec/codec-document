@@ -47,6 +47,10 @@ export async function verifyPaypalOrder(params: {
   subscriptionId?: string;
   product: PaypalProduct;
   documentId?: string;
+  /** Bono parcial aplicado a este pago. El servidor recalcula el precio con
+   *  descuento a partir del porcentaje guardado y comprueba que lo capturado
+   *  coincide; sólo entonces registra el canje. */
+  promoCode?: string;
 }): Promise<{ verified: true; amountPaid: number }> {
   const { data, error } = await supabase.functions.invoke('paypal-verify', {
     body: params,
@@ -87,4 +91,41 @@ export async function redeemPromoCode(
     throw new Error(data?.error || 'Código promocional inválido.');
   }
   return { verified: true, product: data.product };
+}
+
+export interface DescuentoDeBono {
+  code: string;
+  discountPct: number;
+  /** Precio de lista, antes del bono. */
+  originalAmount: number | null;
+  /** Lo que hay que cobrar. 0 cuando el bono es del 100%. */
+  discountedAmount: number | null;
+}
+
+/**
+ * Consulta cuánto descuenta un bono, sin canjearlo.
+ *
+ * Hace falta porque un bono ya no es necesariamente «gratis»: uno del 40%
+ * deja un importe que pagar, y el botón de PayPal tiene que crearse por esa
+ * cifra. La calcula el servidor a partir del porcentaje guardado — el
+ * navegador manda el código, nunca el precio, porque un importe que viaja
+ * desde el cliente se puede editar y se compraría a un céntimo.
+ *
+ * Devuelve `null` si el bono no sirve (inexistente, caducado o agotado), para
+ * que quien llama pueda distinguir «no aplica» de un fallo de red.
+ */
+export async function consultarDescuento(
+  promoCode: string,
+  context: { product: PaypalProduct; documentId?: string },
+): Promise<DescuentoDeBono | null> {
+  const { data, error } = await supabase.functions.invoke('paypal-verify', {
+    body: { promoCode, preview: true, product: context.product, documentId: context.documentId },
+  });
+  if (error || !data?.valid) return null;
+  return {
+    code: String(data.code),
+    discountPct: Number(data.discountPct ?? 100),
+    originalAmount: data.originalAmount ?? null,
+    discountedAmount: data.discountedAmount ?? null,
+  };
 }

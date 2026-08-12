@@ -11,7 +11,7 @@ import {
   PAYPAL_LEASE_SDK_CLIENT_ID,
   type PlanKey,
 } from '../config/paypal';
-import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 
 // ── kept for backward compatibility with any existing import
@@ -143,6 +143,9 @@ export function PremiumDownloadModal({
   const [promoApplied, setPromoApplied]   = useState(false);
   const [promoError, setPromoError]       = useState('');
   const [promoLoading, setPromoLoading]   = useState(false);
+  /** Bono que NO es del 100%: no libera nada por sí solo, sólo rebaja el
+   *  importe del botón de PayPal. El canje se registra al pagar. */
+  const [promoParcial, setPromoParcial]   = useState<DescuentoDeBono | null>(null);
   const [sdkError, setSdkError]           = useState(false);
   const [sdkLoading, setSdkLoading]       = useState(false);
 
@@ -152,6 +155,11 @@ export function PremiumDownloadModal({
   const emailRegex    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid  = emailRegex.test(email.trim());
   const effectivePrice = price ?? getDocumentPrice(documentId);
+  /** Lo que se le va a cobrar de verdad. La cifra con descuento la calculó el
+   *  servidor; aquí sólo se muestra y se usa para crear la orden. El servidor
+   *  la vuelve a calcular al verificar, así que editarla desde el navegador
+   *  no serviría de nada. */
+  const precioAPagar = promoParcial?.discountedAmount ?? effectivePrice;
   const plan           = PAYPAL_SUBSCRIPTION_PLANS[selectedPlan];
   const planIsReady    = plan.planId && !plan.planId.startsWith('PLAN_PLACEHOLDER');
 
@@ -230,7 +238,7 @@ export function PremiumDownloadModal({
               intent: 'CAPTURE',
               purchase_units: [{
                 description: documentName,
-                amount: { currency_code: 'USD', value: effectivePrice.toFixed(2) },
+                amount: { currency_code: 'USD', value: precioAPagar.toFixed(2) },
               }],
             });
           buttonsConfig.onApprove = async (_: unknown, actions: PayPalActions) => {
@@ -239,7 +247,13 @@ export function PremiumDownloadModal({
               // Server confirms with PayPal (real payment, correct amount)
               // before the download gate is lifted — never trust capture()
               // resolving in the browser alone.
-              await verifyPaypalOrder({ orderId: order.id, product: 'doc_single', documentId });
+              await verifyPaypalOrder({
+                orderId: order.id, product: 'doc_single', documentId,
+                // Va el CÓDIGO, no el importe: el servidor recalcula el
+                // descuento y sólo acepta el pago si la cifra capturada
+                // coincide con la que él mismo obtiene.
+                promoCode: promoParcial?.code,
+              });
               onSuccess(order.id);
               onOpenChange(false);
             } catch (err) {
@@ -284,7 +298,10 @@ export function PremiumDownloadModal({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mode, isEmailValid, selectedPlan, promoApplied, user]);
+    // `promoParcial` entra en las dependencias porque el botón de PayPal se
+    // construye con un importe fijo: sin esto, aplicar un bono cambiaría el
+    // precio en pantalla pero cobraría el original.
+  }, [open, mode, isEmailValid, selectedPlan, promoApplied, user, promoParcial]);
 
   // Escape key
   useEffect(() => {
@@ -311,6 +328,29 @@ export function PremiumDownloadModal({
       const context = mode === 'single'
         ? { product: 'doc_single' as const, documentId }
         : { product: planProductMap[selectedPlan] };
+
+      // Primero se pregunta CUÁNTO descuenta, sin canjear. Un bono ya no es
+      // necesariamente «gratis»: uno del 40% deja un importe que pagar, y
+      // canjearlo aquí lo gastaría sin haber cobrado nada.
+      const info = await consultarDescuento(code, context);
+
+      if (info && info.discountPct < 100) {
+        // Un descuento parcial no se puede aplicar a una suscripción de
+        // PayPal: el importe lo fija el plan (plan_id), no la orden.
+        if (mode !== 'single') {
+          setPromoError(language === 'en'
+            ? 'This coupon is a partial discount and only works on one-off purchases, not on subscriptions.'
+            : 'Este bono es un descuento parcial y sólo sirve para compras sueltas, no para suscripciones.');
+          setPromoParcial(null);
+          return;
+        }
+        setPromoParcial(info);
+        setPromoApplied(false);
+        setPromoError('');
+        return;
+      }
+
+      // 100% (o bono antiguo sin porcentaje): libera sin pasar por PayPal.
       await redeemPromoCode(code, context);
       setPromoApplied(true);
       onSuccess(`PROMO-${code}`);
@@ -449,8 +489,16 @@ export function PremiumDownloadModal({
                           {t('One-time · No watermark', 'Pago único · Sin marca de agua')}
                         </p>
                       </div>
+                      {/* Con bono se tacha el precio de lista al lado del
+                          nuevo: ver la rebaja es media razón por la que un
+                          bono funciona. */}
+                      {promoParcial && (
+                        <span className="mr-2 text-sm font-bold text-slate-400 line-through shrink-0">
+                          ${effectivePrice.toFixed(2)}
+                        </span>
+                      )}
                       <span className="text-2xl font-black text-indigo-700 shrink-0">
-                        ${effectivePrice.toFixed(2)}
+                        ${precioAPagar.toFixed(2)}
                       </span>
                     </div>
 
@@ -502,6 +550,20 @@ export function PremiumDownloadModal({
                               {t('100% discount applied!', '¡100% descuento aplicado!')}
                             </span>
                             <span className="ml-auto text-xs font-black text-emerald-700">$0.00</span>
+                          </div>
+                        )}
+                        {promoParcial && (
+                          <div className="mt-2 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+                            <TicketPercent className="size-3.5 text-indigo-600" />
+                            <span className="text-xs font-semibold text-indigo-700">
+                              {t(
+                                `${promoParcial.discountPct}% off applied — pay below to finish`,
+                                `${promoParcial.discountPct}% de descuento aplicado — paga abajo para terminar`,
+                              )}
+                            </span>
+                            <span className="ml-auto text-xs font-black text-indigo-700">
+                              ${precioAPagar.toFixed(2)}
+                            </span>
                           </div>
                         )}
                       </div>

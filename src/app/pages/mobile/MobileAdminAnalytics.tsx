@@ -16,6 +16,7 @@ import {
 import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntelligenceTab';
 import { AnalyticsAccessManager } from '../../components/admin/AnalyticsAccessManager';
 import { VoiceAssistantAnalyticsTab } from '../../components/admin/VoiceAssistantAnalyticsTab';
+import { BonosYRegalosTab } from '../../components/admin/BonosYRegalosTab';
 import { CARD_RADIUS, CARD_SHADOW, DARK_GRADIENT } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -33,7 +34,7 @@ function AnalyticsContent() {
   const { isAdmin } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz'>('comercial');
+  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz' | 'bonos'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -96,7 +97,7 @@ function AnalyticsContent() {
       <div className="px-4 pt-4 space-y-4">
         {/* Comercial / Visitantes — solo admin, ver AdminRoute en routes.tsx */}
         <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
-          {(['comercial', 'visitantes', 'voz'] as const).map((t) => (
+          {(['comercial', 'visitantes', 'voz', ...(isAdmin ? ['bonos' as const] : [])] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -104,10 +105,15 @@ function AnalyticsContent() {
               className="flex-1 rounded-full py-2 text-xs font-bold transition"
               style={tab === t ? { background: '#4338CA', color: '#fff' } : { color: '#64748B' }}
             >
-              {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial') : t === 'visitantes' ? (language === 'en' ? 'Visitors' : 'Visitantes') : (language === 'en' ? 'Voice' : 'Voz')}
+              {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial')
+                : t === 'visitantes' ? (language === 'en' ? 'Visitors' : 'Visitantes')
+                : t === 'bonos' ? (language === 'en' ? 'Coupons' : 'Bonos')
+                : (language === 'en' ? 'Voice' : 'Voz')}
             </button>
           ))}
         </div>
+
+        {tab === 'bonos' && isAdmin && <BonosYRegalosTab language={language} />}
 
         {tab === 'comercial' && (
           <div className="space-y-4">
