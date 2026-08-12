@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
   ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw, Activity, Globe2, PenLine,
+  Palette, SlidersHorizontal, Check,
 } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
@@ -19,8 +20,9 @@ import {
   type QuoteLineItem, type ProposalBlocks, type QuoteType, type QuoteStatus,
 } from '../services/quotes-service';
 import { consumeQuoteLimit72h, getNextQuoteSlot } from '../services/user-limits-service';
-import { generateQuotePdf } from '../services/quote-pdf-generator';
+import { generateQuotePdf, parseTemplate, buildTemplateValue, type TemplateId } from '../services/quote-pdf-generator';
 import { DictadoYMejora } from '../components/DictadoYMejora';
+import { PropuestaComercial } from '../components/PropuestaComercial';
 import { useGuiaFormulario } from '../hooks/use-guia-formulario';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
@@ -77,13 +79,42 @@ function QuotePaywallButtons({ onApprove }: { onApprove: (orderId: string) => Pr
 
 const EMPTY_ITEM: QuoteLineItem = { description: '', quantity: 1, unit: '', unit_price: 0, discount_pct: 0, tax_pct: 0 };
 
-type QuoteTemplate = 'corporate' | 'modern' | 'executive' | 'minimal';
+type QuoteTemplate = TemplateId;
 
 const TEMPLATES: Array<{ id: QuoteTemplate; es: string; en: string; descEs: string; descEn: string; swatch: string }> = [
   { id: 'corporate', es: 'Corporate', en: 'Corporate', descEs: 'Barra de color, clásico', descEn: 'Color bar, classic', swatch: '#4338CA' },
   { id: 'modern', es: 'Modern', en: 'Modern', descEs: 'Panel de color, audaz', descEn: 'Color panel, bold', swatch: '#2563EB' },
   { id: 'executive', es: 'Executive', en: 'Executive', descEs: 'Serif centrado, formal', descEn: 'Centered serif, formal', swatch: '#334155' },
   { id: 'minimal', es: 'Minimal', en: 'Minimal', descEs: 'Blanco y negro, limpio', descEn: 'Black & white, clean', swatch: '#0F172A' },
+];
+
+/**
+ * Paleta del cajón de diseño.
+ *
+ * Va plegada a propósito. La mayoría de la gente quiere mandar la cotización,
+ * no elegir un color; quien sí quiere, lo encuentra. Dieciséis tonos puestos
+ * a la vista convierten una pantalla de trabajo en un catálogo.
+ *
+ * Sin elección, manda el color de marca que el cliente guardó en
+ * Configuración — que sigue siendo la respuesta correcta por defecto.
+ */
+const COLORES: Array<{ hex: string; es: string; en: string }> = [
+  { hex: '#4338CA', es: 'Índigo', en: 'Indigo' },
+  { hex: '#1D4ED8', es: 'Azul', en: 'Blue' },
+  { hex: '#0369A1', es: 'Azul acero', en: 'Steel blue' },
+  { hex: '#0E7490', es: 'Cian profundo', en: 'Deep cyan' },
+  { hex: '#0F766E', es: 'Verde azulado', en: 'Teal' },
+  { hex: '#15803D', es: 'Verde', en: 'Green' },
+  { hex: '#4D7C0F', es: 'Oliva', en: 'Olive' },
+  { hex: '#A16207', es: 'Ámbar oscuro', en: 'Dark amber' },
+  { hex: '#C2410C', es: 'Naranja quemado', en: 'Burnt orange' },
+  { hex: '#B91C1C', es: 'Rojo', en: 'Red' },
+  { hex: '#9F1239', es: 'Carmesí', en: 'Crimson' },
+  { hex: '#A21CAF', es: 'Fucsia', en: 'Fuchsia' },
+  { hex: '#7E22CE', es: 'Púrpura', en: 'Purple' },
+  { hex: '#5B21B6', es: 'Violeta', en: 'Violet' },
+  { hex: '#334155', es: 'Pizarra', en: 'Slate' },
+  { hex: '#0F172A', es: 'Negro azulado', en: 'Near black' },
 ];
 
 const BLOCK_KEYS: Array<{ key: keyof ProposalBlocks; es: string; en: string }> = [
@@ -105,6 +136,30 @@ const BLOCK_KEYS: Array<{ key: keyof ProposalBlocks; es: string; en: string }> =
  *  propuesta que suena a contrato no vende. */
 const CLAUSULAS_DE_PROPUESTA = new Set(['exclusions', 'terms', 'warranty', 'payment_terms']);
 
+/**
+ * Traduce el perfil de marca al formato que espera el generador de PDF.
+ *
+ * Estaba escrito dos veces —en la vista previa y al pedir la firma— con la
+ * misma lista de campos copiada a mano, así que añadir uno nuevo obligaba a
+ * acordarse de los dos sitios. Faltaban justamente los que el cliente
+ * configura y no salían: tamaño y posición del logo, marca de agua, y los
+ * textos de cabecera y pie.
+ */
+type Branding = Awaited<ReturnType<typeof getUserBranding>>;
+const aBrandingDePdf = (b: Branding | null) => (b ? {
+  company_logo_url: b.companyLogoUrl, company_legal_name: b.companyLegalName,
+  company_address_line1: b.companyAddressLine1, company_address_line2: b.companyAddressLine2,
+  company_city: b.companyCity, company_state: b.companyState, company_country: b.companyCountry,
+  company_phone: b.companyPhone, company_email: b.companyEmail, company_website: b.companyWebsite,
+  brand_color_primary: b.brandColorPrimary, brand_color_secondary: b.brandColorSecondary, brand_font: b.brandFont,
+  bank_name: b.bankName, bank_account: b.bankAccount, payment_ach: b.paymentAch,
+  payment_zelle: b.paymentZelle, payment_nequi: b.paymentNequi, payment_daviplata: b.paymentDaviplata,
+  payment_paypal: b.paymentPaypal,
+  logo_size: b.logoSize, logo_position: b.logoPosition,
+  enable_logo_in_docs: b.enableLogoInDocs, use_watermark: b.useWatermark,
+  header_text: b.headerText, footer_text: b.footerText,
+} : null);
+
 const inputClass = 'w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-indigo-400';
 const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600';
 
@@ -117,17 +172,13 @@ export function MyQuoteEditorPage() {
   // Guía por voz: presenta la cotización, dice cuántos bloques tiene y cuenta
   // que los textos largos se pueden dictar. Cada sección se narra al llegar.
   const seccionesDeVoz = useMemo(() => ({
-    proyecto: {
-      es: 'Datos del proyecto. El resumen, el objetivo y el alcance me los puedes dictar con el micrófono de abajo, y yo te los dejo bien escritos sin cambiar lo que quisiste decir.',
-      en: 'Project details. You can dictate the summary, the objective and the scope with the microphone below each one, and I’ll tidy them up without changing what you meant.',
-    },
     items: {
-      es: 'Productos y servicios. Añade cada ítem con su cantidad y su precio, que del total me encargo yo.',
-      en: 'Products and services. Add each item with its quantity and price; the total is worked out for you.',
+      es: 'Productos y servicios. Pon cada cosa con su cantidad y su precio, y de las cuentas me encargo yo: el descuento, el impuesto y el total se van calculando solos mientras escribes.',
+      en: 'Products and services. Add each item with its quantity and price, and leave the maths to me: discount, tax and total work themselves out as you type.',
     },
     propuesta: {
-      es: 'Propuesta comercial. Son secciones opcionales: activa solo las que necesites. Cualquiera me la puedes dictar y yo te la dejo bien redactada.',
-      en: 'Commercial proposal. These sections are optional: turn on only the ones you need. You can dictate any of them and I’ll tidy up the wording.',
+      es: 'Aquí va el cuerpo de tu cotización, y tienes dos opciones. Pegas el texto en el recuadro y eso es exactamente lo que va a quedar. O te vas a la pestaña de al lado, me hablas por el micrófono, me dices algo como «hazme una cotización de treinta agendas a treinta mil cada una», y yo te escribo el texto completo y de paso te dejo los productos puestos aquí abajo. Tú decides, y lo que yo escriba lo puedes cambiar entero.',
+      en: 'This is the body of your quote, and you have two options. Paste your text in the box and that is exactly what comes out. Or switch to the other tab, talk to me through the microphone — something like "write me a quote for thirty planners at thirty thousand each" — and I will write the whole text and fill in the products below. Your call, and you can change anything I write.',
     },
   }), []);
 
@@ -154,6 +205,10 @@ export function MyQuoteEditorPage() {
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [quoteType, setQuoteType] = useState<QuoteType>('quote');
   const [template, setTemplate] = useState<QuoteTemplate>('corporate');
+  /** null = usar el color de marca guardado en Configuración. */
+  const [brandColor, setBrandColor] = useState<string | null>(null);
+  const [showDesign, setShowDesign] = useState(false);
+  const [showBlocks, setShowBlocks] = useState(false);
 
   const [clientName, setClientName] = useState('');
   const [clientCompany, setClientCompany] = useState('');
@@ -185,7 +240,11 @@ export function MyQuoteEditorPage() {
       setQuoteId(quote.id);
       setCountryCode(quote.country);
       setQuoteType(quote.quote_type);
-      setTemplate((quote.template as QuoteTemplate) || 'corporate');
+      // `template` guarda maqueta y color juntos ("corporate|#B91C1C"); ver
+      // parseTemplate en quote-pdf-generator.ts.
+      const { layout, color } = parseTemplate(quote.template);
+      setTemplate(layout);
+      setBrandColor(color);
       setClientName(quote.client_name); setClientCompany(quote.client_company ?? '');
       setClientPosition(quote.client_position ?? ''); setClientEmail(quote.client_email ?? '');
       setClientPhone(quote.client_phone ?? ''); setClientAddress(quote.client_address ?? '');
@@ -230,7 +289,7 @@ export function MyQuoteEditorPage() {
     project_name: projectName, executive_summary: executiveSummary, project_objective: projectObjective,
     project_scope: projectScope, proposal_blocks: blocks,
     subtotal: totals.subtotal, discount_total: totals.discountTotal, tax_total: totals.taxTotal, total: totals.total,
-    template,
+    template: buildTemplateValue(template, brandColor),
   });
 
   /** Actually inserts the quote row — called either directly (free slot
@@ -314,16 +373,7 @@ export function MyQuoteEditorPage() {
       };
       const pdfBytes = await generateQuotePdf(
         draftQuote as Parameters<typeof generateQuotePdf>[0], items,
-        branding ? {
-          company_logo_url: branding.companyLogoUrl, company_legal_name: branding.companyLegalName,
-          company_address_line1: branding.companyAddressLine1, company_address_line2: branding.companyAddressLine2,
-          company_city: branding.companyCity, company_state: branding.companyState, company_country: branding.companyCountry,
-          company_phone: branding.companyPhone, company_email: branding.companyEmail, company_website: branding.companyWebsite,
-          brand_color_primary: branding.brandColorPrimary, brand_color_secondary: branding.brandColorSecondary, brand_font: branding.brandFont,
-          bank_name: branding.bankName, bank_account: branding.bankAccount, payment_ach: branding.paymentAch,
-          payment_zelle: branding.paymentZelle, payment_nequi: branding.paymentNequi, payment_daviplata: branding.paymentDaviplata,
-          payment_paypal: branding.paymentPaypal,
-        } : null,
+        aBrandingDePdf(branding),
         documentTitle,
       );
       const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
@@ -349,20 +399,7 @@ export function MyQuoteEditorPage() {
       if (!full) throw new Error('Quote not found after save');
       const branding = user?.id ? await getUserBranding(user.id) : null;
 
-      const pdfBytes = await generateQuotePdf(
-        full.quote, full.items,
-        branding ? {
-          company_logo_url: branding.companyLogoUrl, company_legal_name: branding.companyLegalName,
-          company_address_line1: branding.companyAddressLine1, company_address_line2: branding.companyAddressLine2,
-          company_city: branding.companyCity, company_state: branding.companyState, company_country: branding.companyCountry,
-          company_phone: branding.companyPhone, company_email: branding.companyEmail, company_website: branding.companyWebsite,
-          brand_color_primary: branding.brandColorPrimary, brand_color_secondary: branding.brandColorSecondary, brand_font: branding.brandFont,
-          bank_name: branding.bankName, bank_account: branding.bankAccount, payment_ach: branding.paymentAch,
-          payment_zelle: branding.paymentZelle, payment_nequi: branding.paymentNequi, payment_daviplata: branding.paymentDaviplata,
-          payment_paypal: branding.paymentPaypal,
-        } : null,
-        documentTitle,
-      );
+      const pdfBytes = await generateQuotePdf(full.quote, full.items, aBrandingDePdf(branding), documentTitle);
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
 
       const documentId = await createDocumentRecord({ name: projectName || full.quote.quote_number, userId: user?.id ?? null });
@@ -498,6 +535,59 @@ export function MyQuoteEditorPage() {
               </button>
             ))}
           </div>
+          {/* Cajón de diseño. Plegado por defecto: quien entra a mandar una
+              cotización no viene a elegir un color, y dieciséis tonos a la
+              vista convierten la pantalla en un catálogo. */}
+          <button
+            type="button"
+            onClick={() => setShowDesign((v) => !v)}
+            className="mt-4 flex w-full items-center justify-between rounded-2xl bg-slate-50 px-4 py-2.5 text-left"
+          >
+            <span className="flex items-center gap-2 text-xs font-bold text-slate-600">
+              <Palette className="size-3.5 text-slate-400" />
+              {language === 'en' ? 'More colours' : 'Más colores'}
+              <span className="font-normal text-slate-400">
+                {brandColor
+                  ? (language === 'en' ? 'custom' : 'personalizado')
+                  : (language === 'en' ? 'using your brand colour' : 'usando el color de tu marca')}
+              </span>
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="size-4 rounded-full ring-1 ring-black/10" style={{ background: brandColor ?? '#CBD5E1' }} />
+              {showDesign ? <ChevronUp className="size-4 text-slate-400" /> : <ChevronDown className="size-4 text-slate-400" />}
+            </span>
+          </button>
+
+          {showDesign && (
+            <div className="mt-3 rounded-2xl border border-slate-100 p-4">
+              <div className="grid grid-cols-8 gap-2">
+                {COLORES.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    title={language === 'en' ? c.en : c.es}
+                    onClick={() => setBrandColor(c.hex)}
+                    className={`flex aspect-square items-center justify-center rounded-xl ring-offset-1 transition ${
+                      brandColor === c.hex ? 'ring-2 ring-slate-800' : 'ring-1 ring-black/10 hover:ring-slate-400'
+                    }`}
+                    style={{ background: c.hex }}
+                  >
+                    {brandColor === c.hex && <Check className="size-3.5 text-white" />}
+                  </button>
+                ))}
+              </div>
+              {brandColor && (
+                <button
+                  type="button"
+                  onClick={() => setBrandColor(null)}
+                  className="mt-3 text-[11px] font-semibold text-slate-500 underline hover:text-slate-700"
+                >
+                  {language === 'en' ? 'Back to my brand colour' : 'Volver al color de mi marca'}
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             disabled={previewing}
@@ -522,11 +612,149 @@ export function MyQuoteEditorPage() {
           </div>
         </div>
 
-        {/* Project data */}
-        <div data-seccion-voz="proyecto" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Project' : 'Datos del Proyecto'}</p>
-          <label className={labelClass}>{language === 'en' ? 'Project name' : 'Nombre del proyecto'}</label>
-          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} className={`${inputClass} mb-3`} />
+        {/* Nombre del proyecto: una sola línea, junto a los datos del cliente,
+            porque es parte de a quién y para qué va dirigida la cotización.
+            El resumen, el objetivo y el alcance se fueron al cajón de abajo:
+            eran tres textos largos de relleno obligatorio en la mitad de la
+            pantalla, y el cuerpo de la propuesta ya cuenta todo eso. */}
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <label className={labelClass}>{language === 'en' ? 'Project or subject' : 'Proyecto o asunto'}</label>
+          <input
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            className={inputClass}
+            placeholder={language === 'en' ? 'Corporate planners 2026' : 'Dotación de agendas 2026'}
+          />
+        </div>
+
+        {/* Line items */}
+        <div data-seccion-voz="items" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Products & Services' : 'Productos y Servicios'}</p>
+          <div className="space-y-3">
+            {items.map((item, i) => (
+              <div key={i} className="rounded-2xl bg-slate-50 p-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    value={item.description}
+                    onChange={(e) => updateItem(i, { description: e.target.value })}
+                    placeholder={language === 'en'
+                      ? 'Description of the product or service'
+                      : 'Descripción del producto o servicio'}
+                    className={`${inputClass} bg-white`}
+                  />
+                  <button type="button" onClick={() => removeItem(i)} className="shrink-0 text-slate-300 hover:text-red-500"><Trash2 className="size-4" /></button>
+                </div>
+                {/* Cada casilla lleva de fondo un ejemplo de lo que va en
+                    ella, y desaparece al escribir. Sin eso, cinco casillas
+                    numéricas seguidas no dicen cuál es cuál.
+
+                    Los números se pintan con `|| ''` para que un 0 se vea
+                    vacío y deje leer el ejemplo: un input de tipo number con
+                    valor 0 muestra «0» y tapa el placeholder, que es
+                    justamente donde estaba la duda. */}
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400">{language === 'en' ? 'Quantity' : 'Cantidad'}</span>
+                    <input
+                      type="number" min={0} inputMode="decimal"
+                      value={item.quantity || ''}
+                      onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })}
+                      placeholder="1"
+                      className={`${inputClass} bg-white text-xs`}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400">{language === 'en' ? 'Unit of measure' : 'Unidad de medida'}</span>
+                    <input
+                      value={item.unit}
+                      onChange={(e) => updateItem(i, { unit: e.target.value })}
+                      placeholder={language === 'en' ? 'units, grams, litres…' : 'unidades, gramos, litros…'}
+                      className={`${inputClass} bg-white text-xs`}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400">{language === 'en' ? 'Unit price' : 'Precio unitario'}</span>
+                    <input
+                      type="number" min={0} inputMode="decimal"
+                      value={item.unit_price || ''}
+                      onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}
+                      placeholder={language === 'en' ? 'Price per unit' : 'Precio por unidad'}
+                      className={`${inputClass} bg-white text-xs`}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400">{language === 'en' ? 'Discount' : 'Descuento'}</span>
+                    <input
+                      type="number" min={0} max={100} inputMode="decimal"
+                      value={item.discount_pct || ''}
+                      onChange={(e) => updateItem(i, { discount_pct: Number(e.target.value) })}
+                      placeholder={language === 'en' ? '% discount' : '% de descuento'}
+                      className={`${inputClass} bg-white text-xs`}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-400">{language === 'en' ? 'Tax' : 'Impuesto'}</span>
+                    <input
+                      type="number" min={0} max={100} inputMode="decimal"
+                      value={item.tax_pct || ''}
+                      onChange={(e) => updateItem(i, { tax_pct: Number(e.target.value) })}
+                      placeholder={language === 'en' ? '% tax' : '% de IVA'}
+                      className={`${inputClass} bg-white text-xs`}
+                    />
+                  </label>
+                </div>
+                <p className="mt-1.5 text-right text-xs font-bold text-slate-500">{`$${computeLineItemTotal(item).toFixed(2)}`}</p>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={addItem} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-indigo-600">
+            <Plus className="size-3.5" /> {language === 'en' ? 'Add item' : 'Agregar producto'}
+          </button>
+
+          <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-right text-sm">
+            <p className="text-slate-500">{language === 'en' ? 'Subtotal' : 'Subtotal'}: <b className="text-slate-800">${totals.subtotal.toFixed(2)}</b></p>
+            {totals.discountTotal > 0 && <p className="text-slate-500">{language === 'en' ? 'Discount' : 'Descuento'}: <b className="text-slate-800">-${totals.discountTotal.toFixed(2)}</b></p>}
+            {totals.taxTotal > 0 && <p className="text-slate-500">{language === 'en' ? 'Taxes' : 'Impuestos'}: <b className="text-slate-800">${totals.taxTotal.toFixed(2)}</b></p>}
+            <p className="text-lg font-black text-indigo-700">{language === 'en' ? 'Total' : 'Total'}: ${totals.total.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <PropuestaComercial
+          texto={blocks.pitch ?? ''}
+          onTexto={(v) => setBlocks((prev) => ({ ...prev, pitch: v }))}
+          language={language}
+          clientName={clientName}
+          clientCompany={clientCompany}
+          projectName={projectName}
+          onItems={setItems}
+        />
+
+        {/* El camino largo: las diez secciones sueltas y los tres textos de
+            proyecto. Plegado, porque para mandar una cotización de treinta
+            agendas no hace falta nada de esto — pero quien arma propuestas por
+            secciones lo sigue teniendo entero. */}
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowBlocks((v) => !v)}
+            className="flex w-full items-center justify-between px-6 py-4 text-left"
+          >
+            <span>
+              <span className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                <SlidersHorizontal className="size-4 text-slate-400" />
+                {language === 'en' ? 'Break it into sections' : 'Separar la propuesta en secciones'}
+              </span>
+              <span className="mt-0.5 block pl-6 text-xs text-slate-400">
+                {language === 'en'
+                  ? 'Optional. Summary, scope, timeline, terms, warranty…'
+                  : 'Opcional. Resumen, alcance, cronograma, condiciones, garantías…'}
+              </span>
+            </span>
+            {showBlocks ? <ChevronUp className="size-4 shrink-0 text-slate-400" /> : <ChevronDown className="size-4 shrink-0 text-slate-400" />}
+          </button>
+
+          {showBlocks && (
+          <div className="border-t border-slate-100 p-6">
           <label className={labelClass}>{language === 'en' ? 'Executive summary' : 'Resumen ejecutivo'}</label>
           <textarea value={executiveSummary} onChange={(e) => setExecutiveSummary(e.target.value)} rows={2} className={inputClass} />
           <DictadoYMejora
@@ -554,51 +782,8 @@ export function MyQuoteEditorPage() {
             contexto={language === 'en' ? 'Project scope' : 'Alcance del proyecto'}
             tono="letter"
           />
-        </div>
 
-        {/* Line items */}
-        <div data-seccion-voz="items" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Products & Services' : 'Productos y Servicios'}</p>
-          <div className="space-y-3">
-            {items.map((item, i) => (
-              <div key={i} className="rounded-2xl bg-slate-50 p-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    value={item.description}
-                    onChange={(e) => updateItem(i, { description: e.target.value })}
-                    placeholder={language === 'en' ? 'Description' : 'Descripción'}
-                    className={`${inputClass} bg-white`}
-                  />
-                  <button type="button" onClick={() => removeItem(i)} className="shrink-0 text-slate-300 hover:text-red-500"><Trash2 className="size-4" /></button>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  <input type="number" min={0} value={item.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} placeholder={language === 'en' ? 'Qty' : 'Cant.'} className={`${inputClass} bg-white text-xs`} />
-                  <input value={item.unit} onChange={(e) => updateItem(i, { unit: e.target.value })} placeholder={language === 'en' ? 'Unit' : 'Unidad'} className={`${inputClass} bg-white text-xs`} />
-                  <input type="number" min={0} value={item.unit_price} onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })} placeholder={language === 'en' ? 'Price' : 'Precio'} className={`${inputClass} bg-white text-xs`} />
-                  <input type="number" min={0} max={100} value={item.discount_pct} onChange={(e) => updateItem(i, { discount_pct: Number(e.target.value) })} placeholder="% Desc." className={`${inputClass} bg-white text-xs`} />
-                  <input type="number" min={0} max={100} value={item.tax_pct} onChange={(e) => updateItem(i, { tax_pct: Number(e.target.value) })} placeholder="% Tax" className={`${inputClass} bg-white text-xs`} />
-                </div>
-                <p className="mt-1.5 text-right text-xs font-bold text-slate-500">{`$${computeLineItemTotal(item).toFixed(2)}`}</p>
-              </div>
-            ))}
-          </div>
-          <button type="button" onClick={addItem} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-indigo-600">
-            <Plus className="size-3.5" /> {language === 'en' ? 'Add item' : 'Agregar producto'}
-          </button>
-
-          <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-right text-sm">
-            <p className="text-slate-500">{language === 'en' ? 'Subtotal' : 'Subtotal'}: <b className="text-slate-800">${totals.subtotal.toFixed(2)}</b></p>
-            {totals.discountTotal > 0 && <p className="text-slate-500">{language === 'en' ? 'Discount' : 'Descuento'}: <b className="text-slate-800">-${totals.discountTotal.toFixed(2)}</b></p>}
-            {totals.taxTotal > 0 && <p className="text-slate-500">{language === 'en' ? 'Taxes' : 'Impuestos'}: <b className="text-slate-800">${totals.taxTotal.toFixed(2)}</b></p>}
-            <p className="text-lg font-black text-indigo-700">{language === 'en' ? 'Total' : 'Total'}: ${totals.total.toFixed(2)}</p>
-          </div>
-        </div>
-
-        {/* Proposal blocks */}
-        <div data-seccion-voz="propuesta" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="mb-1 text-sm font-bold text-slate-800">{language === 'en' ? 'Commercial Proposal' : 'Propuesta Comercial'}</p>
-          <p className="mb-4 text-xs text-slate-400">{language === 'en' ? 'Optional sections — activate what you need.' : 'Secciones opcionales — activa las que necesites.'}</p>
-          <div className="space-y-2">
+          <div className="mt-5 space-y-2">
             {BLOCK_KEYS.map(({ key, es, en }) => (
               <div key={key} className="rounded-xl border border-slate-100">
                 <button type="button" onClick={() => toggleBlock(key)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm font-semibold text-slate-700">
@@ -628,6 +813,8 @@ export function MyQuoteEditorPage() {
               </div>
             ))}
           </div>
+          </div>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">

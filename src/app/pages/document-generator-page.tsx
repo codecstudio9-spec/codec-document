@@ -35,6 +35,7 @@ import { IntentModal } from '../components/IntentModal';
 import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
+import { PAISES_FISCALES, resolverPais, etiquetaFiscal, placeholderFiscal } from '../data/paises-fiscales';
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
 import { saveDocumentRecord } from '../services/documents-service';
 import { nombrePersonaDeValores, tituloDeDocumento } from '../utils/nombre-del-documento';
@@ -2542,12 +2543,24 @@ function ContenidoGenerador() {
 
                   <div className="space-y-2">
                     <Label htmlFor="companyCountry">{language === 'en' ? 'Country' : 'País'}</Label>
-                    <Input id="companyCountry" value={branding.companyCountry || ''} onChange={(e) => setBranding((prev) => ({ ...prev, companyCountry: e.target.value }))} placeholder={language === 'en' ? 'United States' : 'Estados Unidos'} />
+                    <select
+                      id="companyCountry"
+                      value={resolverPais(branding.companyCountry)?.code ?? ''}
+                      onChange={(e) => setBranding((prev) => ({ ...prev, companyCountry: e.target.value || undefined }))}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none md:text-sm"
+                    >
+                      <option value="">{language === 'en' ? 'Select a country…' : 'Elige un país…'}</option>
+                      {PAISES_FISCALES.map((p) => (
+                        <option key={p.code} value={p.code}>
+                          {p.flag} {language === 'en' ? p.nameEn : p.nameEs}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="companyEIN">{language === 'en' ? 'EIN / Tax ID' : 'EIN / Identificación fiscal'}</Label>
-                    <Input id="companyEIN" value={branding.companyEIN || ''} onChange={(e) => setBranding((prev) => ({ ...prev, companyEIN: e.target.value }))} placeholder="XX-XXXXXXX" />
+                    <Label htmlFor="companyEIN">{etiquetaFiscal(branding.companyCountry, language)}</Label>
+                    <Input id="companyEIN" value={branding.companyEIN || ''} onChange={(e) => setBranding((prev) => ({ ...prev, companyEIN: e.target.value }))} placeholder={placeholderFiscal(branding.companyCountry)} />
                   </div>
 
                   <div className="space-y-2">

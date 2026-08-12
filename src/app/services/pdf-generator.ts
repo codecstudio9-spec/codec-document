@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { DocumentBranding } from '../types/document';
 import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signature-jurisdictions';
+import { etiquetaFiscal, nombrePais } from '../data/paises-fiscales';
 import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
 
 interface PDFGeneratorOptions {
@@ -1227,7 +1228,9 @@ export class PDFGenerator {
       this.doc.saveGraphicsState();
 
       try {
-        const format = branding.logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+        // Caja cuadrada, imagen NO cuadrada: drawImageFit encaja el logo
+        // dentro respetando su proporción real. Antes se forzaban 82×82 y un
+        // logotipo apaisado salía estirado a lo alto en cada página.
         const watermarkSize = 82;
         const x = (this.pageWidth - watermarkSize) / 2;
         const y = (this.pageHeight - watermarkSize) / 2;
@@ -1238,7 +1241,7 @@ export class PDFGenerator {
           anyDoc.setGState(new anyDoc.GState({ opacity: 0.15 }));
         }
 
-        this.doc.addImage(branding.logoDataUrl, format, x, y, watermarkSize, watermarkSize, undefined, 'FAST', 0);
+        this.drawImageFit(branding.logoDataUrl, x, y, watermarkSize, watermarkSize);
       } catch {
         // If logo watermark fails, continue generating PDF without interrupting output.
       }
@@ -1404,25 +1407,36 @@ export class PDFGenerator {
 
       const cityLine = [city, state, zip].filter(Boolean).join(', ').replace(', ,', ',');
       if (cityLine) companyLines.push(cityLine);
-      if (country) companyLines.push(country);
+      // El país se guarda como código ISO desde que es una lista; sin esto el
+      // documento imprimiría «CO» en vez de «Colombia». nombrePais devuelve el
+      // texto tal cual si no reconoce el valor, así que los perfiles antiguos
+      // escritos a mano siguen saliendo igual que antes.
+      if (country) companyLines.push(nombrePais(country, this.language));
 
       const contactParts = [phone, email, website].filter(Boolean);
       if (contactParts.length) companyLines.push(contactParts.join('  |  '));
 
-      if (ein) companyLines.push(`EIN/Tax ID: ${ein}`);
+      // La etiqueta la decide el país. Poner «EIN» —el número federal
+      // estadounidense— delante del NIT de una empresa colombiana es un dato
+      // mal rotulado dentro de un documento que alguien firma.
+      if (ein) companyLines.push(`${etiquetaFiscal(country, this.language)}: ${ein}`);
     }
 
     if (hasLogo && branding?.logoDataUrl) {
       try {
-        const format = branding.logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-        const logoWidth = 12;
-        const logoHeight = 12;
-        const logoX = this.pageWidth - this.margin - logoWidth;
+        // Caja más ancha que alta (28×12) y anclada a la derecha: un logotipo
+        // apaisado necesita ancho para no encogerse a nada, y uno cuadrado
+        // sigue ocupando sus 12 mm de alto. Con la caja de 12×12 anterior, un
+        // logo 4:1 se aplastaba hasta quedar ilegible en la cabecera.
+        const boxW = 28;
+        const boxH = 12;
         const logoY = topY - 4;
         // Force fully opaque, vibrant logo in premium header.
         this.doc.setTextColor(0, 0, 0);
-        this.doc.addImage(branding.logoDataUrl, format, logoX, logoY, logoWidth, logoHeight, undefined, 'FAST');
-        logoBottomY = logoY + logoHeight;
+        const puesto = this.drawImageFit(
+          branding.logoDataUrl, this.pageWidth - this.margin - boxW, logoY, boxW, boxH, 'right',
+        );
+        logoBottomY = puesto.y + puesto.height;
       } catch {
         // Continue with title-only premium header
       }
@@ -1468,8 +1482,9 @@ export class PDFGenerator {
 
     if (letterhead.logoDataUrl) {
       try {
-        const format = letterhead.logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-        this.doc.addImage(letterhead.logoDataUrl, format, this.margin, startY, 24, 24, undefined, 'FAST');
+        // Caja de 40×24 alineada a la izquierda, en vez de 24×24 forzados:
+        // el membrete es el sitio donde más se nota un logotipo deformado.
+        this.drawImageFit(letterhead.logoDataUrl, this.margin, startY, 40, 24, 'left');
       } catch {
         // If image fails, continue without breaking PDF generation.
       }
@@ -1488,6 +1503,41 @@ export class PDFGenerator {
     this.doc.setLineWidth(0.2);
     this.doc.line(this.margin, this.currentY, this.pageWidth - this.margin, this.currentY);
     this.addSpacing(0.8);
+  }
+
+  /**
+   * Dibuja una imagen dentro de una caja SIN deformarla y SIN pintar fondo.
+   *
+   * Se diferencia de addImageContain en el fondo blanco: aquel lo pinta porque
+   * enmarca firmas y fotos, pero un logotipo o una marca de agua sobre un
+   * rectángulo blanco tapa lo que tiene detrás.
+   *
+   * Existe porque el logo del cliente se dibujaba con alto y ancho fijos e
+   * iguales —82×82 en la marca de agua, 12×12 en la cabecera, 24×24 en el
+   * membrete—, así que cualquier logotipo que no fuera exactamente cuadrado
+   * salía estirado o aplastado. Y apaisado es lo normal en un logotipo, no la
+   * excepción: la marca del cliente se veía mal en su propio documento.
+   *
+   * Devuelve el rectángulo realmente ocupado, para que quien llama sepa dónde
+   * continuar en vez de suponer el alto de la caja.
+   */
+  private drawImageFit(
+    dataUrl: string, x: number, y: number, boxW: number, boxH: number,
+    align: 'left' | 'center' | 'right' = 'center',
+  ): { width: number; height: number; x: number; y: number } {
+    const props = this.doc.getImageProperties(dataUrl);
+    const imgW = Math.max(1, props.width);
+    const imgH = Math.max(1, props.height);
+    const scale = Math.min(boxW / imgW, boxH / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const drawX = align === 'left' ? x : align === 'right' ? x + (boxW - drawW) : x + (boxW - drawW) / 2;
+    const drawY = y + (boxH - drawH) / 2;
+    const fmt = dataUrl.startsWith('data:image/png') ? 'PNG'
+      : dataUrl.startsWith('data:image/webp') ? 'WEBP' : 'JPEG';
+
+    this.doc.addImage(dataUrl, fmt, drawX, drawY, drawW, drawH, undefined, 'FAST');
+    return { width: drawW, height: drawH, x: drawX, y: drawY };
   }
 
   private addImageContain(dataUrl: string, x: number, y: number, width: number, height: number): void {

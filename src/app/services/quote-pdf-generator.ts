@@ -1,21 +1,38 @@
 /**
- * Smart Quotes PDF — deliberately separate from PDFGenerator
- * (pdf-generator.ts), which is purpose-built for jurisdiction-aware legal
- * documents and already carries a lot of that-specific complexity.
- * Quotes have a different shape entirely (cover page, line-items table,
- * financial summary, proposal blocks) — a dedicated generator here keeps
- * both simple and avoids risking the legal-doc generator while building
- * this.
+ * Smart Quotes PDF — deliberadamente separado de PDFGenerator
+ * (pdf-generator.ts), que está hecho para documentos legales con lógica de
+ * jurisdicción y ya carga bastante complejidad propia.
  *
- * Four templates, genuinely different layouts (not just a recolor):
- * - Corporate: color top bar, logo + address block, left-aligned title.
- * - Modern: full-bleed color header panel, white title inside it, bold
- *   sans throughout, angular accent block on the summary page.
- * - Executive: serif (jsPDF "times"), centered title page, grayscale with
- *   the brand color used only as a thin double-rule — a formal
- *   engagement-letter feel.
- * - Minimal: pure black/white, one thin accent line under the title, no
- *   fills at all, generous whitespace, small-caps-style labels.
+ * ── Por qué se reescribió la maquetación ─────────────────────────────────
+ *
+ * La versión anterior forzaba `addPage()` en cada sección: portada, resumen,
+ * bloques de propuesta, tabla de ítems y aceptación. Una cotización de tres
+ * productos salía en cinco páginas, casi todas vacías —la portada dejaba
+ * 120 mm en blanco bajo el nombre del cliente, y la página de aceptación
+ * tenía un párrafo y nada más—. Eso no es un problema estético: una
+ * cotización de agendas que llega en cinco hojas se lee como relleno y resta
+ * credibilidad al precio que va dentro.
+ *
+ * Ahora el documento FLUYE. Hay un solo motor de maquetación con un cursor
+ * vertical (`ctx.y`) y una única regla —`asegurarEspacio()`— que salta de
+ * página sólo cuando lo que viene no cabe. Una cotización corta sale en una
+ * hoja; una propuesta larga crece hasta donde haga falta, sin huecos.
+ *
+ * Las cuatro plantillas siguen siendo distintas de verdad (no un recoloreado),
+ * pero la diferencia está en la CABECERA y en los detalles de estilo, no en
+ * gastar una hoja entera de portada:
+ * - Corporate: banda de color superior, logo y datos enfrentados.
+ * - Modern:    panel de color con el título en blanco dentro.
+ * - Executive: serif centrado con doble filete fino, tono de carta formal.
+ * - Minimal:   blanco y negro, un filete y mucho aire, sin rellenos.
+ *
+ * ── Marca y configuración del cliente ────────────────────────────────────
+ *
+ * El generador anterior leía sólo el logo y los colores, e ignoraba el resto
+ * del perfil de marca que el cliente sí había configurado: tamaño del logo,
+ * posición, si quiere logo en los documentos, marca de agua, y los datos de
+ * pago. Aquí se respetan todos: lo que el cliente ve en Configuración es lo
+ * que sale en el PDF.
  */
 import { jsPDF } from 'jspdf';
 import type { Quote, QuoteLineItem, ProposalBlocks, QuotePublicBranding } from './quotes-service';
@@ -24,8 +41,20 @@ import { computeLineItemTotal } from './quotes-service';
 const PAGE_W = 210;
 const PAGE_H = 297;
 const MARGIN = 18;
+const CONTENT_W = PAGE_W - MARGIN * 2;
+/**
+ * Límite inferior del contenido. Debajo queda reservada la franja del pie:
+ * la nota de aceptación y la línea de numeración.
+ *
+ * La reserva es deliberada. Cuando la nota se maquetaba como una sección más
+ * del flujo, un documento que terminaba cerca del borde se llevaba esas dos
+ * líneas a una hoja nueva —y salía una página entera en blanco con un párrafo
+ * de letra pequeña arriba—. Reservar 30 mm en todas las páginas cuesta menos
+ * que una hoja fantasma en cualquiera.
+ */
+const FONDO = PAGE_H - 30;
 
-type TemplateId = 'corporate' | 'modern' | 'executive' | 'minimal';
+export type TemplateId = 'corporate' | 'modern' | 'executive' | 'minimal';
 type Lang = 'es' | 'en';
 
 function fmtMoney(n: number): string {
@@ -33,6 +62,7 @@ function fmtMoney(n: number): string {
 }
 
 const BLOCK_LABELS: Record<keyof ProposalBlocks, { es: string; en: string }> = {
+  pitch: { es: 'Propuesta', en: 'Proposal' },
   intro: { es: 'Introducción', en: 'Introduction' },
   problem: { es: 'Problema del Cliente', en: 'Client Problem' },
   solution: { es: 'Solución Propuesta', en: 'Proposed Solution' },
@@ -45,16 +75,34 @@ const BLOCK_LABELS: Record<keyof ProposalBlocks, { es: string; en: string }> = {
   notes: { es: 'Observaciones', en: 'Notes' },
 };
 
+/** Orden de aparición. `pitch` —el texto que el cliente pega de una vez— va
+ *  primero porque es el cuerpo de la propuesta; el resto son secciones
+ *  opcionales que casi nadie rellena y que sólo salen si tienen contenido. */
+const ORDEN_BLOQUES: Array<keyof ProposalBlocks> = [
+  'pitch', 'intro', 'problem', 'solution', 'benefits',
+  'exclusions', 'timeline', 'terms', 'warranty', 'payment_terms', 'notes',
+];
+
 function rgbOf(hex: string | null | undefined, fallback: [number, number, number]): [number, number, number] {
   if (!hex) return fallback;
-  const h = hex.replace('#', '');
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return [Number.isFinite(r) ? r : fallback[0], Number.isFinite(g) ? g : fallback[1], Number.isFinite(b) ? b : fallback[2]];
+  const h = hex.replace('#', '').trim();
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return fallback;
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+/** Blanco o negro según el fondo, para que el texto sobre la banda de color
+ *  se lea tanto si la marca es amarilla como si es azul marino. Fórmula de
+ *  luminancia relativa; el umbral 0.6 es el que deja legible el amarillo. */
+function textoSobre(fondo: [number, number, number]): [number, number, number] {
+  const [r, g, b] = fondo.map((c) => c / 255);
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return lum > 0.6 ? [20, 20, 20] : [255, 255, 255];
 }
 
 async function logoToDataUrl(url: string): Promise<string | null> {
+  // Si ya viene incrustado no hay nada que descargar. Además de ahorrar una
+  // petición, es lo que permite probar el generador fuera del navegador.
+  if (url.startsWith('data:')) return url;
   try {
     const res = await fetch(url);
     const blob = await res.blob();
@@ -69,6 +117,16 @@ async function logoToDataUrl(url: string): Promise<string | null> {
   }
 }
 
+/** El formato se deduce del propio data URL. Antes iba fijo a 'PNG', así que
+ *  un logo JPEG —lo que sale de la cámara o de casi cualquier descarga— o no
+ *  se dibujaba o se dibujaba corrupto. */
+function formatoDeDataUrl(dataUrl: string): 'PNG' | 'JPEG' | 'WEBP' {
+  const cabecera = dataUrl.slice(0, 30).toLowerCase();
+  if (cabecera.includes('jpeg') || cabecera.includes('jpg')) return 'JPEG';
+  if (cabecera.includes('webp')) return 'WEBP';
+  return 'PNG';
+}
+
 interface Ctx {
   doc: jsPDF;
   quote: Quote;
@@ -76,323 +134,619 @@ interface Ctx {
   branding: QuotePublicBranding | null;
   documentTitle: string;
   lang: Lang;
+  template: TemplateId;
   primary: [number, number, number];
   secondary: [number, number, number];
-  font: 'helvetica' | 'times' | 'courier';
+  font: 'helvetica' | 'times';
   logoDataUrl: string | null;
+  logoFormato: 'PNG' | 'JPEG' | 'WEBP';
+  /** Proporción ancho/alto real de la imagen, para no deformarla. */
+  logoRatio: number;
+  usarMarcaDeAgua: boolean;
+  /** Cursor vertical. Lo mueve cada bloque que escribe. */
+  y: number;
 }
 
-// ── Shared: section header used on the summary/proposal-block body pages,
-// styled per template so the whole document feels consistent, not just
-// the cover ─────────────────────────────────────────────────────────────
-function sectionHeader(ctx: Ctx, template: TemplateId, label: string, y: number): number {
-  const { doc, primary, font } = ctx;
-  doc.setFont(font, template === 'executive' ? 'bold' : 'bold');
+// ── Marca de agua ────────────────────────────────────────────────────────
+//
+// No existía. El cliente la activaba en Configuración y no aparecía en
+// ninguna cotización. Va en diagonal, grande y por DEBAJO del contenido
+// (se dibuja al abrir cada página, antes que nada), con opacidad baja para
+// que no compita con el texto pero se note.
+
+function marcaDeAgua(ctx: Ctx) {
+  if (!ctx.usarMarcaDeAgua) return;
+  const { doc } = ctx;
+  const GS = (doc as unknown as { GState: new (o: { opacity: number }) => unknown }).GState;
+
+  doc.saveGraphicsState();
+  try {
+    doc.setGState(new GS({ opacity: 0.07 }));
+
+    if (ctx.logoDataUrl) {
+      // El logo del cliente, centrado y grande, ajustado a una caja de
+      // 150 × 170 mm sobre una hoja de 210 × 297.
+      //
+      // Se limita por ANCHO Y POR ALTO. Fijando sólo el ancho, un logotipo
+      // vertical (por ejemplo 1:4) salía de 130 mm de ancho por 520 de alto y
+      // se derramaba fuera de la página por arriba y por abajo.
+      const CAJA_W = 150;
+      const CAJA_H = 170;
+      const ratio = ctx.logoRatio || 1;
+      const ancho = Math.min(CAJA_W, CAJA_H * ratio);
+      const alto = ancho / ratio;
+      try {
+        doc.addImage(ctx.logoDataUrl, ctx.logoFormato, (PAGE_W - ancho) / 2, (PAGE_H - alto) / 2, ancho, alto, undefined, 'FAST');
+      } catch { /* un logo ilegible no puede tumbar la cotización entera */ }
+    } else {
+      // Sin logo, el nombre de la empresa en diagonal. jsPDF mide el texto,
+      // así que el cuerpo se calcula para que ocupe el ancho de la diagonal
+      // en vez de fijar un tamaño que se desborde con nombres largos.
+      const texto = (ctx.branding?.company_legal_name || ctx.documentTitle).toUpperCase();
+      doc.setFont(ctx.font, 'bold');
+      doc.setTextColor(120, 120, 120);
+
+      // El largo admisible no es la diagonal de la hoja: un texto girado θ
+      // ocupa ancho·cos(θ) en horizontal, y ahí es donde se salía. Con 38° y
+      // 186 mm de ancho útil, el máximo real es 186/cos(38°) ≈ 236 mm. Antes
+      // se fijaba en 250 y la marca aparecía recortada por los dos lados.
+      const ANGULO = 38;
+      const rad = (ANGULO * Math.PI) / 180;
+      const objetivo = Math.min((PAGE_W - 26) / Math.cos(rad), (PAGE_H - 26) / Math.sin(rad));
+
+      let cuerpo = 90;
+      doc.setFontSize(cuerpo);
+      const anchoA90 = doc.getTextWidth(texto);
+      if (anchoA90 > 0) cuerpo = Math.max(24, Math.min(90, (cuerpo * objetivo) / anchoA90));
+      doc.setFontSize(cuerpo);
+
+      // El punto de partida se calcula a mano en vez de usar align:'center'.
+      // jsPDF aplica el centrado ANTES de rotar, así que con un ángulo el
+      // texto queda descolocado y se sale por un lado de la hoja. Aquí se
+      // retrocede media palabra a lo largo del propio eje del texto girado
+      // —que avanza en (cos θ, −sen θ)— y así el centro real cae en el centro
+      // de la página.
+      const largo = doc.getTextWidth(texto);
+      const x0 = PAGE_W / 2 - (largo / 2) * Math.cos(rad);
+      const y0 = PAGE_H / 2 + (largo / 2) * Math.sin(rad);
+      doc.text(texto, x0, y0, { angle: ANGULO, baseline: 'middle' });
+    }
+  } catch { /* si el motor no soporta opacidad, mejor sin marca que con un bloque opaco */ }
+  doc.restoreGraphicsState();
+}
+
+// ── Motor de flujo ───────────────────────────────────────────────────────
+
+function nuevaPagina(ctx: Ctx) {
+  ctx.doc.addPage();
+  marcaDeAgua(ctx);
+  ctx.y = MARGIN + 6;
+}
+
+/** La única regla de salto de página del documento: si lo que viene no cabe
+ *  en lo que queda de hoja, se abre otra. Nada más fuerza un salto. */
+function asegurarEspacio(ctx: Ctx, alto: number) {
+  if (ctx.y + alto > FONDO) nuevaPagina(ctx);
+}
+
+function pieDePagina(ctx: Ctx) {
+  const { doc, quote, branding, lang } = ctx;
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+
+    // La nota de aceptación va sólo en la última página, anclada a la franja
+    // reservada por FONDO. Así nunca puede generar una hoja para ella sola.
+    if (p === total) {
+      const nota = lang === 'en'
+        ? 'This document does not necessarily constitute a final legal contract unless the parties so indicate, but it is verifiable evidence of acceptance of this commercial proposal.'
+        : 'Este documento no constituye necesariamente un contrato legal definitivo, salvo que las partes así lo indiquen, pero sí constituye evidencia verificable de aceptación de la propuesta comercial.';
+      doc.setFont(ctx.font, 'normal');
+      doc.setFontSize(7.5);
+      const lineas = doc.splitTextToSize(nota, CONTENT_W) as string[];
+      // Se ancla por abajo: la última línea queda siempre a la misma altura,
+      // llegue el texto en una o en tres líneas.
+      let yNota = PAGE_H - 18 - (lineas.length - 1) * 3.4;
+      doc.setDrawColor(228, 228, 228);
+      doc.setLineWidth(0.25);
+      doc.line(MARGIN, yNota - 5, PAGE_W - MARGIN, yNota - 5);
+      doc.setTextColor(145, 145, 145);
+      for (const linea of lineas) {
+        doc.text(linea, MARGIN, yNota);
+        yNota += 3.4;
+      }
+    }
+
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(150, 150, 150);
+    const izquierda = [quote.quote_number, branding?.company_legal_name].filter(Boolean).join(' · ');
+    doc.text(izquierda, MARGIN, PAGE_H - 12);
+    if (total > 1) {
+      doc.text(`${p} / ${total}`, PAGE_W - MARGIN, PAGE_H - 12, { align: 'right' });
+    }
+    if (branding?.footer_text) {
+      doc.text(String(branding.footer_text).slice(0, 120), PAGE_W / 2, PAGE_H - 7, { align: 'center' });
+    }
+  }
+}
+
+function tituloDeSeccion(ctx: Ctx, label: string) {
+  const { doc, primary, template } = ctx;
+  asegurarEspacio(ctx, 16);
+  doc.setFont(ctx.font, 'bold');
+
   if (template === 'minimal') {
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(20, 20, 20);
-    doc.text(label.toUpperCase(), MARGIN, y);
+    doc.text(label.toUpperCase(), MARGIN, ctx.y);
     doc.setDrawColor(20, 20, 20);
     doc.setLineWidth(0.3);
-    doc.line(MARGIN, y + 2, PAGE_W - MARGIN, y + 2);
-    return y + 9;
+    doc.line(MARGIN, ctx.y + 1.8, PAGE_W - MARGIN, ctx.y + 1.8);
+    ctx.y += 7;
+    return;
   }
   if (template === 'executive') {
-    doc.setFontSize(12);
-    doc.setTextColor(60, 60, 60);
-    doc.text(label, PAGE_W / 2, y, { align: 'center' });
+    doc.setFontSize(11.5);
+    doc.setTextColor(50, 50, 50);
+    doc.text(label, PAGE_W / 2, ctx.y, { align: 'center' });
     doc.setDrawColor(...primary);
-    doc.setLineWidth(0.6);
-    doc.line(PAGE_W / 2 - 12, y + 2.5, PAGE_W / 2 + 12, y + 2.5);
-    return y + 11;
+    doc.setLineWidth(0.5);
+    doc.line(PAGE_W / 2 - 11, ctx.y + 2, PAGE_W / 2 + 11, ctx.y + 2);
+    ctx.y += 8.5;
+    return;
   }
   if (template === 'modern') {
     doc.setFillColor(...primary);
-    doc.rect(MARGIN, y - 5, 3, 7, 'F');
-    doc.setFontSize(13);
+    doc.rect(MARGIN, ctx.y - 3.6, 2.6, 5.2, 'F');
+    doc.setFontSize(11.5);
     doc.setTextColor(20, 20, 20);
-    doc.text(label, MARGIN + 6, y);
-    return y + 9;
+    doc.text(label, MARGIN + 5.5, ctx.y);
+    ctx.y += 7.5;
+    return;
   }
-  // corporate
-  doc.setFontSize(13);
+  doc.setFontSize(11.5);
   doc.setTextColor(...primary);
-  doc.text(label, MARGIN, y);
-  return y + 7;
+  doc.text(label, MARGIN, ctx.y);
+  ctx.y += 7;
 }
 
-function bodyText(ctx: Ctx, text: string, y: number, width = PAGE_W - MARGIN * 2, align: 'left' | 'center' = 'left'): number {
-  const { doc, font } = ctx;
-  doc.setFont(font, 'normal');
-  doc.setFontSize(10);
+/**
+ * Escribe un párrafo largo respetando saltos de línea y viñetas, y partiendo
+ * por página cuando hace falta. Es lo que recibe el texto que el cliente pega
+ * de una sola vez, así que tiene que aguantar cualquier cosa: líneas sueltas,
+ * listas con guiones, párrafos separados por líneas en blanco.
+ */
+function parrafo(ctx: Ctx, texto: string, centrado = false) {
+  const { doc } = ctx;
+  doc.setFont(ctx.font, 'normal');
+  doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
-  const x = align === 'center' ? PAGE_W / 2 : MARGIN;
-  const wrapped = doc.splitTextToSize(text, width);
-  doc.text(wrapped, x, y, align === 'center' ? { align: 'center' } : undefined);
-  return y + wrapped.length * 5 + 10;
+
+  const bloques = String(texto).replace(/\r\n/g, '\n').split('\n');
+  for (const bruto of bloques) {
+    const linea = bruto.trim();
+    if (!linea) { ctx.y += 2.6; continue; }
+
+    // Las viñetas se sangran y conservan su marca, en vez de fundirse con el
+    // párrafo anterior como pasaba antes al pasarlo todo por splitTextToSize.
+    const esVinieta = /^[-*•·]\s+/.test(linea);
+    const cuerpo = esVinieta ? linea.replace(/^[-*•·]\s+/, '') : linea;
+    const sangria = esVinieta ? 5 : 0;
+    const ancho = CONTENT_W - sangria;
+    const partes = doc.splitTextToSize(cuerpo, ancho);
+
+    for (let i = 0; i < partes.length; i++) {
+      asegurarEspacio(ctx, 6);
+      const x = centrado ? PAGE_W / 2 : MARGIN + sangria;
+      if (esVinieta && i === 0) {
+        doc.text('•', MARGIN + 1, ctx.y);
+      }
+      doc.text(partes[i], x, ctx.y, centrado ? { align: 'center' } : undefined);
+      ctx.y += 4.9;
+    }
+  }
+  ctx.y += 3.5;
 }
 
-// ── Cover pages — one per template, genuinely different layouts ────────
+// ── Cabecera (sustituye a la portada de página completa) ─────────────────
 
-async function renderCoverCorporate(ctx: Ctx) {
-  const { doc, primary, quote, branding, documentTitle, lang, logoDataUrl } = ctx;
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, PAGE_W, 8, 'F');
-  if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', MARGIN, 20, 32, 32, undefined, 'FAST'); } catch { /* skip */ } }
-
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(30, 30, 30);
-  doc.setFontSize(11);
-  doc.text(branding?.company_legal_name || '', PAGE_W - MARGIN, 25, { align: 'right' });
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  [branding?.company_address_line1, branding?.company_city, branding?.company_phone, branding?.company_email]
-    .filter(Boolean).forEach((line, i) => doc.text(line as string, PAGE_W - MARGIN, 31 + i * 5, { align: 'right' }));
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(28);
-  doc.setTextColor(...primary);
-  doc.text(documentTitle, MARGIN, 90);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`${lang === 'en' ? 'No.' : 'N.º'} ${quote.quote_number}`, MARGIN, 100);
-  doc.text(new Date(quote.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), MARGIN, 106);
-
-  doc.setFontSize(10);
-  doc.setTextColor(120, 120, 120);
-  doc.text(lang === 'en' ? 'PREPARED FOR' : 'PREPARADO PARA', MARGIN, 125);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(30, 30, 30);
-  doc.text(quote.client_name, MARGIN, 133);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
-  [quote.client_company, quote.client_email, quote.client_phone].filter(Boolean).forEach((line, i) => doc.text(line as string, MARGIN, 140 + i * 5));
-
-  if (quote.project_name) {
-    doc.setFontSize(10);
-    doc.setTextColor(120, 120, 120);
-    doc.text(lang === 'en' ? 'PROJECT' : 'PROYECTO', MARGIN, 165);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(30, 30, 30);
-    doc.text(quote.project_name, MARGIN, 173);
+function dibujarLogo(ctx: Ctx, x: number, y: number, altoMax: number): number {
+  if (!ctx.logoDataUrl) return 0;
+  const alto = altoMax;
+  const ancho = alto * (ctx.logoRatio || 1);
+  try {
+    ctx.doc.addImage(ctx.logoDataUrl, ctx.logoFormato, x, y, ancho, alto, undefined, 'FAST');
+    return ancho;
+  } catch {
+    return 0;
   }
 }
 
-async function renderCoverModern(ctx: Ctx) {
-  const { doc, primary, secondary, quote, branding, documentTitle, lang, logoDataUrl } = ctx;
-  // Full-bleed color header panel
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, PAGE_W, 95, 'F');
-  doc.setFillColor(...secondary);
-  doc.triangle(PAGE_W - 40, 0, PAGE_W, 0, PAGE_W, 40, 'F');
+/** Alto del logo en mm según lo que el cliente eligió en Configuración. */
+function altoDelLogo(ctx: Ctx): number {
+  const tam = ctx.branding?.logo_size ?? 'medium';
+  return tam === 'small' ? 12 : tam === 'large' ? 26 : 18;
+}
 
-  if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', MARGIN, 16, 24, 24, undefined, 'FAST'); } catch { /* skip */ } }
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text(branding?.company_legal_name || '', PAGE_W - MARGIN, 20, { align: 'right' });
+function bloqueEmpresa(ctx: Ctx, x: number, y: number, alinear: 'left' | 'right'): number {
+  const { doc, branding } = ctx;
+  let yy = y;
+  doc.setFont(ctx.font, 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(30, 30, 30);
+  if (branding?.company_legal_name) {
+    doc.text(branding.company_legal_name, x, yy, { align: alinear });
+    yy += 4.6;
+  }
+  doc.setFont(ctx.font, 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(115, 115, 115);
+  const lineas = [
+    branding?.company_address_line1,
+    [branding?.company_city, branding?.company_state].filter(Boolean).join(', ') || null,
+    branding?.company_phone,
+    branding?.company_email,
+    branding?.company_website,
+  ].filter(Boolean) as string[];
+  for (const l of lineas) {
+    doc.text(l, x, yy, { align: alinear });
+    yy += 3.9;
+  }
+  return yy;
+}
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(30);
-  doc.setTextColor(255, 255, 255);
-  doc.text(documentTitle, MARGIN, 60);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.text(`${lang === 'en' ? 'No.' : 'N.º'} ${quote.quote_number}  ·  ${new Date(quote.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`, MARGIN, 72);
+function cabecera(ctx: Ctx) {
+  const { doc, quote, template, primary, secondary, documentTitle, lang } = ctx;
+  const mostrarLogo = ctx.branding?.enable_logo_in_docs !== false && Boolean(ctx.logoDataUrl);
+  const aDerecha = ctx.branding?.logo_position === 'right';
+  const altoLogo = altoDelLogo(ctx);
+  const fecha = new Date(quote.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const numero = `${lang === 'en' ? 'No.' : 'N.º'} ${quote.quote_number}`;
 
-  let y = 115;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...primary);
-  doc.text(lang === 'en' ? 'PREPARED FOR' : 'PREPARADO PARA', MARGIN, y);
-  y += 8;
-  doc.setFontSize(15);
-  doc.setTextColor(20, 20, 20);
-  doc.text(quote.client_name, MARGIN, y);
-  y += 7;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
-  [quote.client_company, quote.client_email, quote.client_phone].filter(Boolean).forEach((line) => { doc.text(line as string, MARGIN, y); y += 5; });
+  if (template === 'modern') {
+    const altoPanel = 46;
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, PAGE_W, altoPanel, 'F');
+    doc.setFillColor(...secondary);
+    doc.triangle(PAGE_W - 32, 0, PAGE_W, 0, PAGE_W, 32, 'F');
+    const tinta = textoSobre(primary);
 
-  if (quote.project_name) {
-    y += 10;
-    doc.setFont('helvetica', 'bold');
+    if (mostrarLogo) dibujarLogo(ctx, aDerecha ? PAGE_W - MARGIN - altoLogo * ctx.logoRatio : MARGIN, 9, altoLogo);
+    doc.setFont(ctx.font, 'bold');
+    doc.setFontSize(21);
+    doc.setTextColor(...tinta);
+    doc.text(documentTitle, MARGIN, altoPanel - 15);
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(9.5);
+    doc.text(`${numero}  ·  ${fecha}`, MARGIN, altoPanel - 7.5);
+
+    // Hay que avanzar el cursor HASTA EL FINAL del bloque de la empresa. Con
+    // un `+= 2` fijo, la columna derecha del bloque de cliente («Proyecto»)
+    // se dibujaba encima de la dirección y el teléfono.
+    ctx.y = bloqueEmpresa(ctx, PAGE_W - MARGIN, altoPanel + 12, 'right') + 7;
+    return;
+  }
+
+  if (template === 'executive') {
+    if (mostrarLogo) {
+      const ancho = altoLogo * ctx.logoRatio;
+      dibujarLogo(ctx, (PAGE_W - ancho) / 2, MARGIN, altoLogo);
+    }
+    let y = MARGIN + (mostrarLogo ? altoLogo + 7 : 0);
+    doc.setFont(ctx.font, 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(...primary);
-    doc.text(lang === 'en' ? 'PROJECT' : 'PROYECTO', MARGIN, y);
-    y += 8;
-    doc.setFontSize(15);
-    doc.setTextColor(20, 20, 20);
-    doc.text(quote.project_name, MARGIN, y);
+    doc.setTextColor(110, 110, 110);
+    if (ctx.branding?.company_legal_name) {
+      doc.text(ctx.branding.company_legal_name.toUpperCase(), PAGE_W / 2, y, { align: 'center' });
+      y += 9;
+    }
+    doc.setFont(ctx.font, 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(30, 30, 30);
+    doc.text(documentTitle, PAGE_W / 2, y + 4, { align: 'center' });
+    doc.setDrawColor(...primary);
+    doc.setLineWidth(0.4);
+    doc.line(PAGE_W / 2 - 18, y + 8, PAGE_W / 2 + 18, y + 8);
+    doc.line(PAGE_W / 2 - 18, y + 9.6, PAGE_W / 2 + 18, y + 9.6);
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(110, 110, 110);
+    doc.text(`${numero}   ·   ${fecha}`, PAGE_W / 2, y + 16, { align: 'center' });
+    ctx.y = y + 26;
+    return;
   }
-}
 
-async function renderCoverExecutive(ctx: Ctx) {
-  const { doc, primary, quote, branding, documentTitle, lang, logoDataUrl } = ctx;
-  doc.setFont('times', 'normal');
-
-  if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', PAGE_W / 2 - 12, 26, 24, 24, undefined, 'FAST'); } catch { /* skip */ } }
-
-  doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
-  doc.text((branding?.company_legal_name || '').toUpperCase(), PAGE_W / 2, 60, { align: 'center' });
-
-  doc.setFont('times', 'bold');
-  doc.setFontSize(30);
-  doc.setTextColor(30, 30, 30);
-  doc.text(documentTitle, PAGE_W / 2, 105, { align: 'center' });
-
-  doc.setDrawColor(...primary);
-  doc.setLineWidth(0.4);
-  doc.line(PAGE_W / 2 - 20, 111, PAGE_W / 2 + 20, 111);
-  doc.line(PAGE_W / 2 - 20, 113.5, PAGE_W / 2 + 20, 113.5);
-
-  doc.setFont('times', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(90, 90, 90);
-  doc.text(`${lang === 'en' ? 'No.' : 'N.º'} ${quote.quote_number}`, PAGE_W / 2, 125, { align: 'center' });
-  doc.text(new Date(quote.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), PAGE_W / 2, 132, { align: 'center' });
-
-  let y = 165;
-  doc.setFontSize(9);
-  doc.setTextColor(140, 140, 140);
-  doc.text(lang === 'en' ? 'PREPARED EXCLUSIVELY FOR' : 'PREPARADO EXCLUSIVAMENTE PARA', PAGE_W / 2, y, { align: 'center' });
-  y += 9;
-  doc.setFont('times', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 30, 30);
-  doc.text(quote.client_name, PAGE_W / 2, y, { align: 'center' });
-  y += 7;
-  doc.setFont('times', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  const clientLine = [quote.client_company, quote.project_name].filter(Boolean).join(' — ');
-  if (clientLine) doc.text(clientLine, PAGE_W / 2, y, { align: 'center' });
-}
-
-async function renderCoverMinimal(ctx: Ctx) {
-  const { doc, quote, branding, documentTitle, lang, logoDataUrl } = ctx;
-  doc.setFont('helvetica', 'normal');
-
-  if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', MARGIN, 22, 18, 18, undefined, 'FAST'); } catch { /* skip */ } }
-  doc.setFontSize(9);
-  doc.setTextColor(120, 120, 120);
-  doc.text((branding?.company_legal_name || '').toUpperCase(), PAGE_W - MARGIN, 27, { align: 'right' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(26);
-  doc.setTextColor(15, 15, 15);
-  doc.text(documentTitle, MARGIN, 80);
-  doc.setDrawColor(15, 15, 15);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, 85, PAGE_W - MARGIN, 85);
-
-  doc.setFontSize(9);
-  doc.setTextColor(130, 130, 130);
-  doc.text(`${lang === 'en' ? 'No.' : 'N.º'} ${quote.quote_number}`, MARGIN, 93);
-  doc.text(new Date(quote.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), PAGE_W - MARGIN, 93, { align: 'right' });
-
-  let y = 120;
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(lang === 'en' ? 'FOR' : 'PARA', MARGIN, y);
-  y += 7;
-  doc.setFontSize(13);
-  doc.setTextColor(15, 15, 15);
-  doc.text(quote.client_name, MARGIN, y);
-  y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(120, 120, 120);
-  [quote.client_company, quote.client_email, quote.client_phone].filter(Boolean).forEach((line) => { doc.text(line as string, MARGIN, y); y += 5; });
-
-  if (quote.project_name) {
-    y += 8;
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(lang === 'en' ? 'PROJECT' : 'PROYECTO', MARGIN, y);
-    y += 7;
-    doc.setFontSize(13);
+  if (template === 'minimal') {
+    if (mostrarLogo) dibujarLogo(ctx, aDerecha ? PAGE_W - MARGIN - altoLogo * ctx.logoRatio : MARGIN, MARGIN, altoLogo);
+    // Sin logo no se reserva su altura: quien no sube marca no tiene por qué
+    // recibir un documento con un hueco donde el logo habría ido.
+    const y = MARGIN + (mostrarLogo ? altoLogo + 8 : 4);
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(19);
     doc.setTextColor(15, 15, 15);
-    doc.text(quote.project_name, MARGIN, y);
+    doc.text(documentTitle, MARGIN, y);
+    doc.setDrawColor(15, 15, 15);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, y + 3.5, PAGE_W - MARGIN, y + 3.5);
+    doc.setFontSize(8);
+    doc.setTextColor(130, 130, 130);
+    doc.text(`${numero}`, MARGIN, y + 9);
+    doc.text(fecha, PAGE_W - MARGIN, y + 9, { align: 'right' });
+    ctx.y = bloqueEmpresa(ctx, PAGE_W - MARGIN, y + 16, 'right') + 7;
+    return;
   }
+
+  // corporate
+  doc.setFillColor(...primary);
+  doc.rect(0, 0, PAGE_W, 6, 'F');
+  const yTop = 18;
+  if (mostrarLogo) dibujarLogo(ctx, aDerecha ? PAGE_W - MARGIN - altoLogo * ctx.logoRatio : MARGIN, yTop, altoLogo);
+  const xDatos = aDerecha ? MARGIN : PAGE_W - MARGIN;
+  const finDatos = bloqueEmpresa(ctx, xDatos, yTop + 4, aDerecha ? 'left' : 'right');
+
+  const y = Math.max(mostrarLogo ? yTop + altoLogo : 0, finDatos) + 10;
+  doc.setFont(ctx.font, 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(...primary);
+  doc.text(documentTitle, MARGIN, y);
+  doc.setFont(ctx.font, 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text(`${numero}   ·   ${fecha}`, MARGIN, y + 6.5);
+  ctx.y = y + 15;
 }
 
-// ── Line items table + financial summary — shared structure, styled per
-// template via the shared sectionHeader/font/color already set on ctx ──
-function renderItemsAndSummary(ctx: Ctx, template: TemplateId) {
-  const { doc, items, quote, lang, primary, font } = ctx;
-  doc.addPage();
-  let y = sectionHeader(ctx, template, lang === 'en' ? 'Products & Services' : 'Productos y Servicios', 22) + 8;
+// ── Cliente + proyecto, en dos columnas ──────────────────────────────────
+//
+// Antes ocupaban 60 mm de una portada vacía. Aquí van enfrentados en una
+// franja de ~26 mm, que es lo que ocupa esta información en cualquier
+// cotización real.
 
-  const colX = { desc: MARGIN, qty: 118, price: 140, disc: 162, total: 182 };
-  doc.setFont(font, 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(140, 140, 140);
-  doc.text(lang === 'en' ? 'DESCRIPTION' : 'DESCRIPCIÓN', colX.desc, y);
-  doc.text(lang === 'en' ? 'QTY' : 'CANT.', colX.qty, y);
-  doc.text(lang === 'en' ? 'PRICE' : 'PRECIO', colX.price, y);
-  doc.text(lang === 'en' ? 'DISC.' : 'DESC.', colX.disc, y);
-  doc.text(lang === 'en' ? 'TOTAL' : 'TOTAL', colX.total, y);
-  y += 3;
-  doc.setDrawColor(template === 'minimal' ? 20 : 220, template === 'minimal' ? 20 : 220, template === 'minimal' ? 20 : 220);
-  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
-  y += 6;
+function bloqueCliente(ctx: Ctx) {
+  const { doc, quote, lang } = ctx;
+  asegurarEspacio(ctx, 34);
 
-  doc.setFont(font, 'normal');
-  doc.setFontSize(9);
-  for (const item of items) {
-    if (y > PAGE_H - 30) { doc.addPage(); y = 25; }
-    doc.setTextColor(40, 40, 40);
-    const descLines = doc.splitTextToSize(item.description, 90);
-    doc.text(descLines, colX.desc, y);
-    doc.text(`${item.quantity} ${item.unit || ''}`.trim(), colX.qty, y);
-    doc.text(fmtMoney(item.unit_price), colX.price, y);
-    doc.text(item.discount_pct ? `${item.discount_pct}%` : '—', colX.disc, y);
-    doc.text(fmtMoney(computeLineItemTotal(item)), colX.total, y);
-    y += Math.max(descLines.length * 5, 7);
-  }
+  const yIni = ctx.y;
+  const colDer = MARGIN + CONTENT_W / 2 + 4;
 
-  y += 8;
-  doc.setDrawColor(template === 'minimal' ? 20 : 220, template === 'minimal' ? 20 : 220, template === 'minimal' ? 20 : 220);
-  doc.line(120, y, PAGE_W - MARGIN, y);
-  y += 8;
-  const summaryRow = (label: string, value: string, bold = false) => {
-    doc.setFont(font, bold ? 'bold' : 'normal');
-    doc.setFontSize(bold ? 12 : 10);
-    doc.setTextColor(bold ? primary[0] : 90, bold ? primary[1] : 90, bold ? primary[2] : 90);
-    doc.text(label, 140, y);
-    doc.text(value, PAGE_W - MARGIN, y, { align: 'right' });
-    y += bold ? 8 : 6;
+  const etiqueta = (txt: string, x: number, y: number) => {
+    doc.setFont(ctx.font, 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(150, 150, 150);
+    doc.text(txt.toUpperCase(), x, y);
   };
-  summaryRow(lang === 'en' ? 'Subtotal' : 'Subtotal', fmtMoney(quote.subtotal));
-  if (quote.discount_total > 0) summaryRow(lang === 'en' ? 'Discount' : 'Descuento', `-${fmtMoney(quote.discount_total)}`);
-  if (quote.tax_total > 0) summaryRow(lang === 'en' ? 'Taxes' : 'Impuestos', fmtMoney(quote.tax_total));
-  summaryRow(lang === 'en' ? 'TOTAL' : 'TOTAL', fmtMoney(quote.total), true);
+
+  etiqueta(lang === 'en' ? 'Prepared for' : 'Preparado para', MARGIN, yIni);
+  let yIzq = yIni + 5.5;
+  doc.setFont(ctx.font, 'bold');
+  doc.setFontSize(11.5);
+  doc.setTextColor(25, 25, 25);
+  doc.text(quote.client_name || '—', MARGIN, yIzq);
+  yIzq += 5;
+  doc.setFont(ctx.font, 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(105, 105, 105);
+  const datosCliente = [
+    [quote.client_position, quote.client_company].filter(Boolean).join(' · ') || null,
+    quote.client_email,
+    quote.client_phone,
+    quote.client_address,
+  ].filter(Boolean) as string[];
+  for (const l of datosCliente) {
+    for (const parte of doc.splitTextToSize(l, CONTENT_W / 2 - 6)) {
+      doc.text(parte, MARGIN, yIzq);
+      yIzq += 4;
+    }
+  }
+
+  let yDer = yIni;
+  if (quote.project_name) {
+    etiqueta(lang === 'en' ? 'Project' : 'Proyecto', colDer, yDer);
+    yDer += 5.5;
+    doc.setFont(ctx.font, 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(25, 25, 25);
+    for (const parte of doc.splitTextToSize(quote.project_name, CONTENT_W / 2 - 4)) {
+      doc.text(parte, colDer, yDer);
+      yDer += 5;
+    }
+  }
+
+  ctx.y = Math.max(yIzq, yDer) + 7;
+
+  // Filete de cierre: separa la identidad de las partes del contenido
+  // comercial. En minimal no va — esa plantilla vive de no tener adornos.
+  if (ctx.template !== 'minimal') {
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.25);
+    doc.line(MARGIN, ctx.y - 3.5, PAGE_W - MARGIN, ctx.y - 3.5);
+  }
 }
 
-function renderAcceptancePage(ctx: Ctx, template: TemplateId) {
-  const { doc, lang, font, quote } = ctx;
-  doc.addPage();
-  sectionHeader(ctx, template, lang === 'en' ? 'Acceptance' : 'Aceptación', 25);
-  doc.setFont(font, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  const acceptanceNote = lang === 'en'
-    ? 'This document does not necessarily constitute a final legal contract unless the parties so indicate, but it is verifiable evidence of acceptance of this commercial proposal.'
-    : 'Este documento no constituye necesariamente un contrato legal definitivo, salvo que las partes así lo indiquen, pero sí constituye evidencia verificable de aceptación de la propuesta comercial.';
-  doc.text(doc.splitTextToSize(acceptanceNote, PAGE_W - MARGIN * 2), MARGIN, 35);
+// ── Tabla de productos y servicios ───────────────────────────────────────
 
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`${quote.quote_number} · Codec Document`, MARGIN, PAGE_H - 15);
+// Anclas de columna en mm. Las numéricas se alinean a la derecha, que es como
+// se leen las cifras de una cotización (las unidades bajo las unidades).
+//
+// El reparto está calculado para el peor caso realista: importes en pesos
+// colombianos con separador de miles, del orden de $10,000,000.00, que a 8,5 pt
+// ocupan unos 23 mm. La versión anterior dejaba 14 mm entre IVA y TOTAL y los
+// dos valores se solapaban —salía «19%$1,017,450.00» pegado—; aquí el total
+// tiene 30 mm propios.
+const COL = {
+  desc: MARGIN,           // izquierda
+  cant: 94,               // derecha
+  unidad: 97,             // izquierda
+  precio: 136,            // derecha
+  desc_pct: 149,          // derecha
+  iva_pct: 160,           // derecha
+  total: PAGE_W - MARGIN, // derecha (192)
+};
+const ANCHO_DESC = 64;
+
+function encabezadoTabla(ctx: Ctx) {
+  const { doc, lang, template, primary } = ctx;
+  doc.setFont(ctx.font, 'bold');
+  doc.setFontSize(7.5);
+
+  if (template === 'modern' || template === 'corporate') {
+    doc.setFillColor(...primary);
+    doc.rect(MARGIN, ctx.y - 4.2, CONTENT_W, 6.4, 'F');
+    doc.setTextColor(...textoSobre(primary));
+  } else {
+    doc.setTextColor(130, 130, 130);
+  }
+
+  const t = (txt: string, x: number, alinear?: 'right') => doc.text(txt, x, ctx.y, alinear ? { align: 'right' } : undefined);
+  t(lang === 'en' ? 'DESCRIPTION' : 'DESCRIPCIÓN', COL.desc + (template === 'modern' || template === 'corporate' ? 2 : 0));
+  t(lang === 'en' ? 'QTY' : 'CANT.', COL.cant, 'right');
+  t(lang === 'en' ? 'UNIT' : 'UNIDAD', COL.unidad);
+  t(lang === 'en' ? 'PRICE' : 'PRECIO', COL.precio, 'right');
+  t(lang === 'en' ? 'DISC.' : 'DESC.', COL.desc_pct, 'right');
+  t(lang === 'en' ? 'TAX' : 'IVA', COL.iva_pct, 'right');
+  t('TOTAL', COL.total - (template === 'modern' || template === 'corporate' ? 2 : 0), 'right');
+
+  ctx.y += 3;
+  if (template !== 'modern' && template !== 'corporate') {
+    doc.setDrawColor(template === 'minimal' ? 20 : 210, template === 'minimal' ? 20 : 210, template === 'minimal' ? 20 : 210);
+    doc.setLineWidth(0.3);
+    doc.line(MARGIN, ctx.y, PAGE_W - MARGIN, ctx.y);
+  }
+  ctx.y += 5.5;
 }
+
+function tablaDeItems(ctx: Ctx) {
+  const { doc, items, lang, template } = ctx;
+  const conItems = items.filter((it) => (it.description || '').trim() || it.unit_price > 0);
+  if (conItems.length === 0) return;
+
+  tituloDeSeccion(ctx, lang === 'en' ? 'Products & Services' : 'Productos y Servicios');
+  asegurarEspacio(ctx, 24);
+  encabezadoTabla(ctx);
+
+  let alterna = false;
+  for (const item of conItems) {
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(8.5);
+    const lineasDesc = doc.splitTextToSize((item.description || '').trim() || '—', ANCHO_DESC);
+    const altoFila = Math.max(lineasDesc.length * 4.2, 6) + 2.6;
+
+    // Si la fila no cabe entera, se lleva completa a la página siguiente y se
+    // repite el encabezado. Partir una fila por la mitad es lo que hacía que
+    // la descripción quedara huérfana del precio.
+    if (ctx.y + altoFila > FONDO) {
+      nuevaPagina(ctx);
+      encabezadoTabla(ctx);
+    }
+
+    if (alterna && template !== 'minimal') {
+      doc.setFillColor(248, 249, 251);
+      doc.rect(MARGIN, ctx.y - 3.8, CONTENT_W, altoFila, 'F');
+    }
+    alterna = !alterna;
+
+    doc.setTextColor(45, 45, 45);
+    doc.text(lineasDesc, COL.desc + 2, ctx.y);
+    doc.setTextColor(80, 80, 80);
+    doc.text(String(item.quantity ?? 0), COL.cant, ctx.y, { align: 'right' });
+    if (item.unit) doc.text(String(item.unit).slice(0, 12), COL.unidad, ctx.y);
+    doc.text(fmtMoney(item.unit_price || 0), COL.precio, ctx.y, { align: 'right' });
+    doc.text(item.discount_pct ? `${item.discount_pct}%` : '—', COL.desc_pct, ctx.y, { align: 'right' });
+    doc.text(item.tax_pct ? `${item.tax_pct}%` : '—', COL.iva_pct, ctx.y, { align: 'right' });
+    doc.setFont(ctx.font, 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text(fmtMoney(computeLineItemTotal(item)), COL.total - 2, ctx.y, { align: 'right' });
+
+    ctx.y += altoFila;
+  }
+
+  resumenFinanciero(ctx);
+}
+
+function resumenFinanciero(ctx: Ctx) {
+  const { doc, quote, lang, primary, template } = ctx;
+  asegurarEspacio(ctx, 34);
+  ctx.y += 2;
+
+  const xEtiqueta = 128;
+  doc.setDrawColor(210, 210, 210);
+  doc.setLineWidth(0.3);
+  doc.line(xEtiqueta, ctx.y, PAGE_W - MARGIN, ctx.y);
+  ctx.y += 6;
+
+  const fila = (label: string, valor: string) => {
+    doc.setFont(ctx.font, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(105, 105, 105);
+    doc.text(label, xEtiqueta, ctx.y);
+    doc.setTextColor(45, 45, 45);
+    doc.text(valor, PAGE_W - MARGIN, ctx.y, { align: 'right' });
+    ctx.y += 5.4;
+  };
+
+  fila(lang === 'en' ? 'Subtotal' : 'Subtotal', fmtMoney(quote.subtotal));
+  if (quote.discount_total > 0) fila(lang === 'en' ? 'Discount' : 'Descuento', `-${fmtMoney(quote.discount_total)}`);
+  if (quote.tax_total > 0) fila(lang === 'en' ? 'Taxes' : 'Impuestos', fmtMoney(quote.tax_total));
+
+  // El total va en una caja de color: es el dato por el que se abre una
+  // cotización, y antes se perdía como una línea más de la lista.
+  ctx.y += 1.5;
+  const altoCaja = 11;
+  if (template === 'minimal') {
+    doc.setDrawColor(20, 20, 20);
+    doc.setLineWidth(0.5);
+    doc.line(xEtiqueta, ctx.y - 4, PAGE_W - MARGIN, ctx.y - 4);
+    doc.setTextColor(15, 15, 15);
+  } else {
+    doc.setFillColor(...primary);
+    doc.rect(xEtiqueta, ctx.y - 6.5, PAGE_W - MARGIN - xEtiqueta, altoCaja, 'F');
+    doc.setTextColor(...textoSobre(primary));
+  }
+  doc.setFont(ctx.font, 'bold');
+  doc.setFontSize(11.5);
+  doc.text('TOTAL', xEtiqueta + (template === 'minimal' ? 0 : 3), ctx.y);
+  doc.text(fmtMoney(quote.total), PAGE_W - MARGIN - (template === 'minimal' ? 0 : 3), ctx.y, { align: 'right' });
+  ctx.y += altoCaja + 5;
+}
+
+// ── Datos de pago ────────────────────────────────────────────────────────
+//
+// El cliente ya los tenía configurados (banco, Nequi, Daviplata, Zelle,
+// PayPal, ACH) y no salían en ninguna cotización, que es justo donde hacen
+// falta: quien acepta necesita saber a dónde transferir.
+
+function datosDePago(ctx: Ctx) {
+  const { branding, lang } = ctx;
+  if (!branding) return;
+  const filas: Array<[string, string]> = [];
+  if (branding.bank_name || branding.bank_account) {
+    filas.push([lang === 'en' ? 'Bank' : 'Banco', [branding.bank_name, branding.bank_account].filter(Boolean).join(' · ')]);
+  }
+  if (branding.payment_nequi) filas.push(['Nequi', branding.payment_nequi]);
+  if (branding.payment_daviplata) filas.push(['Daviplata', branding.payment_daviplata]);
+  if (branding.payment_zelle) filas.push(['Zelle', branding.payment_zelle]);
+  if (branding.payment_ach) filas.push(['ACH', branding.payment_ach]);
+  if (branding.payment_paypal) filas.push(['PayPal', branding.payment_paypal]);
+  if (filas.length === 0) return;
+
+  const { doc } = ctx;
+  asegurarEspacio(ctx, 14 + filas.length * 4.6);
+  tituloDeSeccion(ctx, lang === 'en' ? 'Payment Details' : 'Datos de Pago');
+  for (const [etiqueta, valor] of filas) {
+    doc.setFont(ctx.font, 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(90, 90, 90);
+    doc.text(`${etiqueta}:`, MARGIN, ctx.y);
+    doc.setFont(ctx.font, 'normal');
+    doc.setTextColor(60, 60, 60);
+    doc.text(String(valor), MARGIN + 26, ctx.y);
+    ctx.y += 4.6;
+  }
+  ctx.y += 3;
+}
+
+// ── Entrada pública ──────────────────────────────────────────────────────
 
 export async function generateQuotePdf(
   quote: Quote,
@@ -400,52 +754,89 @@ export async function generateQuotePdf(
   branding: QuotePublicBranding | null,
   documentTitle: string,
 ): Promise<Uint8Array> {
-  const template: TemplateId = (quote.template as TemplateId) || 'corporate';
+  const { layout, color } = parseTemplate(quote.template);
   const lang: Lang = quote.language === 'en' ? 'en' : 'es';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  const primary = rgbOf(branding?.brand_color_primary, [67, 56, 202]);
+  // El color elegido en el cajón de diseño de esta cotización manda sobre el
+  // color de marca del perfil; sin elección, se usa el de marca.
+  const primary = color ? rgbOf(color, [67, 56, 202]) : rgbOf(branding?.brand_color_primary, [67, 56, 202]);
   const secondary = rgbOf(branding?.brand_color_secondary, [30, 41, 59]);
-  const font: Ctx['font'] = template === 'executive' ? 'times' : 'helvetica';
+  const font: Ctx['font'] = layout === 'executive' ? 'times' : 'helvetica';
+
   const logoDataUrl = branding?.company_logo_url ? await logoToDataUrl(branding.company_logo_url) : null;
-
-  const ctx: Ctx = { doc, quote, items, branding, documentTitle, lang, primary, secondary, font, logoDataUrl };
-
-  // ── Cover page ──────────────────────────────────────────────────────
-  if (template === 'modern') await renderCoverModern(ctx);
-  else if (template === 'executive') await renderCoverExecutive(ctx);
-  else if (template === 'minimal') await renderCoverMinimal(ctx);
-  else await renderCoverCorporate(ctx);
-
-  // ── Executive summary / scope page ──────────────────────────────────
-  if (quote.executive_summary || quote.project_objective || quote.project_scope) {
-    doc.addPage();
-    let y = 25;
-    const addSection = (label: string, text: string | null) => {
-      if (!text) return;
-      y = sectionHeader(ctx, template, label, y);
-      y = bodyText(ctx, text, y, PAGE_W - MARGIN * 2, template === 'executive' ? 'center' : 'left');
-    };
-    addSection(lang === 'en' ? 'Executive Summary' : 'Resumen Ejecutivo', quote.executive_summary);
-    addSection(lang === 'en' ? 'Objective' : 'Objetivo', quote.project_objective);
-    addSection(lang === 'en' ? 'Scope' : 'Alcance', quote.project_scope);
+  let logoRatio = 1;
+  let logoFormato: Ctx['logoFormato'] = 'PNG';
+  if (logoDataUrl) {
+    logoFormato = formatoDeDataUrl(logoDataUrl);
+    try {
+      // Sin esto el logo se metía a la fuerza en un cuadrado de 32×32 mm y
+      // salía aplastado; un logotipo apaisado es lo normal, no la excepción.
+      const props = doc.getImageProperties(logoDataUrl);
+      if (props?.width && props?.height) logoRatio = props.width / props.height;
+    } catch { /* proporción 1:1 como último recurso */ }
   }
 
-  // ── Proposal blocks (activated sections) ────────────────────────────
-  const activeBlocks = Object.entries(quote.proposal_blocks || {}).filter(([, v]) => v && String(v).trim());
-  if (activeBlocks.length > 0) {
-    doc.addPage();
-    let y = 25;
-    for (const [key, value] of activeBlocks) {
-      const label = BLOCK_LABELS[key as keyof ProposalBlocks]?.[lang] ?? key;
-      if (y > PAGE_H - 40) { doc.addPage(); y = 25; }
-      y = sectionHeader(ctx, template, label, y);
-      y = bodyText(ctx, String(value), y, PAGE_W - MARGIN * 2, template === 'executive' ? 'center' : 'left');
-    }
+  const ctx: Ctx = {
+    doc, quote, items, branding, documentTitle, lang, template: layout,
+    primary, secondary, font, logoDataUrl, logoFormato, logoRatio,
+    usarMarcaDeAgua: Boolean(branding?.use_watermark),
+    y: MARGIN,
+  };
+
+  marcaDeAgua(ctx);
+  cabecera(ctx);
+  bloqueCliente(ctx);
+
+  // Resumen / objetivo / alcance — sólo los que tengan contenido.
+  const centrado = layout === 'executive';
+  for (const [label, texto] of [
+    [lang === 'en' ? 'Executive Summary' : 'Resumen Ejecutivo', quote.executive_summary],
+    [lang === 'en' ? 'Objective' : 'Objetivo', quote.project_objective],
+    [lang === 'en' ? 'Scope' : 'Alcance', quote.project_scope],
+  ] as Array<[string, string | null]>) {
+    if (!texto || !texto.trim()) continue;
+    tituloDeSeccion(ctx, label);
+    parrafo(ctx, texto, centrado);
   }
 
-  renderItemsAndSummary(ctx, template);
-  renderAcceptancePage(ctx, template);
+  // Bloques de propuesta, en orden fijo. `pitch` es el texto que el cliente
+  // pega de una vez y va sin título propio: ES el cuerpo de la propuesta, y
+  // encabezarlo con la palabra «Propuesta» dentro de un documento que ya se
+  // titula «Cotización» sólo añade ruido.
+  const bloques = quote.proposal_blocks || {};
+  for (const clave of ORDEN_BLOQUES) {
+    const valor = bloques[clave];
+    if (!valor || !String(valor).trim()) continue;
+    if (clave !== 'pitch') tituloDeSeccion(ctx, BLOCK_LABELS[clave][lang]);
+    parrafo(ctx, String(valor), centrado && clave !== 'pitch');
+  }
+
+  tablaDeItems(ctx);
+  datosDePago(ctx);
+  pieDePagina(ctx);
 
   return new Uint8Array(doc.output('arraybuffer'));
+}
+
+/**
+ * `template` guarda la maqueta y, opcionalmente, el color elegido para esta
+ * cotización concreta: `"corporate"` o `"corporate|#0EA5E9"`.
+ *
+ * Se codifica en la misma columna a propósito. `quotes.template` es `text`
+ * sin restricción CHECK, así que admite el sufijo sin tocar la base de datos,
+ * y los valores antiguos —sin barra— siguen leyéndose igual. La alternativa
+ * era una migración con una columna nueva para un dato puramente estético.
+ */
+export function parseTemplate(valor: string | null | undefined): { layout: TemplateId; color: string | null } {
+  const bruto = String(valor || 'corporate');
+  const [maqueta, color] = bruto.split('|');
+  const layout = (['corporate', 'modern', 'executive', 'minimal'] as const).includes(maqueta as TemplateId)
+    ? (maqueta as TemplateId)
+    : 'corporate';
+  return { layout, color: color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null };
+}
+
+export function buildTemplateValue(layout: TemplateId, color: string | null): string {
+  return color ? `${layout}|${color}` : layout;
 }

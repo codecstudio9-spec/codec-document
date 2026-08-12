@@ -14,6 +14,14 @@ export type QuoteStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected';
 export type QuoteType = 'quote' | 'proposal' | 'estimate' | 'sow';
 
 export interface ProposalBlocks {
+  /** El cuerpo de la propuesta escrito de una sola vez — lo que el cliente
+   *  pega en el recuadro, o lo que la agente redacta cuando se lo pide de
+   *  viva voz. Es el camino normal; los diez bloques de abajo son el camino
+   *  largo, para quien quiera separar la propuesta en secciones.
+   *
+   *  Va dentro de `proposal_blocks` (jsonb) en vez de en una columna nueva
+   *  precisamente para no necesitar migración. */
+  pitch?: string;
   intro?: string;
   problem?: string;
   solution?: string;
@@ -175,6 +183,17 @@ export async function getQuotesSummary(): Promise<{
 
 export interface QuotePublicBranding {
   company_logo_url: string | null;
+  /** Opcionales porque `get_quote_public` (la vista sin sesión) no los
+   *  devuelve: el PDF siempre se genera del lado del dueño, con el perfil
+   *  completo que trae getUserBranding. Sin esto, el generador ignoraba lo
+   *  que el cliente había configurado — logo aplastado, marca de agua
+   *  activada que no aparecía nunca. */
+  logo_size?: 'small' | 'medium' | 'large' | null;
+  logo_position?: 'left' | 'right' | null;
+  enable_logo_in_docs?: boolean | null;
+  use_watermark?: boolean | null;
+  header_text?: string | null;
+  footer_text?: string | null;
   company_legal_name: string | null;
   company_address_line1: string | null;
   company_address_line2: string | null;

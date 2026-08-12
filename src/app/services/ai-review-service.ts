@@ -104,3 +104,63 @@ export async function improveClauseWithAi(
 
   return String((data as { improvedText?: string })?.improvedText ?? '');
 }
+
+export interface CotizacionRedactada {
+  /** Cuerpo comercial listo para el PDF. */
+  proposal: string;
+  /** Productos detectados en la petición, ya validados en el servidor. */
+  items: Array<{
+    description: string; quantity: number; unit: string;
+    unit_price: number; discount_pct: number; tax_pct: number;
+  }>;
+}
+
+/**
+ * La agente escribe la cotización entera a partir de una petición en lenguaje
+ * normal: «hazme una cotización de 30 agendas a 30.000 cada una».
+ *
+ * Es la alternativa a pegar el texto ya escrito. Devuelve el cuerpo comercial
+ * y los productos por separado para que caigan cada uno en su sitio del
+ * formulario, en vez de dejar un bloque de texto que el usuario tenga que
+ * desarmar a mano.
+ *
+ * Ver supabase/functions/ai-quote-writer/index.ts: los precios sólo se
+ * rellenan si la persona los dijo — nunca se estiman.
+ */
+export async function escribirCotizacion(
+  peticion: string,
+  language: 'en' | 'es',
+  contexto: { clientName?: string; clientCompany?: string; projectName?: string; currency?: string } = {},
+): Promise<CotizacionRedactada> {
+  const { data, error } = await supabase.functions.invoke('ai-quote-writer', {
+    body: {
+      request: peticion,
+      language,
+      client_name: contexto.clientName,
+      client_company: contexto.clientCompany,
+      project_name: contexto.projectName,
+      currency: contexto.currency,
+    },
+  });
+
+  if (error) {
+    const ctx = (error as { context?: Response })?.context;
+    if (ctx?.status === 402) {
+      throw new AiReviewUpgradeRequiredError(
+        language === 'en'
+          ? 'Having me write the whole quote is available on paid plans.'
+          : 'Que yo te escriba la cotización completa está disponible en los planes pagos.',
+      );
+    }
+    throw new Error(await extractEdgeFunctionErrorMessage(
+      error,
+      language === 'en' ? 'I could not write the quote.' : 'No pude escribir la cotización.',
+    ));
+  }
+
+  const d = data as Partial<CotizacionRedactada> | null;
+  return {
+    proposal: String(d?.proposal ?? ''),
+    items: Array.isArray(d?.items) ? d.items : [],
+  };
+}

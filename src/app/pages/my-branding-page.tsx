@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getUserBranding, updateUserBranding, uploadLogo, type UserBranding } from '../services/branding-service';
+import { PAISES_FISCALES, resolverPais, etiquetaFiscal, placeholderFiscal } from '../data/paises-fiscales';
 
 const EMPTY: UserBranding = {
   companyLogoUrl: null, logoSize: 'medium', headerText: null, footerText: null,
@@ -257,13 +258,42 @@ export function MyBrandingPage() {
                   <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'ZIP code' : 'Código ZIP'}</label>
                   <input value={branding.companyZip ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyZip: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
                 </div>
+                {/* País como lista, no como texto libre: de él depende cómo
+                    se rotula el número fiscal en el PDF. Escrito a mano, un
+                    «Colombia» y un «COLOMBIA» eran países distintos y ninguno
+                    servía para decidir la etiqueta. */}
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Country' : 'País'}</label>
-                  <input value={branding.companyCountry ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyCountry: e.target.value }))} placeholder={language === 'en' ? 'United States' : 'Estados Unidos'} className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                  <select
+                    value={resolverPais(branding.companyCountry)?.code ?? ''}
+                    onChange={(e) => setBranding((b) => ({ ...b, companyCountry: e.target.value || null }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                  >
+                    <option value="">{language === 'en' ? 'Select a country…' : 'Elige un país…'}</option>
+                    {PAISES_FISCALES.map((p) => (
+                      <option key={p.code} value={p.code}>
+                        {p.flag} {language === 'en' ? p.nameEn : p.nameEs}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'EIN / Tax ID' : 'EIN / Identificación fiscal'}</label>
-                  <input value={branding.companyEIN ?? ''} onChange={(e) => setBranding((b) => ({ ...b, companyEIN: e.target.value }))} placeholder="XX-XXXXXXX" className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400" />
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                    {etiquetaFiscal(branding.companyCountry, language)}
+                  </label>
+                  <input
+                    value={branding.companyEIN ?? ''}
+                    onChange={(e) => setBranding((b) => ({ ...b, companyEIN: e.target.value }))}
+                    placeholder={placeholderFiscal(branding.companyCountry)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                  />
+                  {!resolverPais(branding.companyCountry) && (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {language === 'en'
+                        ? 'Pick a country and this field takes its proper name (EIN, NIT, RFC, RUT…).'
+                        : 'Elige el país y este campo toma su nombre real (EIN, NIT, RFC, RUT…).'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-700">{language === 'en' ? 'Business phone' : 'Teléfono empresarial'}</label>
