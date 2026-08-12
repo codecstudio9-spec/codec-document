@@ -37,6 +37,7 @@ import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service'
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
 import { DictadoYMejora } from '../components/DictadoYMejora';
 import { DictarFormulario } from '../components/DictarFormulario';
+import { BotonDictado } from '../components/BotonDictado';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 type FlowStep = 'form' | 'sign' | 'verify';
@@ -599,6 +600,60 @@ function ContenidoGenerador() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, visibleFields]);
+
+  // ── El asistente sigue al usuario por el formulario ──────────────────────
+  //
+  // Al llegar a una sección nueva corta lo que estaba diciendo y explica ésa.
+  // Antes narraba una sola vez al abrir la pantalla y ahí se quedaba: quien
+  // bajaba a «Detalles del Acuerdo» seguía oyendo la bienvenida, o nada.
+  //
+  // Se dispara sólo al CAMBIAR de sección, nunca al volver a la misma, porque
+  // un desplazamiento que oscile entre dos tarjetas repetiría la frase sin
+  // parar. `speak()` ya cancela lo anterior, así que basta con llamarlo.
+  const seccionNarrada = useRef<string>('');
+  useEffect(() => {
+    if (flowStep !== 'form') return;
+    const guiones: Record<string, { es: string; en: string }> = {
+      parties: {
+        es: 'Información de las partes. Aquí van los nombres, documentos y datos de contacto de quienes intervienen en el documento.',
+        en: 'Party information. This is where the names, ID numbers and contact details of everyone involved go.',
+      },
+      agreement: {
+        es: 'Detalles del acuerdo. Aquí van las fechas y las condiciones que rigen el documento.',
+        en: 'Agreement details. This is where the dates and the terms that govern the document go.',
+      },
+      variables: {
+        es: 'Variables específicas. Son los datos propios de este documento en particular. Recuerda que los campos de texto largo los puedes dictar con el micrófono.',
+        en: 'Specific variables. These are the details particular to this document. Remember you can dictate the long text fields with the microphone.',
+      },
+    };
+
+    const tarjetas = Array.from(document.querySelectorAll<HTMLElement>('[data-seccion-voz]'));
+    if (tarjetas.length === 0) return;
+
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        // La sección "actual" es la más visible en pantalla, no la primera que
+        // asome: con tarjetas altas, dos pueden estar a la vez en el borde.
+        const visible = entradas
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const clave = visible.target.getAttribute('data-seccion-voz') ?? '';
+        if (!clave || clave === seccionNarrada.current) return;
+        seccionNarrada.current = clave;
+        const guion = guiones[clave];
+        if (guion) speak(guion);
+      },
+      // Umbrales escalonados para poder comparar cuál se ve más, y un margen
+      // que descarta lo que apenas asoma por abajo.
+      { threshold: [0.25, 0.5, 0.75], rootMargin: '-15% 0px -35% 0px' },
+    );
+
+    tarjetas.forEach((t) => observador.observe(t));
+    return () => observador.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowStep, language, visibleFields.length]);
 
   // ── Dictar el formulario ──────────────────────────────────────────────────
   const [dictadoAbierto, setDictadoAbierto] = useState(false);
@@ -2210,26 +2265,11 @@ function ContenidoGenerador() {
             {/* Dictar el documento entero. Va arriba del todo porque su valor
                 está en usarlo ANTES de empezar a escribir: contar los datos de
                 corrido y encontrarse el formulario medio lleno. */}
-            <button
-              type="button"
+            <BotonDictado
               onClick={() => setDictadoAbierto(true)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 px-4 py-3.5 text-left transition hover:bg-blue-50"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-                <Mic className="size-4.5 text-blue-600" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-900">
-                  {language === 'en' ? 'Dictate the document' : 'Dicta el documento'}
-                </span>
-                <span className="block text-xs text-slate-500">
-                  {language === 'en'
-                    ? 'Say the details out loud and the AI fills in the fields.'
-                    : 'Cuenta los datos en voz alta y la IA rellena los campos.'}
-                </span>
-              </span>
-              <Sparkles className="ml-auto size-4 shrink-0 text-blue-400" />
-            </button>
+              language={language}
+              cuantosCampos={camposParaDictado.length}
+            />
 
             {deshacerRelleno && (
               <button
@@ -2308,21 +2348,21 @@ function ContenidoGenerador() {
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <Card data-seccion-voz="parties" className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
                 {sectionHeader(<Users className="size-4.5 text-indigo-600" />, 'bg-indigo-50', language === 'en' ? 'Party Information' : 'Información de las Partes', groupedFields.parties)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.parties.map(renderField)}
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <Card data-seccion-voz="agreement" className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
                 {sectionHeader(<ClipboardList className="size-4.5 text-sky-600" />, 'bg-sky-50', language === 'en' ? 'Agreement Details' : 'Detalles del Acuerdo', groupedFields.agreement)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.agreement.map(renderField)}
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
+              <Card data-seccion-voz="variables" className="md:col-span-2 shadow-sm transition-shadow duration-200 hover:shadow-md">
                 {sectionHeader(<SlidersHorizontal className="size-4.5 text-purple-600" />, 'bg-purple-50', language === 'en' ? 'Specific Variables' : 'Variables Específicas', groupedFields.variables)}
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {groupedFields.variables.map(renderField)}

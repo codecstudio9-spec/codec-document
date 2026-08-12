@@ -134,7 +134,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <DynamicDocForm fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
+                  <DynamicDocForm nombreDocumento={template.name} fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5">
                     <div className="flex min-w-0 items-center gap-2.5">

@@ -1,13 +1,51 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Search, FileText, ArrowRight, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
 import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
 import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+
+/** Un círculo del menú de secciones. Algo más pequeño que en escritorio: aquí
+ *  van en una tira que se desliza y tienen que caber cuatro o cinco a la vez
+ *  para que se entienda que hay más al lado. */
+function CirculoSeccion({ activa, color, Icono, nombre, cuantas, onClick }: {
+  activa: boolean;
+  color: string;
+  Icono: LucideIcon;
+  nombre: string;
+  cuantas: number;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="flex w-[74px] shrink-0 flex-col items-center gap-1.5">
+      <motion.span
+        whileTap={{ scale: 0.92 }}
+        className="relative flex size-[54px] items-center justify-center rounded-full"
+        style={activa
+          ? { background: color, boxShadow: `0 10px 20px ${color}59` }
+          : { background: '#fff', boxShadow: CARD_SHADOW, border: `1.5px solid ${color}26` }}
+      >
+        <Icono className="size-5" style={{ color: activa ? '#fff' : color }} />
+        <span
+          className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full px-1 py-0.5 text-[9px] font-black tabular-nums"
+          style={activa ? { background: '#fff', color } : { background: color, color: '#fff' }}
+        >
+          {cuantas}
+        </span>
+      </motion.span>
+      <span
+        className="text-center text-[10px] font-bold leading-tight"
+        style={{ color: activa ? color : '#475569' }}
+      >
+        {nombre}
+      </span>
+    </button>
+  );
+}
 
 export function MobileTemplates() {
   return (
@@ -53,47 +91,32 @@ function TemplatesContent() {
       </div>
 
       <div className="px-4 pt-4">
-      {/* Secciones. Mismo menú que en escritorio, en tira horizontal porque
-          en un teléfono no caben en dos filas. Los nombres salían en inglés
-          («Real Estate & Property») y el icono de cada tarjeta se sacaba de
-          una segunda lista que ni siquiera tenía Empleo. Todo eso vive ahora
-          en categories-meta.ts, una sola vez. */}
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-        <button
-          type="button"
+      {/* Secciones en círculos, igual que en escritorio, en tira horizontal
+          porque en un teléfono no caben en dos filas. Todos del mismo tamaño
+          y alineados: una fila de pastillas de anchos distintos se lee como
+          una lista desordenada, y una de círculos se lee como un menú. */}
+      <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+        <CirculoSeccion
+          activa={activeCategory === null}
+          color="#0F172A"
+          Icono={LayoutGrid}
+          nombre={language === 'en' ? 'All' : 'Todas'}
+          cuantas={documentTemplates.length}
           onClick={() => setActiveCategory(null)}
-          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
-          style={
-            activeCategory === null
-              ? { background: '#0F172A', color: '#fff' }
-              : { background: '#fff', color: '#374151', border: '1px solid #E5E7EB' }
-          }
-        >
-          <LayoutGrid className="size-3.5" />
-          {language === 'en' ? 'All' : 'Todas'}
-          <span className="tabular-nums opacity-60">{documentTemplates.length}</span>
-        </button>
+        />
         {CATEGORIAS.map((c) => {
           const cuantas = documentTemplates.filter((t) => claveCategoria(t.category) === c.id).length;
           if (cuantas === 0) return null;
-          const activa = activeCategory === c.id;
-          const Icono = c.icono;
           return (
-            <button
+            <CirculoSeccion
               key={c.id}
-              type="button"
-              onClick={() => setActiveCategory(activa ? null : c.id)}
-              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-bold transition active:scale-95"
-              style={
-                activa
-                  ? { background: c.color, color: '#fff' }
-                  : { background: '#fff', color: '#374151', border: '1px solid #E5E7EB' }
-              }
-            >
-              <Icono className="size-3.5" style={{ color: activa ? '#fff' : c.color }} />
-              {nombreCategoria(c.id, language)}
-              <span className="tabular-nums opacity-60">{cuantas}</span>
-            </button>
+              activa={activeCategory === c.id}
+              color={c.color}
+              Icono={c.icono}
+              nombre={nombreCategoria(c.id, language)}
+              cuantas={cuantas}
+              onClick={() => setActiveCategory(activeCategory === c.id ? null : c.id)}
+            />
           );
         })}
       </div>

@@ -20,6 +20,7 @@ import {
 } from '../services/quotes-service';
 import { consumeQuoteLimit72h, getNextQuoteSlot } from '../services/user-limits-service';
 import { generateQuotePdf } from '../services/quote-pdf-generator';
+import { DictadoYMejora } from '../components/DictadoYMejora';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
 } from '../../lib/signatureService';
@@ -96,6 +97,12 @@ const BLOCK_KEYS: Array<{ key: keyof ProposalBlocks; es: string; en: string }> =
   { key: 'payment_terms', es: 'Forma de Pago', en: 'Payment Terms' },
   { key: 'notes', es: 'Observaciones', en: 'Notes' },
 ];
+
+/** Bloques que son condiciones del contrato y no texto comercial. La IA los
+ *  pule con tono de cláusula; el resto —introducción, problema, solución,
+ *  beneficios— se corrige manteniendo la voz de quien escribe, porque una
+ *  propuesta que suena a contrato no vende. */
+const CLAUSULAS_DE_PROPUESTA = new Set(['exclusions', 'terms', 'warranty', 'payment_terms']);
 
 const inputClass = 'w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-indigo-400';
 const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600';
@@ -495,11 +502,32 @@ export function MyQuoteEditorPage() {
           <label className={labelClass}>{language === 'en' ? 'Project name' : 'Nombre del proyecto'}</label>
           <input value={projectName} onChange={(e) => setProjectName(e.target.value)} className={`${inputClass} mb-3`} />
           <label className={labelClass}>{language === 'en' ? 'Executive summary' : 'Resumen ejecutivo'}</label>
-          <textarea value={executiveSummary} onChange={(e) => setExecutiveSummary(e.target.value)} rows={2} className={`${inputClass} mb-3`} />
-          <label className={labelClass}>{language === 'en' ? 'Objective' : 'Objetivo'}</label>
-          <textarea value={projectObjective} onChange={(e) => setProjectObjective(e.target.value)} rows={2} className={`${inputClass} mb-3`} />
-          <label className={labelClass}>{language === 'en' ? 'Scope' : 'Alcance'}</label>
+          <textarea value={executiveSummary} onChange={(e) => setExecutiveSummary(e.target.value)} rows={2} className={inputClass} />
+          <DictadoYMejora
+            valor={executiveSummary}
+            onCambio={setExecutiveSummary}
+            language={language}
+            contexto={language === 'en' ? 'Executive summary' : 'Resumen ejecutivo'}
+            tono="letter"
+          />
+          <label className={`${labelClass} mt-3`}>{language === 'en' ? 'Objective' : 'Objetivo'}</label>
+          <textarea value={projectObjective} onChange={(e) => setProjectObjective(e.target.value)} rows={2} className={inputClass} />
+          <DictadoYMejora
+            valor={projectObjective}
+            onCambio={setProjectObjective}
+            language={language}
+            contexto={language === 'en' ? 'Project objective' : 'Objetivo del proyecto'}
+            tono="letter"
+          />
+          <label className={`${labelClass} mt-3`}>{language === 'en' ? 'Scope' : 'Alcance'}</label>
           <textarea value={projectScope} onChange={(e) => setProjectScope(e.target.value)} rows={2} className={inputClass} />
+          <DictadoYMejora
+            valor={projectScope}
+            onCambio={setProjectScope}
+            language={language}
+            contexto={language === 'en' ? 'Project scope' : 'Alcance del proyecto'}
+            tono="letter"
+          />
         </div>
 
         {/* Line items */}
@@ -552,13 +580,24 @@ export function MyQuoteEditorPage() {
                   {openBlocks.has(key) ? <ChevronUp className="size-4 text-slate-400" /> : <ChevronDown className="size-4 text-slate-400" />}
                 </button>
                 {openBlocks.has(key) && (
-                  <textarea
-                    value={blocks[key] ?? ''}
-                    onChange={(e) => setBlocks((prev) => ({ ...prev, [key]: e.target.value }))}
-                    rows={3}
-                    className="w-full border-t border-slate-100 px-3.5 py-2.5 text-sm outline-none"
-                    placeholder={language === 'en' ? en : es}
-                  />
+                  <div className="border-t border-slate-100">
+                    <textarea
+                      value={blocks[key] ?? ''}
+                      onChange={(e) => setBlocks((prev) => ({ ...prev, [key]: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3.5 py-2.5 text-sm outline-none"
+                      placeholder={language === 'en' ? en : es}
+                    />
+                    <div className="px-3.5 pb-2.5">
+                      <DictadoYMejora
+                        valor={blocks[key] ?? ''}
+                        onCambio={(v) => setBlocks((prev) => ({ ...prev, [key]: v }))}
+                        language={language}
+                        contexto={language === 'en' ? en : es}
+                        tono={CLAUSULAS_DE_PROPUESTA.has(key) ? 'clause' : 'letter'}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             ))}

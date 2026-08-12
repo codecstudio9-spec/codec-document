@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, Home, Briefcase, Building2, DollarSign, Globe, ArrowRight, LayoutGrid } from 'lucide-react';
+import { Search, FileText, ArrowRight, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
@@ -14,6 +14,52 @@ export function DesktopTemplates() {
     <DesktopAppShell>
       <TemplatesContent />
     </DesktopAppShell>
+  );
+}
+
+/**
+ * Un círculo del menú de secciones.
+ *
+ * Inactivo es un disco blanco con el icono en el color de su sección y un
+ * anillo tenue del mismo color; activo se rellena de ese color con una sombra
+ * proyectada del mismo tono. Así el estado se ve por el color y por el
+ * relieve, no sólo por un borde —que a este tamaño casi no se distingue.
+ */
+function CirculoSeccion({ activa, color, Icono, nombre, cuantas, onClick }: {
+  activa: boolean;
+  color: string;
+  Icono: LucideIcon;
+  nombre: string;
+  cuantas: number;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="group flex w-[86px] flex-col items-center gap-2">
+      <motion.span
+        whileHover={{ y: -3 }}
+        whileTap={{ scale: 0.94 }}
+        className="relative flex size-[62px] items-center justify-center rounded-full transition-colors"
+        style={activa
+          ? { background: color, boxShadow: `0 12px 26px ${color}59` }
+          : { background: '#fff', boxShadow: CARD_SHADOW, border: `1.5px solid ${color}26` }}
+      >
+        <Icono className="size-[23px]" style={{ color: activa ? '#fff' : color }} />
+        <span
+          className="absolute -right-1 -top-1 flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums"
+          style={activa
+            ? { background: '#fff', color }
+            : { background: color, color: '#fff' }}
+        >
+          {cuantas}
+        </span>
+      </motion.span>
+      <span
+        className="text-center text-[11px] font-bold leading-tight transition-colors"
+        style={{ color: activa ? color : '#475569' }}
+      >
+        {nombre}
+      </span>
+    </button>
   );
 }
 
@@ -49,44 +95,36 @@ function TemplatesContent() {
         </div>
       </div>
 
-      {/* Menú de secciones. Iconos y no sólo texto: el contador reconoce
-          antes un icono de casa que la frase «Real Estate & Property», y
-          además los nombres estaban sin traducir. Cada botón muestra
-          cuántas plantillas tiene, para que no haya que entrar a
-          descubrir que una sección está vacía. */}
-      <div className="mt-5 flex flex-wrap gap-2.5">
-        <button
-          type="button"
+      {/* Secciones en círculos.
+          Una fila de pastillas de texto de anchos distintos se lee como una
+          lista desordenada; un círculo por sección, todos del mismo tamaño y
+          alineados, se lee como un menú. El icono hace el trabajo de
+          reconocimiento —una casa se identifica antes que la palabra
+          «Inmobiliaria»— y el número dice cuántas plantillas hay dentro sin
+          tener que entrar a mirar. */}
+      <div className="mt-6 flex flex-wrap gap-x-5 gap-y-4">
+        <CirculoSeccion
+          activa={activeCategory === null}
+          color="#0F172A"
+          Icono={LayoutGrid}
+          nombre={language === 'en' ? 'All' : 'Todas'}
+          cuantas={documentTemplates.length}
           onClick={() => setActiveCategory(null)}
-          className="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition"
-          style={activeCategory === null
-            ? { background: '#0F172A', color: '#fff' }
-            : { background: '#fff', color: '#334155', boxShadow: CARD_SHADOW }}
-        >
-          <LayoutGrid className="size-4" />
-          {language === 'en' ? 'All' : 'Todas'}
-          <span className="tabular-nums opacity-60">{documentTemplates.length}</span>
-        </button>
+        />
 
         {CATEGORIAS.map((c) => {
-          const activa = activeCategory === c.id;
           const cuantas = documentTemplates.filter((t) => claveCategoria(t.category) === c.id).length;
           if (cuantas === 0) return null;
-          const Icono = c.icono;
           return (
-            <button
+            <CirculoSeccion
               key={c.id}
-              type="button"
-              onClick={() => setActiveCategory(activa ? null : c.id)}
-              className="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition"
-              style={activa
-                ? { background: c.color, color: '#fff', boxShadow: `0 10px 22px ${c.color}44` }
-                : { background: '#fff', color: '#334155', boxShadow: CARD_SHADOW }}
-            >
-              <Icono className="size-4" style={{ color: activa ? '#fff' : c.color }} />
-              {nombreCategoria(c.id, language)}
-              <span className="tabular-nums opacity-60">{cuantas}</span>
-            </button>
+              activa={activeCategory === c.id}
+              color={c.color}
+              Icono={c.icono}
+              nombre={nombreCategoria(c.id, language)}
+              cuantas={cuantas}
+              onClick={() => setActiveCategory(activeCategory === c.id ? null : c.id)}
+            />
           );
         })}
       </div>
