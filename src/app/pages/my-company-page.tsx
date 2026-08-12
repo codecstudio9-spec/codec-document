@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { getPayPalClientId } from '../config/paypal';
-import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
   addCompanyMember, removeCompanyMember, COMPANY_ROLE_LABELS,
@@ -276,7 +276,12 @@ const COMPANY_PLAN_PRICES: Record<BillingCycle, { price: number; product: 'compa
 /** Lives inside <PayPalScriptProvider> — same split as PaypalSignatureCheckout.tsx
  * (reads real SDK load status via usePayPalScriptReducer instead of a nonexistent
  * onError prop on the provider itself). */
-function CompanyBillingButtons({ cycle, onApprove }: { cycle: BillingCycle; onApprove: (orderId: string) => Promise<void> }) {
+function CompanyBillingButtons({ cycle, onApprove, descuento }: {
+  cycle: BillingCycle;
+  onApprove: (orderId: string) => Promise<void>;
+  /** Bono parcial aplicado. El importe rebajado lo calculó el servidor. */
+  descuento?: DescuentoDeBono | null;
+}) {
   const [{ isPending, isRejected }] = usePayPalScriptReducer();
   const plan = COMPANY_PLAN_PRICES[cycle];
 
@@ -310,14 +315,23 @@ function CompanyBillingButtons({ cycle, onApprove }: { cycle: BillingCycle; onAp
     <PayPalButtons
       key={cycle} // force remount when the billing cycle changes
       style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 45, tagline: false }}
-      forceReRender={[plan.price]}
+      forceReRender={[plan.price, descuento?.discountPct ?? 0]}
       createOrder={(_data, actions) =>
         actions.order.create({
           intent: 'CAPTURE',
           purchase_units: [
             {
               description: `Codec Document · Plan Empresarial (${cycle === 'annual' ? 'Anual' : 'Mensual'})`,
-              amount: { currency_code: 'USD', value: plan.price.toFixed(2) },
+              amount: {
+                currency_code: 'USD',
+                // Se aplica el PORCENTAJE al precio del ciclo elegido, con la
+                // misma fórmula y el mismo redondeo que usa el servidor al
+                // verificar: si difirieran en un céntimo, el pago se
+                // rechazaría por importe incorrecto.
+                value: (descuento
+                  ? Math.round(plan.price * (100 - descuento.discountPct)) / 100
+                  : plan.price).toFixed(2),
+              },
             },
           ],
           application_context: {
@@ -349,6 +363,9 @@ function CompanyBillingSection({ company, language, onRenewed }: { company: Comp
   const [promoInput, setPromoInput] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
+  /** Bono parcial. Se guarda el porcentaje, no el importe: el campo es común
+   *  a los dos ciclos y el precio depende del que se acabe eligiendo. */
+  const [promoParcial, setPromoParcial] = useState<DescuentoDeBono | null>(null);
   const clientId = getPayPalClientId();
 
   const isActive = company.plan_active_until ? new Date(company.plan_active_until) > new Date() : false;
@@ -356,7 +373,11 @@ function CompanyBillingSection({ company, language, onRenewed }: { company: Comp
   const handleApprove = async (cycle: BillingCycle, orderId: string) => {
     setProcessing(cycle);
     try {
-      await verifyPaypalOrder({ orderId, product: COMPANY_PLAN_PRICES[cycle].product });
+      await verifyPaypalOrder({
+        orderId,
+        product: COMPANY_PLAN_PRICES[cycle].product,
+        promoCode: promoParcial?.code,
+      });
       toast.success(language === 'en' ? 'Business plan activated!' : '¡Plan Empresarial activado!');
       onRenewed();
     } catch (err) {
@@ -372,6 +393,20 @@ function CompanyBillingSection({ company, language, onRenewed }: { company: Comp
     setPromoLoading(true);
     setPromoError('');
     try {
+      // Se consulta con el plan mensual sólo para averiguar el PORCENTAJE:
+      // el campo del bono es común a los dos ciclos, y el importe concreto
+      // depende del que la persona elija después. Por eso más abajo se
+      // guarda el porcentaje y no la cifra.
+      const info = await consultarDescuento(code, { product: COMPANY_PLAN_PRICES.monthly.product });
+      if (info && info.discountPct < 100) {
+        setPromoParcial(info);
+        setPromoError('');
+        toast.success(language === 'en'
+          ? `${info.discountPct}% off applied — pay below to finish.`
+          : `${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
+        return;
+      }
+
       await redeemPromoCode(code);
       toast.success(language === 'en' ? 'Code applied — Business plan activated!' : '¡Código aplicado — Plan Empresarial activado!');
       setPromoInput('');
@@ -444,7 +479,7 @@ function CompanyBillingSection({ company, language, onRenewed }: { company: Comp
                       {language === 'en' ? 'Activating…' : 'Activando…'}
                     </div>
                   ) : (
-                    <CompanyBillingButtons cycle={planCycle} onApprove={(orderId) => handleApprove(planCycle, orderId)} />
+                    <CompanyBillingButtons cycle={planCycle} onApprove={(orderId) => handleApprove(planCycle, orderId)} descuento={promoParcial} />
                   )}
                 </div>
               </div>

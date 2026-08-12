@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { SITE_URL } from '../config/site';
 import { getPayPalClientId } from '../config/paypal';
-import { verifyPaypalOrder } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { getUserBranding } from '../services/branding-service';
 import {
@@ -35,7 +35,10 @@ const QUOTE_SINGLE_PRICE = 6.99;
  * <PayPalScriptProvider> and reads real SDK load status via
  * usePayPalScriptReducer instead of a nonexistent onError prop on the
  * provider itself. */
-function QuotePaywallButtons({ onApprove }: { onApprove: (orderId: string) => Promise<void> }) {
+function QuotePaywallButtons({ onApprove, descuento }: {
+  onApprove: (orderId: string) => Promise<void>;
+  descuento?: DescuentoDeBono | null;
+}) {
   const [{ isPending, isRejected }] = usePayPalScriptReducer();
 
   if (isRejected) {
@@ -63,7 +66,17 @@ function QuotePaywallButtons({ onApprove }: { onApprove: (orderId: string) => Pr
       createOrder={(_data, actions) =>
         actions.order.create({
           intent: 'CAPTURE',
-          purchase_units: [{ description: 'Codec Document · Cotización Individual', amount: { currency_code: 'USD', value: QUOTE_SINGLE_PRICE.toFixed(2) } }],
+          purchase_units: [{
+            description: 'Codec Document · Cotización Individual',
+            amount: {
+              currency_code: 'USD',
+              // Misma fórmula y mismo redondeo que el servidor al verificar:
+              // un céntimo de diferencia y el pago se rechaza.
+              value: (descuento
+                ? Math.round(QUOTE_SINGLE_PRICE * (100 - descuento.discountPct)) / 100
+                : QUOTE_SINGLE_PRICE).toFixed(2),
+            },
+          }],
           application_context: { brand_name: 'Codec Document', shipping_preference: 'NO_SHIPPING', user_action: 'PAY_NOW' },
         })
       }
@@ -230,6 +243,11 @@ export function MyQuoteEditorPage() {
   const [copied, setCopied] = useState(false);
   const [borradorRecuperado, setBorradorRecuperado] = useState(false);
 
+  const [bonoInput, setBonoInput] = useState('');
+  const [bonoLoading, setBonoLoading] = useState(false);
+  const [bonoError, setBonoError] = useState('');
+  const [bonoParcial, setBonoParcial] = useState<DescuentoDeBono | null>(null);
+
   // ── Borrador local ─────────────────────────────────────────────────────
   //
   // Todo lo escrito vivía sólo en el estado de React. Bastaba con recargar,
@@ -370,7 +388,7 @@ export function MyQuoteEditorPage() {
   const handlePaidQuoteApprove = async (orderId: string) => {
     setPayingForQuote(true);
     try {
-      await verifyPaypalOrder({ orderId, product: 'quote_single' });
+      await verifyPaypalOrder({ orderId, product: 'quote_single', promoCode: bonoParcial?.code });
       await finalizeNewQuote();
       toast.success(language === 'en' ? 'Payment confirmed — quote created!' : '¡Pago confirmado — cotización creada!');
     } catch (err) {
@@ -496,6 +514,30 @@ export function MyQuoteEditorPage() {
       ? `here is the ${documentTitle.toLowerCase()} we prepared for you${projectName ? ` for ${projectName}` : ''}. Total: $${totals.total.toFixed(2)}.\n\nYou can review it and sign it here:`
       : `aquí tienes la ${documentTitle.toLowerCase()} que preparamos para ti${projectName ? ` para ${projectName}` : ''}. Total: $${totals.total.toFixed(2)}.\n\nPuedes revisarla y firmarla aquí:`;
     return `${saludo} ${cuerpo}\n${shareLink ?? ''}`;
+  };
+
+  /** Aplica un bono en el cobro de la cotización. Uno del 100% la desbloquea
+   *  y la crea al momento; uno parcial sólo rebaja el importe de PayPal. */
+  const aplicarBono = async () => {
+    const code = bonoInput.trim().toUpperCase();
+    if (!code) return;
+    setBonoLoading(true);
+    setBonoError('');
+    try {
+      const contexto = { product: 'quote_single' as const };
+      const info = await consultarDescuento(code, contexto);
+      if (info && info.discountPct < 100) {
+        setBonoParcial(info);
+        return;
+      }
+      await redeemPromoCode(code, contexto);
+      await finalizeNewQuote();
+      toast.success(language === 'en' ? 'Coupon applied — quote created!' : '¡Bono aplicado — cotización creada!');
+    } catch (err) {
+      setBonoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
+    } finally {
+      setBonoLoading(false);
+    }
   };
 
   const handleCopyLink = async () => {
@@ -975,6 +1017,39 @@ export function MyQuoteEditorPage() {
                   : `Desbloquea esta cotización ahora mismo por $${QUOTE_SINGLE_PRICE.toFixed(2)}, o mejora al plan de $29.99/mes para cotizaciones ilimitadas.`)}
             </p>
 
+            {/* Campo de bono. Esta ventana de cobro no lo tenía, así que un
+                bono repartido para cotizaciones no había dónde escribirlo. */}
+            <div className="mb-3">
+              <label className="mb-1.5 block text-[11px] font-bold text-amber-900">
+                {language === 'en' ? 'Have a coupon?' : '¿Tienes un bono de descuento?'}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={bonoInput}
+                  onChange={(e) => { setBonoInput(e.target.value.toUpperCase()); setBonoError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') void aplicarBono(); }}
+                  placeholder={language === 'en' ? 'Enter code' : 'Escribe el código'}
+                  className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm uppercase tracking-wide outline-none focus:border-amber-500"
+                />
+                <button
+                  type="button"
+                  disabled={bonoLoading || !bonoInput.trim()}
+                  onClick={() => void aplicarBono()}
+                  className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+                >
+                  {bonoLoading ? (language === 'en' ? 'Checking…' : 'Verificando…') : (language === 'en' ? 'Apply' : 'Aplicar')}
+                </button>
+              </div>
+              {bonoError && <p className="mt-1.5 text-xs text-red-600">{bonoError}</p>}
+              {bonoParcial && (
+                <p className="mt-1.5 text-xs font-semibold text-amber-900">
+                  {language === 'en'
+                    ? `${bonoParcial.discountPct}% off — pay below to finish.`
+                    : `${bonoParcial.discountPct}% de descuento — paga abajo para terminar.`}
+                </p>
+              )}
+            </div>
+
             {payingForQuote ? (
               <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-600">
                 <Loader className="size-4 animate-spin" />
@@ -982,7 +1057,7 @@ export function MyQuoteEditorPage() {
               </div>
             ) : getPayPalClientId() ? (
               <PayPalScriptProvider options={{ clientId: getPayPalClientId(), currency: 'USD', intent: 'capture', components: 'buttons' }}>
-                <QuotePaywallButtons onApprove={handlePaidQuoteApprove} />
+                <QuotePaywallButtons onApprove={handlePaidQuoteApprove} descuento={bonoParcial} />
               </PayPalScriptProvider>
             ) : (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">

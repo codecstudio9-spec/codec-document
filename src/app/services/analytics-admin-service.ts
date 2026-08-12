@@ -8,6 +8,41 @@
  */
 import { supabase } from '../../lib/supabase';
 
+// ─── Regalar meses de plan ──────────────────────────────────────────────
+//
+// Distinto de un bono: un bono es anónimo y lo canjea quien lo tenga; esto va
+// dirigido a una persona por su correo y se activa solo, sin que ella escriba
+// nada. Es la cortesía para un cliente concreto, no una campaña.
+
+export interface PlanGift {
+  id: string;
+  email: string;
+  months: number;
+  expiresAt: string;
+  note: string | null;
+  createdAt: string;
+}
+
+/** Si esa persona ya tiene plan, el tiempo se SUMA a lo que le quede: un
+ *  regalo nunca puede dejar a nadie peor de lo que estaba. */
+export async function grantFreeMonths(email: string, months = 1, note?: string): Promise<{ email: string; expiresAt: string }> {
+  const { data, error } = await supabase.rpc('admin_grant_free_month', {
+    p_email: email, p_months: months, p_note: note ?? null,
+  });
+  if (error) throw new Error(error.message);
+  const fila = Array.isArray(data) ? data[0] : data;
+  return { email: String(fila?.email ?? email), expiresAt: String(fila?.expires_at ?? '') };
+}
+
+export async function listPlanGifts(limit = 50): Promise<PlanGift[]> {
+  const { data, error } = await supabase.rpc('admin_list_plan_gifts', { p_limit: limit });
+  if (error) return [];
+  return ((data as any[]) ?? []).map((r) => ({
+    id: r.id, email: r.email, months: Number(r.months ?? 0),
+    expiresAt: r.expires_at, note: r.note ?? null, createdAt: r.created_at,
+  }));
+}
+
 export interface AnalyticsAdminGrant {
   id: string;
   email: string;

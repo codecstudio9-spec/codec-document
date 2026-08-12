@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
-import { verifyPaypalOrder, redeemPromoCode } from '../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
 import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag } from 'lucide-react';
 import { OnboardingModal } from './auth/OnboardingModal';
@@ -171,6 +171,11 @@ export function PricingSection() {
   const [promoInput, setPromoInput] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
+  /** Bono que no es del 100%: no activa el plan por sí solo, rebaja el
+   *  importe que se cobra por PayPal. Esta pantalla vende los planes como
+   *  pago único (Orders API), así que aquí el descuento es simplemente un
+   *  importe menor — no hace falta un plan de PayPal aparte. */
+  const [promoParcial, setPromoParcial] = useState<DescuentoDeBono | null>(null);
   const API_BASE_URL = import.meta.env.VITE_PAYPAL_API_URL || '/api';
   const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string ?? '';
 
@@ -215,12 +220,16 @@ export function PricingSection() {
       await (window as any).paypal.Buttons({
         style: { layout: 'vertical' },
         createOrder: (_data: any, actions: any) => {
-          const numericPrice = selectedProduct.price.replace(/[^0-9.]/g, '');
+          const listaBase = Number(selectedProduct.price.replace(/[^0-9.]/g, ''));
+          // Con bono se cobra el importe que calculó el SERVIDOR. El servidor
+          // lo vuelve a calcular al verificar, así que retocar esta cifra
+          // desde el navegador sólo consigue que el pago sea rechazado.
+          const aCobrar = promoParcial?.discountedAmount ?? listaBase;
           return actions.order.create({
             purchase_units: [{
               description: language === 'en' ? selectedProduct.titleEn : selectedProduct.titleEs,
               custom_id: payerEmail || user?.email || '',
-              amount: { currency_code: 'USD', value: numericPrice },
+              amount: { currency_code: 'USD', value: aCobrar.toFixed(2) },
             }],
           });
         },
@@ -236,7 +245,11 @@ export function PricingSection() {
             monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
           };
           try {
-            await verifyPaypalOrder({ orderId, product: planProductMap[selectedProduct.planId] });
+            await verifyPaypalOrder({
+              orderId,
+              product: planProductMap[selectedProduct.planId],
+              promoCode: promoParcial?.code,
+            });
           } catch (err) {
             toast.error(
               language === 'en'
@@ -265,7 +278,10 @@ export function PricingSection() {
       const container = document.getElementById('paypal-checkout-modal-container');
       if (container) { try { container.innerHTML = ''; } catch (_) {} }
     };
-  }, [API_BASE_URL, PAYPAL_CLIENT_ID, checkoutReady, language, modalOpen, payerEmail, refreshPurchasedDocuments, refreshSubscription, selectedProduct, user?.email]);
+    // `promoParcial` va en las dependencias porque el botón de PayPal se
+    // construye con un importe fijo: sin esto, aplicar un bono cambiaría el
+    // texto en pantalla pero cobraría el precio entero.
+  }, [API_BASE_URL, PAYPAL_CLIENT_ID, checkoutReady, language, modalOpen, payerEmail, refreshPurchasedDocuments, refreshSubscription, selectedProduct, user?.email, promoParcial]);
 
   const restoreBodyScroll = () => {
     document.body.style.overflow = '';
@@ -295,7 +311,23 @@ export function PricingSection() {
       const planProductMap: Record<Product['planId'], 'sub_monthly' | 'sub_semiannual' | 'sub_annual'> = {
         monthly: 'sub_monthly', semiannual: 'sub_semiannual', annual: 'sub_annual',
       };
-      await redeemPromoCode(code, selectedProduct ? { product: planProductMap[selectedProduct.planId] } : undefined);
+      const contexto = selectedProduct ? { product: planProductMap[selectedProduct.planId] } : undefined;
+
+      // Primero se pregunta cuánto descuenta, sin canjear. Un bono parcial
+      // canjeado aquí se gastaría sin haber cobrado el resto.
+      if (contexto) {
+        const info = await consultarDescuento(code, contexto);
+        if (info && info.discountPct < 100) {
+          setPromoParcial(info);
+          setPromoError('');
+          toast.success(language === 'en'
+            ? `${info.discountPct}% off applied — pay below to finish.`
+            : `${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
+          return;
+        }
+      }
+
+      await redeemPromoCode(code, contexto);
       await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);
       toast.success(language === 'en' ? 'Promo code applied — plan activated!' : '¡Código aplicado — plan activado!');
       closeModal();
@@ -566,6 +598,21 @@ export function PricingSection() {
                       </button>
                     </div>
                     {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
+                    {promoParcial && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+                        <Tag className="size-3.5 shrink-0 text-indigo-600" />
+                        <span className="text-xs font-semibold text-indigo-700">
+                          {language === 'en'
+                            ? `${promoParcial.discountPct}% off — pay below to finish`
+                            : `${promoParcial.discountPct}% de descuento — paga abajo para terminar`}
+                        </span>
+                        {promoParcial.discountedAmount !== null && (
+                          <span className="ml-auto shrink-0 text-xs font-black text-indigo-700">
+                            ${promoParcial.discountedAmount.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

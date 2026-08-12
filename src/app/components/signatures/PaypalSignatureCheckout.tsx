@@ -3,7 +3,7 @@ import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@pa
 import { ShieldCheck, Zap, Infinity, Loader, CheckCircle, XCircle, RefreshCw, Lock, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPayPalClientId } from '../../config/paypal';
-import { verifyPaypalOrder, redeemPromoCode } from '../../../lib/paypal-verify';
+import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono, type PaypalProduct } from '../../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../../utils/paypal-scroll-fix';
 
 interface PaypalSignatureCheckoutProps {
@@ -83,6 +83,8 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
   const [promoInput, setPromoInput] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState('');
+  /** Bono parcial: no desbloquea por sí solo, rebaja el importe a cobrar. */
+  const [promoParcial, setPromoParcial] = useState<DescuentoDeBono | null>(null);
 
   const clientId = getPayPalClientId();
   const plan = PLANS.find((p) => p.id === selectedPlan)!;
@@ -90,7 +92,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
   // Same product for a real payment and for a promo-code redemption in
   // this checkout — whichever plan/tab is currently selected is what
   // either path unlocks.
-  const currentContextProduct = mode === 'document'
+  const currentContextProduct: PaypalProduct = mode === 'document'
     ? (selectedPlan === 'single' ? 'doc_single' : 'sub_monthly')
     : (selectedPlan === 'single' ? 'sig_single' : 'sig_monthly');
 
@@ -108,6 +110,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
       await verifyPaypalOrder({
         orderId,
         product,
+        promoCode: promoParcial?.code,
         // doc_single needs a documentId to price against — this checkout
         // fires before the document exists in the DB (it's the gate that
         // blocks creating it), so there's no real id yet. Any non-matching
@@ -130,10 +133,22 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
     setPromoLoading(true);
     setPromoError('');
     try {
-      await redeemPromoCode(code, {
+      const contexto = {
         product: currentContextProduct,
         documentId: mode === 'document' ? 'generic-single-document' : undefined,
-      });
+      };
+
+      // Se consulta antes de canjear: un bono parcial canjeado aquí se
+      // gastaría sin haber cobrado el resto.
+      const info = await consultarDescuento(code, contexto);
+      if (info && info.discountPct < 100) {
+        setPromoParcial(info);
+        setPromoError('');
+        toast.success(`${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
+        return;
+      }
+
+      await redeemPromoCode(code, contexto);
       setSucceeded(true);
       toast.success('¡Código aplicado! Acceso desbloqueado.');
       onSuccess(selectedPlan);
@@ -268,7 +283,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
         <PayPalScriptProvider
           options={{ clientId, currency: 'USD', intent: 'capture', components: 'buttons' }}
         >
-          <PayPalButtonsArea plan={plan} selectedPlan={selectedPlan} onApprove={handleApprove} />
+          <PayPalButtonsArea plan={plan} selectedPlan={selectedPlan} onApprove={handleApprove} descuento={promoParcial} />
         </PayPalScriptProvider>
       ) : (
         <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-950/30 px-4 py-3 text-xs text-red-300">
@@ -290,11 +305,13 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
  * — a dead end for the user. This shows a real loading/error state instead.
  */
 function PayPalButtonsArea({
-  plan, selectedPlan, onApprove,
+  plan, selectedPlan, onApprove, descuento,
 }: {
   plan: (typeof SIGNATURE_PLANS)[number];
   selectedPlan: Plan;
   onApprove: (orderId: string) => Promise<void>;
+  /** Bono parcial aplicado: rebaja el importe del botón. */
+  descuento?: DescuentoDeBono | null;
 }) {
   const [{ isPending, isRejected }] = usePayPalScriptReducer();
 
@@ -337,7 +354,12 @@ function PayPalButtonsArea({
               description: `Codec Document · ${plan.label}`,
               amount: {
                 currency_code: 'USD',
-                value: plan.price.toFixed(2),
+                // Con bono, el importe que calculó el servidor. Él lo vuelve
+                // a calcular al verificar, así que editarlo aquí sólo logra
+                // que el pago se rechace por no cuadrar.
+                value: (descuento
+                  ? Math.round(plan.price * (100 - descuento.discountPct)) / 100
+                  : plan.price).toFixed(2),
               },
             },
           ],
