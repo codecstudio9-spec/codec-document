@@ -15,6 +15,7 @@ import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
+import { useGuiaFormulario } from '../hooks/use-guia-formulario';
 import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { getDocumentTranslation } from '../data/document-translations';
 import { getFieldTranslation, getFieldOptionTranslation } from '../data/field-translations';
@@ -260,14 +261,11 @@ function ContenidoGenerador() {
   const [flowStep, setFlowStep] = useState<FlowStep>('form');
   const { speak } = useVoiceSpeak();
   useEffect(() => {
-    // Bienvenida al llegar al primer paso, y agradecimiento al llegar al
-    // último de este asistente — el mismo patrón que en las otras
-    // pantallas con voz.
-    const messages: Record<FlowStep, { es: string; en: string }> = {
-      form: {
-        es: 'Bienvenido a Codec Document. Completa los campos del documento. Los campos marcados como obligatorios deben llenarse antes de continuar.',
-        en: 'Welcome to Codec Document. Fill in the document fields. Fields marked as required must be completed before continuing.',
-      },
+    // Firma y verificación. El paso del formulario lo narra
+    // useGuiaFormulario, que además dice qué documento es, cuántos campos
+    // tiene y cómo dictarlo — si se saludara también aquí, sonarían dos
+    // bienvenidas seguidas y la segunda cortaría a la primera.
+    const messages: Partial<Record<FlowStep, { es: string; en: string }>> = {
       sign: {
         es: 'Firma el documento para continuar.',
         en: 'Sign the document to continue.',
@@ -277,7 +275,8 @@ function ContenidoGenerador() {
         en: 'Verify your identity to finish the document. Thank you for using Codec Document.',
       },
     };
-    speak(messages[flowStep]);
+    const mensaje = messages[flowStep];
+    if (mensaje) speak(mensaje);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flowStep]);
   const [userSigDataUrl, setUserSigDataUrl] = useState<string>('');
@@ -601,59 +600,31 @@ function ContenidoGenerador() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, visibleFields]);
 
-  // ── El asistente sigue al usuario por el formulario ──────────────────────
-  //
-  // Al llegar a una sección nueva corta lo que estaba diciendo y explica ésa.
-  // Antes narraba una sola vez al abrir la pantalla y ahí se quedaba: quien
-  // bajaba a «Detalles del Acuerdo» seguía oyendo la bienvenida, o nada.
-  //
-  // Se dispara sólo al CAMBIAR de sección, nunca al volver a la misma, porque
-  // un desplazamiento que oscile entre dos tarjetas repetiría la frase sin
-  // parar. `speak()` ya cancela lo anterior, así que basta con llamarlo.
-  const seccionNarrada = useRef<string>('');
-  useEffect(() => {
-    if (flowStep !== 'form') return;
-    const guiones: Record<string, { es: string; en: string }> = {
-      parties: {
-        es: 'Información de las partes. Aquí van los nombres, documentos y datos de contacto de quienes intervienen en el documento.',
-        en: 'Party information. This is where the names, ID numbers and contact details of everyone involved go.',
-      },
-      agreement: {
-        es: 'Detalles del acuerdo. Aquí van las fechas y las condiciones que rigen el documento.',
-        en: 'Agreement details. This is where the dates and the terms that govern the document go.',
-      },
-      variables: {
-        es: 'Variables específicas. Son los datos propios de este documento en particular. Recuerda que los campos de texto largo los puedes dictar con el micrófono.',
-        en: 'Specific variables. These are the details particular to this document. Remember you can dictate the long text fields with the microphone.',
-      },
-    };
+  // ── Guía por voz ─────────────────────────────────────────────────────────
+  // Presenta el documento, cuenta cuántos campos tiene, explica el dictado y
+  // va narrando cada sección conforme el usuario baja. Ver use-guia-formulario.
+  const guionesSeccion = useMemo(() => ({
+    parties: {
+      es: 'Información de las partes. Aquí van los nombres, documentos y datos de contacto de quienes intervienen.',
+      en: 'Party information. Names, ID numbers and contact details of everyone involved.',
+    },
+    agreement: {
+      es: 'Detalles del acuerdo. Aquí van las fechas y las condiciones que rigen el documento.',
+      en: 'Agreement details. The dates and the terms that govern the document.',
+    },
+    variables: {
+      es: 'Variables específicas. Son los datos propios de este documento. En los campos de texto largo tienes un micrófono para dictarlos y un botón para que la inteligencia artificial mejore la redacción.',
+      en: 'Specific variables. The details particular to this document. The long text fields have a microphone to dictate them and a button for the AI to polish the wording.',
+    },
+  }), []);
 
-    const tarjetas = Array.from(document.querySelectorAll<HTMLElement>('[data-seccion-voz]'));
-    if (tarjetas.length === 0) return;
-
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        // La sección "actual" es la más visible en pantalla, no la primera que
-        // asome: con tarjetas altas, dos pueden estar a la vez en el borde.
-        const visible = entradas
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const clave = visible.target.getAttribute('data-seccion-voz') ?? '';
-        if (!clave || clave === seccionNarrada.current) return;
-        seccionNarrada.current = clave;
-        const guion = guiones[clave];
-        if (guion) speak(guion);
-      },
-      // Umbrales escalonados para poder comparar cuál se ve más, y un margen
-      // que descarta lo que apenas asoma por abajo.
-      { threshold: [0.25, 0.5, 0.75], rootMargin: '-15% 0px -35% 0px' },
-    );
-
-    tarjetas.forEach((t) => observador.observe(t));
-    return () => observador.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flowStep, language, visibleFields.length]);
+  useGuiaFormulario({
+    nombreDocumento: getDocumentTranslation(template?.id ?? '', 'name', language) || template?.name || '',
+    cuantosCampos: visibleFields.length,
+    tienePremium: Boolean(unlimitedActive || subscriptionActive || isAdmin),
+    secciones: guionesSeccion,
+    activo: flowStep === 'form',
+  });
 
   // ── Dictar el formulario ──────────────────────────────────────────────────
   const [dictadoAbierto, setDictadoAbierto] = useState(false);

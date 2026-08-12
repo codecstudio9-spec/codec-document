@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
@@ -21,6 +21,7 @@ import {
 import { consumeQuoteLimit72h, getNextQuoteSlot } from '../services/user-limits-service';
 import { generateQuotePdf } from '../services/quote-pdf-generator';
 import { DictadoYMejora } from '../components/DictadoYMejora';
+import { useGuiaFormulario } from '../hooks/use-guia-formulario';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
 } from '../../lib/signatureService';
@@ -110,7 +111,32 @@ const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600';
 export function MyQuoteEditorPage() {
   const { id } = useParams<{ id?: string }>();
   const { user, isAdmin, unlimitedActive, subscriptionActive } = useAuth();
+
   const { language } = useLanguage();
+
+  // Guía por voz: presenta la cotización, dice cuántos bloques tiene y cuenta
+  // que los textos largos se pueden dictar. Cada sección se narra al llegar.
+  const seccionesDeVoz = useMemo(() => ({
+    proyecto: {
+      es: 'Datos del proyecto. El resumen ejecutivo, el objetivo y el alcance los puedes dictar con el micrófono que está debajo de cada uno, y pulsar «Mejorar con IA» para que quede bien redactado.',
+      en: 'Project details. You can dictate the executive summary, the objective and the scope with the microphone under each one, and press "Improve with AI" to polish the wording.',
+    },
+    items: {
+      es: 'Productos y servicios. Añade cada ítem con su cantidad y su precio; el total se calcula solo.',
+      en: 'Products and services. Add each item with its quantity and price; the total is worked out for you.',
+    },
+    propuesta: {
+      es: 'Propuesta comercial. Son secciones opcionales: activa las que necesites. Cada una se puede dictar y mejorar con inteligencia artificial.',
+      en: 'Commercial proposal. These sections are optional: turn on the ones you need. Each one can be dictated and polished with AI.',
+    },
+  }), []);
+
+  useGuiaFormulario({
+    nombreDocumento: language === 'en' ? 'a quote' : 'una cotización',
+    cuantosCampos: 0,
+    tienePremium: Boolean(isAdmin || unlimitedActive || subscriptionActive),
+    secciones: seccionesDeVoz,
+  });
   const navigate = useNavigate();
   const isEditing = Boolean(id);
 
@@ -497,7 +523,7 @@ export function MyQuoteEditorPage() {
         </div>
 
         {/* Project data */}
-        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div data-seccion-voz="proyecto" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Project' : 'Datos del Proyecto'}</p>
           <label className={labelClass}>{language === 'en' ? 'Project name' : 'Nombre del proyecto'}</label>
           <input value={projectName} onChange={(e) => setProjectName(e.target.value)} className={`${inputClass} mb-3`} />
@@ -531,7 +557,7 @@ export function MyQuoteEditorPage() {
         </div>
 
         {/* Line items */}
-        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div data-seccion-voz="items" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Products & Services' : 'Productos y Servicios'}</p>
           <div className="space-y-3">
             {items.map((item, i) => (
@@ -569,7 +595,7 @@ export function MyQuoteEditorPage() {
         </div>
 
         {/* Proposal blocks */}
-        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div data-seccion-voz="propuesta" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="mb-1 text-sm font-bold text-slate-800">{language === 'en' ? 'Commercial Proposal' : 'Propuesta Comercial'}</p>
           <p className="mb-4 text-xs text-slate-400">{language === 'en' ? 'Optional sections — activate what you need.' : 'Secciones opcionales — activa las que necesites.'}</p>
           <div className="space-y-2">

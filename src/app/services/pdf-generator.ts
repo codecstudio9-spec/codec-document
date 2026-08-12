@@ -738,6 +738,12 @@ export class PDFGenerator {
     const BODY_SIZE = 9.5;
     const lines = content.split('\n');
     let titleAssigned = false;
+    // Renglones con texto vistos hasta ahora. Un título encabeza el documento
+    // o no existe: una carta empieza por la ciudad y la fecha y no lleva
+    // ninguno. Sin este corte, el primer renglón en mayúsculas que apareciera
+    // —«CONSTANCIA DE RECIBIDO», al final de la carta— se ascendería a título
+    // y se imprimiría centrado y en grande donde no toca.
+    let renglonesConTexto = 0;
     // Líneas en blanco seguidas pendientes de convertir en espacio. Se
     // acumulan y se aplican de una vez sobre el renglón siguiente: dos saltos
     // en la plantilla tienen que separar más que uno, y antes cada uno sumaba
@@ -760,6 +766,8 @@ export class PDFGenerator {
         this.addSpacing(Math.min(blancos, 3) * 0.62);
         blancos = 0;
       }
+
+      renglonesConTexto++;
 
       // Professional divider lines (hyphen-only lines from templates)
       if (/^-{5,}$/.test(trimmedLine)) {
@@ -788,8 +796,16 @@ export class PDFGenerator {
         continue;
       }
 
-      if (/^[A-Z\s\u00C0-\u017F]+$/.test(trimmedLine) && trimmedLine.length > 0 && trimmedLine.length < 100) {
-        if (!titleAssigned) {
+      // Mismo criterio que la vista previa (document-preview.tsx): sin esto,
+      // \u00ABPRIMERA \u2014 OBJETO\u00BB no encajaba aqu\u00ED \u2014la clase no admit\u00EDa la raya\u2014 y
+      // las diecinueve cl\u00E1usulas del contrato de boda se imprim\u00EDan como texto
+      // corriente en el PDF mientras en pantalla se ve\u00EDan como encabezados.
+      //
+      // Sin CIFRAS a prop\u00F3sito. \u00ABC.C. 1022925002\u00BB y \u00ABART\u00CDCULO 1 - VENTA\u00BB son
+      // may\u00FAsculas con n\u00FAmeros: el primero es un dato bajo la firma y el
+      // segundo lo recoge mejor la rama de art\u00EDculos que hay m\u00E1s abajo.
+      if (/^[A-Z\u00C0-\u017F\s\-\u2013\u2014()&,.'"]+$/.test(trimmedLine) && trimmedLine.length > 3 && trimmedLine.length <= 80 && !/[:;]/.test(trimmedLine)) {
+        if (!titleAssigned && renglonesConTexto <= 3) {
           titleAssigned = true;
           this.addMixedRuns([{ text: trimmedLine, bold: true }], TITLE_SIZE, 'center', { leading: 1.1, spaceBefore: 1.2, spaceAfter: 2.2 });
         } else {

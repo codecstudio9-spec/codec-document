@@ -23,7 +23,14 @@ interface DocumentPreviewProps {
 }
 
 // US Legal Standard document formatting
-function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl?: string): React.ReactNode {
+function formatDocumentContent(
+  content: string,
+  leftSigUrl?: string,
+  rightSigUrl?: string,
+  /** Los valores que escribió el usuario, en mayúsculas. Un dato suyo nunca se
+   *  maqueta como encabezado, aunque venga todo en mayúsculas. */
+  datosUsuario: Set<string> = new Set(),
+): React.ReactNode {
   const renderSolidDivider = (key: string) => (
     <div key={key} className="my-3">
       <div className="border-b border-slate-300 w-full" aria-hidden="true" />
@@ -59,10 +66,9 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
   // línea de guiones no debe confundirse con un renglón de firma.
   const SIG_LINE_RE = /_{5,}|Signature\s*:|Firma\s*:/i;
 
-  // El título del documento es la primera línea centrada. Se le da más cuerpo
-  // que a los encabezados de cláusula, que también van centrados: sin esa
-  // diferencia el documento empieza sin jerarquía, con el título del mismo
-  // tamaño que la cláusula primera.
+  // El título del documento es el primer renglón en mayúsculas, y el único
+  // que va centrado y a mayor cuerpo. Todo lo demás en mayúsculas es un
+  // encabezado de cláusula y va a la izquierda.
   let tituloEmitido = false;
   const LEGAL_TERMS = [
     'WITNESSETH', 'WHEREAS', 'NOW THEREFORE', 'IN WITNESS WHEREOF',
@@ -116,18 +122,39 @@ function formatDocumentContent(content: string, leftSigUrl?: string, rightSigUrl
       );
     }
 
+    // Sin CIFRAS, y no es un detalle: «C.C. 1022925002» es mayúsculas con
+    // números y se maquetaba como encabezado justo debajo de la firma, donde
+    // sólo es un dato. «ARTÍCULO 1 - VENTA» también lleva número, y lo recoge
+    // mejor la rama de artículos de más abajo, que es la que sabe qué es.
+    //
+    // Y nunca es encabezado un valor que escribió el usuario: quien puso el
+    // nombre de su empresa en mayúsculas se lo encontraba compuesto como
+    // título del documento.
     if (
-      /^[A-Z0-9\sÀ-ſ\-–—()&,.'"]+$/.test(trimmedLine) &&
+      /^[A-ZÀ-ſ\s\-–—()&,.'"]+$/.test(trimmedLine) &&
       trimmedLine.length > 3 && trimmedLine.length <= 80 &&
-      !/[:;]/.test(trimmedLine)
+      !/[:;]/.test(trimmedLine) &&
+      !datosUsuario.has(trimmedLine.toUpperCase())
     ) {
+      // Sólo el título del documento va centrado. Los encabezados de cláusula
+      // van a la izquierda, que es como se componen en un contrato de verdad:
+      // centrarlos todos rompe el eje de lectura —el ojo salta al centro y
+      // vuelve al margen en cada cláusula— y además hace que el título no se
+      // distinga de las cláusulas, porque comparten alineación.
+      //
+      // Es también lo que ya hacía el maquetador del PDF, que centra el
+      // primero y alinea el resto a la izquierda. Los dos coinciden por fin:
+      // hasta ahora la vista previa y el documento descargado componían los
+      // encabezados de forma distinta.
       const esTitulo = !tituloEmitido;
       tituloEmitido = true;
       return (
         <div
           key={key}
-          className={`text-center font-bold uppercase leading-tight ${
-            esTitulo ? 'text-[13px] tracking-[0.08em] mt-[0.2em] mb-[0.9em]' : 'text-[10.5px] tracking-[0.05em]'
+          className={`font-bold uppercase leading-tight ${
+            esTitulo
+              ? 'text-center text-[13px] tracking-[0.08em] mt-[0.2em] mb-[0.9em]'
+              : 'text-[10.5px] tracking-[0.06em] mt-[0.5em] mb-[0.15em]'
           } ${gapClass}`}
           style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
         >
@@ -424,6 +451,18 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
     [data, language, templateId],
   );
 
+  /** Lo que el usuario escribió, para poder distinguirlo del texto de la
+   *  plantilla al maquetar. Se descartan los valores muy cortos: un «SÍ» o un
+   *  número suelto coincidiría con demasiadas cosas. */
+  const datosUsuario = useMemo(
+    () => new Set(
+      Object.values(data)
+        .map((v) => String(v ?? '').trim().toUpperCase())
+        .filter((v) => v.length >= 4),
+    ),
+    [data],
+  );
+
   const contentAfterConditionals = useMemo(() => {
     return template.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match, fieldName, innerContent) => {
       const cleanFieldName = fieldName.trim() as keyof typeof enrichedData;
@@ -457,8 +496,8 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
       processedContent = processedContent.replace(regex, String(value ?? ''));
     });
     processedContent = processedContent.replace(/\{\{([^}]+)\}\}/g, EMPTY_FIELD_TOKEN);
-    return formatDocumentContent(processedContent, leftSignatureUrl, rightSignatureUrl);
-  }, [contentAfterConditionals, enrichedData, activeFieldId, leftSignatureUrl, rightSignatureUrl]);
+    return formatDocumentContent(processedContent, leftSignatureUrl, rightSignatureUrl, datosUsuario);
+  }, [contentAfterConditionals, enrichedData, activeFieldId, leftSignatureUrl, rightSignatureUrl, datosUsuario]);
 
   // Scrolls the preview just enough to bring the field the user just
   // focused into view — nothing moves if it's already visible, and it

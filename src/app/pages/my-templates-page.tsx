@@ -10,6 +10,7 @@ import {
   type DocxTemplate, type PublicExampleTemplate,
 } from '../services/docx-template-service';
 import { GenerateSendModal } from '../components/templates/GenerateSendModal';
+import { GaleriaEjemplos } from '../components/templates/GaleriaEjemplos';
 import { DesktopAppShell } from '../components/desktop/DesktopAppShell';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import { SITE_URL } from '../config/site';
@@ -192,49 +193,19 @@ export function MyTemplatesPage() {
             clones it into an independent copy the new owner can freely
             rewrite (fields, clauses, everything) without touching the
             original example. */}
+        {/* Galería de ejemplos. Vive en su propio componente porque tiene
+            lógica propia —partir la etiqueta en nombre y sector, agrupar y
+            filtrar— y aquí dentro sólo añadía ruido a una página que ya es
+            larga. «Usar esta plantilla» clona el ejemplo en una copia
+            independiente que el nuevo dueño puede reescribir entera sin tocar
+            el original. */}
         {examples !== null && examples.length > 0 && (
-          <div className="mt-6">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
-              <Sparkles className="size-4 text-purple-500" /> {language === 'en' ? 'Example templates' : 'Plantillas de ejemplo'}
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {examples.map((ex) => (
-                <div key={ex.id} className="flex flex-col gap-3 rounded-3xl border border-purple-200 bg-purple-50/40 p-5 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100">
-                      <Sparkles className="size-5 text-purple-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold leading-snug text-slate-900">{ex.exampleLabel || ex.name}</p>
-                      <p className="text-xs text-slate-400">
-                        {ex.fieldCount} {language === 'en' ? 'field(s) · fully editable' : 'campo(s) · totalmente editable'}
-                      </p>
-                    </div>
-                  </div>
-                  {/* Real per-template instructions (written when the example
-                      was created) so someone browsing the gallery understands
-                      what THIS specific template is for, instead of a single
-                      generic blurb shown identically on every card. Falls
-                      back to that generic blurb only if a template genuinely
-                      has none set. */}
-                  <p className="text-xs leading-relaxed text-slate-500">
-                    {(language === 'en' ? ex.instructionsEn : ex.instructionsEs) || (language === 'en'
-                      ? 'Get your own independent copy — rewrite the clauses, fields, and form however you need.'
-                      : 'Obtén tu propia copia independiente — reescribe las cláusulas, campos y formulario como lo necesites.')}
-                  </p>
-                  <button
-                    type="button"
-                    disabled={cloningId === ex.id}
-                    onClick={() => void handleUseExample(ex)}
-                    className="mt-auto flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 py-2.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-60"
-                  >
-                    {cloningId === ex.id ? <Loader className="size-3.5 animate-spin" /> : <Copy className="size-3.5" />}
-                    {language === 'en' ? 'Use this template' : 'Usar esta plantilla'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <GaleriaEjemplos
+            ejemplos={examples}
+            language={language}
+            cloningId={cloningId}
+            onUsar={(ex) => void handleUseExample(ex)}
+          />
         )}
 
         {docxTemplates !== null && docxTemplates.length > 0 && (

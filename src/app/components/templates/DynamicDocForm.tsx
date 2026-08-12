@@ -3,6 +3,7 @@ import type { DetectedField } from '../../../lib/docxTemplateEngine';
 import { rememberFieldValue, recallFieldValue } from '../../utils/field-memory';
 import { DictarFormulario } from '../DictarFormulario';
 import { BotonDictado } from '../BotonDictado';
+import { useGuiaFormulario } from '../../hooks/use-guia-formulario';
 import type { DocumentField } from '../../types/document';
 
 interface DynamicDocFormProps {
@@ -10,8 +11,15 @@ interface DynamicDocFormProps {
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
   language: 'en' | 'es';
-  /** Nombre de la plantilla, para el ejemplo del panel de dictado. */
+  /** Nombre de la plantilla, para el ejemplo del panel de dictado y para que
+   *  la guía por voz diga qué se está llenando. */
   nombreDocumento?: string;
+  /** Si esta cuenta puede usar el dictado con IA. Cambia lo que dice la guía:
+   *  a quien ya lo tiene se le explica cómo usarlo, y a quien no, qué gana. */
+  tienePremium?: boolean;
+  /** Falso en el enlace público: lo rellena un invitado sin sesión y el
+   *  dictado devolvería «necesitas iniciar sesión». */
+  mostrarDictado?: boolean;
   /** Field keys that should render with a red border/label — set by the
    * caller after a failed "Next"/"Generate" click, so the user can see
    * exactly which required fields are still empty instead of only a
@@ -36,7 +44,7 @@ interface DynamicDocFormProps {
  * with more than a few options span both columns so the dropdown/options
  * don't fight a narrow half-width column.
  */
-export function DynamicDocForm({ fields, values, onChange, language, invalidKeys, nombreDocumento }: DynamicDocFormProps) {
+export function DynamicDocForm({ fields, values, onChange, language, invalidKeys, nombreDocumento, tienePremium = false, mostrarDictado = true }: DynamicDocFormProps) {
   const [dictadoAbierto, setDictadoAbierto] = useState(false);
 
   /**
@@ -61,6 +69,32 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
       })),
     [fields],
   );
+  /**
+   * Guía por voz. Las secciones son las que el dueño de la plantilla creó con
+   * «Agregar subsección»: sus propios títulos, así que el guion sale de la
+   * plantilla y no de una lista fija — cada plantilla de Word es distinta y
+   * decir siempre lo mismo no ayudaría a nadie.
+   */
+  const seccionesDeVoz = useMemo(() => {
+    const mapa: Record<string, { es: string; en: string }> = {};
+    for (const f of fields) {
+      if (f.type !== 'section') continue;
+      mapa[f.key] = {
+        es: `Sección ${f.label}. Completa los datos de esta parte del documento.`,
+        en: `Section ${f.label}. Fill in the details for this part of the document.`,
+      };
+    }
+    return mapa;
+  }, [fields]);
+
+  useGuiaFormulario({
+    nombreDocumento: nombreDocumento || (language === 'en' ? 'this document' : 'este documento'),
+    cuantosCampos: camposParaDictado.length,
+    tienePremium,
+    secciones: seccionesDeVoz,
+    mencionarDictado: mostrarDictado,
+  });
+
   // Pre-fill empty fields from the last value remembered for that LABEL,
   // once per field the first time it appears — never overwrites something
   // the user (or the template) already put in `values`.
@@ -79,7 +113,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
 
   return (
     <>
-      {dictadoAbierto && (
+      {dictadoAbierto && mostrarDictado && (
         <DictarFormulario
           campos={camposParaDictado}
           language={language}
@@ -92,7 +126,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
         />
       )}
 
-      {camposParaDictado.length > 0 && (
+      {mostrarDictado && camposParaDictado.length > 0 && (
         <BotonDictado
           onClick={() => setDictadoAbierto(true)}
           language={language}
@@ -105,7 +139,7 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
       {fields.map((f) => {
         if (f.type === 'section') {
           return (
-            <div key={f.key} className="col-span-1 mt-2 border-b border-slate-200 pb-1.5 first:mt-0 md:col-span-2">
+            <div key={f.key} data-seccion-voz={f.key} className="col-span-1 mt-2 border-b border-slate-200 pb-1.5 first:mt-0 md:col-span-2">
               <h3 className="text-xs font-black uppercase tracking-wide text-indigo-600">{f.label}</h3>
             </div>
           );

@@ -8,6 +8,7 @@ import type { SecurityConfig } from '../../services/sign-transaction-service';
 import { SecurityConfigModal } from '../SecurityConfigModal';
 import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
+import { useAuth } from '../../contexts/auth-context';
 
 interface GenerateSendModalProps {
   template: DocxTemplate | null;
@@ -27,6 +28,11 @@ interface GenerateSendModalProps {
  * touching the template's own stored default.
  */
 export function GenerateSendModal({ template, language, onClose }: GenerateSendModalProps) {
+  // Quién está llenando esto es el dueño de la plantilla, con sesión: aquí el
+  // dictado con IA sí funciona, y lo único que cambia según el plan es cómo se
+  // lo cuenta la guía por voz.
+  const { unlimitedActive, subscriptionActive, isAdmin } = useAuth();
+  const tienePremium = Boolean(unlimitedActive || subscriptionActive || isAdmin);
   const [values, setValues] = useState<Record<string, string>>({});
   const [securityOverride, setSecurityOverride] = useState<SecurityConfig | null>(null);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -134,7 +140,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                 </div>
               ) : (
                 <div className="space-y-5">
-                  <DynamicDocForm nombreDocumento={template.name} fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
+                  <DynamicDocForm nombreDocumento={template.name} tienePremium={tienePremium} fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5">
                     <div className="flex min-w-0 items-center gap-2.5">

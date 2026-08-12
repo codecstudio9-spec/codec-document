@@ -137,7 +137,7 @@ export function TemplateFillPublicPage() {
             )}
           </div>
 
-          <DynamicDocForm nombreDocumento={template.name} fields={template.detectedFields} values={values} onChange={setFieldValue} language={language} invalidKeys={invalidKeys} />
+          <DynamicDocForm nombreDocumento={template.name} mostrarDictado={false} fields={template.detectedFields} values={values} onChange={setFieldValue} language={language} invalidKeys={invalidKeys} />
 
           <button
             type="button"
