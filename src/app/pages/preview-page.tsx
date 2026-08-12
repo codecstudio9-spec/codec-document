@@ -32,6 +32,7 @@ import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } f
 import { getDocumentPrice } from '../config/paypal';
 import { triggerDownload, triggerDownloadFromUrl } from '../utils/download';
 import { SITE_HOSTNAME, SITE_URL } from '../config/site';
+import { Logo } from '../components/brand/Logo';
 import { createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl } from '../../lib/signatureService';
 
 export function normalizeCorruptedText(input: string): string {
@@ -1531,26 +1532,51 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
   return (
     <>
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-        {/* Header */}
-        <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <Link
-                to={`/generator/${documentType}`}
-                className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition"
-              >
-                <ArrowLeft className="size-4" />
-                {language === 'es' ? 'Editar Contrato' : 'Edit Contract'}
-              </Link>
-              <div className="flex items-center gap-2">
-                <Badge variant="default" className="gap-1 bg-emerald-600 hover:bg-emerald-600">
+        {/* ── Encabezado ────────────────────────────────────────────────
+            Con la marca a la izquierda, como el resto del producto. Antes
+            sólo tenía un «← Editar Contrato» sobre fondo blanco, y esta
+            pantalla —la última del recorrido, donde el usuario descarga y
+            comparte— se leía como una página suelta de otro sitio. Es
+            justamente donde peor cae: es el momento en que decide si esto le
+            parece serio. */}
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="container mx-auto px-4 py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-4">
+                <Logo size="sm" href="/dashboard" />
+                <Link
+                  to={`/generator/${documentType}`}
+                  className="hidden items-center gap-1.5 border-l border-slate-200 pl-4 text-sm text-slate-500 transition hover:text-slate-800 sm:flex"
+                >
+                  <ArrowLeft className="size-4" />
+                  {language === 'es' ? 'Editar' : 'Edit'}
+                </Link>
+              </div>
+
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="hidden truncate text-sm font-semibold text-slate-800 sm:block">
+                  {getDocumentTranslation(template.id, 'name', language)}
+                </span>
+                <Badge variant="default" className="shrink-0 gap-1 bg-emerald-600 hover:bg-emerald-600">
                   <CheckCircle2 className="size-3" />
                   {language === 'es' ? 'Desbloqueado' : 'Unlocked'}
                 </Badge>
-                <span className="text-sm font-semibold text-slate-800">
-                  {getDocumentTranslation(template.id, 'name', language)}
-                </span>
               </div>
+            </div>
+
+            {/* En móvil el nombre del documento y el botón de editar no caben
+                arriba sin apretar el logo, así que bajan a su propia línea. */}
+            <div className="mt-1.5 flex items-center justify-between gap-3 sm:hidden">
+              <Link
+                to={`/generator/${documentType}`}
+                className="flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-800"
+              >
+                <ArrowLeft className="size-3.5" />
+                {language === 'es' ? 'Editar' : 'Edit'}
+              </Link>
+              <span className="truncate text-xs font-semibold text-slate-700">
+                {getDocumentTranslation(template.id, 'name', language)}
+              </span>
             </div>
           </div>
         </header>
@@ -1728,6 +1754,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
                       <DocumentPreview
                         template={edicionManual ? editedContent : plantillaParaVista}
                         templateId={template.id}
+                        documentLanguage={exportLanguage}
                         data={edicionManual ? {} : documentData}
                         showWatermark={false}
                         leftSignatureUrl={placedSignatures.find(s => s.id === 'owner')?.dataUrl}
@@ -1855,6 +1882,70 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
           </div>
 
         </div>
+
+        {/* ── Pie de seguridad ──────────────────────────────────────────
+            Cierra el recorrido diciendo qué respalda al documento que la
+            persona acaba de descargar. Va aquí y no antes porque es donde
+            surge la duda: ya lo tiene en la mano y se pregunta si esto vale
+            legalmente. Antes la página simplemente se acababa. */}
+        <footer className="mt-8 border-t border-slate-200 bg-slate-950">
+          <div className="container mx-auto max-w-5xl px-4 py-10">
+            <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+              <Logo size="sm" dark href="/" />
+
+              <div className="grid w-full gap-4 sm:grid-cols-3">
+                {[
+                  {
+                    icono: ShieldCheck,
+                    t: language === 'es' ? 'Validez legal' : 'Legally valid',
+                    d: language === 'es'
+                      ? 'Firma electrónica con equivalencia funcional a la firma manuscrita, según la ley de tu país.'
+                      : 'Electronic signature with the same legal standing as a handwritten one under your country’s law.',
+                  },
+                  {
+                    icono: BadgeCheck,
+                    t: language === 'es' ? 'Pista de auditoría' : 'Audit trail',
+                    d: language === 'es'
+                      ? 'Cada documento lleva su huella SHA-256, la fecha y hora, y los datos de quien firmó.'
+                      : 'Every document carries its SHA-256 hash, timestamp, and the signer’s details.',
+                  },
+                  {
+                    icono: Lock,
+                    t: language === 'es' ? 'Tus datos son tuyos' : 'Your data is yours',
+                    d: language === 'es'
+                      ? 'El documento se arma en tu navegador y viaja cifrado. No se comparte con terceros.'
+                      : 'The document is built in your browser and travels encrypted. Never shared with third parties.',
+                  },
+                ].map((g) => (
+                  <div key={g.t} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
+                    <g.icono className="size-4.5 text-emerald-400" />
+                    <h3 className="mt-2 text-xs font-black text-white">{g.t}</h3>
+                    <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{g.d}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex w-full flex-col items-center justify-between gap-3 border-t border-white/10 pt-5 text-[11px] text-slate-500 sm:flex-row">
+                <span>
+                  {language === 'es'
+                    ? '© Codec Document · Plataforma de documentos legales y firma electrónica'
+                    : '© Codec Document · Legal documents and electronic signature platform'}
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <Link to="/terms" className="transition hover:text-slate-300">
+                    {language === 'es' ? 'Términos' : 'Terms'}
+                  </Link>
+                  <Link to="/privacy" className="transition hover:text-slate-300">
+                    {language === 'es' ? 'Privacidad' : 'Privacy'}
+                  </Link>
+                  <Link to="/verificar" className="transition hover:text-slate-300">
+                    {language === 'es' ? 'Verificar un documento' : 'Verify a document'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
 
       {template && (

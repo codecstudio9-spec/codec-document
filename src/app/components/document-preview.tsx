@@ -20,6 +20,16 @@ interface DocumentPreviewProps {
   /** Id de la plantilla. Con él, las opciones elegidas en un desplegable se
    *  muestran en el idioma del documento y no en su forma canónica inglesa. */
   templateId?: string;
+  /**
+   * Idioma del DOCUMENTO, que no siempre es el de la interfaz.
+   *
+   * En la vista previa se puede elegir descargar en inglés teniendo la app en
+   * español. Sin este dato, la plantilla llegaba en inglés pero las fechas y
+   * los términos locales se resolvían con el idioma de la interfaz, y el
+   * documento salía mezclado: «SUBJECT: Voluntary resignation… con cédula de
+   * ciudadanía… 12 de agosto de 2026».
+   */
+  documentLanguage?: 'en' | 'es';
 }
 
 // US Legal Standard document formatting
@@ -442,8 +452,9 @@ function formatDocumentContent(
   return result;
 }
 
-export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl, templateId }: DocumentPreviewProps) {
-  const { language } = useLanguage();
+export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl, templateId, documentLanguage }: DocumentPreviewProps) {
+  const { language: idiomaInterfaz } = useLanguage();
+  const language = documentLanguage ?? idiomaInterfaz;
   const previewContentRef = useRef<HTMLDivElement | null>(null);
 
   const enrichedData = useMemo(
