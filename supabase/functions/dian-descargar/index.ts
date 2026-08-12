@@ -212,6 +212,24 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: auth } },
   });
 
+  // Quién puede usar la descarga masiva. Esto NO es una preferencia de
+  // interfaz: mientras se prueba, la herramienta está abierta sólo al
+  // propietario y a las personas que él autorice por correo.
+  //
+  // Ocultar el botón en el navegador no cerraba nada — la función seguía
+  // atendiendo a cualquiera con sesión que conociera su URL. Y aquí importa
+  // más que en otras funciones: todo el tráfico sale por las IPs de Supabase,
+  // compartidas por todos los clientes, así que un desconocido abusando de
+  // esto hace que la DIAN bloquee la IP de todos a la vez.
+  const { data: permitida, error: errPermitida } = await supabase.rpc('ed_descarga_permitida');
+  if (errPermitida) return json({ error: errPermitida.message }, 403, origin);
+  if (permitida !== true) {
+    return json({
+      error: 'La descarga masiva desde la DIAN está en pruebas y todavía no está abierta a tu cuenta.',
+      code: 'NO_AUTORIZADO',
+    }, 403, origin);
+  }
+
   let cuerpo: {
     /** Enlace del correo "Token Acceso DIAN". Autentica; no descarga. */
     url?: string;

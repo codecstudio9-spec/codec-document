@@ -120,18 +120,18 @@ export const resignationLetterTemplateES: DocumentTemplate = {
     },
     {
       id: 'reason',
-      label: 'Motivo de la renuncia',
+      label: 'Tu mensaje personal',
       type: 'textarea',
       required: false,
-      placeholder: 'Por motivos personales / Para asumir un nuevo proyecto profesional',
-      helpText: 'Opcional, y breve. No estás obligado a dar explicaciones.',
+      placeholder: 'Cuenta con tus palabras por qué te vas y qué te llevas de la empresa. Puedes dictarlo con el micrófono.',
+      helpText: 'Va dentro de la carta, con tu voz. Dícta lo que quieras decir y pulsa «Mejorar con IA»: corrige la redacción y le da tono de carta formal sin cambiar lo que dijiste. Es opcional, y no estás obligado a explicar por qué te vas.',
     },
     {
       id: 'include_thanks',
-      label: 'Incluir párrafo de agradecimiento',
+      label: 'Añadir un párrafo de agradecimiento estándar',
       type: 'checkbox',
       required: false,
-      helpText: 'Recomendado: mantiene la puerta abierta para una referencia futura',
+      helpText: 'Si ya escribiste tu propio mensaje arriba, déjalo desactivado: diría dos veces lo mismo.',
     },
     {
       id: 'include_handover',

@@ -30,10 +30,39 @@ function corsHeaders(origin: string | null) {
   };
 }
 
-function buildPrompt(clauseText: string, language: 'en' | 'es'): string {
+/**
+ * Hay dos tonos, y usar el equivocado se nota mucho.
+ *
+ * `clause` es el original: una cláusula de contrato, donde lo que importa es
+ * no alterar el significado jurídico.
+ *
+ * `letter` es un párrafo personal dentro de un documento formal — el
+ * agradecimiento y el motivo que alguien escribe en su carta de renuncia.
+ * Pasarlo por el editor de cláusulas lo dejaba con voz de contrato ("por medio
+ * del presente el suscrito manifiesta…"), que es justo lo contrario de lo que
+ * hace falta: tiene que sonar a esa persona, sólo que bien escrito. Y hay una
+ * regla que en una cláusula no aplica y aquí es esencial: si alguien dicta una
+ * queja o un reproche, se reformula en términos neutros. Una carta de renuncia
+ * queda en la hoja de vida laboral de quien la firma.
+ */
+function buildPrompt(clauseText: string, language: 'en' | 'es', tone: 'clause' | 'letter', context: string): string {
   const lang = language === 'en' ? 'English' : 'Spanish';
+
+  if (tone === 'letter') {
+    return [
+      `You are helping someone polish a personal paragraph they wrote for a formal letter${context ? ` (the field is: ${context})` : ''}.`,
+      `Rewrite it in ${lang} so it reads professionally and warmly: correct grammar, punctuation and capitalisation, connect the ideas, and use the register of a formal letter — but keep it in the FIRST PERSON and keep the person's own voice and their reasons. It must still sound like them, only well written.`,
+      `Do NOT turn it into contract or legalese language. Do NOT add facts, names, dates, job titles or reasons they did not write. Do not add a greeting or a sign-off — this is one paragraph inside a longer letter that already has both.`,
+      `If the text contains a complaint, a reproach or anything said in anger, rewrite it in neutral, cordial terms without accusations: this letter stays in the person's employment record.`,
+      `Keep it to a similar length, at most two short paragraphs. Respond with ONLY the rewritten text — no markdown, no quotes, no explanation.`,
+      ``,
+      `TEXT:`,
+      clauseText,
+    ].join('\n');
+  }
+
   return [
-    `You are a legal-document copy editor. Rewrite the following contract clause to be clearer and more formally worded in ${lang}, WITHOUT changing its legal meaning, without adding new obligations or removing existing ones, and without inventing facts, names, or numbers that aren't already in the text.`,
+    `You are a legal-document copy editor. Rewrite the following contract clause${context ? ` (the field is: ${context})` : ''} to be clearer and more formally worded in ${lang}, WITHOUT changing its legal meaning, without adding new obligations or removing existing ones, and without inventing facts, names, or numbers that aren't already in the text.`,
     `Keep roughly the same length. Respond with ONLY the rewritten clause text — no markdown, no quotes, no explanation, no preamble.`,
     ``,
     `CLAUSE TEXT:`,
@@ -94,9 +123,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    const body = (await req.json()) as { clauseText?: string; language?: 'en' | 'es' };
+    const body = (await req.json()) as {
+      clauseText?: string;
+      language?: 'en' | 'es';
+      tone?: 'clause' | 'letter';
+      context?: string;
+    };
     const clauseText = String(body.clauseText ?? '').trim();
     const language: 'en' | 'es' = body.language === 'en' ? 'en' : 'es';
+    // Por omisión, cláusula: es como se comportaba antes de existir el tono, y
+    // los llamadores que ya había no lo mandan.
+    const tone: 'clause' | 'letter' = body.tone === 'letter' ? 'letter' : 'clause';
+    const context = String(body.context ?? '').trim().slice(0, 120);
 
     if (!clauseText) {
       return new Response(JSON.stringify({ error: 'No clause text provided.' }), {
@@ -114,7 +152,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        messages: [{ role: 'user', content: buildPrompt(truncated, language) }],
+        messages: [{ role: 'user', content: buildPrompt(truncated, language, tone, context) }],
         temperature: 0.3,
       }),
     });

@@ -1,11 +1,35 @@
 
 
 <!DOCTYPE html>
-<html lang="en">
+<!-- translate="no" no es una preferencia de estilo: es lo que impide que la
+     aplicación se caiga.
+
+     Chrome ofrece traducir cualquier página cuyo idioma declarado no coincida
+     con el del usuario, y aquí coincidía siempre: este shell estático sirve
+     ~190 rutas y declara lang="en", aunque casi todo el contenido para
+     Latinoamérica está en español (el LanguageProvider corrige el atributo,
+     pero ya en tiempo de ejecución, después de que Chrome decidió).
+
+     Al traducir, Chrome REEMPLAZA los nodos de texto del DOM. React sigue
+     creyendo que los suyos están donde los dejó, y en el siguiente re-render
+     llama a insertBefore o removeChild sobre nodos que ya no existen: eso
+     lanza NotFoundError y la frontera de errores cambia la página entera por
+     «Ocurrió un inconveniente». Se disparaba justo en las pantallas que más
+     se repintan — el dictado por voz, que actualiza el texto varias veces por
+     segundo, y el progreso de la descarga DIAN. La pista fue un botón que en
+     pantalla decía «Dictador», palabra que no existe en el código.
+
+     Desactivarlo no le quita nada a nadie: la aplicación ya se ofrece en
+     español e inglés con su propio selector, que traduce de verdad —textos,
+     documentos y plantillas— en vez de reescribir el HTML por encima. -->
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
+    <!-- La misma instrucción para el traductor de Google, que no siempre
+         respeta el atributo translate del elemento raíz. -->
+    <meta name="google" content="notranslate" />
 
     <!-- ═══ PWA / installability ══════════════════════════════════════════════ -->
     <link rel="manifest" href="/manifest.json" />

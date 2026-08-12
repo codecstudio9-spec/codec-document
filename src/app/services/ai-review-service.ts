@@ -36,7 +36,7 @@ export class AiReviewUpgradeRequiredError extends Error {}
 /** Same "the real error is JSON in the response body" unwrap used by
  * lib/paypal-verify.ts — supabase-js otherwise surfaces only a generic
  * "Edge Function returned a non-2xx status code" message. */
-async function extractEdgeFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
+export async function extractEdgeFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
   const context = (error as { context?: Response })?.context;
   if (context && typeof context.json === 'function') {
     try {
@@ -75,9 +75,18 @@ export async function reviewDocumentWithAi(content: string, language: 'en' | 'es
  * deliberately narrow (improves existing text, never invents a new clause
  * from scratch), gated to paid plans/admin the same way as the AI review.
  */
-export async function improveClauseWithAi(clauseText: string, language: 'en' | 'es'): Promise<string> {
+export async function improveClauseWithAi(
+  clauseText: string,
+  language: 'en' | 'es',
+  /** `letter` para un párrafo personal dentro de un documento formal —el
+   *  agradecimiento de una carta de renuncia—, que necesita otro registro que
+   *  una cláusula de contrato. Por omisión, cláusula. */
+  tone: 'clause' | 'letter' = 'clause',
+  /** Qué campo es, para que el modelo sepa qué está corrigiendo. */
+  context = '',
+): Promise<string> {
   const { data, error } = await supabase.functions.invoke('ai-improve-clause', {
-    body: { clauseText, language },
+    body: { clauseText, language, tone, context },
   });
 
   if (error) {

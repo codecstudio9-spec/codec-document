@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 // Select/Tooltip Radix components removed — replaced with native elements to avoid portal removeChild errors
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine, CreditCard, Lock, UserPlus, Copy, Check, Download, Camera, User, RefreshCw, ScanLine, CheckCircle2, Users, SlidersHorizontal, ClipboardList, Palette } from 'lucide-react';
+import { ArrowLeft, FileText, Info, X, ShieldCheck, MapPin, ChevronDown, PenLine, CreditCard, Lock, UserPlus, Copy, Check, Download, Camera, User, RefreshCw, ScanLine, CheckCircle2, Users, SlidersHorizontal, ClipboardList, Palette, Mic, Sparkles, Undo2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
@@ -36,8 +36,15 @@ import { createSignTransaction, subscribeToTransaction, getSignTransaction, stas
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
 import { DictadoYMejora } from '../components/DictadoYMejora';
+import { DictarFormulario } from '../components/DictarFormulario';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 type FlowStep = 'form' | 'sign' | 'verify';
+
+/** Campos que son un mensaje de una persona y no una cláusula de un contrato.
+ *  La IA los pule con otro registro: mantiene la primera persona y la voz de
+ *  quien escribe, en vez de convertirlos en lenguaje jurídico. */
+const CAMPOS_PERSONALES = new Set(['reason', 'personal_message', 'message']);
 
 interface CoSigner {
   id: string;
@@ -205,7 +212,24 @@ function SigPlacementChip({ dataUrl, x, y, containerRef, onChange, onRemove }: S
   );
 }
 
+/**
+ * El formulario, con su propia frontera de errores.
+ *
+ * Aquí un fallo de render cuesta más que en otras pantallas: quien lo sufre
+ * lleva veinte campos escritos y, sin esto, la frontera de la ruta cambia la
+ * página entera por «Ocurrió un inconveniente» y hay que empezar de cero. Con
+ * ella el error se ve, se copia y se reintenta sin recargar — y el borrador
+ * sigue en localStorage.
+ */
 export function DocumentGeneratorPage() {
+  return (
+    <ErrorBoundary zona="Generador de documentos">
+      <ContenidoGenerador />
+    </ErrorBoundary>
+  );
+}
+
+function ContenidoGenerador() {
   const { documentType } = useParams<{ documentType: string }>();
   const navigate = useNavigate();
   const template = getTemplateById(documentType || '');
@@ -546,7 +570,10 @@ export function DocumentGeneratorPage() {
     employee_name: 'name',
     employee_email: 'email',
   };
-  const [camposAutorrellenados, setCamposAutorrellenados] = useState<string[]>([]);
+  // De dónde salió cada valor que el usuario no escribió: de su cuenta de
+  // Google o de lo que dictó. El aviso bajo el campo dice cosas distintas
+  // según el caso, y decir el origen equivocado es peor que no decir nada.
+  const [camposAutorrellenados, setCamposAutorrellenados] = useState<Record<string, 'cuenta' | 'voz'>>({});
   const yaAutorrellenado = useRef(false);
   useEffect(() => {
     if (yaAutorrellenado.current || !user) return;
@@ -565,10 +592,39 @@ export function DocumentGeneratorPage() {
     });
     if (puestos.length) {
       yaAutorrellenado.current = true;
-      setCamposAutorrellenados(puestos);
+      setCamposAutorrellenados((prev) => ({
+        ...prev,
+        ...Object.fromEntries(puestos.map((id) => [id, 'cuenta' as const])),
+      }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, visibleFields]);
+
+  // ── Dictar el formulario ──────────────────────────────────────────────────
+  const [dictadoAbierto, setDictadoAbierto] = useState(false);
+  // El formulario ENTERO tal como estaba antes de que la IA lo tocara. Guardar
+  // sólo los campos cambiados no bastaría: si un campo estaba vacío hay que
+  // poder devolverlo a vacío, y un objeto de cambios no distingue «no lo
+  // toqué» de «lo dejé en blanco».
+  const [deshacerRelleno, setDeshacerRelleno] = useState<DocumentData | null>(null);
+
+  const aplicarRellenoIA = (valores: Record<string, string | number | boolean>) => {
+    setDeshacerRelleno(formData);
+    setFormData((prev) => ({ ...prev, ...valores }));
+    setCamposAutorrellenados(Object.fromEntries(Object.keys(valores).map((id) => [id, 'voz' as const])));
+    const n = Object.keys(valores).length;
+    toast.success(language === 'en'
+      ? `${n} field(s) filled in. Check them before continuing.`
+      : `Se rellenaron ${n} campo(s). Revísalos antes de continuar.`);
+  };
+
+  const deshacerElRelleno = () => {
+    if (!deshacerRelleno) return;
+    setFormData(deshacerRelleno);
+    setDeshacerRelleno(null);
+    setCamposAutorrellenados({});
+    toast.success(language === 'en' ? 'Restored.' : 'Se restauró lo que tenías.');
+  };
 
   const handleStateChange = (state: string) => {
     setSelectedState(state);
@@ -617,7 +673,12 @@ export function DocumentGeneratorPage() {
     setFormData(prev => ({ ...prev, [fieldId]: value }));
     // En cuanto lo tocan deja de ser «lo tomamos de tu cuenta»: el aviso
     // sobraría y encima sería falso.
-    setCamposAutorrellenados((prev) => (prev.includes(fieldId) ? prev.filter((id) => id !== fieldId) : prev));
+    setCamposAutorrellenados((prev) => {
+      if (!(fieldId in prev)) return prev;
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
     // Bidirectional sync: if user edits the inline 'state' field, keep Step 1 selector in sync
     if (fieldId === 'state') {
       const str = String(value);
@@ -1119,6 +1180,7 @@ export function DocumentGeneratorPage() {
               onCambio={(v) => handleInputChange(field.id, v)}
               language={language}
               contexto={getFieldTranslation(template.id, field.id, 'label', language) || field.label}
+              tono={CAMPOS_PERSONALES.has(field.id) ? 'letter' : 'clause'}
             />
           </>
         )}
@@ -1154,12 +1216,23 @@ export function DocumentGeneratorPage() {
           </div>
         )}
 
-        {camposAutorrellenados.includes(field.id) && (
+        {camposAutorrellenados[field.id] && (
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
-            <User className="size-3.5 shrink-0" />
-            {language === 'en'
-              ? 'Taken from your account — edit it if it should read differently.'
-              : 'Lo tomamos de tu cuenta. Puedes cambiarlo si debe aparecer distinto.'}
+            {camposAutorrellenados[field.id] === 'voz' ? (
+              <>
+                <Mic className="size-3.5 shrink-0" />
+                {language === 'en'
+                  ? 'From what you dictated — check it before signing.'
+                  : 'Sale de lo que dictaste. Revísalo antes de firmar.'}
+              </>
+            ) : (
+              <>
+                <User className="size-3.5 shrink-0" />
+                {language === 'en'
+                  ? 'Taken from your account — edit it if it should read differently.'
+                  : 'Lo tomamos de tu cuenta. Puedes cambiarlo si debe aparecer distinto.'}
+              </>
+            )}
           </p>
         )}
       </div>
@@ -1262,6 +1335,18 @@ export function DocumentGeneratorPage() {
         onConfirm={handleSecurityConfirm}
         onCancel={() => setSecurityModalOpen(false)}
       />
+
+      {/* ── Dictar el formulario ─────────────────────────────────────────── */}
+      {dictadoAbierto && (
+        <DictarFormulario
+          campos={visibleFields}
+          language={language}
+          nombreDocumento={getDocumentTranslation(template.id, 'name', language) || template.name}
+          datosActuales={formData}
+          onAplicar={aplicarRellenoIA}
+          onCerrar={() => setDictadoAbierto(false)}
+        />
+      )}
 
       {/* ── Free signature-request limit (72h rolling window) ────────────── */}
       <SignatureLimitDialog
@@ -2098,6 +2183,41 @@ export function DocumentGeneratorPage() {
                 </div>
               </CardHeader>
             </Card>
+
+            {/* Dictar el documento entero. Va arriba del todo porque su valor
+                está en usarlo ANTES de empezar a escribir: contar los datos de
+                corrido y encontrarse el formulario medio lleno. */}
+            <button
+              type="button"
+              onClick={() => setDictadoAbierto(true)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 px-4 py-3.5 text-left transition hover:bg-blue-50"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                <Mic className="size-4.5 text-blue-600" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-900">
+                  {language === 'en' ? 'Dictate the document' : 'Dicta el documento'}
+                </span>
+                <span className="block text-xs text-slate-500">
+                  {language === 'en'
+                    ? 'Say the details out loud and the AI fills in the fields.'
+                    : 'Cuenta los datos en voz alta y la IA rellena los campos.'}
+                </span>
+              </span>
+              <Sparkles className="ml-auto size-4 shrink-0 text-blue-400" />
+            </button>
+
+            {deshacerRelleno && (
+              <button
+                type="button"
+                onClick={deshacerElRelleno}
+                className="-mt-3 flex items-center gap-1.5 px-1 text-xs font-semibold text-slate-500 transition hover:text-slate-800"
+              >
+                <Undo2 className="size-3.5" />
+                {language === 'en' ? 'Undo what the AI filled in' : 'Deshacer lo que rellenó la IA'}
+              </button>
+            )}
 
             {/* â"€â"€ State selector — STEP 1 for residential-lease â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
             {STATE_DEPENDENT_DOCUMENTS.includes(documentType || '') && (

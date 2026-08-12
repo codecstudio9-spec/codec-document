@@ -38,11 +38,12 @@ import {
   MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT,
 } from '../styles/mobile-theme';
 import { isAdminEmail } from '../utils/admin-access';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   cruzarCufes, obtenerDocumento, type CruceCufes,
-  enviarFeedback, type Feedback,
+  enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
@@ -70,7 +71,23 @@ const ESTADO: Record<string, { texto: string; clase: string }> = {
   ERROR: { texto: 'Error', clase: 'bg-rose-50 text-rose-700 ring-rose-200' },
 };
 
+/**
+ * La pantalla, envuelta en su propia frontera de errores.
+ *
+ * Sin ella, cualquier fallo de render aquí sube hasta la frontera de la ruta y
+ * cambia la página entera por «Ocurrió un inconveniente»: el contador pierde
+ * los CUFEs pegados y la carpeta elegida, y no queda ni rastro de qué falló.
+ * Con ella el error se ve, se puede copiar y se puede reintentar sin recargar.
+ */
 export default function DianDocumentsPage() {
+  return (
+    <ErrorBoundary zona="Documentos DIAN">
+      <ContenidoDian />
+    </ErrorBoundary>
+  );
+}
+
+function ContenidoDian() {
   const { user, loading: cargandoSesion, signInWithMagicLink } = useAuth();
   const permitido = Boolean(user);
   const ilimitado = isAdminEmail(user?.email);
@@ -85,6 +102,15 @@ export default function DianDocumentsPage() {
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
+  // Quién ve la descarga masiva. Lo decide el servidor y llega en `beta`;
+  // `ilimitado` es sólo el respaldo mientras esa consulta va y vuelve, para
+  // que al propietario no le parpadee el botón al entrar.
+  //
+  // Va DESPUÉS del useState de `beta`, no junto a `ilimitado` arriba: leerlo
+  // antes de declararlo es un error de zona muerta temporal que tumba la
+  // página entera al montar, y en producción sale como «Ocurrió un
+  // inconveniente» sin más pistas.
+  const puedeDescargar = beta?.puedeDescargar ?? ilimitado;
   const { speak } = useVoiceSpeak();
   const [panelPlantilla, setPanelPlantilla] = useState(false);
   const [correo, setCorreo] = useState('');
@@ -111,6 +137,69 @@ export default function DianDocumentsPage() {
   };
   const [panelAuditor, setPanelAuditor] = useState(false);
   const [panelDescarga, setPanelDescarga] = useState(false);
+
+  // ── Panel del propietario: quién prueba la descarga, y qué respondieron ──
+  const [nuevoTester, setNuevoTester] = useState('');
+  const [guardandoTesters, setGuardandoTesters] = useState(false);
+  const [respuestas, setRespuestas] = useState<Record<string, unknown>[] | null>(null);
+  const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
+
+  const guardarTesters = async (correos: string[], aviso: string) => {
+    setGuardandoTesters(true);
+    try {
+      await guardarPermitidosDescarga(correos);
+      await refrescar();
+      toast.success(aviso);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setGuardandoTesters(false); }
+  };
+
+  const agregarTester = async () => {
+    const correo = nuevoTester.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+      toast.error('Escribe un correo válido');
+      return;
+    }
+    const actuales = beta?.descargaPermitidos ?? [];
+    if (actuales.includes(correo)) {
+      toast.error('Esa persona ya tiene acceso');
+      return;
+    }
+    await guardarTesters([...actuales, correo], `${correo} ya puede usar la descarga`);
+    setNuevoTester('');
+  };
+
+  const quitarTester = async (correo: string) => {
+    const actuales = beta?.descargaPermitidos ?? [];
+    await guardarTesters(actuales.filter((c) => c !== correo), `Se le quitó el acceso a ${correo}`);
+  };
+
+  const cargarRespuestas = async () => {
+    setCargandoRespuestas(true);
+    try {
+      setRespuestas(await listarFeedback() as Record<string, unknown>[]);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setCargandoRespuestas(false); }
+  };
+
+  /** Las respuestas en CSV, para poder cruzarlas en una hoja de cálculo con
+   *  los correos a los que hay que volver a escribir. */
+  const descargarRespuestas = () => {
+    if (!respuestas?.length) return;
+    const columnas = ['created_at', 'email', 'xml_manuales', 'clientes', 'precio', 'sistema_contable', 'falta'];
+    const escapar = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [
+      columnas.join(';'),
+      ...respuestas.map((r) => columnas.map((c) => escapar(r[c])).join(';')),
+    ].join('\n');
+    // El BOM es lo que hace que Excel en español abra las tildes bien.
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `encuesta-dian-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   /** Atajo para narrar. El asistente decide solo si suena: si el contador
    *  tiene la guía apagada, speak() no hace nada, así que no hay que
@@ -578,13 +667,17 @@ export default function DianDocumentsPage() {
           {/* Acción de salida. Va en el encabezado y no enterrada entre las
               secciones porque es el final del recorrido del contador: lo que
               vino a buscar es llevarse los datos a su programa. */}
-          {/* Descargar XML de la DIAN — oculta hasta que el propietario la
-              publique. El endpoint de descarga por documento todavía no se
-              ha confirmado contra el portal real, y abrirla antes daría
-              fallos justo en la función que el contador más espera, que es
-              la peor primera impresión posible.
-              Al publicarla hay que quitar el guardia AQUÍ y en el panel. */}
-          {ilimitado && (
+          {/* Descargar XML de la DIAN — todavía no abierta a todo el mundo.
+              El endpoint de descarga por documento no se ha confirmado contra
+              el portal real, y abrirla antes daría fallos justo en la función
+              que el contador más espera, que es la peor primera impresión
+              posible.
+              Quién la ve lo decide el servidor (ed_descarga_permitida): el
+              propietario y los correos que él autorice desde el panel. Este
+              `if` sólo evita mostrar un botón que no va a funcionar; el
+              cierre de verdad está en la Edge Function `dian-descargar`,
+              porque esconder un botón no cierra nada. */}
+          {puedeDescargar && (
             <button
               type="button"
               onClick={() => setPanelDescarga(true)}
@@ -598,7 +691,7 @@ export default function DianDocumentsPage() {
               <CloudDownload className="size-4" />
               Descargar XML de la DIAN
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
-                solo tú
+                {ilimitado ? 'solo tú' : 'en pruebas'}
               </span>
             </button>
           )}
@@ -792,6 +885,129 @@ export default function DianDocumentsPage() {
           <p className="mt-2 text-[11px] leading-relaxed text-white/40">
             Los cambios aplican de inmediato para todos, sin desplegar nada.
           </p>
+
+          {/* ── Quién puede probar la descarga masiva ─────────────────────
+              La descarga sale por las IPs de Supabase, compartidas con el
+              resto de la plataforma: si la DIAN bloquea esa IP por abuso, la
+              bloquea para todos. Por eso se abre persona por persona y no
+              con un interruptor de «todos». */}
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <h3 className="text-xs font-bold text-white/80">Acceso a «Descargar XML de la DIAN»</h3>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
+              Escribe el correo con el que la persona entra a Codec. Tendrá acceso
+              en cuanto recargue; tú siempre lo tienes.
+            </p>
+
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              <input
+                value={nuevoTester}
+                onChange={(e) => setNuevoTester(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void agregarTester(); } }}
+                placeholder="contador@correo.com"
+                className="min-w-0 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/15"
+              />
+              <button
+                type="button"
+                onClick={() => void agregarTester()}
+                disabled={guardandoTesters}
+                className="rounded-lg bg-white/15 px-3.5 py-2 text-xs font-bold transition hover:bg-white/25 disabled:opacity-50"
+              >
+                {guardandoTesters ? <Loader2 className="size-3.5 animate-spin" /> : 'Dar acceso'}
+              </button>
+            </div>
+
+            {beta.descargaPermitidos && beta.descargaPermitidos.length > 0 ? (
+              <ul className="mt-2.5 flex flex-wrap gap-1.5">
+                {beta.descargaPermitidos.map((correo) => (
+                  <li key={correo} className="flex items-center gap-1.5 rounded-full bg-white/10 py-1 pl-3 pr-1.5 text-xs">
+                    <span className="max-w-[220px] truncate">{correo}</span>
+                    <button
+                      type="button"
+                      onClick={() => void quitarTester(correo)}
+                      disabled={guardandoTesters}
+                      title={`Quitar acceso a ${correo}`}
+                      className="rounded-full p-0.5 text-white/50 transition hover:bg-white/20 hover:text-white disabled:opacity-50"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-[11px] text-white/30">
+                Nadie más tiene acceso todavía.
+              </p>
+            )}
+          </div>
+
+          {/* ── Respuestas de la encuesta ─────────────────────────────────
+              Se guardaban desde el primer día pero no había dónde leerlas,
+              que es como no haberlas pedido. */}
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xs font-bold text-white/80">Respuestas de la encuesta</h3>
+              <button
+                type="button"
+                onClick={() => void cargarRespuestas()}
+                disabled={cargandoRespuestas}
+                className="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-bold transition hover:bg-white/20 disabled:opacity-50"
+              >
+                {cargandoRespuestas
+                  ? <Loader2 className="size-3.5 animate-spin" />
+                  : respuestas === null ? 'Ver respuestas' : 'Actualizar'}
+              </button>
+              {respuestas !== null && respuestas.length > 0 && (
+                <button
+                  type="button"
+                  onClick={descargarRespuestas}
+                  className="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-bold transition hover:bg-white/20"
+                >
+                  Descargar CSV
+                </button>
+              )}
+            </div>
+
+            {respuestas !== null && (
+              respuestas.length === 0 ? (
+                <p className="mt-2 text-[11px] text-white/30">
+                  Todavía nadie ha respondido. La encuesta aparece cuando alguien
+                  termina su primera importación.
+                </p>
+              ) : (
+                <div className="mt-2.5 max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {respuestas.map((r) => (
+                    <div key={String(r.id)} className="rounded-xl bg-white/5 px-3 py-2.5 text-[11px] leading-relaxed">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-white/50">
+                        <span className="font-semibold text-white/80">{String(r.email ?? 'sin correo')}</span>
+                        <span>·</span>
+                        <span>{new Date(String(r.created_at)).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                      </div>
+                      <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
+                        {([
+                          ['XML al mes a mano', r.xml_manuales],
+                          ['Clientes', r.clientes],
+                          ['Pagaría', r.precio],
+                          ['Sistema contable', r.sistema_contable],
+                        ] as const).map(([etiqueta, valor]) => (
+                          valor ? (
+                            <div key={etiqueta}>
+                              <span className="text-white/40">{etiqueta}: </span>
+                              <span className="text-white/85">{String(valor)}</span>
+                            </div>
+                          ) : null
+                        ))}
+                      </div>
+                      {r.falta ? (
+                        <p className="mt-1.5 border-l-2 border-white/20 pl-2 text-white/70">
+                          «{String(r.falta)}»
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
         </section>
       )}
 
@@ -1397,7 +1613,7 @@ export default function DianDocumentsPage() {
         </div>
       )}
 
-      {panelDescarga && ilimitado && (
+      {panelDescarga && puedeDescargar && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelDescarga(false)}>
           <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
             <DescargarDeDian onCerrar={() => setPanelDescarga(false)} narrar={narrar} />

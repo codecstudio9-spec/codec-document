@@ -27,9 +27,13 @@ interface Props {
   /** Sin IA: campos cortos (un nombre, una ciudad) donde sólo tiene sentido
    *  dictar. */
   soloDictado?: boolean;
+  /** `letter` para un párrafo personal dentro de un documento formal —el
+   *  agradecimiento de una carta de renuncia—. Con el tono de cláusula, ese
+   *  texto sale con voz de contrato en vez de con la de quien lo escribe. */
+  tono?: 'clause' | 'letter';
 }
 
-export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictado }: Props) {
+export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictado, tono = 'clause' }: Props) {
   const es = language === 'es';
   const [mejorando, setMejorando] = useState(false);
   // Estado, no ref: el botón de deshacer tiene que aparecer y desaparecer
@@ -56,8 +60,7 @@ export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictad
     detener();
     setMejorando(true);
     try {
-      const entrada = contexto ? `[${contexto}]\n${texto}` : texto;
-      const mejorado = (await improveClauseWithAi(entrada, language)).trim();
+      const mejorado = (await improveClauseWithAi(texto, language, tono, contexto ?? '')).trim();
       if (!mejorado) throw new Error(es ? 'La IA no devolvió texto.' : 'The AI returned no text.');
       setPrevio(valor);
       onCambio(mejorado);

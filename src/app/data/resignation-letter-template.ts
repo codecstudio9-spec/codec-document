@@ -106,17 +106,18 @@ export const resignationLetterTemplate: DocumentTemplate = {
     },
     {
       id: 'reason',
-      label: 'Reason for leaving',
+      label: 'Your personal message',
       type: 'textarea',
       required: false,
-      helpText: 'Optional and brief. You are not required to explain.',
+      placeholder: 'Say in your own words why you are leaving and what you take away from the company. You can dictate it with the microphone.',
+      helpText: 'It goes inside the letter, in your own voice. Dictate whatever you want to say and press "Improve with AI": it fixes the writing and gives it the register of a formal letter without changing what you said. Optional — you are not required to explain why you are leaving.',
     },
     {
       id: 'include_thanks',
-      label: 'Include a thank-you paragraph',
+      label: 'Add a standard thank-you paragraph',
       type: 'checkbox',
       required: false,
-      helpText: 'Recommended: keeps the door open for a future reference',
+      helpText: 'If you already wrote your own message above, leave this off: it would say the same thing twice.',
     },
     {
       id: 'include_handover',

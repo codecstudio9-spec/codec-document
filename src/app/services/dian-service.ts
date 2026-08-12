@@ -69,6 +69,13 @@ export interface EstadoBeta {
   ilimitado: boolean;
   restantesPersona: number;
   restantesGlobal: number;
+  /** Si esta cuenta puede usar la descarga masiva desde la DIAN. La decide el
+   *  servidor; el cliente sólo la obedece para mostrar o no el botón. El
+   *  cierre de verdad está en la Edge Function `dian-descargar`. */
+  puedeDescargar: boolean;
+  /** Correos autorizados a probar la descarga. Sólo llega si quien pregunta
+   *  es el propietario; para el resto es null, porque son datos de terceros. */
+  descargaPermitidos: string[] | null;
 }
 
 export async function estadoBeta(): Promise<EstadoBeta> {
@@ -91,7 +98,20 @@ export async function estadoBeta(): Promise<EstadoBeta> {
     ilimitado: Boolean(d.ilimitado),
     restantesPersona: Math.max(0, limitePersona - usadosPersona),
     restantesGlobal: Math.max(0, limiteGlobal - usadosGlobal),
+    puedeDescargar: Boolean(d.puede_descargar),
+    descargaPermitidos: typeof d.descarga_permitidos === 'string'
+      ? d.descarga_permitidos.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)
+      : null,
   };
+}
+
+/** Guarda la lista de personas autorizadas a probar la descarga masiva.
+ *  Se normaliza aquí y se vuelve a validar en el servidor. */
+export async function guardarPermitidosDescarga(correos: string[]): Promise<void> {
+  const limpios = [...new Set(
+    correos.map((c) => c.trim().toLowerCase()).filter((c) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)),
+  )];
+  await configurarBeta('dian_descarga_permitidos', limpios.join(','));
 }
 
 /** Sólo el propietario. El guardia real está dentro de la función SQL. */

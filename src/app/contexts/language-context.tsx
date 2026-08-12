@@ -299,6 +299,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('codec_language', language);
       document.documentElement.lang = language;
+      // Se reafirma en cada cambio de idioma, no sólo en index.html. Cambiar
+      // `lang` es exactamente lo que despierta al traductor del navegador, y
+      // si traduce, reescribe los nodos de texto por debajo de React y el
+      // siguiente re-render revienta con NotFoundError. Ver el comentario
+      // largo en index.html.
+      document.documentElement.setAttribute('translate', 'no');
     }
   }, [language]);
 
