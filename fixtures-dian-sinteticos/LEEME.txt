@@ -1,0 +1,15 @@
+FIXTURES SINTETICOS — no son documentos reales
+
+Generados por scripts/dian-fixtures-sinteticos.mts (npm run fixtures:dian).
+No provienen de la DIAN ni de ningun contribuyente. Cubren los dialectos
+que la muestra real no tenia: documento equivalente POS y nota debito.
+
+Para editarlos, cambia el script y vuelve a generarlos. Editar los .xml a
+mano se pierde en la siguiente ejecucion.
+
+Comprobar:  npm run check:dian -- ./fixtures-dian-sinteticos
+
+  sint-0001-pos-simple.xml           documento equivalente POS suelto, IVA 19 %
+  sint-0002-pos-mixto.xml            POS con linea gravada y linea excluida
+  sint-0003-pos-restaurante-inc.xml  POS de restaurante con INC 8 %
+  sint-0004-nota-debito.xml          nota debito en contenedor, con retenciones

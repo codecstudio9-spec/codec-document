@@ -6,7 +6,10 @@
   "scripts": {
     "anonymize:dian": "node scripts/anonymize-dian-xml.mjs",
     "check:dian": "tsx scripts/dian-parse-check.mts",
+    "fixtures:dian": "tsx scripts/dian-fixtures-sinteticos.mts",
+    "check:dian-sinteticos": "npm run fixtures:dian && npm run check:dian -- ./fixtures-dian-sinteticos",
     "check:dian-security": "tsx scripts/dian-security-check.mts",
+    "check:dian-contabilidad": "tsx scripts/dian-contabilidad-check.mts",
     "validate:legal": "node scripts/validate-legal-content.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:seo-manifest": "tsx scripts/generate-seo-manifest.mts",

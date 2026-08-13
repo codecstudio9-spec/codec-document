@@ -103,10 +103,30 @@ const n = (v: unknown): number => {
   return Number.isFinite(x) ? x : 0;
 };
 
-function hojaGeneral(docs: DocumentoReporte[]): Hoja {
-  const suma = (f: (d: DocumentoReporte) => number) => docs.reduce((a, d) => a + n(f(d)), 0);
+/** Una nota crédito REVIERTE el documento que referencia: baja la compra y
+ *  baja el IVA descontable. Sumarla en positivo junto a las facturas infla el
+ *  total del periodo y, mucho peor, infla el IVA que el contador va a
+ *  declarar — que es exactamente el error que esta herramienta existe para
+ *  evitarle.
+ *
+ *  El signo se aplica sólo al agregar. Las hojas de detalle siguen mostrando
+ *  cada documento tal como lo emitió el proveedor, porque es contra ese papel
+ *  contra el que el contador va a cotejar fila por fila; verlo ahí en negativo
+ *  le haría dudar del dato bueno. */
+const SIGNO_POR_TIPO: Record<string, number> = { nota_credito: -1 };
+export const signoDelTipo = (tipo: string): number => SIGNO_POR_TIPO[tipo] ?? 1;
 
-  const conceptos: Array<[string, number]> = [
+const dinero = (v: number): string =>
+  v.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Los totales del periodo, ya con el signo aplicado. Se expone aparte de la
+ *  hoja porque son las cifras que el contador traslada a su declaración: hay
+ *  que poder comprobarlas sin tener que abrir un Excel y leerlo a ojo. */
+export function totalesDelPeriodo(docs: DocumentoReporte[]): Array<[string, number]> {
+  const suma = (f: (d: DocumentoReporte) => number) =>
+    docs.reduce((a, d) => a + signoDelTipo(d.doc_type) * n(f(d)), 0);
+
+  return [
     ['Total BASE', suma((d) => d.line_total)],
     ['Base gravable', suma((d) => d.taxable_base)],
     ['Total IVA', suma((d) => d.total_iva)],
@@ -120,13 +140,20 @@ function hojaGeneral(docs: DocumentoReporte[]): Hoja {
     ['Total descuentos', suma((d) => d.discounts)],
     ['TOTAL DOCUMENTOS', suma((d) => d.total)],
   ];
+}
+
+function hojaGeneral(docs: DocumentoReporte[]): Hoja {
+  const conceptos = totalesDelPeriodo(docs);
 
   const porTipo = new Map<string, { cantidad: number; total: number }>();
   for (const d of docs) {
     const k = ETIQUETA_TIPO[d.doc_type] ?? d.doc_type;
     const p = porTipo.get(k) ?? { cantidad: 0, total: 0 };
     p.cantidad++;
-    p.total += n(d.total);
+    // Mismo signo que arriba, para que esta columna sume exactamente el
+    // TOTAL DOCUMENTOS. Una tabla cuyas partes no dan el todo obliga al
+    // contador a rehacer la cuenta a mano, que es justo lo que vino a evitar.
+    p.total += signoDelTipo(d.doc_type) * n(d.total);
     porTipo.set(k, p);
   }
 
@@ -135,10 +162,36 @@ function hojaGeneral(docs: DocumentoReporte[]): Hoja {
     ['', '', ''],
     ['CONCEPTO', 'VALOR', ''],
     ...conceptos.map(([c, v]) => [c, v, ''] as ValorCelda[]),
+  ];
+
+  // Que las notas crédito restan tiene que estar escrito, no deducirse de que
+  // las cifras "no cuadran con lo que yo sumé". Si no hay ninguna, sobra.
+  const creditos = docs.filter((d) => signoDelTipo(d.doc_type) < 0);
+  if (creditos.length > 0) {
+    const restado = creditos.reduce((a, d) => a + n(d.total), 0);
+    filas.push(
+      ['', '', ''],
+      ['NOTA SOBRE EL CÁLCULO', '', ''],
+      [
+        `Se restaron ${creditos.length} nota(s) crédito por $ ${dinero(restado)}.`,
+        '', '',
+      ],
+      [
+        'Una nota crédito reversa la factura que referencia: baja la base y baja el IVA descontable.',
+        '', '',
+      ],
+      [
+        'En las hojas de detalle aparecen en positivo, tal como las emitió el proveedor.',
+        '', '',
+      ],
+    );
+  }
+
+  filas.push(
     ['', '', ''],
     ['POR TIPO DE DOCUMENTO', 'CANTIDAD', 'TOTAL'],
     ...[...porTipo.entries()].map(([t, p]) => [t, p.cantidad, p.total] as ValorCelda[]),
-  ];
+  );
 
   const porEstado = new Map<string, number>();
   for (const d of docs) {

@@ -89,6 +89,34 @@ export const TOLERANCIA_VALOR = 100;
 
 const soloDigitos = (s: string): string => (s ?? '').replace(/\D/g, '');
 
+/** Una nota crédito reversa el documento que referencia, y no hay una única
+ *  forma de escribirlo: unos programas contables la guardan en negativo
+ *  (−124.700) y otros en positivo dentro de una columna de créditos. Las dos
+ *  convenciones existen y las dos son correctas.
+ *
+ *  Si el auditor asumiera una, con la otra marcaría TODA nota crédito como
+ *  "registrada por otra cifra" — con una diferencia del doble del valor. Un
+ *  informe de excepciones lleno de hallazgos falsos deja de leerse, y ese es
+ *  el único fallo que esta herramienta no puede permitirse.
+ *
+ *  Por eso las notas crédito se comparan por magnitud: da igual el signo con
+ *  que vengan de cada lado. El resto de documentos se compara tal cual, para
+ *  que un valor negativo donde no debería haberlo siga saltando. */
+const esReverso = (tipo: string): boolean => tipo === 'nota_credito';
+
+/** Diferencia entre lo que dice la DIAN y lo que registró el contador. */
+function diferenciaValor(d: DocumentoDian, valorContable: number): number {
+  const bruto = esReverso(d.doc_type)
+    ? Math.abs(Number(d.total)) - Math.abs(valorContable)
+    : Number(d.total) - valorContable;
+  return Math.round(bruto * 100) / 100;
+}
+
+/** Valor del documento con el signo contable: la nota crédito resta, venga
+ *  escrita como venga. Es la misma regla que aplica el Excel del periodo. */
+const valorConSigno = (d: DocumentoDian): number =>
+  esReverso(d.doc_type) ? -Math.abs(Number(d.total)) : Number(d.total);
+
 /** Normaliza un número de documento para comparar.
  *
  *  Un mismo documento aparece como "FE-1234", "FE 1234", "fe1234" o
@@ -169,7 +197,7 @@ export function auditar(
       dian: d,
       contable: c,
       motivo,
-      diferencia: Math.round((Number(d.total) - c.valor) * 100) / 100,
+      diferencia: diferenciaValor(d, c.valor),
     });
   };
 
@@ -213,7 +241,7 @@ export function auditar(
     const cand = contables.find(
       (c) => !usadosContables.has(c.fila)
         && soloDigitos(c.nit) === nit
-        && Math.abs(c.valor - Number(d.total)) <= TOLERANCIA_VALOR,
+        && Math.abs(diferenciaValor(d, c.valor)) <= TOLERANCIA_VALOR,
     );
     if (cand) emparejar(d, cand, 'valor');
   }
@@ -233,9 +261,9 @@ export function auditar(
     resumen: {
       totalDian: documentos.length,
       totalContable: contables.length,
-      valorDian: suma(documentos.map((d) => Number(d.total))),
+      valorDian: suma(documentos.map(valorConSigno)),
       valorContable: suma(contables.map((c) => c.valor)),
-      valorFaltante: suma(faltanEnContabilidad.map((d) => Number(d.total))),
+      valorFaltante: suma(faltanEnContabilidad.map(valorConSigno)),
       valorSobrante: suma(sobranEnContabilidad.map((c) => c.valor)),
     },
   };
