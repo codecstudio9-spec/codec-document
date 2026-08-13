@@ -66,7 +66,8 @@ import {
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
   type EstadoCuota, type PlanCatalogo,
-  estadoCorreo, activarCorreo, importarBandeja, listarBandeja, resumenMes,
+  estadoCorreo, activarCorreo, renombrarCorreo, previsualizarAlias,
+  importarBandeja, listarBandeja, resumenMes,
   type EstadoCorreo, type ArchivoBandeja, type ResumenMes as ResumenMesDatos,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
@@ -244,6 +245,24 @@ function ContenidoDian() {
   // para pedir el enlace de acceso, y son dos cosas distintas.
   const [buzon, setBuzon] = useState<EstadoCorreo | null>(null);
   const [panelCorreo, setPanelCorreo] = useState(false);
+  const [aliasCorreo, setAliasCorreo] = useState('');
+  const [renombrando, setRenombrando] = useState(false);
+
+  /** Cambia el nombre de la dirección de correo. La validación de verdad y el
+   *  sufijo al azar los pone el servidor; aquí sólo se pide y se refresca. */
+  const cambiarAliasCorreo = async () => {
+    setRenombrando(true);
+    try {
+      const nueva = await renombrarCorreo(aliasCorreo);
+      setAliasCorreo('');
+      toast.success(`Tu dirección ahora es ${nueva}`, { duration: 9000 });
+      await refrescar();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRenombrando(false);
+    }
+  };
   /** Lo que llegó por correo y aún no se ha procesado. Se lista, no sólo se
    *  cuenta: un «3 sin procesar» no dice si son los de tu cliente o el
    *  reenvío repetido de otro, y cuando algo falla no hay forma de saber qué. */
@@ -2001,6 +2020,64 @@ function ContenidoDian() {
                     Crea en tu correo una regla que reenvíe ahí los mensajes con facturas.
                     Guardamos el XML, que es el documento con validez legal; el PDF no hace falta.
                   </p>
+
+                  {/* Ponerle nombre a la dirección.
+                      La original es una tira de veinte caracteres al azar:
+                      imposible de dictar por teléfono a un proveedor, que es
+                      justo lo que hay que hacer con ella. Aquí el contador
+                      elige el nombre y el sistema le pega el sufijo — el
+                      sufijo NO se puede quitar, porque es lo único que impide
+                      que alguien que sepa cómo se llama adivine su dirección
+                      y le meta facturas en la bandeja. */}
+                  <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                    <p className="text-[12.5px] font-bold text-slate-800">
+                      Ponle un nombre que puedas dictar por teléfono
+                    </p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                      El tuyo o el de tu oficina. Queda como dirección completa, sin números
+                      detrás, para que se la puedas dar a un proveedor de viva voz.
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <input
+                        value={aliasCorreo}
+                        onChange={(e) => setAliasCorreo(e.target.value)}
+                        placeholder="contabilidad-taborda"
+                        maxLength={30}
+                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] outline-none transition focus:border-sky-400"
+                      />
+                      <Boton
+                        estilo={BOTON_NEUTRO}
+                        disabled={renombrando || previsualizarAlias(aliasCorreo).length < 4}
+                        onClick={() => void cambiarAliasCorreo()}
+                      >
+                        {renombrando ? 'Cambiando…' : 'Cambiar'}
+                      </Boton>
+                    </div>
+
+                    {/* Se enseña cómo va a quedar ANTES de pulsar. La limpieza
+                        real la hace el servidor; esto es el mismo cálculo, para
+                        que no haya sorpresas. */}
+                    {previsualizarAlias(aliasCorreo).length >= 4 && (
+                      <p className="mt-2.5 break-all font-mono text-[11.5px] text-slate-500">
+                        Quedará: <span className="font-bold text-slate-700">
+                          {previsualizarAlias(aliasCorreo)}@facturas.codecdocument.com
+                        </span>
+                      </p>
+                    )}
+
+                    <p className="mt-2.5 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-slate-500">
+                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                      <span>
+                        Al cambiarla, la anterior deja de funcionar: si ya se la pasaste a algún
+                        proveedor, tendrás que darle la nueva. Y como es una dirección fácil de
+                        adivinar, puede llegarte correo de desconocidos —
+                        <strong className="text-slate-700">nada se procesa solo</strong>: lo que
+                        entra espera en la bandeja con su remitente a la vista, y lo que no
+                        reconozcas lo borras sin procesarlo.
+                      </span>
+                    </p>
+                  </div>
 
                   {buzon.pendientes > 0 ? (
                     <Boton

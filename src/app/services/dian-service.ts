@@ -379,6 +379,41 @@ export async function activarCorreo(): Promise<string> {
   return dir;
 }
 
+/**
+ * Cambia el nombre de la dirección: `douglas-taborda` → la dirección pasa a
+ * ser `douglas-taborda-a4f9c2d1@…`.
+ *
+ * El sufijo lo pone el servidor y no se puede elegir: es lo que impide que
+ * alguien adivine la dirección de un contador sabiendo cómo se llama. Por lo
+ * mismo, la normalización del nombre también es del servidor — aquí sólo se
+ * previsualiza para que el contador vea lo que va a quedar.
+ */
+export async function renombrarCorreo(alias: string): Promise<string> {
+  const { data, error } = await supabase.rpc('ed_email_alias', { p_alias: alias });
+  if (error) throw new Error(error.message);
+  const dir = direccionDe(((data ?? {}) as Record<string, unknown>).token as string);
+  if (!dir) throw new Error('No se pudo cambiar la dirección.');
+  return dir;
+}
+
+/** La misma limpieza que hace el servidor, para enseñar en vivo cómo va a
+ *  quedar mientras se teclea. NO sustituye a la del servidor: es un espejo
+ *  para que no haya sorpresas al pulsar el botón. */
+export function previsualizarAlias(alias: string): string {
+  return alias
+    .toLowerCase()
+    // El rango del corchete es U+0300–U+036F: las marcas diacríticas que NFD
+    // separa de su letra. Van como caracteres literales, así que en un editor
+    // el corchete parece vacío o con basura — no lo está. Si alguna vez sale
+    // mojibake ahí, es que una herramienta reescribió el archivo con otra
+    // codificación; se restituye con ̀-ͯ.
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .slice(0, 24)
+    .replace(/^-+|-+$/g, '');
+}
+
 export async function apagarCorreo(): Promise<void> {
   const { error } = await supabase.rpc('ed_email_apagar');
   if (error) throw new Error(error.message);
