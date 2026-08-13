@@ -65,21 +65,52 @@ export function useDraggablePosition(storageKey: string) {
     return () => window.removeEventListener('resize', recolocar);
   }, [pos !== null]);
 
+  /**
+   * ── Por qué la captura del puntero NO se pide aquí ─────────────────────
+   *
+   * Se pedía en `pointerdown`, y eso rompía en silencio todos los botones que
+   * viven dentro del elemento arrastrable. Una vez capturado el puntero, la
+   * especificación manda los eventos siguientes —incluido el `click`— al
+   * elemento que captura, no al que está debajo del cursor: el `click` se
+   * disparaba sobre el contenedor y jamás llegaba al botón de dentro. El de la
+   * voz, el de la ayuda y la X estaban muertos al ratón, y el de «Instalar
+   * app» tenía exactamente el mismo problema.
+   *
+   * No se detectó antes porque las pruebas llamaban a `.click()` desde
+   * JavaScript, que se salta la captura y pasaba en verde. Un clic de persona
+   * no.
+   *
+   * Ahora se captura en el primer movimiento que pasa del umbral, es decir
+   * cuando ya se sabe que esto es un arrastre y no un clic. Arrastrar sigue
+   * siendo igual de firme —la captura entra en cuanto el gesto empieza de
+   * verdad— y pulsar vuelve a funcionar.
+   */
+  const capturadoRef = useRef<{ nodo: HTMLElement; id: number } | null>(null);
+
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     nodoRef.current = e.currentTarget;
     draggingRef.current = true;
     movedRef.current = false;
     startRef.current = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top };
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     if (!draggingRef.current) return;
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
-    if (!movedRef.current && Math.hypot(dx, dy) > 6) movedRef.current = true;
-    if (!movedRef.current) return;
+
+    if (!movedRef.current) {
+      if (Math.hypot(dx, dy) <= 6) return;
+      movedRef.current = true;
+      // Ahora sí: es un arrastre. Capturar aquí mantiene el gesto pegado al
+      // puntero aunque se salga del botón, sin secuestrar los clics.
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        capturadoRef.current = { nodo: e.currentTarget, id: e.pointerId };
+      } catch { /* algunos navegadores lo rechazan; el arrastre sigue */ }
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     setPos(dentroDeLaVentana(
       { left: startRef.current.left + dx, top: startRef.current.top + dy },
@@ -90,6 +121,13 @@ export function useDraggablePosition(storageKey: string) {
 
   const onPointerUp = () => {
     draggingRef.current = false;
+
+    const capturado = capturadoRef.current;
+    capturadoRef.current = null;
+    if (capturado) {
+      try { capturado.nodo.releasePointerCapture(capturado.id); } catch { /* ya soltado */ }
+    }
+
     if (movedRef.current) {
       setPos((current) => {
         if (current) localStorage.setItem(storageKey, JSON.stringify(current));

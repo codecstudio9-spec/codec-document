@@ -75,6 +75,16 @@ export function AyudaFlotante({
    */
   const [oculto, setOculto] = useState(false);
 
+  /** Escape cierra el modal. El cajón lateral ya lo hacía y éste no: dos
+   *  ventanas del mismo producto que se cierran de forma distinta obligan a
+   *  recordar cuál es cuál. */
+  useEffect(() => {
+    if (!abierta) return;
+    const alTeclear = (e: KeyboardEvent) => { if (e.key === 'Escape') onCerrar(); };
+    window.addEventListener('keydown', alTeclear);
+    return () => window.removeEventListener('keydown', alTeclear);
+  }, [abierta, onCerrar]);
+
   /** Late hasta que se abre por primera vez. Después, nunca más. */
   const [novato, setNovato] = useState(false);
   useEffect(() => {
