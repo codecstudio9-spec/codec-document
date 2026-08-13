@@ -687,6 +687,111 @@ export const router = createBrowserRouter([
     Component: ContadorDianLanding,
     errorElement: <RouteErrorBoundary />,
   },
+  // Automatizacion para Contadores -- 20 paginas de VENTA.
+  // Cubren las tres intenciones que cierran una compra y que las otras
+  // veinticinco no tocaban: el software que el contador ya usa, la
+  // competencia, y la norma que le preocupa. Misma plantilla; el contenido
+  // vive en contador-venta-seo-content.ts.
+  {
+    path: "/importar-facturas-electronicas-a-alegra",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/importar-facturas-electronicas-a-world-office",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/importar-facturas-electronicas-a-helisa",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/alternativa-a-qfe-collector",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/programa-para-descargar-facturas-dian",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/software-para-contadores-colombia",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/excel-facturas-electronicas-plantilla-contable",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/cierre-contable-sin-digitar-facturas",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/iva-descontable-perdido-facturas-no-registradas",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/recibir-facturas-de-proveedores-por-correo",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/cuantas-horas-pierde-un-contador-en-facturas",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/contador-independiente-automatizar-clientes",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/oficina-contable-pequena-automatizar",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/revisor-fiscal-facturacion-electronica",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/documento-equivalente-pos-iva-descontable",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/conservar-xml-facturas-electronicas-obligacion",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/validar-cufe-masivo",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/descargar-xml-dian-varios-clientes",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/precio-software-descarga-facturas-dian",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/auditoria-facturas-electronicas-vs-contabilidad",
+    Component: ContadorDianLanding,
+    errorElement: <RouteErrorBoundary />,
+  },
   // Fase 3 -- SEO "gratis" (7 paginas, cada una con un angulo distinto,
   // ver free-feature-seo-content.ts).
   {

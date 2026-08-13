@@ -1009,6 +1009,32 @@ function ContenidoDian() {
     },
   ], [puedeDescargar]);
 
+  /**
+   * La promoción de lanzamiento, si está viva.
+   *
+   * Se deduce del catálogo, que ya trae `promoHasta` y `limiteNormal` cuando
+   * hay una en curso. No hay ninguna fecha escrita en la pantalla: cuando
+   * caduque en la base, esto pasa a `null` y el anuncio desaparece el mismo
+   * día en que el tope vuelve a su valor. Un banner que sigue prometiendo lo
+   * que ya no se da hace más daño que no tenerlo.
+   */
+  const promoLanzamiento = useMemo(() => {
+    const conPromo = planes.find((p) => p.promoHasta && p.limiteNormal !== null);
+    if (!conPromo?.promoHasta) return null;
+
+    const restanteMs = new Date(conPromo.promoHasta).getTime() - Date.now();
+    if (restanteMs <= 0) return null;
+
+    return {
+      // Se redondea hacia abajo: decir «quedan 3 días» cuando quedan 3 días y
+      // 20 horas es prometer de menos, que es el lado correcto en el que
+      // equivocarse con una cuenta atrás.
+      dias: Math.floor(restanteMs / 86_400_000),
+      normal: conPromo.limiteNormal ?? 50,
+      limite: conPromo.limite ?? 100,
+    };
+  }, [planes]);
+
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / DOCS_POR_PAGINA));
 
   /**
@@ -1300,6 +1326,39 @@ function ContenidoDian() {
           <div className="mb-5">
             <AccionesRapidas acciones={accionesRapidas} />
           </div>
+        )}
+
+        {/* El aviso del lanzamiento también en Inicio, en versión de una línea.
+            Es donde entra el contador, y una promoción que sólo se ve entrando
+            a «Planes» la ve quien ya estaba pensando en pagar — justo el que
+            menos falta le hace. Sólo para quien está en el plan gratuito: a
+            quien ya paga, esto es ruido. */}
+        {seccion === 'inicio' && promoLanzamiento && cuota && !cuota.ilimitado
+          && (cuota.planPrecio ?? 0) === 0 && (
+          <motion.button
+            type="button"
+            onClick={() => setSeccion('planes')}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={MOV.entrada}
+            whileHover={{ y: -2 }}
+            className="mb-5 flex w-full flex-wrap items-center gap-3 px-5 py-3.5 text-left"
+            style={{
+              borderRadius: CARD_RADIUS,
+              background: 'linear-gradient(120deg,#B45309,#D97706 55%,#F59E0B)',
+              boxShadow: '0 14px 30px rgba(180,83,9,0.28)',
+            }}
+          >
+            <Sparkles className="size-5 shrink-0 text-white" />
+            <span className="min-w-0 flex-1 text-[13.5px] font-bold text-white">
+              Por lanzamiento tienes {promoLanzamiento.limite} documentos gratis al mes.
+              <span className="font-medium text-white/80">
+                {' '}Quedan {promoLanzamiento.dias} {promoLanzamiento.dias === 1 ? 'día' : 'días'};
+                después vuelve a {promoLanzamiento.normal}.
+              </span>
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-white/70" />
+          </motion.button>
         )}
 
         {/* ── Analítica (sólo el dueño) ─────────────────────────────────
@@ -1676,6 +1735,56 @@ function ContenidoDian() {
             icono={CreditCard}
             color="#7C3AED"
           />
+
+          {/* Anuncio del lanzamiento, con los días que quedan de verdad.
+              La cuenta atrás sale de la fecha que la base ya conoce, no de una
+              constante escrita aquí: cuando la promoción caduca, el aviso
+              desaparece solo el mismo día en que el tope vuelve a 50. Un banner
+              que sigue prometiendo algo que ya no se da es peor que no
+              tenerlo. */}
+          {promoLanzamiento && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={MOV.entrada}
+              className="relative mb-5 flex flex-wrap items-center gap-4 overflow-hidden p-5"
+              style={{
+                borderRadius: CARD_RADIUS,
+                background: 'linear-gradient(120deg,#B45309,#D97706 55%,#F59E0B)',
+                boxShadow: '0 18px 40px rgba(180,83,9,0.30)',
+              }}
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full"
+                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%)' }}
+              />
+              <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+                <Sparkles className="size-6 text-white" />
+              </div>
+              <div className="relative min-w-0 flex-1">
+                <p className="text-[11px] font-black uppercase tracking-wider text-white/70">
+                  Por lanzamiento
+                </p>
+                <p className="text-lg font-black leading-tight text-white">
+                  100 documentos gratis al mes, sin tarjeta
+                </p>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-white/85">
+                  {promoLanzamiento.dias === 0
+                    ? 'Último día. Mañana el plan Gratis vuelve a 50 documentos al mes.'
+                    : `Quedan ${promoLanzamiento.dias} ${promoLanzamiento.dias === 1 ? 'día' : 'días'}. Después, el plan Gratis vuelve a ${promoLanzamiento.normal} documentos al mes.`}
+                </p>
+              </div>
+              <div className="relative shrink-0 rounded-2xl bg-white/20 px-4 py-3 text-center">
+                <p className="text-3xl font-black leading-none tabular-nums text-white">
+                  {promoLanzamiento.dias}
+                </p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/75">
+                  {promoLanzamiento.dias === 1 ? 'día' : 'días'}
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Tu consumo, en grande. Es lo primero que se mira al entrar. */}
           {!cuota.ilimitado && (

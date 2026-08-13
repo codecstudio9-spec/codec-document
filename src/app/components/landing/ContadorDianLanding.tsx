@@ -43,6 +43,7 @@ import { LandingFooter } from './LandingFooter';
 import { FAQAccordion } from './LandingSections';
 import { CIUDADES_CONTADOR, CAPACIDADES, type CiudadContadorSeo } from '../../data/contador-dian-seo-content';
 import { NECESIDADES_CONTADOR } from '../../data/contador-necesidad-seo-content';
+import { VENTAS_CONTADOR } from '../../data/contador-venta-seo-content';
 import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
 
 const COLOMBIA = LATAM_COUNTRIES.find((c) => c.slug === 'colombia')!;
@@ -496,11 +497,14 @@ function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
 export default function ContadorDianLanding() {
   const { pathname } = useLocation();
   const slug = pathname.replace(/^\//, '').replace(/\/$/, '');
-  // Las veinticuatro paginas -- doce por ciudad y doce por necesidad -- usan
-  // esta misma plantilla y se distinguen por su slug.
+  // Las cuarenta y cinco paginas -- doce por ciudad, trece por necesidad y
+  // veinte de venta -- usan esta misma plantilla y se distinguen por su slug.
+  // Anadir una pagina es anadir una entrada al archivo de datos y su ruta:
+  // ningun componente nuevo que mantener.
   const ciudad =
     CIUDADES_CONTADOR.find((c) => c.slug === slug)
     ?? NECESIDADES_CONTADOR.find((n) => n.slug === slug)
+    ?? VENTAS_CONTADOR.find((v) => v.slug === slug)
     ?? CIUDADES_CONTADOR[0];
 
   return (
