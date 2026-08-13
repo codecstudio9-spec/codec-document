@@ -24,26 +24,39 @@ import type { CSSProperties } from 'react';
 
 // ── Superficies ───────────────────────────────────────────────────────────
 
-/** Barra lateral. Oscura para que el área de trabajo respire y la vista
- *  vuelva sola al contenido, no al menú. */
+/** Barra lateral, en el azul de la marca.
+ *
+ *  Se probó oscura y el resultado fue peor: un panel casi negro al lado de un
+ *  área blanca parte la pantalla en dos productos distintos y el contador
+ *  tarda en entender que es una sola herramienta. El azul mantiene la
+ *  jerarquía sin ese corte. */
 export const SIDEBAR_BG =
-  'linear-gradient(180deg, #0B1220 0%, #111C31 55%, #0D1626 100%)';
+  'linear-gradient(180deg, #1D4ED8 0%, #1E51DD 45%, #1A44C4 100%)';
 
-/** Fondo del área de trabajo. Tres capas: un degradado vertical y dos
- *  resplandores muy tenues. Un gris plano hace que las tarjetas floten sin
- *  apoyo; esto les da suelo. */
-export const WORKSPACE_BG =
-  'radial-gradient(1200px 600px at 15% -10%, rgba(37,99,235,0.10), transparent 60%),'
-  + 'radial-gradient(900px 500px at 95% 0%, rgba(16,185,129,0.08), transparent 55%),'
-  + 'linear-gradient(180deg, #F7F9FC 0%, #EFF4FD 100%)';
+/** Franja de bienvenida, arriba del área de trabajo. Continúa el azul de la
+ *  barra para que ambas se lean como un mismo marco. */
+export const BANNER_BG =
+  'linear-gradient(100deg, #1D4ED8 0%, #2563EB 55%, #3B82F6 100%)';
+
+/** Fondo del área de trabajo: casi blanco.
+ *
+ *  El degradado tiene apenas dos puntos de diferencia entre extremos. Sirve
+ *  para que las tarjetas blancas no floten sobre un plano idéntico al suyo,
+ *  pero sin teñir la pantalla. Aquí el blanco es la superficie de trabajo, no
+ *  el acento. */
+export const WORKSPACE_BG = 'linear-gradient(180deg, #FBFCFE 0%, #F4F7FC 100%)';
 
 /** Tarjeta estándar. La sombra va en dos capas —una corta y densa, otra
- *  larga y difusa— porque una sola sombra grande se ve como una mancha. */
+ *  larga y difusa— porque una sola sombra grande se ve como una mancha.
+ *
+ *  Sobre un fondo casi blanco la sombra tiene que ser MÁS suave, no más
+ *  fuerte: en cuanto se nota el gris, la tarjeta parece sucia en vez de
+ *  elevada. El relieve lo da el borde claro, no la sombra. */
 export const CARD: CSSProperties = {
   background: '#FFFFFF',
-  borderRadius: 20,
-  boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.07)',
-  border: '1px solid rgba(15,23,42,0.05)',
+  borderRadius: 16,
+  boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.05)',
+  border: '1px solid #E8EDF5',
 };
 
 /** Tarjeta destacada, para lo que hay que mirar primero. */

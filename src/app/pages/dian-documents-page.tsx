@@ -27,6 +27,7 @@ import {
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
 } from 'lucide-react';
 import { PanelLateral, type GrupoLateral } from '../components/dian/PanelLateral';
+import { Bienvenida, type AccionPrincipal } from '../components/dian/Bienvenida';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
@@ -259,7 +260,13 @@ function ContenidoDian() {
    *  una columna única: antes, para llegar al auditor había que pasar por
    *  delante de la importación, los CUFEs y la tabla entera. */
   const [seccion, setSeccion] = useState<string>('inicio');
-  const [menuMovil, setMenuMovil] = useState(false);
+  /** El menú arranca OCULTO y recuerda la elección.
+   *
+   *  El recorrido normal cabe entero en Inicio —soltar, ver el avance, mirar
+   *  la tabla—, así que el menú sólo hace falta para ir a una herramienta
+   *  concreta. Tenerlo siempre puesto le robaba ancho a la tabla, que es lo
+   *  que el contador de verdad mira. */
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   // Bandeja de excepciones y limpieza
   const [vista, setVista] = useState<'documentos' | 'revision'>('documentos');
@@ -695,6 +702,59 @@ function ContenidoDian() {
     return grupos;
   }, [totales?.revision, buzon, puedeDescargar, ilimitado]);
 
+  /** Primer nombre para el saludo. Del correo se saca lo que hay antes de la
+   *  arroba y se corta en el primer punto o guion: «douglas.taborda» → Douglas.
+   *  Si no sale nada legible se saluda sin nombre, que es mejor que soltarle
+   *  un identificador. */
+  const nombreCorto = useMemo(() => {
+    const local = (user?.email ?? '').split('@')[0] ?? '';
+    const trozo = local.split(/[._-]/)[0] ?? '';
+    // Se descarta lo que no parece un nombre: muy corto, con dígitos, o
+    // demasiado largo. Un correo sin separadores como
+    // «douglastabordasanchez@» daba «¡Hola, Douglastabordasanchez!», que es
+    // peor que no saludar por el nombre.
+    if (trozo.length < 2 || trozo.length > 12 || /\d/.test(trozo)) return undefined;
+    return trozo.charAt(0).toUpperCase() + trozo.slice(1).toLowerCase();
+  }, [user?.email]);
+
+  /** Las cuatro acciones de la fila superior: el flujo entero de la
+   *  herramienta a la vista, sin abrir el menú. */
+  const accionesPrincipales: AccionPrincipal[] = useMemo(() => [
+    {
+      id: 'descargar',
+      titulo: 'Descargar de la DIAN',
+      descripcion: 'Documentos XML',
+      icono: CloudDownload,
+      activa: seccion === 'descargar',
+      bloqueada: !puedeDescargar,
+      onClick: () => (puedeDescargar ? setPanelDescarga(true) : toast.error('Todavía no está abierta para tu cuenta.')),
+    },
+    {
+      id: 'reportes',
+      titulo: 'Llevar a mi programa',
+      descripcion: 'Exportar a contabilidad',
+      icono: FileSpreadsheet,
+      activa: seccion === 'reportes',
+      onClick: () => setSeccion('reportes'),
+    },
+    {
+      id: 'auditor',
+      titulo: 'Cruzar contabilidad',
+      descripcion: 'Comparar y validar',
+      icono: Scale,
+      activa: seccion === 'auditor',
+      onClick: () => setPanelAuditor(true),
+    },
+    {
+      id: 'correo',
+      titulo: 'Recibir por correo',
+      descripcion: buzon && !buzon.disponible ? 'Desde el plan Básico' : 'Sin descargar nada',
+      icono: Mail,
+      activa: seccion === 'correo',
+      onClick: () => setSeccion('correo'),
+    },
+  ], [seccion, puedeDescargar, buzon]);
+
   const [exportando, setExportando] = useState(false);
 
   const descargarExcel = async () => {
@@ -883,96 +943,22 @@ function ContenidoDian() {
           if (id === 'documentos') setVista('documentos');
         }}
         correo={user?.email ?? undefined}
-        plan={cuota?.planNombre}
-        abiertoMovil={menuMovil}
-        onCerrarMovil={() => setMenuMovil(false)}
+        plan={cuota ? { nombre: cuota.planNombre, limite: cuota.limite, usados: cuota.usados } : undefined}
+        onVerPlan={() => setSeccion('planes')}
+        abierta={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
       />
 
-      <div className="lg:pl-[248px]">
-        <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+      <Bienvenida
+        nombre={nombreCorto}
+        onAbrirMenu={() => setMenuAbierto(true)}
+        onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
+        acciones={accionesPrincipales}
+      />
 
-        {/* Barra superior. Sólo el botón de menú en móvil y las acciones que
-            cierran el recorrido: llevarse los datos. */}
-        <div className="mb-6 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMenuMovil(true)}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-white hover:text-slate-800 lg:hidden"
-            style={BOTON_NEUTRO}
-            aria-label="Abrir menú"
-          >
-            <Menu className="size-5" />
-          </button>
-          <div className="min-w-0 flex-1 lg:hidden">
-            <Logo size="sm" href="/dashboard" />
-          </div>
-        </div>
+      <div>
+        <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6">
 
-        {/* ── Cabecera de la sección ─────────────────────────────────────
-            Sólo Inicio lleva portada. En las demás secciones ocuparía sitio
-            sin decir nada nuevo: el contador ya sabe dónde está porque lo
-            acaba de pulsar en el menú. */}
-        {seccion === 'inicio' && (
-          <motion.header
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={MOV.entrada}
-            className="relative mb-5 overflow-hidden px-6 py-6 text-white"
-            style={{
-              background: DARK_GRADIENT,
-              borderRadius: 22,
-              boxShadow: '0 24px 56px rgba(15,23,42,0.20)',
-            }}
-          >
-            <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
-            <div className="relative">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[26px] font-black leading-tight tracking-tight">
-                  Automatización para contadores
-                </h1>
-                {cuota && cuota.planCode !== 'gratis' && (
-                  <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-300/30">
-                    Plan {cuota.planNombre}
-                    {cuota.diasRestantes !== null && cuota.diasRestantes <= 7 && (
-                      <> · renueva en {cuota.diasRestantes} {cuota.diasRestantes === 1 ? 'día' : 'días'}</>
-                    )}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1.5 max-w-lg text-[13.5px] leading-relaxed text-white/65">
-                Suelta el comprimido de la DIAN y te devuelvo el Excel armado, con los
-                duplicados detectados y sólo los documentos que necesitas revisar.
-              </p>
-
-              {/* Las tres salidas del recorrido. Van arriba porque son lo que
-                  el contador vino a buscar: llevarse los datos. */}
-              <div className="mt-4 flex flex-wrap gap-2">
-                {puedeDescargar && (
-                  <Boton estilo={BOTON_CORREO} icono={CloudDownload}
-                         onClick={() => setSeccion('descargar')}>
-                    Descargar de la DIAN
-                  </Boton>
-                )}
-                <Boton estilo={BOTON_PLANTILLA} icono={FileSpreadsheet}
-                       onClick={() => setPanelPlantilla(true)}>
-                  Llevar a mi programa contable
-                </Boton>
-                <Boton
-                  estilo={{
-                    background: 'rgba(255,255,255,0.10)',
-                    border: '1px solid rgba(255,255,255,0.16)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
-                  }}
-                  icono={Scale}
-                  className="text-white"
-                  onClick={() => setPanelAuditor(true)}
-                >
-                  Cruzar con mi contabilidad
-                </Boton>
-              </div>
-            </div>
-          </motion.header>
-        )}
 
         {/* ── Consumo del mes ────────────────────────────────────────────
             El anillo va en Inicio y no escondido en Planes: el contador tiene
@@ -2071,7 +2057,13 @@ function ContenidoDian() {
         )}
 
         {/* ── Tabla ───────────────────────────────────────────────────── */}
-        {(seccion === 'documentos' || seccion === 'revision') && (
+        {/* La tabla también en Inicio.
+            Es el cambio que hace que esto se entienda: soltar los archivos,
+            ver el avance y ver los documentos ocurre en la MISMA pantalla, sin
+            navegar. Tenerlo repartido en secciones obligaba al contador a
+            recordar dónde estaba cada cosa, que es justo lo que sobra en una
+            herramienta que se usa una vez al mes. */}
+        {(seccion === 'inicio' || seccion === 'documentos' || seccion === 'revision') && (
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
             {([
