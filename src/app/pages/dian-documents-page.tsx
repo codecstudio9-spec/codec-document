@@ -26,19 +26,21 @@ import {
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
-  FolderOpen, Eye, ChevronLeft,
+  FolderOpen, ChevronLeft, ArrowRight, Clock3,
 } from 'lucide-react';
 import { PanelLateral, ANCHO_LATERAL, type GrupoLateral } from '../components/dian/PanelLateral';
 import { Bienvenida } from '../components/dian/Bienvenida';
 import { RepartoPorTipo, CifrasMes, COLOR_TIPO } from '../components/dian/ResumenMes';
-import { AccionesRapidas, BannerOscuro, type Accion } from '../components/dian/AccionesRapidas';
+import { AccionesRapidas, type Accion } from '../components/dian/AccionesRapidas';
+import { CajonDerecho } from '../components/dian/CajonDerecho';
+import { AyudaFlotante } from '../components/dian/AyudaFlotante';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
 import {
   FONDO_APP, RESPLANDOR_DERECHA, RESPLANDOR_IZQUIERDA,
   BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
-  BOTON_NEUTRO, MOV, CARD,
+  BOTON_NEUTRO, MOV, CARD, aparecer,
 } from '../styles/contador-theme';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -155,7 +157,11 @@ function ContenidoDian() {
   const [progreso, setProgreso] = useState<EventoProgreso | null>(null);
   const [resumen, setResumen] = useState<ResumenImportacion | null>(null);
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
-  const [ayudaAbierta, setAyudaAbierta] = useState(true);
+  /** Cerrada de fábrica. Antes venía abierta y ocupaba el primer tercio de la
+   *  pantalla: el contador que ya sabe usar esto —o sea, el mismo contador a
+   *  partir del segundo mes— tenía que pasar por encima de tres párrafos que
+   *  ya se sabía. Ahora vive en el botón flotante. */
+  const [ayudaAbierta, setAyudaAbierta] = useState(false);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const [cuota, setCuota] = useState<EstadoCuota | null>(null);
   const [planes, setPlanes] = useState<PlanCatalogo[]>([]);
@@ -724,9 +730,11 @@ function ContenidoDian() {
     if (ilimitado) {
       grupos.push({
         titulo: 'Sólo tú',
+        // Una sola entrada. «Ajustes de la prueba» era otra opción aparte y
+        // obligaba a saltar de pestaña para mirar el consumo y luego subir el
+        // tope, que es lo mismo que uno quiere hacer seguido.
         items: [
           { id: 'analitica', etiqueta: 'Analítica', icono: BarChart3 },
-          { id: 'ajustes', etiqueta: 'Ajustes de la prueba', icono: SlidersHorizontal },
         ],
       });
     }
@@ -793,14 +801,14 @@ function ContenidoDian() {
       id: 'auditor',
       etiqueta: 'Cruzar contabilidad',
       icono: Scale,
-      variante: 'neutra',
+      variante: 'auditor',
       onClick: () => setPanelAuditor(true),
     },
     {
       id: 'reportes',
       etiqueta: 'Excel y plantillas',
       icono: FileSpreadsheet,
-      variante: 'neutra',
+      variante: 'excel',
       onClick: () => setSeccion('reportes'),
     },
   ], [puedeDescargar]);
@@ -1059,49 +1067,19 @@ function ContenidoDian() {
 
         <div className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-8">
 
-        {/* ── Cifras del mes ───────────────────────────────────────────
-            Abren el cuerpo, igual que en el dashboard principal. Es la
-            respuesta a la pregunta con la que el contador entra —«cómo va el
-            mes»— y va antes que cualquier cosa que haya que hacer.
-
-            Sin documentos no se dibujan: cuatro ceros dan la bienvenida peor
-            que no decir nada, y en una cuenta nueva lo que tiene que llamar la
-            atención es el recuadro de soltar archivos. */}
-        {seccion === 'inicio' && resMes && resMes.documentos > 0 && (
-          <div className="mb-6">
-            <CifrasMes datos={resMes} />
-          </div>
-        )}
-
         {/* ── Acciones rápidas ─────────────────────────────────────────
-            El recorrido entero en una fila: traer, bajar de la DIAN, cruzar
-            con la contabilidad y llevarse el Excel. Vistas juntas cuentan lo
-            que la herramienta hace sin que nadie lo explique — que era el
-            trabajo de los cuatro pasos numerados que hubo aquí antes, hecho
-            ahora con botones que además sirven para algo. */}
+            Encabezan la pantalla. Es lo primero que se ve al entrar y contesta
+            la única pregunta que el contador trae —«¿qué hago ahora?»— antes
+            de que tenga que leer nada.
+
+            Aquí estuvieron las cuatro cifras del mes y estaban de más: mirar
+            cuánto se procesó es algo que se hace DESPUÉS de procesar, no al
+            abrir. Se fueron a la pestaña Documentos, que es donde el contador
+            va cuando quiere revisar. El banner del conector de correo también
+            salió: está en el menú de la izquierda, que es donde vive. */}
         {seccion === 'inicio' && (
           <div className="mb-5">
             <AccionesRapidas acciones={accionesRapidas} />
-          </div>
-        )}
-
-        {/* ── Conector de correo ───────────────────────────────────────
-            En banner y no en la fila de arriba porque no es una acción más:
-            cambia cómo trabaja el contador —deja de ir a buscar los XML— y eso
-            no cabe en la etiqueta de un botón. Sólo se ofrece a quien no lo
-            tiene activo; a quien ya lo usa, el banner sería ruido. */}
-        {seccion === 'inicio' && buzon && !buzon.activo && (
-          <div className="mb-6">
-            <BannerOscuro
-              icono={Mail}
-              titulo="Que tus facturas lleguen solas"
-              descripcion={
-                buzon.disponible
-                  ? 'Te damos una dirección de correo propia. Pídeles a tus clientes que envíen ahí sus facturas y aparecen en tu bandeja sin que tengas que descargar ni arrastrar nada.'
-                  : 'Con un plan de pago te damos una dirección de correo propia: tus clientes envían ahí las facturas y aparecen solas en tu bandeja, sin descargar ni arrastrar nada.'
-              }
-              onClick={() => (buzon.disponible ? setPanelCorreo(true) : setSeccion('planes'))}
-            />
           </div>
         )}
 
@@ -1208,76 +1186,21 @@ function ContenidoDian() {
           </div>
         )}
 
-        {/* ── Guía paso a paso, dentro de la propia herramienta ───────── */}
-        {seccion === 'inicio' && (
-        <section className="mb-6 overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <button
-            type="button"
-            onClick={() => setAyudaAbierta((v) => !v)}
-            className="flex w-full items-center gap-3 px-5 py-4 text-left"
-          >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-              <HelpCircle className="size-4 text-indigo-600" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-slate-800">Cómo funciona</span>
-              <span className="block text-xs text-slate-400">Tres pasos. No necesitas saber nada técnico.</span>
-            </div>
-            <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${ayudaAbierta ? 'rotate-90' : ''}`} />
-          </button>
+        {/* ── Control de la prueba, dentro de Analítica ──────────────────
+            Era su propia sección, «Ajustes de la prueba», y encima en oscuro:
+            el único bloque negro de toda la herramienta, en una aplicación
+            que es blanca y azul de principio a fin. Se leía como una consola
+            de otra cosa pegada dentro.
 
-          {ayudaAbierta && (
-            <div className="border-t border-slate-100 px-5 py-5">
-              <ol className="grid gap-4 sm:grid-cols-3">
-                {[
-                  {
-                    n: '1',
-                    t: 'Descarga tus documentos de la DIAN',
-                    d: 'Entra al portal de la DIAN, busca tus documentos recibidos del periodo y descárgalos. Te queda un ZIP, o varios XML sueltos.',
-                  },
-                  {
-                    n: '2',
-                    t: 'Suéltalos aquí',
-                    d: 'Arrastra el ZIP tal como te lo dio la DIAN. No hace falta descomprimirlo ni renombrar nada. También sirven XML sueltos.',
-                  },
-                  {
-                    n: '3',
-                    t: 'Revisa y exporta',
-                    d: 'Codec lee cada documento y arma la tabla. Tú solo revisas lo que quedó marcado y descargas el reporte.',
-                  },
-                ].map((p) => (
-                  <li key={p.n} className="flex gap-3">
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-bold text-white">
-                      {p.n}
-                    </span>
-                    <div className="min-w-0">
-                      <span className="block text-sm font-semibold text-slate-800">{p.t}</span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{p.d}</span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 px-3.5 py-3 text-xs leading-relaxed text-slate-500">
-                <Sparkles className="mt-0.5 size-3.5 shrink-0 text-indigo-500" />
-                <span>
-                  Tus archivos se procesan en tu propio navegador. El XML original
-                  se conserva porque es el documento con validez legal, no el PDF.
-                </span>
-              </p>
-            </div>
-          )}
-        </section>
-        )}
-
-        {/* ── Panel del propietario: medir la prueba y ajustar los topes ──
-          Va aquí y no en la sección de analítica porque es donde el
-          propietario ya está mirando la herramienta; si el consumo se
-          dispara, lo ve en el mismo sitio donde puede subir el tope. */}
-      {beta?.ilimitado && seccion === 'ajustes' && (
-        <section className="mb-6 p-5 text-white" style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+            Ahora va debajo de la analítica, que es su sitio natural: las dos
+            responden la misma pregunta del dueño —cómo va la prueba— y tenerlas
+            separadas obligaba a saltar de pestaña para mirar el consumo y
+            luego subir el tope. */}
+      {beta?.ilimitado && seccion === 'analitica' && (
+        <section className="mb-6 mt-6 p-6" style={CARD}>
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-bold">Control de la prueba</h2>
-            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/60">
+            <h2 className="text-base font-black text-slate-900">Control de la prueba</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
               solo tú ves esto
             </span>
           </div>
@@ -1294,29 +1217,29 @@ function ContenidoDian() {
                   : 'sin fecha',
               },
             ].map((x) => (
-              <div key={x.l} className="rounded-xl bg-white/5 px-3 py-3">
+              <div key={x.l} className="rounded-xl bg-slate-50 px-3 py-3">
                 <div className="truncate text-base font-bold tabular-nums">{x.v}</div>
-                <div className="mt-0.5 text-[11px] leading-tight text-white/50">{x.l}</div>
+                <div className="mt-0.5 text-[11px] leading-tight text-slate-400">{x.l}</div>
               </div>
             ))}
           </div>
 
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
             <div
               className={`h-full rounded-full transition-all ${
-                beta.usadosGlobal / beta.limiteGlobal > 0.85 ? 'bg-rose-400' : 'bg-emerald-400'
+                beta.usadosGlobal / beta.limiteGlobal > 0.85 ? 'bg-rose-500' : 'bg-emerald-500'
               }`}
               style={{ width: `${Math.min(100, (beta.usadosGlobal / Math.max(1, beta.limiteGlobal)) * 100)}%` }}
             />
           </div>
           {beta.llena && (
-            <p className="mt-2 text-xs font-semibold text-rose-300">
+            <p className="mt-2 text-xs font-semibold text-rose-600">
               Tope alcanzado. La herramienta está bloqueada para todos hasta que lo subas.
             </p>
           )}
 
           <div className="mt-4 flex flex-wrap items-end gap-2">
-            <label className="text-xs text-white/60">
+            <label className="text-xs text-slate-500">
               Tope global
               <input
                 type="number"
@@ -1328,10 +1251,10 @@ function ContenidoDian() {
                     .then(() => { toast.success(`Tope global: ${v}`); void refrescar(); })
                     .catch((err) => toast.error(err.message));
                 }}
-                className="mt-1 block w-28 rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white outline-none focus:bg-white/15"
+                className="mt-1 block w-28 rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-semibold text-slate-800 outline-none focus:bg-slate-200"
               />
             </label>
-            <label className="text-xs text-white/60">
+            <label className="text-xs text-slate-500">
               Cupo por persona
               <input
                 type="number"
@@ -1343,7 +1266,7 @@ function ContenidoDian() {
                     .then(() => { toast.success(`Cupo por persona: ${v}`); void refrescar(); })
                     .catch((err) => toast.error(err.message));
                 }}
-                className="mt-1 block w-28 rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white outline-none focus:bg-white/15"
+                className="mt-1 block w-28 rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-semibold text-slate-800 outline-none focus:bg-slate-200"
               />
             </label>
             <button
@@ -1355,7 +1278,7 @@ function ContenidoDian() {
                   .then(() => { toast.success('Prueba extendida 3 días más'); void refrescar(); })
                   .catch((err) => toast.error(err.message));
               }}
-              className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20"
+              className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold transition hover:bg-slate-200"
             >
               +3 días
             </button>
@@ -1366,12 +1289,12 @@ function ContenidoDian() {
                   .then(() => { toast.success('Prueba cerrada'); void refrescar(); })
                   .catch((err) => toast.error(err.message));
               }}
-              className="rounded-lg bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-200 transition hover:bg-rose-500/30"
+              className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
             >
               Cerrar ahora
             </button>
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-white/40">
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
             Los cambios aplican de inmediato para todos, sin desplegar nada.
           </p>
 
@@ -1380,14 +1303,14 @@ function ContenidoDian() {
               resto de la plataforma: si la DIAN bloquea esa IP por abuso, la
               bloquea para todos. Por eso se abre persona por persona y no
               con un interruptor de «todos». */}
-          <div className="mt-5 border-t border-white/10 pt-4">
-            <h3 className="text-xs font-bold text-white/80">Acceso a «Descargar XML de la DIAN»</h3>
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h3 className="text-xs font-bold text-slate-700">Acceso a «Descargar XML de la DIAN»</h3>
 
             {/* Abrir y cerrar en un clic, sin desplegar. Todo el tráfico sale
                 por las IPs de Supabase, compartidas con el resto de la
                 plataforma: si la DIAN bloquea esa IP por abuso, la bloquea
                 para todos los clientes a la vez. */}
-            <label className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-xl bg-white/5 px-3 py-2.5">
+            <label className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={Boolean(beta.descargaAbierta)}
@@ -1397,11 +1320,11 @@ function ContenidoDian() {
                     .then(() => { toast.success(abrir ? 'Abierta para todos' : 'Cerrada: sólo tú y los autorizados'); void refrescar(); })
                     .catch((err) => toast.error(err.message));
                 }}
-                className="size-4 accent-emerald-400"
+                className="size-4 accent-emerald-600"
               />
               <span className="text-xs">
                 <span className="block font-bold">Abierta para todos</span>
-                <span className="block text-white/40">
+                <span className="block text-slate-400">
                   {beta.descargaAbierta
                     ? 'Cualquier usuario con sesión puede descargar. Siguen vigentes el cierre por fecha, el tope global y el ritmo de 2 peticiones por segundo.'
                     : 'Sólo tú y los correos de abajo.'}
@@ -1409,7 +1332,7 @@ function ContenidoDian() {
               </span>
             </label>
 
-            <p className="mt-0.5 text-[11px] leading-relaxed text-white/40">
+            <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">
               Escribe el correo con el que la persona entra a Codec. Tendrá acceso
               en cuanto recargue; tú siempre lo tienes.
             </p>
@@ -1420,13 +1343,13 @@ function ContenidoDian() {
                 onChange={(e) => setNuevoTester(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void agregarTester(); } }}
                 placeholder="contador@correo.com"
-                className="min-w-0 flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:bg-white/15"
+                className="min-w-0 flex-1 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:bg-slate-200"
               />
               <button
                 type="button"
                 onClick={() => void agregarTester()}
                 disabled={guardandoTesters}
-                className="rounded-lg bg-white/15 px-3.5 py-2 text-xs font-bold transition hover:bg-white/25 disabled:opacity-50"
+                className="rounded-lg bg-slate-200 px-3.5 py-2 text-xs font-bold transition hover:bg-slate-300 disabled:opacity-50"
               >
                 {guardandoTesters ? <Loader2 className="size-3.5 animate-spin" /> : 'Dar acceso'}
               </button>
@@ -1435,14 +1358,14 @@ function ContenidoDian() {
             {beta.descargaPermitidos && beta.descargaPermitidos.length > 0 ? (
               <ul className="mt-2.5 flex flex-wrap gap-1.5">
                 {beta.descargaPermitidos.map((correo) => (
-                  <li key={correo} className="flex items-center gap-1.5 rounded-full bg-white/10 py-1 pl-3 pr-1.5 text-xs">
+                  <li key={correo} className="flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-xs">
                     <span className="max-w-[220px] truncate">{correo}</span>
                     <button
                       type="button"
                       onClick={() => void quitarTester(correo)}
                       disabled={guardandoTesters}
                       title={`Quitar acceso a ${correo}`}
-                      className="rounded-full p-0.5 text-white/50 transition hover:bg-white/20 hover:text-white disabled:opacity-50"
+                      className="rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-800 disabled:opacity-50"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -1450,7 +1373,7 @@ function ContenidoDian() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-[11px] text-white/30">
+              <p className="mt-2 text-[11px] text-slate-300">
                 Nadie más tiene acceso todavía.
               </p>
             )}
@@ -1459,14 +1382,14 @@ function ContenidoDian() {
           {/* ── Respuestas de la encuesta ─────────────────────────────────
               Se guardaban desde el primer día pero no había dónde leerlas,
               que es como no haberlas pedido. */}
-          <div className="mt-5 border-t border-white/10 pt-4">
+          <div className="mt-5 border-t border-slate-100 pt-4">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-xs font-bold text-white/80">Respuestas de la encuesta</h3>
+              <h3 className="text-xs font-bold text-slate-700">Respuestas de la encuesta</h3>
               <button
                 type="button"
                 onClick={() => void cargarRespuestas()}
                 disabled={cargandoRespuestas}
-                className="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-bold transition hover:bg-white/20 disabled:opacity-50"
+                className="rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-bold transition hover:bg-slate-200 disabled:opacity-50"
               >
                 {cargandoRespuestas
                   ? <Loader2 className="size-3.5 animate-spin" />
@@ -1476,7 +1399,7 @@ function ContenidoDian() {
                 <button
                   type="button"
                   onClick={descargarRespuestas}
-                  className="rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-bold transition hover:bg-white/20"
+                  className="rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-bold transition hover:bg-slate-200"
                 >
                   Descargar CSV
                 </button>
@@ -1485,16 +1408,16 @@ function ContenidoDian() {
 
             {respuestas !== null && (
               respuestas.length === 0 ? (
-                <p className="mt-2 text-[11px] text-white/30">
+                <p className="mt-2 text-[11px] text-slate-300">
                   Todavía nadie ha respondido. La encuesta aparece cuando alguien
                   termina su primera importación.
                 </p>
               ) : (
                 <div className="mt-2.5 max-h-72 space-y-2 overflow-y-auto pr-1">
                   {respuestas.map((r) => (
-                    <div key={String(r.id)} className="rounded-xl bg-white/5 px-3 py-2.5 text-[11px] leading-relaxed">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-white/50">
-                        <span className="font-semibold text-white/80">{String(r.email ?? 'sin correo')}</span>
+                    <div key={String(r.id)} className="rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-relaxed">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-400">
+                        <span className="font-semibold text-slate-700">{String(r.email ?? 'sin correo')}</span>
                         <span>·</span>
                         <span>{new Date(String(r.created_at)).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })}</span>
                       </div>
@@ -1507,14 +1430,14 @@ function ContenidoDian() {
                         ] as const).map(([etiqueta, valor]) => (
                           valor ? (
                             <div key={etiqueta}>
-                              <span className="text-white/40">{etiqueta}: </span>
-                              <span className="text-white/85">{String(valor)}</span>
+                              <span className="text-slate-400">{etiqueta}: </span>
+                              <span className="text-slate-800">{String(valor)}</span>
                             </div>
                           ) : null
                         ))}
                       </div>
                       {r.falta ? (
-                        <p className="mt-1.5 border-l-2 border-white/20 pl-2 text-white/70">
+                        <p className="mt-1.5 border-l-2 border-slate-200 pl-2 text-slate-600">
                           «{String(r.falta)}»
                         </p>
                       ) : null}
@@ -1556,45 +1479,64 @@ function ContenidoDian() {
         {/* ── Tu cupo del mes, y los planes ──────────────────────────────
             El contador tiene que ver su límite ANTES de chocar con él, no
             enterarse por un mensaje rojo a mitad de una importación de mil
-            documentos. Por eso el consumo va siempre visible y el catálogo a
-            un clic. */}
-        {seccion === 'planes' && cuota && !cuota.ilimitado && (
-          <section
-            className="mb-6 overflow-hidden bg-white ring-1 ring-slate-100"
-            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
-          >
-            <div className="px-5 py-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-bold text-slate-900">
-                  Plan {cuota.planNombre}
-                  {cuota.planPrecio ? (
-                    <span className="ml-1.5 text-xs font-semibold text-slate-400">
-                      {pesos(cuota.planPrecio)}/mes
-                    </span>
-                  ) : null}
-                </p>
-                <p className="text-xs font-semibold tabular-nums text-slate-500">
+            documentos.
+
+            Los planes YA NO van detrás de un «Ver planes y precios» cerrado de
+            fábrica. Entrar a una pantalla que se llama «Planes y consumo» y no
+            ver ningún plan es exactamente lo contrario de lo que uno espera, y
+            un botón menos entre el contador y la decisión de pagar no le hace
+            daño a nadie. */}
+        {seccion === 'planes' && cuota && (
+        <div>
+          <Cabecera
+            titulo="Planes y consumo"
+            descripcion="Sólo cuentan los documentos que se procesan bien. Los duplicados y los que fallan no gastan cupo."
+            icono={CreditCard}
+            color="#7C3AED"
+          />
+
+          {/* Tu consumo, en grande. Es lo primero que se mira al entrar. */}
+          {!cuota.ilimitado && (
+            <Tarjeta className="mb-4 p-6" indice={0}>
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    Tu plan actual
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-slate-900">
+                    {cuota.planNombre}
+                    {cuota.planPrecio ? (
+                      <span className="ml-2 text-sm font-bold text-slate-400">
+                        {pesos(cuota.planPrecio)}/mes
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+                <p className="text-sm font-bold tabular-nums text-slate-500">
                   {cuota.usados.toLocaleString('es-CO')} de {(cuota.limite ?? 0).toLocaleString('es-CO')} documentos este mes
                 </p>
               </div>
 
               {/* La barra dice de un vistazo lo que la cifra dice exacto. */}
-              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    (cuota.restantes ?? 0) === 0
-                      ? 'bg-rose-500'
-                      : (cuota.restantes ?? 0) <= (cuota.limite ?? 1) * 0.15
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
-                  }`}
-                  style={{
+              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{
                     width: `${Math.min(100, Math.round((cuota.usados / Math.max(1, cuota.limite ?? 1)) * 100))}%`,
+                  }}
+                  transition={MOV.lenta}
+                  style={{
+                    background: (cuota.restantes ?? 0) === 0
+                      ? '#F43F5E'
+                      : (cuota.restantes ?? 0) <= (cuota.limite ?? 1) * 0.15
+                        ? '#F59E0B'
+                        : 'linear-gradient(90deg,#10B981,#059669)',
                   }}
                 />
               </div>
 
-              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+              <p className="mt-2.5 text-[12.5px] leading-relaxed text-slate-500">
                 {(cuota.restantes ?? 0) === 0
                   ? 'Llegaste al límite de tu plan.'
                   : `Te quedan ${(cuota.restantes ?? 0).toLocaleString('es-CO')} documentos.`}
@@ -1604,178 +1546,227 @@ function ContenidoDian() {
                   </>
                 )}
               </p>
+            </Tarjeta>
+          )}
 
-              <button
-                type="button"
-                onClick={() => setPanelPlanes((v) => !v)}
-                className="mt-3 text-xs font-bold text-emerald-700 transition hover:text-emerald-800"
-              >
-                {panelPlanes ? 'Ocultar planes' : 'Ver planes y precios'}
-              </button>
-            </div>
+          {/* El catálogo, siempre a la vista. */}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {planes.map((p, i) => {
+              const actual = p.code === cuota.planCode;
+              // El plan que se quiere vender es el más barato de los que sí
+              // están a la venta y superan al actual. Marcarlos todos como
+              // «recomendado» es no recomendar ninguno.
+              const recomendado = !actual
+                && p.aLaVenta
+                && p.precio !== null && p.precio > 0
+                && planes.filter((o) => o.aLaVenta && (o.precio ?? 0) > 0)
+                  .sort((a, b) => (a.precio ?? 0) - (b.precio ?? 0))[0]?.code === p.code;
 
-            {panelPlanes && (
-              <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-5">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {planes.map((p) => {
-                    const actual = p.code === cuota.planCode;
-                    return (
-                      <div
-                        key={p.code}
-                        className={`rounded-2xl bg-white p-4 ring-1 transition ${
-                          actual ? 'ring-2 ring-emerald-400' : 'ring-slate-200'
-                        }`}
+              return (
+                <motion.div
+                  key={p.code}
+                  {...aparecer(i)}
+                  whileHover={{ y: -3 }}
+                  className="relative flex flex-col overflow-hidden bg-white p-6"
+                  style={{
+                    borderRadius: CARD_RADIUS,
+                    boxShadow: actual
+                      ? '0 2px 4px rgba(16,185,129,0.10), 0 20px 44px rgba(16,185,129,0.22)'
+                      : recomendado
+                        ? '0 2px 4px rgba(37,99,235,0.10), 0 20px 44px rgba(37,99,235,0.20)'
+                        : CARD_SHADOW,
+                    outline: actual
+                      ? '2px solid #10B981'
+                      : recomendado ? '2px solid #2563EB' : 'none',
+                    outlineOffset: -2,
+                  }}
+                >
+                  {/* Resplandor de esquina: da profundidad sin meter un borde
+                      de color que compita con el precio. */}
+                  <div
+                    className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full"
+                    style={{
+                      background: `radial-gradient(circle, ${
+                        actual ? 'rgba(16,185,129,0.16)' : recomendado ? 'rgba(37,99,235,0.16)' : 'rgba(148,163,184,0.10)'
+                      }, transparent 70%)`,
+                    }}
+                  />
+
+                  <div className="relative flex items-center justify-between gap-2">
+                    <p className="text-base font-black text-slate-900">{p.nombre}</p>
+                    {actual ? (
+                      <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                        Tu plan
+                      </span>
+                    ) : recomendado ? (
+                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700">
+                        <Sparkles className="size-2.5" /> Recomendado
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="relative mt-3 text-3xl font-black tabular-nums text-slate-900">
+                    {p.precio === null
+                      ? <span className="text-base font-bold text-slate-400">Precio por definir</span>
+                      : p.precio === 0
+                        ? 'Gratis'
+                        : <>{pesos(p.precio)}<span className="text-sm font-bold text-slate-400">/mes</span></>}
+                  </p>
+
+                  {/* El límite se dice SIEMPRE y con el número. Es la cifra
+                      por la que se está pagando. */}
+                  <p className="relative mt-3 flex items-center gap-2 text-[13px] font-bold text-slate-700">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                    {p.limite === null
+                      ? 'Documentos sin límite'
+                      : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
+                  </p>
+
+                  {p.precio !== null && p.precio > 0 && (
+                    <p className="relative mt-2 flex items-center gap-2 text-[13px] text-slate-500">
+                      <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                      Facturas por correo, sin descargarlas
+                    </p>
+                  )}
+
+                  {p.usoJusto && (
+                    <p className="relative mt-3 text-[11.5px] leading-relaxed text-slate-400">{p.usoJusto}</p>
+                  )}
+
+                  <div className="relative mt-auto pt-5">
+                    {actual ? (
+                      <p className="rounded-2xl bg-emerald-50 px-4 py-2.5 text-center text-[12px] font-bold text-emerald-700">
+                        Es el que tienes activo
+                      </p>
+                    ) : p.aLaVenta ? (
+                      <Boton
+                        estilo={recomendado ? BOTON_PRIMARIO : BOTON_EXITO}
+                        className="w-full"
+                        disabled={pagando !== ''}
+                        onClick={() => void pagarPlan(p.code)}
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-bold text-slate-900">{p.nombre}</p>
-                          {actual && (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
-                              Tu plan
-                            </span>
-                          )}
-                        </div>
+                        {pagando === p.code ? 'Abriendo el pago…' : `Pasar a ${p.nombre}`}
+                      </Boton>
+                    ) : p.precio === null ? (
+                      <p className="rounded-2xl bg-slate-50 px-4 py-2.5 text-center text-[11.5px] text-slate-500">
+                        Todavía no está a la venta. Escríbenos si lo necesitas.
+                      </p>
+                    ) : null}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
 
-                        <p className="mt-1.5 text-xl font-black tabular-nums text-slate-900">
-                          {p.precio === null
-                            ? <span className="text-sm font-bold text-slate-400">Precio por definir</span>
-                            : p.precio === 0
-                              ? 'Gratis'
-                              : <>{pesos(p.precio)}<span className="text-xs font-semibold text-slate-400">/mes</span></>}
-                        </p>
-
-                        {/* El límite se dice SIEMPRE y con el número. Es la
-                            cifra por la que se está pagando. */}
-                        <p className="mt-1 text-xs font-semibold text-slate-600">
-                          {p.limite === null
-                            ? 'Documentos sin límite'
-                            : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
-                        </p>
-
-                        {p.usoJusto && (
-                          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{p.usoJusto}</p>
-                        )}
-
-                        {!actual && p.aLaVenta && (
-                          <button
-                            type="button"
-                            onClick={() => void pagarPlan(p.code)}
-                            disabled={pagando !== ''}
-                            className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                          >
-                            {pagando === p.code ? 'Abriendo el pago…' : `Pasar a ${p.nombre}`}
-                          </button>
-                        )}
-                        {!actual && !p.aLaVenta && p.precio === null && (
-                          <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
-                            Todavía no está a la venta. Escríbenos si lo necesitas.
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Se nombra el medio de pago antes de salir de la app. Llegar
-                    a una pasarela sin saber si acepta lo que uno usa es la
-                    forma más tonta de perder un pago. */}
-                <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
-                  Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal. Se cancela cuando quieras.
-                </p>
-              </div>
-            )}
-          </section>
+          {/* Se nombra el medio de pago antes de salir de la app. Llegar a una
+              pasarela sin saber si acepta lo que uno usa es la forma más tonta
+              de perder un pago. */}
+          <p className="mt-5 flex items-center justify-center gap-2 text-[12px] leading-relaxed text-slate-400">
+            <Lock className="size-3.5 shrink-0" />
+            Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal. Se cancela cuando quieras.
+          </p>
+        </div>
         )}
 
         {/* ── Recibir por correo ────────────────────────────────────────
             El token de la DIAN dura 60 minutos y hay que pedirlo a mano, así
             que no existe forma de sincronizar de noche por ahí. El correo sí:
             la ley obliga al emisor a mandar el XML por email, o sea que los
-            documentos YA están llegando a un buzón todos los días. */}
-        {seccion === 'correo' && (
-        <section className="mb-6 overflow-hidden bg-sky-50/50 ring-2 ring-sky-200"
-          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <button
-            type="button"
-            onClick={() => setPanelCorreo((v) => !v)}
-            className="flex w-full items-center gap-3 px-5 py-4 text-left"
-          >
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-600">
-              <Mail className="size-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="flex flex-wrap items-center gap-2 text-base font-bold text-slate-900">
-                Que las facturas lleguen solas, por correo
-                {buzon && !buzon.disponible && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                    <Lock className="size-2.5" />
-                    {buzon.planMinimo?.nombre ?? 'De pago'}
-                  </span>
-                )}
-                {buzon && buzon.disponible && buzon.pendientes > 0 && (
-                  <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            documentos YA están llegando a un buzón todos los días.
+
+            Ya no es un desplegable suelto en medio de una pantalla vacía.
+            Ahora es una sección de verdad: cabecera propia, la acción a la
+            izquierda y a la derecha el porqué. Antes esta pantalla eran dos
+            frases y un botón flotando sobre un metro de blanco, y el contador
+            no tenía forma de entender que ésta es la función que le quita el
+            trabajo repetitivo del mes. */}
+        {seccion === 'correo' && buzon && (
+        <div>
+          <Cabecera
+            titulo="Que las facturas lleguen solas"
+            descripcion="Tus proveedores ya te mandan el XML por correo: la ley los obliga. Esto convierte esos correos en documentos procesados, sin que descargues ni arrastres nada."
+            icono={Mail}
+            color="#0284C7"
+            acciones={
+              buzon.disponible ? (
+                buzon.pendientes > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white">
                     {buzon.pendientes} sin procesar
                   </span>
-                )}
-              </span>
-              <span className="mt-0.5 block text-xs text-slate-600">
-                Reenvía las facturas de tus proveedores a una dirección tuya y entran
-                aquí sin que las descargues ni las arrastres.
-              </span>
-            </div>
-            <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${panelCorreo ? 'rotate-90' : ''}`} />
-          </button>
+                ) : undefined
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+                  <Lock className="size-3" />
+                  Plan {buzon.planMinimo?.nombre ?? 'de pago'}
+                </span>
+              )
+            }
+          />
 
-          {panelCorreo && (
-            <div className="border-t border-sky-200 bg-white px-5 py-5">
-              {/* Sin plan: se muestra bloqueado, NO se esconde.
-                  Una función invisible no se descubre nunca, y quien no sabe
-                  que existe tampoco la echa de menos ni paga por ella. Se dice
-                  qué es, por qué está cerrada y cuánto cuesta abrirla. */}
-              {buzon && !buzon.disponible ? (
-                <div className="text-center">
-                  <Lock className="mx-auto mb-3 size-6 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-800">
-                    Disponible desde el plan {buzon.planMinimo?.nombre ?? 'Básico'}
-                  </p>
-                  <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-slate-500">
-                    Recibir las facturas por correo es lo que elimina el paso de descargarlas
-                    y arrastrarlas una por una. Tu plan actual es {buzon.planActual}.
-                  </p>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+            {/* Columna de la acción */}
+            <Tarjeta className="p-6" indice={0}>
+              {/* Sin plan: se muestra bloqueado, NO se esconde. Una función
+                  invisible no se descubre nunca, y quien no sabe que existe
+                  tampoco la echa de menos ni paga por ella. */}
+              {!buzon.disponible ? (
+                <>
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50">
+                      <Lock className="size-5 text-amber-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-black text-slate-900">
+                        Se abre con el plan {buzon.planMinimo?.nombre ?? 'Básico'}
+                      </h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
+                        Estás en el plan <strong className="text-slate-700">{buzon.planActual}</strong>.
+                        Recibir por correo es lo único que necesita un plan de pago, porque cada
+                        cuenta lleva su propio buzón y su almacenamiento.
+                      </p>
+                    </div>
+                  </div>
 
                   {buzon.planMinimo && (
-                    <button
-                      type="button"
-                      onClick={() => void pagarPlan(buzon.planMinimo!.code)}
+                    <Boton
+                      estilo={BOTON_CORREO}
+                      icono={Mail}
+                      className="mt-5"
                       disabled={pagando !== ''}
-                      className="mt-4 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                      onClick={() => void pagarPlan(buzon.planMinimo!.code)}
                     >
                       {pagando === buzon.planMinimo.code
                         ? 'Abriendo el pago…'
                         : `Pasar a ${buzon.planMinimo.nombre} · ${pesos(buzon.planMinimo.precio)}/mes`}
-                    </button>
+                    </Boton>
                   )}
 
-                  {/* Que no se quede pensando que sin pagar no puede hacer nada:
-                      los otros tres caminos siguen abiertos. */}
-                  <p className="mx-auto mt-3 max-w-md text-[11px] leading-relaxed text-slate-400">
-                    Mientras tanto puedes seguir subiendo el ZIP, descargando desde la DIAN
-                    y verificando por CUFEs, que no tienen ninguna restricción.
+                  {/* Que no se quede pensando que sin pagar no puede hacer
+                      nada: los otros tres caminos siguen abiertos. */}
+                  <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-[12px] leading-relaxed text-slate-500">
+                    Mientras tanto puedes seguir subiendo el ZIP, descargando desde la DIAN y
+                    verificando por CUFEs. Nada de eso tiene restricción.
                   </p>
-                </div>
-              ) : !buzon?.direccion ? (
+                </>
+              ) : !buzon.direccion ? (
                 <>
-                  <p className="mb-3 text-xs leading-relaxed text-slate-600">
-                    Te damos una dirección solo tuya. No pedimos la contraseña de tu
-                    correo: tú creas una regla de reenvío, o le pasas la dirección a
-                    tus proveedores.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void activarBuzon()}
-                    className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700"
-                  >
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-sky-50">
+                      <Mail className="size-5 text-sky-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-black text-slate-900">Crea tu dirección</h3>
+                      <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
+                        Te damos una dirección sólo tuya. <strong className="text-slate-700">No
+                        pedimos la contraseña de tu correo</strong>: tú creas una regla de
+                        reenvío, o le pasas la dirección a tus proveedores.
+                      </p>
+                    </div>
+                  </div>
+                  <Boton estilo={BOTON_CORREO} icono={Mail} className="mt-5"
+                         onClick={() => void activarBuzon()}>
                     Crear mi dirección
-                  </button>
+                  </Boton>
                 </>
               ) : (
                 <>
@@ -1791,33 +1782,31 @@ function ContenidoDian() {
                       void navigator.clipboard.writeText(buzon.direccion!);
                       toast.success('Dirección copiada');
                     }}
-                    className="mt-1 flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-left font-mono text-xs text-slate-800 transition hover:bg-white"
+                    className="mt-1.5 flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left font-mono text-[12.5px] text-slate-800 transition hover:border-sky-300 hover:bg-white"
                   >
                     <span className="min-w-0 flex-1 truncate">{buzon.direccion}</span>
-                    <Copy className="size-3.5 shrink-0 text-slate-400" />
+                    <Copy className="size-4 shrink-0 text-slate-400" />
                   </button>
 
-                  <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                    Crea en tu correo una regla que reenvíe ahí los mensajes con
-                    facturas. Guardamos el XML, que es el documento con validez legal;
-                    el PDF no hace falta.
+                  <p className="mt-3 text-[12.5px] leading-relaxed text-slate-500">
+                    Crea en tu correo una regla que reenvíe ahí los mensajes con facturas.
+                    Guardamos el XML, que es el documento con validez legal; el PDF no hace falta.
                   </p>
 
                   {buzon.pendientes > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => void procesarCorreo()}
+                    <Boton
+                      estilo={BOTON_CORREO}
+                      icono={Sparkles}
+                      className="mt-5"
                       disabled={cargando}
-                      className="mt-4 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                      onClick={() => void procesarCorreo()}
                     >
-                      {cargando
-                        ? 'Procesando…'
-                        : `Procesar los ${buzon.pendientes} que llegaron`}
-                    </button>
+                      {cargando ? 'Procesando…' : `Procesar los ${buzon.pendientes} que llegaron`}
+                    </Boton>
                   ) : (
                     // Decir que no hay nada es información. Un hueco en blanco
                     // parece que la pantalla se rompió.
-                    <p className="mt-4 rounded-xl bg-slate-50 px-3.5 py-3 text-xs text-slate-500">
+                    <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
                       {buzon.ultimoCorreo
                         ? `Sin documentos nuevos. El último correo llegó el ${new Date(buzon.ultimoCorreo).toLocaleDateString('es-CO')}.`
                         : 'Todavía no ha llegado ningún correo a esta dirección.'}
@@ -1830,13 +1819,19 @@ function ContenidoDian() {
                       otro. Y cuando algo falla, sin esta lista no hay forma de
                       saber QUÉ falló ni a quién reclamarle el archivo. */}
                   {bandeja.length > 0 && (
-                    <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-slate-200">
-                      <p className="bg-slate-50 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    <div className="mt-5 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+                      <p className="bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                         Esperando a que los proceses
                       </p>
                       <div className="max-h-64 divide-y divide-slate-100 overflow-y-auto">
-                        {bandeja.map((a) => (
-                          <div key={a.id} className="flex items-start gap-2.5 px-3.5 py-2.5">
+                        {bandeja.map((a, i) => (
+                          <motion.div
+                            key={a.id}
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ ...MOV.entrada, delay: Math.min(i, 6) * 0.04 }}
+                            className="flex items-start gap-2.5 px-4 py-3"
+                          >
                             <FileText className="mt-0.5 size-3.5 shrink-0 text-sky-500" />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[12.5px] font-semibold text-slate-800">
@@ -1850,50 +1845,98 @@ function ContenidoDian() {
                             <span className="shrink-0 text-[11px] tabular-nums text-slate-400">
                               {new Date(a.received_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
                             </span>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
                   )}
                 </>
               )}
-            </div>
-          )}
-        </section>
+            </Tarjeta>
+
+            {/* Columna del porqué. Es lo que llenaba de blanco esta pantalla:
+                la función estaba, pero nada explicaba qué cambia en el mes del
+                contador si la enciende. */}
+            <Tarjeta className="p-6" indice={1}>
+              <h3 className="text-base font-black text-slate-900">Qué cambia en tu mes</h3>
+              <ul className="mt-4 space-y-4">
+                {[
+                  {
+                    icono: Clock3,
+                    titulo: 'Dejas de ir a buscarlos',
+                    texto: 'El portal de la DIAN pide un token que dura una hora y hay que pedirlo a mano. Por correo no hay que pedir nada: llegan.',
+                  },
+                  {
+                    icono: CheckCheck,
+                    titulo: 'No se te pierde ninguno',
+                    texto: 'Lo que entra queda listado con remitente y fecha. Si un proveedor no mandó la factura, se ve — y sabes a quién reclamarle.',
+                  },
+                  {
+                    icono: Lock,
+                    titulo: 'Sin darnos tu contraseña',
+                    texto: 'Es una dirección aparte, sólo tuya. Tú decides qué se reenvía ahí; nosotros no entramos a tu correo.',
+                  },
+                ].map((b, i) => {
+                  const Icono = b.icono;
+                  return (
+                    <motion.li
+                      key={b.titulo}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ ...MOV.entrada, delay: 0.1 + i * 0.07 }}
+                      className="flex gap-3"
+                    >
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-sky-50">
+                        <Icono className="size-4 text-sky-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-bold text-slate-800">{b.titulo}</p>
+                        <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">{b.texto}</p>
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+
+              {!buzon.disponible && (
+                <button
+                  type="button"
+                  onClick={() => setSeccion('planes')}
+                  className="mt-5 flex w-full items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-left transition hover:bg-blue-50"
+                >
+                  <span className="min-w-0 text-[12.5px] font-bold text-slate-700">
+                    Ver todos los planes
+                  </span>
+                  <ArrowRight className="size-4 shrink-0 text-slate-400" />
+                </button>
+              )}
+            </Tarjeta>
+          </div>
+        </div>
         )}
 
         {/* ── Verificar por lista de CUFEs ─────────────────────────────
             Responde la pregunta que el contador resuelve hoy a mano: de lo
             que la DIAN dice que tengo, ¿qué ya está cargado y qué me falta?
             No descarga nada de la DIAN: cruza contra lo que ya está aquí. */}
+        {/* Integrado como sección, no como una tarjeta flotando en medio de
+            una pantalla vacía. El desplegable tampoco tenía sentido: si el
+            contador entró a «Verificar CUFEs» es exactamente lo que quiere
+            hacer, y le tocaba dar un clic más para que apareciera el campo. */}
         {seccion === 'cufes' && (
-        <section className="mb-6 overflow-hidden bg-emerald-50/50 ring-2 ring-emerald-200"
-          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <button
-            type="button"
-            onClick={() => setPanelCufes((v) => !v)}
-            className="flex w-full items-center gap-3 px-5 py-4 text-left"
-          >
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600">
-              <ListChecks className="size-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="flex flex-wrap items-center gap-2 text-base font-bold text-slate-900">
-                ¿Te faltan documentos? Pega aquí tus CUFEs
-                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  Nuevo
-                </span>
-              </span>
-              <span className="mt-0.5 block text-xs text-slate-600">
-                Copia la columna de CUFEs del Excel de la DIAN y te digo al instante cuáles ya
-                tienes cargados y cuáles te faltan. Sin revisar uno por uno.
-              </span>
-            </div>
-            <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${panelCufes ? 'rotate-90' : ''}`} />
-          </button>
+        <div>
+          <Cabecera
+            titulo="¿Te faltan documentos?"
+            descripcion="Copia la columna de CUFEs del Excel de la DIAN y te digo al instante cuáles ya tienes cargados y cuáles te faltan. Sin revisar uno por uno."
+            icono={ListChecks}
+            color="#059669"
+          />
 
-          {panelCufes && (
-            <div className="border-t border-emerald-200 bg-white px-5 py-5">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+            <Tarjeta className="p-6" indice={0}>
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                Lista de CUFEs
+              </label>
               <textarea
                 value={textoCufes}
                 onChange={(e) => setTextoCufes(e.target.value)}
@@ -1905,43 +1948,48 @@ function ContenidoDian() {
                     'I have your list. Click Verify and I will tell you which of those documents are already loaded here and which ones you still need to upload.',
                   ), 250);
                 }}
-                rows={5}
+                rows={7}
                 placeholder="Pega aquí los CUFEs, uno por línea. También funciona copiando la columna directamente del Excel."
-                className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-xs outline-none transition focus:border-emerald-400 focus:bg-white"
+                className="mt-1.5 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 font-mono text-xs outline-none transition focus:border-emerald-400 focus:bg-white"
               />
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void ejecutarCruce()}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Boton
+                  estilo={BOTON_EXITO}
+                  icono={ListChecks}
                   disabled={cruzando}
-                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                  onClick={() => void ejecutarCruce()}
                 >
                   {cruzando ? 'Verificando…' : 'Verificar'}
-                </button>
+                </Boton>
                 {cruce && (
-                  <button
-                    type="button"
+                  <Boton
+                    estilo={BOTON_NEUTRO}
                     onClick={() => { setCruce(null); setTextoCufes(''); }}
-                    className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
                   >
                     Limpiar
-                  </button>
+                  </Boton>
                 )}
               </div>
 
               {cruce && (
-                <div className="mt-4">
+                <div className="mt-5">
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {[
                       { l: 'En tu lista', v: cruce.total, c: 'text-slate-900' },
                       { l: 'Ya los tienes', v: cruce.encontrados.length, c: 'text-emerald-600' },
                       { l: 'Te faltan', v: cruce.faltantes.length, c: 'text-amber-600' },
                       { l: 'Mal copiados', v: cruce.invalidos.length, c: 'text-rose-600' },
-                    ].map((x) => (
-                      <div key={x.l} className="rounded-xl bg-slate-50 px-3 py-3">
-                        <div className={`text-xl font-bold tabular-nums ${x.c}`}>{x.v}</div>
+                    ].map((x, i) => (
+                      <motion.div
+                        key={x.l}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ ...MOV.entrada, delay: i * 0.05 }}
+                        className="rounded-2xl bg-slate-50 px-3 py-3"
+                      >
+                        <div className={`text-xl font-black tabular-nums ${x.c}`}>{x.v}</div>
                         <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{x.l}</div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
 
@@ -1993,16 +2041,49 @@ function ContenidoDian() {
                   )}
 
                   {cruce.invalidos.length > 0 && (
-                    <p className="mt-3 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-relaxed text-rose-700 ring-1 ring-rose-200">
+                    <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-xs leading-relaxed text-rose-700 ring-1 ring-rose-200">
                       {cruce.invalidos.length} línea(s) no tienen forma de CUFE. Un CUFE son 96 caracteres
                       entre números y letras de la a a la f. Revisa que copiaste la columna completa.
                     </p>
                   )}
                 </div>
               )}
-            </div>
-          )}
-        </section>
+            </Tarjeta>
+
+            {/* De dónde sale la lista. Es la parte que el contador no sabe si
+                nadie se la cuenta: la columna de CUFEs no está a la vista en
+                el portal, hay que exportar el listado del periodo. */}
+            <Tarjeta className="p-6" indice={1}>
+              <h3 className="text-base font-black text-slate-900">De dónde sacas la lista</h3>
+              <ol className="mt-4 space-y-4">
+                {[
+                  'Entra al portal de la DIAN y busca tus documentos recibidos del periodo.',
+                  'Exporta el listado. Te descarga un Excel con una columna CUFE/CUDE.',
+                  'Copia esa columna entera y pégala aquí. No hace falta limpiarla.',
+                ].map((t, i) => (
+                  <motion.li
+                    key={t}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...MOV.entrada, delay: 0.1 + i * 0.07 }}
+                    className="flex gap-3"
+                  >
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[12px] font-black text-emerald-700">
+                      {i + 1}
+                    </span>
+                    <p className="min-w-0 text-[12.5px] leading-relaxed text-slate-500">{t}</p>
+                  </motion.li>
+                ))}
+              </ol>
+
+              <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-[12px] leading-relaxed text-slate-500">
+                Esto no descarga nada de la DIAN: cruza tu lista contra lo que ya está aquí.
+                Para bajar los que falten, usa <strong className="text-slate-700">Descargar de
+                la DIAN</strong>.
+              </p>
+            </Tarjeta>
+          </div>
+        </div>
         )}
 
         {/* ── Zona de trabajo: traer a la izquierda, ver a la derecha ───
@@ -2209,11 +2290,21 @@ function ContenidoDian() {
           </button>
         )}
 
-        {/* ── Cifras de la sección Documentos ──────────────────────────
-            Las seis tarjetas planas que había aquí las sustituye la fila de
-            Inicio con el anillo, que dice lo mismo con jerarquía. Aquí se
-            dejan sólo las tres cifras de dinero, que son las que el contador
-            coteja mientras mira la tabla. */}
+        {/* ── Cómo va el mes ──────────────────────────────────────────
+            Estas cuatro cifras estaban en Inicio y ocupaban la primera
+            pantalla entera. Aquí tienen más sentido: mirar cuánto se procesó
+            es algo que se hace DESPUÉS de procesar, y ésta es la pestaña a la
+            que el contador viene a revisar. */}
+        {seccion === 'documentos' && resMes && resMes.documentos > 0 && (
+          <div className="mb-4">
+            <CifrasMes datos={resMes} />
+          </div>
+        )}
+
+        {/* Y las tres cifras de dinero, que son las que coteja mientras mira
+            la tabla. Van debajo de las de arriba porque responden a otra
+            pregunta: aquéllas dicen cómo fue el mes, éstas cuánto suma lo que
+            está viendo. */}
         {seccion === 'documentos' && totales && totales.documentos > 0 && (
           <div className="mb-5 grid gap-3 sm:grid-cols-3">
             <Cifra etiqueta="Total compras" valor={pesos(totales.compras)}
@@ -2718,69 +2809,86 @@ function ContenidoDian() {
         </div>
       )}
 
-      {panelDescarga && puedeDescargar && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelDescarga(false)}>
-          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
-            <DescargarDeDian
-              onCerrar={() => setPanelDescarga(false)}
-              narrar={narrar}
-              // Los que la verificación ya identificó como faltantes: llegan
-              // pegados, sin que haya que copiarlos a mano.
-              cufesIniciales={cruce?.faltantes}
-              // Y lo descargado entra directo al analizador, que es lo que se
-              // quería desde el principio.
-              onDescargados={(archivos) => { void procesar(archivos); }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Las cuatro herramientas grandes comparten cajón. Antes cada una traía
+          el suyo copiado y pegado, y arreglar uno dejaba los otros tres igual
+          —el detalle de documento, por ejemplo, no cerraba con Escape—. */}
+      <CajonDerecho
+        abierto={panelDescarga && puedeDescargar}
+        onCerrar={() => setPanelDescarga(false)}
+        etiqueta="Descargar de la DIAN"
+      >
+        <DescargarDeDian
+          onCerrar={() => setPanelDescarga(false)}
+          narrar={narrar}
+          // Los que la verificación ya identificó como faltantes: llegan
+          // pegados, sin que haya que copiarlos a mano.
+          cufesIniciales={cruce?.faltantes}
+          // Y lo descargado entra directo al analizador, que es lo que se
+          // quería desde el principio.
+          onDescargados={(archivos) => { void procesar(archivos); }}
+        />
+      </CajonDerecho>
 
-      {panelAuditor && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelAuditor(false)}>
-          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
-            <AuditorFiscal
-              onCerrar={() => setPanelAuditor(false)}
-              narrar={narrar}
-              cargarDocumentos={async () => {
-                const { documentos: docs } = await datosParaReporte({});
-                return docs as unknown as DocumentoDian[];
-              }}
-            />
-          </div>
-        </div>
-      )}
+      <CajonDerecho
+        abierto={panelAuditor}
+        onCerrar={() => setPanelAuditor(false)}
+        ancho="max-w-3xl"
+        etiqueta="Cruzar con mi contabilidad"
+      >
+        <AuditorFiscal
+          onCerrar={() => setPanelAuditor(false)}
+          narrar={narrar}
+          cargarDocumentos={async () => {
+            const { documentos: docs } = await datosParaReporte({});
+            return docs as unknown as DocumentoDian[];
+          }}
+        />
+      </CajonDerecho>
 
-      {panelPlantilla && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelPlantilla(false)}>
-          <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
-            <PlantillaContable
-              onCerrar={() => setPanelPlantilla(false)}
-              narrar={narrar}
-              cargarDatos={async () => {
-                const { documentos: docs, lineas } = await datosParaReporte({
-                  estado: filtroEstado || undefined,
-                });
-                return {
-                  documentos: docs as Record<string, unknown>[],
-                  lineas: lineas as Record<string, unknown>[],
-                };
-              }}
-            />
-          </div>
-        </div>
-      )}
+      <CajonDerecho
+        abierto={panelPlantilla}
+        onCerrar={() => setPanelPlantilla(false)}
+        ancho="max-w-3xl"
+        etiqueta="Plantillas contables"
+      >
+        <PlantillaContable
+          onCerrar={() => setPanelPlantilla(false)}
+          narrar={narrar}
+          cargarDatos={async () => {
+            const { documentos: docs, lineas } = await datosParaReporte({
+              estado: filtroEstado || undefined,
+            });
+            return {
+              documentos: docs as Record<string, unknown>[],
+              lineas: lineas as Record<string, unknown>[],
+            };
+          }}
+        />
+      </CajonDerecho>
 
-      {(detalle || cargandoDetalle) && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setDetalle(null)}>
-          <div className="h-full w-full max-w-lg overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
-            {cargandoDetalle || !detalle ? (
-              <div className="flex h-full items-center justify-center"><Loader2 className="size-6 animate-spin text-slate-300" /></div>
-            ) : (
-              <DetalleDocumento datos={detalle} onCerrar={() => setDetalle(null)} />
-            )}
+      {/* La ayuda, flotante y movible. Fuera del contenedor desplazado por la
+          barra lateral porque se posiciona contra la ventana, no contra la
+          columna de contenido. */}
+      <AyudaFlotante
+        abierta={ayudaAbierta}
+        onAbrir={() => setAyudaAbierta(true)}
+        onCerrar={() => setAyudaAbierta(false)}
+      />
+
+      <CajonDerecho
+        abierto={Boolean(detalle || cargandoDetalle)}
+        onCerrar={() => setDetalle(null)}
+        ancho="max-w-lg"
+        etiqueta="Detalle del documento"
+      >
+        {cargandoDetalle || !detalle ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-slate-300" />
           </div>
-        </div>
-      )}
+        ) : (
+          <DetalleDocumento datos={detalle} onCerrar={() => setDetalle(null)} />
+        )}
+      </CajonDerecho>
     </div>
   );
 }

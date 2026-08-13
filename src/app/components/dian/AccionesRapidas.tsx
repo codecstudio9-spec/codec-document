@@ -26,7 +26,7 @@ import {
  * las secundarias siguen estando a un clic sin competir.
  */
 
-export type VarianteAccion = 'principal' | 'descarga' | 'correo' | 'neutra';
+export type VarianteAccion = 'principal' | 'descarga' | 'auditor' | 'excel' | 'neutra';
 
 export interface Accion {
   id: string;
@@ -39,14 +39,26 @@ export interface Accion {
   bloqueada?: boolean;
 }
 
-/** El relieve por variante. Los tres colores son los de la etapa en el resto
- *  de la pantalla, no una paleta decorativa aparte. */
+/**
+ * El relieve por variante.
+ *
+ * Los cuatro colores son los de su etapa en el resto de la pantalla, no una
+ * paleta decorativa: el azul es traer documentos, el violeta es la DIAN, el
+ * ámbar es revisar y el verde es entregar —el mismo verde del botón
+ * «Descargar Excel» de la tabla y del botón DIAN del dashboard principal—.
+ *
+ * La fila entera va en color a propósito. Se probó con las dos últimas en
+ * blanco y no se leían como parte del recorrido: parecían dos botones
+ * secundarios pegados detrás de dos importantes, cuando cruzar la
+ * contabilidad y sacar el Excel son justo el final del trabajo del mes.
+ */
 function fondo(v: VarianteAccion) {
   if (v === 'principal') {
     return { background: DEGRADADO_MARCA, boxShadow: '0 14px 28px rgba(37,99,235,0.30)' };
   }
   if (v === 'descarga') return accionRelieve('#4338CA', '#6366F1', '67,56,202');
-  if (v === 'correo') return accionRelieve('#047857', '#10B981', '5,150,105');
+  if (v === 'auditor') return accionRelieve('#B45309', '#F59E0B', '180,83,9');
+  if (v === 'excel') return accionRelieve('#047857', '#10B981', '5,150,105');
   return { background: '#FFFFFF', boxShadow: CARD_SHADOW };
 }
 

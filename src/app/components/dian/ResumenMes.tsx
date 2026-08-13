@@ -65,31 +65,69 @@ function Variacion({ valor, sufijo }: { valor: number | null; sufijo?: string })
 }
 
 /**
- * Una tarjeta de cifra.
+ * Anillo de progreso para una cifra que SÍ tiene tope.
  *
- * Es la `MetricCard` del dashboard principal: cuadro de icono en pastel
- * arriba, número grande debajo y etiqueta en gris al pie. Se replica en vez
- * de importarse porque aquélla sólo acepta un `number` y aquí hay porcentajes
- * y pesos; lo que no cambia son las medidas —tarjeta de radio 24, cuadro de
- * 44, número de 30— para que las dos pantallas se lean como la misma.
- *
- * El pie con la variación sí es exclusivo de aquí: en el dashboard un
- * «documentos creados» no tiene con qué compararse, y para un contador el
- * «12 % más que el mes pasado» es una señal de trabajo.
+ * Sólo se dibuja lleno cuando el porcentaje significa algo de verdad. Un
+ * anillo alrededor de «$ 81.590» no puede estar lleno ni vacío —no hay un
+ * máximo contra el que medirlo— y dibujarlo al 100 % para que se vea bonito
+ * sería inventarse una escala.
  */
-function TarjetaCifra({
-  etiqueta, valor, icono: Icono, color, indice, pie,
+function Anillo({ pct, color, children }: { pct: number | null; color: string; children: React.ReactNode }) {
+  const tamano = 96;
+  const grosor = 8;
+  const radio = (tamano - grosor) / 2;
+  const circ = 2 * Math.PI * radio;
+  const lleno = pct === null ? circ : circ * (Math.min(100, Math.max(0, pct)) / 100);
+
+  return (
+    <div className="relative shrink-0" style={{ width: tamano, height: tamano }}>
+      <svg width={tamano} height={tamano} className="-rotate-90">
+        <circle
+          cx={tamano / 2} cy={tamano / 2} r={radio}
+          fill="none" stroke={`${color}1F`} strokeWidth={grosor}
+        />
+        <motion.circle
+          cx={tamano / 2} cy={tamano / 2} r={radio}
+          fill="none" stroke={color} strokeWidth={grosor} strokeLinecap="round"
+          strokeDasharray={circ}
+          initial={{ strokeDashoffset: circ }}
+          animate={{ strokeDashoffset: circ - lleno }}
+          transition={MOV.lenta}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Una cifra del mes, con su anillo.
+ *
+ * Va en la pestaña Documentos y no en Inicio: mirar cuánto se procesó es algo
+ * que se hace DESPUÉS de procesar, no al abrir la herramienta. En Inicio
+ * ocupaban la primera pantalla entera y empujaban hacia abajo lo único que el
+ * contador va a hacer allí, que es soltar archivos.
+ */
+function CifraAnillo({
+  etiqueta, valor, pct, icono: Icono, color, indice, pie,
 }: {
-  etiqueta: string; valor: string; icono: LucideIcon; color: string; indice: number; pie?: React.ReactNode;
+  etiqueta: string; valor: string; pct: number | null;
+  icono: LucideIcon; color: string; indice: number; pie?: React.ReactNode;
 }) {
   return (
-    <motion.div {...aparecer(indice)} className="bg-white p-6" style={CARD}>
-      <div className="flex size-11 items-center justify-center rounded-2xl" style={{ background: `${color}18` }}>
-        <Icono className="size-5" style={{ color }} />
+    <motion.div {...aparecer(indice)} className="flex items-center gap-4 bg-white p-5" style={CARD}>
+      <Anillo pct={pct} color={color}>
+        <span className="text-[15px] font-black leading-none tabular-nums text-slate-900">{valor}</span>
+      </Anillo>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <Icono className="size-3.5 shrink-0" style={{ color }} />
+          <p className="truncate text-[13px] font-bold text-slate-700">{etiqueta}</p>
+        </div>
+        {pie && <div className="mt-1.5 truncate">{pie}</div>}
       </div>
-      <p className="mt-4 truncate text-3xl font-black tabular-nums text-slate-900">{valor}</p>
-      <p className="mt-1 truncate text-sm font-medium text-slate-400">{etiqueta}</p>
-      {pie && <div className="mt-2 truncate">{pie}</div>}
     </motion.div>
   );
 }
@@ -101,19 +139,25 @@ function TarjetaCifra({
  * limpia, cuánto tiempo se ahorró y cuánto dinero pasó por ahí. Las tres
  * primeras dicen si la herramienta está haciendo su trabajo; la cuarta es la
  * que el contador necesita para cuadrar.
+ *
+ * Sólo «sin observaciones» tiene un tope real (100 %), así que es la única
+ * cuyo anillo se llena en proporción. Las otras tres llevan el anillo
+ * completo, como marco del número — no como medida de nada.
  */
 export function CifrasMes({ datos }: { datos: Datos }) {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-      <TarjetaCifra
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <CifraAnillo
         etiqueta="Documentos procesados"
         valor={datos.documentos.toLocaleString('es-CO')}
+        pct={null}
         icono={FileText} color="#2563EB" indice={0}
         pie={<Variacion valor={datos.variacionDocs} />}
       />
-      <TarjetaCifra
+      <CifraAnillo
         etiqueta="Sin observaciones"
         valor={datos.sinErroresPct === null ? '—' : `${datos.sinErroresPct}%`}
+        pct={datos.sinErroresPct}
         icono={CheckCircle2} color="#10B981" indice={1}
         pie={
           <span className="text-[11px] text-slate-400">
@@ -121,18 +165,20 @@ export function CifrasMes({ datos }: { datos: Datos }) {
           </span>
         }
       />
-      <TarjetaCifra
+      <CifraAnillo
         etiqueta="Tiempo ahorrado"
         // Dos minutos por documento: es lo que tarda abrir el XML, leerlo
         // y teclear las cifras en el programa contable. Se dice de dónde
         // sale, porque una cifra de ahorro sin explicar no se cree.
         valor={`${Math.round((datos.documentos * 2) / 60)} h`}
+        pct={null}
         icono={Clock} color="#F59E0B" indice={2}
         pie={<span className="text-[11px] text-slate-400">A 2 min por documento</span>}
       />
-      <TarjetaCifra
+      <CifraAnillo
         etiqueta="Valor total"
-        valor={pesos(datos.valorTotal)}
+        valor={pesos(datos.valorTotal).replace(/\s/g, '')}
+        pct={null}
         icono={DollarSign} color="#7C3AED" indice={3}
         pie={<Variacion valor={datos.variacionValor} />}
       />

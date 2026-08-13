@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Share, PlusSquare, X, Download } from 'lucide-react';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import { useInstallPrompt, isIOSDevice, isStandaloneDisplay } from '../hooks/use-install-prompt';
+import { useDraggablePosition } from '../hooks/use-draggable-position';
 
 const COOKIE_CONSENT_KEY = 'codec_cookie_consent_v1';
 const IOS_DISMISS_KEY = 'codec_ios_install_dismissed_at';
@@ -136,62 +137,3 @@ export function InstallAppPrompt() {
   return null;
 }
 
-/** Lets the user drag the floating install button somewhere it isn't
- * blocking content, and remembers where they left it (per browser,
- * across sessions). A tap that never moves past a small threshold still
- * falls through as a normal click; a real drag suppresses it, mirroring
- * the same "swallow the click after a real gesture" trick used for
- * long-press elsewhere in the app (see use-long-press.ts). */
-function useDraggablePosition(storageKey: string) {
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-  const draggingRef = useRef(false);
-  const movedRef = useRef(false);
-  const startRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
-
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved) as { left: number; top: number };
-      if (typeof parsed.left === 'number' && typeof parsed.top === 'number') setPos(parsed);
-    } catch { /* ignore malformed value */ }
-  }, [storageKey]);
-
-  const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    draggingRef.current = true;
-    movedRef.current = false;
-    startRef.current = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
-    if (!draggingRef.current) return;
-    const dx = e.clientX - startRef.current.x;
-    const dy = e.clientY - startRef.current.y;
-    if (!movedRef.current && Math.hypot(dx, dy) > 6) movedRef.current = true;
-    if (!movedRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const left = Math.min(Math.max(startRef.current.left + dx, 8), window.innerWidth - rect.width - 8);
-    const top = Math.min(Math.max(startRef.current.top + dy, 8), window.innerHeight - rect.height - 8);
-    setPos({ left, top });
-  };
-
-  const onPointerUp = () => {
-    draggingRef.current = false;
-    if (movedRef.current) {
-      setPos((current) => {
-        if (current) localStorage.setItem(storageKey, JSON.stringify(current));
-        return current;
-      });
-    }
-  };
-
-  return {
-    pos,
-    wasDragged: () => movedRef.current,
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-  };
-}
