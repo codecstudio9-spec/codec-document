@@ -46,6 +46,17 @@ const ENDPOINT_POR_DEFECTO = 'https://catalogo-vpfe.dian.gov.co/Document/Downloa
 interface Props {
   narrar?: (es: string, en: string) => void;
   onCerrar: () => void;
+  /** CUFEs que ya se sabe que faltan, traídos de la verificación de arriba.
+   *  Ahorra copiarlos y volverlos a pegar. */
+  cufesIniciales?: string[];
+  /**
+   * Lo descargado, ya como archivos, para analizarlo sin pasar por el disco.
+   *
+   * Es el paso que faltaba: hasta ahora la descarga terminaba dejando los ZIP
+   * en una carpeta y el contador tenía que ir a buscarlos y arrastrarlos de
+   * vuelta a la misma pantalla. Los bytes ya estaban en el navegador.
+   */
+  onDescargados?: (archivos: File[]) => void;
 }
 
 type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: string };
@@ -63,11 +74,11 @@ const GUION_ES = 'Esta herramienta baja los documentos de la DIAN por ti, pero h
 
 const GUION_EN = 'This tool downloads your DIAN documents, but there is one part you have to do yourself because it needs your credentials. First, go to the DIAN portal and request a token. DIAN emails you a link. Right-click it and choose Copy link address, then paste it in the first field here and hit Test. The token expires in sixty minutes and works only once. Second, open that same link in another tab, export the listing for your period, open the spreadsheet and copy the CUFE column. Paste it below. Third, pick the folder on your computer where you want the files, and hit Start download. I go slowly on purpose so DIAN does not block us.';
 
-export function DescargarDeDian({ narrar, onCerrar }: Props) {
+export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargados }: Props) {
   const [urlDian, setUrlDian] = useState('');
   const [endpoint, setEndpoint] = useState(ENDPOINT_POR_DEFECTO);
   const [mostrarAvanzado, setMostrarAvanzado] = useState(false);
-  const [textoCufes, setTextoCufes] = useState('');
+  const [textoCufes, setTextoCufes] = useState((cufesIniciales ?? []).join('\n'));
   const [carpeta, setCarpeta] = useState<FileSystemDirectoryHandle | null>(null);
   const [probando, setProbando] = useState(false);
   const [enlaceOk, setEnlaceOk] = useState<boolean | null>(null);
@@ -150,7 +161,12 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
     const cufes = cufesDeTexto();
     if (!urlDian.trim()) { toast.error('Falta el enlace de la DIAN'); return; }
     if (cufes.length === 0) { toast.error('No encontré CUFEs válidos en la lista'); return; }
-    if (!carpeta) { toast.error('Elige primero la carpeta donde guardar'); return; }
+    // La carpeta sólo es obligatoria si el destino es el disco. Cuando lo
+    // descargado va directo al analizador, exigirla era un trámite de más.
+    if (!carpeta && !onDescargados) {
+      toast.error('Elige primero la carpeta donde guardar');
+      return;
+    }
 
     cancelar.current = false;
     setCorriendo(true);
@@ -171,14 +187,23 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
     // veces o en otro momento, y el efecto secundario revienta el render.
     let ok = 0;
     let errores = 0;
+    // Lo descargado, para entregárselo al analizador al terminar. Se junta
+    // aquí y no se manda de uno en uno: importar treinta veces seguidas
+    // dispararía treinta recargas de la tabla.
+    const bajados: File[] = [];
 
     try {
       await descargarDeDian({
         urlDian: urlDian.trim(),
         endpoint: endpoint.trim() || undefined,
         cufes,
-        carpeta,
+        carpeta: carpeta ?? undefined,
         cancelado: () => cancelar.current,
+        onArchivo: onDescargados
+          ? (nombre, bytes) => {
+            bajados.push(new File([bytes as BlobPart], nombre, { type: 'application/zip' }));
+          }
+          : undefined,
         onEvento: (e: EventoDescarga) => {
           if (e.ok) ok++; else errores++;
           const hechos = e.hechos;
@@ -195,6 +220,20 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
           setRegistro((r) => [entrada, ...r].slice(0, 60));
         },
       });
+
+      // Si hay a quién entregárselos, se analizan solos. El paso de «ve a la
+      // carpeta y arrástralos aquí» era trabajo manual para mover unos bytes
+      // que ya estaban en el navegador.
+      if (onDescargados && bajados.length > 0) {
+        narrar?.(
+          `Listo. Bajé ${ok} documentos y los estoy analizando ya${errores > 0 ? `. ${errores} no se pudieron bajar` : ''}.`,
+          `Done. I downloaded ${ok} documents and I am analysing them right now.`,
+        );
+        toast.success(`${bajados.length} documento(s) descargado(s). Analizando…`);
+        onDescargados(bajados);
+        onCerrar();
+        return;
+      }
 
       narrar?.(
         errores === 0

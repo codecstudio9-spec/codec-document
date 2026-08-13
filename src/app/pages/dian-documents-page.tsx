@@ -1160,6 +1160,24 @@ function ContenidoDian() {
                           <Copy className="size-3" /> Copiar los {cruce.faltantes.length}
                         </button>
                       </div>
+                      {/* El puente que faltaba.
+                          Saber cuáles faltan no servía de mucho: había que
+                          copiarlos, abrir el descargador, pegarlos, elegir una
+                          carpeta, esperar, ir a buscar esa carpeta y arrastrar
+                          los archivos de vuelta a esta misma pantalla. Todo
+                          eso para mover unos bytes que el navegador ya tenía.
+                          Ahora los baja y los analiza sin salir de aquí. */}
+                      {puedeDescargar && (
+                        <button
+                          type="button"
+                          onClick={() => setPanelDescarga(true)}
+                          className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+                        >
+                          <Download className="size-4" />
+                          Descargar de la DIAN y analizar {cruce.faltantes.length === 1 ? 'el que falta' : `los ${cruce.faltantes.length}`}
+                        </button>
+                      )}
+
                       <div className="max-h-40 overflow-y-auto rounded-xl bg-slate-50 p-3">
                         {cruce.faltantes.map((c) => (
                           <div key={c} className="truncate font-mono text-[11px] text-slate-500">{c}</div>
@@ -1694,7 +1712,16 @@ function ContenidoDian() {
       {panelDescarga && puedeDescargar && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40" onClick={() => setPanelDescarga(false)}>
           <div className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onClick={(ev) => ev.stopPropagation()}>
-            <DescargarDeDian onCerrar={() => setPanelDescarga(false)} narrar={narrar} />
+            <DescargarDeDian
+              onCerrar={() => setPanelDescarga(false)}
+              narrar={narrar}
+              // Los que la verificación ya identificó como faltantes: llegan
+              // pegados, sin que haya que copiarlos a mano.
+              cufesIniciales={cruce?.faltantes}
+              // Y lo descargado entra directo al analizador, que es lo que se
+              // quería desde el principio.
+              onDescargados={(archivos) => { void procesar(archivos); }}
+            />
           </div>
         </div>
       )}

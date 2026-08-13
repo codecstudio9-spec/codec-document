@@ -113,9 +113,20 @@ export interface OpcionesDescarga {
   urlDian: string;
   endpoint?: string;
   cufes: string[];
-  carpeta: FileSystemDirectoryHandle;
+  /** Dónde dejar los archivos. Opcional: sin carpeta, lo descargado sólo se
+   *  entrega por `onArchivo` y no toca el disco. */
+  carpeta?: FileSystemDirectoryHandle;
   cancelado: () => boolean;
   onEvento: (e: EventoDescarga) => void;
+  /**
+   * Cada archivo recién descargado, con sus bytes.
+   *
+   * Existe para poder analizar lo descargado sin obligar al contador a
+   * buscar la carpeta y arrastrar los archivos de vuelta. Los bytes ya
+   * estaban aquí en memoria un instante antes de escribirse al disco; ese
+   * rodeo no aportaba nada salvo trabajo manual.
+   */
+  onArchivo?: (nombre: string, bytes: Uint8Array) => void;
 }
 
 /**
@@ -141,13 +152,24 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
     // permite reanudar cuando el token vence a mitad de un lote largo: se
     // pide otro token y se relanza sobre la misma carpeta.
     const nombre = `${cufe}.zip`;
-    try {
-      await o.carpeta.getFileHandle(nombre);
-      hechos++;
-      avisar({ cufe, ok: true, detalle: 'ya estaba', hechos, total: o.cufes.length });
-      continue;
-    } catch {
-      // No existe: hay que descargarlo.
+    if (o.carpeta) {
+      try {
+        const fh = await o.carpeta.getFileHandle(nombre);
+        hechos++;
+        // Ya estaba en disco, pero el analizador igual lo necesita: se lee y
+        // se entrega. Sin esto, reanudar un lote dejaba fuera del análisis
+        // justo lo que ya se había bajado.
+        if (o.onArchivo) {
+          try {
+            const f = await fh.getFile();
+            o.onArchivo(nombre, new Uint8Array(await f.arrayBuffer()));
+          } catch { /* si no se puede leer, se descarga de nuevo abajo */ }
+        }
+        avisar({ cufe, ok: true, detalle: 'ya estaba', hechos, total: o.cufes.length });
+        continue;
+      } catch {
+        // No existe: hay que descargarlo.
+      }
     }
 
     let intentos = 0;
@@ -190,10 +212,17 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
 
       try {
         const bytes = base64ABytes(j.contenido_b64 as string);
-        const fh = await o.carpeta.getFileHandle(nombre, { create: true });
-        const w = await fh.createWritable();
-        await w.write(bytes);
-        await w.close();
+
+        // Al disco sólo si hay carpeta. El XML es el documento con validez
+        // legal, así que guardarlo sigue siendo lo normal; pero exigir una
+        // carpeta para poder analizar era un requisito artificial.
+        if (o.carpeta) {
+          const fh = await o.carpeta.getFileHandle(nombre, { create: true });
+          const w = await fh.createWritable();
+          await w.write(bytes);
+          await w.close();
+        }
+        o.onArchivo?.(nombre, bytes);
 
         hechos++;
         avisar({ cufe, ok: true, hechos, total: o.cufes.length });
