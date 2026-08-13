@@ -27,7 +27,8 @@ import {
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
 } from 'lucide-react';
 import { PanelLateral, type GrupoLateral } from '../components/dian/PanelLateral';
-import { Bienvenida, type AccionPrincipal } from '../components/dian/Bienvenida';
+import { Bienvenida, type PasoPrincipal } from '../components/dian/Bienvenida';
+import { ResumenMes } from '../components/dian/ResumenMes';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
@@ -55,8 +56,8 @@ import {
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
   type EstadoCuota, type PlanCatalogo,
-  estadoCorreo, activarCorreo, importarBandeja, listarBandeja,
-  type EstadoCorreo, type ArchivoBandeja,
+  estadoCorreo, activarCorreo, importarBandeja, listarBandeja, resumenMes,
+  type EstadoCorreo, type ArchivoBandeja, type ResumenMes as ResumenMesDatos,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
@@ -152,6 +153,7 @@ function ContenidoDian() {
    *  cuenta: un «3 sin procesar» no dice si son los de tu cliente o el
    *  reenvío repetido de otro, y cuando algo falla no hay forma de saber qué. */
   const [bandeja, setBandeja] = useState<ArchivoBandeja[]>([]);
+  const [resMes, setResMes] = useState<ResumenMesDatos | null>(null);
   // Quién ve la descarga masiva. Lo decide el servidor y llega en `beta`;
   // `ilimitado` es sólo el respaldo mientras esa consulta va y vuelve, para
   // que al propietario no le parpadee el botón al entrar.
@@ -409,13 +411,14 @@ function ContenidoDian() {
   const refrescar = useCallback(async () => {
     if (!permitido) return;
     try {
-      const [t, d, c, q, m, pl] = await Promise.all([
+      const [t, d, c, q, m, pl, rm] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
         estadoBeta(),
         estadoCuota(),
         estadoCorreo(),
         listarPlanes(),
+        resumenMes(),
       ]);
       setTotales(t);
       setDocumentos(d);
@@ -423,6 +426,7 @@ function ContenidoDian() {
       setCuota(q);
       setBuzon(m);
       setPlanes(pl);
+      setResMes(rm);
 
       // La bandeja sólo se pide si hay algo y el plan lo permite: una consulta
       // más en cada refresco, para casi todo el mundo, sin nada que mostrar.
@@ -717,43 +721,49 @@ function ContenidoDian() {
     return trozo.charAt(0).toUpperCase() + trozo.slice(1).toLowerCase();
   }, [user?.email]);
 
-  /** Las cuatro acciones de la fila superior: el flujo entero de la
-   *  herramienta a la vista, sin abrir el menú. */
-  const accionesPrincipales: AccionPrincipal[] = useMemo(() => [
+  /** Los cuatro pasos del recorrido, numerados.
+   *
+   *  El orden cuenta una historia —traer, analizar, cruzar, entregar— y quien
+   *  abre esto por primera vez entiende el flujo sin que nadie se lo explique.
+   *  Cada uno lleva el color de su etapa, el mismo que usa el resto de la
+   *  pantalla, para poder mirar el progreso y saber en qué paso vas sin leer. */
+  const pasosPrincipales: PasoPrincipal[] = useMemo(() => [
     {
-      id: 'descargar',
+      id: 'descargar', numero: 1,
       titulo: 'Descargar de la DIAN',
-      descripcion: 'Documentos XML',
-      icono: CloudDownload,
-      activa: seccion === 'descargar',
-      bloqueada: !puedeDescargar,
-      onClick: () => (puedeDescargar ? setPanelDescarga(true) : toast.error('Todavía no está abierta para tu cuenta.')),
+      descripcion: 'Obtén tus documentos XML',
+      icono: CloudDownload, color: '#2563EB',
+      activo: seccion === 'descargar',
+      bloqueado: !puedeDescargar,
+      onClick: () => (puedeDescargar
+        ? setPanelDescarga(true)
+        : toast.error('Todavía no está abierta para tu cuenta.')),
     },
     {
-      id: 'reportes',
-      titulo: 'Llevar a mi programa',
-      descripcion: 'Exportar a contabilidad',
-      icono: FileSpreadsheet,
-      activa: seccion === 'reportes',
-      onClick: () => setSeccion('reportes'),
+      id: 'analizar', numero: 2,
+      titulo: 'Analizar documentos',
+      descripcion: 'Procesamos y validamos',
+      icono: Sparkles, color: '#10B981',
+      activo: seccion === 'inicio',
+      onClick: () => { setSeccion('inicio'); inputRef.current?.click(); },
     },
     {
-      id: 'auditor',
+      id: 'auditor', numero: 3,
       titulo: 'Cruzar contabilidad',
-      descripcion: 'Comparar y validar',
-      icono: Scale,
-      activa: seccion === 'auditor',
+      descripcion: 'Compara y concilia',
+      icono: Scale, color: '#8B5CF6',
+      activo: seccion === 'auditor',
       onClick: () => setPanelAuditor(true),
     },
     {
-      id: 'correo',
-      titulo: 'Recibir por correo',
-      descripcion: buzon && !buzon.disponible ? 'Desde el plan Básico' : 'Sin descargar nada',
-      icono: Mail,
-      activa: seccion === 'correo',
-      onClick: () => setSeccion('correo'),
+      id: 'reportes', numero: 4,
+      titulo: 'Reportes y envío',
+      descripcion: 'Envía o exporta resultados',
+      icono: FileSpreadsheet, color: '#F59E0B',
+      activo: seccion === 'reportes',
+      onClick: () => setSeccion('reportes'),
     },
-  ], [seccion, puedeDescargar, buzon]);
+  ], [seccion, puedeDescargar]);
 
   const [exportando, setExportando] = useState(false);
 
@@ -951,56 +961,23 @@ function ContenidoDian() {
 
       <Bienvenida
         nombre={nombreCorto}
+        rol="Contador"
         onAbrirMenu={() => setMenuAbierto(true)}
         onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
-        acciones={accionesPrincipales}
+        pasos={pasosPrincipales}
       />
 
       <div>
         <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6">
 
 
-        {/* ── Consumo del mes ────────────────────────────────────────────
-            El anillo va en Inicio y no escondido en Planes: el contador tiene
-            que ver venir el tope antes de chocar con él a mitad de una
-            importación de mil documentos. */}
-        {seccion === 'inicio' && cuota && (
-          <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Tarjeta className="flex items-center gap-4 p-4" indice={0}>
-              <AnilloProgreso
-                valor={cuota.usados}
-                total={cuota.limite}
-                tamano={82}
-                color={
-                  (cuota.restantes ?? 1) === 0 ? '#F43F5E'
-                    : (cuota.restantes ?? 1) <= (cuota.limite ?? 1) * 0.15 ? '#F59E0B'
-                    : '#10B981'
-                }
-              />
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                  Este mes
-                </p>
-                <p className="mt-0.5 text-sm font-bold text-slate-800">{cuota.planNombre}</p>
-                <p className="mt-1 text-[11px] leading-snug text-slate-500">
-                  {cuota.limite === null
-                    ? 'Documentos sin límite'
-                    : (cuota.restantes ?? 0) === 0
-                      ? 'Llegaste al tope'
-                      : `Te quedan ${(cuota.restantes ?? 0).toLocaleString('es-CO')}`}
-                </p>
-              </div>
-            </Tarjeta>
-
-            <Cifra etiqueta="Documentos" valor={totales?.documentos ?? 0} icono={FileText}
-                   color="#2563EB" indice={1} pie="Guardados en total" />
-            <Cifra etiqueta="Requieren revisión" valor={totales?.revision ?? 0}
-                   icono={AlertTriangle} color="#F59E0B" indice={2}
-                   resalta={(totales?.revision ?? 0) > 0}
-                   pie={(totales?.revision ?? 0) > 0 ? 'Es lo único que tienes que mirar' : 'Todo cuadra'} />
-            <Cifra etiqueta="IVA del periodo" valor={pesos(totales?.iva ?? 0)}
-                   icono={Scale} color="#7C3AED" indice={3} pie="Notas crédito ya restadas" />
-          </div>
+        {/* ── Resumen del mes y reparto por tipo ────────────────────────
+            Va después de la zona de arrastre en el orden de lectura, pero se
+            renderiza aquí porque el contador que ya tiene documentos entra a
+            mirar cifras, no a subir. El que no tiene ninguno ve la tabla vacía
+            y el foco se le va solo al recuadro de soltar. */}
+        {seccion === 'inicio' && resMes && resMes.documentos > 0 && (
+          <ResumenMes datos={resMes} />
         )}
 
         {/* ── Analítica (sólo el dueño) ─────────────────────────────────

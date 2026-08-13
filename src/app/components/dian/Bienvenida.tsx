@@ -1,63 +1,72 @@
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Menu, HelpCircle } from 'lucide-react';
-import { BANNER_BG, MOV, PULSACION } from '../../styles/contador-theme';
+import { Menu, HelpCircle, ChevronRight } from 'lucide-react';
+import { MOV, PULSACION } from '../../styles/contador-theme';
 
 /**
- * Franja de bienvenida y las acciones principales.
+ * Encabezado y los cuatro pasos del recorrido.
  *
- * ── Por qué tarjetas y no botones ───────────────────────────────────────
- * Cada acción lleva título y una línea de explicación. Un botón que sólo dice
- * «Cruzar contabilidad» obliga al contador a adivinar o a probarlo; con
- * «Comparar y validar» debajo, sabe qué va a pasar antes de pulsar. Son cuatro
- * y caben en una fila: más habrían obligado a esconder algunas.
+ * ── Por qué van NUMERADOS ───────────────────────────────────────────────
+ * Antes eran cuatro tarjetas sueltas y se leían como un menú: cuatro cosas
+ * distintas que hacer, sin decir cuál primero. Numeradas cuentan una historia
+ * —traer, analizar, cruzar, entregar— y un contador que abre esto por primera
+ * vez entiende el flujo entero sin que nadie se lo explique.
  *
- * ── Y por qué están arriba del todo ─────────────────────────────────────
- * Es el flujo entero de la herramienta en una fila: traer documentos,
- * llevárselos, cruzarlos, o recibirlos por correo. El contador ve de qué es
- * capaz esto sin abrir un menú.
+ * Cada paso lleva su propio color, y el color es el mismo que usa el resto de
+ * la pantalla para esa etapa. No es decoración: es lo que permite mirar el
+ * panel de progreso y saber en qué paso estás sin leer.
+ *
+ * ── El encabezado va en blanco ──────────────────────────────────────────
+ * Se probó con una franja azul de lado a lado y competía con la barra lateral,
+ * que ya es azul. Dos bloques de color saturado en la misma esquina hacen que
+ * el ojo no sepa dónde posarse. En blanco, el único azul de la parte de arriba
+ * es el menú, y el saludo se lee como contenido.
  */
 
-export interface AccionPrincipal {
+export interface PasoPrincipal {
   id: string;
+  numero: number;
   titulo: string;
   descripcion: string;
   icono: LucideIcon;
+  /** Color de la etapa. Se comparte con el resto de la pantalla. */
+  color: string;
   onClick: () => void;
-  /** La que corresponde a lo que está haciendo ahora. */
-  activa?: boolean;
-  bloqueada?: boolean;
+  activo?: boolean;
+  bloqueado?: boolean;
 }
 
 export function Bienvenida({
-  nombre, onAbrirMenu, onAyuda, acciones,
+  nombre, rol, onAbrirMenu, onAyuda, pasos,
 }: {
   nombre?: string;
+  rol?: string;
   onAbrirMenu: () => void;
   onAyuda?: () => void;
-  acciones: AccionPrincipal[];
+  pasos: PasoPrincipal[];
 }) {
+  const iniciales = (nombre ?? 'C').slice(0, 2).toUpperCase();
+
   return (
-    <>
-      <div
-        className="relative overflow-hidden px-5 py-4 text-white sm:px-6"
-        style={{ background: BANNER_BG }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
+    <div className="border-b border-slate-100 bg-white">
+      <div className="mx-auto max-w-6xl px-4 pb-5 pt-4 sm:px-6">
+        {/* Saludo */}
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onAbrirMenu}
-            className="shrink-0 rounded-xl bg-white/15 p-2 text-white transition hover:bg-white/25"
+            className="shrink-0 rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}
             aria-label="Abrir menú"
           >
             <Menu className="size-5" />
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[17px] font-black leading-tight">
-              {nombre ? `¡Hola, ${nombre}!` : '¡Hola!'}
+            <p className="truncate text-[19px] font-black leading-tight text-slate-900">
+              {nombre ? `¡Hola, ${nombre}!` : '¡Hola!'} <span aria-hidden>👋</span>
             </p>
-            <p className="truncate text-[12.5px] text-white/75">
+            <p className="truncate text-[12.5px] text-slate-500">
               Automatiza tu trabajo con la DIAN y ahorra horas cada mes.
             </p>
           </div>
@@ -66,69 +75,77 @@ export function Bienvenida({
             <button
               type="button"
               onClick={onAyuda}
-              className="hidden shrink-0 items-center gap-2 rounded-xl bg-white/15 px-3.5 py-2 text-[12.5px] font-bold transition hover:bg-white/25 sm:flex"
+              className="hidden shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[12.5px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 sm:flex"
+              style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}
             >
               <HelpCircle className="size-4" />
-              Necesito ayuda
+              ¿Necesitas ayuda?
             </button>
           )}
-        </div>
-      </div>
 
-      {/* Las cuatro acciones. Van sobre el fondo claro y montadas un poco
-          sobre la franja, para que se lean como lo primero del área de
-          trabajo y no como parte del encabezado. */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="-mt-1 grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          {acciones.map((a, i) => {
-            const Icono = a.icono;
+          <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
+            <div
+              className="flex size-9 items-center justify-center rounded-full text-[12px] font-black text-white"
+              style={{ background: 'linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%)' }}
+            >
+              {iniciales}
+            </div>
+            <div className="hidden leading-tight lg:block">
+              <p className="text-[12.5px] font-bold text-slate-800">{nombre ?? 'Mi cuenta'}</p>
+              <p className="text-[11px] text-slate-400">{rol ?? 'Contador'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Los cuatro pasos */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {pasos.map((p, i) => {
+            const Icono = p.icono;
             return (
               <motion.button
-                key={a.id}
+                key={p.id}
                 type="button"
-                onClick={a.onClick}
-                disabled={a.bloqueada}
+                onClick={p.onClick}
+                disabled={p.bloqueado}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...MOV.entrada, delay: i * 0.05 }}
-                whileTap={a.bloqueada ? undefined : PULSACION}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition disabled:cursor-not-allowed disabled:opacity-55 ${
-                  a.activa
-                    ? 'text-white'
-                    : 'bg-white text-slate-900 hover:border-blue-200 hover:shadow-[0_8px_24px_rgba(37,99,235,0.10)]'
-                }`}
-                style={
-                  a.activa
-                    ? {
-                        background: 'linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%)',
-                        border: '1px solid #1D4ED8',
-                        boxShadow:
-                          'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 22px rgba(37,99,235,0.30)',
-                      }
-                    : {
-                        border: '1px solid #E3EAF5',
-                        boxShadow: '0 1px 2px rgba(15,23,42,0.03), 0 6px 18px rgba(15,23,42,0.05)',
-                      }
-                }
+                whileTap={p.bloqueado ? undefined : PULSACION}
+                className="group flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left transition disabled:cursor-not-allowed disabled:opacity-55"
+                style={{
+                  border: `1px solid ${p.activo ? `${p.color}59` : '#E8EDF5'}`,
+                  boxShadow: p.activo
+                    ? `0 1px 2px rgba(15,23,42,0.04), 0 10px 26px ${p.color}24`
+                    : '0 1px 2px rgba(15,23,42,0.03), 0 6px 18px rgba(15,23,42,0.05)',
+                }}
               >
+                {/* El número, en el color de la etapa. Es lo que convierte
+                    cuatro botones en un recorrido. */}
                 <div
-                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                    a.activa ? 'bg-white/20' : 'bg-blue-50'
-                  }`}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-black text-white"
+                  style={{
+                    background: `linear-gradient(180deg, ${p.color} 0%, ${p.color}D9 100%)`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.30), 0 3px 8px ${p.color}40`,
+                  }}
                 >
-                  <Icono className={`size-5 ${a.activa ? 'text-white' : 'text-blue-600'}`} />
+                  {p.numero}
                 </div>
-                <div className="min-w-0">
-                  <p className="truncate text-[13.5px] font-bold leading-tight">{a.titulo}</p>
-                  <p className={`truncate text-[11.5px] ${a.activa ? 'text-white/75' : 'text-slate-500'}`}>
-                    {a.descripcion}
+
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 truncate text-[13.5px] font-bold leading-tight"
+                     style={{ color: p.color }}>
+                    <Icono className="size-3.5 shrink-0" />
+                    {p.titulo}
                   </p>
+                  <p className="mt-0.5 truncate text-[11.5px] text-slate-500">{p.descripcion}</p>
                 </div>
+
+                <ChevronRight className="size-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
               </motion.button>
             );
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

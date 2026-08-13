@@ -207,6 +207,53 @@ export async function estadoCuota(): Promise<EstadoCuota> {
   };
 }
 
+/** Resumen del mes, con la comparación contra el anterior. */
+export interface ResumenMes {
+  mes: string;
+  documentos: number;
+  valorTotal: number;
+  /** null cuando no hay documentos: un 0 % diría «todo mal» donde no hay nada
+   *  que juzgar. */
+  sinErroresPct: number | null;
+  documentosPrev: number;
+  valorPrev: number;
+  porTipo: Array<{ tipo: string; cantidad: number; valor: number }>;
+  /** Variación en documentos. null si el mes anterior estaba vacío: dividir
+   *  entre cero daría un «+∞ %» que no significa nada. */
+  variacionDocs: number | null;
+  variacionValor: number | null;
+}
+
+export async function resumenMes(mes?: string): Promise<ResumenMes> {
+  const { data, error } = await supabase.rpc('ed_resumen_mes', { p_mes: mes ?? null });
+  if (error) throw new Error(error.message);
+  const d = (data ?? {}) as Record<string, unknown>;
+
+  const documentos = Number(d.documentos ?? 0);
+  const documentosPrev = Number(d.documentos_prev ?? 0);
+  const valorTotal = Number(d.valor_total ?? 0);
+  const valorPrev = Number(d.valor_prev ?? 0);
+
+  const variacion = (ahora: number, antes: number): number | null =>
+    antes > 0 ? Math.round(((ahora - antes) / antes) * 1000) / 10 : null;
+
+  return {
+    mes: String(d.mes ?? ''),
+    documentos,
+    valorTotal,
+    sinErroresPct: d.sin_errores_pct == null ? null : Number(d.sin_errores_pct),
+    documentosPrev,
+    valorPrev,
+    porTipo: ((d.por_tipo ?? []) as Record<string, unknown>[]).map((t) => ({
+      tipo: String(t.tipo),
+      cantidad: Number(t.cantidad ?? 0),
+      valor: Number(t.valor ?? 0),
+    })),
+    variacionDocs: variacion(documentos, documentosPrev),
+    variacionValor: variacion(valorTotal, valorPrev),
+  };
+}
+
 export async function listarPlanes(): Promise<PlanCatalogo[]> {
   const { data, error } = await supabase.rpc('ed_planes_listar');
   if (error) throw new Error(error.message);
