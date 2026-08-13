@@ -772,15 +772,46 @@ export interface FiltrosDocumentos {
   tipo?: string;
   estado?: string;
   busqueda?: string;
-  limite?: number;
+  /** Página pedida, empezando en 1. */
+  pagina?: number;
+  porPagina?: number;
 }
 
-export async function listarDocumentos(f: FiltrosDocumentos = {}): Promise<DocumentoListado[]> {
+/** Cuántas filas trae una página. 50 llena la pantalla de un portátil sin
+ *  obligar a bajar dos veces, y el mes típico de un contador cabe en 25
+ *  páginas en vez de en una lista infinita. */
+export const DOCS_POR_PAGINA = 50;
+
+export interface PaginaDocumentos {
+  filas: DocumentoListado[];
+  /** Total que cumple el filtro, no el de la página. Es lo que permite decir
+   *  «1 a 50 de 1.250» y saber cuántas páginas hay. */
+  total: number;
+}
+
+/**
+ * Antes esto traía como mucho 200 filas y no lo decía en ninguna parte: un
+ * contador con 1.250 documentos en el mes veía 200 y daba por hecho que ésos
+ * eran todos. El corte silencioso en una herramienta fiscal es peor que la
+ * lentitud — se declara con las cifras que se ven.
+ *
+ * `count: 'exact'` cuesta un conteo por consulta. Es asumible porque la tabla
+ * está filtrada por RLS al dueño y lleva índice por fecha; y sin el total no
+ * hay forma honesta de dibujar el paginador.
+ */
+export async function listarDocumentos(f: FiltrosDocumentos = {}): Promise<PaginaDocumentos> {
+  const porPagina = f.porPagina ?? DOCS_POR_PAGINA;
+  const pagina = Math.max(1, f.pagina ?? 1);
+  const desdeFila = (pagina - 1) * porPagina;
+
   let q = supabase
     .from('ed_documents')
-    .select('id,doc_type,full_number,issue_date,issuer_nit,issuer_name,line_total,total_iva,total_retenciones,total,status,cufe')
+    .select(
+      'id,doc_type,full_number,issue_date,issuer_nit,issuer_name,line_total,total_iva,total_retenciones,total,status,cufe',
+      { count: 'exact' },
+    )
     .order('issue_date', { ascending: false })
-    .limit(f.limite ?? 200);
+    .range(desdeFila, desdeFila + porPagina - 1);
 
   if (f.desde) q = q.gte('issue_date', f.desde);
   if (f.hasta) q = q.lte('issue_date', f.hasta);
@@ -791,9 +822,9 @@ export async function listarDocumentos(f: FiltrosDocumentos = {}): Promise<Docum
     q = q.or(`full_number.ilike.%${s}%,issuer_name.ilike.%${s}%,issuer_nit.ilike.%${s}%`);
   }
 
-  const { data, error } = await q;
+  const { data, error, count } = await q;
   if (error) throw new Error(error.message);
-  return (data ?? []) as DocumentoListado[];
+  return { filas: (data ?? []) as DocumentoListado[], total: count ?? 0 };
 }
 
 export interface TotalesPanel {

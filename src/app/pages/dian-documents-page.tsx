@@ -18,23 +18,24 @@
  * ejecuta en un worker sin cambiar una línea.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
+  FolderOpen, Eye, ChevronLeft,
 } from 'lucide-react';
-import { PanelLateral, type GrupoLateral } from '../components/dian/PanelLateral';
-import { Bienvenida, type PasoPrincipal } from '../components/dian/Bienvenida';
-import { ResumenMes } from '../components/dian/ResumenMes';
+import { PanelLateral, ANCHO_LATERAL, type GrupoLateral } from '../components/dian/PanelLateral';
+import { Bienvenida } from '../components/dian/Bienvenida';
+import { RepartoPorTipo, COLOR_TIPO } from '../components/dian/ResumenMes';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
 import {
   WORKSPACE_BG, BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
-  BOTON_NEUTRO, MOV,
+  BOTON_NEUTRO, MOV, CARD,
 } from '../styles/contador-theme';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -52,7 +53,7 @@ import {
 import { isAdminEmail } from '../utils/admin-access';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
-  importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
+  importarArchivos, listarDocumentos, DOCS_POR_PAGINA, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
   type EstadoCuota, type PlanCatalogo,
@@ -132,6 +133,11 @@ function ContenidoDian() {
 
   const [totales, setTotales] = useState<TotalesPanel | null>(null);
   const [documentos, setDocumentos] = useState<DocumentoListado[]>([]);
+  /** Cuántos documentos cumplen el filtro actual, no cuántos se ven. Es lo
+   *  que permite decir «1 a 50 de 1.250» en vez de dejar creer que 50 es
+   *  todo lo que hay. */
+  const [totalFiltrado, setTotalFiltrado] = useState(0);
+  const [pagina, setPagina] = useState(1);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -413,7 +419,11 @@ function ContenidoDian() {
     try {
       const [t, d, c, q, m, pl, rm] = await Promise.all([
         obtenerTotales(),
-        listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
+        listarDocumentos({
+          busqueda: busqueda || undefined,
+          estado: filtroEstado || undefined,
+          pagina,
+        }),
         estadoBeta(),
         estadoCuota(),
         estadoCorreo(),
@@ -421,7 +431,8 @@ function ContenidoDian() {
         resumenMes(),
       ]);
       setTotales(t);
-      setDocumentos(d);
+      setDocumentos(d.filas);
+      setTotalFiltrado(d.total);
       setBeta(c);
       setCuota(q);
       setBuzon(m);
@@ -434,9 +445,14 @@ function ContenidoDian() {
     } catch (e) {
       toast.error((e as Error).message);
     }
-  }, [permitido, busqueda, filtroEstado, ilimitado]);
+  }, [permitido, busqueda, filtroEstado, pagina, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+
+  /** Al cambiar el filtro hay que volver a la primera página. Quedarse en la
+   *  9 después de buscar algo que sólo tiene dos páginas enseña una tabla
+   *  vacía y parece que la búsqueda no encontró nada. */
+  useEffect(() => { setPagina(1); }, [busqueda, filtroEstado]);
 
   /** Lleva al Checkout de Wompi. El importe y la firma los pone el servidor;
    *  aquí sólo viaja el código del plan. */
@@ -721,49 +737,34 @@ function ContenidoDian() {
     return trozo.charAt(0).toUpperCase() + trozo.slice(1).toLowerCase();
   }, [user?.email]);
 
-  /** Los cuatro pasos del recorrido, numerados.
+  const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / DOCS_POR_PAGINA));
+
+  /**
+   * Los números que se dibujan en el paginador.
    *
-   *  El orden cuenta una historia —traer, analizar, cruzar, entregar— y quien
-   *  abre esto por primera vez entiende el flujo sin que nadie se lo explique.
-   *  Cada uno lleva el color de su etapa, el mismo que usa el resto de la
-   *  pantalla, para poder mirar el progreso y saber en qué paso vas sin leer. */
-  const pasosPrincipales: PasoPrincipal[] = useMemo(() => [
-    {
-      id: 'descargar', numero: 1,
-      titulo: 'Descargar de la DIAN',
-      descripcion: 'Obtén tus documentos XML',
-      icono: CloudDownload, color: '#2563EB',
-      activo: seccion === 'descargar',
-      bloqueado: !puedeDescargar,
-      onClick: () => (puedeDescargar
-        ? setPanelDescarga(true)
-        : toast.error('Todavía no está abierta para tu cuenta.')),
-    },
-    {
-      id: 'analizar', numero: 2,
-      titulo: 'Analizar documentos',
-      descripcion: 'Procesamos y validamos',
-      icono: Sparkles, color: '#10B981',
-      activo: seccion === 'inicio',
-      onClick: () => { setSeccion('inicio'); inputRef.current?.click(); },
-    },
-    {
-      id: 'auditor', numero: 3,
-      titulo: 'Cruzar contabilidad',
-      descripcion: 'Compara y concilia',
-      icono: Scale, color: '#8B5CF6',
-      activo: seccion === 'auditor',
-      onClick: () => setPanelAuditor(true),
-    },
-    {
-      id: 'reportes', numero: 4,
-      titulo: 'Reportes y envío',
-      descripcion: 'Envía o exporta resultados',
-      icono: FileSpreadsheet, color: '#F59E0B',
-      activo: seccion === 'reportes',
-      onClick: () => setSeccion('reportes'),
-    },
-  ], [seccion, puedeDescargar]);
+   * Con 1.250 documentos hay 25 páginas y con 12.000 hay 240: pintarlas todas
+   * llenaría el pie de la tabla de números diminutos. Se enseña la primera, la
+   * última, la actual y una vecina a cada lado; los saltos van como `null` y
+   * se dibujan como puntos suspensivos.
+   */
+  const paginasVisibles = useMemo<(number | null)[]>(() => {
+    if (totalPaginas <= 7) {
+      return Array.from({ length: totalPaginas }, (_, i) => i + 1);
+    }
+    const cerca = new Set([1, totalPaginas, pagina, pagina - 1, pagina + 1]);
+    const salida: (number | null)[] = [];
+    let hueco = false;
+    for (let p = 1; p <= totalPaginas; p++) {
+      if (cerca.has(p)) {
+        salida.push(p);
+        hueco = false;
+      } else if (!hueco) {
+        salida.push(null);
+        hueco = true;
+      }
+    }
+    return salida;
+  }, [pagina, totalPaginas]);
 
   const [exportando, setExportando] = useState(false);
 
@@ -952,33 +953,32 @@ function ContenidoDian() {
           if (id === 'revision') setVista('revision');
           if (id === 'documentos') setVista('documentos');
         }}
+        nombre={nombreCorto}
         correo={user?.email ?? undefined}
         plan={cuota ? { nombre: cuota.planNombre, limite: cuota.limite, usados: cuota.usados } : undefined}
         onVerPlan={() => setSeccion('planes')}
+        onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
         abierta={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
 
-      <Bienvenida
-        nombre={nombreCorto}
-        rol="Contador"
-        onAbrirMenu={() => setMenuAbierto(true)}
-        onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
-        pasos={pasosPrincipales}
-      />
+      {/* Todo lo que no es la barra se desplaza a su derecha en escritorio.
+          El desplazamiento va aquí, envolviendo también la franja azul: si
+          sólo se desplazara el cuerpo, la franja pasaría por detrás del menú
+          y se verían dos azules distintos superpuestos. */}
+      <div
+        className="lg:pl-[var(--lateral)]"
+        style={{ '--lateral': `${ANCHO_LATERAL}px` } as CSSProperties}
+      >
+        <Bienvenida
+          nombre={nombreCorto}
+          rol="Contador"
+          onAbrirMenu={() => setMenuAbierto(true)}
+          onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
+          resumen={seccion === 'inicio' ? resMes : null}
+        />
 
-      <div>
         <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6">
-
-
-        {/* ── Resumen del mes y reparto por tipo ────────────────────────
-            Va después de la zona de arrastre en el orden de lectura, pero se
-            renderiza aquí porque el contador que ya tiene documentos entra a
-            mirar cifras, no a subir. El que no tiene ninguno ve la tabla vacía
-            y el foco se le va solo al recuadro de soltar. */}
-        {seccion === 'inicio' && resMes && resMes.documentos > 0 && (
-          <ResumenMes datos={resMes} />
-        )}
 
         {/* ── Analítica (sólo el dueño) ─────────────────────────────────
             El componente ni se monta para nadie más, pero eso es cortesía:
@@ -1880,114 +1880,181 @@ function ContenidoDian() {
         </section>
         )}
 
+        {/* ── Zona de trabajo: traer a la izquierda, ver a la derecha ───
+            Antes el recuadro de soltar ocupaba todo el ancho y el avance
+            aparecía DENTRO de él, empujando el botón fuera de la pantalla
+            justo cuando el contador quería soltar el siguiente archivo. En
+            dos columnas cada cosa tiene su sitio fijo y nada salta.
+
+            La columna derecha nunca está vacía: mientras se analiza enseña el
+            avance, al terminar el resultado de esa importación, y en reposo
+            el reparto por tipo del mes. Media pantalla en blanco el 95 % del
+            tiempo no la merece nadie. */}
         {seccion === 'inicio' && (
-        <section
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            void archivosDeSoltar(e.dataTransfer).then((fs) => procesar(fs));
-          }}
-          className={`mb-6 rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-indigo-300 ${
-            beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
-          }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".xml,.zip"
-            multiple
-            className="hidden"
-            onChange={(e) => { void procesar(e.target.files); e.target.value = ''; }}
-          />
+        <div className="mb-6 grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+          <section
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              void archivosDeSoltar(e.dataTransfer).then((fs) => procesar(fs));
+            }}
+            className={`flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-blue-300 hover:bg-blue-50/30 ${
+              beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
+            }`}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xml,.zip"
+              multiple
+              className="hidden"
+              onChange={(e) => { void procesar(e.target.files); e.target.value = ''; }}
+            />
 
-          {!cargando ? (
-            <>
-              <FileUp className="mx-auto mb-3 size-8 text-slate-300" />
-              <p className="mb-1 text-sm font-semibold text-slate-800">
-                Arrastra aquí el ZIP de la DIAN
-              </p>
-              <p className="mb-4 text-xs text-slate-400">
-                Puedes soltar varios a la vez, o la carpeta entera. También sirven los XML sueltos.
-              </p>
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                className="px-6 py-3 text-sm font-bold text-white transition"
-                style={{ background: BLUE_GRADIENT, borderRadius: 14, boxShadow: '0 12px 24px rgba(37,99,235,0.30)' }}
-              >
-                Seleccionar archivos
-              </button>
-            </>
-          ) : (
-            <div className="mx-auto max-w-md text-left">
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-800">
-                  {progreso?.fase === 'leyendo' ? 'Abriendo el archivo…' : 'Leyendo tus documentos…'}
+            {/* Hoja con la etiqueta XML. Dice de un vistazo qué se espera
+                aquí; un icono de nube genérico serviría para subir cualquier
+                cosa, y aquí no vale cualquier cosa. */}
+            <div className="relative mb-4">
+              <FileUp className="size-12 text-blue-200" strokeWidth={1.5} />
+              <span className="absolute -bottom-1 -left-2 rounded-md bg-blue-600 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white shadow-sm">
+                XML
+              </span>
+            </div>
+
+            <p className="mb-1.5 text-[15px] font-black text-slate-900">
+              Arrastra aquí tus XML de la DIAN
+            </p>
+            <p className="mb-5 max-w-sm text-[12.5px] leading-relaxed text-slate-500">
+              O selecciona los archivos desde tu computador. Puedes soltar varios ZIP a la vez,
+              o la carpeta entera; también sirven los XML sueltos.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={cargando}
+              className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-white transition disabled:opacity-60"
+              style={{ background: BLUE_GRADIENT, borderRadius: 14, boxShadow: '0 12px 24px rgba(37,99,235,0.30)' }}
+            >
+              {cargando ? <Loader2 className="size-4 animate-spin" /> : <FolderOpen className="size-4" />}
+              {cargando ? 'Analizando…' : 'Seleccionar archivos'}
+            </button>
+
+            <p className="mt-4 text-[11.5px] text-slate-400">
+              Formatos permitidos: .zip, .xml
+            </p>
+          </section>
+
+          {cargando ? (
+            <section className="flex flex-col p-5" style={CARD}>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <h3 className="text-[15px] font-black text-slate-900">Análisis en progreso</h3>
+                <span className="size-2 shrink-0 animate-pulse rounded-full bg-emerald-500" />
+                <span className="rounded-lg bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                  {progreso?.fase === 'leyendo'
+                    ? 'Abriendo el archivo'
+                    : `Analizando ${progreso?.hechos ?? 0} de ${progreso?.total ?? 0} archivos`}
                 </span>
-                <span className="tabular-nums text-slate-500">{porcentaje}%</span>
+                <span className="ml-auto text-[19px] font-black tabular-nums text-blue-700">
+                  {porcentaje}%
+                </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-indigo-600 transition-all" style={{ width: `${porcentaje}%` }} />
-              </div>
-              <p className="mt-2 text-xs tabular-nums text-slate-400">
-                {progreso?.hechos ?? 0} de {progreso?.total ?? 0}
-              </p>
 
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: BLUE_GRADIENT }}
+                  animate={{ width: `${porcentaje}%` }}
+                  transition={MOV.suave}
+                />
+              </div>
+
+              {/* La lista crece hacia abajo y con muchos archivos empujaría la
+                  tabla fuera de la pantalla. Va en su propia caja con scroll:
+                  el panel mide siempre lo mismo pase lo que pase. */}
               {feed.length > 0 && (
-                <ul className="mt-4 space-y-1.5">
+                <ul className="mt-4 max-h-[240px] space-y-2 overflow-y-auto pr-1">
                   {feed.map((f, i) => (
-                    <li key={`${f.nombre}-${i}`} className="flex items-center gap-2 text-xs text-slate-500">
-                      {f.estado === 'ok' && <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />}
-                      {f.estado === 'revision' && <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />}
-                      {f.estado === 'duplicado' && <Copy className="size-3.5 shrink-0 text-slate-400" />}
-                      {f.estado === 'error' && <XCircle className="size-3.5 shrink-0 text-rose-500" />}
-                      <span className="truncate">{f.nombre}</span>
+                    <li key={`${f.nombre}-${i}`} className="flex items-center gap-2.5 text-[12px]">
+                      <FileText className="size-3.5 shrink-0 text-slate-300" />
+                      <span className="min-w-0 flex-1 truncate text-slate-600">{f.nombre}</span>
+                      {f.estado === 'ok' && (
+                        <span className="flex shrink-0 items-center gap-1 font-semibold text-emerald-600">
+                          <CheckCircle2 className="size-3.5" /> Leído
+                        </span>
+                      )}
+                      {f.estado === 'revision' && (
+                        <span className="flex shrink-0 items-center gap-1 font-semibold text-amber-600">
+                          <AlertTriangle className="size-3.5" /> Revisar
+                        </span>
+                      )}
+                      {f.estado === 'duplicado' && (
+                        <span className="flex shrink-0 items-center gap-1 text-slate-400">
+                          <Copy className="size-3.5" /> Repetido
+                        </span>
+                      )}
+                      {f.estado === 'error' && (
+                        <span className="flex shrink-0 items-center gap-1 font-semibold text-rose-600">
+                          <XCircle className="size-3.5" /> Con errores
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
-          )}
-        </section>
-        )}
+            </section>
+          ) : resumen ? (
+            <section className="flex flex-col p-5" style={CARD}>
+              <h3 className="mb-3 text-[15px] font-black text-slate-900">
+                Resultado de lo que acabas de subir
+              </h3>
 
-        {/* ── Resultado de la última importación ──────────────────────── */}
-        {seccion === 'inicio' && resumen && (
-          <section className="mb-6 bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-            <h2 className="mb-3 text-sm font-semibold text-slate-800">Resultado</h2>
-            {resumen.rechazados.length > 0 && (
-              <div className="mb-3 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-relaxed text-rose-800 ring-1 ring-rose-200">
-                <p className="mb-1 font-bold">
-                  {resumen.rechazados.length} archivo(s) no se pudieron abrir. El resto sí se procesó.
-                </p>
-                {resumen.rechazados.slice(0, 6).map((r) => (
-                  <p key={r.nombre} className="truncate">· {r.nombre} — {r.motivo}</p>
-                ))}
-                {resumen.rechazados.length > 6 && <p>· y {resumen.rechazados.length - 6} más</p>}
-              </div>
-            )}
-            {resumen.sinProcesarPorCuota > 0 && (
-              <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
-                Quedaron <strong>{resumen.sinProcesarPorCuota}</strong> documento(s) sin procesar
-                porque llegaste a tu cupo de {beta?.limitePersona ?? 100}. No se perdieron:
-                vuelve a subir el mismo archivo cuando tengas cupo y Codec continúa donde quedó.
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {[
-                { l: 'Encontrados', v: resumen.encontrados, c: 'text-slate-900' },
-                { l: 'Procesados', v: resumen.procesados, c: 'text-emerald-600' },
-                { l: 'Duplicados', v: resumen.duplicados, c: 'text-slate-500' },
-                { l: 'Requieren revisión', v: resumen.revision, c: 'text-amber-600' },
-                { l: 'Con error', v: resumen.errores, c: 'text-rose-600' },
-              ].map((x) => (
-                <div key={x.l} className="rounded-xl bg-slate-50 px-3 py-3">
-                  <div className={`text-xl font-bold tabular-nums ${x.c}`}>{x.v}</div>
-                  <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{x.l}</div>
+              {resumen.rechazados.length > 0 && (
+                <div className="mb-3 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-relaxed text-rose-800 ring-1 ring-rose-200">
+                  <p className="mb-1 font-bold">
+                    {resumen.rechazados.length} archivo(s) no se pudieron abrir. El resto sí se procesó.
+                  </p>
+                  {resumen.rechazados.slice(0, 4).map((r) => (
+                    <p key={r.nombre} className="truncate">· {r.nombre} — {r.motivo}</p>
+                  ))}
+                  {resumen.rechazados.length > 4 && <p>· y {resumen.rechazados.length - 4} más</p>}
                 </div>
-              ))}
-            </div>
-          </section>
+              )}
+              {resumen.sinProcesarPorCuota > 0 && (
+                <p className="mb-3 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200">
+                  Quedaron <strong>{resumen.sinProcesarPorCuota}</strong> documento(s) sin procesar
+                  porque llegaste a tu cupo de {beta?.limitePersona ?? 100}. No se perdieron:
+                  vuelve a subir el mismo archivo cuando tengas cupo y Codec continúa donde quedó.
+                </p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { l: 'Encontrados', v: resumen.encontrados, c: 'text-slate-900' },
+                  { l: 'Procesados', v: resumen.procesados, c: 'text-emerald-600' },
+                  { l: 'Duplicados', v: resumen.duplicados, c: 'text-slate-500' },
+                  { l: 'Requieren revisión', v: resumen.revision, c: 'text-amber-600' },
+                  { l: 'Con error', v: resumen.errores, c: 'text-rose-600' },
+                ].map((x) => (
+                  <div key={x.l} className="rounded-xl bg-slate-50 px-3 py-3">
+                    <div className={`text-xl font-bold tabular-nums ${x.c}`}>{x.v}</div>
+                    <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{x.l}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : resMes && resMes.documentos > 0 ? (
+            <RepartoPorTipo datos={resMes} />
+          ) : (
+            <section className="flex flex-col items-center justify-center p-8 text-center" style={CARD}>
+              <BarChart3 className="mb-3 size-8 text-slate-200" />
+              <p className="text-[13px] font-bold text-slate-700">Aquí verás el avance</p>
+              <p className="mt-1 max-w-[240px] text-[12px] leading-relaxed text-slate-400">
+                Cuando sueltes tus archivos, esta columna te dirá archivo por archivo cómo va.
+              </p>
+            </section>
+          )}
+        </div>
         )}
 
 
@@ -2043,8 +2110,11 @@ function ContenidoDian() {
         {(seccion === 'inicio' || seccion === 'documentos' || seccion === 'revision') && (
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
+            {/* La insignia lleva el TOTAL que cumple el filtro, no las filas
+                de esta página. Con paginación, `documentos.length` diría
+                «Documentos 50» tuviera el contador 50 o 5.000. */}
             {([
-              ['documentos', 'Documentos', documentos.length],
+              ['documentos', 'Documentos', totalFiltrado],
               ['revision', 'Requieren revisión', totales?.revision ?? 0],
             ] as const).map(([v, l, n]) => (
               <button
@@ -2243,6 +2313,7 @@ function ContenidoDian() {
                     <th className="px-4 py-3 text-right font-bold">IVA</th>
                     <th className="px-4 py-3 text-right font-bold">Total</th>
                     <th className="px-4 py-3 text-left font-bold">Estado</th>
+                    <th className="w-16 px-4 py-3 text-right font-bold">Ver</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2259,7 +2330,23 @@ function ContenidoDian() {
                             className="size-4 accent-slate-900"
                           />
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{ETIQUETA_TIPO[d.doc_type] ?? d.doc_type}</td>
+                        {/* El tipo como pastilla de color, y el color es el
+                            mismo que usa la dona del reparto por tipo. Es lo
+                            que permite recorrer 50 filas y ver dónde están las
+                            notas crédito sin leer una por una. */}
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const c = COLOR_TIPO[d.doc_type] ?? COLOR_TIPO.desconocido;
+                            return (
+                              <span
+                                className="inline-block whitespace-nowrap rounded-lg px-2 py-1 text-[11.5px] font-semibold"
+                                style={{ color: c, background: `${c}14`, boxShadow: `inset 0 0 0 1px ${c}2E` }}
+                              >
+                                {ETIQUETA_TIPO[d.doc_type] ?? d.doc_type}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-4 py-3 font-semibold text-slate-800">{d.full_number}</td>
                         <td className="px-4 py-3 tabular-nums text-slate-500">{d.issue_date}</td>
                         <td className="max-w-[220px] px-4 py-3">
@@ -2290,11 +2377,98 @@ function ContenidoDian() {
                             {(d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID') && ' ›'}
                           </span>
                         </td>
+                        {/* Sólo «ver». En el mockup había además un botón de
+                            descarga por fila, pero el XML de cada documento
+                            todavía no se guarda en Storage —sólo su huella—,
+                            así que ese botón no tendría nada que bajar. Un
+                            icono que no hace nada gasta más confianza de la
+                            que ahorra: la descarga por fila entra cuando entre
+                            la retención del XML. */}
+                        <td className="px-4 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => void abrirDetalle(d.id)}
+                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
+                            aria-label={`Ver el detalle de ${d.full_number ?? 'este documento'}`}
+                          >
+                            <Eye className="size-4" />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* ── Paginación ────────────────────────────────────────────────
+              Antes la tabla traía como mucho 200 filas y no lo decía: quien
+              tenía 1.250 documentos en el mes veía 200 y daba por hecho que
+              ésos eran todos. En una herramienta fiscal, un corte silencioso
+              es peor que una página de más. */}
+          {vista === 'documentos' && totalFiltrado > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3.5">
+              <p className="text-[12px] text-slate-500">
+                Mostrando{' '}
+                <strong className="tabular-nums text-slate-700">
+                  {((pagina - 1) * DOCS_POR_PAGINA + 1).toLocaleString('es-CO')}
+                </strong>
+                {' a '}
+                <strong className="tabular-nums text-slate-700">
+                  {Math.min(pagina * DOCS_POR_PAGINA, totalFiltrado).toLocaleString('es-CO')}
+                </strong>
+                {' de '}
+                <strong className="tabular-nums text-slate-700">
+                  {totalFiltrado.toLocaleString('es-CO')}
+                </strong>
+                {' documentos'}
+              </p>
+
+              {totalPaginas > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                    disabled={pagina === 1}
+                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:pointer-events-none disabled:opacity-30"
+                    aria-label="Página anterior"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+
+                  {paginasVisibles.map((p, i) =>
+                    p === null ? (
+                      <span key={`hueco-${i}`} className="px-1 text-[12px] text-slate-300">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPagina(p)}
+                        className={`min-w-[32px] rounded-lg px-2 py-1.5 text-[12px] font-bold tabular-nums transition ${
+                          p === pagina
+                            ? 'text-white'
+                            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                        }`}
+                        style={p === pagina ? { background: BLUE_GRADIENT } : undefined}
+                        aria-current={p === pagina ? 'page' : undefined}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                    disabled={pagina >= totalPaginas}
+                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:pointer-events-none disabled:opacity-30"
+                    aria-label="Página siguiente"
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </section>
