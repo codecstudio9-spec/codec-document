@@ -54,7 +54,8 @@ import {
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
   type EstadoCuota, type PlanCatalogo,
-  estadoCorreo, activarCorreo, importarBandeja, type EstadoCorreo,
+  estadoCorreo, activarCorreo, importarBandeja, listarBandeja,
+  type EstadoCorreo, type ArchivoBandeja,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
@@ -146,6 +147,10 @@ function ContenidoDian() {
   // para pedir el enlace de acceso, y son dos cosas distintas.
   const [buzon, setBuzon] = useState<EstadoCorreo | null>(null);
   const [panelCorreo, setPanelCorreo] = useState(false);
+  /** Lo que llegó por correo y aún no se ha procesado. Se lista, no sólo se
+   *  cuenta: un «3 sin procesar» no dice si son los de tu cliente o el
+   *  reenvío repetido de otro, y cuando algo falla no hay forma de saber qué. */
+  const [bandeja, setBandeja] = useState<ArchivoBandeja[]>([]);
   // Quién ve la descarga masiva. Lo decide el servidor y llega en `beta`;
   // `ilimitado` es sólo el respaldo mientras esa consulta va y vuelve, para
   // que al propietario no le parpadee el botón al entrar.
@@ -411,6 +416,10 @@ function ContenidoDian() {
       setCuota(q);
       setBuzon(m);
       setPlanes(pl);
+
+      // La bandeja sólo se pide si hay algo y el plan lo permite: una consulta
+      // más en cada refresco, para casi todo el mundo, sin nada que mostrar.
+      setBandeja(m.disponible && m.pendientes > 0 ? await listarBandeja() : []);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -1725,6 +1734,38 @@ function ContenidoDian() {
                         ? `Sin documentos nuevos. El último correo llegó el ${new Date(buzon.ultimoCorreo).toLocaleDateString('es-CO')}.`
                         : 'Todavía no ha llegado ningún correo a esta dirección.'}
                     </p>
+                  )}
+
+                  {/* Lo que llegó, con nombre y remitente.
+                      Un contador que ve «3 sin procesar» y nada más no puede
+                      saber si son los de su cliente o el reenvío repetido de
+                      otro. Y cuando algo falla, sin esta lista no hay forma de
+                      saber QUÉ falló ni a quién reclamarle el archivo. */}
+                  {bandeja.length > 0 && (
+                    <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-slate-200">
+                      <p className="bg-slate-50 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                        Esperando a que los proceses
+                      </p>
+                      <div className="max-h-64 divide-y divide-slate-100 overflow-y-auto">
+                        {bandeja.map((a) => (
+                          <div key={a.id} className="flex items-start gap-2.5 px-3.5 py-2.5">
+                            <FileText className="mt-0.5 size-3.5 shrink-0 text-sky-500" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12.5px] font-semibold text-slate-800">
+                                {a.filename}
+                              </p>
+                              <p className="truncate text-[11px] text-slate-400">
+                                {a.from_address ?? 'remitente desconocido'}
+                                {a.subject ? ` · ${a.subject}` : ''}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-[11px] tabular-nums text-slate-400">
+                              {new Date(a.received_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </>
               )}
