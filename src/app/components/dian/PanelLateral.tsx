@@ -131,8 +131,17 @@ function Contenido({
   return (
     <>
       <div className={`flex items-start justify-between pb-5 pt-7 ${plegada ? 'px-0' : 'px-6'}`}>
+        {/* El logo vuelve al dashboard principal. Estaba sin enlace y dejaba
+            el módulo del contador sin salida: para volver a Codec Document
+            había que editar la barra de direcciones. En el resto del producto
+            el logo siempre lleva a casa, y aquí no hacía nada. */}
         <div className={plegada ? 'flex w-full justify-center' : ''}>
-          <Logo size="md" tagline="Contadores" href="" markOnly={plegada} />
+          <Logo
+            size="md"
+            tagline="Contadores"
+            href="/dashboard"
+            markOnly={plegada}
+          />
         </div>
         {conCierre && (
           <button

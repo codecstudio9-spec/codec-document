@@ -119,6 +119,71 @@ const ETIQUETA_TIPO: Record<string, string> = {
 /** Dónde se recuerda si el contador dejó la barra lateral plegada. */
 const CLAVE_LATERAL_PLEGADA = 'codec_dian_lateral_plegada';
 
+/**
+ * Lo que dice la voz en cada sección.
+ *
+ * ── Por qué en una constante y no repartido por la pantalla ─────────────
+ * Los guiones describen DÓNDE están las cosas, así que cada vez que se mueve
+ * un botón hay que revisarlos. Repartidos por las secciones se quedan viejos
+ * sin que nadie se dé cuenta: pasó con la bienvenida, que siguió mandando al
+ * «recuadro azul» del correo y al «recuadro verde» de los CUFEs meses después
+ * de que los dos se convirtieran en secciones del menú de la izquierda. Quien
+ * se guiara por la voz buscaba dos recuadros que ya no existían.
+ *
+ * Juntos se releen de un vistazo cuando cambia la disposición.
+ *
+ * ── Por qué son cortos ──────────────────────────────────────────────────
+ * Esto se ESCUCHA. Una lista de nueve funciones no se retiene: cada guion
+ * dice qué es esta pantalla, qué hacer ahora mismo y qué se saca de ahí. Lo
+ * demás se descubre al usarlo, que para eso cada sección tiene la suya.
+ */
+const GUION_SECCION: Record<string, { es: string; en: string }> = {
+  inicio: {
+    es: 'Bienvenido a Codec Document para contadores. Esto convierte los XML de la DIAN en información contable lista para usar, sin que abras un solo archivo. '
+      + 'Para empezar ahora mismo, suelta el comprimido tal como te lo entregó la DIAN en el recuadro del centro. '
+      + 'Arriba tienes los cuatro pasos del mes en orden: subir tus XML, bajarlos de la DIAN, cruzarlos con tu contabilidad y sacar el Excel. '
+      + 'Cuando termine te doy el Excel de cuatro hojas y te señalo únicamente los documentos que no cuadran, que suelen ser un puñado: el resto no lo tienes que mirar.',
+    en: 'Welcome to Codec Document for accountants. This turns DIAN XML files into accounting data ready to use, without you opening a single file. '
+      + 'To start right now, drop the ZIP just as DIAN gave it to you into the box in the middle. '
+      + 'At the top you have the four steps of the month in order: upload your XML files, download them from DIAN, cross-check them against your books, and export the spreadsheet. '
+      + 'When I finish I give you the four sheet Excel and point out only the documents that do not add up, usually a handful: you can ignore the rest.',
+  },
+  documentos: {
+    es: 'Aquí está todo lo que llevas procesado. Arriba, cómo va el mes: cuántos documentos, cuántos salieron limpios y cuánto suman. '
+      + 'En la tabla puedes buscar por número, por proveedor o por NIT, y abrir cualquier documento para ver su detalle. '
+      + 'Si tienes muchos, van de cincuenta en cincuenta: el total real está siempre al pie de la tabla.',
+    en: 'This is everything you have processed. At the top, how the month is going: how many documents, how many came out clean and what they add up to. '
+      + 'In the table you can search by number, supplier or tax ID, and open any document to see its detail. '
+      + 'If you have many, they come fifty at a time: the real total is always at the foot of the table.',
+  },
+  correo: {
+    es: 'Esta es la forma de no volver a descargar facturas. Te damos una dirección de correo sólo tuya; tus proveedores mandan ahí el XML, que la ley ya los obliga a mandarte, y entra aquí solo. '
+      + 'No te pedimos la contraseña de tu correo: tú creas una regla de reenvío o le pasas la dirección a tus proveedores. '
+      + 'Es la única función que necesita un plan de pago, porque cada cuenta lleva su propio buzón.',
+    en: 'This is how you stop downloading invoices. We give you an email address of your own; your suppliers send the XML there, which the law already requires them to send you, and it comes in by itself. '
+      + 'We do not ask for your email password: you create a forwarding rule or give the address to your suppliers. '
+      + 'It is the only feature that needs a paid plan, because each account gets its own mailbox.',
+  },
+  cufes: {
+    es: 'Esto contesta la pregunta de si te falta algún documento. Entra al portal de la DIAN, exporta el listado del periodo y copia la columna de CUFEs completa; pégala en el recuadro de la izquierda y dale a Verificar. '
+      + 'Te digo cuáles ya tienes cargados y cuáles te faltan. No descarga nada: cruza tu lista contra lo que ya está aquí.',
+    en: 'This answers whether you are missing any document. Go into the DIAN portal, export the period listing and copy the whole CUFE column; paste it in the box on the left and click Verify. '
+      + 'I tell you which ones you already have loaded and which ones are missing. It downloads nothing: it cross-checks your list against what is already here.',
+  },
+  reportes: {
+    es: 'Aquí te llevas los datos, de dos formas. El Excel de cuatro hojas sale de un clic y ya viene con las notas crédito restadas, listo para declarar. '
+      + 'Y si prefieres el formato de tu propio programa contable, sube tu plantilla vacía y te la devuelvo llena; el mapeo queda guardado para el mes siguiente.',
+    en: 'Here you take the data with you, in two ways. The four sheet spreadsheet is one click away and already has credit notes subtracted, ready to file. '
+      + 'And if you prefer your own accounting software format, upload your empty template and I return it filled in; the mapping is saved for next month.',
+  },
+  planes: {
+    es: 'Aquí ves tu consumo del mes y los planes. Todos los planes traen lo mismo —subir, descargar de la DIAN, verificar CUFEs, el Excel, las plantillas y el cruce con tu contabilidad—: lo que cambia es cuántos documentos al mes, y que recibir facturas por correo necesita un plan de pago. '
+      + 'Sólo cuentan los documentos que se procesan bien; los duplicados y los que fallan no gastan cupo.',
+    en: 'Here you see your usage for the month and the plans. Every plan includes the same things — upload, download from DIAN, verify CUFEs, the spreadsheet, the templates and the cross-check against your books. What changes is how many documents per month, and that receiving invoices by email needs a paid plan. '
+      + 'Only documents that process correctly count; duplicates and failures do not use up your quota.',
+  },
+};
+
 const ESTADO: Record<string, { texto: string; color: string; fondo: string; punto: string }> = {
   PROCESSED: { texto: 'Procesado', color: '#059669', fondo: '#ECFDF5', punto: '#10B981' },
   REVIEW_REQUIRED: { texto: 'Requiere revisión', color: '#B45309', fondo: '#FFFBEB', punto: '#F59E0B' },
@@ -191,7 +256,10 @@ function ContenidoDian() {
   // página entera al montar, y en producción sale como «Ocurrió un
   // inconveniente» sin más pistas.
   const puedeDescargar = beta?.puedeDescargar ?? ilimitado;
-  const { speak } = useVoiceSpeak();
+  // Siempre en español. Este módulo existe sólo para Colombia y su interfaz
+  // está escrita en español fijo: con un navegador en inglés, la voz explicaba
+  // en inglés lo que se estaba viendo en español.
+  const { speak } = useVoiceSpeak('es');
   const [panelPlantilla, setPanelPlantilla] = useState(false);
   const [correo, setCorreo] = useState('');
   const [enviandoEnlace, setEnviandoEnlace] = useState(false);
@@ -542,19 +610,36 @@ function ContenidoDian() {
     // larga no se retiene: se dice qué hace, cómo empezar ahora mismo, qué se
     // lleva al final, y que hay atajos. Lo demás se descubre al usarlo, que
     // para eso cada sección tiene su propia voz.
-    speak({
-      es: 'Bienvenido a Codec Document para contadores. Esto convierte los XML de la DIAN en información contable lista para usar, sin que abras un solo archivo. '
-        + 'Para empezar ahora mismo, suelta aquí el comprimido tal como te lo entregó la DIAN. '
-        + 'Cuando termine te doy el Excel de cuatro hojas y te señalo únicamente los documentos que no cuadran, que suelen ser un puñado: el resto no lo tienes que mirar. '
-        + 'Si prefieres no volver a descargar nada, en el recuadro azul activas una dirección de correo tuya y las facturas entran solas. '
-        + 'Y si lo que tienes es el Excel de la DIAN, pega la columna de CUFEs en el recuadro verde y te digo cuáles te faltan.',
-      en: 'Welcome to Codec Document for accountants. This turns DIAN XML files into accounting data ready to use, without you opening a single file. '
-        + 'To start right now, drop the ZIP here, just as DIAN gave it to you. '
-        + 'When I finish I give you the four sheet Excel and point out only the documents that do not add up, usually a handful: you can ignore the rest. '
-        + 'If you would rather never download anything again, the blue box gives you your own email address and the invoices come in on their own. '
-        + 'And if what you have is the DIAN spreadsheet, paste the CUFE column in the green box and I will tell you which ones are missing.',
-    });
+    speak(GUION_SECCION.inicio);
   }, [permitido, speak]);
+
+  /**
+   * Cada sección se presenta sola al entrar.
+   *
+   * Antes sólo hablaban la bienvenida y la bandeja de revisión: quien se
+   * guiaba por la voz entraba a «Por correo» o a «Verificar CUFEs» y se
+   * encontraba con silencio, justo en las dos pantallas donde hay algo que
+   * explicar antes de tocar nada.
+   *
+   * No hace falta callar a la anterior a mano: `speak()` cancela lo que esté
+   * sonando antes de empezar la frase nueva (ver `voice-assistant-service`),
+   * así que cambiar de sección a media explicación corta la vieja y arranca
+   * la que toca, en vez de encolarse detrás.
+   *
+   * `inicio` se salta en el primer render porque la bienvenida ya lo cubre;
+   * volver a Inicio desde otra sección sí lo repite, que es cuando el
+   * contador necesita que le recuerden dónde está.
+   */
+  const seccionPrevia = useRef<string | null>(null);
+  useEffect(() => {
+    if (!permitido) return;
+    if (seccionPrevia.current === null) { seccionPrevia.current = seccion; return; }
+    if (seccionPrevia.current === seccion) return;
+    seccionPrevia.current = seccion;
+
+    const guion = GUION_SECCION[seccion];
+    if (guion) speak(guion);
+  }, [seccion, permitido, speak]);
 
   /** Saca los archivos de lo que el usuario soltó, incluidas las carpetas.
    *
@@ -2912,6 +2997,10 @@ function ContenidoDian() {
         abierta={ayudaAbierta}
         onAbrir={() => setAyudaAbierta(true)}
         onCerrar={() => setAyudaAbierta(false)}
+        // Repite el guion de la sección en la que está, no el último que sonó:
+        // si el contador cambió de pantalla mientras la voz hablaba, lo que
+        // quiere oír es dónde está ahora.
+        onEscuchar={() => speak(GUION_SECCION[seccion] ?? GUION_SECCION.inicio)}
       />
 
       <CajonDerecho

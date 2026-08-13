@@ -16,12 +16,22 @@ import { voiceAssistant, type VoiceMessage } from '../services/voice-assistant-s
  * the subscription for components that actually need to show/react to
  * the boolean (VoiceGuideToggle, VoiceReplayButton).
  */
-export function useVoiceSpeak() {
+/**
+ * @param forzarIdioma Narra siempre en este idioma, ignorando el del usuario.
+ *
+ * Es para las pantallas cuyo texto NO se traduce. El módulo DIAN es el caso:
+ * existe sólo para Colombia y su interfaz está escrita en español fijo, así
+ * que con un navegador en inglés la voz explicaba en inglés lo que se veía en
+ * español. La guía tiene que sonar en el idioma de lo que hay en pantalla, no
+ * en el de la configuración del navegador.
+ */
+export function useVoiceSpeak(forzarIdioma?: 'es' | 'en') {
   const { language } = useLanguage();
+  const idioma = forzarIdioma ?? language;
 
   const speak = useCallback((text: VoiceMessage, highlight?: string) => {
-    voiceAssistant.speak(text, language, highlight);
-  }, [language]);
+    voiceAssistant.speak(text, idioma, highlight);
+  }, [idioma]);
 
   const stop = useCallback(() => voiceAssistant.stop(), []);
   const pause = useCallback(() => voiceAssistant.pause(), []);

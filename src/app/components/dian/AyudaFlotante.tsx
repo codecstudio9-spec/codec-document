@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, X, Sparkles } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { CARD_RADIUS, DEGRADADO_MARCA, MOV } from '../../styles/contador-theme';
 import { useDraggablePosition } from '../../hooks/use-draggable-position';
+import { useVoiceGuide } from '../../hooks/useVoiceGuide';
 
 /**
  * «Cómo funciona», como botón flotante que se puede mover.
@@ -26,6 +27,11 @@ import { useDraggablePosition } from '../../hooks/use-draggable-position';
 
 const CLAVE_POSICION = 'codec_dian_ayuda_pos';
 
+/** Si el contador ya abrió la ayuda alguna vez. Marca cuándo dejar de llamar
+ *  la atención: un botón que late para siempre deja de ser un aviso y pasa a
+ *  ser algo que hay que aprender a ignorar. */
+const CLAVE_VISTA = 'codec_dian_ayuda_vista';
+
 const PASOS = [
   {
     n: '1',
@@ -45,14 +51,48 @@ const PASOS = [
 ];
 
 export function AyudaFlotante({
-  abierta, onAbrir, onCerrar,
+  abierta, onAbrir, onCerrar, onEscuchar,
 }: {
   abierta: boolean;
   onAbrir: () => void;
   onCerrar: () => void;
+  /** Repite en voz alta las instrucciones de la pantalla en la que está el
+   *  contador ahora mismo. */
+  onEscuchar: () => void;
 }) {
   const [pulsado, setPulsado] = useState(false);
   const arrastre = useDraggablePosition(CLAVE_POSICION);
+  const { enabled, setEnabled } = useVoiceGuide();
+
+  /** Late hasta que se abre por primera vez. Después, nunca más. */
+  const [novato, setNovato] = useState(false);
+  useEffect(() => {
+    try { setNovato(localStorage.getItem(CLAVE_VISTA) !== '1'); } catch { /* da igual */ }
+  }, []);
+
+  const abrir = () => {
+    setNovato(false);
+    try { localStorage.setItem(CLAVE_VISTA, '1'); } catch { /* da igual */ }
+    onAbrir();
+  };
+
+  /**
+   * Un solo botón para la voz, con una sola idea: «léeme esto».
+   *
+   * Se pensó como interruptor de encendido y apagado y quedaba peor: el
+   * contador que quiere que le repitan las instrucciones no está pensando en
+   * activar un ajuste, y con la guía apagada un botón de «reproducir» que no
+   * suena parece roto. Así que si está apagada, la enciende Y narra; si está
+   * encendida, repite. Apagarla sigue estando en el menú de la izquierda, que
+   * es donde viven los ajustes.
+   */
+  const escuchar = () => {
+    if (!enabled) setEnabled(true);
+    // Un tick después: `setEnabled` es lo que levanta la bandera que hace que
+    // `speak()` no sea un no-op, y leerla en el mismo tick la encuentra
+    // todavía en false.
+    setTimeout(onEscuchar, 0);
+  };
 
   const posicion: React.CSSProperties = arrastre.pos
     ? { left: arrastre.pos.left, top: arrastre.pos.top, right: 'auto', bottom: 'auto' }
@@ -60,23 +100,54 @@ export function AyudaFlotante({
 
   return (
     <>
-      {/* El botón. `touch-none` es lo que impide que el navegador se quede el
-          gesto para hacer scroll en móvil y el arrastre no llegue a ocurrir. */}
-      <motion.button
-        type="button"
+      {/* Los dos botones viajan juntos: se arrastran como un bloque y el
+          contador no acaba con la ayuda en una esquina y la voz en otra.
+          `touch-none` impide que el navegador se quede el gesto para hacer
+          scroll en móvil y el arrastre no llegue a ocurrir. */}
+      <motion.div
+        ref={arrastre.ref}
         onPointerDown={(e) => { setPulsado(true); arrastre.onPointerDown(e); }}
         onPointerMove={arrastre.onPointerMove}
         onPointerUp={() => { setPulsado(false); arrastre.onPointerUp(); }}
-        onClick={() => { if (!arrastre.wasDragged()) onAbrir(); }}
-        animate={{ scale: pulsado ? 0.94 : 1 }}
+        animate={{ scale: pulsado ? 0.96 : 1 }}
         transition={MOV.suave}
-        style={{ ...posicion, background: DEGRADADO_MARCA }}
-        className="fixed z-40 flex touch-none cursor-grab items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_10px_30px_rgba(37,99,235,0.42)] active:cursor-grabbing"
-        aria-label="Cómo funciona"
+        style={posicion}
+        className="fixed z-40 flex touch-none cursor-grab items-center gap-2 active:cursor-grabbing"
       >
-        <HelpCircle className="size-4.5 shrink-0" />
-        <span className="hidden sm:inline">¿Cómo funciona?</span>
-      </motion.button>
+        <button
+          type="button"
+          onClick={() => { if (!arrastre.wasDragged()) escuchar(); }}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_8px_24px_rgba(15,23,42,0.16)] ring-1 transition hover:bg-blue-50 ${
+            enabled ? 'text-blue-700 ring-blue-200' : 'text-slate-500 ring-slate-200'
+          }`}
+          title={enabled ? 'Escuchar otra vez las instrucciones' : 'Escuchar las instrucciones'}
+          aria-label={enabled ? 'Escuchar otra vez las instrucciones' : 'Escuchar las instrucciones'}
+        >
+          {enabled ? <Volume2 className="size-4.5" /> : <VolumeX className="size-4.5" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { if (!arrastre.wasDragged()) abrir(); }}
+          style={{ background: DEGRADADO_MARCA }}
+          className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_10px_30px_rgba(37,99,235,0.42)]"
+          aria-label="Cómo funciona"
+        >
+          {/* El aro que late. Va detrás del botón y sin capturar el puntero,
+              así que llama la atención sin estorbar al clic ni al arrastre. */}
+          {novato && (
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{ background: DEGRADADO_MARCA }}
+              animate={{ scale: [1, 1.35], opacity: [0.5, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+            />
+          )}
+          <HelpCircle className="relative size-4.5 shrink-0" />
+          <span className="relative hidden sm:inline">¿Cómo funciona?</span>
+        </button>
+      </motion.div>
 
       <AnimatePresence>
         {abierta && (

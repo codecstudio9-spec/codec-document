@@ -77,6 +77,7 @@ export function InstallAppPrompt() {
       : { left: 16, bottom: defaultBottom };
     return (
       <div
+        ref={drag.ref}
         className="fixed z-[9980] flex items-center gap-1 rounded-full bg-indigo-600 pl-4 pr-1.5 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/30"
         style={{ ...style, touchAction: 'none' }}
         onPointerDown={drag.onPointerDown}
