@@ -1,112 +1,103 @@
+import { motion } from 'framer-motion';
 import { Menu, HelpCircle } from 'lucide-react';
-import { BANNER_BG } from '../../styles/contador-theme';
-import { CifrasMes } from './ResumenMes';
-import type { ResumenMes as ResumenMesDatos } from '../../services/dian-service';
+import { CRISTAL } from '../../styles/contador-theme';
 
 /**
- * Franja de bienvenida del panel para contadores.
+ * Cabecera del panel para contadores.
  *
- * ── Por qué vuelve a ser azul ───────────────────────────────────────────
- * Una versión anterior la puso en blanco porque la franja azul competía con
- * la barra lateral, que también es azul. El problema no era el color sino que
- * la franja iba de lado a lado de la ventana, incluida la parte que queda
- * encima del menú: dos bloques azules pegados sin nada que los separe. Ahora
- * la barra lateral es fija y la franja empieza donde ella termina, así que se
- * leen como un marco continuo y no como dos piezas peleándose.
+ * ── Es la misma cabecera del dashboard principal ────────────────────────
+ * Misma altura (80), mismo blanco translúcido con desenfoque, mismo borde
+ * inferior, mismo saludo por hora del día, y los mismos cuadros redondeados
+ * de 44 px a la derecha con la sombra larga y suave de la casa.
  *
- * ── Por qué las cifras van AQUÍ ─────────────────────────────────────────
- * Estaban más abajo, bajo el título «Resumen del mes», y había que bajar para
- * verlas. Son la respuesta a la pregunta con la que el contador abre esto —
- * «¿cómo va el mes?»—, y la respuesta no se pone debajo del pliegue.
+ * Hubo una versión con franja azul y las cifras del mes flotando dentro. Se
+ * veía bien en un mockup y mal en el producto: era el único sitio de todo
+ * Codec Document con un bloque de color saturado arriba, y entrar aquí desde
+ * el dashboard se sentía como cambiar de aplicación. Las cifras se movieron a
+ * las cuatro tarjetas blancas del cuerpo, que es donde el dashboard las pone.
  *
- * Antes ocupaban este sitio cuatro pasos numerados que explicaban el
- * recorrido. Se quitaron al fijar la barra lateral: el menú ya enseña de un
- * vistazo todo lo que la herramienta hace, que era justo el trabajo que
- * hacían los pasos.
+ * ── Por qué no reutiliza `DesktopHeader` ────────────────────────────────
+ * Aquél trae la campana de notificaciones, que cuenta documentos firmados sin
+ * abrir — algo que en el módulo del contador no existe. Enseñar una campana
+ * que nunca puede tener nada es peor que no tenerla.
  */
 
+function saludo(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
 export function Bienvenida({
-  nombre, rol, onAbrirMenu, onAyuda, resumen,
+  nombre, foto, onAbrirMenu, onAyuda, onPerfil,
 }: {
   nombre?: string;
-  rol?: string;
+  foto?: string;
   onAbrirMenu: () => void;
   onAyuda?: () => void;
-  /** Sin datos —cuenta recién abierta— la tarjeta de cifras no se dibuja:
-   *  cuatro ceros dan la bienvenida peor que no decir nada. */
-  resumen?: ResumenMesDatos | null;
+  onPerfil?: () => void;
 }) {
-  const iniciales = (nombre ?? 'C').slice(0, 2).toUpperCase();
-  const hayCifras = !!resumen && resumen.documentos > 0;
+  const inicial = (nombre ?? '?').charAt(0).toUpperCase();
 
   return (
-    <div className="relative overflow-hidden" style={{ background: BANNER_BG }}>
-      {/* Dos manchas de luz muy difusas. Es lo que separa un degradado plano
-          de una superficie con profundidad, y a la vez levanta el lado donde
-          va la tarjeta blanca para que no parezca pegada sobre un vacío. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(120% 100% at 88% -10%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%),'
-            + 'radial-gradient(90% 80% at 0% 110%, rgba(2,20,80,0.30) 0%, rgba(2,20,80,0) 60%)',
-        }}
-      />
+    <header
+      className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-200/70 bg-white/70 px-5 sm:px-8"
+      style={CRISTAL}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={onAbrirMenu}
+          className="shrink-0 rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 lg:hidden"
+          aria-label="Abrir menú"
+        >
+          <Menu className="size-5" />
+        </button>
 
-      <div className="relative mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6">
-        {/* Fila superior: sólo el menú en móvil, ayuda y cuenta a la derecha. */}
-        <div className="mb-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onAbrirMenu}
-            className="shrink-0 rounded-xl bg-white/15 p-2 text-white ring-1 ring-white/25 transition hover:bg-white/25 lg:hidden"
-            aria-label="Abrir menú"
-          >
-            <Menu className="size-5" />
-          </button>
-
-          <div className="flex-1" />
-
-          {onAyuda && (
-            <button
-              type="button"
-              onClick={onAyuda}
-              className="flex shrink-0 items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-[12.5px] font-bold text-white ring-1 ring-white/25 transition hover:bg-white/25"
-            >
-              <HelpCircle className="size-4" />
-              <span className="hidden sm:inline">¿Necesitas ayuda?</span>
-            </button>
-          )}
-
-          <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-full bg-white text-[12px] font-black text-blue-700 ring-1 ring-white/40">
-              {iniciales}
-            </div>
-            <div className="hidden leading-tight lg:block">
-              <p className="text-[12.5px] font-bold text-white">{nombre ?? 'Mi cuenta'}</p>
-              <p className="text-[11px] text-white/65">{rol ?? 'Contador'}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Saludo y cifras. En escritorio conviven en una fila; por debajo de
-            xl la tarjeta baja entera, porque cuatro cifras apretadas contra el
-            saludo no se leen ni bien ni rápido. */}
-        <div className="grid items-center gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,660px)]">
-          <div className="min-w-0">
-            <p className="truncate text-[26px] font-black leading-tight text-white sm:text-[30px]">
-              {nombre ? `Hola, ${nombre}` : 'Hola'} <span aria-hidden>👋</span>
-            </p>
-            <p className="mt-1 max-w-md text-[13px] leading-relaxed text-white/80">
-              Automatiza tu trabajo con la DIAN y ahorra horas cada mes.
-              Enfócate en lo que importa, nosotros hacemos el resto.
-            </p>
-          </div>
-
-          {hayCifras && <CifrasMes datos={resumen} />}
+        <div className="min-w-0">
+          <p className="truncate text-lg font-black text-slate-900">
+            {saludo()}{nombre ? `, ${nombre}` : ''}
+          </p>
+          <p translate="no" className="notranslate truncate text-xs text-slate-400">
+            Codec Document · Contadores
+          </p>
         </div>
       </div>
-    </div>
+
+      <div className="flex shrink-0 items-center gap-3">
+        {onAyuda && (
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            type="button"
+            onClick={onAyuda}
+            className="flex size-11 items-center justify-center rounded-2xl bg-white"
+            style={{ boxShadow: '0 10px 30px rgba(15,23,42,0.06)' }}
+            aria-label="Ayuda"
+          >
+            <HelpCircle className="size-4.5 text-slate-500" />
+          </motion.button>
+        )}
+
+        <button
+          type="button"
+          onClick={onPerfil}
+          className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white"
+          style={{ boxShadow: '0 10px 30px rgba(15,23,42,0.06)' }}
+          aria-label="Mi cuenta"
+        >
+          {foto ? (
+            <img
+              src={foto}
+              alt={nombre ?? 'Mi cuenta'}
+              referrerPolicy="no-referrer"
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="text-sm font-black text-slate-400">{inicial}</span>
+          )}
+        </button>
+      </div>
+    </header>
   );
 }

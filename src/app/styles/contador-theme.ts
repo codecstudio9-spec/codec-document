@@ -1,68 +1,66 @@
 import type { CSSProperties } from 'react';
+import { CARD_RADIUS, CARD_SHADOW } from './mobile-theme';
 
 /**
  * Lenguaje visual del panel para contadores (Colombia).
  *
- * ── Por qué un archivo aparte de mobile-theme ───────────────────────────
- * Esta herramienta es otro producto dentro del mismo dominio: sólo Colombia,
- * sólo contadores, con su propia pasarela de pago. Comparte la marca pero no
- * el recorrido: aquí no se firman documentos, se procesan miles de XML. Un
- * panel de trabajo necesita densidad y jerarquía distintas de las de una app
- * móvil de firma, y mezclarlos en el mismo archivo terminaría con tokens que
- * sólo valen para la mitad de las pantallas.
+ * ── Este archivo NO define un estilo propio ─────────────────────────────
+ * Lo intentó y fue un error. Durante un tiempo el panel del contador tuvo su
+ * propia paleta —barra azul saturada, franja azul de bienvenida, tarjetas de
+ * radio 16— y el resultado era que entrar aquí desde el dashboard principal
+ * se sentía como salir a otro producto. Es el mismo Codec Document y la misma
+ * cuenta: tiene que verse igual.
  *
- * Se reutilizan los valores de marca (azul, radios, sombras) para que siga
- * pareciendo Codec Document.
+ * Así que las superficies vienen de `mobile-theme` (fondo, radios, sombras,
+ * degradados de marca), que es lo que usa `DesktopAppShell` en `/dashboard/*`.
+ * Aquí sólo queda lo que de verdad es exclusivo del contador: el color por
+ * estado fiscal, las curvas de movimiento y los botones con relieve.
  *
- * ── Qué se busca ────────────────────────────────────────────────────────
- * Que un contador que paga $129.000 al mes sienta que abrió una herramienta
- * seria. Eso es profundidad y quietud, no adornos: fondos con capas en vez de
- * un relleno plano, relieve suave en lo que se pulsa, y movimiento sólo donde
- * comunica algo. Una animación que no explica nada distrae, y esta gente pasa
- * horas aquí.
+ * Si algo de aquí empieza a hacer falta en el dashboard principal, se sube a
+ * `mobile-theme` — no se copia.
  */
+
+export {
+  MOBILE_BG_GRADIENT as FONDO_APP,
+  GLOW_TOP_RIGHT as RESPLANDOR_DERECHA,
+  GLOW_TOP_LEFT as RESPLANDOR_IZQUIERDA,
+  BLUE_GRADIENT as DEGRADADO_MARCA,
+  CARD_RADIUS,
+  CARD_SHADOW,
+} from './mobile-theme';
+
+/** Ancho de la barra lateral. El mismo 280 que `DesktopAppShell`: si las dos
+ *  barras del producto midieran distinto, pasar de una pantalla a otra
+ *  desplazaría el contenido de lado. */
+export const ANCHO_LATERAL = 280;
 
 // ── Superficies ───────────────────────────────────────────────────────────
 
-/** Barra lateral, en el azul de la marca.
+/**
+ * Tarjeta estándar. Es literalmente la del dashboard principal: radio 24 y
+ * una sombra larga y muy suave.
  *
- *  Se probó oscura y el resultado fue peor: un panel casi negro al lado de un
- *  área blanca parte la pantalla en dos productos distintos y el contador
- *  tarda en entender que es una sola herramienta. El azul mantiene la
- *  jerarquía sin ese corte. */
-export const SIDEBAR_BG =
-  'linear-gradient(180deg, #1D4ED8 0%, #1E51DD 45%, #1A44C4 100%)';
-
-/** Franja de bienvenida, arriba del área de trabajo. Continúa el azul de la
- *  barra para que ambas se lean como un mismo marco. */
-export const BANNER_BG =
-  'linear-gradient(100deg, #1D4ED8 0%, #2563EB 55%, #3B82F6 100%)';
-
-/** Fondo del área de trabajo: casi blanco.
- *
- *  El degradado tiene apenas dos puntos de diferencia entre extremos. Sirve
- *  para que las tarjetas blancas no floten sobre un plano idéntico al suyo,
- *  pero sin teñir la pantalla. Aquí el blanco es la superficie de trabajo, no
- *  el acento. */
-export const WORKSPACE_BG = 'linear-gradient(180deg, #FBFCFE 0%, #F4F7FC 100%)';
-
-/** Tarjeta estándar. La sombra va en dos capas —una corta y densa, otra
- *  larga y difusa— porque una sola sombra grande se ve como una mancha.
- *
- *  Sobre un fondo casi blanco la sombra tiene que ser MÁS suave, no más
- *  fuerte: en cuanto se nota el gris, la tarjeta parece sucia en vez de
- *  elevada. El relieve lo da el borde claro, no la sombra. */
+ * Sin borde a propósito. El dashboard no lo lleva, y sobre el fondo lavanda
+ * la sombra sola ya despega la tarjeta; añadirle un borde gris la ensucia.
+ */
 export const CARD: CSSProperties = {
   background: '#FFFFFF',
-  borderRadius: 16,
-  boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.05)',
-  border: '1px solid #E8EDF5',
+  borderRadius: CARD_RADIUS,
+  boxShadow: CARD_SHADOW,
 };
 
 /** Tarjeta destacada, para lo que hay que mirar primero. */
 export const CARD_ALZADA: CSSProperties = {
   ...CARD,
-  boxShadow: '0 2px 4px rgba(15,23,42,0.05), 0 20px 48px rgba(15,23,42,0.11)',
+  boxShadow: '0 24px 56px rgba(15,23,42,0.13)',
+};
+
+/** Superficie esmerilada: barra lateral y cabecera, nada más. Es la regla del
+ *  dashboard principal, y el motivo es que el efecto sólo se lee como
+ *  «premium» mientras siga siendo raro. */
+export const CRISTAL: CSSProperties = {
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
 };
 
 // ── Botones con relieve ───────────────────────────────────────────────────
@@ -97,6 +95,24 @@ export const BOTON_NEUTRO: CSSProperties = {
     'inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(15,23,42,0.06), 0 6px 14px rgba(15,23,42,0.06)',
   border: '1px solid rgba(15,23,42,0.08)',
 };
+
+/**
+ * Acciones rápidas de la fila principal, con el mismo relieve que el botón
+ * DIAN del dashboard: degradado con el punto claro FUERA del centro, luz
+ * interior arriba, línea oscura abajo y sombra proyectada del propio color.
+ *
+ * Los cuatro `inset` son lo que separa esto de un rectángulo de color. Un
+ * degradado a secas, por bonito que sea, se lee plano.
+ */
+export function accionRelieve(base: string, claro: string, rgbSombra: string): CSSProperties {
+  return {
+    background: `linear-gradient(135deg, ${base} 0%, ${claro} 45%, ${base} 72%, ${base} 100%)`,
+    boxShadow:
+      `0 14px 30px rgba(${rgbSombra},0.40),`
+      + `inset 0 1px 0 rgba(255,255,255,0.35),`
+      + `inset 0 -2px 0 rgba(0,0,0,0.20)`,
+  };
+}
 
 /** Al pulsar: se hunde. 1px basta — más parece que el botón se rompe. */
 export const PULSACION = { scale: 0.985, y: 1 };

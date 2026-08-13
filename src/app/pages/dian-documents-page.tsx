@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
@@ -29,12 +30,14 @@ import {
 } from 'lucide-react';
 import { PanelLateral, ANCHO_LATERAL, type GrupoLateral } from '../components/dian/PanelLateral';
 import { Bienvenida } from '../components/dian/Bienvenida';
-import { RepartoPorTipo, COLOR_TIPO } from '../components/dian/ResumenMes';
+import { RepartoPorTipo, CifrasMes, COLOR_TIPO } from '../components/dian/ResumenMes';
+import { AccionesRapidas, BannerOscuro, type Accion } from '../components/dian/AccionesRapidas';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
 import {
-  WORKSPACE_BG, BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
+  FONDO_APP, RESPLANDOR_DERECHA, RESPLANDOR_IZQUIERDA,
+  BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
   BOTON_NEUTRO, MOV, CARD,
 } from '../styles/contador-theme';
 import { toast } from 'sonner';
@@ -102,12 +105,19 @@ const ETIQUETA_TIPO: Record<string, string> = {
   desconocido: 'Sin identificar',
 };
 
-const ESTADO: Record<string, { texto: string; clase: string }> = {
-  PROCESSED: { texto: 'Procesado', clase: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
-  REVIEW_REQUIRED: { texto: 'Requiere revisión', clase: 'bg-amber-50 text-amber-700 ring-amber-200' },
-  DUPLICATE: { texto: 'Duplicado', clase: 'bg-slate-100 text-slate-600 ring-slate-200' },
-  INVALID: { texto: 'Inválido', clase: 'bg-rose-50 text-rose-700 ring-rose-200' },
-  ERROR: { texto: 'Error', clase: 'bg-rose-50 text-rose-700 ring-rose-200' },
+/**
+ * Estado de un documento, con la misma pastilla de punto + texto que usa
+ * «Actividad reciente» en el dashboard principal.
+ *
+ * El punto no es adorno: es lo que se ve al recorrer la columna con la vista
+ * sin leer, y por eso lleva un tono más saturado que el texto.
+ */
+const ESTADO: Record<string, { texto: string; color: string; fondo: string; punto: string }> = {
+  PROCESSED: { texto: 'Procesado', color: '#059669', fondo: '#ECFDF5', punto: '#10B981' },
+  REVIEW_REQUIRED: { texto: 'Requiere revisión', color: '#B45309', fondo: '#FFFBEB', punto: '#F59E0B' },
+  DUPLICATE: { texto: 'Duplicado', color: '#475569', fondo: '#F1F5F9', punto: '#94A3B8' },
+  INVALID: { texto: 'Inválido', color: '#BE123C', fondo: '#FFF1F2', punto: '#F43F5E' },
+  ERROR: { texto: 'Error', color: '#BE123C', fondo: '#FFF1F2', punto: '#F43F5E' },
 };
 
 /**
@@ -127,7 +137,8 @@ export default function DianDocumentsPage() {
 }
 
 function ContenidoDian() {
-  const { user, loading: cargandoSesion, signInWithMagicLink } = useAuth();
+  const { user, loading: cargandoSesion, signInWithMagicLink, logout } = useAuth();
+  const navegar = useNavigate();
   const permitido = Boolean(user);
   const ilimitado = isAdminEmail(user?.email);
 
@@ -722,20 +733,77 @@ function ContenidoDian() {
     return grupos;
   }, [totales?.revision, buzon, puedeDescargar, ilimitado]);
 
-  /** Primer nombre para el saludo. Del correo se saca lo que hay antes de la
-   *  arroba y se corta en el primer punto o guion: «douglas.taborda» → Douglas.
-   *  Si no sale nada legible se saluda sin nombre, que es mejor que soltarle
-   *  un identificador. */
+  /**
+   * Primer nombre para el saludo.
+   *
+   * Primero el nombre real de la cuenta, que es lo que hace el dashboard
+   * principal. Esto faltaba y se notaba: con un correo sin separadores como
+   * «douglastabordasanchez@», el dashboard decía «Buenas tardes, Douglas» y
+   * esta pantalla, un clic después, decía «Buenas tardes» a secas — como si
+   * no supiera quién había entrado.
+   *
+   * Sólo si no hay nombre se recurre al correo: lo de antes de la arroba,
+   * cortado en el primer punto o guion («douglas.taborda» → Douglas). Y si
+   * de ahí no sale nada legible se saluda sin nombre, que es mejor que
+   * soltarle un identificador.
+   */
   const nombreCorto = useMemo(() => {
+    const deCuenta = (user?.name ?? '').trim().split(/\s+/)[0] ?? '';
+    if (deCuenta.length >= 2) {
+      return deCuenta.charAt(0).toUpperCase() + deCuenta.slice(1);
+    }
+
     const local = (user?.email ?? '').split('@')[0] ?? '';
     const trozo = local.split(/[._-]/)[0] ?? '';
     // Se descarta lo que no parece un nombre: muy corto, con dígitos, o
-    // demasiado largo. Un correo sin separadores como
-    // «douglastabordasanchez@» daba «¡Hola, Douglastabordasanchez!», que es
-    // peor que no saludar por el nombre.
+    // demasiado largo. «Douglastabordasanchez» es peor que no saludar.
     if (trozo.length < 2 || trozo.length > 12 || /\d/.test(trozo)) return undefined;
     return trozo.charAt(0).toUpperCase() + trozo.slice(1).toLowerCase();
-  }, [user?.email]);
+  }, [user?.name, user?.email]);
+
+  /**
+   * Las cuatro acciones de la fila principal.
+   *
+   * El orden es el del recorrido real —traer, bajar, cruzar, entregar—, no el
+   * de importancia: un contador que abre esto por primera vez lee la fila de
+   * izquierda a derecha y entiende el flujo entero.
+   *
+   * «Descargar de la DIAN» sólo aparece a quien la tiene abierta. Un botón
+   * deshabilitado con un candado invita a pulsarlo y a preguntar por qué no
+   * funciona; uno que no está no genera esa pregunta.
+   */
+  const accionesRapidas: Accion[] = useMemo(() => [
+    {
+      id: 'subir',
+      etiqueta: 'Subir mis XML',
+      icono: FileUp,
+      variante: 'principal',
+      onClick: () => { setSeccion('inicio'); inputRef.current?.click(); },
+    },
+    ...(puedeDescargar
+      ? [{
+          id: 'descargar',
+          etiqueta: 'Descargar de la DIAN',
+          icono: CloudDownload,
+          variante: 'descarga' as const,
+          onClick: () => setPanelDescarga(true),
+        }]
+      : []),
+    {
+      id: 'auditor',
+      etiqueta: 'Cruzar contabilidad',
+      icono: Scale,
+      variante: 'neutra',
+      onClick: () => setPanelAuditor(true),
+    },
+    {
+      id: 'reportes',
+      etiqueta: 'Excel y plantillas',
+      icono: FileSpreadsheet,
+      variante: 'neutra',
+      onClick: () => setSeccion('reportes'),
+    },
+  ], [puedeDescargar]);
 
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / DOCS_POR_PAGINA));
 
@@ -939,7 +1007,15 @@ function ContenidoDian() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: WORKSPACE_BG }}>
+    /* El fondo y los dos resplandores son los de `DesktopAppShell`: un
+       lavanda muy suave con luz en las dos esquinas de arriba. Es lo que hace
+       que las tarjetas blancas se lean como piezas apoyadas y no como recortes
+       sobre papel, y es lo que el contador ya vio en el dashboard un segundo
+       antes de entrar aquí. */
+    <div className="relative min-h-screen" style={{ background: FONDO_APP }}>
+      <div className="pointer-events-none fixed inset-0 z-0" style={{ background: RESPLANDOR_DERECHA }} />
+      <div className="pointer-events-none fixed inset-0 z-0" style={{ background: RESPLANDOR_IZQUIERDA }} />
+
       {/* ── Barra lateral ─────────────────────────────────────────────
           Todo a un clic desde cualquier punto, y —más importante— el
           contador VE de un vistazo todo lo que la herramienta sabe hacer.
@@ -955,30 +1031,79 @@ function ContenidoDian() {
         }}
         nombre={nombreCorto}
         correo={user?.email ?? undefined}
+        foto={user?.picture ?? undefined}
         plan={cuota ? { nombre: cuota.planNombre, limite: cuota.limite, usados: cuota.usados } : undefined}
         onVerPlan={() => setSeccion('planes')}
         onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
+        onSalir={() => { void logout().then(() => navegar('/', { replace: true })); }}
         abierta={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
 
-      {/* Todo lo que no es la barra se desplaza a su derecha en escritorio.
-          El desplazamiento va aquí, envolviendo también la franja azul: si
-          sólo se desplazara el cuerpo, la franja pasaría por detrás del menú
-          y se verían dos azules distintos superpuestos. */}
+      {/* Sin z-index aquí a propósito: emparejar `relative` con un z-index
+          explícito crea un contexto de apilamiento que limita a TODOS los
+          descendientes, incluidos los modales a pantalla completa, y los
+          dejaría por debajo de la barra lateral aunque su z-index sea mayor.
+          Es el mismo motivo documentado en `DesktopAppShell`. */}
       <div
-        className="lg:pl-[var(--lateral)]"
+        className="relative lg:pl-[var(--lateral)]"
         style={{ '--lateral': `${ANCHO_LATERAL}px` } as CSSProperties}
       >
         <Bienvenida
           nombre={nombreCorto}
-          rol="Contador"
+          foto={user?.picture ?? undefined}
           onAbrirMenu={() => setMenuAbierto(true)}
           onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
-          resumen={seccion === 'inicio' ? resMes : null}
+          onPerfil={() => setSeccion('planes')}
         />
 
-        <div className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-6">
+        <div className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-8">
+
+        {/* ── Cifras del mes ───────────────────────────────────────────
+            Abren el cuerpo, igual que en el dashboard principal. Es la
+            respuesta a la pregunta con la que el contador entra —«cómo va el
+            mes»— y va antes que cualquier cosa que haya que hacer.
+
+            Sin documentos no se dibujan: cuatro ceros dan la bienvenida peor
+            que no decir nada, y en una cuenta nueva lo que tiene que llamar la
+            atención es el recuadro de soltar archivos. */}
+        {seccion === 'inicio' && resMes && resMes.documentos > 0 && (
+          <div className="mb-6">
+            <CifrasMes datos={resMes} />
+          </div>
+        )}
+
+        {/* ── Acciones rápidas ─────────────────────────────────────────
+            El recorrido entero en una fila: traer, bajar de la DIAN, cruzar
+            con la contabilidad y llevarse el Excel. Vistas juntas cuentan lo
+            que la herramienta hace sin que nadie lo explique — que era el
+            trabajo de los cuatro pasos numerados que hubo aquí antes, hecho
+            ahora con botones que además sirven para algo. */}
+        {seccion === 'inicio' && (
+          <div className="mb-5">
+            <AccionesRapidas acciones={accionesRapidas} />
+          </div>
+        )}
+
+        {/* ── Conector de correo ───────────────────────────────────────
+            En banner y no en la fila de arriba porque no es una acción más:
+            cambia cómo trabaja el contador —deja de ir a buscar los XML— y eso
+            no cabe en la etiqueta de un botón. Sólo se ofrece a quien no lo
+            tiene activo; a quien ya lo usa, el banner sería ruido. */}
+        {seccion === 'inicio' && buzon && !buzon.activo && (
+          <div className="mb-6">
+            <BannerOscuro
+              icono={Mail}
+              titulo="Que tus facturas lleguen solas"
+              descripcion={
+                buzon.disponible
+                  ? 'Te damos una dirección de correo propia. Pídeles a tus clientes que envíen ahí sus facturas y aparecen en tu bandeja sin que tengas que descargar ni arrastrar nada.'
+                  : 'Con un plan de pago te damos una dirección de correo propia: tus clientes envían ahí las facturas y aparecen solas en tu bandeja, sin descargar ni arrastrar nada.'
+              }
+              onClick={() => (buzon.disponible ? setPanelCorreo(true) : setSeccion('planes'))}
+            />
+          </div>
+        )}
 
         {/* ── Analítica (sólo el dueño) ─────────────────────────────────
             El componente ni se monta para nadie más, pero eso es cortesía:
@@ -1898,9 +2023,10 @@ function ContenidoDian() {
               e.preventDefault();
               void archivosDeSoltar(e.dataTransfer).then((fs) => procesar(fs));
             }}
-            className={`flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-blue-300 hover:bg-blue-50/30 ${
+            className={`flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40 ${
               beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
             }`}
+            style={{ borderRadius: CARD_RADIUS }}
           >
             <input
               ref={inputRef}
@@ -2108,8 +2234,8 @@ function ContenidoDian() {
             recordar dónde estaba cada cosa, que es justo lo que sobra en una
             herramienta que se usa una vez al mes. */}
         {(seccion === 'inicio' || seccion === 'documentos' || seccion === 'revision') && (
-        <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
-          <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
+        <section className="overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+          <div className="flex items-center gap-1 border-b border-slate-100 px-6 pt-4">
             {/* La insignia lleva el TOTAL que cumple el filtro, no las filas
                 de esta página. Con paginación, `documentos.length` diría
                 «Documentos 50» tuviera el contador 50 o 5.000. */}
@@ -2140,20 +2266,20 @@ function ContenidoDian() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-4">
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-6 py-4">
             <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por número, proveedor o NIT"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:bg-white"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
               />
             </div>
             <select
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:bg-white"
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:bg-white"
             >
               <option value="">Todos los estados</option>
               <option value="PROCESSED">Procesados</option>
@@ -2164,7 +2290,7 @@ function ContenidoDian() {
               type="button"
               onClick={() => void descargarExcel()}
               disabled={exportando}
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-2xl bg-emerald-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
             >
               {exportando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
               Descargar Excel
@@ -2172,7 +2298,7 @@ function ContenidoDian() {
             <button
               type="button"
               onClick={descargarCsv}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="flex items-center gap-1.5 rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               CSV
             </button>
@@ -2181,7 +2307,7 @@ function ContenidoDian() {
                 type="button"
                 onClick={() => void borrar([...seleccion])}
                 disabled={borrando}
-                className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-2xl bg-rose-600 px-3.5 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
               >
                 <Trash2 className="size-4" />
                 Borrar {seleccion.size}
@@ -2293,16 +2419,23 @@ function ContenidoDian() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[940px] text-sm" translate="no">
+              {/* Las celdas van a px-4, no a los px-6 del resto de la tarjeta.
+                  «Actividad reciente» del dashboard usa px-6 y le sobra sitio
+                  porque tiene cuatro columnas; ésta tiene diez, y con px-6 la
+                  fecha se partía en dos líneas y el estado quedaba cortado
+                  contra el borde. La tarjeta conserva sus px-6 en la barra de
+                  filtros y en el pie: lo que se aprieta es la rejilla de
+                  datos, que es lo que la necesita. */}
+              <table className="w-full min-w-[900px] text-sm" translate="no">
                 <thead>
-                  <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">
-                    <th className="w-10 px-4 py-3">
+                  <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                    <th className="w-12 px-5 py-3">
                       <input
                         type="checkbox"
                         aria-label="Seleccionar todos"
                         checked={documentos.length > 0 && seleccion.size === documentos.length}
                         onChange={(e) => setSeleccion(e.target.checked ? new Set(documentos.map((d) => d.id)) : new Set())}
-                        className="size-4 accent-slate-900"
+                        className="size-4 accent-blue-600"
                       />
                     </th>
                     <th className="px-4 py-3 text-left font-bold">Tipo</th>
@@ -2313,85 +2446,93 @@ function ContenidoDian() {
                     <th className="px-4 py-3 text-right font-bold">IVA</th>
                     <th className="px-4 py-3 text-right font-bold">Total</th>
                     <th className="px-4 py-3 text-left font-bold">Estado</th>
-                    <th className="w-16 px-4 py-3 text-right font-bold">Ver</th>
+                    <th className="w-20 px-5 py-3 text-right font-bold">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
                   {documentos.map((d) => {
-                    const e = ESTADO[d.status] ?? { texto: d.status, clase: 'bg-slate-100 text-slate-600 ring-slate-200' };
+                    const e = ESTADO[d.status]
+                      ?? { texto: d.status, color: '#475569', fondo: '#F1F5F9', punto: '#94A3B8' };
+                    const revisable = d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID';
                     return (
-                      <tr key={d.id} onClick={() => void abrirDetalle(d.id)} className="cursor-pointer border-b border-slate-50 transition hover:bg-slate-50/60">
-                        <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
+                      <tr
+                        key={d.id}
+                        onClick={() => void abrirDetalle(d.id)}
+                        className="cursor-pointer border-b border-slate-50 transition last:border-0 hover:bg-slate-50/60"
+                      >
+                        <td className="px-4 py-3.5" onClick={(ev) => ev.stopPropagation()}>
                           <input
                             type="checkbox"
                             aria-label={`Seleccionar ${d.full_number ?? ''}`}
                             checked={seleccion.has(d.id)}
                             onChange={() => alternarSeleccion(d.id)}
-                            className="size-4 accent-slate-900"
+                            className="size-4 accent-blue-600"
                           />
                         </td>
                         {/* El tipo como pastilla de color, y el color es el
                             mismo que usa la dona del reparto por tipo. Es lo
                             que permite recorrer 50 filas y ver dónde están las
                             notas crédito sin leer una por una. */}
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5">
                           {(() => {
                             const c = COLOR_TIPO[d.doc_type] ?? COLOR_TIPO.desconocido;
                             return (
                               <span
-                                className="inline-block whitespace-nowrap rounded-lg px-2 py-1 text-[11.5px] font-semibold"
-                                style={{ color: c, background: `${c}14`, boxShadow: `inset 0 0 0 1px ${c}2E` }}
+                                className="inline-block whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-bold"
+                                style={{ color: c, background: `${c}14` }}
                               >
                                 {ETIQUETA_TIPO[d.doc_type] ?? d.doc_type}
                               </span>
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-800">{d.full_number}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-500">{d.issue_date}</td>
-                        <td className="max-w-[220px] px-4 py-3">
+                        <td className="px-4 py-3.5 font-semibold text-slate-800">{d.full_number}</td>
+                        <td className="whitespace-nowrap px-4 py-3.5 tabular-nums text-slate-400">{d.issue_date}</td>
+                        {/* 180 y no 220: con 220 la tabla medía 1.100 px en
+                            una caja de 1.062 y la columna «Acción» quedaba
+                            cortada contra el borde. El nombre del proveedor ya
+                            iba truncado de todos modos, así que los 40 px
+                            salen de donde no se estaba leyendo nada. */}
+                        <td className="max-w-[180px] px-4 py-3.5">
                           <span className="block truncate text-slate-800">{d.issuer_name}</span>
                           <span className="block truncate text-xs tabular-nums text-slate-400">{d.issuer_nit}</span>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{pesos(Number(d.line_total))}</td>
-                        <td className="px-4 py-3 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
-                        <td className="px-4 py-3">
-                          {/* La insignia dice el estado, pero no el porqué, y
+                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.line_total))}</td>
+                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
+                        <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
+                        <td className="px-4 py-3.5">
+                          {/* La pastilla dice el estado, pero no el porqué, y
                               «Requiere revisión» sin motivo deja al contador
                               adivinando. Se marca como pulsable y abre el
                               detalle, donde está «Qué debes revisar». */}
                           <span
-                            title={
-                              d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID'
-                                ? 'Clic para ver por qué'
-                                : undefined
-                            }
-                            className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${e.clase}${
-                              d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID'
-                                ? ' cursor-pointer underline decoration-dotted underline-offset-2'
-                                : ''
+                            title={revisable ? 'Clic para ver por qué' : undefined}
+                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold${
+                              revisable ? ' cursor-pointer' : ''
                             }`}
+                            style={{ color: e.color, background: e.fondo }}
                           >
+                            <span className="size-1.5 shrink-0 rounded-full" style={{ background: e.punto }} />
                             {e.texto}
-                            {(d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID') && ' ›'}
+                            {revisable && ' ›'}
                           </span>
                         </td>
-                        {/* Sólo «ver». En el mockup había además un botón de
-                            descarga por fila, pero el XML de cada documento
-                            todavía no se guarda en Storage —sólo su huella—,
-                            así que ese botón no tendría nada que bajar. Un
-                            icono que no hace nada gasta más confianza de la
-                            que ahorra: la descarga por fila entra cuando entre
-                            la retención del XML. */}
-                        <td className="px-4 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
+                        {/* «Abrir» como enlace azul, igual que en Actividad
+                            reciente del dashboard.
+
+                            En el mockup había además un botón de descarga por
+                            fila, pero el XML de cada documento todavía no se
+                            guarda en Storage —sólo su huella—, así que no
+                            tendría nada que bajar. Un icono que no hace nada
+                            gasta más confianza de la que ahorra: la descarga
+                            por fila entra cuando entre la retención del XML. */}
+                        <td className="px-4 py-3.5 text-right" onClick={(ev) => ev.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => void abrirDetalle(d.id)}
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
-                            aria-label={`Ver el detalle de ${d.full_number ?? 'este documento'}`}
+                            className="text-xs font-bold text-blue-600 transition hover:text-blue-700"
                           >
-                            <Eye className="size-4" />
+                            Abrir
                           </button>
                         </td>
                       </tr>
@@ -2408,7 +2549,7 @@ function ContenidoDian() {
               ésos eran todos. En una herramienta fiscal, un corte silencioso
               es peor que una página de más. */}
           {vista === 'documentos' && totalFiltrado > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
               <p className="text-[12px] text-slate-500">
                 Mostrando{' '}
                 <strong className="tabular-nums text-slate-700">
@@ -2652,7 +2793,8 @@ function DetalleDocumento({ datos, onCerrar }: { datos: any; onCerrar: () => voi
   const lineas = (datos.lineas ?? []) as Array<Record<string, any>>;
   const impuestos = (datos.impuestos ?? []) as Array<Record<string, any>>;
   const excepciones = (datos.excepciones ?? []) as Array<Record<string, any>>;
-  const e = ESTADO[d.status] ?? { texto: d.status, clase: 'bg-slate-100 text-slate-600 ring-slate-200' };
+  const e = ESTADO[d.status]
+    ?? { texto: d.status, color: '#475569', fondo: '#F1F5F9', punto: '#94A3B8' };
 
   const Fila = ({ k, v }: { k: string; v: React.ReactNode }) => (
     <div className="flex justify-between gap-4 border-b border-slate-50 py-2 text-sm">
@@ -2667,7 +2809,13 @@ function DetalleDocumento({ datos, onCerrar }: { datos: any; onCerrar: () => voi
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="truncate text-lg font-bold text-slate-900">{d.full_number}</h2>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${e.clase}`}>{e.texto}</span>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+              style={{ color: e.color, background: e.fondo }}
+            >
+              <span className="size-1.5 shrink-0 rounded-full" style={{ background: e.punto }} />
+              {e.texto}
+            </span>
           </div>
           <p className="mt-0.5 text-xs text-slate-400">{ETIQUETA_TIPO[d.doc_type] ?? d.doc_type} · {d.issue_date}</p>
         </div>

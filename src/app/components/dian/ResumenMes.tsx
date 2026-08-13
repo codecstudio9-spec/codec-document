@@ -8,12 +8,12 @@ import { CARD, MOV, aparecer } from '../../styles/contador-theme';
  * Las cifras del mes y el reparto por tipo de documento.
  *
  * ── Por qué están partidos en dos componentes ───────────────────────────
- * Las cuatro cifras viven ahora dentro de la franja azul de bienvenida y el
- * reparto por tipo vive en la columna derecha del área de trabajo. Son sitios
- * distintos de la pantalla, pero comparten los colores y los nombres de los
- * tipos, y tenerlos en dos archivos terminaría con «Nota crédito» en ámbar en
- * un lado y en naranja en el otro. Por eso siguen en el mismo archivo aunque
- * ya no se dibujen juntos.
+ * Las cuatro cifras abren el cuerpo de la pantalla, como en el dashboard
+ * principal, y el reparto por tipo vive en la columna derecha del área de
+ * trabajo. Son sitios distintos, pero comparten los colores y los nombres de
+ * los tipos, y tenerlos en dos archivos terminaría con «Nota crédito» en
+ * ámbar en un lado y en naranja en el otro. Por eso siguen en el mismo
+ * archivo aunque ya no se dibujen juntos.
  *
  * ── Por qué la comparación con el mes anterior ──────────────────────────
  * «1.250 documentos» no dice si fue un buen mes. «1.250, un 12 % más que el
@@ -65,76 +65,76 @@ function Variacion({ valor, sufijo }: { valor: number | null; sufijo?: string })
 }
 
 /**
- * Una casilla de la tarjeta de cifras.
+ * Una tarjeta de cifra.
  *
- * Va sin recuadro propio y separada de la siguiente por una línea fina: las
- * cuatro son una sola lectura —«así va el mes»—, y cuatro tarjetas sueltas
- * dentro de otra tarjeta se leerían como cuatro cosas distintas.
+ * Es la `MetricCard` del dashboard principal: cuadro de icono en pastel
+ * arriba, número grande debajo y etiqueta en gris al pie. Se replica en vez
+ * de importarse porque aquélla sólo acepta un `number` y aquí hay porcentajes
+ * y pesos; lo que no cambia son las medidas —tarjeta de radio 24, cuadro de
+ * 44, número de 30— para que las dos pantallas se lean como la misma.
+ *
+ * El pie con la variación sí es exclusivo de aquí: en el dashboard un
+ * «documentos creados» no tiene con qué compararse, y para un contador el
+ * «12 % más que el mes pasado» es una señal de trabajo.
  */
-function Casilla({
+function TarjetaCifra({
   etiqueta, valor, icono: Icono, color, indice, pie,
 }: {
   etiqueta: string; valor: string; icono: LucideIcon; color: string; indice: number; pie?: React.ReactNode;
 }) {
   return (
-    <motion.div
-      {...aparecer(indice)}
-      className="min-w-0 px-4 py-3.5 sm:border-l sm:border-slate-100 sm:first:border-l-0"
-    >
-      <div className="flex items-center gap-1.5">
-        <Icono className="size-3.5 shrink-0" style={{ color }} />
-        <p className="truncate text-[11px] font-semibold text-slate-500">{etiqueta}</p>
+    <motion.div {...aparecer(indice)} className="bg-white p-6" style={CARD}>
+      <div className="flex size-11 items-center justify-center rounded-2xl" style={{ background: `${color}18` }}>
+        <Icono className="size-5" style={{ color }} />
       </div>
-      <p className="mt-1 truncate text-[21px] font-black leading-tight tabular-nums text-slate-900">
-        {valor}
-      </p>
-      {pie && <div className="mt-0.5 truncate">{pie}</div>}
+      <p className="mt-4 truncate text-3xl font-black tabular-nums text-slate-900">{valor}</p>
+      <p className="mt-1 truncate text-sm font-medium text-slate-400">{etiqueta}</p>
+      {pie && <div className="mt-2 truncate">{pie}</div>}
     </motion.div>
   );
 }
 
 /**
- * Las cuatro cifras del mes, para la franja de bienvenida.
+ * Las cuatro cifras del mes.
  *
- * Es lo primero que ve el contador al entrar, y por eso son éstas cuatro y no
- * otras: cuánto se procesó, qué proporción salió limpia, cuánto tiempo se
- * ahorró y cuánto dinero pasó por ahí. Las tres primeras dicen si la
- * herramienta está haciendo su trabajo; la cuarta es la que él necesita para
- * cuadrar.
+ * Son éstas cuatro y no otras: cuánto se procesó, qué proporción salió
+ * limpia, cuánto tiempo se ahorró y cuánto dinero pasó por ahí. Las tres
+ * primeras dicen si la herramienta está haciendo su trabajo; la cuarta es la
+ * que el contador necesita para cuadrar.
  */
 export function CifrasMes({ datos }: { datos: Datos }) {
   return (
-    <div className="grid grid-cols-2 divide-y divide-slate-100 rounded-2xl bg-white shadow-[0_2px_4px_rgba(15,23,42,0.06),0_18px_40px_rgba(12,35,110,0.28)] ring-1 ring-white/60 sm:grid-cols-4 sm:divide-y-0">
-      <Casilla
-        etiqueta="Procesados"
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <TarjetaCifra
+        etiqueta="Documentos procesados"
         valor={datos.documentos.toLocaleString('es-CO')}
         icono={FileText} color="#2563EB" indice={0}
-        pie={<Variacion valor={datos.variacionDocs} sufijo="vs. mes anterior" />}
+        pie={<Variacion valor={datos.variacionDocs} />}
       />
-      <Casilla
+      <TarjetaCifra
         etiqueta="Sin observaciones"
         valor={datos.sinErroresPct === null ? '—' : `${datos.sinErroresPct}%`}
-        icono={CheckCircle2} color="#0EA5E9" indice={1}
+        icono={CheckCircle2} color="#10B981" indice={1}
         pie={
           <span className="text-[11px] text-slate-400">
             {datos.sinErroresPct === null ? 'Todavía no hay documentos' : 'Del total del mes'}
           </span>
         }
       />
-      <Casilla
+      <TarjetaCifra
         etiqueta="Tiempo ahorrado"
         // Dos minutos por documento: es lo que tarda abrir el XML, leerlo
         // y teclear las cifras en el programa contable. Se dice de dónde
         // sale, porque una cifra de ahorro sin explicar no se cree.
         valor={`${Math.round((datos.documentos * 2) / 60)} h`}
-        icono={Clock} color="#8B5CF6" indice={2}
+        icono={Clock} color="#F59E0B" indice={2}
         pie={<span className="text-[11px] text-slate-400">A 2 min por documento</span>}
       />
-      <Casilla
+      <TarjetaCifra
         etiqueta="Valor total"
         valor={pesos(datos.valorTotal)}
-        icono={DollarSign} color="#10B981" indice={3}
-        pie={<Variacion valor={datos.variacionValor} sufijo="vs. mes anterior" />}
+        icono={DollarSign} color="#7C3AED" indice={3}
+        pie={<Variacion valor={datos.variacionValor} />}
       />
     </div>
   );
@@ -199,9 +199,9 @@ export function RepartoPorTipo({ datos }: { datos: Datos }) {
     : '';
 
   return (
-    <div className="flex h-full flex-col p-5" style={CARD}>
+    <div className="flex h-full flex-col p-6" style={CARD}>
       <div className="mb-4 flex flex-wrap items-baseline gap-2">
-        <h3 className="text-[15px] font-black text-slate-900">Documentos por tipo</h3>
+        <h3 className="text-base font-black text-slate-900">Documentos por tipo</h3>
         {/* `first-letter`, no `capitalize`: en español el mes se escribe
             «junio de 2026», y `capitalize` lo convierte en «Junio De 2026». */}
         {mes && (
