@@ -26,7 +26,9 @@ import { PropuestaComercial } from '../components/PropuestaComercial';
 import { useGuiaFormulario } from '../hooks/use-guia-formulario';
 import {
   createDocumentRecord, uploadPdfToStorage, updateDocumentPdfUrl, createSigner, createSigningLink,
+  uploadSignatureImage, insertSignature, dataUrlToBlob, sha256Hex, getPublicIp,
 } from '../../lib/signatureService';
+import { SignatureModal } from '../components/signatures/SignatureModal';
 
 const QUOTE_SINGLE_PRICE = 6.99;
 
@@ -248,6 +250,16 @@ export function MyQuoteEditorPage() {
   const [bonoError, setBonoError] = useState('');
   const [bonoParcial, setBonoParcial] = useState<DescuentoDeBono | null>(null);
 
+  // ── Quién firma ────────────────────────────────────────────────────────
+  //
+  // La cotización creaba UN firmante: el cliente. Quien la enviaba no firmaba
+  // nunca, aunque muchas veces quiera hacerlo — una cotización firmada por
+  // las dos partes es un acuerdo, y firmada por una sola es sólo una oferta
+  // aceptada. Ahora se pregunta antes de mandarla.
+  const [preguntandoQuienFirma, setPreguntandoQuienFirma] = useState(false);
+  const [firmandoYo, setFirmandoYo] = useState(false);
+  const [miFirma, setMiFirma] = useState<string | null>(null);
+
   // ── Borrador local ─────────────────────────────────────────────────────
   //
   // Todo lo escrito vivía sólo en el estado de React. Bastaba con recargar,
@@ -464,7 +476,20 @@ export function MyQuoteEditorPage() {
     }
   };
 
-  const handleRequestSignature = async () => {
+  /** Punto de entrada del botón: antes de mandar nada, se pregunta quién
+   *  firma. La opción se pregunta AQUÍ y no al final porque si el remitente
+   *  quiere firmar, su firma tiene que existir antes de generarse el enlace
+   *  del cliente — si no, el cliente firmaría un documento donde falta la
+   *  firma de quien se lo mandó. */
+  const abrirQuienFirma = () => {
+    if (!clientEmail.trim()) {
+      toast.error(language === 'en' ? 'Client email is required to request a signature.' : 'El correo del cliente es obligatorio para solicitar firma.');
+      return;
+    }
+    setPreguntandoQuienFirma(true);
+  };
+
+  const handleRequestSignature = async (firmaPropia?: string | null) => {
     if (!clientEmail.trim()) {
       toast.error(language === 'en' ? 'Client email is required to request a signature.' : 'El correo del cliente es obligatorio para solicitar firma.');
       return;
@@ -484,6 +509,36 @@ export function MyQuoteEditorPage() {
       const documentId = await createDocumentRecord({ name: projectName || full.quote.quote_number, userId: user?.id ?? null });
       const pdfUrl = await uploadPdfToStorage(documentId, pdfBlob);
       await updateDocumentPdfUrl(documentId, pdfUrl);
+
+      // Mi firma va PRIMERO, antes de generar el enlace del cliente: si se
+      // registrara después, habría un momento en que el cliente puede abrir y
+      // firmar un documento al que todavía le falta la firma de quien se lo
+      // mandó. Mismo procedimiento que usa el flujo de firmas normal —
+      // subida de la imagen, huella SHA-256 e IP para la pista de auditoría.
+      if (firmaPropia) {
+        try {
+          const blob = await dataUrlToBlob(firmaPropia);
+          const sigUrl = await uploadSignatureImage(documentId, 'creator', blob);
+          await sha256Hex(await blob.arrayBuffer());
+          const ip = await getPublicIp();
+          await insertSignature({
+            documentId,
+            signerName: user?.name || user?.email || 'Emisor',
+            signerEmail: user?.email ?? '',
+            ip,
+            userAgent: navigator.userAgent,
+            signatureUrl: sigUrl,
+          });
+        } catch (err) {
+          // Que falle mi firma no puede impedir que la cotización salga: se
+          // avisa y se sigue, en vez de dejar el envío a medias.
+          console.error('[cotizacion] no se pudo registrar la firma del emisor:', err);
+          toast.error(language === 'en'
+            ? 'Your signature could not be saved, but the quote was sent.'
+            : 'No se pudo guardar tu firma, pero la cotización sí se envió.');
+        }
+      }
+
       const signerId = await createSigner({ documentId, name: clientName, email: clientEmail });
       const token = await createSigningLink({ documentId, signerId, guestName: clientName, guestEmail: clientEmail });
       await linkQuoteSignature(savedId, documentId);
@@ -993,13 +1048,86 @@ export function MyQuoteEditorPage() {
           <button
             type="button"
             disabled={requestingSignature}
-            onClick={() => void handleRequestSignature()}
+            onClick={abrirQuienFirma}
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg disabled:opacity-50"
           >
             {requestingSignature ? <Loader className="size-4 animate-spin" /> : <Send className="size-4" />}
             {language === 'en' ? 'Request signature' : 'Solicitar firma'}
           </button>
         </div>
+
+        {/* ── ¿Quién firma? ──────────────────────────────────────────────
+            Se pregunta siempre, porque la respuesta no es evidente: hay
+            cotizaciones que sólo acepta el cliente y otras que las dos partes
+            quieren dejar firmadas. */}
+        {preguntandoQuienFirma && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+            onClick={() => setPreguntandoQuienFirma(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <p className="text-base font-black text-slate-900">
+                {language === 'en' ? 'Who signs this quote?' : '¿Quién firma esta cotización?'}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {language === 'en'
+                  ? 'Signed by both parties it reads as an agreement; signed only by your client, as an accepted offer.'
+                  : 'Firmada por las dos partes se lee como un acuerdo; firmada sólo por tu cliente, como una oferta aceptada.'}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => { setPreguntandoQuienFirma(false); void handleRequestSignature(null); }}
+                className="mt-5 w-full rounded-2xl border-2 border-slate-200 px-4 py-3.5 text-left transition hover:border-indigo-300"
+              >
+                <p className="text-sm font-bold text-slate-800">
+                  {language === 'en' ? 'Only my client' : 'Solo mi cliente'}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {language === 'en' ? 'They receive it, review it and sign.' : 'La recibe, la revisa y firma.'}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPreguntandoQuienFirma(false); setFirmandoYo(true); }}
+                className="mt-2.5 w-full rounded-2xl border-2 border-indigo-300 bg-indigo-50/50 px-4 py-3.5 text-left transition hover:border-indigo-400"
+              >
+                <p className="flex items-center gap-1.5 text-sm font-bold text-indigo-800">
+                  <PenLine className="size-3.5" />
+                  {language === 'en' ? 'My client and me' : 'Mi cliente y yo'}
+                </p>
+                <p className="mt-0.5 text-xs text-indigo-600/80">
+                  {language === 'en' ? 'You sign now; your client signs from the link.' : 'Tú firmas ahora; tu cliente firma desde el enlace.'}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPreguntandoQuienFirma(false)}
+                className="mt-4 w-full text-center text-xs font-semibold text-slate-400 hover:text-slate-600"
+              >
+                {language === 'en' ? 'Cancel' : 'Cancelar'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <SignatureModal
+          open={firmandoYo}
+          onOpenChange={setFirmandoYo}
+          signerName={user?.email ?? ''}
+          title={language === 'en' ? 'Your signature' : 'Tu firma'}
+          subtitle={language === 'en'
+            ? 'Sign here and we will send the quote to your client right away.'
+            : 'Firma aquí y enviamos la cotización a tu cliente enseguida.'}
+          userId={user?.id}
+          onConfirm={(dataUrl) => {
+            setMiFirma(dataUrl);
+            setFirmandoYo(false);
+            void handleRequestSignature(dataUrl);
+          }}
+        />
 
         {quotaExceeded && (
           <div className="mt-4 rounded-3xl border-2 border-amber-200 bg-amber-50 p-6">

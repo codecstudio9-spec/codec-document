@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useAuth } from '../../contexts/auth-context';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShieldCheck, Lock } from 'lucide-react';
 import { SignaturePad } from './SignaturePad';
@@ -23,10 +22,12 @@ export function SignatureModal({
   subtitle,
   userId,
 }: SignatureModalProps) {
-  const { user, isAdmin } = useAuth();
   useEffect(() => {
     if (!open) return;
-    try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
+    // Aquí había un console.log que volcaba el objeto de usuario entero y sus
+    // permisos cada vez que se abría el modal. Era depuración olvidada, y en
+    // producción deja datos de la cuenta en la consola de cualquiera que abra
+    // las herramientas de desarrollo mientras firma.
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onOpenChange(false); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);

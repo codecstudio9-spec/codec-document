@@ -1794,7 +1794,7 @@ function ContenidoGenerador() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-800 leading-tight">
-                        {user?.user_metadata?.full_name || user?.email || (language === 'en' ? 'You' : 'Tú')}
+                        {user?.name || user?.email || (language === 'en' ? 'You' : 'Tú')}
                       </p>
                       <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
                         {language === 'en' ? 'Document Owner · Primary Signer' : 'Propietario · Firmante Principal'}
@@ -1848,7 +1848,7 @@ function ContenidoGenerador() {
                       />
                       <div style={{ width: '100%', height: 1, background: '#94a3b8', margin: '8px 0 2px' }} />
                       <p className="text-[10px] text-slate-400 font-medium">
-                        {user?.user_metadata?.full_name || user?.email || ''}
+                        {user?.name || user?.email || ''}
                       </p>
                     </div>
                   )}
@@ -1958,7 +1958,7 @@ function ContenidoGenerador() {
             open={signingPanelOpen}
             onOpenChange={setSigningPanelOpen}
             onConfirm={handleSignatureConfirm}
-            signerName={user?.user_metadata?.full_name || user?.email || ''}
+            signerName={user?.name || user?.email || ''}
             userId={session?.user?.id}
             title={language === 'en' ? 'Electronic Signature' : 'Firma Electrónica'}
           />
@@ -1973,7 +1973,7 @@ function ContenidoGenerador() {
           if (!open) setPendingSecConfig(null);
         }}
         onConfirm={handleSenderSignatureAndCreate}
-        signerName={user?.user_metadata?.full_name || user?.email || ''}
+        signerName={user?.name || user?.email || ''}
         userId={session?.user?.id}
         title={language === 'en' ? 'Sign as Sender' : 'Firma como Remitente'}
         subtitle={language === 'en'
