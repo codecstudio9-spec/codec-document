@@ -124,6 +124,79 @@ export async function configurarBeta(clave: string, valor: string): Promise<void
   if (error) throw new Error(error.message);
 }
 
+// ── Plan de pago (Wompi) ──────────────────────────────────────────────────
+
+/** Estado del plan del contador.
+ *
+ *  Es un plan APARTE del de documentos y firmas: otro producto, otro precio y
+ *  otra moneda. El precio llega del servidor y no va escrito en la pantalla,
+ *  para que moverlo sea cambiar un ajuste y no desplegar. */
+export interface EstadoPlan {
+  activo: boolean;
+  /** Hasta cuándo está pagado. null si nunca ha pagado. */
+  hasta: string | null;
+  ultimoPago: string | null;
+  /** En pesos, no en centavos: es lo que se muestra. */
+  precioMes: number;
+  /** null mientras el plan anual no esté abierto. */
+  precioAnual: number | null;
+  /** Documentos al mes que no se cobran. */
+  gratisMes: number;
+  diasRestantes: number | null;
+}
+
+export async function estadoPlan(): Promise<EstadoPlan> {
+  const { data, error } = await supabase.rpc('ed_plan_estado');
+  if (error) throw new Error(error.message);
+  const d = (data ?? {}) as Record<string, unknown>;
+
+  const hasta = (d.hasta as string) ?? null;
+  const diasRestantes = hasta
+    ? Math.max(0, Math.ceil((new Date(hasta).getTime() - Date.now()) / 86_400_000))
+    : null;
+
+  return {
+    activo: Boolean(d.activo),
+    hasta,
+    ultimoPago: (d.ultimo_pago as string) ?? null,
+    precioMes: Number(d.precio_mes ?? 52900),
+    precioAnual: d.precio_anual == null ? null : Number(d.precio_anual),
+    gratisMes: Number(d.gratis_mes ?? 200),
+    diasRestantes,
+  };
+}
+
+/** Abre el cobro y devuelve la dirección del Checkout de Wompi.
+ *
+ *  El importe y la firma los calcula la Edge Function contra el precio que
+ *  dice la base. Aquí no se pone ninguna cifra: si el navegador pudiera decir
+ *  cuánto cobrar, cualquiera pagaría mil pesos por el mes. */
+export async function iniciarPagoPlan(meses: 1 | 12): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('wompi-checkout', {
+    body: { meses },
+  });
+  if (error) throw new Error(error.message);
+
+  const c = data as {
+    publicKey: string; reference: string; amountInCents: number;
+    currency: string; signature: string; redirectUrl: string; error?: string;
+  };
+  if (c?.error) throw new Error(c.error);
+  if (!c?.signature) throw new Error('No se pudo abrir el cobro.');
+
+  // Checkout Web de Wompi por redirección. Se prefiere al widget incrustado
+  // porque no obliga a cargar un script de otro dominio dentro de la app.
+  const q = new URLSearchParams({
+    'public-key': c.publicKey,
+    currency: c.currency,
+    'amount-in-cents': String(c.amountInCents),
+    reference: c.reference,
+    'signature:integrity': c.signature,
+    'redirect-url': c.redirectUrl,
+  });
+  return `https://checkout.wompi.co/p/?${q.toString()}`;
+}
+
 export class BetaCerradaError extends Error {
   constructor(motivo: 'cerrada' | 'llena' | 'cupo') {
     super(

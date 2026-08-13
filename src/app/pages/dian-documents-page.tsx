@@ -42,6 +42,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
+  estadoPlan, iniciarPagoPlan, type EstadoPlan,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
@@ -102,6 +103,8 @@ function ContenidoDian() {
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
+  const [plan, setPlan] = useState<EstadoPlan | null>(null);
+  const [pagando, setPagando] = useState(false);
   // Quién ve la descarga masiva. Lo decide el servidor y llega en `beta`;
   // `ilimitado` es sólo el respaldo mientras esa consulta va y vuelve, para
   // que al propietario no le parpadee el botón al entrar.
@@ -342,20 +345,37 @@ function ContenidoDian() {
   const refrescar = useCallback(async () => {
     if (!permitido) return;
     try {
-      const [t, d, c] = await Promise.all([
+      const [t, d, c, p] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
         estadoBeta(),
+        estadoPlan(),
       ]);
       setTotales(t);
       setDocumentos(d);
       setBeta(c);
+      setPlan(p);
     } catch (e) {
       toast.error((e as Error).message);
     }
   }, [permitido, busqueda, filtroEstado, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+
+  /** Lleva al Checkout de Wompi. El importe y la firma los pone el servidor. */
+  const pagarPlan = async (meses: 1 | 12) => {
+    setPagando(true);
+    try {
+      const url = await iniciarPagoPlan(meses);
+      // Misma pestaña: Wompi devuelve aquí al terminar, y con una pestaña
+      // nueva el contador se queda mirando la vieja sin enterarse de que ya
+      // pagó.
+      window.location.href = url;
+    } catch (e) {
+      toast.error((e as Error).message);
+      setPagando(false);
+    }
+  };
   useEffect(() => {
     if (vista !== 'revision') return;
     void cargarExcepciones();
@@ -656,6 +676,17 @@ function ContenidoDian() {
                     : 'bg-white/10 text-white/70 ring-white/15'
               }`}>
                 {beta.restantesPersona} de {beta.limitePersona} documentos disponibles
+              </span>
+            )}
+            {/* Quien paga tiene que VER que paga. Un plan activo que no se
+                nota en ninguna parte hace dudar de si el cobro entró, y esa
+                duda acaba siempre en un mensaje preguntándolo. */}
+            {plan?.activo && (
+              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
+                Plan activo
+                {plan.diasRestantes !== null && plan.diasRestantes <= 7 && (
+                  <> · renueva en {plan.diasRestantes} {plan.diasRestantes === 1 ? 'día' : 'días'}</>
+                )}
               </span>
             )}
           </div>
@@ -1044,16 +1075,70 @@ function ContenidoDian() {
       )}
 
       {/* ── Importar ────────────────────────────────────────────────── */}
-        {beta && !beta.ilimitado && (beta.cerrada || beta.llena) && (
-          <section className="mb-6 rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
+        {/* Se acabó el cupo → aquí está la salida.
+            Antes esta pantalla decía «se acabó» y «escríbenos», sin nada que
+            pulsar. Dejar a alguien pidiéndole algo que no puede hacer desde
+            donde está ya costó un ciclo en el login de esta misma herramienta;
+            no se repite. Ahora el bloqueo y su solución están en el mismo
+            sitio. */}
+        {beta && !beta.ilimitado && (beta.cerrada || beta.llena || beta.restantesPersona === 0) && (
+          <section
+            className="mb-6 overflow-hidden bg-white p-6 text-center ring-1 ring-slate-100"
+            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+          >
             <Lock className="mx-auto mb-3 size-7 text-slate-300" />
             <p className="text-sm font-semibold text-slate-800">
-              {beta.cerrada ? 'El periodo de prueba terminó' : 'La prueba alcanzó su capacidad'}
+              {beta.cerrada
+                ? 'El periodo de prueba terminó'
+                : beta.llena
+                  ? 'La prueba alcanzó su capacidad'
+                  : 'Llegaste a tu cupo del mes'}
             </p>
             <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
-              Gracias por participar. Tus documentos siguen aquí y puedes consultarlos
-              y exportarlos; sólo no se pueden procesar nuevos por ahora.
+              Tus documentos siguen aquí: puedes consultarlos y exportarlos. Lo único
+              que se detuvo es procesar nuevos.
             </p>
+
+            {plan && (
+              <div className="mx-auto mt-5 max-w-sm">
+                <div className="rounded-2xl bg-slate-50 px-5 py-4 ring-1 ring-slate-200">
+                  <p className="text-2xl font-black tabular-nums text-slate-900">
+                    {pesos(plan.precioMes)}
+                    <span className="ml-1 text-sm font-semibold text-slate-500">/ mes</span>
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Sin tope de documentos. Se cancela cuando quieras.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void pagarPlan(1)}
+                  disabled={pagando}
+                  className="mt-3 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {pagando ? 'Abriendo el pago…' : 'Continuar sin límite'}
+                </button>
+
+                {plan.precioAnual !== null && (
+                  <button
+                    type="button"
+                    onClick={() => void pagarPlan(12)}
+                    disabled={pagando}
+                    className="mt-2 w-full rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    O paga el año: {pesos(plan.precioAnual)}
+                  </button>
+                )}
+
+                {/* Se nombra el medio de pago antes de salir de la app. Llegar
+                    a una pasarela sin saber si acepta lo que uno usa es la
+                    forma más tonta de perder un pago. */}
+                <p className="mt-2.5 text-[11px] leading-relaxed text-slate-400">
+                  Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal.
+                </p>
+              </div>
+            )}
           </section>
         )}
 
