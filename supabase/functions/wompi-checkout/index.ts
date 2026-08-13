@@ -28,8 +28,12 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const PUBLIC_KEY = Deno.env.get('WOMPI_PUBLIC_KEY') ?? '';
 const INTEGRITY_SECRET = Deno.env.get('WOMPI_INTEGRITY_SECRET') ?? '';
+// La ruta real de la herramienta es /documentos-electronicos. Estuvo apuntando
+// a /documentos-dian, que no existe: el contador habría pagado y aterrizado en
+// un 404, sin forma de saber si el cobro entró. Comprobado en el navegador
+// contra routes.tsx.
 const REDIRECT_URL = Deno.env.get('WOMPI_REDIRECT_URL')
-  ?? 'https://www.codecdocument.com/documentos-dian';
+  ?? 'https://www.codecdocument.com/documentos-electronicos';
 
 function cors(origin: string | null) {
   return {

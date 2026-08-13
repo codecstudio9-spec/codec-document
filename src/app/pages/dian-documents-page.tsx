@@ -52,6 +52,28 @@ import {
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
 
+/** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
+ *  porque aquí encabezan una frase leída en voz alta: «Nota crédito 1234 de
+ *  Distribuidora…». Un contador distingue perfectamente los tipos, y oír
+ *  «factura» sobre una nota crédito le hace desconfiar del resto. */
+const ETIQUETA_TIPO_VOZ: Record<string, string> = {
+  factura: 'Factura',
+  nota_credito: 'Nota crédito',
+  nota_debito: 'Nota débito',
+  documento_equivalente: 'Documento equivalente',
+  documento_soporte: 'Documento soporte',
+  nomina: 'Nómina electrónica',
+};
+
+const ETIQUETA_TIPO_VOZ_EN: Record<string, string> = {
+  factura: 'Invoice',
+  nota_credito: 'Credit note',
+  nota_debito: 'Debit note',
+  documento_equivalente: 'Equivalent document',
+  documento_soporte: 'Supporting document',
+  nomina: 'Payroll document',
+};
+
 const pesos = (n: number) =>
   n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
@@ -319,9 +341,14 @@ function ContenidoDian() {
           `This document has ${obs === 1 ? 'one issue' : `${obs} issues`}. I put them at the top, explained with the document's own figures.`,
         );
       } else {
+        // Se nombra el tipo REAL. Decía «Factura» a todo, y llamarle factura a
+        // una nota crédito delante de un contador es un error de bulto: son
+        // documentos que se comportan al revés en su contabilidad.
+        const tipo = ETIQUETA_TIPO_VOZ[String(doc.doc_type ?? '')] ?? 'Documento';
+        const tipoEn = ETIQUETA_TIPO_VOZ_EN[String(doc.doc_type ?? '')] ?? 'Document';
         narrar(
-          `Factura ${String(doc.full_number ?? '')} de ${String(doc.issuer_name ?? '')}. Está correcta: los totales cuadran con sus líneas y sus impuestos.`,
-          `Invoice ${String(doc.full_number ?? '')} from ${String(doc.issuer_name ?? '')}. It is correct: the totals match its lines and taxes.`,
+          `${tipo} ${String(doc.full_number ?? '')} de ${String(doc.issuer_name ?? '')}. Está correcto: los totales cuadran con sus líneas y sus impuestos.`,
+          `${tipoEn} ${String(doc.full_number ?? '')} from ${String(doc.issuer_name ?? '')}. It is correct: the totals match its lines and taxes.`,
         );
       }
     }
@@ -399,9 +426,27 @@ function ContenidoDian() {
   useEffect(() => {
     if (!permitido || bienvenidaDada.current) return;
     bienvenidaDada.current = true;
+    // El guion dice lo que la herramienta hace HOY, y en el orden en que el
+    // contador lo va a necesitar. Decía «puedes trabajar de dos formas» y
+    // describía dos, cuando ya son cuatro maneras de meter documentos más el
+    // Excel, el auditor y la plantilla contable: quien se guiara por la voz
+    // nunca se enteraba de que existían.
+    //
+    // Aun así no se enumeran las nueve cosas. Esto se ESCUCHA, y una lista
+    // larga no se retiene: se dice qué hace, cómo empezar ahora mismo, qué se
+    // lleva al final, y que hay atajos. Lo demás se descubre al usarlo, que
+    // para eso cada sección tiene su propia voz.
     speak({
-      es: 'Bienvenido a Codec Document para contadores. Puedes trabajar de dos formas. La primera: suelta aquí el archivo comprimido tal como te lo entregó la DIAN, y yo lo leo y organizo la información. La segunda: si tienes el Excel de la DIAN, copia la columna de CUFEs y pégala en el recuadro verde de arriba; te digo al instante cuáles documentos ya tienes cargados y cuáles te faltan, sin que revises uno por uno.',
-      en: 'Welcome to Codec Document for accountants. You can work in two ways. First: drop the ZIP file here, just as DIAN gave it to you, and I will read it and organize the information. Second: if you have the DIAN spreadsheet, copy the CUFE column and paste it in the green box above; I will tell you right away which documents you already have and which ones are missing, without checking them one by one.',
+      es: 'Bienvenido a Codec Document para contadores. Esto convierte los XML de la DIAN en información contable lista para usar, sin que abras un solo archivo. '
+        + 'Para empezar ahora mismo, suelta aquí el comprimido tal como te lo entregó la DIAN. '
+        + 'Cuando termine te doy el Excel de cuatro hojas y te señalo únicamente los documentos que no cuadran, que suelen ser un puñado: el resto no lo tienes que mirar. '
+        + 'Si prefieres no volver a descargar nada, en el recuadro azul activas una dirección de correo tuya y las facturas entran solas. '
+        + 'Y si lo que tienes es el Excel de la DIAN, pega la columna de CUFEs en el recuadro verde y te digo cuáles te faltan.',
+      en: 'Welcome to Codec Document for accountants. This turns DIAN XML files into accounting data ready to use, without you opening a single file. '
+        + 'To start right now, drop the ZIP here, just as DIAN gave it to you. '
+        + 'When I finish I give you the four sheet Excel and point out only the documents that do not add up, usually a handful: you can ignore the rest. '
+        + 'If you would rather never download anything again, the blue box gives you your own email address and the invoices come in on their own. '
+        + 'And if what you have is the DIAN spreadsheet, paste the CUFE column in the green box and I will tell you which ones are missing.',
     });
   }, [permitido, speak]);
 
@@ -567,9 +612,23 @@ function ContenidoDian() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`${docs.length} documento(s) exportados en 4 hojas`);
+      // Se avisa de las notas crédito ANTES de que abra el archivo. En la hoja
+      // de resumen restan, como debe ser; en las de detalle salen en positivo,
+      // tal como las emitió el proveedor. Quien no lo sepa suma la columna a
+      // mano, le da distinto, y desconfía del Excel entero — cuando el Excel
+      // es el que está bien.
+      const creditos = docs.filter((d) => d.doc_type === 'nota_credito').length;
       narrar(
-        `Tu Excel se está descargando con ${docs.length} documentos. Trae cuatro hojas: un resumen con los totales del periodo, el detalle línea por línea de cada producto, una hoja con un renglón por documento, y las retenciones aparte. Ábrelo con Excel y ya lo puedes trabajar.`,
-        `Your Excel is downloading with ${docs.length} documents. It has four sheets: a summary with the period totals, the line by line detail of each product, one row per document, and withholdings separately. Open it in Excel and it is ready to work with.`,
+        `Tu Excel se está descargando con ${docs.length} documentos. Trae cuatro hojas: un resumen con los totales del periodo, el detalle línea por línea de cada producto, una hoja con un renglón por documento, y las retenciones aparte.`
+          + (creditos > 0
+              ? ` Ojo con una cosa: en el resumen ${creditos === 1 ? 'la nota crédito resta' : `las ${creditos} notas crédito restan`}, porque así es como afectan tu base y tu IVA descontable. En las hojas de detalle ${creditos === 1 ? 'aparece' : 'aparecen'} en positivo, tal como ${creditos === 1 ? 'la emitió el proveedor' : 'las emitió el proveedor'}.`
+              : '')
+          + ' Ábrelo con Excel y ya lo puedes trabajar.',
+        `Your Excel is downloading with ${docs.length} documents. It has four sheets: a summary with the period totals, the line by line detail of each product, one row per document, and withholdings separately.`
+          + (creditos > 0
+              ? ` One thing to watch: in the summary ${creditos === 1 ? 'the credit note subtracts' : `the ${creditos} credit notes subtract`}, because that is how they affect your base and your deductible VAT. In the detail sheets they appear as positive, exactly as the supplier issued them.`
+              : '')
+          + ' Open it in Excel and it is ready to work with.',
       );
     } catch (e) {
       toast.error((e as Error).message);

@@ -8,11 +8,17 @@
  *   1. Pide el token en la DIAN → le llega el enlace al correo
  *   2. Pega ese enlace aquí
  *   3. Abre el enlace, exporta el listado del periodo y copia los CUFEs
- *   4. Los pega aquí y elige la carpeta
- *   5. Codec descarga los XML y los deja en esa carpeta
+ *   4. Los pega aquí y le da a Iniciar descarga
  *
- * Luego arrastra esa carpeta a la herramienta de Documentos DIAN, que ya
- * sabe leerla. No se toca ese flujo.
+ * Y ahí termina su parte. Lo descargado entra al analizador por
+ * `onDescargados`, sin pasar por el disco. La carpeta es OPCIONAL: sirve para
+ * que conserve el XML, que es el documento con validez legal, pero no hace
+ * falta para analizar.
+ *
+ * Hubo una etapa en que sí había que arrastrar la carpeta de vuelta a la
+ * pantalla anterior. Ya no, y conviene recordarlo: los guiones de voz de este
+ * archivo siguieron diciéndolo un tiempo después de que dejara de ser cierto,
+ * mandando al contador a hacer un trabajo que ya nadie le pedía.
  *
  * ── Por qué va tan medido ───────────────────────────────────────────────
  * El navegador no puede pedirle archivos a la DIAN (CORS), así que la
@@ -70,9 +76,9 @@ type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: s
  *  Es largo a proposito. La parte manual de este proceso es justo la que
  *  confunde, y un contador que no sabe de donde sale el token abandona
  *  antes de llegar a la parte automatica. */
-const GUION_ES = 'Esta herramienta baja los documentos de la DIAN por ti, pero hay una parte que tienes que hacer tu, porque necesita tus claves. Te la explico. Primero, entra al portal de la DIAN y solicita un token. La DIAN te manda un correo con el asunto Token Acceso DIAN. En ese correo hay un boton que dice Ingrese aqui. No le des clic todavia: haz clic derecho encima y elige Copiar direccion del enlace. Ese enlace lo pegas aqui en el primer campo, y le das al boton Probar para confirmar que sirve. Ojo con esto: el token vence a los sesenta minutos y solo funciona una vez. Segundo, abre ese mismo enlace en otra pestana, entra a Documentos, exporta el listado del periodo que necesites, y abre el Excel que te descarga. Ahi viene una columna que se llama CUFE. Copia esa columna completa y pegala aqui abajo. Tercero, elige la carpeta de tu computador donde quieres que te deje los archivos, y dale a Iniciar descarga. A partir de ahi yo hago el resto. Voy despacio a proposito, para que la DIAN no nos bloquee, asi que si son muchos documentos tomate un cafe. Cuando termine, arrastras esa carpeta a la pantalla de atras y yo leo todo y te armo la tabla y el Excel.';
+const GUION_ES = 'Esta herramienta baja los documentos de la DIAN por ti, pero hay una parte que tienes que hacer tu, porque necesita tus claves. Te la explico. Primero, entra al portal de la DIAN y solicita un token. La DIAN te manda un correo con el asunto Token Acceso DIAN. En ese correo hay un boton que dice Ingrese aqui. No le des clic todavia: haz clic derecho encima y elige Copiar direccion del enlace. Ese enlace lo pegas aqui en el primer campo, y le das al boton Probar para confirmar que sirve. Ojo con esto: el token vence a los sesenta minutos y solo funciona una vez. Segundo, abre ese mismo enlace en otra pestana, entra a Documentos, exporta el listado del periodo que necesites, y abre el Excel que te descarga. Ahi viene una columna que se llama CUFE. Copia esa columna completa y pegala aqui abajo. Tercero, dale a Iniciar descarga. Si quieres quedarte tambien con una copia en tu computador, elige antes una carpeta, pero no es obligatorio: el XML es el documento con validez legal y conviene guardarlo, aunque yo lo analizo igual sin eso. A partir de ahi yo hago el resto. Voy despacio a proposito, para que la DIAN no nos bloquee, asi que si son muchos documentos tomate un cafe. Cuando termine no tienes que hacer nada mas: los documentos pasan solos al analisis y apareceran en la tabla de atras, ya listos para el Excel.';
 
-const GUION_EN = 'This tool downloads your DIAN documents, but there is one part you have to do yourself because it needs your credentials. First, go to the DIAN portal and request a token. DIAN emails you a link. Right-click it and choose Copy link address, then paste it in the first field here and hit Test. The token expires in sixty minutes and works only once. Second, open that same link in another tab, export the listing for your period, open the spreadsheet and copy the CUFE column. Paste it below. Third, pick the folder on your computer where you want the files, and hit Start download. I go slowly on purpose so DIAN does not block us.';
+const GUION_EN = 'This tool downloads your DIAN documents, but there is one part you have to do yourself because it needs your credentials. First, go to the DIAN portal and request a token. DIAN emails you a link. Right-click it and choose Copy link address, then paste it in the first field here and hit Test. The token expires in sixty minutes and works only once. Second, open that same link in another tab, export the listing for your period, open the spreadsheet and copy the CUFE column. Paste it below. Third, hit Start download. If you also want a copy on your computer, pick a folder first, but it is optional: the XML is the legally valid document and worth keeping, though I analyse it either way. I go slowly on purpose so DIAN does not block us. When I finish you do not have to do anything else: the documents go straight into the analysis and show up in the table behind, ready for the Excel.';
 
 export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargados }: Props) {
   const [urlDian, setUrlDian] = useState('');
@@ -107,8 +113,8 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
       }).showDirectoryPicker({ mode: 'readwrite' });
       setCarpeta(dir);
       narrar?.(
-        `Voy a guardar todo en la carpeta ${dir.name}. Recuérdala, porque al terminar tienes que arrastrarla a la pantalla de atrás para que yo lea los documentos.`,
-        `I will save everything to the folder ${dir.name}. Remember it: when I finish you need to drag it to the previous screen so I can read the documents.`,
+        `Voy a guardar una copia en la carpeta ${dir.name}. No tienes que hacer nada con ella: los documentos pasan solos al análisis. La copia es para que conserves el XML, que es el que tiene validez legal.`,
+        `I will save a copy in the folder ${dir.name}. You do not have to do anything with it: the documents go into the analysis on their own. The copy is so you keep the XML, which is the legally valid one.`,
       );
     } catch {
       // El usuario canceló el diálogo: no es un error que reportar.
@@ -124,8 +130,8 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
       setEnlaceOk(true);
       toast.success('El enlace funciona: la DIAN abrió sesión.');
       narrar?.(
-        'Tu enlace funciona. Ahora pega la lista de CUFEs, elige la carpeta donde quieres los archivos y dale a Descargar.',
-        'Your link works. Now paste the CUFE list, choose the folder where you want the files, and hit Download.',
+        'Tu enlace funciona. Ahora pega la lista de CUFEs y dale a Descargar. Lo de elegir carpeta es opcional, solo si quieres quedarte con una copia de los XML.',
+        'Your link works. Now paste the CUFE list and hit Download. Choosing a folder is optional, only if you want to keep a copy of the XML files.',
       );
     } catch (e) {
       setEnlaceOk(false);
@@ -235,15 +241,22 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
         return;
       }
 
+      // Aquí se llega sólo cuando no bajó NADA (todos los CUFEs fallaron), o
+      // cuando quien monta el panel no pasó onDescargados. En el recorrido
+      // real de la aplicación siempre se pasa, así que decirle al contador
+      // que arrastre una carpeta era mandarlo a hacer un trabajo que ya no
+      // existe — y encima una carpeta que puede estar vacía.
       narrar?.(
-        errores === 0
-          ? `Listo. Descargué ${ok} documentos en tu carpeta. Ahora arrastra esa carpeta a la pantalla de atrás y yo los leo.`
-          : `Terminé. ${ok} documentos descargados y ${errores} con problema. Arrastra la carpeta a la pantalla de atrás para procesar los que sí bajaron.`,
-        errores === 0
-          ? `Done. I downloaded ${ok} documents to your folder. Now drag that folder to the previous screen.`
+        ok === 0
+          ? `No pude bajar ningún documento: los ${errores} fallaron. Lo más común es que el token ya se haya vencido; pide uno nuevo y vuelve a intentarlo.`
+          : `Terminé. ${ok} documentos descargados y ${errores} con problema.`,
+        ok === 0
+          ? `I could not download any document: all ${errores} failed. The usual cause is an expired token; request a new one and try again.`
           : `Finished. ${ok} downloaded, ${errores} failed.`,
       );
-      toast.success('Descarga terminada. Arrastra la carpeta a la pantalla principal.');
+      toast.success(
+        ok === 0 ? 'No se pudo descargar ningún documento.' : `Descarga terminada: ${ok} documento(s).`,
+      );
     } catch (e) {
       // Nada de lo que pase aquí dentro puede tumbar la pantalla. Una
       // descarga que falla es un contratiempo; perder la página con los
@@ -529,12 +542,18 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
           </div>
         )}
 
+        {/* En el recorrido real este panel se cierra solo al terminar y los
+            documentos pasan al análisis, así que este aviso casi nunca se ve.
+            Cuando se ve, tiene que decir la verdad: durante un tiempo pedía
+            arrastrar la carpeta a la pantalla anterior, un paso que ya no
+            existe. */}
         {progreso.total > 0 && !corriendo && progreso.ok > 0 && (
           <p className="mt-4 flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-xs leading-relaxed text-emerald-900 ring-1 ring-emerald-200">
             <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" />
             <span>
-              Listo. Cierra esto y <strong>arrastra la carpeta «{carpeta?.name}»</strong> a la zona
-              de arriba: yo leo los XML y te armo la tabla y el Excel.
+              Listo: {progreso.ok} documento(s) descargado(s). Pasan solos al análisis y
+              aparecerán en la tabla.
+              {carpeta && <> También te quedó una copia en «{carpeta.name}».</>}
             </span>
           </p>
         )}
