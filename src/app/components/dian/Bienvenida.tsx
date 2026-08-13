@@ -30,13 +30,17 @@ function saludo(): string {
 }
 
 export function Bienvenida({
-  nombre, foto, onAbrirMenu, onAyuda, onPerfil,
+  nombre, foto, onAbrirMenu, onAyuda, onPerfil, campana,
 }: {
   nombre?: string;
   foto?: string;
   onAbrirMenu: () => void;
   onAyuda?: () => void;
   onPerfil?: () => void;
+  /** La campana de avisos. Se recibe ya montada en vez de recibir la lista y
+   *  dibujarla aquí: así la cabecera no se vuelve a renderizar cada vez que
+   *  entra un aviso, y sólo se repinta la campana. */
+  campana?: React.ReactNode;
 }) {
   const inicial = (nombre ?? '?').charAt(0).toUpperCase();
 
@@ -66,6 +70,8 @@ export function Bienvenida({
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
+        {campana}
+
         {onAyuda && (
           <motion.button
             whileTap={{ scale: 0.92 }}

@@ -36,6 +36,8 @@ import { RepartoPorTipo, CifrasMes, COLOR_TIPO } from '../components/dian/Resume
 import { AccionesRapidas, type Accion } from '../components/dian/AccionesRapidas';
 import { CajonDerecho } from '../components/dian/CajonDerecho';
 import { AyudaFlotante } from '../components/dian/AyudaFlotante';
+import { Campana } from '../components/dian/Campana';
+import { useNotificaciones } from '../hooks/use-notificaciones';
 import { AnilloProgreso } from '../components/dian/AnilloProgreso';
 import { VistaAnalitica } from '../components/dian/VistaAnalitica';
 import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
@@ -365,6 +367,7 @@ function ContenidoDian() {
    *  concreta. Tenerlo siempre puesto le robaba ancho a la tabla, que es lo
    *  que el contador de verdad mira. */
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const avisos = useNotificaciones();
 
   /**
    * Barra lateral plegada a sólo iconos.
@@ -630,6 +633,52 @@ function ContenidoDian() {
    * volver a Inicio desde otra sección sí lo repite, que es cuando el
    * contador necesita que le recuerden dónde está.
    */
+  /**
+   * Avisos de cambios que el contador no está mirando.
+   *
+   * Se detectan comparando el estado nuevo contra el anterior en cada
+   * refresco, en vez de esperar un mensaje del servidor. Es lo correcto aquí:
+   * el pago lo confirma el webhook de Wompi contra la base, y lo que la
+   * pantalla puede saber es que el plan que tenía hace un momento ya no es el
+   * mismo — que es exactamente lo que hay que anunciar.
+   *
+   * `null` en la referencia significa «primer refresco»: sin él, entrar a la
+   * herramienta dispararía un aviso de «cambiaste de plan» sólo por descubrir
+   * cuál es. Y por eso la comparación va aquí y no dentro de `refrescar`, que
+   * corre también al teclear en el buscador.
+   */
+  const planPrevio = useRef<string | null>(null);
+  useEffect(() => {
+    if (!cuota) return;
+    const anterior = planPrevio.current;
+    planPrevio.current = cuota.planCode;
+    if (anterior === null || anterior === cuota.planCode) return;
+
+    avisos.añadir({
+      tipo: 'plan',
+      titulo: `Tu plan ahora es ${cuota.planNombre}`,
+      detalle: cuota.limite === null
+        ? 'Sin límite de documentos al mes.'
+        : `Puedes procesar ${cuota.limite.toLocaleString('es-CO')} documentos al mes.`,
+    });
+  }, [cuota, avisos]);
+
+  /** Lo que llega al buzón mientras el contador trabaja en otra pantalla. */
+  const pendientesPrevios = useRef<number | null>(null);
+  useEffect(() => {
+    if (!buzon?.disponible) return;
+    const anterior = pendientesPrevios.current;
+    pendientesPrevios.current = buzon.pendientes;
+    if (anterior === null || buzon.pendientes <= anterior) return;
+
+    const nuevos = buzon.pendientes - anterior;
+    avisos.añadir({
+      tipo: 'correo',
+      titulo: nuevos === 1 ? 'Llegó 1 factura por correo' : `Llegaron ${nuevos} facturas por correo`,
+      detalle: 'Están en tu bandeja, esperando a que las proceses.',
+    });
+  }, [buzon?.disponible, buzon?.pendientes, avisos]);
+
   const seccionPrevia = useRef<string | null>(null);
   useEffect(() => {
     if (!permitido) return;
@@ -721,6 +770,18 @@ function ContenidoDian() {
               ? ` ${pendientes} need your review. Filter by Needs review to find them.`
               : ' All of them are correct, nothing to review.')
           + ' You can download the Excel report whenever you want.',
+      });
+
+      // El aviso con sonido, para quien se fue a otra pestaña mientras se
+      // procesaba un lote grande — que es lo normal con mil documentos. La voz
+      // no le sirve a quien tiene el sonido de la guía apagado, y el toast se
+      // va solo a los pocos segundos.
+      avisos.añadir({
+        tipo: pendientes > 0 ? 'revision' : 'proceso',
+        titulo: `Terminé: ${r.procesados.toLocaleString('es-CO')} documentos procesados`,
+        detalle: pendientes > 0
+          ? `${pendientes} necesitan que los revises. El resto quedó correcto.`
+          : 'Todos quedaron correctos. Ya puedes descargar el Excel.',
       });
 
       await refrescar();
@@ -1194,6 +1255,14 @@ function ContenidoDian() {
           onAbrirMenu={() => setMenuAbierto(true)}
           onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
           onPerfil={() => setSeccion('planes')}
+          campana={
+            <Campana
+              lista={avisos.lista}
+              sinLeer={avisos.sinLeer}
+              onAbrir={avisos.marcarTodasLeidas}
+              onLimpiar={avisos.limpiar}
+            />
+          }
         />
 
         <div className="mx-auto max-w-6xl px-5 pb-24 pt-8 sm:px-8">
