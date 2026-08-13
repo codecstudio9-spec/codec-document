@@ -23,6 +23,7 @@ import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -43,6 +44,7 @@ import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
   estadoPlan, iniciarPagoPlan, type EstadoPlan,
+  estadoCorreo, activarCorreo, importarBandeja, type EstadoCorreo,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
@@ -105,6 +107,10 @@ function ContenidoDian() {
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const [plan, setPlan] = useState<EstadoPlan | null>(null);
   const [pagando, setPagando] = useState(false);
+  // `buzon`, no `correo`: en esta pantalla `correo` ya es el que se teclea
+  // para pedir el enlace de acceso, y son dos cosas distintas.
+  const [buzon, setBuzon] = useState<EstadoCorreo | null>(null);
+  const [panelCorreo, setPanelCorreo] = useState(false);
   // Quién ve la descarga masiva. Lo decide el servidor y llega en `beta`;
   // `ilimitado` es sólo el respaldo mientras esa consulta va y vuelve, para
   // que al propietario no le parpadee el botón al entrar.
@@ -345,16 +351,18 @@ function ContenidoDian() {
   const refrescar = useCallback(async () => {
     if (!permitido) return;
     try {
-      const [t, d, c, p] = await Promise.all([
+      const [t, d, c, p, m] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
         estadoBeta(),
         estadoPlan(),
+        estadoCorreo(),
       ]);
       setTotales(t);
       setDocumentos(d);
       setBeta(c);
       setPlan(p);
+      setBuzon(m);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -489,6 +497,50 @@ function ContenidoDian() {
       setCargando(false);
       setProgreso(null);
     }
+  };
+
+  /** Procesa lo que llegó por correo. Comparte con `procesar` el estado de
+   *  progreso y el resumen: para el contador es la misma operación, sólo que
+   *  no tuvo que ir a buscar los archivos. */
+  const procesarCorreo = async () => {
+    setCargando(true);
+    setResumen(null);
+    setFeed([]);
+    try {
+      const r = await importarBandeja((e) => {
+        setProgreso(e);
+        if (e.ultimo) setFeed((prev) => [e.ultimo!, ...prev].slice(0, 8));
+      });
+      setResumen(r);
+      setAyudaAbierta(false);
+      toast.success(`${r.procesados} documento(s) procesados desde tu correo`);
+      speak({
+        es: `Listo. Bajé ${r.desdeCorreo} documentos de tu correo y procesé ${r.procesados}.`
+          + (r.duplicados > 0 ? ` ${r.duplicados} ya los tenías.` : ''),
+        en: `Done. I pulled ${r.desdeCorreo} documents from your email and processed ${r.procesados}.`
+          + (r.duplicados > 0 ? ` ${r.duplicados} were already here.` : ''),
+      });
+      await refrescar();
+      setBuzon(await estadoCorreo());
+    } catch (e) {
+      if (e instanceof BetaCerradaError) toast.error(e.message, { duration: 9000 });
+      else toast.error((e as Error).message);
+    } finally {
+      setCargando(false);
+      setProgreso(null);
+    }
+  };
+
+  const activarBuzon = async () => {
+    try {
+      const dir = await activarCorreo();
+      setBuzon((c) => (c ? { ...c, direccion: dir, activo: true } : c));
+      toast.success('Tu dirección quedó lista');
+      narrar(
+        'Ya tienes tu dirección. Copia esa dirección y crea una regla en tu correo que reenvíe ahí las facturas de tus proveedores. Desde ese momento los documentos entran solos.',
+        'Your address is ready. Copy it and create a rule in your email that forwards your suppliers invoices there. From then on the documents come in on their own.',
+      );
+    } catch (e) { toast.error((e as Error).message); }
   };
 
   const [exportando, setExportando] = useState(false);
@@ -1141,6 +1193,107 @@ function ContenidoDian() {
             )}
           </section>
         )}
+
+        {/* ── Recibir por correo ────────────────────────────────────────
+            El token de la DIAN dura 60 minutos y hay que pedirlo a mano, así
+            que no existe forma de sincronizar de noche por ahí. El correo sí:
+            la ley obliga al emisor a mandar el XML por email, o sea que los
+            documentos YA están llegando a un buzón todos los días. */}
+        <section className="mb-6 overflow-hidden bg-sky-50/50 ring-2 ring-sky-200"
+          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
+          <button
+            type="button"
+            onClick={() => setPanelCorreo((v) => !v)}
+            className="flex w-full items-center gap-3 px-5 py-4 text-left"
+          >
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-600">
+              <Mail className="size-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2 text-base font-bold text-slate-900">
+                Que las facturas lleguen solas, por correo
+                {buzon && buzon.pendientes > 0 && (
+                  <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    {buzon.pendientes} sin procesar
+                  </span>
+                )}
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-600">
+                Reenvía las facturas de tus proveedores a una dirección tuya y entran
+                aquí sin que las descargues ni las arrastres.
+              </span>
+            </div>
+            <ChevronRight className={`size-4 shrink-0 text-slate-400 transition ${panelCorreo ? 'rotate-90' : ''}`} />
+          </button>
+
+          {panelCorreo && (
+            <div className="border-t border-sky-200 bg-white px-5 py-5">
+              {!buzon?.direccion ? (
+                <>
+                  <p className="mb-3 text-xs leading-relaxed text-slate-600">
+                    Te damos una dirección solo tuya. No pedimos la contraseña de tu
+                    correo: tú creas una regla de reenvío, o le pasas la dirección a
+                    tus proveedores.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void activarBuzon()}
+                    className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700"
+                  >
+                    Crear mi dirección
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    Tu dirección
+                  </p>
+                  {/* Copiable de un toque: esta dirección se va a pegar en la
+                      configuración de otro programa, y teclear veinte
+                      caracteres aleatorios a mano se equivoca siempre. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(buzon.direccion!);
+                      toast.success('Dirección copiada');
+                    }}
+                    className="mt-1 flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-left font-mono text-xs text-slate-800 transition hover:bg-white"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{buzon.direccion}</span>
+                    <Copy className="size-3.5 shrink-0 text-slate-400" />
+                  </button>
+
+                  <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                    Crea en tu correo una regla que reenvíe ahí los mensajes con
+                    facturas. Guardamos el XML, que es el documento con validez legal;
+                    el PDF no hace falta.
+                  </p>
+
+                  {buzon.pendientes > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => void procesarCorreo()}
+                      disabled={cargando}
+                      className="mt-4 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                    >
+                      {cargando
+                        ? 'Procesando…'
+                        : `Procesar los ${buzon.pendientes} que llegaron`}
+                    </button>
+                  ) : (
+                    // Decir que no hay nada es información. Un hueco en blanco
+                    // parece que la pantalla se rompió.
+                    <p className="mt-4 rounded-xl bg-slate-50 px-3.5 py-3 text-xs text-slate-500">
+                      {buzon.ultimoCorreo
+                        ? `Sin documentos nuevos. El último correo llegó el ${new Date(buzon.ultimoCorreo).toLocaleDateString('es-CO')}.`
+                        : 'Todavía no ha llegado ningún correo a esta dirección.'}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </section>
 
         {/* ── Verificar por lista de CUFEs ─────────────────────────────
             Responde la pregunta que el contador resuelve hoy a mano: de lo

@@ -197,6 +197,127 @@ export async function iniciarPagoPlan(meses: 1 | 12): Promise<string> {
   return `https://checkout.wompi.co/p/?${q.toString()}`;
 }
 
+// ── Conector de correo ────────────────────────────────────────────────────
+
+/** El dominio donde se reciben las facturas. Va aquí y no en la base para que
+ *  cambiarlo no obligue a migrar filas: en la base sólo vive el token. */
+const DOMINIO_BUZON =
+  (import.meta.env.VITE_DIAN_INBOX_DOMAIN as string | undefined)
+  ?? 'facturas.codecdocument.com';
+
+export interface EstadoCorreo {
+  /** Dirección completa del contador. null si nunca la ha activado. */
+  direccion: string | null;
+  activo: boolean;
+  ultimoCorreo: string | null;
+  /** Documentos esperando a que los procese. */
+  pendientes: number;
+}
+
+export interface ArchivoBandeja {
+  id: string;
+  filename: string;
+  from_address: string | null;
+  subject: string | null;
+  received_at: string;
+  size_bytes: number | null;
+  storage_path: string;
+}
+
+const direccionDe = (token: string | null): string | null =>
+  token ? `${token}@${DOMINIO_BUZON}` : null;
+
+export async function estadoCorreo(): Promise<EstadoCorreo> {
+  const { data, error } = await supabase.rpc('ed_email_estado');
+  if (error) throw new Error(error.message);
+  const d = (data ?? {}) as Record<string, unknown>;
+  return {
+    direccion: direccionDe((d.token as string) ?? null),
+    activo: Boolean(d.activo),
+    ultimoCorreo: (d.ultimo_correo as string) ?? null,
+    pendientes: Number(d.pendientes ?? 0),
+  };
+}
+
+export async function activarCorreo(): Promise<string> {
+  const { data, error } = await supabase.rpc('ed_email_activar');
+  if (error) throw new Error(error.message);
+  const dir = direccionDe(((data ?? {}) as Record<string, unknown>).token as string);
+  if (!dir) throw new Error('No se pudo crear la dirección.');
+  return dir;
+}
+
+export async function apagarCorreo(): Promise<void> {
+  const { error } = await supabase.rpc('ed_email_apagar');
+  if (error) throw new Error(error.message);
+}
+
+export async function listarBandeja(): Promise<ArchivoBandeja[]> {
+  const { data, error } = await supabase
+    .from('ed_inbox_files')
+    .select('id, filename, from_address, subject, received_at, size_bytes, storage_path')
+    .eq('status', 'PENDING')
+    .order('received_at', { ascending: false })
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ArchivoBandeja[];
+}
+
+/**
+ * Procesa lo que llegó por correo.
+ *
+ * Baja los archivos del bucket privado y los mete por EL MISMO camino que un
+ * archivo arrastrado a mano. Esa es la decisión de fondo del conector: no hay
+ * un segundo motor para el correo. Si lo hubiera, el mismo documento podría
+ * dar dos cifras distintas según por dónde entró, y eso en contabilidad no es
+ * una molestia, es una declaración mal presentada.
+ */
+export async function importarBandeja(
+  onProgreso: (e: EventoProgreso) => void,
+): Promise<ResumenImportacion & { desdeCorreo: number }> {
+  const pendientes = await listarBandeja();
+  if (pendientes.length === 0) {
+    throw new Error('No hay documentos nuevos en el correo.');
+  }
+
+  const archivos: File[] = [];
+  const bajados: string[] = [];
+  const fallidos: { id: string; error: string }[] = [];
+
+  for (const p of pendientes) {
+    const { data, error } = await supabase.storage
+      .from('fiscal-documents')
+      .download(p.storage_path);
+    if (error || !data) {
+      fallidos.push({ id: p.id, error: error?.message ?? 'No se pudo leer el archivo.' });
+      continue;
+    }
+    archivos.push(new File([data], p.filename));
+    bajados.push(p.id);
+  }
+
+  // Los que no se pudieron leer se marcan antes de importar. Si se dejaran
+  // en PENDING, volverían a intentarse en cada visita y el contador vería
+  // para siempre un aviso de documentos nuevos que nunca bajan.
+  for (const f of fallidos) {
+    await supabase.rpc('ed_inbox_marcar', {
+      p_ids: [f.id], p_status: 'ERROR', p_import_id: null, p_error: f.error,
+    });
+  }
+
+  if (archivos.length === 0) {
+    throw new Error('No se pudo leer ninguno de los documentos que llegaron.');
+  }
+
+  const resumen = await importarArchivos(archivos, onProgreso);
+
+  await supabase.rpc('ed_inbox_marcar', {
+    p_ids: bajados, p_status: 'IMPORTED', p_import_id: resumen.importId, p_error: null,
+  });
+
+  return { ...resumen, desdeCorreo: archivos.length };
+}
+
 export class BetaCerradaError extends Error {
   constructor(motivo: 'cerrada' | 'llena' | 'cupo') {
     super(
