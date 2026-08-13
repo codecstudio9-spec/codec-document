@@ -45,6 +45,11 @@ export const VERSION_MOTOR = '1.0.0';
  *  dejaría de mirarla, que es el único fallo que no se puede permitir. */
 const TOLERANCIA = 1;
 
+/** Identificaciones que la DIAN reserva para el comprador que no se
+ *  identifica (Res. 000042 de 2020). Se listan las dos longitudes porque los
+ *  emisores escriben una u otra. */
+const CONSUMIDOR_FINAL = new Set(['222222222222', '22222222222']);
+
 // ── Utilidades ────────────────────────────────────────────────────────────
 
 /** Convierte a número siendo tolerante con el formato. Devuelve 0 y no NaN:
@@ -261,6 +266,34 @@ function validar(doc: DocumentoNormalizado): Excepcion[] {
 
   if (doc.tipo !== 'evento' && doc.lineas.length === 0) {
     falta('SIN_LINEAS', 'lineas', 'El documento no tiene líneas de detalle.');
+  }
+
+  // Documento equivalente POS sin adquiriente identificado.
+  //
+  // El artículo 16 de la Resolución 000165 de 2023 sólo reconoce el documento
+  // equivalente electrónico como soporte de IVA descontable, costos y
+  // deducciones cuando el adquiriente queda plenamente identificado con su
+  // nombre o razón social y su número de identificación. Si el vendedor lo
+  // expidió a «Consumidor final» —NIT 222222222222, según la Resolución
+  // 000042 de 2020— no sirve para descontar nada.
+  //
+  // Es el hallazgo más caro que puede dar esta herramienta y no se ve por
+  // ninguna parte al abrir el archivo: el documento es perfectamente válido,
+  // está firmado y la DIAN lo validó. Sólo que descontarle el IVA es un
+  // rechazo seguro en una revisión. Quien no lo sepa lo descuenta.
+  if (doc.tipo === 'documento_equivalente'
+      && (!doc.receptor.nit || CONSUMIDOR_FINAL.has(doc.receptor.nit))) {
+    ex.push({
+      codigo: 'POS_SIN_ADQUIRIENTE',
+      severidad: 'revision',
+      mensaje:
+        'Este documento equivalente salió a nombre de «Consumidor final», sin identificar '
+        + 'al comprador. Así no sirve para descontar IVA ni para soportar costos ni '
+        + 'deducciones (Res. 000165 de 2023, art. 16). Pídele al proveedor que lo reexpida '
+        + 'con el NIT y la razón social, o que te dé factura electrónica.',
+      campo: 'receptor.nit',
+      encontrado: doc.receptor.nit || '(vacío)',
+    });
   }
 
   // Cuadre 1: la suma de las líneas contra el bruto declarado.

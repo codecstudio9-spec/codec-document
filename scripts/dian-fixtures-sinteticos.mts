@@ -125,6 +125,16 @@ const EMISOR_MAYORISTA: Parte = {
   direccion: 'AVENIDA 6N # 23 - 61', regimen: 'O-13;O-23',
 };
 
+/** El comprador que no se identifica. La DIAN le reserva el NIT
+ *  222222222222 y la razón social «Consumidor final» (Res. 000042 de 2020). */
+const CONSUMIDOR_FINAL: Parte = {
+  nit: '222222222222', dv: '0',
+  razon: 'Consumidor final',
+  comercial: 'Consumidor final',
+  ciudad: 'BOGOTA D.C.', departamento: 'Bogota',
+  direccion: 'CALLE 100 # 10 - 10', regimen: 'R-99-PN',
+};
+
 const RECEPTOR: Parte = {
   nit: '901987654', dv: '3',
   razon: 'CLIENTE SINTETICO S.A.S. (FIXTURE)',
@@ -346,6 +356,48 @@ ${extensionesDian({ resolucion: '18760000777', prefijo: 'REST', desde: '1', hast
 `;
 }
 
+// ── Fixture 5 · POS a «Consumidor final» ──────────────────────────────────
+//
+// Ejercita el hallazgo más caro que da la herramienta. Este documento es
+// impecable: firmado, validado por la DIAN, cuadrado al peso. Y descontarle el
+// IVA es un rechazo seguro, porque el artículo 16 de la Resolución 000165 de
+// 2023 sólo lo reconoce como soporte cuando el adquiriente queda plenamente
+// identificado. No hay nada en el archivo que lo grite; hay que saberlo.
+
+function posConsumidorFinal(): string {
+  const cufe = cufeFalso('pos-consumidor-final');
+  const iva = 7600; // 40.000 × 19 %
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice ${NS_INVOICE}>
+${extensionesDian({ resolucion: '18760000001', prefijo: 'POS', desde: '1', hasta: '5000000', cufe })}
+  <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>10</cbc:CustomizationID>
+  <cbc:ProfileID>DIAN 2.1: Documento Equivalente Electronico P.O.S.</cbc:ProfileID>
+  <cbc:ProfileExecutionID>1</cbc:ProfileExecutionID>
+  <cbc:ID>POS45122</cbc:ID>
+  <cbc:UUID schemeID="1" schemeName="CUDE-SHA384">${cufe}</cbc:UUID>
+  <cbc:IssueDate>2026-08-05</cbc:IssueDate>
+  <cbc:IssueTime>18:31:09-05:00</cbc:IssueTime>
+  <cbc:InvoiceTypeCode>04</cbc:InvoiceTypeCode>
+  <cbc:Note>${AVISO}</cbc:Note>
+  <cbc:Note>Expedido sin identificar al adquiriente: no soporta IVA descontable.</cbc:Note>
+  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:LineCountNumeric>1</cbc:LineCountNumeric>
+  ${parte('AccountingSupplierParty', EMISOR_POS, '1')}
+  ${parte('AccountingCustomerParty', CONSUMIDOR_FINAL, '2')}
+  <cac:PaymentMeans><cbc:ID>1</cbc:ID><cbc:PaymentMeansCode>10</cbc:PaymentMeansCode></cac:PaymentMeans>
+  ${bloqueImpuesto(iva, [subtotal('01', 'IVA', 40000, 19, iva)])}
+  ${totales({ bruto: 40000, baseGravable: 40000, conImpuestos: 47600, pagar: 47600 })}
+  ${linea('InvoiceLine', 'InvoicedQuantity', {
+    numero: 1, cantidad: 1, unidad: '94', precio: 40000, bruto: 40000,
+    descripcion: 'PAPELERIA SURTIDA', codigo: 'P-3001',
+    impuestos: bloqueImpuesto(iva, [subtotal('01', 'IVA', 40000, 19, iva)]),
+  })}
+</Invoice>
+`;
+}
+
 // ── Fixture 4 · nota débito dentro de AttachedDocument, con retenciones ────
 //
 // Ejercita tres cosas a la vez:
@@ -475,6 +527,7 @@ const FIXTURES: Array<{ archivo: string; que: string; genera: () => string }> = 
   { archivo: 'sint-0002-pos-mixto.xml', que: 'POS con linea gravada y linea excluida', genera: posMixto },
   { archivo: 'sint-0003-pos-restaurante-inc.xml', que: 'POS de restaurante con INC 8 %', genera: posRestaurante },
   { archivo: 'sint-0004-nota-debito.xml', que: 'nota debito en contenedor, con retenciones', genera: notaDebito },
+  { archivo: 'sint-0005-pos-consumidor-final.xml', que: 'POS sin adquiriente: no da IVA descontable', genera: posConsumidorFinal },
 ];
 
 fs.mkdirSync(SALIDA, { recursive: true });

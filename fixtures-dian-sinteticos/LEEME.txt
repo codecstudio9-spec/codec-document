@@ -13,3 +13,4 @@ Comprobar:  npm run check:dian -- ./fixtures-dian-sinteticos
   sint-0002-pos-mixto.xml            POS con linea gravada y linea excluida
   sint-0003-pos-restaurante-inc.xml  POS de restaurante con INC 8 %
   sint-0004-nota-debito.xml          nota debito en contenedor, con retenciones
+  sint-0005-pos-consumidor-final.xml POS sin adquiriente: no da IVA descontable
