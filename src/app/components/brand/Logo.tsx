@@ -5,6 +5,11 @@ interface LogoProps {
   size?: 'sm' | 'md';
   dark?: boolean;
   href?: string;
+  /** Sólo el escudo, sin el nombre. Para barras laterales plegadas, donde no
+   *  cabe el texto pero la marca tiene que seguir estando. Va aquí y no
+   *  redibujado en el sitio que lo necesite para que el degradado y el
+   *  resplandor del escudo sigan teniendo un solo origen. */
+  markOnly?: boolean;
 }
 
 /**
@@ -12,7 +17,7 @@ interface LogoProps {
  * LandingHeader.tsx — copied here as a single shared source instead of a
  * third hand-written copy, since the mobile app shell needs it too.
  */
-export function Logo({ tagline, size = 'md', dark = false, href = '/' }: LogoProps) {
+export function Logo({ tagline, size = 'md', dark = false, href = '/', markOnly = false }: LogoProps) {
   const boxSize = size === 'sm' ? 'size-8' : 'size-9';
   const iconSize = size === 'sm' ? 'size-4' : 'size-5';
   const wordmarkSize = size === 'sm' ? 'text-sm' : 'text-base';
@@ -26,14 +31,16 @@ export function Logo({ tagline, size = 'md', dark = false, href = '/' }: LogoPro
         <Shield className={`${iconSize} text-white`} />
         <span className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
       </div>
-      <div className="min-w-0">
-        <span translate="no" className={`notranslate block ${wordmarkSize} font-black tracking-tight ${textColor}`}>
-          Codec <span className={accentColor}>Document</span>
-        </span>
-        {tagline && (
-          <span className={`block text-[10px] font-medium leading-none ${taglineColor}`}>{tagline}</span>
-        )}
-      </div>
+      {!markOnly && (
+        <div className="min-w-0">
+          <span translate="no" className={`notranslate block ${wordmarkSize} font-black tracking-tight ${textColor}`}>
+            Codec <span className={accentColor}>Document</span>
+          </span>
+          {tagline && (
+            <span className={`block text-[10px] font-medium leading-none ${taglineColor}`}>{tagline}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 

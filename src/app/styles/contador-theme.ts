@@ -34,6 +34,13 @@ export {
  *  desplazaría el contenido de lado. */
 export const ANCHO_LATERAL = 280;
 
+/** Ancho plegado: sólo los iconos.
+ *
+ *  76 y no menos porque el icono mide 18, la pastilla del activo necesita
+ *  respirar a los lados, y por debajo de eso el objetivo de pulsación queda
+ *  más estrecho de lo que cualquiera acierta al primer intento. */
+export const ANCHO_LATERAL_PLEGADA = 76;
+
 // ── Superficies ───────────────────────────────────────────────────────────
 
 /**

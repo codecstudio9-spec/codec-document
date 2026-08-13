@@ -28,7 +28,9 @@ import {
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
   FolderOpen, ChevronLeft, ArrowRight, Clock3,
 } from 'lucide-react';
-import { PanelLateral, ANCHO_LATERAL, type GrupoLateral } from '../components/dian/PanelLateral';
+import {
+  PanelLateral, ANCHO_LATERAL, ANCHO_LATERAL_PLEGADA, type GrupoLateral,
+} from '../components/dian/PanelLateral';
 import { Bienvenida } from '../components/dian/Bienvenida';
 import { RepartoPorTipo, CifrasMes, COLOR_TIPO } from '../components/dian/ResumenMes';
 import { AccionesRapidas, type Accion } from '../components/dian/AccionesRapidas';
@@ -114,6 +116,9 @@ const ETIQUETA_TIPO: Record<string, string> = {
  * El punto no es adorno: es lo que se ve al recorrer la columna con la vista
  * sin leer, y por eso lleva un tono más saturado que el texto.
  */
+/** Dónde se recuerda si el contador dejó la barra lateral plegada. */
+const CLAVE_LATERAL_PLEGADA = 'codec_dian_lateral_plegada';
+
 const ESTADO: Record<string, { texto: string; color: string; fondo: string; punto: string }> = {
   PROCESSED: { texto: 'Procesado', color: '#059669', fondo: '#ECFDF5', punto: '#10B981' },
   REVIEW_REQUIRED: { texto: 'Requiere revisión', color: '#B45309', fondo: '#FFFBEB', punto: '#F59E0B' },
@@ -292,6 +297,32 @@ function ContenidoDian() {
    *  concreta. Tenerlo siempre puesto le robaba ancho a la tabla, que es lo
    *  que el contador de verdad mira. */
   const [menuAbierto, setMenuAbierto] = useState(false);
+
+  /**
+   * Barra lateral plegada a sólo iconos.
+   *
+   * Se recuerda porque es una preferencia de sitio de trabajo, no una decisión
+   * de esta visita: quien la pliega para ganar ancho en la tabla no quiere
+   * volver a plegarla cada vez que entra. Se lee de forma perezosa —dentro del
+   * `useState`— para que no haya un primer render con la barra desplegada y un
+   * salto en cuanto el efecto la corrija.
+   */
+  const [lateralPlegada, setLateralPlegada] = useState(() => {
+    try {
+      return localStorage.getItem(CLAVE_LATERAL_PLEGADA) === '1';
+    } catch {
+      // Safari en privado tira al leer localStorage. Que la barra salga
+      // desplegada es un detalle; que la pantalla no cargue, no.
+      return false;
+    }
+  });
+
+  const alternarPlegado = useCallback(() => {
+    setLateralPlegada((v) => {
+      try { localStorage.setItem(CLAVE_LATERAL_PLEGADA, v ? '0' : '1'); } catch { /* da igual */ }
+      return !v;
+    });
+  }, []);
 
   // Bandeja de excepciones y limpieza
   const [vista, setVista] = useState<'documentos' | 'revision'>('documentos');
@@ -1053,6 +1084,8 @@ function ContenidoDian() {
         onSalir={() => { void logout().then(() => navegar('/', { replace: true })); }}
         abierta={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
+        plegada={lateralPlegada}
+        onAlternarPlegado={alternarPlegado}
       />
 
       {/* Sin z-index aquí a propósito: emparejar `relative` con un z-index
@@ -1060,9 +1093,15 @@ function ContenidoDian() {
           descendientes, incluidos los modales a pantalla completa, y los
           dejaría por debajo de la barra lateral aunque su z-index sea mayor.
           Es el mismo motivo documentado en `DesktopAppShell`. */}
+      {/* El desplazamiento sigue al ancho real de la barra, plegada o no.
+          `transition-[padding]` con la misma curva que la barra: si el
+          contenido saltara de golpe mientras la barra se desliza, el plegado
+          se vería como un fallo en vez de como un movimiento. */}
       <div
-        className="relative lg:pl-[var(--lateral)]"
-        style={{ '--lateral': `${ANCHO_LATERAL}px` } as CSSProperties}
+        className="relative transition-[padding] duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:pl-[var(--lateral)]"
+        style={{
+          '--lateral': `${lateralPlegada ? ANCHO_LATERAL_PLEGADA : ANCHO_LATERAL}px`,
+        } as CSSProperties}
       >
         <Bienvenida
           nombre={nombreCorto}
