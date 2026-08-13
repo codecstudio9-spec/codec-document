@@ -1382,7 +1382,13 @@ function ContenidoDian() {
             <div className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2 text-base font-bold text-slate-900">
                 Que las facturas lleguen solas, por correo
-                {buzon && buzon.pendientes > 0 && (
+                {buzon && !buzon.disponible && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
+                    <Lock className="size-2.5" />
+                    {buzon.planMinimo?.nombre ?? 'De pago'}
+                  </span>
+                )}
+                {buzon && buzon.disponible && buzon.pendientes > 0 && (
                   <span className="rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                     {buzon.pendientes} sin procesar
                   </span>
@@ -1398,7 +1404,42 @@ function ContenidoDian() {
 
           {panelCorreo && (
             <div className="border-t border-sky-200 bg-white px-5 py-5">
-              {!buzon?.direccion ? (
+              {/* Sin plan: se muestra bloqueado, NO se esconde.
+                  Una función invisible no se descubre nunca, y quien no sabe
+                  que existe tampoco la echa de menos ni paga por ella. Se dice
+                  qué es, por qué está cerrada y cuánto cuesta abrirla. */}
+              {buzon && !buzon.disponible ? (
+                <div className="text-center">
+                  <Lock className="mx-auto mb-3 size-6 text-slate-300" />
+                  <p className="text-sm font-semibold text-slate-800">
+                    Disponible desde el plan {buzon.planMinimo?.nombre ?? 'Básico'}
+                  </p>
+                  <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-slate-500">
+                    Recibir las facturas por correo es lo que elimina el paso de descargarlas
+                    y arrastrarlas una por una. Tu plan actual es {buzon.planActual}.
+                  </p>
+
+                  {buzon.planMinimo && (
+                    <button
+                      type="button"
+                      onClick={() => void pagarPlan(buzon.planMinimo!.code)}
+                      disabled={pagando !== ''}
+                      className="mt-4 rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                    >
+                      {pagando === buzon.planMinimo.code
+                        ? 'Abriendo el pago…'
+                        : `Pasar a ${buzon.planMinimo.nombre} · ${pesos(buzon.planMinimo.precio)}/mes`}
+                    </button>
+                  )}
+
+                  {/* Que no se quede pensando que sin pagar no puede hacer nada:
+                      los otros tres caminos siguen abiertos. */}
+                  <p className="mx-auto mt-3 max-w-md text-[11px] leading-relaxed text-slate-400">
+                    Mientras tanto puedes seguir subiendo el ZIP, descargando desde la DIAN
+                    y verificando por CUFEs, que no tienen ninguna restricción.
+                  </p>
+                </div>
+              ) : !buzon?.direccion ? (
                 <>
                   <p className="mb-3 text-xs leading-relaxed text-slate-600">
                     Te damos una dirección solo tuya. No pedimos la contraseña de tu

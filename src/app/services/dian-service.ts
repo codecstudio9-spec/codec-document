@@ -275,6 +275,14 @@ export interface EstadoCorreo {
   ultimoCorreo: string | null;
   /** Documentos esperando a que los procese. */
   pendientes: number;
+  /** Si su plan incluye la recepción por correo. Lo decide el servidor; la
+   *  pantalla sólo lo obedece para mostrar el candado. El cierre de verdad
+   *  está en `ed_email_activar()` y en `ed_email_recibir()`. */
+  disponible: boolean;
+  planActual: string;
+  /** El plan más barato que lo incluye, para poder ofrecerlo sin que la
+   *  pantalla se sepa el catálogo ni se quede desfasada si cambian precios. */
+  planMinimo: { code: string; nombre: string; precio: number } | null;
 }
 
 export interface ArchivoBandeja {
@@ -294,11 +302,18 @@ export async function estadoCorreo(): Promise<EstadoCorreo> {
   const { data, error } = await supabase.rpc('ed_email_estado');
   if (error) throw new Error(error.message);
   const d = (data ?? {}) as Record<string, unknown>;
+  const m = d.plan_minimo as Record<string, unknown> | null;
+
   return {
     direccion: direccionDe((d.token as string) ?? null),
     activo: Boolean(d.activo),
     ultimoCorreo: (d.ultimo_correo as string) ?? null,
     pendientes: Number(d.pendientes ?? 0),
+    disponible: Boolean(d.disponible),
+    planActual: String(d.plan_actual ?? 'Gratis'),
+    planMinimo: m
+      ? { code: String(m.code), nombre: String(m.nombre), precio: Number(m.precio) }
+      : null,
   };
 }
 

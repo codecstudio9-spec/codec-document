@@ -199,16 +199,30 @@ Deno.serve(async (req) => {
 
   let token = '';
   let owner: string | null = null;
+  let motivo = 'desconocido';
+
   for (const d of destinos) {
     const t = tokenDeDireccion(d);
     if (!t) continue;
-    const { data: duenio } = await admin.rpc('ed_email_duenio', { p_token: t });
-    if (duenio) { token = t; owner = duenio as string; break; }
+    const { data } = await admin.rpc('ed_email_destino', { p_token: t });
+    const r = (data ?? {}) as { ok?: boolean; motivo?: string; owner?: string };
+    if (r.ok) { token = t; owner = r.owner ?? null; break; }
+    if (r.motivo) motivo = r.motivo;
   }
 
   if (!owner) {
-    // Dirección que no es de nadie. 200: reintentarlo no la va a crear.
-    console.warn('correo-entrante: destino sin dueño', destinos.join(','));
+    // Se distinguen los dos casos a proposito. Uno es alguien escribiendo a
+    // una direccion inventada, que no requiere ninguna accion. El otro es un
+    // cliente de verdad cuyo plan vencio, y a ese hay que llamarlo — si los
+    // dos se registraran igual, el segundo se perderia entre el ruido.
+    if (motivo === 'sin_plan') {
+      console.warn('correo-entrante: plan vencido, correo declinado', destinos.join(','));
+    } else {
+      console.warn('correo-entrante: destino sin dueño', destinos.join(','));
+    }
+    // 200 en ambos casos: reintentar no crea una dirección ni renueva un plan.
+    // Y no se pierde nada — el correo original sigue en el buzón del contador,
+    // que es desde donde nos lo reenvió.
     return new Response('ok', { status: 200 });
   }
 
