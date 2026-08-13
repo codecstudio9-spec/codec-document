@@ -179,13 +179,18 @@ export async function iniciarPagoPlan(meses: 1 | 12): Promise<string> {
 
   const c = data as {
     publicKey: string; reference: string; amountInCents: number;
-    currency: string; signature: string; redirectUrl: string; error?: string;
+    currency: string; signature: string; redirectUrl: string;
+    email?: string; error?: string;
   };
   if (c?.error) throw new Error(c.error);
   if (!c?.signature) throw new Error('No se pudo abrir el cobro.');
 
   // Checkout Web de Wompi por redirección. Se prefiere al widget incrustado
   // porque no obliga a cargar un script de otro dominio dentro de la app.
+  //
+  // NO se usa un «link de pago» de Wompi (checkout.wompi.co/l/…): ese lleva
+  // referencia fija, y el webhook necesita saber QUÉ contador pagó para
+  // activarle el plan. Con una referencia igual para todos no se puede.
   const q = new URLSearchParams({
     'public-key': c.publicKey,
     currency: c.currency,
@@ -194,6 +199,10 @@ export async function iniciarPagoPlan(meses: 1 | 12): Promise<string> {
     'signature:integrity': c.signature,
     'redirect-url': c.redirectUrl,
   });
+  // Prellenar el correo evita retecleárselo justo cuando va a pagar, que es
+  // el peor momento para poner un trámite de más.
+  if (c.email) q.set('customer-data:email', c.email);
+
   return `https://checkout.wompi.co/p/?${q.toString()}`;
 }
 

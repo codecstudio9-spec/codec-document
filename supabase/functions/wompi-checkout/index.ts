@@ -95,6 +95,12 @@ Deno.serve(async (req) => {
   const { data, error } = await supabase.rpc('ed_crear_pago', { p_meses: meses });
   if (error) return json({ error: error.message }, 400, origin);
 
+  // El correo se saca de la sesión, no del cuerpo de la petición. Va a
+  // Wompi sólo para prellenar el formulario y mandar el recibo al sitio
+  // correcto; que lo aportara el cliente permitiría poner el de otro.
+  const { data: sesion } = await supabase.auth.getUser();
+  const correo = sesion?.user?.email ?? '';
+
   const pago = data as { reference: string; amount_in_cents: number; currency: string };
   if (!pago?.reference) return json({ error: 'No se pudo abrir el cobro.' }, 500, origin);
 
@@ -110,6 +116,7 @@ Deno.serve(async (req) => {
     currency: pago.currency,
     signature: firma,
     redirectUrl: REDIRECT_URL,
+    email: correo,
     meses,
   }, 200, origin);
 });
