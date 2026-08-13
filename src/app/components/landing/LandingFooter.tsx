@@ -173,6 +173,31 @@ export function LandingFooter() {
             ))}
           </div>
 
+          {/* Entrada al grupo de páginas de intención de Estados Unidos.
+              Mismo motivo que el bloque de contadores de abajo: un grupo que
+              sólo se enlaza a sí mismo lo descubre Google por el sitemap, que
+              es la señal más débil que hay. Sólo en inglés — son páginas de
+              derecho estadounidense y ofrecerlas a quien lee en español es
+              una señal de tema incoherente. */}
+          {language === 'en' && (
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-600">Popular documents:</span>
+              <a href="/letter-of-intent" className="transition hover:text-white">Letter of Intent</a>
+              <span className="text-slate-700">·</span>
+              <a href="/nda-template" className="transition hover:text-white">NDA</a>
+              <span className="text-slate-700">·</span>
+              <a href="/free-lease-agreement-template" className="transition hover:text-white">Lease Agreement</a>
+              <span className="text-slate-700">·</span>
+              <a href="/service-agreement-template" className="transition hover:text-white">Service Agreement</a>
+              <span className="text-slate-700">·</span>
+              <a href="/promissory-note-template" className="transition hover:text-white">Promissory Note</a>
+              <span className="text-slate-700">·</span>
+              <a href="/prenuptial-agreement" className="transition hover:text-white">Prenup</a>
+              <span className="text-slate-700">·</span>
+              <a href="/is-an-electronic-signature-legally-binding" className="transition hover:text-white">Are e-signatures legal?</a>
+            </div>
+          )}
+
           {/* Puerta de entrada al grupo de páginas de contadores (DIAN).
               Sin esto el grupo quedaba cerrado sobre sí mismo: sus 25 páginas
               se enlazan entre ellas, pero ninguna página pública del sitio

@@ -512,6 +512,26 @@
       "destination": "/documentos-legales-gratis.html"
     },
     {
+      "source": "/docusign-alternative",
+      "destination": "/docusign-alternative.html"
+    },
+    {
+      "source": "/e-signature-for-financial-services",
+      "destination": "/e-signature-for-financial-services.html"
+    },
+    {
+      "source": "/electronic-signature-for-banks",
+      "destination": "/electronic-signature-for-banks.html"
+    },
+    {
+      "source": "/electronic-signature-for-realtors",
+      "destination": "/electronic-signature-for-realtors.html"
+    },
+    {
+      "source": "/esign-act-compliance",
+      "destination": "/esign-act-compliance.html"
+    },
+    {
       "source": "/firma-digital-gratis",
       "destination": "/firma-digital-gratis.html"
     },
@@ -584,12 +604,20 @@
       "destination": "/firmar-pdf-gratis.html"
     },
     {
+      "source": "/free-lease-agreement-template",
+      "destination": "/free-lease-agreement-template.html"
+    },
+    {
       "source": "/generador-de-cotizaciones",
       "destination": "/generador-de-cotizaciones.html"
     },
     {
       "source": "/importar-facturas-electronicas-a-siigo",
       "destination": "/importar-facturas-electronicas-a-siigo.html"
+    },
+    {
+      "source": "/independent-contractor-agreement-template",
+      "destination": "/independent-contractor-agreement-template.html"
     },
     {
       "source": "/independent-contractor-alabama",
@@ -690,6 +718,10 @@
     {
       "source": "/independent-contractor-wisconsin",
       "destination": "/independent-contractor-wisconsin.html"
+    },
+    {
+      "source": "/is-an-electronic-signature-legally-binding",
+      "destination": "/is-an-electronic-signature-legally-binding.html"
     },
     {
       "source": "/lease-agreement-alabama",
@@ -848,6 +880,22 @@
       "destination": "/legal-documents-virginia.html"
     },
     {
+      "source": "/letter-of-intent",
+      "destination": "/letter-of-intent.html"
+    },
+    {
+      "source": "/letter-of-intent-business-purchase",
+      "destination": "/letter-of-intent-business-purchase.html"
+    },
+    {
+      "source": "/letter-of-intent-real-estate",
+      "destination": "/letter-of-intent-real-estate.html"
+    },
+    {
+      "source": "/loan-agreement-electronic-signature",
+      "destination": "/loan-agreement-electronic-signature.html"
+    },
+    {
       "source": "/nda-alabama",
       "destination": "/nda-alabama.html"
     },
@@ -928,6 +976,10 @@
       "destination": "/nda-south-carolina.html"
     },
     {
+      "source": "/nda-template",
+      "destination": "/nda-template.html"
+    },
+    {
       "source": "/nda-tennessee",
       "destination": "/nda-tennessee.html"
     },
@@ -954,6 +1006,14 @@
     {
       "source": "/notas-credito-debito-dian-xml",
       "destination": "/notas-credito-debito-dian-xml.html"
+    },
+    {
+      "source": "/postnuptial-agreement",
+      "destination": "/postnuptial-agreement.html"
+    },
+    {
+      "source": "/prenuptial-agreement",
+      "destination": "/prenuptial-agreement.html"
     },
     {
       "source": "/professional-quote-template",
@@ -1040,6 +1100,10 @@
       "destination": "/promissory-note-south-carolina.html"
     },
     {
+      "source": "/promissory-note-template",
+      "destination": "/promissory-note-template.html"
+    },
+    {
       "source": "/promissory-note-tennessee",
       "destination": "/promissory-note-tennessee.html"
     },
@@ -1068,12 +1132,20 @@
       "destination": "/propuesta-comercial.html"
     },
     {
+      "source": "/purchase-agreement-template",
+      "destination": "/purchase-agreement-template.html"
+    },
+    {
       "source": "/que-es-el-cufe-factura-electronica",
       "destination": "/que-es-el-cufe-factura-electronica.html"
     },
     {
       "source": "/quote-generator",
       "destination": "/quote-generator.html"
+    },
+    {
+      "source": "/real-estate-purchase-agreement",
+      "destination": "/real-estate-purchase-agreement.html"
     },
     {
       "source": "/reporte-retenciones-facturas-electronicas",
@@ -1164,6 +1236,10 @@
       "destination": "/service-agreement-south-carolina.html"
     },
     {
+      "source": "/service-agreement-template",
+      "destination": "/service-agreement-template.html"
+    },
+    {
       "source": "/service-agreement-tennessee",
       "destination": "/service-agreement-tennessee.html"
     },
@@ -1182,6 +1258,10 @@
     {
       "source": "/service-agreement-wisconsin",
       "destination": "/service-agreement-wisconsin.html"
+    },
+    {
+      "source": "/ueta-vs-esign-act",
+      "destination": "/ueta-vs-esign-act.html"
     },
     {
       "source": "/vehicle-bill-of-sale-alabama",

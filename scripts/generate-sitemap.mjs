@@ -81,9 +81,33 @@ function buildUrlEntry(p, lastmod) {
 ${altLines}  </url>`;
 }
 
+/**
+ * Rutas SEO que routes.tsx declara de forma GENERADA y no literal.
+ *
+ * extractPaths() busca `path: "..."` con comillas. Una familia de rutas
+ * creada con un .map() sobre su archivo de datos —como las veinte páginas de
+ * Estados Unidos— no coincide con ese patrón, así que quedaba fuera del
+ * sitemap sin que nada avisara: el build terminaba en verde y las páginas
+ * existían, simplemente no estaban en el mapa que Google lee.
+ *
+ * El manifiesto es la fuente correcta para taparlo: es JSON, se genera antes
+ * que esto en la cadena de build, y por definición contiene todas las rutas
+ * con SEO propio. Unirlo hace que este script deje de depender de CÓMO se
+ * declararon las rutas.
+ */
+function rutasDelManifiesto() {
+  const f = path.join(root, 'public', 'seo-manifest.json');
+  if (!fs.existsSync(f)) return [];
+  try {
+    return Object.keys(JSON.parse(fs.readFileSync(f, 'utf8')));
+  } catch {
+    return [];
+  }
+}
+
 function main() {
   const source = fs.readFileSync(routesFile, 'utf8');
-  const allPaths = extractPaths(source);
+  const allPaths = [...new Set([...extractPaths(source), ...rutasDelManifiesto()])];
   const included = allPaths.filter((p) => !isExcluded(p)).sort();
   const lastmod = new Date().toISOString().slice(0, 10);
 

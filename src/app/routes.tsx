@@ -3,6 +3,9 @@ import { createBrowserRouter } from "react-router";
 import { ProtectedRoute } from "./components/auth/protected-route";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
+// Sólo los datos (slugs), no el componente: esto viaja en el bundle
+// principal, así que importar aquí la landing anularía su carga diferida.
+import { PAGINAS_US } from "./data/us-intent-seo-content";
 
 // Lazy-loaded route components -- each page's JS downloads only when
 // that route is actually visited, instead of bundling all ~150 pages
@@ -215,6 +218,7 @@ const FirmaElectronicaGratis = lazy(() => import("./pages/landings/firma-electro
 // incluida la portada. Eso es peso muerto para el 99% de los visitantes y
 // castiga las Core Web Vitals, que Google usa como senal de posicionamiento.
 const ContadorDianLanding = lazy(() => import("./components/landing/ContadorDianLanding"));
+const USIntentLanding = lazy(() => import("./components/landing/USIntentLanding"));
 const FirmarPdfGratis = lazy(() => import("./pages/landings/firmar-pdf-gratis"));
 const FirmaDigitalGratis = lazy(() => import("./pages/landings/firma-digital-gratis"));
 const FirmarDocumentosOnlineGratis = lazy(() => import("./pages/landings/firmar-documentos-online-gratis"));
@@ -1312,6 +1316,20 @@ export const router = createBrowserRouter([
     Component: RefundPolicyPage,
     errorElement: <RouteErrorBoundary />,
   },
+  // ── Veinte paginas de intencion para Estados Unidos ───────────────────
+  //
+  // Se generan desde los datos en vez de escribirse a mano: veinte entradas
+  // repetidas es donde se cuelan las erratas, y anadir una pagina nueva no
+  // deberia obligar a tocar dos archivos.
+  //
+  // Van ANTES del comodin "*", porque react-router resuelve en orden y el
+  // comodin se traga cualquier ruta que llegue despues.
+  ...PAGINAS_US.map((p) => ({
+    path: `/${p.slug}`,
+    Component: USIntentLanding,
+    errorElement: <RouteErrorBoundary />,
+  })),
+
   {
     path: "*",
     Component: NotFoundPage,
