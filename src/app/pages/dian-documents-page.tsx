@@ -43,7 +43,8 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   importarArchivos, listarDocumentos, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
-  estadoPlan, iniciarPagoPlan, type EstadoPlan,
+  estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
+  type EstadoCuota, type PlanCatalogo,
   estadoCorreo, activarCorreo, importarBandeja, type EstadoCorreo,
   cruzarCufes, obtenerDocumento, type CruceCufes,
   enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
@@ -127,8 +128,11 @@ function ContenidoDian() {
   const [feed, setFeed] = useState<NonNullable<EventoProgreso['ultimo']>[]>([]);
   const [ayudaAbierta, setAyudaAbierta] = useState(true);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
-  const [plan, setPlan] = useState<EstadoPlan | null>(null);
-  const [pagando, setPagando] = useState(false);
+  const [cuota, setCuota] = useState<EstadoCuota | null>(null);
+  const [planes, setPlanes] = useState<PlanCatalogo[]>([]);
+  const [pagando, setPagando] = useState('');
+  /** Se abre solo al chocar con el límite, y se puede abrir a mano. */
+  const [panelPlanes, setPanelPlanes] = useState(false);
   // `buzon`, no `correo`: en esta pantalla `correo` ya es el que se teclea
   // para pedir el enlace de acceso, y son dos cosas distintas.
   const [buzon, setBuzon] = useState<EstadoCorreo | null>(null);
@@ -378,18 +382,20 @@ function ContenidoDian() {
   const refrescar = useCallback(async () => {
     if (!permitido) return;
     try {
-      const [t, d, c, p, m] = await Promise.all([
+      const [t, d, c, q, m, pl] = await Promise.all([
         obtenerTotales(),
         listarDocumentos({ busqueda: busqueda || undefined, estado: filtroEstado || undefined }),
         estadoBeta(),
-        estadoPlan(),
+        estadoCuota(),
         estadoCorreo(),
+        listarPlanes(),
       ]);
       setTotales(t);
       setDocumentos(d);
       setBeta(c);
-      setPlan(p);
+      setCuota(q);
       setBuzon(m);
+      setPlanes(pl);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -397,18 +403,19 @@ function ContenidoDian() {
 
   useEffect(() => { void refrescar(); }, [refrescar]);
 
-  /** Lleva al Checkout de Wompi. El importe y la firma los pone el servidor. */
-  const pagarPlan = async (meses: 1 | 12) => {
-    setPagando(true);
+  /** Lleva al Checkout de Wompi. El importe y la firma los pone el servidor;
+   *  aquí sólo viaja el código del plan. */
+  const pagarPlan = async (planCode: string) => {
+    setPagando(planCode);
     try {
-      const url = await iniciarPagoPlan(meses);
+      const url = await iniciarPagoPlan(planCode);
       // Misma pestaña: Wompi devuelve aquí al terminar, y con una pestaña
       // nueva el contador se queda mirando la vieja sin enterarse de que ya
       // pagó.
       window.location.href = url;
     } catch (e) {
       toast.error((e as Error).message);
-      setPagando(false);
+      setPagando('');
     }
   };
   useEffect(() => {
@@ -536,8 +543,21 @@ function ContenidoDian() {
     } catch (e) {
       // El límite no es un fallo del sistema: se explica, no se reporta
       // como error rojo genérico.
-      if (e instanceof BetaCerradaError) toast.error(e.message, { duration: 9000 });
-      else toast.error((e as Error).message);
+      if (e instanceof LimiteDelPlanError) {
+        toast.error(e.message, { duration: 14000 });
+        // Y se le pone delante lo que puede hacer. Explicar el tope sin
+        // enseñar la salida deja a la persona igual de atascada, sólo que
+        // mejor informada.
+        setPanelPlanes(true);
+        speak({
+          es: e.message,
+          en: `You reached your ${e.cuota.planNombre} plan limit for this month.`,
+        });
+      } else if (e instanceof BetaCerradaError) {
+        toast.error(e.message, { duration: 9000 });
+      } else {
+        toast.error((e as Error).message);
+      }
     } finally {
       setCargando(false);
       setProgreso(null);
@@ -792,11 +812,11 @@ function ContenidoDian() {
             {/* Quien paga tiene que VER que paga. Un plan activo que no se
                 nota en ninguna parte hace dudar de si el cobro entró, y esa
                 duda acaba siempre en un mensaje preguntándolo. */}
-            {plan?.activo && (
+            {cuota && cuota.planCode !== 'gratis' && (
               <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
-                Plan activo
-                {plan.diasRestantes !== null && plan.diasRestantes <= 7 && (
-                  <> · renueva en {plan.diasRestantes} {plan.diasRestantes === 1 ? 'día' : 'días'}</>
+                Plan {cuota.planNombre}
+                {cuota.diasRestantes !== null && cuota.diasRestantes <= 7 && (
+                  <> · renueva en {cuota.diasRestantes} {cuota.diasRestantes === 1 ? 'día' : 'días'}</>
                 )}
               </span>
             )}
@@ -1192,61 +1212,152 @@ function ContenidoDian() {
             donde está ya costó un ciclo en el login de esta misma herramienta;
             no se repite. Ahora el bloqueo y su solución están en el mismo
             sitio. */}
-        {beta && !beta.ilimitado && (beta.cerrada || beta.llena || beta.restantesPersona === 0) && (
+        {/* Los topes de CAPACIDAD de la plataforma. No se resuelven pagando,
+            así que aquí no se ofrece ningún plan: hacerlo sería cobrar por
+            algo que no se puede entregar todavía. */}
+        {beta && !beta.exentoGlobal && (beta.cerrada || beta.llena) && (
           <section
             className="mb-6 overflow-hidden bg-white p-6 text-center ring-1 ring-slate-100"
             style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
           >
             <Lock className="mx-auto mb-3 size-7 text-slate-300" />
             <p className="text-sm font-semibold text-slate-800">
-              {beta.cerrada
-                ? 'El periodo de prueba terminó'
-                : beta.llena
-                  ? 'La prueba alcanzó su capacidad'
-                  : 'Llegaste a tu cupo del mes'}
+              {beta.cerrada ? 'El periodo de prueba terminó' : 'La plataforma llegó a su capacidad'}
             </p>
             <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
               Tus documentos siguen aquí: puedes consultarlos y exportarlos. Lo único
-              que se detuvo es procesar nuevos.
+              que se detuvo es procesar nuevos. Escríbenos y te damos acceso ampliado.
             </p>
+          </section>
+        )}
 
-            {plan && (
-              <div className="mx-auto mt-5 max-w-sm">
-                <div className="rounded-2xl bg-slate-50 px-5 py-4 ring-1 ring-slate-200">
-                  <p className="text-2xl font-black tabular-nums text-slate-900">
-                    {pesos(plan.precioMes)}
-                    <span className="ml-1 text-sm font-semibold text-slate-500">/ mes</span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Sin tope de documentos. Se cancela cuando quieras.
-                  </p>
-                </div>
+        {/* ── Tu cupo del mes, y los planes ──────────────────────────────
+            El contador tiene que ver su límite ANTES de chocar con él, no
+            enterarse por un mensaje rojo a mitad de una importación de mil
+            documentos. Por eso el consumo va siempre visible y el catálogo a
+            un clic. */}
+        {cuota && !cuota.ilimitado && (
+          <section
+            className="mb-6 overflow-hidden bg-white ring-1 ring-slate-100"
+            style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+          >
+            <div className="px-5 py-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-bold text-slate-900">
+                  Plan {cuota.planNombre}
+                  {cuota.planPrecio ? (
+                    <span className="ml-1.5 text-xs font-semibold text-slate-400">
+                      {pesos(cuota.planPrecio)}/mes
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-xs font-semibold tabular-nums text-slate-500">
+                  {cuota.usados.toLocaleString('es-CO')} de {(cuota.limite ?? 0).toLocaleString('es-CO')} documentos este mes
+                </p>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => void pagarPlan(1)}
-                  disabled={pagando}
-                  className="mt-3 w-full rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {pagando ? 'Abriendo el pago…' : 'Continuar sin límite'}
-                </button>
+              {/* La barra dice de un vistazo lo que la cifra dice exacto. */}
+              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    (cuota.restantes ?? 0) === 0
+                      ? 'bg-rose-500'
+                      : (cuota.restantes ?? 0) <= (cuota.limite ?? 1) * 0.15
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(100, Math.round((cuota.usados / Math.max(1, cuota.limite ?? 1)) * 100))}%`,
+                  }}
+                />
+              </div>
 
-                {plan.precioAnual !== null && (
-                  <button
-                    type="button"
-                    onClick={() => void pagarPlan(12)}
-                    disabled={pagando}
-                    className="mt-2 w-full rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-50"
-                  >
-                    O paga el año: {pesos(plan.precioAnual)}
-                  </button>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                {(cuota.restantes ?? 0) === 0
+                  ? 'Llegaste al límite de tu plan.'
+                  : `Te quedan ${(cuota.restantes ?? 0).toLocaleString('es-CO')} documentos.`}
+                {cuota.renuevaEl && (
+                  <> Tu cupo se repone el{' '}
+                    {new Date(cuota.renuevaEl).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.
+                  </>
                 )}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setPanelPlanes((v) => !v)}
+                className="mt-3 text-xs font-bold text-emerald-700 transition hover:text-emerald-800"
+              >
+                {panelPlanes ? 'Ocultar planes' : 'Ver planes y precios'}
+              </button>
+            </div>
+
+            {panelPlanes && (
+              <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {planes.map((p) => {
+                    const actual = p.code === cuota.planCode;
+                    return (
+                      <div
+                        key={p.code}
+                        className={`rounded-2xl bg-white p-4 ring-1 transition ${
+                          actual ? 'ring-2 ring-emerald-400' : 'ring-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-slate-900">{p.nombre}</p>
+                          {actual && (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                              Tu plan
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-1.5 text-xl font-black tabular-nums text-slate-900">
+                          {p.precio === null
+                            ? <span className="text-sm font-bold text-slate-400">Precio por definir</span>
+                            : p.precio === 0
+                              ? 'Gratis'
+                              : <>{pesos(p.precio)}<span className="text-xs font-semibold text-slate-400">/mes</span></>}
+                        </p>
+
+                        {/* El límite se dice SIEMPRE y con el número. Es la
+                            cifra por la que se está pagando. */}
+                        <p className="mt-1 text-xs font-semibold text-slate-600">
+                          {p.limite === null
+                            ? 'Documentos sin límite'
+                            : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
+                        </p>
+
+                        {p.usoJusto && (
+                          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{p.usoJusto}</p>
+                        )}
+
+                        {!actual && p.aLaVenta && (
+                          <button
+                            type="button"
+                            onClick={() => void pagarPlan(p.code)}
+                            disabled={pagando !== ''}
+                            className="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {pagando === p.code ? 'Abriendo el pago…' : `Pasar a ${p.nombre}`}
+                          </button>
+                        )}
+                        {!actual && !p.aLaVenta && p.precio === null && (
+                          <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+                            Todavía no está a la venta. Escríbenos si lo necesitas.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
 
                 {/* Se nombra el medio de pago antes de salir de la app. Llegar
                     a una pasarela sin saber si acepta lo que uno usa es la
                     forma más tonta de perder un pago. */}
-                <p className="mt-2.5 text-[11px] leading-relaxed text-slate-400">
-                  Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal.
+                <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
+                  Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal. Se cancela cuando quieras.
                 </p>
               </div>
             )}

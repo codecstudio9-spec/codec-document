@@ -67,6 +67,11 @@ export interface EstadoBeta {
   cerrada: boolean;
   llena: boolean;
   ilimitado: boolean;
+  /** Plan de pago o admin: no le aplican los topes de capacidad de la beta. */
+  exentoGlobal: boolean;
+  planCode: string;
+  planNombre: string;
+  planActivo: boolean;
   restantesPersona: number;
   restantesGlobal: number;
   /** Si esta cuenta puede usar la descarga masiva desde la DIAN. La decide el
@@ -86,7 +91,10 @@ export async function estadoBeta(): Promise<EstadoBeta> {
   if (error) throw new Error(error.message);
   const d = (data ?? {}) as Record<string, unknown>;
 
-  const limitePersona = Number(d.limite_persona ?? 100);
+  // Sin límite personal (plan sin tope o admin) llega null. Se representa como
+  // Infinity para que las restas de abajo no lo conviertan en cero, que es
+  // justo lo contrario de «sin límite».
+  const limitePersona = d.limite_persona == null ? Infinity : Number(d.limite_persona);
   const limiteGlobal = Number(d.limite_global ?? 2000);
   const usadosPersona = Number(d.usados_persona ?? 0);
   const usadosGlobal = Number(d.usados_global ?? 0);
@@ -99,6 +107,10 @@ export async function estadoBeta(): Promise<EstadoBeta> {
     cerrada: Boolean(d.cerrada),
     llena: Boolean(d.llena),
     ilimitado: Boolean(d.ilimitado),
+    exentoGlobal: Boolean(d.exento_global),
+    planCode: String(d.plan_code ?? 'gratis'),
+    planNombre: String(d.plan_nombre ?? 'Gratis'),
+    planActivo: Boolean(d.plan_activo),
     restantesPersona: Math.max(0, limitePersona - usadosPersona),
     restantesGlobal: Math.max(0, limiteGlobal - usadosGlobal),
     puedeDescargar: Boolean(d.puede_descargar),
@@ -131,49 +143,91 @@ export async function configurarBeta(clave: string, valor: string): Promise<void
  *  Es un plan APARTE del de documentos y firmas: otro producto, otro precio y
  *  otra moneda. El precio llega del servidor y no va escrito en la pantalla,
  *  para que moverlo sea cambiar un ajuste y no desplegar. */
-export interface EstadoPlan {
-  activo: boolean;
-  /** Hasta cuándo está pagado. null si nunca ha pagado. */
+/** Un plan del catálogo, tal como se le enseña al contador. */
+export interface PlanCatalogo {
+  code: string;
+  nombre: string;
+  /** En pesos. null = todavía no tiene precio definido. */
+  precio: number | null;
+  /** Documentos al mes. null = sin límite técnico. */
+  limite: number | null;
+  usoJusto: string | null;
+  aLaVenta: boolean;
+}
+
+/** La cuota del contador este mes, con todo lo necesario para explicársela
+ *  ANTES de que choque con ella. */
+export interface EstadoCuota {
+  planCode: string;
+  planNombre: string;
+  planPrecio: number | null;
+  /** null = sin límite técnico. */
+  limite: number | null;
+  usoJusto: string | null;
+  usados: number;
+  /** null cuando no hay límite. */
+  restantes: number | null;
+  ilimitado: boolean;
   hasta: string | null;
-  ultimoPago: string | null;
-  /** En pesos, no en centavos: es lo que se muestra. */
-  precioMes: number;
-  /** null mientras el plan anual no esté abierto. */
-  precioAnual: number | null;
-  /** Documentos al mes que no se cobran. */
-  gratisMes: number;
+  renuevaEl: string | null;
+  /** El siguiente plan comprable, para poder ofrecerlo sin saberse el catálogo. */
+  siguiente: { code: string; nombre: string; precio: number; limite: number | null } | null;
   diasRestantes: number | null;
 }
 
-export async function estadoPlan(): Promise<EstadoPlan> {
-  const { data, error } = await supabase.rpc('ed_plan_estado');
+export async function estadoCuota(): Promise<EstadoCuota> {
+  const { data, error } = await supabase.rpc('ed_cuota_estado');
   if (error) throw new Error(error.message);
   const d = (data ?? {}) as Record<string, unknown>;
 
   const hasta = (d.hasta as string) ?? null;
-  const diasRestantes = hasta
-    ? Math.max(0, Math.ceil((new Date(hasta).getTime() - Date.now()) / 86_400_000))
-    : null;
+  const s = d.siguiente as Record<string, unknown> | null;
 
   return {
-    activo: Boolean(d.activo),
+    planCode: String(d.plan_code ?? 'gratis'),
+    planNombre: String(d.plan_nombre ?? 'Gratis'),
+    planPrecio: d.plan_precio == null ? null : Number(d.plan_precio),
+    limite: d.limite == null ? null : Number(d.limite),
+    usoJusto: (d.uso_justo as string) ?? null,
+    usados: Number(d.usados ?? 0),
+    restantes: d.restantes == null ? null : Number(d.restantes),
+    ilimitado: Boolean(d.ilimitado),
     hasta,
-    ultimoPago: (d.ultimo_pago as string) ?? null,
-    precioMes: Number(d.precio_mes ?? 52900),
-    precioAnual: d.precio_anual == null ? null : Number(d.precio_anual),
-    gratisMes: Number(d.gratis_mes ?? 200),
-    diasRestantes,
+    renuevaEl: (d.renueva_el as string) ?? null,
+    siguiente: s
+      ? {
+          code: String(s.code), nombre: String(s.nombre),
+          precio: Number(s.precio),
+          limite: s.limite == null ? null : Number(s.limite),
+        }
+      : null,
+    diasRestantes: hasta
+      ? Math.max(0, Math.ceil((new Date(hasta).getTime() - Date.now()) / 86_400_000))
+      : null,
   };
 }
 
-/** Abre el cobro y devuelve la dirección del Checkout de Wompi.
+export async function listarPlanes(): Promise<PlanCatalogo[]> {
+  const { data, error } = await supabase.rpc('ed_planes_listar');
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
+    code: String(p.code),
+    nombre: String(p.nombre),
+    precio: p.precio == null ? null : Number(p.precio),
+    limite: p.limite == null ? null : Number(p.limite),
+    usoJusto: (p.uso_justo as string) ?? null,
+    aLaVenta: Boolean(p.a_la_venta),
+  }));
+}
+
+/** Abre el cobro del plan y devuelve la dirección del Checkout de Wompi.
  *
- *  El importe y la firma los calcula la Edge Function contra el precio que
- *  dice la base. Aquí no se pone ninguna cifra: si el navegador pudiera decir
- *  cuánto cobrar, cualquiera pagaría mil pesos por el mes. */
-export async function iniciarPagoPlan(meses: 1 | 12): Promise<string> {
+ *  Viaja el CÓDIGO del plan, nunca el precio. El importe y la firma los
+ *  calcula el servidor leyendo ed_plans: si el navegador pudiera decir cuánto
+ *  cobrar, cualquiera pagaría mil pesos por el Profesional. */
+export async function iniciarPagoPlan(planCode: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke('wompi-checkout', {
-    body: { meses },
+    body: { plan: planCode },
   });
   if (error) throw new Error(error.message);
 
@@ -328,15 +382,47 @@ export async function importarBandeja(
 }
 
 export class BetaCerradaError extends Error {
-  constructor(motivo: 'cerrada' | 'llena' | 'cupo') {
+  constructor(motivo: 'cerrada' | 'llena') {
     super(
       motivo === 'cerrada'
         ? 'El periodo de prueba terminó. Gracias por participar — te escribiremos con las novedades.'
-        : motivo === 'llena'
-          ? 'La prueba alcanzó su capacidad. Escríbenos y te damos acceso ampliado.'
-          : 'Llegaste a tu cupo de documentos de la prueba. Escríbenos si necesitas procesar más.',
+        : 'La plataforma alcanzó su capacidad por hoy. Escríbenos y te damos acceso ampliado.',
     );
     this.name = 'BetaCerradaError';
+  }
+}
+
+/**
+ * Se acabó el cupo del mes.
+ *
+ * Va aparte de BetaCerradaError porque NO es lo mismo y no se resuelve igual:
+ * aquello es un tope de la plataforma y esto es el plan que el contador
+ * contrató. Lleva las cifras encima —plan, límite, usados, cuándo se repone y
+ * qué plan sigue— para que la pantalla pueda decirle exactamente qué pasó y
+ * qué puede hacer.
+ *
+ * Un «no se puede procesar» a secas deja a la persona sin saber si es un fallo
+ * nuestro, un problema de su archivo o un límite suyo. Las tres se atienden de
+ * forma distinta, y adivinar cuál es no es trabajo del contador.
+ */
+export class LimiteDelPlanError extends Error {
+  constructor(public readonly cuota: EstadoCuota) {
+    const limite = cuota.limite ?? 0;
+    const renueva = cuota.renuevaEl
+      ? new Date(cuota.renuevaEl).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+      : null;
+
+    super(
+      `Llegaste al límite de tu plan ${cuota.planNombre}: `
+      + `${limite.toLocaleString('es-CO')} documentos al mes, y este mes ya procesaste ${cuota.usados.toLocaleString('es-CO')}.`
+      + (renueva ? ` Tu cupo se repone el ${renueva}.` : '')
+      + (cuota.siguiente
+          ? ` Si necesitas más ahora, el plan ${cuota.siguiente.nombre} te da `
+            + `${cuota.siguiente.limite === null ? 'documentos sin límite' : `${cuota.siguiente.limite.toLocaleString('es-CO')} al mes`}`
+            + ` por $${cuota.siguiente.precio.toLocaleString('es-CO')} al mes.`
+          : ''),
+    );
+    this.name = 'LimiteDelPlanError';
   }
 }
 
@@ -419,15 +505,23 @@ export async function importarArchivos(
   // Tres barreras, en orden de gravedad: la prueba terminó, la plataforma
   // llegó a su tope global, o esta persona agotó su cupo. Las dos primeras
   // detienen; la tercera procesa hasta donde alcance.
-  const beta = await estadoBeta();
-  if (!beta.ilimitado) {
+  const [beta, cuota] = await Promise.all([estadoBeta(), estadoCuota()]);
+
+  // Los topes de capacidad de la plataforma. Un plan de pago queda exento:
+  // cobrarle a alguien y después decirle que no hay sitio no es defendible.
+  if (!beta.exentoGlobal) {
     if (beta.cerrada) throw new BetaCerradaError('cerrada');
     if (beta.llena) throw new BetaCerradaError('llena');
-    if (beta.restantesPersona <= 0) throw new BetaCerradaError('cupo');
   }
-  const tope = beta.ilimitado
+
+  // El límite del plan, que es otra cosa: se explica con nombre y cifras.
+  if (!cuota.ilimitado && (cuota.restantes ?? 0) <= 0) {
+    throw new LimiteDelPlanError(cuota);
+  }
+
+  const tope = cuota.ilimitado
     ? entradas.length
-    : Math.min(entradas.length, beta.restantesPersona, beta.restantesGlobal);
+    : Math.min(entradas.length, cuota.restantes ?? entradas.length);
 
   const { data: imp, error: errImp } = await supabase
     .from('ed_imports')

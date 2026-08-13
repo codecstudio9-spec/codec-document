@@ -74,15 +74,18 @@ Deno.serve(async (req) => {
     return json({ error: 'Hay que iniciar sesión para pagar.' }, 401, origin);
   }
 
-  let meses = 1;
+  // Llega el CÓDIGO del plan, no el precio. El precio lo pone ed_crear_pago()
+  // leyendo ed_plans; así el navegador no tiene ni voz ni voto sobre cuánto se
+  // cobra, sólo sobre qué se compra.
+  let planCode = '';
   try {
     const body = await req.json();
-    meses = Number(body?.meses ?? 1);
+    planCode = String(body?.plan ?? '').trim();
   } catch {
-    meses = 1;
+    planCode = '';
   }
-  if (meses !== 1 && meses !== 12) {
-    return json({ error: 'Sólo hay plan mensual o anual.' }, 400, origin);
+  if (!planCode) {
+    return json({ error: 'Falta indicar el plan.' }, 400, origin);
   }
 
   // Con la sesión del usuario, no con la llave de servicio: ed_crear_pago()
@@ -92,7 +95,10 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: auth } },
   });
 
-  const { data, error } = await supabase.rpc('ed_crear_pago', { p_meses: meses });
+  const { data, error } = await supabase.rpc('ed_crear_pago', { p_plan_code: planCode });
+  // El mensaje de la base ya viene redactado para el contador («El plan
+  // Ilimitado todavía no está a la venta»), así que se pasa tal cual en vez
+  // de taparlo con un genérico.
   if (error) return json({ error: error.message }, 400, origin);
 
   // El correo se saca de la sesión, no del cuerpo de la petición. Va a
@@ -101,7 +107,10 @@ Deno.serve(async (req) => {
   const { data: sesion } = await supabase.auth.getUser();
   const correo = sesion?.user?.email ?? '';
 
-  const pago = data as { reference: string; amount_in_cents: number; currency: string };
+  const pago = data as {
+    reference: string; amount_in_cents: number; currency: string;
+    plan_code: string; plan_nombre: string; plan_limite: number | null;
+  };
   if (!pago?.reference) return json({ error: 'No se pudo abrir el cobro.' }, 500, origin);
 
   // El orden importa y no es negociable: referencia, importe, moneda, secreto.
@@ -117,6 +126,10 @@ Deno.serve(async (req) => {
     signature: firma,
     redirectUrl: REDIRECT_URL,
     email: correo,
-    meses,
+    // Se devuelve lo que se está comprando para que la pantalla lo confirme
+    // con las mismas cifras que se van a cobrar, no con las que ella creía.
+    plan: pago.plan_code,
+    planNombre: pago.plan_nombre,
+    planLimite: pago.plan_limite,
   }, 200, origin);
 });
