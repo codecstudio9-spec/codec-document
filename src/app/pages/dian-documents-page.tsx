@@ -44,7 +44,7 @@ import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel'
 import {
   FONDO_APP, RESPLANDOR_DERECHA, RESPLANDOR_IZQUIERDA,
   BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
-  BOTON_NEUTRO, MOV, CARD, aparecer,
+  BOTON_NEUTRO, MOV, CARD, aparecer, PULSACION,
 } from '../styles/contador-theme';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -1342,22 +1342,30 @@ function ContenidoDian() {
             animate={{ opacity: 1, y: 0 }}
             transition={MOV.entrada}
             whileHover={{ y: -2 }}
-            className="mb-5 flex w-full flex-wrap items-center gap-3 px-5 py-3.5 text-left"
+            className="relative mb-5 flex w-full flex-wrap items-center gap-3 overflow-hidden px-5 py-4 text-left"
             style={{
               borderRadius: CARD_RADIUS,
-              background: 'linear-gradient(120deg,#B45309,#D97706 55%,#F59E0B)',
-              boxShadow: '0 14px 30px rgba(180,83,9,0.28)',
+              background: 'linear-gradient(120deg,#1e1b4b,#312e81 60%,#111827)',
+              boxShadow: '0 16px 34px rgba(30,27,75,0.30)',
             }}
           >
-            <Sparkles className="size-5 shrink-0 text-white" />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{ background: 'linear-gradient(90deg,transparent,rgba(251,191,36,0.7),transparent)' }}
+            />
+            <Sparkles className="size-5 shrink-0 text-amber-300" />
             <span className="min-w-0 flex-1 text-[13.5px] font-bold text-white">
               Por lanzamiento tienes {promoLanzamiento.limite} documentos gratis al mes.
-              <span className="font-medium text-white/80">
-                {' '}Quedan {promoLanzamiento.dias} {promoLanzamiento.dias === 1 ? 'día' : 'días'};
-                después vuelve a {promoLanzamiento.normal}.
+              <span className="font-medium text-white/65">
+                {' '}Te quedan {promoLanzamiento.dias} {promoLanzamiento.dias === 1 ? 'día' : 'días'} para
+                aprovecharlo.
               </span>
             </span>
-            <ArrowRight className="size-4 shrink-0 text-white/70" />
+            <span className="shrink-0 rounded-xl bg-white/10 px-3 py-1.5 text-[11.5px] font-black text-amber-300 ring-1 ring-white/15">
+              Ver planes
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-white/60" />
           </motion.button>
         )}
 
@@ -1747,41 +1755,81 @@ function ContenidoDian() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={MOV.entrada}
-              className="relative mb-5 flex flex-wrap items-center gap-4 overflow-hidden p-5"
+              className="relative mb-5 overflow-hidden p-6 sm:p-7"
               style={{
                 borderRadius: CARD_RADIUS,
-                background: 'linear-gradient(120deg,#B45309,#D97706 55%,#F59E0B)',
-                boxShadow: '0 18px 40px rgba(180,83,9,0.30)',
+                // Azul noche, no ámbar. El ámbar es el color que esta misma
+                // herramienta usa para «requiere revisión», así que un banner
+                // ámbar se lee como una advertencia — justo lo contrario de una
+                // oferta. El azul profundo con filo dorado es lo que el ojo
+                // asocia a algo premium, y es el mismo fondo oscuro que ya usa
+                // el dashboard principal para lo destacado.
+                background: 'linear-gradient(120deg,#1e1b4b,#312e81 55%,#111827)',
+                boxShadow: '0 24px 56px rgba(30,27,75,0.34)',
               }}
             >
+              {/* Dos luces muy difusas y un filo dorado arriba. Es lo que
+                  separa un rectángulo oscuro de una superficie con
+                  profundidad. */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%)' }}
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    'radial-gradient(90% 120% at 88% -20%, rgba(251,191,36,0.22) 0%, transparent 60%),'
+                    + 'radial-gradient(70% 90% at 0% 120%, rgba(99,102,241,0.30) 0%, transparent 60%)',
+                }}
               />
-              <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-                <Sparkles className="size-6 text-white" />
-              </div>
-              <div className="relative min-w-0 flex-1">
-                <p className="text-[11px] font-black uppercase tracking-wider text-white/70">
-                  Por lanzamiento
-                </p>
-                <p className="text-lg font-black leading-tight text-white">
-                  100 documentos gratis al mes, sin tarjeta
-                </p>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-white/85">
-                  {promoLanzamiento.dias === 0
-                    ? 'Último día. Mañana el plan Gratis vuelve a 50 documentos al mes.'
-                    : `Quedan ${promoLanzamiento.dias} ${promoLanzamiento.dias === 1 ? 'día' : 'días'}. Después, el plan Gratis vuelve a ${promoLanzamiento.normal} documentos al mes.`}
-                </p>
-              </div>
-              <div className="relative shrink-0 rounded-2xl bg-white/20 px-4 py-3 text-center">
-                <p className="text-3xl font-black leading-none tabular-nums text-white">
-                  {promoLanzamiento.dias}
-                </p>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-white/75">
-                  {promoLanzamiento.dias === 1 ? 'día' : 'días'}
-                </p>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                style={{ background: 'linear-gradient(90deg,transparent,rgba(251,191,36,0.7),transparent)' }}
+              />
+
+              <div className="relative flex flex-wrap items-center gap-x-6 gap-y-5">
+                <div className="min-w-0 flex-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300 ring-1 ring-amber-400/30">
+                    <Sparkles className="size-3" />
+                    Por lanzamiento
+                  </span>
+
+                  <p className="mt-3 text-2xl font-black leading-tight text-white sm:text-[28px]">
+                    {promoLanzamiento.limite} documentos gratis al mes
+                  </p>
+
+                  {/* Se dice qué pasa después SIN plantearlo como una pérdida.
+                      «Vuelve a 50» hace que el contador sienta que le quitan
+                      algo antes de haberlo usado; «continúas con 50» dice lo
+                      mismo y deja claro que el plan gratuito no se acaba. */}
+                  <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed text-white/70">
+                    Sin tarjeta y sin compromiso. Aprovéchalo para procesar un mes completo
+                    de un cliente y comprobar que las cifras te cuadran. Después de este
+                    periodo continúas gratis con {promoLanzamiento.normal} documentos al mes.
+                  </p>
+
+                  <motion.button
+                    type="button"
+                    onClick={() => { setSeccion('inicio'); setTimeout(() => inputRef.current?.click(), 260); }}
+                    whileHover={{ y: -2 }}
+                    whileTap={PULSACION}
+                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-[13.5px] font-black text-indigo-950 shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition hover:bg-amber-50"
+                  >
+                    <FileUp className="size-4" />
+                    Aprovechar ahora
+                    <ArrowRight className="size-4" />
+                  </motion.button>
+                </div>
+
+                {/* La cuenta atrás, en su propia pieza. El número grande es lo
+                    que crea la urgencia; el resto del banner explica. */}
+                <div className="shrink-0 rounded-2xl bg-white/[0.07] px-6 py-5 text-center ring-1 ring-white/15">
+                  <p className="text-[46px] font-black leading-none tabular-nums text-white">
+                    {promoLanzamiento.dias}
+                  </p>
+                  <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">
+                    {promoLanzamiento.dias === 1 ? 'día restante' : 'días restantes'}
+                  </p>
+                </div>
               </div>
             </motion.div>
           )}
@@ -1928,12 +1976,12 @@ function ContenidoDian() {
                         viene, que es como se pierde un cliente que acababa de
                         empezar a confiar. */}
                     {p.limiteNormal !== null && p.promoHasta && (
-                      <li className="flex items-start gap-2 rounded-xl bg-amber-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-amber-800">
-                        <Sparkles className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                      <li className="flex items-start gap-2 rounded-xl bg-indigo-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-indigo-900">
+                        <Sparkles className="mt-0.5 size-3.5 shrink-0 text-indigo-500" />
                         <span>
-                          Precio de lanzamiento: el doble de documentos hasta el{' '}
+                          Por lanzamiento, hasta el{' '}
                           {new Date(p.promoHasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.
-                          Después vuelve a {p.limiteNormal.toLocaleString('es-CO')} al mes.
+                          Después continúas gratis con {p.limiteNormal.toLocaleString('es-CO')} al mes.
                         </span>
                       </li>
                     )}
