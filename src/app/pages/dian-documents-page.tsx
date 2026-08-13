@@ -1033,6 +1033,13 @@ function ContenidoDian() {
         grupos={menuLateral}
         activo={seccion}
         onSeleccionar={(id) => {
+          // Dos entradas del menú no son destinos sino herramientas: abren su
+          // cajón encima de donde estés, sin moverte de sitio. Antes cada una
+          // llevaba a una pantalla intermedia cuyo único contenido era un
+          // botón para abrir ese mismo cajón — un clic para llegar a un clic.
+          if (id === 'descargar') { setPanelDescarga(true); return; }
+          if (id === 'auditor') { setPanelAuditor(true); return; }
+
           setSeccion(id);
           if (id === 'revision') setVista('revision');
           if (id === 'documentos') setVista('documentos');
@@ -1140,51 +1147,14 @@ function ContenidoDian() {
           </div>
         )}
 
-        {/* ── Cruzar con la contabilidad ────────────────────────────────── */}
-        {seccion === 'auditor' && (
-          <div>
-            <Cabecera
-              titulo="Cruzar con mi contabilidad"
-              descripcion="Compara lo que la DIAN tiene contra lo que registraste. El cruce es aritmética exacta, no una estimación."
-              icono={Scale}
-              color="#0EA5E9"
-            />
-            <Tarjeta className="p-5" indice={0}>
-              <p className="max-w-2xl text-[12.5px] leading-relaxed text-slate-500">
-                Sube el archivo que exporta tu programa contable y te digo qué documentos están
-                en la DIAN y no en tu contabilidad —eso es IVA que dejaste de descontar—, cuáles
-                están registrados por otra cifra, y cuáles sobran.
-              </p>
-              <Boton estilo={BOTON_PRIMARIO} icono={Scale} className="mt-4"
-                     onClick={() => setPanelAuditor(true)}>
-                Abrir el auditor
-              </Boton>
-            </Tarjeta>
-          </div>
-        )}
+        {/* «Cruzar contabilidad» y «Descargar de la DIAN» tenían aquí una
+            pantalla propia cuyo único contenido era un párrafo y un botón para
+            abrir el cajón de la derecha. Un clic para llegar a un clic.
 
-        {/* ── Descargar de la DIAN ──────────────────────────────────────── */}
-        {seccion === 'descargar' && puedeDescargar && (
-          <div>
-            <Cabecera
-              titulo="Descargar de la DIAN"
-              descripcion="Con tu token del portal, bajo los documentos por CUFE y los analizo aquí mismo."
-              icono={CloudDownload}
-              color="#0284C7"
-            />
-            <Tarjeta className="p-5" indice={0}>
-              <p className="max-w-2xl text-[12.5px] leading-relaxed text-slate-500">
-                Hay una parte que tienes que hacer tú, porque necesita tus claves: pedir el token
-                en el portal de la DIAN. Dura sesenta minutos y sirve una sola vez. El resto lo
-                hago yo, a ritmo moderado para que la DIAN no nos bloquee.
-              </p>
-              <Boton estilo={BOTON_CORREO} icono={CloudDownload} className="mt-4"
-                     onClick={() => setPanelDescarga(true)}>
-                Abrir el descargador
-              </Boton>
-            </Tarjeta>
-          </div>
-        )}
+            Ya no existen: ahora son HERRAMIENTAS, no destinos. Pulsarlas en el
+            menú abre el cajón directamente encima de donde estés, y al cerrarlo
+            sigues donde estabas. El párrafo que explicaba cada una vive dentro
+            del propio cajón, que es donde hace falta leerlo. */}
 
         {/* ── Control de la prueba, dentro de Analítica ──────────────────
             Era su propia sección, «Ajustes de la prueba», y encima en oscuro:
@@ -1553,6 +1523,7 @@ function ContenidoDian() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {planes.map((p, i) => {
               const actual = p.code === cuota.planCode;
+              const esDePago = p.precio !== null && p.precio > 0;
               // El plan que se quiere vender es el más barato de los que sí
               // están a la venta y superan al actual. Marcarlos todos como
               // «recomendado» es no recomendar ninguno.
@@ -1615,19 +1586,48 @@ function ContenidoDian() {
 
                   {/* El límite se dice SIEMPRE y con el número. Es la cifra
                       por la que se está pagando. */}
-                  <p className="relative mt-3 flex items-center gap-2 text-[13px] font-bold text-slate-700">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-                    {p.limite === null
-                      ? 'Documentos sin límite'
-                      : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
-                  </p>
+                  {/* Todo lo que incluye, plan por plan.
+                      Antes sólo se decía el tope, y con eso un contador no
+                      puede comparar nada: no sabía si el Gratis traía el
+                      auditor, si el Excel era de pago, ni qué gana de verdad
+                      al subir. La lista es la MISMA para todos salvo el
+                      correo, y eso es exactamente lo que hay que dejar claro
+                      — lo que se compra es cupo, no funciones a medias. */}
+                  <ul className="relative mt-4 space-y-2">
+                    <li className="flex items-start gap-2 text-[13px] font-bold text-slate-800">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                      {p.limite === null
+                        ? 'Documentos sin límite'
+                        : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
+                    </li>
 
-                  {p.precio !== null && p.precio > 0 && (
-                    <p className="relative mt-2 flex items-center gap-2 text-[13px] text-slate-500">
-                      <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-                      Facturas por correo, sin descargarlas
-                    </p>
-                  )}
+                    {[
+                      'Subir ZIP o XML sueltos, sin descomprimir',
+                      'Descargar de la DIAN con tu token',
+                      'Verificar por lista de CUFEs',
+                      'Excel de cuatro hojas listo para declarar',
+                      'Plantillas de tu programa contable',
+                      'Cruzar con tu contabilidad',
+                    ].map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-[12.5px] text-slate-500">
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                        {f}
+                      </li>
+                    ))}
+
+                    {/* La única diferencia real entre gratis y de pago. Se
+                        dibuja en las dos, tachada donde no la hay: un contador
+                        que sólo ve la lista del plan gratis no puede saber qué
+                        le falta. */}
+                    <li className={`flex items-start gap-2 text-[12.5px] ${
+                      esDePago ? 'font-bold text-slate-800' : 'text-slate-300'
+                    }`}>
+                      {esDePago
+                        ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                        : <Lock className="mt-0.5 size-4 shrink-0 text-slate-300" />}
+                      Facturas por correo, sin ir a buscarlas
+                    </li>
+                  </ul>
 
                   {p.usoJusto && (
                     <p className="relative mt-3 text-[11.5px] leading-relaxed text-slate-400">{p.usoJusto}</p>
