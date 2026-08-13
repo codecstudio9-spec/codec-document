@@ -149,8 +149,13 @@ export interface PlanCatalogo {
   nombre: string;
   /** En pesos. null = todavía no tiene precio definido. */
   precio: number | null;
-  /** Documentos al mes. null = sin límite técnico. */
+  /** Documentos al mes que aplican AHORA. Ya lleva la promoción dentro si la
+   *  hay: la pantalla no tiene que calcular nada. */
   limite: number | null;
+  /** A cuánto vuelve cuando acabe la promoción. null = no hay promoción. */
+  limiteNormal: number | null;
+  /** Cuándo acaba la promoción. null = no hay promoción. */
+  promoHasta: string | null;
   usoJusto: string | null;
   aLaVenta: boolean;
 }
@@ -262,6 +267,8 @@ export async function listarPlanes(): Promise<PlanCatalogo[]> {
     nombre: String(p.nombre),
     precio: p.precio == null ? null : Number(p.precio),
     limite: p.limite == null ? null : Number(p.limite),
+    limiteNormal: p.limite_normal == null ? null : Number(p.limite_normal),
+    promoHasta: (p.promo_hasta as string) ?? null,
     usoJusto: (p.uso_justo as string) ?? null,
     aLaVenta: Boolean(p.a_la_venta),
   }));

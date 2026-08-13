@@ -1794,6 +1794,22 @@ function ContenidoDian() {
                         : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
                     </li>
 
+                    {/* La promoción se cuenta ENTERA: cuánto es ahora, hasta
+                        cuándo y a cuánto vuelve. Enseñar sólo el 100 sería
+                        cierto hoy y una sorpresa desagradable el mes que
+                        viene, que es como se pierde un cliente que acababa de
+                        empezar a confiar. */}
+                    {p.limiteNormal !== null && p.promoHasta && (
+                      <li className="flex items-start gap-2 rounded-xl bg-amber-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-amber-800">
+                        <Sparkles className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                        <span>
+                          Precio de lanzamiento: el doble de documentos hasta el{' '}
+                          {new Date(p.promoHasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.
+                          Después vuelve a {p.limiteNormal.toLocaleString('es-CO')} al mes.
+                        </span>
+                      </li>
+                    )}
+
                     {[
                       'Subir ZIP o XML sueltos, sin descomprimir',
                       'Descargar de la DIAN con tu token',
