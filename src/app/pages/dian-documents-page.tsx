@@ -19,12 +19,21 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   FileUp, FileText, AlertTriangle, CheckCircle2, Copy, XCircle, Loader2,
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
-  Mail,
+  Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
 } from 'lucide-react';
+import { PanelLateral, type GrupoLateral } from '../components/dian/PanelLateral';
+import { AnilloProgreso } from '../components/dian/AnilloProgreso';
+import { VistaAnalitica } from '../components/dian/VistaAnalitica';
+import { Cabecera, Tarjeta, Boton, Cifra } from '../components/dian/PiezasPanel';
+import {
+  WORKSPACE_BG, BOTON_PRIMARIO, BOTON_EXITO, BOTON_CORREO, BOTON_PLANTILLA,
+  BOTON_NEUTRO, MOV,
+} from '../styles/contador-theme';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
@@ -240,6 +249,12 @@ function ContenidoDian() {
    *  tiene la guía apagada, speak() no hace nada, así que no hay que
    *  consultar su estado en cada llamada. */
   const narrar = useCallback((es: string, en: string) => speak({ es, en }), [speak]);
+
+  /** Sección del panel. Es la navegación principal desde que esto dejó de ser
+   *  una columna única: antes, para llegar al auditor había que pasar por
+   *  delante de la importación, los CUFEs y la tabla entera. */
+  const [seccion, setSeccion] = useState<string>('inicio');
+  const [menuMovil, setMenuMovil] = useState(false);
 
   // Bandeja de excepciones y limpieza
   const [vista, setVista] = useState<'documentos' | 'revision'>('documentos');
@@ -608,6 +623,69 @@ function ContenidoDian() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  /**
+   * El menú lateral.
+   *
+   * El orden no es decorativo: sigue el recorrido real del contador. Primero
+   * meter documentos, luego mirarlos, luego lo que no cuadra, y al final
+   * llevárselos a su programa. «Planes» va abajo con lo administrativo
+   * porque cobrar no es la tarea que vino a hacer.
+   */
+  const menuLateral: GrupoLateral[] = useMemo(() => {
+    const grupos: GrupoLateral[] = [
+      {
+        items: [
+          { id: 'inicio', etiqueta: 'Inicio', icono: LayoutDashboard },
+          { id: 'documentos', etiqueta: 'Documentos', icono: Table2 },
+          {
+            id: 'revision', etiqueta: 'Requieren revisión', icono: AlertTriangle,
+            pendientes: totales?.revision ?? 0,
+          },
+        ],
+      },
+      {
+        titulo: 'Traer documentos',
+        items: [
+          {
+            id: 'correo', etiqueta: 'Por correo', icono: Mail,
+            pendientes: buzon?.disponible ? buzon.pendientes : 0,
+            marca: buzon && !buzon.disponible ? 'Plan' : undefined,
+            bloqueado: buzon ? !buzon.disponible : false,
+          },
+          { id: 'cufes', etiqueta: 'Verificar CUFEs', icono: ListChecks },
+          ...(puedeDescargar
+            ? [{ id: 'descargar', etiqueta: 'Descargar de la DIAN', icono: CloudDownload }]
+            : []),
+        ],
+      },
+      {
+        titulo: 'Llevarme los datos',
+        items: [
+          { id: 'reportes', etiqueta: 'Excel y plantillas', icono: FileSpreadsheet },
+          { id: 'auditor', etiqueta: 'Cruzar contabilidad', icono: Scale },
+        ],
+      },
+      {
+        titulo: 'Cuenta',
+        items: [{ id: 'planes', etiqueta: 'Planes y consumo', icono: CreditCard }],
+      },
+    ];
+
+    // Sólo el dueño. El componente ni se monta para nadie más, pero eso es
+    // cortesía: cada función de esa vista comprueba is_admin_user() en la
+    // base. Esconder una opción del menú no protege ningún dato.
+    if (ilimitado) {
+      grupos.push({
+        titulo: 'Sólo tú',
+        items: [
+          { id: 'analitica', etiqueta: 'Analítica', icono: BarChart3 },
+          { id: 'ajustes', etiqueta: 'Ajustes de la prueba', icono: SlidersHorizontal },
+        ],
+      });
+    }
+    return grupos;
+  }, [totales?.revision, buzon, puedeDescargar, ilimitado]);
+
   const [exportando, setExportando] = useState(false);
 
   const descargarExcel = async () => {
@@ -781,114 +859,260 @@ function ContenidoDian() {
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: MOBILE_BG_GRADIENT }}>
-      <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+    <div className="min-h-screen" style={{ background: WORKSPACE_BG }}>
+      {/* ── Barra lateral ─────────────────────────────────────────────
+          Todo a un clic desde cualquier punto, y —más importante— el
+          contador VE de un vistazo todo lo que la herramienta sabe hacer.
+          Media docena de funciones enterradas bajo un scroll no existen
+          para quien no baja. */}
+      <PanelLateral
+        grupos={menuLateral}
+        activo={seccion}
+        onSeleccionar={(id) => {
+          setSeccion(id);
+          if (id === 'revision') setVista('revision');
+          if (id === 'documentos') setVista('documentos');
+        }}
+        correo={user?.email ?? undefined}
+        plan={cuota?.planNombre}
+        abiertoMovil={menuMovil}
+        onCerrarMovil={() => setMenuMovil(false)}
+      />
 
-        <div className="mb-6 flex items-center justify-between pt-2">
-          <Logo size="sm" tagline="Automatización para contadores · DIAN" href="/dashboard" />
+      <div className="lg:pl-[248px]">
+        <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+
+        {/* Barra superior. Sólo el botón de menú en móvil y las acciones que
+            cierran el recorrido: llevarse los datos. */}
+        <div className="mb-6 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMenuMovil(true)}
+            className="rounded-xl p-2 text-slate-500 transition hover:bg-white hover:text-slate-800 lg:hidden"
+            style={BOTON_NEUTRO}
+            aria-label="Abrir menú"
+          >
+            <Menu className="size-5" />
+          </button>
+          <div className="min-w-0 flex-1 lg:hidden">
+            <Logo size="sm" href="/dashboard" />
+          </div>
         </div>
 
-        <header
-          className="relative mb-6 overflow-hidden px-6 py-6 text-white"
-          style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
-        >
-          <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
-          <div className="relative flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight">Automatización para Contadores</h1>
-            <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white/90">
-              Beta
-            </span>
-            {beta && !beta.ilimitado && (
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold tabular-nums ring-1 ${
-                beta.restantesPersona === 0
-                  ? 'bg-rose-500/20 text-rose-200 ring-rose-400/30'
-                  : beta.restantesPersona <= 20
-                    ? 'bg-amber-500/20 text-amber-100 ring-amber-400/30'
-                    : 'bg-white/10 text-white/70 ring-white/15'
-              }`}>
-                {beta.restantesPersona} de {beta.limitePersona} documentos disponibles
-              </span>
-            )}
-            {/* Quien paga tiene que VER que paga. Un plan activo que no se
-                nota en ninguna parte hace dudar de si el cobro entró, y esa
-                duda acaba siempre en un mensaje preguntándolo. */}
-            {cuota && cuota.planCode !== 'gratis' && (
-              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-400/30">
-                Plan {cuota.planNombre}
-                {cuota.diasRestantes !== null && cuota.diasRestantes <= 7 && (
-                  <> · renueva en {cuota.diasRestantes} {cuota.diasRestantes === 1 ? 'día' : 'días'}</>
-                )}
-              </span>
-            )}
-          </div>
-          <p className="relative mt-1.5 max-w-xl text-sm leading-relaxed text-white/70">
-            Convierte los XML de la DIAN en información contable lista para usar.
-            Sin abrir archivos, sin copiar CUFEs, sin armar el Excel a mano.
-          </p>
-
-          {/* Acción de salida. Va en el encabezado y no enterrada entre las
-              secciones porque es el final del recorrido del contador: lo que
-              vino a buscar es llevarse los datos a su programa. */}
-          {/* Descargar XML de la DIAN — todavía no abierta a todo el mundo.
-              El endpoint de descarga por documento no se ha confirmado contra
-              el portal real, y abrirla antes daría fallos justo en la función
-              que el contador más espera, que es la peor primera impresión
-              posible.
-              Quién la ve lo decide el servidor (ed_descarga_permitida): el
-              propietario y los correos que él autorice desde el panel. Este
-              `if` sólo evita mostrar un botón que no va a funcionar; el
-              cierre de verdad está en la Edge Function `dian-descargar`,
-              porque esconder un botón no cierra nada. */}
-          {puedeDescargar && (
-            <button
-              type="button"
-              onClick={() => setPanelDescarga(true)}
-              className="relative mr-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
-              style={{
-                background: 'linear-gradient(135deg, #0284C7 0%, #38BDF8 100%)',
-                borderRadius: 14,
-                boxShadow: '0 12px 26px rgba(2,132,199,0.35)',
-              }}
-            >
-              <CloudDownload className="size-4" />
-              Descargar XML de la DIAN
-              {/* La insignia dice el estado REAL, no quién eres. Decía «solo
-                  tú» a cualquiera que fuera el propietario, así que después de
-                  abrir la herramienta a todo el mundo seguía anunciando que
-                  estaba cerrada — y no había forma de saber desde la pantalla
-                  si el cambio había surtido efecto. */}
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
-                {beta?.descargaAbierta ? 'beta abierta' : ilimitado ? 'solo tú' : 'en pruebas'}
-              </span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setPanelPlantilla(true)}
-            className="relative mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
+        {/* ── Cabecera de la sección ─────────────────────────────────────
+            Sólo Inicio lleva portada. En las demás secciones ocuparía sitio
+            sin decir nada nuevo: el contador ya sabe dónde está porque lo
+            acaba de pulsar en el menú. */}
+        {seccion === 'inicio' && (
+          <motion.header
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={MOV.entrada}
+            className="relative mb-5 overflow-hidden px-6 py-6 text-white"
             style={{
-              background: 'linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)',
-              borderRadius: 14,
-              boxShadow: '0 12px 26px rgba(124,58,237,0.35)',
+              background: DARK_GRADIENT,
+              borderRadius: 22,
+              boxShadow: '0 24px 56px rgba(15,23,42,0.20)',
             }}
           >
-            <FileSpreadsheet className="size-4" />
-            Llevar a mi programa contable
-          </button>
+            <div className="pointer-events-none absolute inset-0" style={{ background: GLOW_TOP_RIGHT }} />
+            <div className="relative">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-[26px] font-black leading-tight tracking-tight">
+                  Automatización para contadores
+                </h1>
+                {cuota && cuota.planCode !== 'gratis' && (
+                  <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200 ring-1 ring-emerald-300/30">
+                    Plan {cuota.planNombre}
+                    {cuota.diasRestantes !== null && cuota.diasRestantes <= 7 && (
+                      <> · renueva en {cuota.diasRestantes} {cuota.diasRestantes === 1 ? 'día' : 'días'}</>
+                    )}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1.5 max-w-lg text-[13.5px] leading-relaxed text-white/65">
+                Suelta el comprimido de la DIAN y te devuelvo el Excel armado, con los
+                duplicados detectados y sólo los documentos que necesitas revisar.
+              </p>
 
-          <button
-            type="button"
-            onClick={() => setPanelAuditor(true)}
-            className="relative ml-2 mt-4 inline-flex items-center gap-2.5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15"
-            style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 14 }}
-          >
-            <Scale className="size-4" />
-            Comparar con mi contabilidad
-          </button>
-        </header>
+              {/* Las tres salidas del recorrido. Van arriba porque son lo que
+                  el contador vino a buscar: llevarse los datos. */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {puedeDescargar && (
+                  <Boton estilo={BOTON_CORREO} icono={CloudDownload}
+                         onClick={() => setSeccion('descargar')}>
+                    Descargar de la DIAN
+                  </Boton>
+                )}
+                <Boton estilo={BOTON_PLANTILLA} icono={FileSpreadsheet}
+                       onClick={() => setPanelPlantilla(true)}>
+                  Llevar a mi programa contable
+                </Boton>
+                <Boton
+                  estilo={{
+                    background: 'rgba(255,255,255,0.10)',
+                    border: '1px solid rgba(255,255,255,0.16)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+                  }}
+                  icono={Scale}
+                  className="text-white"
+                  onClick={() => setPanelAuditor(true)}
+                >
+                  Cruzar con mi contabilidad
+                </Boton>
+              </div>
+            </div>
+          </motion.header>
+        )}
+
+        {/* ── Consumo del mes ────────────────────────────────────────────
+            El anillo va en Inicio y no escondido en Planes: el contador tiene
+            que ver venir el tope antes de chocar con él a mitad de una
+            importación de mil documentos. */}
+        {seccion === 'inicio' && cuota && (
+          <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Tarjeta className="flex items-center gap-4 p-4" indice={0}>
+              <AnilloProgreso
+                valor={cuota.usados}
+                total={cuota.limite}
+                tamano={82}
+                color={
+                  (cuota.restantes ?? 1) === 0 ? '#F43F5E'
+                    : (cuota.restantes ?? 1) <= (cuota.limite ?? 1) * 0.15 ? '#F59E0B'
+                    : '#10B981'
+                }
+              />
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  Este mes
+                </p>
+                <p className="mt-0.5 text-sm font-bold text-slate-800">{cuota.planNombre}</p>
+                <p className="mt-1 text-[11px] leading-snug text-slate-500">
+                  {cuota.limite === null
+                    ? 'Documentos sin límite'
+                    : (cuota.restantes ?? 0) === 0
+                      ? 'Llegaste al tope'
+                      : `Te quedan ${(cuota.restantes ?? 0).toLocaleString('es-CO')}`}
+                </p>
+              </div>
+            </Tarjeta>
+
+            <Cifra etiqueta="Documentos" valor={totales?.documentos ?? 0} icono={FileText}
+                   color="#2563EB" indice={1} pie="Guardados en total" />
+            <Cifra etiqueta="Requieren revisión" valor={totales?.revision ?? 0}
+                   icono={AlertTriangle} color="#F59E0B" indice={2}
+                   resalta={(totales?.revision ?? 0) > 0}
+                   pie={(totales?.revision ?? 0) > 0 ? 'Es lo único que tienes que mirar' : 'Todo cuadra'} />
+            <Cifra etiqueta="IVA del periodo" valor={pesos(totales?.iva ?? 0)}
+                   icono={Scale} color="#7C3AED" indice={3} pie="Notas crédito ya restadas" />
+          </div>
+        )}
+
+        {/* ── Analítica (sólo el dueño) ─────────────────────────────────
+            El componente ni se monta para nadie más, pero eso es cortesía:
+            cada función que consulta comprueba is_admin_user() en la base.
+            Esconder un componente no protege datos. */}
+        {seccion === 'analitica' && ilimitado && <VistaAnalitica />}
+
+        {/* ── Llevarme los datos ────────────────────────────────────────
+            Las dos salidas del recorrido en un sitio: el Excel de cuatro
+            hojas y la plantilla del propio programa contable. */}
+        {seccion === 'reportes' && (
+          <div>
+            <Cabecera
+              titulo="Llevarme los datos"
+              descripcion="El Excel de cuatro hojas, o directamente la plantilla de tu programa contable."
+              icono={FileSpreadsheet}
+              color="#7C3AED"
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Tarjeta className="p-5" indice={0}>
+                <FileSpreadsheet className="mb-3 size-6 text-emerald-600" />
+                <h3 className="text-sm font-bold text-slate-900">Excel de cuatro hojas</h3>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+                  Resumen del periodo, detalle línea por línea, un renglón por documento y las
+                  retenciones aparte. En el resumen las notas crédito ya van restadas.
+                </p>
+                <Boton
+                  estilo={BOTON_EXITO}
+                  icono={Download}
+                  className="mt-4"
+                  disabled={exportando || (totales?.documentos ?? 0) === 0}
+                  onClick={() => void descargarExcel()}
+                >
+                  {exportando ? 'Armando el Excel…' : 'Descargar Excel'}
+                </Boton>
+                {(totales?.documentos ?? 0) === 0 && (
+                  <p className="mt-2 text-[11px] text-slate-400">
+                    Todavía no hay documentos que exportar.
+                  </p>
+                )}
+              </Tarjeta>
+
+              <Tarjeta className="p-5" indice={1}>
+                <Sparkles className="mb-3 size-6 text-violet-600" />
+                <h3 className="text-sm font-bold text-slate-900">Tu propia plantilla</h3>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+                  Sube la plantilla vacía de tu programa —Siigo, Alegra, World Office, la que
+                  sea— y te la devuelvo llena. El mapeo queda guardado para el mes siguiente.
+                </p>
+                <Boton estilo={BOTON_PLANTILLA} icono={FileSpreadsheet} className="mt-4"
+                       onClick={() => setPanelPlantilla(true)}>
+                  Abrir plantillas
+                </Boton>
+              </Tarjeta>
+            </div>
+          </div>
+        )}
+
+        {/* ── Cruzar con la contabilidad ────────────────────────────────── */}
+        {seccion === 'auditor' && (
+          <div>
+            <Cabecera
+              titulo="Cruzar con mi contabilidad"
+              descripcion="Compara lo que la DIAN tiene contra lo que registraste. El cruce es aritmética exacta, no una estimación."
+              icono={Scale}
+              color="#0EA5E9"
+            />
+            <Tarjeta className="p-5" indice={0}>
+              <p className="max-w-2xl text-[12.5px] leading-relaxed text-slate-500">
+                Sube el archivo que exporta tu programa contable y te digo qué documentos están
+                en la DIAN y no en tu contabilidad —eso es IVA que dejaste de descontar—, cuáles
+                están registrados por otra cifra, y cuáles sobran.
+              </p>
+              <Boton estilo={BOTON_PRIMARIO} icono={Scale} className="mt-4"
+                     onClick={() => setPanelAuditor(true)}>
+                Abrir el auditor
+              </Boton>
+            </Tarjeta>
+          </div>
+        )}
+
+        {/* ── Descargar de la DIAN ──────────────────────────────────────── */}
+        {seccion === 'descargar' && puedeDescargar && (
+          <div>
+            <Cabecera
+              titulo="Descargar de la DIAN"
+              descripcion="Con tu token del portal, bajo los documentos por CUFE y los analizo aquí mismo."
+              icono={CloudDownload}
+              color="#0284C7"
+            />
+            <Tarjeta className="p-5" indice={0}>
+              <p className="max-w-2xl text-[12.5px] leading-relaxed text-slate-500">
+                Hay una parte que tienes que hacer tú, porque necesita tus claves: pedir el token
+                en el portal de la DIAN. Dura sesenta minutos y sirve una sola vez. El resto lo
+                hago yo, a ritmo moderado para que la DIAN no nos bloquee.
+              </p>
+              <Boton estilo={BOTON_CORREO} icono={CloudDownload} className="mt-4"
+                     onClick={() => setPanelDescarga(true)}>
+                Abrir el descargador
+              </Boton>
+            </Tarjeta>
+          </div>
+        )}
 
         {/* ── Guía paso a paso, dentro de la propia herramienta ───────── */}
+        {seccion === 'inicio' && (
         <section className="mb-6 overflow-hidden bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <button
             type="button"
@@ -946,12 +1170,13 @@ function ContenidoDian() {
             </div>
           )}
         </section>
+        )}
 
         {/* ── Panel del propietario: medir la prueba y ajustar los topes ──
           Va aquí y no en la sección de analítica porque es donde el
           propietario ya está mirando la herramienta; si el consumo se
           dispara, lo ve en el mismo sitio donde puede subir el tope. */}
-      {beta?.ilimitado && (
+      {beta?.ilimitado && seccion === 'ajustes' && (
         <section className="mb-6 p-5 text-white" style={{ background: DARK_GRADIENT, borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-bold">Control de la prueba</h2>
@@ -1215,7 +1440,7 @@ function ContenidoDian() {
         {/* Los topes de CAPACIDAD de la plataforma. No se resuelven pagando,
             así que aquí no se ofrece ningún plan: hacerlo sería cobrar por
             algo que no se puede entregar todavía. */}
-        {beta && !beta.exentoGlobal && (beta.cerrada || beta.llena) && (
+        {seccion === 'inicio' && beta && !beta.exentoGlobal && (beta.cerrada || beta.llena) && (
           <section
             className="mb-6 overflow-hidden bg-white p-6 text-center ring-1 ring-slate-100"
             style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
@@ -1236,7 +1461,7 @@ function ContenidoDian() {
             enterarse por un mensaje rojo a mitad de una importación de mil
             documentos. Por eso el consumo va siempre visible y el catálogo a
             un clic. */}
-        {cuota && !cuota.ilimitado && (
+        {seccion === 'planes' && cuota && !cuota.ilimitado && (
           <section
             className="mb-6 overflow-hidden bg-white ring-1 ring-slate-100"
             style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
@@ -1369,6 +1594,7 @@ function ContenidoDian() {
             que no existe forma de sincronizar de noche por ahí. El correo sí:
             la ley obliga al emisor a mandar el XML por email, o sea que los
             documentos YA están llegando a un buzón todos los días. */}
+        {seccion === 'correo' && (
         <section className="mb-6 overflow-hidden bg-sky-50/50 ring-2 ring-sky-200"
           style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <button
@@ -1505,11 +1731,13 @@ function ContenidoDian() {
             </div>
           )}
         </section>
+        )}
 
         {/* ── Verificar por lista de CUFEs ─────────────────────────────
             Responde la pregunta que el contador resuelve hoy a mano: de lo
             que la DIAN dice que tengo, ¿qué ya está cargado y qué me falta?
             No descarga nada de la DIAN: cruza contra lo que ya está aquí. */}
+        {seccion === 'cufes' && (
         <section className="mb-6 overflow-hidden bg-emerald-50/50 ring-2 ring-emerald-200"
           style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <button
@@ -1646,7 +1874,9 @@ function ContenidoDian() {
             </div>
           )}
         </section>
+        )}
 
+        {seccion === 'inicio' && (
         <section
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
@@ -1715,9 +1945,10 @@ function ContenidoDian() {
             </div>
           )}
         </section>
+        )}
 
         {/* ── Resultado de la última importación ──────────────────────── */}
-        {resumen && (
+        {seccion === 'inicio' && resumen && (
           <section className="mb-6 bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <h2 className="mb-3 text-sm font-semibold text-slate-800">Resultado</h2>
             {resumen.rechazados.length > 0 && (
@@ -1781,26 +2012,25 @@ function ContenidoDian() {
           </button>
         )}
 
-        {/* ── Tarjetas ────────────────────────────────────────────────── */}
-        {totales && totales.documentos > 0 && (
-          <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-6">
-            {[
-              { l: 'Documentos', v: String(totales.documentos) },
-              { l: 'Requieren revisión', v: String(totales.revision) },
-              { l: 'Con error', v: String(totales.errores) },
-              { l: 'Total compras', v: pesos(totales.compras) },
-              { l: 'IVA', v: pesos(totales.iva) },
-              { l: 'Retenciones', v: pesos(totales.retenciones) },
-            ].map((c) => (
-              <div key={c.l} className="bg-white px-4 py-3.5" style={{ borderRadius: 18, boxShadow: CARD_SHADOW }}>
-                <div className="truncate text-lg font-bold tabular-nums text-slate-900">{c.v}</div>
-                <div className="mt-0.5 text-[11px] leading-tight text-slate-500">{c.l}</div>
-              </div>
-            ))}
-          </section>
+        {/* ── Cifras de la sección Documentos ──────────────────────────
+            Las seis tarjetas planas que había aquí las sustituye la fila de
+            Inicio con el anillo, que dice lo mismo con jerarquía. Aquí se
+            dejan sólo las tres cifras de dinero, que son las que el contador
+            coteja mientras mira la tabla. */}
+        {seccion === 'documentos' && totales && totales.documentos > 0 && (
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <Cifra etiqueta="Total compras" valor={pesos(totales.compras)}
+                   icono={FileText} color="#2563EB" indice={0} />
+            <Cifra etiqueta="IVA" valor={pesos(totales.iva)}
+                   icono={Scale} color="#7C3AED" indice={1}
+                   pie="Notas crédito ya restadas" />
+            <Cifra etiqueta="Retenciones" valor={pesos(totales.retenciones)}
+                   icono={CheckCheck} color="#10B981" indice={2} />
+          </div>
         )}
 
         {/* ── Tabla ───────────────────────────────────────────────────── */}
+        {(seccion === 'documentos' || seccion === 'revision') && (
         <section className="bg-white" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
           <div className="flex items-center gap-1 border-b border-slate-100 px-4 pt-3">
             {([
@@ -2058,8 +2288,13 @@ function ContenidoDian() {
             </div>
           )}
         </section>
+        )}
+        </div>
       </div>
 
+      {/* Los modales quedan FUERA del envoltorio con desplazamiento lateral:
+          son superposiciones fijas y con el `padding-left` de la barra se
+          verían descentradas en escritorio. */}
 
       {/* ── Encuesta ─────────────────────────────────────────────────────
           En modal y no en la página: pedirla en línea la volvía una sección
