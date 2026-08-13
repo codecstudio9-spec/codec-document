@@ -84,7 +84,27 @@ function extraerCookies(res: Response): string {
  * Se cachea: el token dura una hora y una descarga de 2000 documentos
  * tarda media, así que la misma sesión sirve para todo el lote.
  */
-async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { error: string }> {
+/**
+ * Resultado de abrir sesión.
+ *
+ * `culpaDeLaDian` decide si el fallo alimenta al cortacircuitos, y esa
+ * distinción resultó ser el fallo más caro de este módulo:
+ *
+ * El cortacircuitos existe para retirarnos cuando la DIAN nos está
+ * rechazando, y es GLOBAL —una sola fila para todos los contadores—: tres
+ * fallos seguidos pausan a todo el mundo un minuto, diez lo pausan cinco.
+ *
+ * Pero contaba también los tokens vencidos. Y un token vencido no es la DIAN
+ * portándose mal: es lo más normal del mundo, dura 60 minutos y sólo sirve
+ * una vez. Bastaba con que alguien probara tres enlaces caducados —tres
+ * intentos, algo que se hace en veinte segundos— para dejar la herramienta
+ * pausada para todos, incluido él mismo con un token recién pedido.
+ */
+type ResultadoSesion =
+  | { cookie: string }
+  | { error: string; culpaDeLaDian: boolean };
+
+async function abrirSesion(urlAuth: string): Promise<ResultadoSesion> {
   limpiarSesiones();
   const clave = urlAuth;
   const guardada = sesiones.get(clave);
@@ -93,9 +113,9 @@ async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { erro
   }
 
   let url: URL;
-  try { url = new URL(urlAuth); } catch { return { error: 'La URL de la DIAN no es válida.' }; }
+  try { url = new URL(urlAuth); } catch { return { error: 'La URL de la DIAN no es válida.', culpaDeLaDian: false }; }
   const problema = validarHost(url);
-  if (problema) return { error: problema };
+  if (problema) return { error: problema, culpaDeLaDian: false };
 
   const control = new AbortController();
   const alarma = setTimeout(() => control.abort(), TIMEOUT_MS);
@@ -103,7 +123,24 @@ async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { erro
     const res = await fetch(url.toString(), {
       signal: control.signal,
       redirect: 'follow',
-      headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
+      // Cabeceras de navegador real.
+      //
+      // `catalogo-vpfe.dian.gov.co` no es la DIAN directamente: resuelve a
+      // Azure Front Door, un WAF por delante. Comprobado contra el portal:
+      // devuelve 403 a clientes que no parecen un navegador (un `curl/8.x`
+      // pelado lo recibe), y 200 en cuanto la petición trae el aspecto
+      // habitual de una navegación. Estas cabeceras no engañan a nadie sobre
+      // quiénes somos —el User-Agent sigue identificando a Codec Document—,
+      // sólo evitan que el WAF nos clasifique como script suelto.
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'es-CO,es;q=0.9',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+      },
     });
     const cookie = extraerCookies(res);
 
@@ -127,17 +164,39 @@ async function abrirSesion(urlAuth: string): Promise<{ cookie: string } | { erro
       && c.split(';')[0].split('=').slice(1).join('=').length > 20
     );
 
+    // Un 500 en /User/AuthToken es lo que la DIAN devuelve ante un token mal
+    // formado o incompleto — comprobado contra el portal real. Va con los
+    // tokens agotados, no con los fallos de la DIAN.
+    const tokenAgotado = acaboEnLogin || !sesionViva || res.status === 500;
     if (!res.ok || !cookie || acaboEnLogin || !sesionViva) {
       return {
-        error: acaboEnLogin || !sesionViva
-          ? 'La DIAN no aceptó el enlace: te devolvió a la pantalla de acceso. El token dura 60 minutos y solo sirve una vez — solicita uno nuevo y pega el enlace recién llegado.'
+        error: tokenAgotado
+          ? 'La DIAN no aceptó el enlace. El token dura 60 minutos y sólo sirve una vez: pide uno nuevo, y copia el enlace COMPLETO del correo recién llegado (termina en «&token=…»).'
           : `La DIAN respondió ${res.status} al abrir la sesión.`,
+        culpaDeLaDian: !tokenAgotado,
       };
     }
     sesiones.set(clave, { cookie, creada: Date.now() });
     return { cookie };
-  } catch {
-    return { error: 'No se pudo abrir sesión con la DIAN.' };
+  } catch (err) {
+    // Antes este catch devolvía «No se pudo abrir sesión con la DIAN.» y
+    // tiraba la causa a la basura. Ese mensaje es indistinguible entre un
+    // token vencido, la DIAN caída, un corte de red y un fallo de TLS — y
+    // sin saber cuál es, ni el contador ni nosotros podemos hacer nada.
+    //
+    // Llegar hasta aquí significa que el fetch REVENTÓ: no hubo respuesta.
+    // Un token vencido no cae aquí, cae más arriba con una respuesta 200 que
+    // redirige a la pantalla de acceso.
+    const e = err as { name?: string; message?: string };
+    const abortado = e?.name === 'AbortError' || control.signal.aborted;
+    console.error('[dian-descargar] fallo al abrir sesión:', e?.name, e?.message);
+
+    return {
+      error: abortado
+        ? `La DIAN no respondió en ${TIMEOUT_MS / 1000} segundos. Suele ser el portal saturado; espera un minuto y vuelve a intentarlo con el mismo enlace.`
+        : `No se pudo conectar con la DIAN (${e?.name ?? 'error'}: ${e?.message ?? 'sin detalle'}). El enlace es correcto; el problema está en la conexión con el portal.`,
+      culpaDeLaDian: true,
+    };
   } finally {
     clearTimeout(alarma);
   }
@@ -272,8 +331,10 @@ Deno.serve(async (req) => {
 
   const sesion = await abrirSesion(base);
   if ('error' in sesion) {
-    await supabase.rpc('ed_dian_resultado', { p_ok: false });
-    return json({ error: sesion.error }, 502, origin);
+    // Sólo alimenta al cortacircuitos lo que de verdad es la DIAN fallando.
+    // Un enlace caducado no puede pausar la herramienta para todo el mundo.
+    if (sesion.culpaDeLaDian) await supabase.rpc('ed_dian_resultado', { p_ok: false });
+    return json({ error: sesion.error, tokenVencido: !sesion.culpaDeLaDian }, 502, origin);
   }
   await supabase.rpc('ed_dian_resultado', { p_ok: true });
 

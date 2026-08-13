@@ -46,9 +46,26 @@ async function llamar(cuerpo: Record<string, unknown>): Promise<Response> {
 export async function probarEnlaceDian(urlDian: string): Promise<void> {
   const res = await llamar({ url: urlDian, soloSesion: true });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok || !j.ok) {
-    throw new Error(j.error ?? 'No se pudo abrir sesión con la DIAN.');
+  if (res.ok && j.ok) return;
+
+  // El servidor tiene DOS formas de decir que no, y sólo una trae `error`.
+  //
+  // Cuando el gobernador de ritmo frena la petición responde 429 con
+  // `{ espera, esperar_ms, motivo }` y NINGÚN campo `error`. Antes eso caía
+  // al texto de reserva —«No se pudo abrir sesión con la DIAN»— y le echaba
+  // la culpa al enlace, que estaba perfecto. El contador pedía otro token,
+  // volvía a intentarlo, seguía en pausa, y no había forma de salir del bucle
+  // ni de entender por qué.
+  if (res.status === 429 || j.espera) {
+    const seg = Math.max(1, Math.ceil(Number(j.esperar_ms ?? 0) / 1000));
+    throw new Error(
+      j.motivo === 'pausado'
+        ? `La herramienta está en pausa ${seg} segundo${seg === 1 ? '' : 's'} porque la DIAN venía rechazando peticiones. Tu enlace está bien: espera y vuelve a darle a Probar.`
+        : `Vamos demasiado rápido para el ritmo que la DIAN tolera. Espera ${seg} segundo${seg === 1 ? '' : 's'} y vuelve a intentarlo.`,
+    );
   }
+
+  throw new Error(j.error ?? `La DIAN no respondió como se esperaba (código ${res.status}).`);
 }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
