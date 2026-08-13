@@ -43,10 +43,46 @@ async function llamar(cuerpo: Record<string, unknown>): Promise<Response> {
  *
  *  Vale la pena antes de lanzar cientos de descargas: si el token venció o
  *  el enlace ya se usó, se descubre en un segundo y no a mitad del lote. */
-export async function probarEnlaceDian(urlDian: string): Promise<void> {
+/** Lo que la DIAN respondió, tal cual. Sirve para saber de quién es el fallo
+ *  en vez de deducirlo de un mensaje redactado por nosotros. */
+export interface DetalleDian {
+  status: number;
+  urlFinal: string;
+  acaboEnLogin: boolean;
+  cookiesRecibidas: number;
+  tieneCookieSesion: boolean;
+  cookieSesionViva: boolean;
+  azureRef: string | null;
+  muestra?: string;
+}
+
+/** Error de la prueba del enlace que además lleva la evidencia cruda. */
+export class ErrorEnlaceDian extends Error {
+  constructor(mensaje: string, public readonly detalle?: DetalleDian) {
+    super(mensaje);
+    this.name = 'ErrorEnlaceDian';
+  }
+}
+
+export async function probarEnlaceDian(urlDian: string): Promise<DetalleDian | undefined> {
+  // Comprobación de forma antes de gastar una petición contra la DIAN.
+  // El enlace del correo lleva tres parámetros; si al copiar entró sólo un
+  // trozo, la DIAN devuelve un 500 que parece un fallo suyo y no lo es.
+  try {
+    const u = new URL(urlDian.trim());
+    if (/\/User\/AuthToken/i.test(u.pathname) && !u.searchParams.get('token')) {
+      throw new ErrorEnlaceDian(
+        'Ese enlace está incompleto: le falta la parte «&token=…». Vuelve al correo, clic derecho sobre «Ingrese aquí» → Copiar dirección del enlace, y pega lo que copies sin recortar.',
+      );
+    }
+  } catch (e) {
+    if (e instanceof ErrorEnlaceDian) throw e;
+    throw new ErrorEnlaceDian('Eso no parece una dirección web. Copia el enlace desde el correo de la DIAN.');
+  }
+
   const res = await llamar({ url: urlDian, soloSesion: true });
   const j = await res.json().catch(() => ({}));
-  if (res.ok && j.ok) return;
+  if (res.ok && j.ok) return j.dian as DetalleDian | undefined;
 
   // El servidor tiene DOS formas de decir que no, y sólo una trae `error`.
   //
@@ -58,14 +94,17 @@ export async function probarEnlaceDian(urlDian: string): Promise<void> {
   // ni de entender por qué.
   if (res.status === 429 || j.espera) {
     const seg = Math.max(1, Math.ceil(Number(j.esperar_ms ?? 0) / 1000));
-    throw new Error(
+    throw new ErrorEnlaceDian(
       j.motivo === 'pausado'
         ? `La herramienta está en pausa ${seg} segundo${seg === 1 ? '' : 's'} porque la DIAN venía rechazando peticiones. Tu enlace está bien: espera y vuelve a darle a Probar.`
         : `Vamos demasiado rápido para el ritmo que la DIAN tolera. Espera ${seg} segundo${seg === 1 ? '' : 's'} y vuelve a intentarlo.`,
     );
   }
 
-  throw new Error(j.error ?? `La DIAN no respondió como se esperaba (código ${res.status}).`);
+  throw new ErrorEnlaceDian(
+    j.error ?? `La DIAN no respondió como se esperaba (código ${res.status}).`,
+    j.dian as DetalleDian | undefined,
+  );
 }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -100,16 +100,45 @@ function extraerCookies(res: Response): string {
  * intentos, algo que se hace en veinte segundos— para dejar la herramienta
  * pausada para todos, incluido él mismo con un token recién pedido.
  */
-type ResultadoSesion =
-  | { cookie: string }
-  | { error: string; culpaDeLaDian: boolean };
+/**
+ * Lo que la DIAN respondió de verdad, sin interpretar.
+ *
+ * Existe para poder responder a la única pregunta que importa cuando algo
+ * falla: ¿el problema es de la DIAN o nuestro? Sin esto sólo había un
+ * mensaje redactado por nosotros, que es una conclusión, no una prueba.
+ */
+interface DetalleDian {
+  status: number;
+  urlFinal: string;
+  acaboEnLogin: boolean;
+  cookiesRecibidas: number;
+  tieneCookieSesion: boolean;
+  cookieSesionViva: boolean;
+  azureRef: string | null;
+  /** Primeros caracteres del cuerpo, para ver si es la pantalla de acceso,
+   *  un error del portal o una página inesperada. */
+  muestra?: string;
+}
 
-async function abrirSesion(urlAuth: string): Promise<ResultadoSesion> {
+type ResultadoSesion =
+  | { cookie: string; detalle: DetalleDian }
+  | { error: string; culpaDeLaDian: boolean; detalle?: DetalleDian };
+
+async function abrirSesion(urlAuth: string, conDetalle = false): Promise<ResultadoSesion> {
   limpiarSesiones();
   const clave = urlAuth;
   const guardada = sesiones.get(clave);
   if (guardada && Date.now() - guardada.creada < SESION_TTL_MS) {
-    return { cookie: guardada.cookie };
+    return {
+      cookie: guardada.cookie,
+      detalle: {
+        status: 200, urlFinal: '(sesión reutilizada de la caché)', acaboEnLogin: false,
+        cookiesRecibidas: guardada.cookie.split(';').length,
+        tieneCookieSesion: /AspNet\.ApplicationCookie=/i.test(guardada.cookie),
+        cookieSesionViva: true, azureRef: null,
+        muestra: 'La sesión se abrió antes y sigue viva; no se volvió a pedir a la DIAN.',
+      },
+    };
   }
 
   let url: URL;
@@ -168,16 +197,31 @@ async function abrirSesion(urlAuth: string): Promise<ResultadoSesion> {
     // formado o incompleto — comprobado contra el portal real. Va con los
     // tokens agotados, no con los fallos de la DIAN.
     const tokenAgotado = acaboEnLogin || !sesionViva || res.status === 500;
+
+    const detalle: DetalleDian = {
+      status: res.status,
+      urlFinal: res.url,
+      acaboEnLogin,
+      cookiesRecibidas: crudas.length,
+      tieneCookieSesion: crudas.some((c) => /AspNet\.ApplicationCookie=/i.test(c)),
+      cookieSesionViva: sesionViva,
+      azureRef: res.headers.get('x-azure-ref'),
+      muestra: conDetalle
+        ? (await res.clone().text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)
+        : undefined,
+    };
+
     if (!res.ok || !cookie || acaboEnLogin || !sesionViva) {
       return {
         error: tokenAgotado
-          ? 'La DIAN no aceptó el enlace. El token dura 60 minutos y sólo sirve una vez: pide uno nuevo, y copia el enlace COMPLETO del correo recién llegado (termina en «&token=…»).'
+          ? 'La DIAN no aceptó el enlace. El token dura 60 minutos y sólo sirve una vez: pide uno nuevo, y pégalo aquí ANTES de abrirlo en el navegador.'
           : `La DIAN respondió ${res.status} al abrir la sesión.`,
         culpaDeLaDian: !tokenAgotado,
+        detalle,
       };
     }
     sesiones.set(clave, { cookie, creada: Date.now() });
-    return { cookie };
+    return { cookie, detalle };
   } catch (err) {
     // Antes este catch devolvía «No se pudo abrir sesión con la DIAN.» y
     // tiraba la causa a la basura. Ese mensaje es indistinguible entre un
@@ -329,19 +373,31 @@ Deno.serve(async (req) => {
     return json({ espera: true, esperar_ms: permisoSesion.esperar_ms, motivo: permisoSesion.motivo }, 429, origin);
   }
 
-  const sesion = await abrirSesion(base);
+  // El detalle se pide sólo al probar el enlace: es una lectura extra del
+  // cuerpo de la respuesta, y en un lote de 2000 descargas no aporta nada.
+  const sesion = await abrirSesion(base, soloSesion);
   if ('error' in sesion) {
     // Sólo alimenta al cortacircuitos lo que de verdad es la DIAN fallando.
     // Un enlace caducado no puede pausar la herramienta para todo el mundo.
     if (sesion.culpaDeLaDian) await supabase.rpc('ed_dian_resultado', { p_ok: false });
-    return json({ error: sesion.error, tokenVencido: !sesion.culpaDeLaDian }, 502, origin);
+    return json({
+      error: sesion.error,
+      tokenVencido: !sesion.culpaDeLaDian,
+      // La evidencia cruda de lo que contestó la DIAN. Va sólo al probar,
+      // que es cuando alguien está intentando averiguar qué pasa.
+      dian: soloSesion ? sesion.detalle : undefined,
+    }, 502, origin);
   }
   await supabase.rpc('ed_dian_resultado', { p_ok: true });
 
   if (soloSesion) {
     // No se devuelve la cookie: identifica la sesión del contador con la
     // DIAN y no tiene por qué salir de aquí.
-    return json({ ok: true, sesion: true, cookies: sesion.cookie.split(';').length }, 200, origin);
+    return json({
+      ok: true, sesion: true,
+      cookies: sesion.cookie.split(';').length,
+      dian: sesion.detalle,
+    }, 200, origin);
   }
 
   if (!cufe) return json({ error: 'Falta el cufe' }, 400, origin);

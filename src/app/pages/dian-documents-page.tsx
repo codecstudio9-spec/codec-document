@@ -1427,13 +1427,43 @@ function ContenidoDian() {
             excepciones === null ? (
               <div className="flex justify-center py-16"><Loader2 className="size-6 animate-spin text-slate-300" /></div>
             ) : excepciones.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <CheckCheck className="mx-auto mb-3 size-8 text-emerald-400" />
-                <p className="text-sm font-semibold text-slate-700">No hay nada que revisar</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Codec no encontró observaciones en tus documentos.
-                </p>
-              </div>
+              /* Dos vacíos que parecían el mismo y no lo son.
+                 Si hay documentos marcados «Requiere revisión» pero ninguna
+                 observación guardada, decir «no hay nada que revisar»
+                 contradice la insignia y deja al contador sin saber a quién
+                 creer. Se distingue y se explica. */
+              (() => {
+                const marcados = documentos.filter((d) => d.status === 'REVIEW_REQUIRED').length;
+                if (marcados === 0) {
+                  return (
+                    <div className="px-6 py-16 text-center">
+                      <CheckCheck className="mx-auto mb-3 size-8 text-emerald-400" />
+                      <p className="text-sm font-semibold text-slate-700">No hay nada que revisar</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Codec no encontró observaciones en tus documentos.
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="px-6 py-12 text-center">
+                    <AlertTriangle className="mx-auto mb-3 size-8 text-amber-400" />
+                    <p className="text-sm font-semibold text-slate-700">
+                      {marcados === 1
+                        ? 'Hay 1 documento marcado, pero su motivo no quedó guardado'
+                        : `Hay ${marcados} documentos marcados, pero su motivo no quedó guardado`}
+                    </p>
+                    <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
+                      Fue un fallo nuestro: el motivo se calculaba al leer el XML y no llegaba a
+                      guardarse, así que el documento quedaba marcado sin nada que enseñar. Ya está
+                      corregido. Para recuperar el motivo de{' '}
+                      {marcados === 1 ? 'este documento' : 'estos documentos'}, vuelve a importar
+                      {marcados === 1 ? ' ese XML' : ' esos XML'} — los nuevos ya llegan con su
+                      explicación.
+                    </p>
+                  </div>
+                );
+              })()
             ) : (
               <div className="divide-y divide-slate-50">
                 {excepciones.map((ex) => (
@@ -1533,8 +1563,24 @@ function ContenidoDian() {
                         <td className="px-4 py-3 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
                         <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${e.clase}`}>
+                          {/* La insignia dice el estado, pero no el porqué, y
+                              «Requiere revisión» sin motivo deja al contador
+                              adivinando. Se marca como pulsable y abre el
+                              detalle, donde está «Qué debes revisar». */}
+                          <span
+                            title={
+                              d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID'
+                                ? 'Clic para ver por qué'
+                                : undefined
+                            }
+                            className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${e.clase}${
+                              d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID'
+                                ? ' cursor-pointer underline decoration-dotted underline-offset-2'
+                                : ''
+                            }`}
+                          >
                             {e.texto}
+                            {(d.status === 'REVIEW_REQUIRED' || d.status === 'INVALID') && ' ›'}
                           </span>
                         </td>
                       </tr>

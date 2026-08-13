@@ -316,12 +316,16 @@ export async function importarArchivos(
 }
 
 async function registrarFallo(importId: string, nombre: string, code?: string, mensaje?: string) {
-  await supabase.from('ed_exceptions').insert({
+  const { error } = await supabase.from('ed_exceptions').insert({
     import_id: importId,
     code: code ?? 'ERROR',
     severity: 'error',
     message: `${nombre}: ${mensaje ?? 'no se pudo procesar'}`.slice(0, 800),
   });
+  // Esta fila es el único rastro de un archivo que no se pudo procesar. Si
+  // tampoco se guarda, el contador ve «28 documentos» cuando subió 30 y no
+  // tiene forma de saber cuáles faltaron ni por qué.
+  if (error) console.error('[dian] no se pudo registrar el fallo de', nombre, error);
 }
 
 /** Guarda documento + líneas + impuestos + excepciones + archivo original.
@@ -359,9 +363,24 @@ async function guardarDocumento(
     );
   }
   if (payload.excepciones.length) {
-    await supabase.from('ed_exceptions').insert(
+    // El resultado SÍ se mira. Antes no, y por eso este fallo vivió oculto:
+    // en supabase-js un INSERT rechazado no lanza, devuelve `{ error }`. Las
+    // observaciones llevaban desde el primer día sin guardarse —la columna
+    // owner_user_id no tenía DEFAULT auth.uid() como el resto de tablas, así
+    // que RLS las rechazaba todas— y el documento quedaba marcado «Requiere
+    // revisión» con la bandeja vacía. Un error que no se lee es un error que
+    // no existe hasta que alguien lo sufre.
+    const { error: errExc } = await supabase.from('ed_exceptions').insert(
       payload.excepciones.map((e) => ({ ...e, document_id: documentId, import_id: importId })),
     );
+    if (errExc) {
+      console.error('[dian] no se pudieron guardar las observaciones de', documentId, errExc);
+      // El documento se conserva: perder la observación es malo, perder la
+      // factura entera es peor. Pero se devuelve a PROCESSED para que no
+      // quede marcado «requiere revisión» sin nada que enseñar — esa
+      // contradicción es justo lo que desconcertaba al contador.
+      await supabase.from('ed_documents').update({ status: 'PROCESSED' }).eq('id', documentId);
+    }
   }
   if (payload.terceros.length) {
     // onConflict sobre (owner_user_id, nit): el mismo proveedor aparece en

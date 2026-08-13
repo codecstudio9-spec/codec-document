@@ -29,7 +29,10 @@ import {
   Play, Square, Link2, Volume2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { descargarDeDian, probarEnlaceDian, type EventoDescarga } from '../../services/dian-descarga-service';
+import {
+  descargarDeDian, probarEnlaceDian, ErrorEnlaceDian,
+  type EventoDescarga, type DetalleDian,
+} from '../../services/dian-descarga-service';
 import { CARD_RADIUS } from '../../styles/mobile-theme';
 
 /** Endpoint por defecto para bajar un documento por CUFE.
@@ -68,6 +71,9 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
   const [carpeta, setCarpeta] = useState<FileSystemDirectoryHandle | null>(null);
   const [probando, setProbando] = useState(false);
   const [enlaceOk, setEnlaceOk] = useState<boolean | null>(null);
+  /** Lo que respondió la DIAN, sin interpretar. Es lo que permite saber si el
+   *  fallo es del portal o nuestro, en vez de deducirlo de un mensaje. */
+  const [detalleDian, setDetalleDian] = useState<DetalleDian | null>(null);
   const [corriendo, setCorriendo] = useState(false);
   const [progreso, setProgreso] = useState({ hechos: 0, total: 0, ok: 0, errores: 0 });
   const [registro, setRegistro] = useState<Entrada[]>([]);
@@ -103,7 +109,7 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
     setProbando(true);
     setEnlaceOk(null);
     try {
-      await probarEnlaceDian(urlDian.trim());
+      setDetalleDian(await probarEnlaceDian(urlDian.trim()) ?? null);
       setEnlaceOk(true);
       toast.success('El enlace funciona: la DIAN abrió sesión.');
       narrar?.(
@@ -112,6 +118,7 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
       );
     } catch (e) {
       setEnlaceOk(false);
+      setDetalleDian(e instanceof ErrorEnlaceDian ? e.detalle ?? null : null);
       const msg = (e as Error).message;
       toast.error(msg, { duration: 9000 });
       // El fallo casi siempre es el mismo y tiene una salida concreta.
@@ -256,13 +263,21 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
         )}
 
         {/* Guía del paso manual: sin ella el contador no sabe de dónde
-            saca el enlace ni los CUFEs. */}
+            saca el enlace ni los CUFEs.
+
+            El ORDEN de estos pasos importa y antes estaba mal. Se decía
+            «abre ese mismo enlace en otra pestaña» para exportar los CUFEs,
+            pero el enlace del token AUTENTICA: abrirlo en el navegador crea
+            allí la sesión y deja el token gastado, así que cuando llegaba
+            aquí la DIAN ya lo rechazaba. Ahora se piden dos tokens, que es
+            lo que el proceso realmente necesita: uno para mirar el listado y
+            otro para que la plataforma descargue. */}
         <ol className="mb-5 space-y-2 rounded-xl bg-slate-50 px-4 py-3.5">
           {[
-            'Entra a la DIAN y solicita tu token. Te llega un correo de «Token Acceso DIAN».',
-            'En ese correo, clic derecho sobre «Ingrese aquí» → Copiar dirección del enlace. Pégalo abajo.',
-            'Abre ese mismo enlace en otra pestaña, exporta el listado del periodo y copia la columna de CUFEs.',
-            'Pega los CUFEs aquí, elige la carpeta y dale a Descargar.',
+            'Entra a la DIAN, solicita un token y abre el enlace del correo. Exporta el listado del periodo y copia la columna de CUFEs.',
+            'Vuelve a la DIAN y solicita un SEGUNDO token. Te llega otro correo de «Token Acceso DIAN».',
+            'En ese segundo correo, clic derecho sobre «Ingrese aquí» → Copiar dirección del enlace. Pégalo abajo SIN abrirlo.',
+            'Pega los CUFEs, elige la carpeta y dale a Descargar.',
           ].map((t, i) => (
             <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-slate-600">
               <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-slate-900 text-[10px] font-bold text-white">
@@ -305,6 +320,45 @@ export function DescargarDeDian({ narrar, onCerrar }: Props) {
           <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
             <CheckCircle2 className="size-3.5" /> El enlace funciona
           </p>
+        )}
+
+        {/* Qué respondió la DIAN, sin interpretar.
+            Existe para contestar la única pregunta que importa cuando algo
+            falla —¿es la DIAN o es la plataforma?— con la respuesta cruda del
+            portal y no con una conclusión nuestra. Va plegado: sólo interesa
+            cuando algo va mal. */}
+        {enlaceOk === false && detalleDian && (
+          <details className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <summary className="cursor-pointer text-[11px] font-bold text-slate-500">
+              Ver qué respondió la DIAN
+            </summary>
+            <div className="mt-2 space-y-1 text-[11px] leading-relaxed text-slate-600">
+              <p>
+                <strong>Veredicto:</strong>{' '}
+                {detalleDian.acaboEnLogin || !detalleDian.cookieSesionViva
+                  ? 'la DIAN nos devolvió a su pantalla de acceso. El token ya no vale — está usado o vencido. No es un fallo de la plataforma.'
+                  : detalleDian.status >= 500
+                    ? 'el portal de la DIAN devolvió un error suyo. Suele ser el enlace incompleto, o el portal con problemas.'
+                    : 'la DIAN respondió algo inesperado; hace falta mirar la muestra de abajo.'}
+              </p>
+              <p><strong>Código:</strong> {detalleDian.status} · <strong>Terminó en:</strong> {detalleDian.urlFinal}</p>
+              <p>
+                <strong>Cookies:</strong> {detalleDian.cookiesRecibidas} ·{' '}
+                <strong>Sesión:</strong>{' '}
+                {detalleDian.tieneCookieSesion
+                  ? (detalleDian.cookieSesionViva ? 'viva' : 'la emitió y la anuló')
+                  : 'no la emitió'}
+              </p>
+              {detalleDian.azureRef && (
+                <p className="break-all"><strong>Referencia DIAN:</strong> {detalleDian.azureRef}</p>
+              )}
+              {detalleDian.muestra && (
+                <p className="mt-1.5 break-all rounded-lg bg-white px-2 py-1.5 font-mono text-[10px] text-slate-500">
+                  {detalleDian.muestra}
+                </p>
+              )}
+            </div>
+          </details>
         )}
         <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
           El token dura <strong>60 minutos</strong>. Si la descarga es larga, puede vencerse a
