@@ -178,6 +178,17 @@ export interface EstadoCuota {
   /** El siguiente plan comprable, para poder ofrecerlo sin saberse el catálogo. */
   siguiente: { code: string; nombre: string; precio: number; limite: number | null } | null;
   diasRestantes: number | null;
+  /** Cuántos documentos se entregan de una vez. null = todo el cupo del mes
+   *  disponible sin espera, que es como funcionan los planes de pago. */
+  tramo: number | null;
+  /** Horas entre un tramo y el siguiente. null si el plan no tiene tramos. */
+  tramoHoras: number | null;
+  /** Cuándo se libera el siguiente tramo. null = no hay espera en curso.
+   *
+   *  Ojo: `restantes` ya lleva esto dentro. Si hay espera, `restantes` es 0
+   *  aunque queden documentos del mes — así la barrera que ya existía sigue
+   *  funcionando sin tocarla, y no hay dos cifras que puedan discrepar. */
+  esperaHasta: string | null;
 }
 
 export async function estadoCuota(): Promise<EstadoCuota> {
@@ -209,6 +220,9 @@ export async function estadoCuota(): Promise<EstadoCuota> {
     diasRestantes: hasta
       ? Math.max(0, Math.ceil((new Date(hasta).getTime() - Date.now()) / 86_400_000))
       : null,
+    tramo: d.tramo == null ? null : Number(d.tramo),
+    tramoHoras: d.tramo_horas == null ? null : Number(d.tramo_horas),
+    esperaHasta: (d.espera_hasta as string) ?? null,
   };
 }
 

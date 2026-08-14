@@ -804,6 +804,37 @@ function ContenidoDian() {
       });
 
       await refrescar();
+
+      // Si esta importación agotó el tramo, se agradece y se dice cuándo
+      // vuelve. Va DESPUÉS de refrescar porque la espera la calcula el
+      // servidor a partir de lo que se acaba de procesar: preguntarla antes
+      // devolvería el estado anterior y diría que no hay espera.
+      const cuotaNueva = await estadoCuota().catch(() => null);
+      if (cuotaNueva?.esperaHasta) {
+        const fin = new Date(cuotaNueva.esperaHasta);
+        const soloDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const dias = Math.round((soloDia(fin) - soloDia(new Date())) / 86_400_000);
+        const cuando = dias <= 0 ? 'hoy mismo'
+          : dias === 1 ? 'mañana'
+          : dias === 2 ? 'pasado mañana'
+          : `el ${fin.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`;
+        const tramo = cuotaNueva.tramo ?? 50;
+
+        avisos.añadir({
+          tipo: 'plan',
+          titulo: `Gracias por usar Codec Document`,
+          detalle: `Terminaste los ${tramo} documentos de este tramo. ${cuando === 'hoy mismo' ? 'Hoy mismo' : `A partir de ${cuando}`} tienes otros ${tramo}.`,
+        });
+
+        narrar(
+          `Gracias por elegirnos. Ya procesaste los ${tramo} documentos de este tramo de tu plan gratuito. `
+            + `Si todo va bien, ${cuando} vuelves a tener otros ${tramo}. `
+            + 'Y si necesitas seguir hoy mismo, cualquier plan de pago quita la espera.',
+          `Thank you for choosing us. You have processed the ${tramo} documents in this batch of your free plan. `
+            + `If all goes well, you will have another ${tramo} ${dias === 1 ? 'tomorrow' : dias === 2 ? 'the day after tomorrow' : 'soon'}. `
+            + 'And if you need to keep going today, any paid plan removes the wait.',
+        );
+      }
     } catch (e) {
       // El límite no es un fallo del sistema: se explica, no se reporta
       // como error rojo genérico.
@@ -1034,6 +1065,40 @@ function ContenidoDian() {
       limite: conPromo.limite ?? 100,
     };
   }, [planes]);
+
+  /**
+   * La espera entre tramos del plan gratuito.
+   *
+   * Se calcula aquí y no en el servidor porque «pasado mañana» depende de la
+   * hora del contador, no de la del servidor: a las once de la noche del
+   * martes, 72 horas caen en viernes de madrugada, y decir «pasado mañana»
+   * sería falso por un día.
+   */
+  const esperaTramo = useMemo(() => {
+    if (!cuota?.esperaHasta) return null;
+    const fin = new Date(cuota.esperaHasta);
+    const restanteMs = fin.getTime() - Date.now();
+    if (restanteMs <= 0) return null;
+
+    const horas = Math.ceil(restanteMs / 3_600_000);
+
+    // Días de calendario, no bloques de 24 horas: es como cuenta la gente.
+    const hoy = new Date();
+    const soloDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const dias = Math.round((soloDia(fin) - soloDia(hoy)) / 86_400_000);
+
+    return {
+      horas,
+      // «Mañana» y «pasado mañana» se entienden sin pensar; a partir de ahí,
+      // la fecha es más clara que «en 3 días».
+      cuando: dias <= 0 ? 'hoy mismo'
+        : dias === 1 ? 'mañana'
+        : dias === 2 ? 'pasado mañana'
+        : `el ${fin.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`,
+      hora: fin.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }),
+      tramo: cuota.tramo ?? 50,
+    };
+  }, [cuota?.esperaHasta, cuota?.tramo]);
 
   const totalPaginas = Math.max(1, Math.ceil(totalFiltrado / DOCS_POR_PAGINA));
 
@@ -1326,6 +1391,60 @@ function ContenidoDian() {
           <div className="mb-5">
             <AccionesRapidas acciones={accionesRapidas} />
           </div>
+        )}
+
+        {/* Tramo agotado, esperando el siguiente.
+            El tono es de agradecimiento y no de bloqueo a propósito: al
+            contador no se le está quitando nada, se le está entregando el
+            resto más despacio. Un cartel rojo de «límite alcanzado» convierte
+            un plan gratuito generoso en una queja, y quien lo lea justo
+            después de que la herramienta le acabe de ahorrar horas se lleva
+            como último recuerdo un muro. */}
+        {seccion === 'inicio' && esperaTramo && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={MOV.entrada}
+            className="relative mb-5 overflow-hidden p-6"
+            style={{
+              borderRadius: CARD_RADIUS,
+              background: 'linear-gradient(120deg,#1e1b4b,#312e81 60%,#111827)',
+              boxShadow: '0 20px 44px rgba(30,27,75,0.30)',
+            }}
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{ background: 'linear-gradient(90deg,transparent,rgba(52,211,153,0.7),transparent)' }}
+            />
+            <div className="relative flex flex-wrap items-center gap-x-6 gap-y-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-400/30">
+                <CheckCircle2 className="size-6 text-emerald-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-black leading-tight text-white">
+                  Gracias por usar Codec Document
+                </p>
+                <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-white/70">
+                  Ya procesaste los {esperaTramo.tramo} documentos de este tramo. Tu plan gratuito
+                  te da otros {esperaTramo.tramo} y los tienes disponibles{' '}
+                  <strong className="font-bold text-white">{esperaTramo.cuando}</strong>
+                  {esperaTramo.cuando !== 'hoy mismo' && ` a partir de las ${esperaTramo.hora}`}.
+                  Si necesitas seguir hoy mismo, cualquier plan de pago quita la espera.
+                </p>
+              </div>
+              <motion.button
+                type="button"
+                onClick={() => setSeccion('planes')}
+                whileHover={{ y: -2 }}
+                whileTap={PULSACION}
+                className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white px-5 py-3 text-[13.5px] font-black text-indigo-950 shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition hover:bg-emerald-50"
+              >
+                Seguir sin esperar
+                <ArrowRight className="size-4" />
+              </motion.button>
+            </div>
+          </motion.div>
         )}
 
         {/* El aviso del lanzamiento también en Inicio, en versión de una línea.
