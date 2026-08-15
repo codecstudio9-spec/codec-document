@@ -206,6 +206,18 @@ async function correrLote() {
   emitir('terminado', { ok, errores });
 }
 
+// Le permite a codecdocument.com preguntar "¿está instalada la extensión?"
+// sin depender de que el contador sepa explicarlo. Sólo responde — nunca
+// inicia nada por su cuenta ni acepta mensajes de otro origen: eso ya lo
+// filtra `externally_connectable` en el manifest antes de que esto se
+// ejecute siquiera.
+chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
+  if (msg?.tipo === 'ping') {
+    responder({ ok: true, version: chrome.runtime.getManifest().version });
+  }
+  return true;
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
   (async () => {
     if (msg.tipo === 'probar') {

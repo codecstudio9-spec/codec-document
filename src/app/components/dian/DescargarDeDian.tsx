@@ -1,282 +1,73 @@
 /**
  * Descargar XML de la DIAN a partir de una lista de CUFEs.
  *
- * ── El flujo, con su parte manual ───────────────────────────────────────
- * Hay pasos que el contador tiene que hacer en el portal, y no se pueden
- * automatizar sin sus credenciales:
+ * ── Por qué esto ya NO se hace pegando el enlace aquí mismo ─────────────
+ * Se verificó en vivo (2026-08-14) que la DIAN ata el token de acceso a la
+ * IP que lo solicitó: el mismo enlace autentica sin problema abierto en el
+ * Chrome del contador, y SIEMPRE falla si sale de un servidor compartido
+ * —cabeceras de navegador perfectas incluidas—, porque la IP nunca es la
+ * suya. El proxy (`dian-descargar`) quedó bloqueado de raíz, no por un bug
+ * arreglable. La única forma de que la petición "sea" el contador es que
+ * salga literalmente de su navegador: de ahí la extensión de Chrome
+ * (`extension-dian/`), que hace exactamente lo que hacía el proxy pero
+ * corriendo dentro de su propia sesión.
  *
- *   1. Pide el token en la DIAN → le llega el enlace al correo
- *   2. Pega ese enlace aquí
- *   3. Abre el enlace, exporta el listado del periodo y copia los CUFEs
- *   4. Los pega aquí y le da a Iniciar descarga
- *
- * Y ahí termina su parte. Lo descargado entra al analizador por
- * `onDescargados`, sin pasar por el disco. La carpeta es OPCIONAL: sirve para
- * que conserve el XML, que es el documento con validez legal, pero no hace
- * falta para analizar.
- *
- * Hubo una etapa en que sí había que arrastrar la carpeta de vuelta a la
- * pantalla anterior. Ya no, y conviene recordarlo: los guiones de voz de este
- * archivo siguieron diciéndolo un tiempo después de que dejara de ser cierto,
- * mandando al contador a hacer un trabajo que ya nadie le pedía.
- *
- * ── Por qué va tan medido ───────────────────────────────────────────────
- * El navegador no puede pedirle archivos a la DIAN (CORS), así que la
- * petición sale de nuestro servidor y el tráfico de todos los contadores
- * comparte las mismas IPs. El gobernador del servidor mantiene el total en
- * ~2 peticiones por segundo pase lo que pase; aquí sólo se respeta lo que
- * él responde. Ir más rápido no acelera nada y arriesga el bloqueo de la
- * IP para todos los clientes a la vez.
+ * Este panel ya no pide el enlace ni los CUFEs — eso ahora vive en el
+ * popup de la extensión, porque ahí es donde puede llegar a la DIAN. Lo
+ * que sí hace: saber si la extensión está instalada (preguntándole
+ * directamente, ver use-dian-extension.ts) y, según eso, guiar al
+ * contador a instalarla o a usarla.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Download, FolderOpen, Loader2, X, CheckCircle2, XCircle, AlertTriangle,
-  Play, Square, Link2, Volume2,
+  Download, X, CheckCircle2, Volume2, ExternalLink, RefreshCw,
+  ClipboardCopy, PlugZap, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  descargarDeDian, probarEnlaceDian, ErrorEnlaceDian,
-  type EventoDescarga, type DetalleDian,
-} from '../../services/dian-descarga-service';
-import { CARD_RADIUS } from '../../styles/mobile-theme';
+import { useDianExtension } from '../../hooks/use-dian-extension';
 
-/** Endpoint por defecto para bajar un documento por CUFE.
- *
- *  Va como valor editable y no cableado: es lo único del flujo que no
- *  pudimos confirmar contra el portal, y si la DIAN lo cambia el contador
- *  puede corregirlo sin esperar un despliegue. El botón «Probar» dice en un
- *  clic si funciona. */
-const ENDPOINT_POR_DEFECTO = 'https://catalogo-vpfe.dian.gov.co/Document/DownloadZipFile?trackId={CUFE}';
+const URL_EXTENSION_ZIP = '/descargas/codec-document-descargador-dian.zip';
 
 interface Props {
   narrar?: (es: string, en: string) => void;
   onCerrar: () => void;
   /** CUFEs que ya se sabe que faltan, traídos de la verificación de arriba.
-   *  Ahorra copiarlos y volverlos a pegar. */
+   *  Aquí ya no se pegan en un campo — la extensión no puede leer el
+   *  portapapeles de esta página por sí sola —, pero sí se pueden copiar
+   *  con un clic para pegarlos en el popup de la extensión. */
   cufesIniciales?: string[];
-  /**
-   * Lo descargado, ya como archivos, para analizarlo sin pasar por el disco.
-   *
-   * Es el paso que faltaba: hasta ahora la descarga terminaba dejando los ZIP
-   * en una carpeta y el contador tenía que ir a buscarlos y arrastrarlos de
-   * vuelta a la misma pantalla. Los bytes ya estaban en el navegador.
-   */
-  onDescargados?: (archivos: File[]) => void;
 }
 
-type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: string; muestra?: string };
+const GUION_ES = 'Esta herramienta se mudó a una extensión de Chrome. La razón es de fondo: la DIAN empezó a atar el token de acceso a la computadora desde la que se pide, así que un servidor compartido como el nuestro ya no puede autenticarlo, sin importar qué tan bien se disfrace. Una extensión sí puede, porque corre dentro de tu propio navegador, con tu propia conexión. Si todavía no la instalas, dale al botón de descargar aquí abajo y sigue los cuatro pasos. Si ya la instalaste, dale clic al ícono de Codec Document en tu barra de Chrome, junto a la barra de direcciones, y ahí pegas el enlace del token y tus CUFEs, igual que hacías aquí antes. Cuando termine de bajar los documentos, quedan en tu carpeta de Descargas, dentro de una carpeta que se llama DIAN. Desde ahí los arrastras a Subir mis XML, como cualquier XML que ya tuvieras guardado.';
 
-/** El recorrido completo, en el orden en que hay que hacerlo.
- *
- *  Se guarda como texto y no en linea porque el boton de repetir tiene que
- *  poder decir exactamente lo mismo: alguien que se pierde a mitad
- *  necesita oir la version entera otra vez, no un resumen distinto.
- *
- *  Es largo a proposito. La parte manual de este proceso es justo la que
- *  confunde, y un contador que no sabe de donde sale el token abandona
- *  antes de llegar a la parte automatica. */
-const GUION_ES = 'Esta herramienta baja los documentos de la DIAN por ti, pero hay una parte que tienes que hacer tu, porque necesita tus claves. Te la explico. Primero, entra al portal de la DIAN y solicita un token. La DIAN te manda un correo con el asunto Token Acceso DIAN. En ese correo hay un boton que dice Ingrese aqui. No le des clic todavia: haz clic derecho encima y elige Copiar direccion del enlace. Ese enlace lo pegas aqui en el primer campo, y le das al boton Probar para confirmar que sirve. Ojo con esto: el token vence a los sesenta minutos y solo funciona una vez. Segundo, abre ese mismo enlace en otra pestana, entra a Documentos, exporta el listado del periodo que necesites, y abre el Excel que te descarga. Ahi viene una columna que se llama CUFE. Copia esa columna completa y pegala aqui abajo. Tercero, dale a Iniciar descarga. Si quieres quedarte tambien con una copia en tu computador, elige antes una carpeta, pero no es obligatorio: el XML es el documento con validez legal y conviene guardarlo, aunque yo lo analizo igual sin eso. A partir de ahi yo hago el resto. Voy despacio a proposito, para que la DIAN no nos bloquee, asi que si son muchos documentos tomate un cafe. Cuando termine no tienes que hacer nada mas: los documentos pasan solos al analisis y apareceran en la tabla de atras, ya listos para el Excel.';
+const GUION_EN = 'This tool moved to a Chrome extension. The DIAN portal started tying the access token to the computer that requested it, so a shared server like ours can no longer authenticate it. A browser extension can, because it runs inside your own browser, on your own connection. If you have not installed it yet, use the download button below and follow the four steps. Once installed, click the Codec Document icon in your Chrome toolbar to paste the token link and your CUFEs there. When it finishes, the files land in your Downloads folder, inside a DIAN subfolder — drag them into "Subir mis XML" from there.';
 
-const GUION_EN = 'This tool downloads your DIAN documents, but there is one part you have to do yourself because it needs your credentials. First, go to the DIAN portal and request a token. DIAN emails you a link. Right-click it and choose Copy link address, then paste it in the first field here and hit Test. The token expires in sixty minutes and works only once. Second, open that same link in another tab, export the listing for your period, open the spreadsheet and copy the CUFE column. Paste it below. Third, hit Start download. If you also want a copy on your computer, pick a folder first, but it is optional: the XML is the legally valid document and worth keeping, though I analyse it either way. I go slowly on purpose so DIAN does not block us. When I finish you do not have to do anything else: the documents go straight into the analysis and show up in the table behind, ready for the Excel.';
+export function DescargarDeDian({ narrar, onCerrar, cufesIniciales }: Props) {
+  const { estado, version, verificar } = useDianExtension();
+  const [comprobando, setComprobando] = useState(false);
 
-export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargados }: Props) {
-  const [urlDian, setUrlDian] = useState('');
-  const [endpoint, setEndpoint] = useState(ENDPOINT_POR_DEFECTO);
-  const [mostrarAvanzado, setMostrarAvanzado] = useState(false);
-  const [textoCufes, setTextoCufes] = useState((cufesIniciales ?? []).join('\n'));
-  const [carpeta, setCarpeta] = useState<FileSystemDirectoryHandle | null>(null);
-  const [probando, setProbando] = useState(false);
-  const [enlaceOk, setEnlaceOk] = useState<boolean | null>(null);
-  /** Lo que respondió la DIAN, sin interpretar. Es lo que permite saber si el
-   *  fallo es del portal o nuestro, en vez de deducirlo de un mensaje. */
-  const [detalleDian, setDetalleDian] = useState<DetalleDian | null>(null);
-  const [corriendo, setCorriendo] = useState(false);
-  const [progreso, setProgreso] = useState({ hechos: 0, total: 0, ok: 0, errores: 0 });
-  const [registro, setRegistro] = useState<Entrada[]>([]);
-  const cancelar = useRef(false);
-
-  // El guion completo al abrir. Si el contador tiene la guia apagada,
-  // narrar() no hace nada, asi que no hay que consultar su estado.
   useEffect(() => {
     narrar?.(GUION_ES, GUION_EN);
     // Solo al abrir el panel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const soportaCarpetas = typeof (window as unknown as { showDirectoryPicker?: unknown }).showDirectoryPicker === 'function';
+  const comprobarDeNuevo = () => {
+    setComprobando(true);
+    verificar();
+    setTimeout(() => setComprobando(false), 1300);
+  };
 
-  const elegirCarpeta = async () => {
+  const copiarCufes = async () => {
+    if (!cufesIniciales?.length) return;
     try {
-      const dir = await (window as unknown as {
-        showDirectoryPicker: (o?: { mode?: string }) => Promise<FileSystemDirectoryHandle>;
-      }).showDirectoryPicker({ mode: 'readwrite' });
-      setCarpeta(dir);
-      narrar?.(
-        `Voy a guardar una copia en la carpeta ${dir.name}. No tienes que hacer nada con ella: los documentos pasan solos al análisis. La copia es para que conserves el XML, que es el que tiene validez legal.`,
-        `I will save a copy in the folder ${dir.name}. You do not have to do anything with it: the documents go into the analysis on their own. The copy is so you keep the XML, which is the legally valid one.`,
-      );
+      await navigator.clipboard.writeText(cufesIniciales.join('\n'));
+      toast.success(`${cufesIniciales.length} CUFEs copiados — pégalos en el popup de la extensión`);
     } catch {
-      // El usuario canceló el diálogo: no es un error que reportar.
+      toast.error('No se pudo copiar. Selecciona la lista de abajo a mano.');
     }
   };
-
-  const probar = async () => {
-    if (!urlDian.trim()) { toast.error('Pega primero el enlace que te llegó al correo'); return; }
-    setProbando(true);
-    setEnlaceOk(null);
-    try {
-      setDetalleDian(await probarEnlaceDian(urlDian.trim()) ?? null);
-      setEnlaceOk(true);
-      toast.success('El enlace funciona: la DIAN abrió sesión.');
-      narrar?.(
-        'Tu enlace funciona. Ahora pega la lista de CUFEs y dale a Descargar. Lo de elegir carpeta es opcional, solo si quieres quedarte con una copia de los XML.',
-        'Your link works. Now paste the CUFE list and hit Download. Choosing a folder is optional, only if you want to keep a copy of the XML files.',
-      );
-    } catch (e) {
-      setEnlaceOk(false);
-      setDetalleDian(e instanceof ErrorEnlaceDian ? e.detalle ?? null : null);
-      const msg = (e as Error).message;
-      toast.error(msg, { duration: 9000 });
-      // El fallo casi siempre es el mismo y tiene una salida concreta.
-      // Decírsela en voz alta evita que se quede mirando un error rojo sin
-      // saber que solo tiene que pedir otro token.
-      narrar?.(
-        msg.includes('acceso') || msg.includes('token')
-          ? 'Ese enlace ya no sirve. El token de la DIAN dura sesenta minutos y solo funciona una vez, así que si ya lo abriste o pasó de una hora, hay que pedir otro. Vuelve al portal, solicita un token nuevo, y copia el enlace del correo recién llegado.'
-          : `No pude conectar con la DIAN. ${msg}`,
-        msg.includes('acceso') || msg.includes('token')
-          ? 'That link no longer works. The DIAN token lasts sixty minutes and works only once. Request a new one and copy the link from the fresh email.'
-          : `I could not reach DIAN. ${msg}`,
-      );
-    } finally {
-      setProbando(false);
-    }
-  };
-
-  const cufesDeTexto = useCallback((): string[] => {
-    const vistos = new Set<string>();
-    for (const c of textoCufes.split(/[\s,;]+/)) {
-      const t = c.trim().toLowerCase();
-      if (/^[0-9a-f]{90,100}$/.test(t)) vistos.add(t);
-    }
-    return [...vistos];
-  }, [textoCufes]);
-
-  const iniciar = async () => {
-    const cufes = cufesDeTexto();
-    if (!urlDian.trim()) { toast.error('Falta el enlace de la DIAN'); return; }
-    if (cufes.length === 0) { toast.error('No encontré CUFEs válidos en la lista'); return; }
-    // La carpeta sólo es obligatoria si el destino es el disco. Cuando lo
-    // descargado va directo al analizador, exigirla era un trámite de más.
-    if (!carpeta && !onDescargados) {
-      toast.error('Elige primero la carpeta donde guardar');
-      return;
-    }
-
-    cancelar.current = false;
-    setCorriendo(true);
-    setRegistro([]);
-    setProgreso({ hechos: 0, total: cufes.length, ok: 0, errores: 0 });
-
-    narrar?.(
-      `Empiezo a descargar ${cufes.length} documentos. Voy a ritmo moderado para que la DIAN no nos bloquee, así que puede tardar. No cierres esta pestaña; te aviso al terminar.`,
-      `Starting to download ${cufes.length} documents. I go at a moderate pace so DIAN does not block us, so it may take a while. Do not close this tab.`,
-    );
-
-    // Los totales se llevan aquí y no leyéndolos del estado.
-    //
-    // Antes se hacía dentro de un setProgreso(p => …) para "aprovechar" el
-    // valor actual, y eso tumbaba la página entera: el actualizador de
-    // estado de React tiene que ser una función PURA, y ahí dentro se
-    // estaba llamando al asistente de voz. React lo puede ejecutar dos
-    // veces o en otro momento, y el efecto secundario revienta el render.
-    let ok = 0;
-    let errores = 0;
-    // Lo descargado, para entregárselo al analizador al terminar. Se junta
-    // aquí y no se manda de uno en uno: importar treinta veces seguidas
-    // dispararía treinta recargas de la tabla.
-    const bajados: File[] = [];
-
-    try {
-      await descargarDeDian({
-        urlDian: urlDian.trim(),
-        endpoint: endpoint.trim() || undefined,
-        cufes,
-        carpeta: carpeta ?? undefined,
-        cancelado: () => cancelar.current,
-        onArchivo: onDescargados
-          ? (nombre, bytes) => {
-            bajados.push(new File([bytes as BlobPart], nombre, { type: 'application/zip' }));
-          }
-          : undefined,
-        onEvento: (e: EventoDescarga) => {
-          if (e.ok) ok++; else errores++;
-          const hechos = e.hechos;
-          const total = e.total;
-          const okActual = ok;
-          const erroresActual = errores;
-          setProgreso({ hechos, total, ok: okActual, errores: erroresActual });
-
-          const entrada: Entrada = {
-            cufe: e.cufe,
-            estado: e.ok ? 'ok' : 'error',
-            detalle: e.detalle,
-            muestra: e.muestra,
-          };
-          setRegistro((r) => [entrada, ...r].slice(0, 60));
-        },
-      });
-
-      // Si hay a quién entregárselos, se analizan solos. El paso de «ve a la
-      // carpeta y arrástralos aquí» era trabajo manual para mover unos bytes
-      // que ya estaban en el navegador.
-      if (onDescargados && bajados.length > 0) {
-        narrar?.(
-          `Listo. Bajé ${ok} documentos y los estoy analizando ya${errores > 0 ? `. ${errores} no se pudieron bajar` : ''}.`,
-          `Done. I downloaded ${ok} documents and I am analysing them right now.`,
-        );
-        toast.success(`${bajados.length} documento(s) descargado(s). Analizando…`);
-        onDescargados(bajados);
-        onCerrar();
-        return;
-      }
-
-      // Aquí se llega sólo cuando no bajó NADA (todos los CUFEs fallaron), o
-      // cuando quien monta el panel no pasó onDescargados. En el recorrido
-      // real de la aplicación siempre se pasa, así que decirle al contador
-      // que arrastre una carpeta era mandarlo a hacer un trabajo que ya no
-      // existe — y encima una carpeta que puede estar vacía.
-      narrar?.(
-        ok === 0
-          ? `No pude bajar ningún documento: los ${errores} fallaron. Lo más común es que el token ya se haya vencido; pide uno nuevo y vuelve a intentarlo.`
-          : `Terminé. ${ok} documentos descargados y ${errores} con problema.`,
-        ok === 0
-          ? `I could not download any document: all ${errores} failed. The usual cause is an expired token; request a new one and try again.`
-          : `Finished. ${ok} downloaded, ${errores} failed.`,
-      );
-      toast.success(
-        ok === 0 ? 'No se pudo descargar ningún documento.' : `Descarga terminada: ${ok} documento(s).`,
-      );
-    } catch (e) {
-      // Nada de lo que pase aquí dentro puede tumbar la pantalla. Una
-      // descarga que falla es un contratiempo; perder la página con los
-      // CUFEs ya pegados y la carpeta ya elegida obliga a repetirlo todo.
-      const msg = e instanceof Error ? e.message : 'Ocurrió un problema durante la descarga.';
-      console.error('[dian-descarga]', e);
-      toast.error(msg, { duration: 9000 });
-      narrar?.(
-        `Se interrumpió la descarga. ${ok > 0 ? `Alcancé a bajar ${ok} documentos, que ya están en tu carpeta.` : ''} Puedes volver a darle a Iniciar: no repito lo que ya se descargó.`,
-        `The download stopped. ${ok > 0 ? `I managed to get ${ok} documents.` : ''} You can hit Start again: I skip what is already downloaded.`,
-      );
-    } finally {
-      setCorriendo(false);
-    }
-  };
-
-  const cufes = cufesDeTexto();
-  const pct = progreso.total > 0 ? Math.round((progreso.hechos / progreso.total) * 100) : 0;
-  const minutos = Math.ceil(cufes.length / 2 / 60);
 
   return (
     <div>
@@ -287,12 +78,9 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-slate-900">Descargar XML de la DIAN</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Pega tus CUFEs y te dejo los archivos en la carpeta que elijas
+            Ahora corre en tu navegador, no en un servidor compartido
           </p>
         </div>
-        {/* Repetir las instrucciones. El guion es largo y la parte manual
-            tiene varios pasos en otra pestaña: quien vuelve tras hacerlos
-            necesita oírlo entero otra vez, no adivinar por dónde iba. */}
         <button
           type="button"
           onClick={() => narrar?.(GUION_ES, GUION_EN)}
@@ -308,278 +96,126 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
       </div>
 
       <div className="px-5 py-5">
-        {!soportaCarpetas && (
-          <p className="mb-4 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
-            Tu navegador no permite guardar en una carpeta. Usa <strong>Chrome</strong> o
-            <strong> Edge</strong> en computador para esta función.
-          </p>
-        )}
-
-        {/* Guía del paso manual: sin ella el contador no sabe de dónde
-            saca el enlace ni los CUFEs.
-
-            El ORDEN de estos pasos importa y antes estaba mal. Se decía
-            «abre ese mismo enlace en otra pestaña» para exportar los CUFEs,
-            pero el enlace del token AUTENTICA: abrirlo en el navegador crea
-            allí la sesión y deja el token gastado, así que cuando llegaba
-            aquí la DIAN ya lo rechazaba. Ahora se piden dos tokens, que es
-            lo que el proceso realmente necesita: uno para mirar el listado y
-            otro para que la plataforma descargue. */}
-        <ol className="mb-5 space-y-2 rounded-xl bg-slate-50 px-4 py-3.5">
-          {[
-            'Entra a la DIAN, solicita un token y abre el enlace del correo. Exporta el listado del periodo y copia la columna de CUFEs.',
-            'Vuelve a la DIAN y solicita un SEGUNDO token. Te llega otro correo de «Token Acceso DIAN».',
-            'En ese segundo correo, clic derecho sobre «Ingrese aquí» → Copiar dirección del enlace. Pégalo abajo SIN abrirlo.',
-            'Pega los CUFEs, elige la carpeta y dale a Descargar.',
-          ].map((t, i) => (
-            <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-slate-600">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-slate-900 text-[10px] font-bold text-white">
-                {i + 1}
-              </span>
-              {t}
-            </li>
-          ))}
-        </ol>
-
-        <label className="block text-xs font-semibold text-slate-600">
-          Enlace de la DIAN (del correo del token)
-          <div className="mt-1.5 flex gap-2">
-            <input
-              value={urlDian}
-              onChange={(e) => { setUrlDian(e.target.value); setEnlaceOk(null); }}
-              onPaste={() => {
-                // Al pegar, no al teclear: nadie escribe una URL de la DIAN
-                // a mano, y narrar en cada pulsacion seria insufrible.
-                setTimeout(() => narrar?.(
-                  'Ya pegaste el enlace. Dale al boton Probar que esta al lado, y te confirmo si todavia sirve antes de que empieces.',
-                  'You pasted the link. Hit the Test button next to it and I will confirm whether it still works before you start.',
-                ), 250);
-              }}
-              placeholder="https://catalogo-vpfe.dian.gov.co/…&rk=…&token=…"
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-xs outline-none transition focus:border-sky-400 focus:bg-white"
-            />
-            <button
-              type="button"
-              onClick={() => void probar()}
-              disabled={probando || corriendo}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-            >
-              {probando ? <Loader2 className="size-3.5 animate-spin" /> : <Link2 className="size-3.5" />}
-              Probar
-            </button>
-          </div>
-        </label>
-        {enlaceOk === true && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-            <CheckCircle2 className="size-3.5" /> El enlace funciona
-          </p>
-        )}
-
-        {/* Qué respondió la DIAN, sin interpretar.
-            Existe para contestar la única pregunta que importa cuando algo
-            falla —¿es la DIAN o es la plataforma?— con la respuesta cruda del
-            portal y no con una conclusión nuestra. Va plegado: sólo interesa
-            cuando algo va mal. */}
-        {enlaceOk === false && detalleDian && (
-          <details className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <summary className="cursor-pointer text-[11px] font-bold text-slate-500">
-              Ver qué respondió la DIAN
-            </summary>
-            <div className="mt-2 space-y-1 text-[11px] leading-relaxed text-slate-600">
-              <p>
-                <strong>Veredicto:</strong>{' '}
-                {detalleDian.acaboEnLogin || !detalleDian.cookieSesionViva
-                  ? 'la DIAN nos devolvió a su pantalla de acceso. El token ya no vale — está usado o vencido. No es un fallo de la plataforma.'
-                  : detalleDian.status >= 500
-                    ? 'el portal de la DIAN devolvió un error suyo. Suele ser el enlace incompleto, o el portal con problemas.'
-                    : 'la DIAN respondió algo inesperado; hace falta mirar la muestra de abajo.'}
-              </p>
-              <p><strong>Código:</strong> {detalleDian.status} · <strong>Terminó en:</strong> {detalleDian.urlFinal}</p>
-              <p>
-                <strong>Cookies:</strong> {detalleDian.cookiesRecibidas} ·{' '}
-                <strong>Sesión:</strong>{' '}
-                {detalleDian.tieneCookieSesion
-                  ? (detalleDian.cookieSesionViva ? 'viva' : 'la emitió y la anuló')
-                  : 'no la emitió'}
-              </p>
-              {detalleDian.azureRef && (
-                <p className="break-all"><strong>Referencia DIAN:</strong> {detalleDian.azureRef}</p>
-              )}
-              {detalleDian.muestra && (
-                <p className="mt-1.5 break-all rounded-lg bg-white px-2 py-1.5 font-mono text-[10px] text-slate-500">
-                  {detalleDian.muestra}
-                </p>
-              )}
-            </div>
-          </details>
-        )}
-        <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
-          El token dura <strong>60 minutos</strong>. Si la descarga es larga, puede vencerse a
-          mitad: pide otro, pégalo y continúa — no se repite lo ya descargado.
-        </p>
-
-        <label className="mt-4 block text-xs font-semibold text-slate-600">
-          Carpeta donde guardar
-          <div className="mt-1.5 flex gap-2">
-            <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700">
-              {carpeta ? carpeta.name : <span className="text-slate-400">Ninguna elegida</span>}
-            </div>
-            <button
-              type="button"
-              onClick={() => void elegirCarpeta()}
-              disabled={!soportaCarpetas || corriendo}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-            >
-              <FolderOpen className="size-3.5" />
-              Examinar
-            </button>
-          </div>
-        </label>
-
-        <label className="mt-4 block text-xs font-semibold text-slate-600">
-          Lista de CUFEs (uno por línea)
-          <textarea
-            value={textoCufes}
-            onChange={(e) => setTextoCufes(e.target.value)}
-            onPaste={() => {
-              // Tras el pegado, no durante: el estado todavía no se ha
-              // actualizado cuando se dispara el evento.
-              setTimeout(() => {
-                const n = cufesDeTexto().length;
-                narrar?.(
-                  n > 0
-                    ? 'Ya tengo tus CUFEs. Ahora elige la carpeta donde quieres los archivos y dale a Iniciar descarga.'
-                    : 'Pegaste algo, pero no reconocí ningún CUFE. Un CUFE son noventa y seis caracteres, entre números y letras de la a a la efe. Revisa que hayas copiado la columna completa del Excel de la DIAN, sin el encabezado.',
-                  n > 0
-                    ? 'I have your CUFEs. Now pick the folder where you want the files and hit Start download.'
-                    : 'I could not recognize any CUFE. A CUFE is ninety-six characters. Make sure you copied the whole column from the DIAN spreadsheet.',
-                );
-              }, 350);
-            }}
-            rows={6}
-            placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"
-            className="mt-1.5 block w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 font-mono text-[11px] outline-none transition focus:border-sky-400 focus:bg-white"
-          />
-        </label>
-        {textoCufes.trim() && (
-          <p className="mt-1.5 text-xs text-slate-500">
-            <strong className="tabular-nums text-slate-800">{cufes.length}</strong> CUFEs válidos
-            {cufes.length > 0 && ` · unos ${minutos} minuto(s) a ritmo seguro`}
-          </p>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setMostrarAvanzado((v) => !v)}
-          className="mt-3 text-[11px] font-semibold text-slate-400 underline"
-        >
-          {mostrarAvanzado ? 'Ocultar' : 'Opciones avanzadas'}
-        </button>
-        {mostrarAvanzado && (
-          <label className="mt-2 block text-xs font-semibold text-slate-600">
-            Dirección de descarga por documento
-            <input
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-[11px] outline-none focus:border-sky-400 focus:bg-white"
-            />
-            <span className="mt-1 block font-normal text-[11px] text-slate-400">
-              Usa <code className="rounded bg-slate-100 px-1">{'{CUFE}'}</code> donde va el código.
-              Solo cámbialo si la DIAN modifica su portal.
-            </span>
-          </label>
-        )}
-
-        <div className="mt-5 flex gap-2">
-          <button
-            type="button"
-            onClick={() => void iniciar()}
-            disabled={corriendo || !soportaCarpetas}
-            className="flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
-          >
-            {corriendo ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
-            {corriendo ? 'Descargando…' : 'Iniciar descarga'}
-          </button>
-          {corriendo && (
-            <button
-              type="button"
-              onClick={() => { cancelar.current = true; }}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              <Square className="size-3.5" /> Detener
-            </button>
-          )}
-        </div>
-
-        {progreso.total > 0 && (
-          <div className="mt-5">
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-700">
-                {progreso.hechos} de {progreso.total}
-              </span>
-              <span className="tabular-nums text-slate-500">
-                {progreso.ok} ok{progreso.errores > 0 && ` · ${progreso.errores} con problema`}
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-sky-600 transition-all" style={{ width: `${pct}%` }} />
-            </div>
-
-            {registro.length > 0 && (
-              <div className="mt-3 max-h-52 space-y-1 overflow-y-auto rounded-xl bg-slate-50 p-3">
-                {registro.map((r, i) => (
-                  <div key={`${r.cufe}-${i}`} className="flex items-start gap-2 text-[11px]">
-                    {r.estado === 'ok'
-                      ? <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-emerald-500" />
-                      : <XCircle className="mt-0.5 size-3 shrink-0 text-rose-500" />}
-                    <span className="min-w-0 flex-1">
-                      <span className="font-mono text-slate-500">{r.cufe.slice(0, 24)}…</span>
-                      {r.detalle && <span className="block text-rose-600">{r.detalle}</span>}
-                      {/* Lo que contestó la DIAN de verdad, para distinguir
-                          un token vencido de un bloqueo del WAF sin adivinar
-                          por el mensaje. Plegado: sólo estorba cuando hace
-                          falta mirarlo. */}
-                      {r.muestra && (
-                        <details className="mt-0.5">
-                          <summary className="cursor-pointer text-[10px] font-semibold text-slate-400">
-                            Ver respuesta de la DIAN
-                          </summary>
-                          <p className="mt-1 break-all rounded-lg bg-white px-2 py-1.5 font-mono text-[10px] text-slate-500">
-                            {r.muestra}
-                          </p>
-                        </details>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* En el recorrido real este panel se cierra solo al terminar y los
-            documentos pasan al análisis, así que este aviso casi nunca se ve.
-            Cuando se ve, tiene que decir la verdad: durante un tiempo pedía
-            arrastrar la carpeta a la pantalla anterior, un paso que ya no
-            existe. */}
-        {progreso.total > 0 && !corriendo && progreso.ok > 0 && (
-          <p className="mt-4 flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-xs leading-relaxed text-emerald-900 ring-1 ring-emerald-200">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              Listo: {progreso.ok} documento(s) descargado(s). Pasan solos al análisis y
-              aparecerán en la tabla.
-              {carpeta && <> También te quedó una copia en «{carpeta.name}».</>}
-            </span>
-          </p>
-        )}
-
-        <p className="mt-5 flex items-start gap-2 text-[11px] leading-relaxed text-slate-400">
-          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+        <p className="mb-5 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           <span>
-            La descarga va a ritmo moderado a propósito. Todos los contadores compartimos la
-            misma salida hacia la DIAN, y forzarla arriesga que nos bloqueen a todos.
+            La DIAN empezó a atar el token al computador que lo pide. Un servidor compartido
+            —como el que usaba esta pantalla antes— ya no puede autenticarlo. Por eso la
+            descarga se mudó a una extensión que corre en tu propio Chrome.
           </span>
         </p>
+
+        {cufesIniciales && cufesIniciales.length > 0 && (
+          <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5">
+            <p className="text-xs font-semibold text-slate-700">
+              {cufesIniciales.length} documento(s) te faltan
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Cópialos y pégalos en la lista de CUFEs del popup de la extensión.
+            </p>
+            <button
+              type="button"
+              onClick={() => void copiarCufes()}
+              className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <ClipboardCopy className="size-3.5" />
+              Copiar lista de CUFEs
+            </button>
+          </div>
+        )}
+
+        {estado === 'revisando' && !comprobando && (
+          <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-6 text-xs text-slate-500">
+            <RefreshCw className="size-3.5 animate-spin" />
+            Comprobando si la extensión está instalada…
+          </div>
+        )}
+
+        {estado === 'instalada' && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <p className="flex items-center gap-2 text-sm font-bold text-emerald-800">
+              <CheckCircle2 className="size-4" />
+              Extensión instalada{version ? ` (v${version})` : ''}
+            </p>
+            <ol className="mt-3 space-y-2.5">
+              {[
+                'Entra a la DIAN y solicita un token — te llega el enlace al correo.',
+                <>Haz clic en el ícono de <strong>Codec Document</strong> en tu barra de Chrome, junto a la barra de direcciones.</>,
+                'Pega el enlace ahí, dale a Probar, pega tus CUFEs y dale a Iniciar descarga.',
+                <>Cuando termine, los archivos quedan en <code className="rounded bg-white px-1 py-0.5 text-[11px]">Descargas/DIAN/</code>. Arrástralos a «Subir mis XML».</>,
+              ].map((t, i) => (
+                <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-emerald-900">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-[10px] font-bold text-white">
+                    {i + 1}
+                  </span>
+                  {t}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {estado === 'no-instalada' && (
+          <div className="rounded-xl border border-slate-200 px-4 py-4">
+            <p className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <PlugZap className="size-4 text-sky-600" />
+              Instala la extensión de Codec Document
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Un solo paquete, se instala una vez y sirve para todas tus descargas futuras.
+            </p>
+
+            <a
+              href={URL_EXTENSION_ZIP}
+              download
+              className="mt-3.5 flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-sky-700"
+            >
+              <Download className="size-4" />
+              Descargar extensión (.zip)
+            </a>
+
+            <details className="mt-3.5 rounded-xl bg-slate-50 px-4 py-3">
+              <summary className="cursor-pointer text-xs font-bold text-slate-600">
+                Cómo instalarla (4 pasos, 2 minutos)
+              </summary>
+              <ol className="mt-3 space-y-2.5">
+                {[
+                  'Descomprime el .zip que acabas de bajar — te queda una carpeta llamada "codec-document-descargador-dian".',
+                  <>Abre <code className="rounded bg-white px-1 py-0.5 text-[11px]">chrome://extensions</code> en una pestaña nueva (pégalo directo en la barra de direcciones).</>,
+                  'Activa "Modo de desarrollador" — el interruptor está arriba, a la derecha.',
+                  'Dale a "Cargar descomprimida" y selecciona la carpeta que descomprimiste.',
+                ].map((t, i) => (
+                  <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-slate-600">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-slate-900 text-[10px] font-bold text-white">
+                      {i + 1}
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ol>
+            </details>
+
+            <button
+              type="button"
+              onClick={comprobarDeNuevo}
+              disabled={comprobando}
+              className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3.5 ${comprobando ? 'animate-spin' : ''}`} />
+              Ya la instalé — comprobar
+            </button>
+          </div>
+        )}
+
+        <a
+          href="https://catalogo-vpfe.dian.gov.co"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 hover:text-slate-600"
+        >
+          <ExternalLink className="size-3" />
+          Abrir el portal de la DIAN para pedir un token
+        </a>
       </div>
     </div>
   );

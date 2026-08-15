@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Codec Document — Descargador DIAN",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Descarga tus documentos electrónicos de la DIAN a tu computador, usando tu propia sesión de navegador — no la de un servidor compartido.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -26,5 +26,13 @@
     "https://catalogo-vpfe-hab.dian.gov.co/*",
     "https://vpfe.dian.gov.co/*",
     "https://vpfe-hab.dian.gov.co/*"
-  ]
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://www.codecdocument.com/*",
+      "https://codecdocument.com/*",
+      "http://localhost:5174/*"
+    ]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxcD5T6YeSxbRTFXOKhM6UHCxBboz4IeAzW4sErWY/YJ2zn8r9ojruZWir0mb1s4VEb2mGCPl//U3N+LA6FmBuZR8V3sRDl78Oyafb/rWIsDKfJWIsxTI0dqXZ3SleRWy+PosDw/+PLAnok3A3DoJUFySIelgFjm0dmXqpVg2gg13/ekBUMA3YHl0j9W2XR5ThzbFG1xZpEeaUCfrNHxJzcSlcx1232HHOHa8XZNEP6sceJGt3G2ugUsaAHUQ1wL/IV0F0XeMhegGHRcEWwqkxdvPAx7Iyu/Nat42HPMzzF39Fh2cUnwNFq/+zhp0JaPVnLD8Un5bj79hynm6EoEaGwIDAQAB"
 }

@@ -3382,12 +3382,9 @@ function ContenidoDian() {
         <DescargarDeDian
           onCerrar={() => setPanelDescarga(false)}
           narrar={narrar}
-          // Los que la verificación ya identificó como faltantes: llegan
-          // pegados, sin que haya que copiarlos a mano.
+          // Los que la verificación ya identificó como faltantes: se pueden
+          // copiar con un clic para pegarlos en el popup de la extensión.
           cufesIniciales={cruce?.faltantes}
-          // Y lo descargado entra directo al analizador, que es lo que se
-          // quería desde el principio.
-          onDescargados={(archivos) => { void procesar(archivos); }}
         />
       </CajonDerecho>
 
