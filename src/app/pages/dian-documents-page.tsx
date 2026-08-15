@@ -2667,7 +2667,12 @@ function ContenidoDian() {
               void archivosDeSoltar(e.dataTransfer).then((fs) => procesar(fs));
             }}
             className={`flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-slate-200 bg-white p-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40 ${
-              beta && !beta.ilimitado && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
+              // Mismo campo que decide si se ve el aviso de "la beta está
+              // cerrada" (más abajo, seccion === 'inicio'): `exentoGlobal`,
+              // no `ilimitado`. Antes revisaba `ilimitado` — un plan de pago
+              // (exentoGlobal true, ilimitado false) no veía el aviso pero
+              // igual se quedaba con la zona de subir gris y sin explicación.
+              beta && !beta.exentoGlobal && (beta.cerrada || beta.llena) ? 'pointer-events-none opacity-40' : ''
             }`}
             style={{ borderRadius: CARD_RADIUS }}
           >
