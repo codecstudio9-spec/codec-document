@@ -57,64 +57,87 @@ async function guardarEstado() {
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * Abre sesión con el enlace del correo. Igual que abrirSesion() del proxy,
- * salvo que aquí no hay cookie que capturar a mano: el navegador la guarda
- * sola en cuanto llega el Set-Cookie de la respuesta.
+ * Abre sesión con el enlace del correo.
+ *
+ * NO usa fetch() — se probó en vivo (2026-08-15) y falla de forma
+ * intermitente: la DIAN a veces responde 200 con la pantalla de login sin
+ * emitir la cookie de sesión, exactamente igual que cuando el proxy del
+ * servidor fallaba por IP. Pero esta vez la IP SÍ es la del contador — lo
+ * que cambia es que un fetch() de un service worker nunca puede llevar las
+ * cabeceras de una navegación real (Sec-Fetch-Dest: document, etc.); Chrome
+ * las fija él mismo según el tipo de petición y un script no puede pedirlas
+ * ni falsearlas. Cuando SÍ se abrió el mismo enlace como pestaña de verdad
+ * (a mano, o navegando con la extensión de automatización), nunca falló.
+ *
+ * Por eso esto abre una pestaña real (oculta, sin robar el foco) en vez de
+ * pedir la URL desde el script. Es más lento —una pestaña tarda más que un
+ * fetch()— pero es lo que de verdad funciona.
  */
-async function abrirSesion(urlAuth, { conMuestra = false } = {}) {
-  const control = new AbortController();
-  const alarma = setTimeout(() => control.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(urlAuth, {
-      credentials: 'include',
-      redirect: 'follow',
-      signal: control.signal,
-      headers: {
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'es-CO,es;q=0.9',
-      },
+async function abrirSesion(urlAuth) {
+  return new Promise((resolve) => {
+    let terminado = false;
+    let tabId = null;
+
+    const escuchar = (id, info, tab) => {
+      if (id !== tabId || info.status !== 'complete') return;
+      finalizar(tab.url ?? '');
+    };
+
+    const vencido = setTimeout(() => {
+      if (terminado) return;
+      terminado = true;
+      chrome.tabs.onUpdated.removeListener(escuchar);
+      if (tabId != null) chrome.tabs.remove(tabId).catch(() => {});
+      resolve({
+        ok: false,
+        error: `La DIAN no respondió en ${TIMEOUT_MS / 1000} segundos. Espera un minuto y reintenta con el mismo enlace.`,
+      });
+    }, TIMEOUT_MS);
+
+    async function finalizar(urlFinal) {
+      if (terminado) return;
+      terminado = true;
+      clearTimeout(vencido);
+      chrome.tabs.onUpdated.removeListener(escuchar);
+
+      const acaboEnLogin = urlFinal.toLowerCase().includes('/user/login');
+
+      // La cookie real vive en el almacén del navegador, no hay que
+      // capturarla a mano: se consulta aparte sólo para poder decir si la
+      // sesión quedó viva o si la DIAN la emitió y la anuló.
+      let sesionViva = false;
+      try {
+        const cookies = await chrome.cookies.getAll({ url: urlAuth });
+        sesionViva = cookies.some((c) => /AspNet\.ApplicationCookie/i.test(c.name) && c.value?.length > 20);
+      } catch { /* permiso "cookies" ausente en una build vieja; no es crítico */ }
+
+      if (tabId != null) chrome.tabs.remove(tabId).catch(() => {});
+
+      const ok = !acaboEnLogin && sesionViva;
+      resolve({
+        ok,
+        status: 200,
+        urlFinal,
+        acaboEnLogin,
+        sesionViva,
+        error: ok
+          ? undefined
+          : 'La DIAN no aceptó el enlace. El token dura 60 minutos y sólo sirve una vez: pide uno nuevo.',
+      });
+    }
+
+    chrome.tabs.onUpdated.addListener(escuchar);
+    chrome.tabs.create({ url: urlAuth, active: false }, (tab) => {
+      if (chrome.runtime.lastError || !tab?.id) {
+        clearTimeout(vencido);
+        chrome.tabs.onUpdated.removeListener(escuchar);
+        terminado = true;
+        resolve({ ok: false, error: 'No se pudo abrir la pestaña para autenticar con la DIAN.' });
+        return;
+      }
+      tabId = tab.id;
     });
-
-    const acaboEnLogin = res.url.toLowerCase().includes('/user/login');
-    const texto = conMuestra || acaboEnLogin
-      ? await res.clone().text().catch(() => '')
-      : '';
-
-    // La cookie real vive en el almacén del navegador, no en la respuesta:
-    // se consulta aparte para poder mostrar el mismo diagnóstico que tenía
-    // el panel web ("¿la sesión quedó viva?"), no para reenviarla — eso lo
-    // hace el navegador solo en la próxima petición.
-    let sesionViva = false;
-    try {
-      const cookies = await chrome.cookies.getAll({ url: urlAuth });
-      sesionViva = cookies.some((c) => /AspNet\.ApplicationCookie/i.test(c.name) && c.value?.length > 20);
-    } catch { /* permiso "cookies" ausente en una build vieja; no es crítico */ }
-
-    const ok = res.ok && !acaboEnLogin && sesionViva;
-    return {
-      ok,
-      status: res.status,
-      urlFinal: res.url,
-      acaboEnLogin,
-      sesionViva,
-      muestra: conMuestra ? texto.replace(/\s+/g, ' ').slice(0, 400) : undefined,
-      error: ok
-        ? undefined
-        : (acaboEnLogin || !sesionViva)
-          ? 'La DIAN no aceptó el enlace. El token dura 60 minutos y sólo sirve una vez: pide uno nuevo.'
-          : `La DIAN respondió ${res.status} al abrir la sesión.`,
-    };
-  } catch (err) {
-    const abortado = err?.name === 'AbortError';
-    return {
-      ok: false,
-      error: abortado
-        ? `La DIAN no respondió en ${TIMEOUT_MS / 1000} segundos. Espera un minuto y reintenta con el mismo enlace.`
-        : `No se pudo conectar con la DIAN (${err?.message ?? 'error de red'}).`,
-    };
-  } finally {
-    clearTimeout(alarma);
-  }
+  });
 }
 
 /** Descarga un documento. Misma validación de bytes que el proxy: un ZIP
@@ -232,7 +255,7 @@ chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
   (async () => {
     if (msg.tipo === 'probar') {
-      const r = await abrirSesion(msg.urlDian, { conMuestra: true });
+      const r = await abrirSesion(msg.urlDian);
       responder(r);
       return;
     }

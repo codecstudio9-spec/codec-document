@@ -43,12 +43,11 @@ btnProbar.addEventListener('click', async () => {
     estadoEnlaceEl.textContent = r.error ?? 'No se pudo probar el enlace.';
     estadoEnlaceEl.className = 'error';
   }
-  if (r.status !== undefined) {
+  if (r.urlFinal !== undefined) {
     detalleEl.style.display = 'block';
     detalleEl.textContent = [
-      `Código: ${r.status} · Terminó en: ${r.urlFinal ?? '(?)'}`,
+      `Terminó en: ${r.urlFinal || '(?)'}`,
       `Sesión: ${r.sesionViva ? 'viva' : 'no la emitió'}`,
-      r.muestra ? `\n${r.muestra}` : '',
     ].join('\n');
   }
 });
