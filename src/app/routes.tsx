@@ -19,6 +19,7 @@ const CheckoutPage = lazy(() => import("./pages/checkout-page").then((m) => ({ d
 const NotFoundPage = lazy(() => import("./pages/not-found-page").then((m) => ({ default: m.NotFoundPage })));
 const TermsOfServicePage = lazy(() => import("./pages/terms-of-service").then((m) => ({ default: m.TermsOfServicePage })));
 const PrivacyPolicyPage = lazy(() => import("./pages/privacy-policy").then((m) => ({ default: m.PrivacyPolicyPage })));
+const DianExtensionPrivacyPage = lazy(() => import("./pages/dian-extension-privacy").then((m) => ({ default: m.DianExtensionPrivacyPage })));
 const RefundPolicyPage = lazy(() => import("./pages/refund-policy").then((m) => ({ default: m.RefundPolicyPage })));
 const PaymentSuccessPage = lazy(() => import("./pages/payment-success-page").then((m) => ({ default: m.PaymentSuccessPage })));
 const GuestSignPage = lazy(() => import("./pages/guest-sign-page").then((m) => ({ default: m.GuestSignPage })));
@@ -1414,6 +1415,11 @@ export const router = createBrowserRouter([
   {
     path: "/privacy",
     Component: PrivacyPolicyPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/privacidad-extension-dian",
+    Component: DianExtensionPrivacyPage,
     errorElement: <RouteErrorBoundary />,
   },
   {
