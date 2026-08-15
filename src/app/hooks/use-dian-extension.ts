@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /**
- * ID de la extensión "Codec Document — Descargador DIAN" (extension-dian/).
- *
- * OJO al retomar esto: este ID se calculó a mano con una clave RSA
- * (extension-dian/manifest.json ya NO la trae — la Chrome Web Store
- * rechaza el campo "key" en el manifiesto al subirlo, así que se quitó) y
- * sólo era válido para instalaciones "cargadas descomprimida" en modo
- * desarrollador. Una vez que la extensión quede publicada en la Chrome Web
- * Store, Google le asigna su PROPIO id permanente al crear el elemento
- * —visible en el panel de developer aunque esté en borrador, antes de
- * pasar la revisión— y ESE es el que hay que poner aquí. Hasta que eso
- * pase, la detección de "¿está instalada?" no va a funcionar para nadie.
+ * ID de la extensión "Codec Document — Descargador DIAN" (extension-dian/),
+ * el que le asignó la Chrome Web Store al crear el elemento (visible en el
+ * panel de developer, arriba del todo, aunque el elemento esté en borrador
+ * y no haya pasado la revisión todavía). Ya no depende de ninguna clave
+ * local — ver el historial de este archivo si hace falta el porqué.
  */
-const EXTENSION_ID = 'nikdagbmkbmbmnmgcalhmhnhmgkconon'; // TODO: reemplazar por el ID real de la Chrome Web Store
+const EXTENSION_ID = 'hgikepfbdgaajbmkagdjebfeodiepcp';
 
 export type EstadoExtensionDian = 'revisando' | 'instalada' | 'no-instalada';
 
