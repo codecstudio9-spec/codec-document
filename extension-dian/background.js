@@ -139,13 +139,17 @@ async function descargarUno(destino, cufe) {
     const ok = res.ok && (esZip || esXml);
 
     if (!ok) {
-      const muestra = new TextDecoder().decode(bytes.slice(0, 300)).replace(/\s+/g, ' ').trim();
+      // La URL completa va en el detalle del fallo — no es sensible como sí
+      // lo es la del token (ésta no autentica nada, sólo identifica un
+      // documento por CUFE), y sin verla es imposible saber si el problema
+      // es la ruta del endpoint o algo puntual de ese documento.
+      const muestra = new TextDecoder().decode(bytes.slice(0, 500)).replace(/\s+/g, ' ').trim();
       return {
         ok: false,
         detalle: res.ok
           ? 'La DIAN respondió algo que no es un documento. El token puede haber vencido.'
           : `La DIAN respondió ${res.status}.`,
-        muestra,
+        muestra, url: destino.toString(), status: res.status,
       };
     }
 
@@ -164,7 +168,11 @@ async function descargarUno(destino, cufe) {
     return { ok: true };
   } catch (err) {
     const abortado = err?.name === 'AbortError';
-    return { ok: false, detalle: abortado ? 'La DIAN no respondió a tiempo.' : 'No se pudo contactar con la DIAN.' };
+    return {
+      ok: false,
+      detalle: abortado ? 'La DIAN no respondió a tiempo.' : 'No se pudo contactar con la DIAN.',
+      url: destino.toString(),
+    };
   } finally {
     clearTimeout(alarma);
   }
@@ -189,10 +197,13 @@ async function correrLote() {
     }
 
     const r = await descargarUno(destino, cufe);
-    estado.resultados[cufe] = { ok: r.ok, detalle: r.detalle };
+    // La URL y la muestra quedan también en el estado guardado, no sólo en
+    // el mensaje en vivo: si se reabre el popup después, el registro tiene
+    // que poder mostrar lo mismo, no sólo "hechos: N".
+    estado.resultados[cufe] = { ok: r.ok, detalle: r.detalle, muestra: r.muestra, url: r.url };
     await guardarEstado();
     emitir('progreso', {
-      cufe, ok: r.ok, detalle: r.detalle, muestra: r.muestra,
+      cufe, ok: r.ok, detalle: r.detalle, muestra: r.muestra, url: r.url,
       hechos: Object.keys(estado.resultados).length, total,
     });
 

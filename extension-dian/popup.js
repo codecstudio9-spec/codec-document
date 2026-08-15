@@ -84,13 +84,47 @@ function actualizarBarra(hechos, total) {
   resumenEl.textContent = total > 0 ? `${hechos} de ${total}` : '';
 }
 
+/**
+ * Una fila del registro. Cuando falla, trae plegada la URL exacta que se
+ * intentó y lo que respondió la DIAN — sin esto, un 404 no dice si la ruta
+ * del endpoint está mal o si es ese documento puntual el que falla.
+ */
+function filaRegistro(r) {
+  const fila = document.createElement('div');
+  fila.className = r.ok ? '' : 'err';
+  fila.textContent = `${r.cufe.slice(0, 20)}… ${r.ok ? 'ok' : `— ${r.detalle ?? 'error'}`}`;
+
+  if (!r.ok && (r.url || r.muestra)) {
+    const detalles = document.createElement('details');
+    detalles.style.marginTop = '2px';
+    const resumen = document.createElement('summary');
+    resumen.style.cursor = 'pointer';
+    resumen.style.fontSize = '10px';
+    resumen.style.color = '#94a3b8';
+    resumen.textContent = 'Ver URL y respuesta';
+    detalles.appendChild(resumen);
+
+    const cuerpo = document.createElement('div');
+    cuerpo.style.marginTop = '3px';
+    cuerpo.style.padding = '6px';
+    cuerpo.style.background = '#f8fafc';
+    cuerpo.style.borderRadius = '6px';
+    cuerpo.style.fontFamily = 'ui-monospace, monospace';
+    cuerpo.style.fontSize = '9.5px';
+    cuerpo.style.wordBreak = 'break-all';
+    cuerpo.style.whiteSpace = 'pre-wrap';
+    cuerpo.textContent = [r.url, r.muestra].filter(Boolean).join('\n\n');
+    detalles.appendChild(cuerpo);
+
+    fila.appendChild(detalles);
+  }
+  return fila;
+}
+
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.tipo === 'progreso') {
     actualizarBarra(msg.hechos, msg.total);
-    const fila = document.createElement('div');
-    fila.className = msg.ok ? '' : 'err';
-    fila.textContent = `${msg.cufe.slice(0, 20)}… ${msg.ok ? 'ok' : `— ${msg.detalle ?? 'error'}`}`;
-    registroEl.prepend(fila);
+    registroEl.prepend(filaRegistro(msg));
   }
   if (msg.tipo === 'terminado') {
     ponerCorriendo(false);
