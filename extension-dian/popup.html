@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Descargar XML de la DIAN</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    width: 380px; margin: 0; padding: 16px;
+    font: 13px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #0f172a; background: #ffffff;
+  }
+  h1 { font-size: 14px; margin: 0 0 2px; }
+  p.sub { margin: 0 0 12px; color: #64748b; font-size: 11px; }
+  label { display: block; font-size: 11px; font-weight: 600; color: #475569; margin-top: 10px; }
+  .fila { display: flex; gap: 6px; margin-top: 4px; }
+  input[type=text], textarea {
+    width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px;
+    padding: 7px 9px; font: 11px/1.4 ui-monospace, monospace; color: #0f172a;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 7px 12px;
+    font-size: 11px; font-weight: 700; cursor: pointer; color: #334155;
+  }
+  button.primario { background: #0284c7; border-color: #0284c7; color: #fff; }
+  button:disabled { opacity: .5; cursor: default; }
+  #estadoEnlace { margin-top: 6px; font-size: 11px; font-weight: 600; }
+  #estadoEnlace.ok { color: #059669; }
+  #estadoEnlace.error { color: #e11d48; }
+  #detalle {
+    margin-top: 6px; padding: 8px; border-radius: 8px; background: #f8fafc;
+    border: 1px solid #e2e8f0; font-size: 10.5px; white-space: pre-wrap; word-break: break-all;
+    display: none;
+  }
+  .barra { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 10px; overflow: hidden; }
+  .barra > div { height: 100%; background: #0284c7; width: 0%; }
+  #resumen { font-size: 11px; color: #475569; margin-top: 6px; display: flex; justify-content: space-between; }
+  #registro { max-height: 140px; overflow-y: auto; margin-top: 8px; font-size: 10.5px; }
+  #registro div { padding: 2px 0; }
+  #registro .err { color: #e11d48; }
+  #aviso {
+    margin-top: 12px; font-size: 10.5px; color: #64748b; line-height: 1.5;
+  }
+  #reanudar { display: none; margin-top: 10px; padding: 8px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 11px; }
+</style>
+</head>
+<body>
+  <h1>Descargar XML de la DIAN</h1>
+  <p class="sub">Corre en tu navegador, con tu propia sesión — no por un servidor compartido.</p>
+
+  <div id="reanudar"></div>
+
+  <label>Enlace de la DIAN (del correo del token)</label>
+  <div class="fila">
+    <input type="text" id="urlDian" placeholder="https://catalogo-vpfe.dian.gov.co/…&token=…" />
+    <button id="btnProbar">Probar</button>
+  </div>
+  <div id="estadoEnlace"></div>
+  <div id="detalle"></div>
+
+  <label>Lista de CUFEs (uno por línea)</label>
+  <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
+  <div id="conteoCufes" style="margin-top:4px;color:#94a3b8;font-size:10.5px;"></div>
+
+  <details style="margin-top:10px;">
+    <summary style="cursor:pointer;font-size:10.5px;font-weight:700;color:#94a3b8;">Opciones avanzadas</summary>
+    <label>Dirección de descarga por documento</label>
+    <input type="text" id="endpoint" />
+    <span style="display:block;margin-top:3px;font-size:10px;color:#94a3b8;">
+      Usa <code>{CUFE}</code> donde va el código. Sólo cámbialo si la DIAN modifica su portal.
+    </span>
+  </details>
+
+  <div class="fila" style="margin-top:12px;">
+    <button id="btnIniciar" class="primario">Iniciar descarga</button>
+    <button id="btnDetener" style="display:none;">Detener</button>
+  </div>
+
+  <div class="barra"><div id="barraRelleno"></div></div>
+  <div id="resumen"></div>
+  <div id="registro"></div>
+
+  <p id="aviso">
+    Los archivos quedan en tu carpeta de Descargas, dentro de <code>DIAN/</code>.
+    El token dura 60 minutos y sirve una sola vez: si se vence a mitad, pide otro,
+    pégalo aquí y dale a Iniciar de nuevo — no se repite lo ya bajado.
+  </p>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
