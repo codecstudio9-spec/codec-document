@@ -46,6 +46,42 @@ const UA = 'CodecDocument/1.0 (+https://www.codecdocument.com)';
 const CUFE_RE = /^[0-9a-fA-F]{90,100}$/;
 
 /**
+ * Cabeceras de navegador real para hablar con `catalogo-vpfe.dian.gov.co`.
+ *
+ * Ese host resuelve a Azure Front Door, un WAF por delante de la DIAN.
+ * Comprobado contra el portal: devuelve 403 a clientes que no parecen un
+ * navegador (un `curl/8.x` pelado lo recibe), y 200 en cuanto la petición
+ * trae el aspecto habitual de una navegación. Esto no engaña a nadie sobre
+ * quiénes somos —el User-Agent sigue identificando a Codec Document, y no
+ * se manda `sec-ch-ua` reclamando ser Chrome, que sí sería mentir sobre la
+ * identidad—; sólo evita que el WAF nos clasifique como script suelto.
+ *
+ * Existían DOS peticiones a la DIAN (abrir sesión y bajar el documento) y
+ * sólo la primera llevaba este juego completo de cabeceras; la segunda iba
+ * con tres sueltas. Si el WAF empezó a exigir más para calificar de
+ * "navegación real", la petición que de verdad importa —la que trae el
+ * archivo— es la que se quedaba corta.
+ *
+ * `referer` va aparte: para el enlace del correo no hay referer real (nadie
+ * navegó hasta ahí, se pegó desde fuera), pero para bajar el documento sí lo
+ * hay — es la página del listado, dentro del propio dominio de la DIAN.
+ */
+function cabecerasNavegador(referer?: string): HeadersInit {
+  return {
+    'User-Agent': UA,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'es-CO,es;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': referer ? 'same-origin' : 'none',
+    'Sec-Fetch-User': '?1',
+    ...(referer ? { Referer: referer } : {}),
+  };
+}
+
+/**
  * Sesiones abiertas con la DIAN, en memoria de la función.
  *
  * El enlace que llega al correo ("Token Acceso DIAN" → "Ingrese aquí") NO
@@ -152,24 +188,10 @@ async function abrirSesion(urlAuth: string, conDetalle = false): Promise<Resulta
     const res = await fetch(url.toString(), {
       signal: control.signal,
       redirect: 'follow',
-      // Cabeceras de navegador real.
-      //
-      // `catalogo-vpfe.dian.gov.co` no es la DIAN directamente: resuelve a
-      // Azure Front Door, un WAF por delante. Comprobado contra el portal:
-      // devuelve 403 a clientes que no parecen un navegador (un `curl/8.x`
-      // pelado lo recibe), y 200 en cuanto la petición trae el aspecto
-      // habitual de una navegación. Estas cabeceras no engañan a nadie sobre
-      // quiénes somos —el User-Agent sigue identificando a Codec Document—,
-      // sólo evitan que el WAF nos clasifique como script suelto.
-      headers: {
-        'User-Agent': UA,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'es-CO,es;q=0.9',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-      },
+      // Sin referer: el enlace llega por correo, nadie "navegó" hasta aquí
+      // dentro del sitio de la DIAN. Ponerlo sería el tipo de mentira que
+      // este proxy evita — ver cabecerasNavegador().
+      headers: cabecerasNavegador(),
     });
     const cookie = extraerCookies(res);
 
@@ -340,7 +362,6 @@ Deno.serve(async (req) => {
     urlDescarga?: string;
     cufe?: string;
     param?: string;
-    diagnostico?: boolean;
     /** Sólo abre sesión y reporta. Permite validar el enlace del contador
      *  antes de lanzar 2000 descargas, y averiguar qué responde la DIAN
      *  sin conocer todavía el endpoint de descarga. */
@@ -352,7 +373,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Cuerpo inválido' }, 400, origin);
   }
 
-  const { url: base, urlDescarga, cufe, param = 'documentKey', diagnostico = false, soloSesion = false } = cuerpo;
+  const { url: base, urlDescarga, cufe, param = 'documentKey', soloSesion = false } = cuerpo;
   if (!base) return json({ error: 'Falta la URL de la DIAN' }, 400, origin);
 
   // El host se valida ANTES de pedir turno: rechazar una URL ajena no debe
@@ -430,9 +451,16 @@ Deno.serve(async (req) => {
       signal: control.signal,
       redirect: 'follow',
       headers: {
-        // Identificarse es lo correcto: permite a la DIAN distinguir un
-        // cliente legítimo y contactarnos antes que bloquearnos.
-        'User-Agent': UA,
+        // Mismo juego de cabeceras que abrir sesión — ver cabecerasNavegador().
+        // Antes esta petición, la que de verdad trae el archivo, iba con
+        // sólo tres cabeceras sueltas mientras la de abrir sesión llevaba el
+        // set completo. Si el WAF pide más para calificar de "navegación
+        // real", ésta era la que se quedaba corta.
+        //
+        // Referer sí aplica aquí: en el recorrido real del navegador, el
+        // botón de descarga se pulsa DESDE el listado de documentos, dentro
+        // del mismo dominio de la DIAN.
+        ...cabecerasNavegador(`${destino.origin}/`),
         Accept: '*/*',
         // La cookie del paso 1 es lo que autoriza la descarga.
         Cookie: sesion.cookie,
@@ -459,14 +487,15 @@ Deno.serve(async (req) => {
     await supabase.rpc('ed_dian_resultado', { p_ok: ok });
 
     if (!ok) {
-      // En diagnóstico se devuelve un fragmento del cuerpo para poder ver
-      // qué respondió de verdad. NUNCA se devuelve la URL: lleva el token.
-      const muestra = diagnostico
-        ? new TextDecoder().decode(bytes.slice(0, 900))
-        : undefined;
+      // Antes esto sólo viajaba con `diagnostico: true`, y el cliente nunca
+      // lo mandaba: un fallo real no dejaba ninguna pista de qué contestó la
+      // DIAN de verdad (captcha, bloqueo del WAF, sesión vencida...). No
+      // lleva nada sensible —es la respuesta de la DIAN, no algo nuestro— y
+      // NUNCA la URL, que sí lleva el token.
+      const muestra = new TextDecoder().decode(bytes.slice(0, 900)).replace(/\s+/g, ' ').trim();
       return json({
         error: respuesta.ok
-          ? 'La DIAN respondió algo que no es un documento. Puede que el token haya vencido.'
+          ? 'La DIAN respondió algo que no es un documento. Puede que el token haya vencido o que haya bloqueado la descarga.'
           : `La DIAN respondió ${respuesta.status}.`,
         status: respuesta.status,
         content_type: tipo,

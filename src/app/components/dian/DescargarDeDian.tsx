@@ -65,7 +65,7 @@ interface Props {
   onDescargados?: (archivos: File[]) => void;
 }
 
-type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: string };
+type Entrada = { cufe: string; estado: 'pendiente' | 'ok' | 'error'; detalle?: string; muestra?: string };
 
 /** El recorrido completo, en el orden en que hay que hacerlo.
  *
@@ -222,6 +222,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
             cufe: e.cufe,
             estado: e.ok ? 'ok' : 'error',
             detalle: e.detalle,
+            muestra: e.muestra,
           };
           setRegistro((r) => [entrada, ...r].slice(0, 60));
         },
@@ -534,6 +535,20 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, onDescargado
                     <span className="min-w-0 flex-1">
                       <span className="font-mono text-slate-500">{r.cufe.slice(0, 24)}…</span>
                       {r.detalle && <span className="block text-rose-600">{r.detalle}</span>}
+                      {/* Lo que contestó la DIAN de verdad, para distinguir
+                          un token vencido de un bloqueo del WAF sin adivinar
+                          por el mensaje. Plegado: sólo estorba cuando hace
+                          falta mirarlo. */}
+                      {r.muestra && (
+                        <details className="mt-0.5">
+                          <summary className="cursor-pointer text-[10px] font-semibold text-slate-400">
+                            Ver respuesta de la DIAN
+                          </summary>
+                          <p className="mt-1 break-all rounded-lg bg-white px-2 py-1.5 font-mono text-[10px] text-slate-500">
+                            {r.muestra}
+                          </p>
+                        </details>
+                      )}
                     </span>
                   </div>
                 ))}

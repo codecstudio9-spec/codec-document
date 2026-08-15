@@ -21,6 +21,9 @@ export interface EventoDescarga {
   cufe: string;
   ok: boolean;
   detalle?: string;
+  /** Fragmento de lo que respondió la DIAN cuando falla, para distinguir un
+   *  token vencido de un bloqueo del WAF sin adivinar por el mensaje. */
+  muestra?: string;
   hechos: number;
   total: number;
 }
@@ -202,6 +205,7 @@ export async function descargarDeDian(o: OpcionesDescarga): Promise<void> {
           avisar({
             cufe, ok: false, hechos, total: o.cufes.length,
             detalle: j.error ?? `error ${res.status}`,
+            muestra: j.muestra,
           });
           listo = true;
         } else {
