@@ -52,4 +52,12 @@ export function cufesDeTexto(texto) {
   return [...vistos];
 }
 
-export const ENDPOINT_POR_DEFECTO = 'https://catalogo-vpfe.dian.gov.co/Document/DownloadZipFile?trackId={CUFE}';
+// `Document/DownloadZipFile` (el valor original) se confirmó en vivo
+// (2026-08-15) que NO EXISTE: la DIAN responde con la página de error
+// genérica de IIS, no con un error de la aplicación — la ruta está mal,
+// no el CUFE. Este es el mejor candidato siguiente (nombre documentado
+// públicamente por Gosocket, el proveedor del portal), pero background.js
+// ya no depende de acertar aquí: si este falla, prueba solo un par de
+// alternativas más antes de rendirse. Ver el comentario de descargarUno()
+// en background.js.
+export const ENDPOINT_POR_DEFECTO = 'https://catalogo-vpfe.dian.gov.co/Document/DownloadDocumentXml?trackId={CUFE}';

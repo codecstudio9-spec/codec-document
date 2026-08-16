@@ -140,61 +140,148 @@ async function abrirSesion(urlAuth) {
   });
 }
 
-/** Descarga un documento. Misma validación de bytes que el proxy: un ZIP
- *  empieza por "PK"; si la DIAN devolvió HTML (sesión vencida a mitad de
- *  lote), no se guarda como si fuera un documento válido. */
-async function descargarUno(destino, cufe) {
+const HOST_BASE = 'https://catalogo-vpfe.dian.gov.co';
+
+/**
+ * Trae los bytes de una URL y los clasifica. No decide éxito/fracaso del
+ * lote — sólo mide qué llegó, para que quien llama pruebe la siguiente URL
+ * si ésta no era un documento.
+ */
+async function probarUrl(url, control) {
+  const res = await fetch(url, {
+    credentials: 'include',
+    redirect: 'follow',
+    signal: control.signal,
+    headers: { Accept: '*/*' },
+  });
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const tipo = res.headers.get('content-type') ?? '';
+  const esZip = bytes.length > 1 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+  const esXml = tipo.includes('xml') || (bytes.length > 5 && bytes[0] === 0x3c);
+  return { ok: res.ok && (esZip || esXml), status: res.status, resOk: res.ok, bytes, esZip, esXml };
+}
+
+/**
+ * Busca en el HTML de una página un enlace que de verdad diga "descargar",
+ * en vez de seguir adivinando el nombre del endpoint. Regex y no DOMParser
+ * a propósito: DOMParser no es fiable en todos los service workers, y aquí
+ * sólo hace falta un href, no un árbol DOM completo.
+ */
+function extraerEnlaceDescarga(html, origin) {
+  const hrefs = [...html.matchAll(/href\s*=\s*"([^"]+)"/gi)].map((m) => m[1]);
+  const candidato = hrefs.find((h) =>
+    /download/i.test(h) && !/\.(css|js|ico|png|jpe?g|svg|woff2?|ttf)(\?|$)/i.test(h));
+  if (!candidato) return null;
+  try { return new URL(candidato, origin).toString(); } catch { return null; }
+}
+
+async function guardarBytes(r, cufe) {
+  let binario = '';
+  const trozo = 0x8000;
+  for (let i = 0; i < r.bytes.length; i += trozo) {
+    binario += String.fromCharCode(...r.bytes.subarray(i, i + trozo));
+  }
+  await chrome.downloads.download({
+    url: `data:application/octet-stream;base64,${btoa(binario)}`,
+    filename: `DIAN/${cufe}.${r.esZip ? 'zip' : 'xml'}`,
+    conflictAction: 'overwrite',
+    saveAs: false,
+  });
+}
+
+/**
+ * Descarga un documento probando VARIAS rutas conocidas en cascada, en vez
+ * de apostar a una sola adivinada.
+ *
+ * Se verificó en vivo (2026-08-15) que `Document/DownloadZipFile` —el
+ * endpoint que se usaba desde el principio— NO EXISTE: la DIAN responde
+ * con la página de error genérica de IIS ("The resource cannot be
+ * found"), no con un error de la aplicación. O sea, la ruta está mal, no
+ * el CUFE.
+ *
+ * Gosocket Corp SpA (el proveedor detrás de este portal, según el propio
+ * HTML) documenta públicamente endpoints llamados `DownloadDocumentXml` /
+ * `DownloadDocumentPdf` — nombres bien distintos. Se prueban esos, y como
+ * último recurso se lee la página pública de detalle del documento
+ * (`ShowDocumentToPublic`, también documentada) y se le pregunta a ELLA
+ * misma cuál es su enlace de descarga real, en vez de seguir adivinando.
+ *
+ * Ninguno de estos candidatos se pudo confirmar contra el portal real
+ * todavía — no había más tokens disponibles el día que se escribió esto.
+ * El primero que se pruebe es siempre el configurado en "Opciones
+ * avanzadas", así que si algo de esto falla, corregir ahí no requiere
+ * tocar el código.
+ */
+async function descargarUno(base, cufe) {
   const control = new AbortController();
   const alarma = setTimeout(() => control.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(destino.toString(), {
-      credentials: 'include',
-      redirect: 'follow',
-      signal: control.signal,
-      headers: { Accept: '*/*' },
-    });
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const tipo = res.headers.get('content-type') ?? '';
+    const candidatos = [];
+    try {
+      const u = construirUrl(base, cufe, 'documentKey');
+      if (!validarHost(u)) candidatos.push(u.toString());
+    } catch { /* endpoint configurado inválido: se ignora, quedan los demás */ }
+    candidatos.push(`${HOST_BASE}/Document/DownloadDocumentXml?trackId=${cufe}`);
+    candidatos.push(`${HOST_BASE}/Document/DownloadDocumentXml/${cufe}`);
 
-    const esZip = bytes.length > 1 && bytes[0] === 0x50 && bytes[1] === 0x4b;
-    const esXml = tipo.includes('xml') || (bytes.length > 5 && bytes[0] === 0x3c);
-    const ok = res.ok && (esZip || esXml);
+    let ultimaUrl = candidatos[0];
+    let ultimoResultado = null;
+    for (const url of candidatos) {
+      if (control.signal.aborted) break;
+      ultimaUrl = url;
+      try {
+        ultimoResultado = await probarUrl(url, control);
+      } catch (err) {
+        ultimoResultado = { error: err };
+        continue;
+      }
+      if (ultimoResultado.ok) {
+        await guardarBytes(ultimoResultado, cufe);
+        return { ok: true };
+      }
+      await dormir(400); // cada intento extra es una petición real a la DIAN
+    }
 
-    if (!ok) {
-      // La URL completa va en el detalle del fallo — no es sensible como sí
-      // lo es la del token (ésta no autentica nada, sólo identifica un
-      // documento por CUFE), y sin verla es imposible saber si el problema
-      // es la ruta del endpoint o algo puntual de ese documento.
-      const muestra = new TextDecoder().decode(bytes.slice(0, 500)).replace(/\s+/g, ' ').trim();
+    // Ninguno de los nombres adivinados funcionó: se lee la página pública
+    // de detalle y se busca ahí su propio enlace de descarga.
+    try {
+      const detalle = `${HOST_BASE}/Document/ShowDocumentToPublic/${cufe}`;
+      const resDet = await fetch(detalle, {
+        credentials: 'include', redirect: 'follow', signal: control.signal,
+        headers: { Accept: 'text/html' },
+      });
+      const html = await resDet.text();
+      const real = extraerEnlaceDescarga(html, HOST_BASE);
+      if (real) {
+        const u = new URL(real);
+        if (!validarHost(u)) {
+          ultimaUrl = real;
+          ultimoResultado = await probarUrl(real, control);
+          if (ultimoResultado.ok) {
+            await guardarBytes(ultimoResultado, cufe);
+            return { ok: true };
+          }
+        }
+      }
+    } catch { /* se queda con el último resultado ya capturado arriba */ }
+
+    if (ultimoResultado?.error) {
+      const abortado = ultimoResultado.error?.name === 'AbortError';
       return {
         ok: false,
-        detalle: res.ok
-          ? 'La DIAN respondió algo que no es un documento. El token puede haber vencido.'
-          : `La DIAN respondió ${res.status}.`,
-        muestra, url: destino.toString(), status: res.status,
+        detalle: abortado ? 'La DIAN no respondió a tiempo.' : 'No se pudo contactar con la DIAN.',
+        url: ultimaUrl,
       };
     }
-
-    let binario = '';
-    const trozo = 0x8000;
-    for (let i = 0; i < bytes.length; i += trozo) {
-      binario += String.fromCharCode(...bytes.subarray(i, i + trozo));
-    }
-    const extension = esZip ? 'zip' : 'xml';
-    await chrome.downloads.download({
-      url: `data:application/octet-stream;base64,${btoa(binario)}`,
-      filename: `DIAN/${cufe}.${extension}`,
-      conflictAction: 'overwrite',
-      saveAs: false,
-    });
-    return { ok: true };
-  } catch (err) {
-    const abortado = err?.name === 'AbortError';
+    const muestra = ultimoResultado
+      ? new TextDecoder().decode(ultimoResultado.bytes.slice(0, 500)).replace(/\s+/g, ' ').trim()
+      : undefined;
     return {
       ok: false,
-      detalle: abortado ? 'La DIAN no respondió a tiempo.' : 'No se pudo contactar con la DIAN.',
-      url: destino.toString(),
+      detalle: ultimoResultado?.resOk
+        ? 'La DIAN respondió algo que no es un documento. El token puede haber vencido.'
+        : `La DIAN respondió ${ultimoResultado?.status ?? '(sin conexión)'}.`,
+      muestra, url: ultimaUrl, status: ultimoResultado?.status,
     };
   } finally {
     clearTimeout(alarma);
@@ -207,19 +294,10 @@ async function correrLote() {
     if (estado.cancelado) break;
     if (estado.resultados[cufe]?.ok) continue; // ya bajado en una corrida anterior
 
-    let destino;
-    try {
-      destino = construirUrl(estado.endpoint || estado.urlDian, cufe, 'documentKey');
-      const problema = validarHost(destino);
-      if (problema) throw new Error(problema);
-    } catch (e) {
-      estado.resultados[cufe] = { ok: false, detalle: e.message };
-      await guardarEstado();
-      emitir('progreso', { cufe, ok: false, detalle: e.message, hechos: Object.keys(estado.resultados).length, total });
-      continue;
-    }
-
-    const r = await descargarUno(destino, cufe);
+    // La construcción de la URL ya no pasa por aquí: descargarUno() prueba
+    // varios candidatos en cascada (ver su comentario), empezando por el
+    // configurado en "Opciones avanzadas".
+    const r = await descargarUno(estado.endpoint || estado.urlDian, cufe);
     // La URL y la muestra quedan también en el estado guardado, no sólo en
     // el mensaje en vivo: si se reabre el popup después, el registro tiene
     // que poder mostrar lo mismo, no sólo "hechos: N".
