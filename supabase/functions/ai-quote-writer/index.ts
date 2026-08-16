@@ -103,8 +103,19 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     '  "proposal": "the commercial body of the quote, plain text",',
     '  "items": [',
     '    { "description": "...", "quantity": 30, "unit": "...", "unit_price": 30000, "discount_pct": 0, "tax_pct": 0 }',
-    '  ]',
+    '  ],',
+    '  "client": { "name": "...", "phone": "...", "email": "..." }',
     '}',
+    '',
+    'RULES FOR "client":',
+    '- Only the client contact details the user actually stated in THIS',
+    '  request, not the KNOWN CONTEXT above (that is already saved).',
+    '- Any field not mentioned in the request must be an empty string "" —',
+    '  never copy it from KNOWN CONTEXT, never guess it from the proposal text.',
+    '- "phone": digits as the user said them, keep a leading "+" if they gave',
+    '  a country code. Do not format, space out, or invent digits.',
+    '- If nothing about the client was said, return "client": {"name":"",',
+    '  "phone":"","email":""}.',
     '',
     'RULES FOR "proposal":',
     '- 120 to 320 words. Short paragraphs separated by a blank line.',
@@ -159,6 +170,20 @@ interface ItemSalida {
   unit_price: number;
   discount_pct: number;
   tax_pct: number;
+}
+
+const MAX_CLIENTE_CHARS = 120;
+
+/** Igual de estricto que con los precios, y por la misma razón: esto se
+ *  escribe solo en un campo del formulario sin que nadie lo revise letra a
+ *  letra primero. Un teléfono mal leído no se nota hasta que alguien llama. */
+function validarCliente(crudo: unknown): { name: string; phone: string; email: string } {
+  const c = (crudo && typeof crudo === 'object') ? crudo as Record<string, unknown> : {};
+  const name = String(c.name ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
+  const phone = String(c.phone ?? '').replace(/[^\d+]/g, '').slice(0, 20);
+  const emailCrudo = String(c.email ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCrudo) ? emailCrudo : '';
+  return { name, phone, email };
 }
 
 function validarItems(crudo: unknown): { items: ItemSalida[]; descartados: number } {
@@ -274,7 +299,7 @@ Deno.serve(async (req) => {
 
     const groqJson = await groqRes.json();
     const contenido = String(groqJson?.choices?.[0]?.message?.content ?? '');
-    const parseado = extraerJson(contenido) as { proposal?: unknown; items?: unknown } | null;
+    const parseado = extraerJson(contenido) as { proposal?: unknown; items?: unknown; client?: unknown } | null;
 
     if (!parseado) {
       console.error('[ai-quote-writer] respuesta no parseable');
@@ -283,13 +308,14 @@ Deno.serve(async (req) => {
 
     const proposal = String(parseado.proposal ?? '').trim().slice(0, MAX_PROPUESTA_CHARS);
     const { items, descartados } = validarItems(parseado.items);
+    const client = validarCliente(parseado.client);
 
     if (!proposal && items.length === 0) {
       return responder({ error: 'No conseguí sacar nada en claro de esa petición. Cuéntamelo con otras palabras.' }, origin, 502);
     }
     if (descartados) console.warn('[ai-quote-writer] ítems descartados:', descartados);
 
-    return responder({ proposal, items, discarded: descartados }, origin);
+    return responder({ proposal, items, client, discarded: descartados }, origin);
   } catch (err) {
     console.error('[ai-quote-writer] error:', err);
     return responder({ error: (err as Error).message ?? 'Error inesperado' }, origin, 500);

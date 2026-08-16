@@ -945,6 +945,13 @@ export function MyQuoteEditorPage() {
           clientCompany={clientCompany}
           projectName={projectName}
           onItems={setItems}
+          onCliente={(c) => {
+            // Sólo lo que esté vacío: si el cliente ya venía escrito (o el
+            // usuario ya lo había tecleado), lo dicho por voz no lo pisa.
+            if (c.name && !clientName.trim()) setClientName(c.name);
+            if (c.phone && !clientPhone.trim()) setClientPhone(c.phone);
+            if (c.email && !clientEmail.trim()) setClientEmail(c.email);
+          }}
         />
 
         {/* El camino largo: las diez secciones sueltas y los tres textos de

@@ -170,6 +170,28 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
     try { recRef.current?.abort(); } catch { /* nada que abortar */ }
   }, []);
 
+  // El campo de texto que hay debajo del botón de dictar se queda enfocable
+  // mientras se escucha. En el celular, si queda enfocado (o se vuelve a
+  // tocar), el teclado nativo se abre encima — y el teclado de Android trae
+  // SU PROPIO botón de dictado. Se enciende un segundo micrófono aparte del
+  // de esta API, y las dos transcripciones se van intercalando en el mismo
+  // campo: de ahí las palabras duplicadas.
+  //
+  // Arreglo centralizado aquí, no en cada formulario: mientras se está
+  // escuchando, cualquier elemento que reciba el foco lo pierde al instante.
+  // Eso mantiene cerrado el teclado nativo —y su micrófono— en todos los
+  // cuadros de dictado de la aplicación a la vez, sin tocar treinta
+  // componentes uno por uno.
+  useEffect(() => {
+    if (!escuchando) return;
+    const quitarFoco = (e: FocusEvent) => {
+      const el = e.target;
+      if (el instanceof HTMLElement && typeof el.blur === 'function') el.blur();
+    };
+    document.addEventListener('focusin', quitarFoco);
+    return () => document.removeEventListener('focusin', quitarFoco);
+  }, [escuchando]);
+
   return { escuchando, parcial, iniciar, detener, alternar, soportado: dictadoSoportado() };
 }
 

@@ -43,6 +43,10 @@ interface Props {
   projectName?: string;
   /** La agente también deja los productos puestos: es la mitad del trabajo. */
   onItems: (items: QuoteLineItem[]) => void;
+  /** Y si se dijo el nombre, teléfono o correo del cliente, también los deja
+   *  puestos en su campo — el llamador decide si pisa lo que ya había
+   *  (normalmente no, si el campo no está vacío). */
+  onCliente?: (c: { name: string; phone: string; email: string }) => void;
 }
 
 type Via = 'pegar' | 'pedir';
@@ -57,7 +61,7 @@ const EJEMPLO_PEDIDO_EN =
   + 'December in Bogotá."';
 
 export function PropuestaComercial({
-  texto, onTexto, language, clientName, clientCompany, projectName, onItems,
+  texto, onTexto, language, clientName, clientCompany, projectName, onItems, onCliente,
 }: Props) {
   const es = language === 'es';
   const [via, setVia] = useState<Via>('pegar');
@@ -100,13 +104,20 @@ export function PropuestaComercial({
         })));
       }
 
+      const huboCliente = Boolean(onCliente && (r.client.name || r.client.phone || r.client.email));
+      if (onCliente && huboCliente) onCliente(r.client);
+
       const sinPrecio = r.items.filter((i) => !i.unit_price).length;
+      const notaCliente = huboCliente
+        ? (es ? ' También puse los datos del cliente que dijiste.' : ' I also filled in the client details you mentioned.')
+        : '';
       toast.success(
-        sinPrecio > 0
+        (sinPrecio > 0
           ? (es
             ? `Listo. Dejé ${sinPrecio === 1 ? 'un producto sin precio' : `${sinPrecio} productos sin precio`} porque no me lo dijiste — ponlo tú y yo sumo.`
             : `Done. I left ${sinPrecio === 1 ? 'one item without a price' : `${sinPrecio} items without a price`} because you didn't mention it — add it and I'll do the maths.`)
-          : (es ? 'Listo, ya te lo escribí. Revísalo y cámbiale lo que quieras.' : "Done — I wrote it. Read it over and change anything you like."),
+          : (es ? 'Listo, ya te lo escribí. Revísalo y cámbiale lo que quieras.' : "Done — I wrote it. Read it over and change anything you like.")
+        ) + notaCliente,
       );
       setVia('pegar');
     } catch (err) {

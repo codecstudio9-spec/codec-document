@@ -113,6 +113,10 @@ export interface CotizacionRedactada {
     description: string; quantity: number; unit: string;
     unit_price: number; discount_pct: number; tax_pct: number;
   }>;
+  /** Datos del cliente que la persona haya dicho al pedir la cotización
+   *  («…para Ruth, al 3001234567…»). Cadena vacía en lo que no se dijo —
+   *  nunca se adivina, y nunca pisa lo que ya estaba en el formulario. */
+  client: { name: string; phone: string; email: string };
 }
 
 /**
@@ -159,8 +163,14 @@ export async function escribirCotizacion(
   }
 
   const d = data as Partial<CotizacionRedactada> | null;
+  const c = d?.client;
   return {
     proposal: String(d?.proposal ?? ''),
     items: Array.isArray(d?.items) ? d.items : [],
+    client: {
+      name: String(c?.name ?? ''),
+      phone: String(c?.phone ?? ''),
+      email: String(c?.email ?? ''),
+    },
   };
 }
