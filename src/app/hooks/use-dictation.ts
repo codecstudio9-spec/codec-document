@@ -105,17 +105,37 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
     rec.continuous = true;
     rec.interimResults = true;
 
+    // Lo que ya se acumuló como "final" en ESTA sesión del reconocedor (se
+    // reinicia cada vez que se llama a rec.start(), abajo y en onend). No
+    // basta con usar `e.resultIndex` para saber qué es nuevo: en Chrome de
+    // Android, `continuous: true` es poco fiable y a veces reenvía la frase
+    // COMPLETA dicha hasta el momento como si fuera un resultado nuevo, en
+    // vez de sólo la palabra que se añadió. Confiar en resultIndex ahí
+    // duplica todo lo dicho ("Necesito Necesito Necesito una..."). Por eso
+    // se compara siempre contra el acumulado propio, no contra el índice
+    // que manda el navegador.
+    let sesionFinal = '';
+
     rec.onresult = (e) => {
-      let cerrado = '';
+      let cerradoSesion = '';
       let enCurso = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      for (let i = 0; i < e.results.length; i++) {
         const r = e.results[i];
         const texto = r[0]?.transcript ?? '';
-        if (r.isFinal) cerrado += texto;
+        if (r.isFinal) cerradoSesion += texto;
         else enCurso += texto;
       }
       setParcial(enCurso);
-      if (cerrado.trim()) onTextoRef.current(cerrado.trim());
+
+      if (cerradoSesion === sesionFinal) return;
+      // Caso normal: lo nuevo extiende lo que ya había → se manda sólo la
+      // diferencia. Caso Android: el navegador "olvidó" lo anterior y volvió
+      // a empezar → se manda todo lo nuevo, no se reenvía lo ya mandado.
+      const nuevo = cerradoSesion.startsWith(sesionFinal)
+        ? cerradoSesion.slice(sesionFinal.length)
+        : cerradoSesion;
+      sesionFinal = cerradoSesion;
+      if (nuevo.trim()) onTextoRef.current(nuevo.trim());
     };
 
     rec.onerror = (e) => {
@@ -137,9 +157,14 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
 
     rec.onend = () => {
       // Silencio largo: el navegador cierra solo. Si el usuario no pulsó
-      // detener, se reabre.
+      // detener, se reabre — y esa reapertura es una sesión nueva del
+      // reconocedor, así que el acumulado de arriba se reinicia con ella.
       if (queriendoRef.current) {
-        try { rec.start(); return; } catch { /* cae abajo */ }
+        try {
+          sesionFinal = '';
+          rec.start();
+          return;
+        } catch { /* cae abajo */ }
       }
       setEscuchando(false);
       setParcial('');
