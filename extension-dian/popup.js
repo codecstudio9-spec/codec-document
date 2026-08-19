@@ -75,6 +75,9 @@ btnIniciar.addEventListener('click', async () => {
   const cufes = cufesDeTexto(cufesEl.value);
   if (!urlDian) { estadoEnlaceEl.textContent = 'Falta el enlace de la DIAN'; estadoEnlaceEl.className = 'error'; return; }
   if (cufes.length === 0) { conteoCufesEl.textContent = 'No encontré CUFEs válidos'; return; }
+  if (btnIniciar.disabled) return; // ya se mandó un clic, no duplicar el mensaje 'iniciar'
+
+  btnIniciar.disabled = true; // antes de esperar la respuesta — un doble clic rápido llegó a mandar dos 'iniciar' y corrompió el estado del gestor (2026-08-19)
 
   const carpeta = carpetaEl.value.trim() || 'DIAN';
   const numWorkers = Math.min(Math.max(1, parseInt(workersEl.value, 10) || 1), 5);
@@ -87,6 +90,7 @@ btnIniciar.addEventListener('click', async () => {
   if (!r.ok) {
     estadoEnlaceEl.textContent = r.error ?? 'No se pudo iniciar.';
     estadoEnlaceEl.className = 'error';
+    btnIniciar.disabled = false;
     return;
   }
   ponerCorriendo(true);

@@ -88,6 +88,15 @@ export class DownloadManager {
   // ── API pública (llamada desde background.js) ──────────────────────────
 
   async iniciar({ urlDian, cufes, carpeta, numWorkers }) {
+    // Sin esto, un doble clic (o "Iniciar" justo cuando la corrida anterior
+    // no había terminado de cerrar) reemplaza this.documentos MIENTRAS el
+    // bucle viejo lo sigue usando — visto en vivo (2026-08-19):
+    // "Cannot set properties of undefined (setting 'estado')" x2 en el
+    // panel de errores de la extensión.
+    if (this.corriendo) {
+      return { ok: false, error: 'Ya hay una descarga en curso. Dale a Detener primero.' };
+    }
+
     const previo = (await chrome.storage.local.get(CLAVE_ESTADO))[CLAVE_ESTADO];
     const mismaLista = previo && previo.cufes.length === cufes.length && previo.cufes.every((c, i) => c === cufes[i]);
 
@@ -241,7 +250,12 @@ export class DownloadManager {
       if (cufe == null) return;
 
       this.cufesEnVuelo.set(cufe, this.carpeta);
-      const doc = this.documentos[cufe];
+      // Autoreparación: si por cualquier motivo this.documentos ya no
+      // tiene este CUFE (p.ej. se reemplazó por debajo mientras corría),
+      // se recrea en vez de tronar con "Cannot set properties of
+      // undefined". El guard de arriba (this.corriendo) evita que esto
+      // pase en el caso normal — esto es sólo una red de seguridad.
+      const doc = this.documentos[cufe] || (this.documentos[cufe] = { estado: ESTADOS.PENDIENTE, intentos: 0 });
       doc.estado = ESTADOS.ASIGNADO;
       doc.workerId = worker.id;
       doc.intentos = (doc.intentos || 0) + 1;
