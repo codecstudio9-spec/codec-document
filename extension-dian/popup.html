@@ -7,7 +7,7 @@
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    width: 380px; margin: 0; padding: 16px;
+    width: 400px; margin: 0; padding: 16px;
     font: 13px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
     color: #0f172a; background: #ffffff;
   }
@@ -17,11 +17,12 @@
   .marca img { width: 26px; height: 26px; border-radius: 7px; }
   .marca span { font-size: 12px; font-weight: 800; color: #1e3a8a; letter-spacing: -.01em; }
   label { display: block; font-size: 11px; font-weight: 600; color: #475569; margin-top: 10px; }
-  .fila { display: flex; gap: 6px; margin-top: 4px; }
-  input[type=text], textarea {
+  .fila { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+  input[type=text], input[type=number], textarea {
     width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px;
     padding: 7px 9px; font: 11px/1.4 ui-monospace, monospace; color: #0f172a;
   }
+  input[type=number] { width: 64px; flex: none; }
   textarea { resize: vertical; min-height: 70px; }
   button {
     border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 7px 12px;
@@ -40,13 +41,22 @@
   .barra { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 10px; overflow: hidden; }
   .barra > div { height: 100%; background: #0284c7; width: 0%; }
   #resumen { font-size: 11px; color: #475569; margin-top: 6px; display: flex; justify-content: space-between; }
+  #metricas {
+    display: none; margin-top: 8px; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 8px; font-size: 10.5px; color: #334155;
+  }
+  #metricas .fila-m { display: flex; justify-content: space-between; padding: 1px 0; }
+  #metricas b { color: #0f172a; }
   #registro { max-height: 140px; overflow-y: auto; margin-top: 8px; font-size: 10.5px; }
   #registro div { padding: 2px 0; }
   #registro .err { color: #e11d48; }
-  #aviso {
-    margin-top: 12px; font-size: 10.5px; color: #64748b; line-height: 1.5;
-  }
+  #aviso { margin-top: 12px; font-size: 10.5px; color: #64748b; line-height: 1.5; }
   #reanudar { display: none; margin-top: 10px; padding: 8px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 11px; }
+  #bloqueo {
+    display: none; margin-top: 10px; padding: 10px; background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; font-size: 11px; color: #991b1b;
+  }
+  #bloqueo button { margin-top: 8px; background: #dc2626; border-color: #dc2626; color: #fff; }
 </style>
 </head>
 <body>
@@ -58,6 +68,11 @@
   <p class="sub">Corre en tu navegador, con tu propia sesión — no por un servidor compartido.</p>
 
   <div id="reanudar"></div>
+
+  <div id="bloqueo">
+    <div id="bloqueoTexto">La DIAN pidió una comprobación humana.</div>
+    <button id="btnContinuarValidacion">Ya completé la validación — continuar</button>
+  </div>
 
   <label>Enlace de la DIAN (del correo del token)</label>
   <div class="fila">
@@ -77,6 +92,12 @@
     <button id="btnAbrirCarpeta" type="button">Abrir carpeta</button>
   </div>
 
+  <label>Workers (pestañas en paralelo)</label>
+  <div class="fila">
+    <input type="number" id="workers" min="1" max="5" value="1" />
+    <span style="font-size:10.5px;color:#94a3b8;">Empieza en 1. Sube sólo si confirmas que no aumenta los bloqueos.</span>
+  </div>
+
   <div class="fila" style="margin-top:12px;">
     <button id="btnIniciar" class="primario">Iniciar descarga</button>
     <button id="btnDetener" style="display:none;">Detener</button>
@@ -86,15 +107,27 @@
   <div class="barra"><div id="barraRelleno"></div></div>
   <div id="resumen"></div>
   <div id="enCurso" style="display:none;color:#0284c7;font-size:11px;margin-top:2px;"></div>
+
+  <div id="metricas">
+    <div class="fila-m"><span>Velocidad actual</span><b id="mVelocidad">—</b></div>
+    <div class="fila-m"><span>Promedio</span><b id="mPromedio">—</b></div>
+    <div class="fila-m"><span>Tiempo estimado restante</span><b id="mEta">—</b></div>
+  </div>
+
+  <div class="fila" style="margin-top:8px;">
+    <button id="btnExportar" type="button">Descargar log (CSV)</button>
+  </div>
+
   <div id="registro"></div>
 
   <p id="aviso">
-    Se abre una pestaña de la DIAN en segundo plano (no la cierres a mano) y
-    busca cada CUFE por su "Código único", igual que lo harías tú. Los
-    archivos quedan en tu carpeta de Descargas, dentro de la carpeta que
-    pongas arriba. El token dura 60 minutos: si se vence a mitad, pide otro,
-    pégalo aquí y dale a Iniciar de nuevo — no se repite lo ya bajado. Si un
-    CUFE falla, se reintenta solo hasta 3 veces antes de darlo por perdido.
+    Cada worker abre su propia pestaña de la DIAN en segundo plano (no las
+    cierres a mano) y busca sus CUFEs por "Código único", igual que lo
+    harías tú. Los archivos quedan en tu carpeta de Descargas, dentro de la
+    carpeta que pongas arriba. El token dura 60 minutos: si se vence a
+    mitad, pide otro, pégalo aquí y dale a Iniciar de nuevo — no se repite
+    lo ya bajado. Si la DIAN pide una comprobación humana, la cola se pausa
+    sola y te avisa arriba — nunca se intenta resolver automáticamente.
   </p>
 
   <script type="module" src="popup.js"></script>

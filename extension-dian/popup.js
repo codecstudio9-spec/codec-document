@@ -1,16 +1,17 @@
 import { cufesDeTexto } from './dian.js';
 
-const CLAVE_ESTADO = 'lote_actual'; // debe coincidir con background.js
-
 const $ = (id) => document.getElementById(id);
 const urlDianEl = $('urlDian');
 const cufesEl = $('cufes');
 const carpetaEl = $('carpeta');
+const workersEl = $('workers');
 const btnProbar = $('btnProbar');
 const btnIniciar = $('btnIniciar');
 const btnDetener = $('btnDetener');
 const btnBorrar = $('btnBorrar');
 const btnAbrirCarpeta = $('btnAbrirCarpeta');
+const btnExportar = $('btnExportar');
+const btnContinuarValidacion = $('btnContinuarValidacion');
 const estadoEnlaceEl = $('estadoEnlace');
 const detalleEl = $('detalle');
 const conteoCufesEl = $('conteoCufes');
@@ -19,6 +20,12 @@ const resumenEl = $('resumen');
 const registroEl = $('registro');
 const reanudarEl = $('reanudar');
 const enCursoEl = $('enCurso');
+const bloqueoEl = $('bloqueo');
+const bloqueoTextoEl = $('bloqueoTexto');
+const metricasEl = $('metricas');
+const mVelocidadEl = $('mVelocidad');
+const mPromedioEl = $('mPromedio');
+const mEtaEl = $('mEta');
 
 let corriendo = false;
 
@@ -27,16 +34,13 @@ function pintarConteo() {
   conteoCufesEl.textContent = n > 0 ? `${n} CUFEs válidos` : '';
 }
 
-// El popup de una extensión se recrea de cero cada vez que se abre — sin
-// esto, cerrar la ventana para hacer otra cosa borraba el enlace, la lista
-// de CUFEs y el registro, y parecía que no había pasado nada.
+// El popup se recrea de cero cada vez que se abre — sin esto, cerrar la
+// ventana para hacer otra cosa borraba el enlace, los CUFEs y la carpeta.
 const guardarCampo = (clave, valor) => chrome.storage.local.set({ [clave]: valor });
 urlDianEl.addEventListener('input', () => guardarCampo('campo_urlDian', urlDianEl.value));
 carpetaEl.addEventListener('input', () => guardarCampo('config_carpeta', carpetaEl.value));
-cufesEl.addEventListener('input', () => {
-  pintarConteo();
-  guardarCampo('campo_cufes', cufesEl.value);
-});
+workersEl.addEventListener('input', () => guardarCampo('config_workers', workersEl.value));
+cufesEl.addEventListener('input', () => { pintarConteo(); guardarCampo('campo_cufes', cufesEl.value); });
 
 btnProbar.addEventListener('click', async () => {
   const urlDian = urlDianEl.value.trim();
@@ -73,24 +77,39 @@ btnIniciar.addEventListener('click', async () => {
   if (cufes.length === 0) { conteoCufesEl.textContent = 'No encontré CUFEs válidos'; return; }
 
   const carpeta = carpetaEl.value.trim() || 'DIAN';
+  const numWorkers = Math.min(Math.max(1, parseInt(workersEl.value, 10) || 1), 5);
+  workersEl.value = numWorkers;
+
   registroEl.innerHTML = '';
   reanudarEl.style.display = 'none';
-  const r = await chrome.runtime.sendMessage({ tipo: 'iniciar', urlDian, cufes, carpeta });
+  bloqueoEl.style.display = 'none';
+  const r = await chrome.runtime.sendMessage({ tipo: 'iniciar', urlDian, cufes, carpeta, numWorkers });
   if (!r.ok) {
     estadoEnlaceEl.textContent = r.error ?? 'No se pudo iniciar.';
     estadoEnlaceEl.className = 'error';
     return;
   }
   ponerCorriendo(true);
-  actualizarBarra(0, r.total);
 });
 
 btnDetener.addEventListener('click', async () => {
   await chrome.runtime.sendMessage({ tipo: 'detener' });
 });
 
+btnContinuarValidacion.addEventListener('click', async () => {
+  bloqueoEl.style.display = 'none';
+  await chrome.runtime.sendMessage({ tipo: 'reanudarValidacion' });
+});
+
 btnAbrirCarpeta.addEventListener('click', () => {
   chrome.runtime.sendMessage({ tipo: 'abrirCarpeta' });
+});
+
+btnExportar.addEventListener('click', async () => {
+  const { csv } = await chrome.runtime.sendMessage({ tipo: 'exportarLog' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  chrome.downloads.download({ url, filename: `dian-log-${Date.now()}.csv`, saveAs: false });
 });
 
 btnBorrar.addEventListener('click', async () => {
@@ -107,9 +126,11 @@ btnBorrar.addEventListener('click', async () => {
   estadoEnlaceEl.className = '';
   detalleEl.style.display = 'none';
   reanudarEl.style.display = 'none';
+  bloqueoEl.style.display = 'none';
   enCursoEl.style.display = 'none';
+  metricasEl.style.display = 'none';
   ponerCorriendo(false);
-  actualizarBarra(0, 0);
+  actualizarMetricas({ total: 0, completados: 0, errores: 0 });
 });
 
 function ponerCorriendo(v) {
@@ -118,23 +139,53 @@ function ponerCorriendo(v) {
   btnDetener.style.display = v ? 'inline-block' : 'none';
 }
 
-function actualizarBarra(hechos, total) {
+function formatearDuracion(seg) {
+  if (seg < 60) return `${Math.round(seg)} s`;
+  const min = Math.floor(seg / 60);
+  const rem = Math.round(seg % 60);
+  return `${min} min ${rem}s`;
+}
+
+function actualizarMetricas(m) {
+  const completados = m.completados ?? 0;
+  const errores = m.errores ?? 0;
+  const total = m.total ?? 0;
+  const hechos = completados + errores;
   const pct = total > 0 ? Math.round((hechos / total) * 100) : 0;
   barraEl.style.width = `${pct}%`;
-  resumenEl.textContent = total > 0 ? `${hechos} de ${total}` : '';
+  resumenEl.textContent = total > 0
+    ? `${hechos} de ${total} (${completados} ok${errores > 0 ? `, ${errores} con error` : ''})`
+    : '';
+
+  if (total > 0) {
+    metricasEl.style.display = 'block';
+    mVelocidadEl.textContent = `${m.velocidadPorMin ?? 0} doc/min`;
+    mPromedioEl.textContent = m.promedioSeg != null ? `${m.promedioSeg.toFixed(1)} s/doc` : '—';
+    mEtaEl.textContent = m.etaSeg != null ? formatearDuracion(m.etaSeg) : '—';
+  } else {
+    metricasEl.style.display = 'none';
+  }
+
+  if (m.pausadoPorValidacion) {
+    bloqueoEl.style.display = 'block';
+    bloqueoTextoEl.textContent = m.ultimoBloqueo?.detalle || 'La DIAN pidió una comprobación humana en la pestaña que se abrió.';
+  }
 }
 
 /**
- * Una fila del registro. Cuando falla, trae plegada la URL exacta que se
- * intentó y lo que respondió la DIAN — sin esto, un 404 no dice si la ruta
- * del endpoint está mal o si es ese documento puntual el que falla.
+ * Una fila del registro. Cuando falla, trae plegada la URL exacta y lo que
+ * respondió la DIAN — sin esto no se sabe si es captcha/bloqueo/sesión
+ * vencida o algo distinto.
  */
 function filaRegistro(r) {
+  const ok = r.estado === 'COMPLETADO';
   const fila = document.createElement('div');
-  fila.className = r.ok ? '' : 'err';
-  fila.textContent = `${r.cufe.slice(0, 20)}… ${r.ok ? 'ok' : `— ${r.detalle ?? 'error'}`}`;
+  fila.className = ok ? '' : 'err';
+  const dur = r.duracionMs != null ? ` (${(r.duracionMs / 1000).toFixed(1)}s)` : '';
+  const worker = r.workerId != null ? ` [w${r.workerId}]` : '';
+  fila.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : `— ${r.detalle ?? r.estado}`}${dur}`;
 
-  if (!r.ok && (r.url || r.muestra)) {
+  if (!ok && (r.url || r.muestra)) {
     const detalles = document.createElement('details');
     detalles.style.marginTop = '2px';
     const resumen = document.createElement('summary');
@@ -165,49 +216,51 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.tipo === 'intento') {
     enCursoEl.style.display = 'block';
     const sufijo = msg.intentosMax > 1 ? ` (intento ${msg.intento} de ${msg.intentosMax})` : '';
-    enCursoEl.textContent = `Buscando ${msg.cufe.slice(0, 20)}…${sufijo}`;
+    enCursoEl.textContent = `[w${msg.workerId}] Buscando ${msg.cufe.slice(0, 20)}…${sufijo}`;
+    actualizarMetricas(msg);
   }
   if (msg.tipo === 'progreso') {
     enCursoEl.style.display = 'none';
-    actualizarBarra(msg.hechos, msg.total);
     registroEl.prepend(filaRegistro(msg));
+    actualizarMetricas(msg);
+  }
+  if (msg.tipo === 'bloqueo') {
+    bloqueoEl.style.display = 'block';
+    bloqueoTextoEl.textContent = msg.detalle || 'La DIAN pidió una comprobación humana en la pestaña que se abrió.';
   }
   if (msg.tipo === 'terminado') {
     ponerCorriendo(false);
     enCursoEl.style.display = 'none';
-    resumenEl.textContent = msg.fatal
-      ? `No se pudo iniciar: ${msg.fatal}`
-      : `Listo — ${msg.ok} ok${msg.errores > 0 ? `, ${msg.errores} con problema` : ''}`;
+    actualizarMetricas(msg);
+    if (msg.fatal) {
+      resumenEl.textContent = `No se pudo iniciar: ${msg.fatal}`;
+    }
   }
 });
 
-// Al abrir el popup: restaura lo que se pegó la última vez (el enlace, los
-// CUFEs, la carpeta) y el registro de lo ya intentado, en vez de mostrar un
-// formulario vacío que hace parecer que no pasó nada.
+// Al abrir el popup: restaura lo que se pegó la última vez y el estado real
+// del lote (corriendo, métricas, pausado por validación, registro) — nunca
+// un formulario vacío que hace parecer que no pasó nada.
 (async () => {
-  const datos = await chrome.storage.local.get(['campo_urlDian', 'campo_cufes', 'config_carpeta', CLAVE_ESTADO]);
+  const datos = await chrome.storage.local.get(['campo_urlDian', 'campo_cufes', 'config_carpeta', 'config_workers']);
   if (datos.campo_urlDian) urlDianEl.value = datos.campo_urlDian;
   if (datos.campo_cufes) cufesEl.value = datos.campo_cufes;
   carpetaEl.value = datos.config_carpeta || 'DIAN';
+  workersEl.value = datos.config_workers || '1';
   pintarConteo();
 
-  const lote = datos[CLAVE_ESTADO];
-  if (lote?.resultados) {
-    registroEl.innerHTML = '';
-    Object.entries(lote.resultados)
-      .reverse() // más reciente arriba, igual que el prepend() en vivo
-      .forEach(([cufe, r]) => registroEl.appendChild(filaRegistro({ cufe, ...r })));
-  }
+  const { filas } = await chrome.runtime.sendMessage({ tipo: 'registro' });
+  registroEl.innerHTML = '';
+  filas
+    .filter((r) => r.estado === 'COMPLETADO' || r.estado === 'ERROR_DEFINITIVO')
+    .forEach((r) => registroEl.appendChild(filaRegistro(r)));
 
-  const r = await chrome.runtime.sendMessage({ tipo: 'estado' });
-  if (r.corriendo) {
+  const m = await chrome.runtime.sendMessage({ tipo: 'estado' });
+  actualizarMetricas(m);
+  if (m.corriendo) {
     ponerCorriendo(true);
-    actualizarBarra(r.hechos, r.total);
-  } else if (r.reanudable && r.hechos < r.total) {
-    actualizarBarra(r.hechos, r.total);
+  } else if (m.reanudable) {
     reanudarEl.style.display = 'block';
-    reanudarEl.textContent = `Quedó una descarga a medias: ${r.hechos} de ${r.total}. Si el enlace venció, pide uno nuevo (los CUFEs ya están pegados arriba) y dale a Iniciar — sigue donde se quedó, no repite lo ya bajado.`;
-  } else if (r.hechos > 0 && r.hechos === r.total) {
-    actualizarBarra(r.hechos, r.total);
+    reanudarEl.textContent = `Quedó una descarga a medias: ${m.completados} de ${m.total} lograron bajarse. Si el enlace venció, pide uno nuevo (los CUFEs ya están pegados arriba) y dale a Iniciar — sigue donde se quedó, no repite lo ya bajado.`;
   }
 })();

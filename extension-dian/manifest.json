@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Codec Document — Descargador DIAN",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Descarga tus documentos electrónicos de la DIAN a tu computador, usando tu propia sesión de navegador.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -20,7 +20,7 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["downloads", "storage", "cookies", "scripting"],
+  "permissions": ["downloads", "storage", "unlimitedStorage", "cookies", "scripting"],
   "host_permissions": [
     "https://catalogo-vpfe.dian.gov.co/*",
     "https://catalogo-vpfe-hab.dian.gov.co/*",
