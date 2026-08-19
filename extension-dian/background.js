@@ -239,6 +239,12 @@ async function esperarBusqueda(tabId) {
 function scriptClicDescargar() {
   const boton = document.querySelector('.download-document');
   if (!boton) return { ok: false, motivo: 'El botón de descargar de esa fila desapareció.' };
+  // Se vio en vivo (2026-08-19) que cada descarga abría una pestaña nueva
+  // del navegador que quedaba huérfana — típico de un enlace con
+  // target="_blank" (común en portales ASP.NET para no perder la página de
+  // resultados). Quitarle el target hace que la descarga navegue en ESTA
+  // misma pestaña en vez de abrir una nueva.
+  boton.removeAttribute('target');
   boton.click();
   return { ok: true };
 }
@@ -408,15 +414,29 @@ async function descargarUno(tabId, cufe) {
       resolve({ ok: false, navegoAError: true });
     };
 
+    // Red de seguridad si quitarle el target al botón (scriptClicDescargar)
+    // no alcanza a tiempo, o el sitio abre la pestaña con window.open() en
+    // vez de un enlace normal: chrome.downloads.onCreated ya captura el
+    // archivo sin importar en qué pestaña se disparó, así que cualquier
+    // pestaña nueva que aparezca aquí no sirve para nada — se cierra sola
+    // para no ir acumulando una por CUFE descargado.
+    const pestanasExtra = [];
+    const onPestanaNueva = (tab) => {
+      if (tab.id !== tabId) pestanasExtra.push(tab.id);
+    };
+
     function limpiar() {
       clearTimeout(vencido);
       clearInterval(latido);
       chrome.downloads.onCreated.removeListener(onCreated);
       chrome.tabs.onUpdated.removeListener(onNavegado);
+      chrome.tabs.onCreated.removeListener(onPestanaNueva);
+      pestanasExtra.forEach((id) => chrome.tabs.remove(id).catch(() => {}));
     }
 
     chrome.downloads.onCreated.addListener(onCreated);
     chrome.tabs.onUpdated.addListener(onNavegado);
+    chrome.tabs.onCreated.addListener(onPestanaNueva);
 
     ejecutarEnPestana(tabId, scriptClicDescargar, [], 8000).then((r) => {
       if (terminado) return;
