@@ -34,6 +34,8 @@ import { CUFE_RE, HOSTS_PERMITIDOS, validarHost } from './dian.js';
 const TIMEOUT_MS = 30_000; // autenticación inicial
 const DESCARGA_TIMEOUT_MS = 20_000; // clic en "descargar" -> archivo o error
 const RITMO_MS = 700; // pausa entre CUFEs
+const INTENTOS_MAX = 3; // reintentos automáticos por CUFE antes de darlo por fallido
+const CARPETA_DEFECTO = 'DIAN';
 const CLAVE_ESTADO = 'lote_actual';
 const HOST_RECIBIDOS = 'https://catalogo-vpfe.dian.gov.co/Document/Received';
 
@@ -58,6 +60,7 @@ async function guardarEstado() {
     [CLAVE_ESTADO]: {
       urlDian: estado.urlDian,
       cufes: estado.cufes,
+      carpeta: estado.carpeta,
       resultados: estado.resultados,
     },
   });
@@ -171,33 +174,48 @@ async function abrirPestanaRecibidos() {
 // pueden disparar los mismos eventos que un clic humano, y el Turnstile de
 // esa página ya está resuelto porque la pestaña terminó de cargar.
 
-function scriptBuscarCufe(cufe) {
-  return new Promise((resolve) => {
-    const campo = document.querySelector('#DocumentKey');
-    const boton = document.querySelector('.btn-search');
-    if (!campo || !boton) {
-      resolve({ ok: false, motivo: 'No encontré el formulario de búsqueda — la DIAN pudo haber cambiado el portal.' });
-      return;
-    }
-    campo.value = cufe;
-    campo.dispatchEvent(new Event('input', { bubbles: true }));
-    campo.dispatchEvent(new Event('change', { bubbles: true }));
-    boton.click();
+// Antes esto era UNA sola llamada a executeScript con un bucle de espera
+// (setTimeout) corriendo DENTRO de la pestaña. Se verificó en vivo
+// (2026-08-19) que eso falla de forma intermitente y sin patrón: Chrome
+// estrangula agresivamente los temporizadores de una pestaña oculta
+// (active:false) — de 19 CUFEs sólo uno completó su búsqueda a tiempo, sin
+// relación con su posición en la lista. La cura no es esperar más: es no
+// dejar que el temporizador viva dentro de la pestaña. Por eso ahora es un
+// clic (síncrono, sin espera) y una comprobación aparte que el SERVICE
+// WORKER repite por su cuenta — cada llamada a executeScript es una
+// inyección nueva, no un timer acumulado en el event loop de la página.
+function scriptClicBuscar(cufe) {
+  const campo = document.querySelector('#DocumentKey');
+  const boton = document.querySelector('.btn-search');
+  if (!campo || !boton) {
+    return { ok: false, motivo: 'No encontré el formulario de búsqueda — la DIAN pudo haber cambiado el portal.' };
+  }
+  campo.value = cufe;
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  campo.dispatchEvent(new Event('change', { bubbles: true }));
+  boton.click();
+  return { ok: true };
+}
 
-    const vence = Date.now() + 15000;
-    const intento = () => {
-      if (document.querySelector('.download-document')) {
-        resolve({ ok: true, encontrado: true });
-        return;
-      }
-      if (Date.now() > vence) {
-        resolve({ ok: true, encontrado: false });
-        return;
-      }
-      setTimeout(intento, 500);
-    };
-    setTimeout(intento, 1200);
-  });
+function scriptComprobarBusqueda() {
+  return { encontrado: !!document.querySelector('.download-document') };
+}
+
+/** Repite la comprobación desde el service worker, no desde la pestaña. */
+async function esperarBusqueda(tabId) {
+  await dormir(1200); // deja que el clic dispare la búsqueda antes de mirar
+  const vence = Date.now() + 15000;
+  while (Date.now() < vence) {
+    let r;
+    try {
+      r = await ejecutarEnPestana(tabId, scriptComprobarBusqueda);
+    } catch {
+      return false;
+    }
+    if (r?.encontrado) return true;
+    await dormir(500);
+  }
+  return false;
 }
 
 function scriptClicDescargar() {
@@ -258,8 +276,13 @@ function esperarDescarga(downloadId) {
 chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
   const cufe = estado?.cufeEnCurso;
   if (!cufe) { suggest(); return; }
+  // Sólo el NOMBRE de una subcarpeta dentro de Descargas: la API de
+  // descargas de una extensión no puede escribir fuera de esa carpeta, así
+  // que no hay selector de ruta absoluta — se limpian caracteres que no son
+  // válidos en un nombre de carpeta de Windows.
+  const carpeta = (estado?.carpeta || CARPETA_DEFECTO).replace(/[\\/:*?"<>|]+/g, '').trim() || CARPETA_DEFECTO;
   const esZip = /\.zip($|\?)/i.test(item.filename) || item.mime === 'application/zip';
-  suggest({ filename: `DIAN/${cufe}.${esZip ? 'zip' : 'xml'}`, conflictAction: 'overwrite' });
+  suggest({ filename: `${carpeta}/${cufe}.${esZip ? 'zip' : 'xml'}`, conflictAction: 'overwrite' });
 });
 
 /**
@@ -270,17 +293,40 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
  * haya descarga (la respuesta no era un archivo: sesión vencida, error del
  * servidor, etc.).
  */
-async function descargarUno(tabId, cufe) {
-  let busqueda;
+/** Best-effort: no debe tumbar el flujo si también falla. */
+async function diagnosticar(tabId) {
   try {
-    busqueda = await ejecutarEnPestana(tabId, scriptBuscarCufe, [cufe]);
+    const d = await ejecutarEnPestana(tabId, scriptLeerPagina);
+    return { muestra: d?.texto, url: d?.url };
   } catch {
-    return { ok: false, detalle: 'Se perdió la conexión con la pestaña de la DIAN al buscar. Reintenta.' };
+    return {};
   }
-  if (!busqueda) return { ok: false, detalle: 'La pestaña de la DIAN no respondió al buscar.' };
-  if (!busqueda.ok) return { ok: false, detalle: busqueda.motivo };
-  if (!busqueda.encontrado) {
-    return { ok: false, detalle: 'La DIAN no muestra este CUFE en "Documentos recibidos" (o la sesión venció).' };
+}
+
+async function descargarUno(tabId, cufe) {
+  let clic;
+  try {
+    clic = await ejecutarEnPestana(tabId, scriptClicBuscar, [cufe]);
+  } catch {
+    return { ok: false, detalle: 'Se perdió la conexión con la pestaña de la DIAN al buscar. Reintenta.', reintentable: true };
+  }
+  if (!clic) {
+    return { ok: false, detalle: 'La pestaña de la DIAN no respondió al buscar.', reintentable: true };
+  }
+  if (!clic.ok) {
+    // Estructural (el portal cambió de forma): reintentar no lo va a arreglar.
+    return { ok: false, detalle: clic.motivo, reintentable: false };
+  }
+
+  const encontrado = await esperarBusqueda(tabId);
+  if (!encontrado) {
+    const diag = await diagnosticar(tabId);
+    return {
+      ok: false,
+      detalle: 'La DIAN no muestra este CUFE en "Documentos recibidos" (o la sesión venció).',
+      reintentable: true,
+      ...diag,
+    };
   }
 
   const resultado = await new Promise((resolve) => {
@@ -384,10 +430,19 @@ async function correrLote() {
 
     estado.cufeEnCurso = cufe;
     let r;
-    try {
-      r = await descargarUno(tabId, cufe);
-    } catch (err) {
-      r = { ok: false, detalle: `Error inesperado: ${err?.message ?? err}` };
+    // La mayoría de los fallos son intermitentes (throttling de la pestaña
+    // oculta, un 503 pasajero de la DIAN), no del CUFE en sí — reintentar
+    // sin que el usuario tenga que darse cuenta y volver a darle a Iniciar
+    // es lo que hace que 5.000 CUFEs terminen bajando los 5.000, no sólo
+    // los que tuvieron suerte de temporización en el primer intento.
+    for (let intento = 1; intento <= INTENTOS_MAX; intento++) {
+      try {
+        r = await descargarUno(tabId, cufe);
+      } catch (err) {
+        r = { ok: false, detalle: `Error inesperado: ${err?.message ?? err}`, reintentable: true };
+      }
+      if (r.ok || r.reintentable === false || intento === INTENTOS_MAX) break;
+      await dormir(1500);
     }
     estado.cufeEnCurso = null;
 
@@ -453,6 +508,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
       estado = {
         urlDian: msg.urlDian,
         cufes: cufesValidos,
+        carpeta: (msg.carpeta || CARPETA_DEFECTO).trim() || CARPETA_DEFECTO,
         resultados: mismaLista ? guardado.resultados : {},
         corriendo: true,
         cancelado: false,

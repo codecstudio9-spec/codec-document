@@ -1,8 +1,11 @@
 import { cufesDeTexto } from './dian.js';
 
+const CLAVE_ESTADO = 'lote_actual'; // debe coincidir con background.js
+
 const $ = (id) => document.getElementById(id);
 const urlDianEl = $('urlDian');
 const cufesEl = $('cufes');
+const carpetaEl = $('carpeta');
 const btnProbar = $('btnProbar');
 const btnIniciar = $('btnIniciar');
 const btnDetener = $('btnDetener');
@@ -20,7 +23,17 @@ function pintarConteo() {
   const n = cufesDeTexto(cufesEl.value).length;
   conteoCufesEl.textContent = n > 0 ? `${n} CUFEs válidos` : '';
 }
-cufesEl.addEventListener('input', pintarConteo);
+
+// El popup de una extensión se recrea de cero cada vez que se abre — sin
+// esto, cerrar la ventana para hacer otra cosa borraba el enlace, la lista
+// de CUFEs y el registro, y parecía que no había pasado nada.
+const guardarCampo = (clave, valor) => chrome.storage.local.set({ [clave]: valor });
+urlDianEl.addEventListener('input', () => guardarCampo('campo_urlDian', urlDianEl.value));
+carpetaEl.addEventListener('input', () => guardarCampo('config_carpeta', carpetaEl.value));
+cufesEl.addEventListener('input', () => {
+  pintarConteo();
+  guardarCampo('campo_cufes', cufesEl.value);
+});
 
 btnProbar.addEventListener('click', async () => {
   const urlDian = urlDianEl.value.trim();
@@ -56,9 +69,10 @@ btnIniciar.addEventListener('click', async () => {
   if (!urlDian) { estadoEnlaceEl.textContent = 'Falta el enlace de la DIAN'; estadoEnlaceEl.className = 'error'; return; }
   if (cufes.length === 0) { conteoCufesEl.textContent = 'No encontré CUFEs válidos'; return; }
 
+  const carpeta = carpetaEl.value.trim() || 'DIAN';
   registroEl.innerHTML = '';
   reanudarEl.style.display = 'none';
-  const r = await chrome.runtime.sendMessage({ tipo: 'iniciar', urlDian, cufes });
+  const r = await chrome.runtime.sendMessage({ tipo: 'iniciar', urlDian, cufes, carpeta });
   if (!r.ok) {
     estadoEnlaceEl.textContent = r.error ?? 'No se pudo iniciar.';
     estadoEnlaceEl.className = 'error';
@@ -134,16 +148,33 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// Al abrir el popup: si había un lote corriendo o a medias (el service
-// worker sigue vivo, o quedó guardado en disco), se refleja en pantalla en
-// vez de mostrar un formulario vacío que hace parecer que no pasó nada.
+// Al abrir el popup: restaura lo que se pegó la última vez (el enlace, los
+// CUFEs, la carpeta) y el registro de lo ya intentado, en vez de mostrar un
+// formulario vacío que hace parecer que no pasó nada.
 (async () => {
+  const datos = await chrome.storage.local.get(['campo_urlDian', 'campo_cufes', 'config_carpeta', CLAVE_ESTADO]);
+  if (datos.campo_urlDian) urlDianEl.value = datos.campo_urlDian;
+  if (datos.campo_cufes) cufesEl.value = datos.campo_cufes;
+  carpetaEl.value = datos.config_carpeta || 'DIAN';
+  pintarConteo();
+
+  const lote = datos[CLAVE_ESTADO];
+  if (lote?.resultados) {
+    registroEl.innerHTML = '';
+    Object.entries(lote.resultados)
+      .reverse() // más reciente arriba, igual que el prepend() en vivo
+      .forEach(([cufe, r]) => registroEl.appendChild(filaRegistro({ cufe, ...r })));
+  }
+
   const r = await chrome.runtime.sendMessage({ tipo: 'estado' });
   if (r.corriendo) {
     ponerCorriendo(true);
     actualizarBarra(r.hechos, r.total);
   } else if (r.reanudable && r.hechos < r.total) {
+    actualizarBarra(r.hechos, r.total);
     reanudarEl.style.display = 'block';
-    reanudarEl.textContent = `Quedó una descarga a medias: ${r.hechos} de ${r.total}. Pega un enlace nuevo de la DIAN y la misma lista de CUFEs, y dale a Iniciar — sigue donde se quedó.`;
+    reanudarEl.textContent = `Quedó una descarga a medias: ${r.hechos} de ${r.total}. Si el enlace venció, pide uno nuevo (los CUFEs ya están pegados arriba) y dale a Iniciar — sigue donde se quedó, no repite lo ya bajado.`;
+  } else if (r.hechos > 0 && r.hechos === r.total) {
+    actualizarBarra(r.hechos, r.total);
   }
 })();
