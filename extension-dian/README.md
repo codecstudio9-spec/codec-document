@@ -45,15 +45,35 @@ lista de CUFEs, no por el enlace (que siempre es nuevo).
   beta, "cargar descomprimida" es más rápido que esperar la revisión de
   Google. Publicarla es un paso aparte si esto escala.
 
+## Cómo descarga cada documento (desde 2026-08-18)
+
+Se verificó en vivo que el botón de descargar del propio portal de la DIAN
+llama a `Document/DownloadZipFiles?trackId=<CUFE>&captcha=<token>`, y ese
+`captcha` es un token de Cloudflare Turnstile que la página resuelve sola al
+cargar. No hay forma de fabricar ese token desde un service worker (no tiene
+DOM), así que la extensión ya NO arma esa URL a mano: abre una pestaña real
+oculta sobre "Documentos recibidos", busca cada CUFE por su campo "Código
+único" (el mismo formulario del portal) y hace clic en el botón real de esa
+fila — igual que lo haría un contador, sólo que automatizado. El Turnstile
+se resuelve solo, una vez por pestaña, no por documento.
+
+Es más lento que una petición directa (cada CUFE es una búsqueda real en el
+portal, unos segundos), pero es lo único que no depende de romper ni de
+adivinar nada.
+
 ## Piezas
 
 - `manifest.json` — Manifest V3. `host_permissions` limitado a los cuatro
   dominios de la DIAN (mismo allowlist que tenía el proxy del servidor).
+  Permiso `scripting` para poder buscar y hacer clic dentro de la pestaña
+  real de la DIAN.
 - `background.js` — el service worker. Abre sesión con el enlace del token
-  y descarga cada CUFE, ambos con `credentials: 'include'` — el navegador
-  guarda y reenvía la cookie de sesión solo, no hay que capturarla a mano
-  como sí tocaba hacer en Deno.
-- `dian.js` — regex de CUFE, validación de host, y construcción de la URL
-  de descarga. Calcado a propósito de `dian-descargar/index.ts`: es la
-  misma regla de dominio, no debería divergir.
+  (pestaña real, no `fetch()`), y para cada CUFE inyecta un script en la
+  pestaña de "Documentos recibidos" que busca y hace clic en el botón de
+  descarga real. Decide éxito/fracaso escuchando `chrome.downloads`
+  (¿empezó a bajar un archivo?) contra la pestaña navegando a una página de
+  error (la respuesta no era un archivo).
+- `dian.js` — regex de CUFE, validación de host. Calcado a propósito de
+  `dian-descargar/index.ts`: es la misma regla de dominio, no debería
+  divergir.
 - `popup.html` / `popup.js` — la interfaz.

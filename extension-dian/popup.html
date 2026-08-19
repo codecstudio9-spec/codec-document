@@ -71,15 +71,6 @@
   <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
   <div id="conteoCufes" style="margin-top:4px;color:#94a3b8;font-size:10.5px;"></div>
 
-  <details style="margin-top:10px;">
-    <summary style="cursor:pointer;font-size:10.5px;font-weight:700;color:#94a3b8;">Opciones avanzadas</summary>
-    <label>Dirección de descarga por documento</label>
-    <input type="text" id="endpoint" />
-    <span style="display:block;margin-top:3px;font-size:10px;color:#94a3b8;">
-      Usa <code>{CUFE}</code> donde va el código. Sólo cámbialo si la DIAN modifica su portal.
-    </span>
-  </details>
-
   <div class="fila" style="margin-top:12px;">
     <button id="btnIniciar" class="primario">Iniciar descarga</button>
     <button id="btnDetener" style="display:none;">Detener</button>
@@ -90,9 +81,11 @@
   <div id="registro"></div>
 
   <p id="aviso">
-    Los archivos quedan en tu carpeta de Descargas, dentro de <code>DIAN/</code>.
-    El token dura 60 minutos y sirve una sola vez: si se vence a mitad, pide otro,
-    pégalo aquí y dale a Iniciar de nuevo — no se repite lo ya bajado.
+    Se abre una pestaña de la DIAN en segundo plano (no la cierres a mano) y
+    busca cada CUFE por su "Código único", igual que lo harías tú. Los
+    archivos quedan en tu carpeta de Descargas, dentro de <code>DIAN/</code>.
+    El token dura 60 minutos: si se vence a mitad, pide otro, pégalo aquí y
+    dale a Iniciar de nuevo — no se repite lo ya bajado.
   </p>
 
   <script type="module" src="popup.js"></script>

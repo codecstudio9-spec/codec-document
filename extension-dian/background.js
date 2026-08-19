@@ -1,36 +1,46 @@
-// Service worker de la extensión: hace exactamente lo que hacía
-// `dian-descargar` (supabase/functions/dian-descargar/index.ts), pero desde
-// AQUÍ — el navegador real del contador — en vez de un servidor compartido.
+// Service worker de la extensión.
 //
 // ── Por qué existe esta extensión ───────────────────────────────────────
 // Se verificó en vivo (2026-08-14) que la DIAN ata el token de acceso a la
 // IP que lo solicitó: el mismo enlace, con el mismo token, autentica sin
 // problema abierto en el Chrome del contador y falla siempre por el proxy
-// del servidor (IPs de Supabase, compartidas entre todos los clientes). No
-// es un problema de cabeceras — eso ya se probó y arregló, y aun así falla.
-// Es la IP. La única forma de que la petición "sea" el contador es que
-// salga literalmente de su navegador. De ahí esto.
+// del servidor (IPs de Supabase, compartidas entre todos los clientes).
+// La única forma de que la petición "sea" el contador es que salga
+// literalmente de su navegador. De ahí esto.
 //
-// ── Por qué no hace falta manejar cookies a mano ────────────────────────
-// El proxy del servidor SÍ tenía que capturar el Set-Cookie de la respuesta
-// y reenviarlo a mano en cada petición siguiente, porque Deno no comparte
-// almacén de cookies con nadie. Aquí no: `fetch(..., {credentials:
-// 'include'})` desde una extensión con host_permissions sobre el dominio de
-// la DIAN usa el almacén de cookies REAL del navegador — la cookie de sesión
-// que la DIAN emite al abrir el enlace del token queda guardada ahí sola, y
-// la siguiente petición a esa misma extensión de dominio la manda sola. Es
-// justo lo que hace un navegador normal al navegar de una página a otra.
+// ── Por qué YA NO se descarga con fetch() directo a una URL adivinada ──
+// Se verificó en vivo (2026-08-18) que la descarga real de la DIAN no es
+// sólo "pega un CUFE en una URL": el botón de descargar del propio portal
+// llama a `Document/DownloadZipFiles?trackId=<CUFE>&captcha=<token>`, y ese
+// `captcha` es un token de Cloudflare Turnstile que la página resuelve SOLA
+// al cargar (widget invisible/administrado). No hay forma de fabricar ese
+// token desde un service worker — no tiene DOM, no puede cargar el script
+// de Turnstile, y reconstruirlo a mano sería evadir a propósito su
+// protección anti-bot, algo que esta extensión no debe hacer.
+//
+// La solución que SÍ es legítima: dejar que la propia página de la DIAN
+// haga el trabajo. Se abre una pestaña real (oculta) sobre "Documentos
+// recibidos", se busca cada CUFE por su campo "Código único" (que ya
+// existe en el formulario del portal) y se hace clic en EL BOTÓN REAL de
+// descargar de esa fila. Es exactamente lo que haría un contador a mano,
+// sólo que automatizado — el Turnstile se resuelve solo, una vez por
+// pestaña, igual que le pasa a un humano.
+//
+// Es más lento que un fetch() (cada CUFE es una búsqueda real en el
+// portal), pero es lo único que no depende de romper ni de adivinar nada.
 
-import { CUFE_RE, validarHost, construirUrl } from './dian.js';
+import { CUFE_RE, HOSTS_PERMITIDOS, validarHost } from './dian.js';
 
-const TIMEOUT_MS = 30_000;
-const RITMO_MS = 950; // ~1 petición/segundo — el ritmo que se midió como seguro
+const TIMEOUT_MS = 30_000; // autenticación inicial
+const DESCARGA_TIMEOUT_MS = 20_000; // clic en "descargar" -> archivo o error
+const RITMO_MS = 700; // pausa entre CUFEs
 const CLAVE_ESTADO = 'lote_actual';
+const HOST_RECIBIDOS = 'https://catalogo-vpfe.dian.gov.co/Document/Received';
 
 /** @type {{
- *   urlDian: string, endpoint: string, cufes: string[],
- *   resultados: Record<string, {ok: boolean, detalle?: string}>,
- *   corriendo: boolean, cancelado: boolean,
+ *   urlDian: string, cufes: string[],
+ *   resultados: Record<string, {ok: boolean, detalle?: string, muestra?: string, url?: string}>,
+ *   corriendo: boolean, cancelado: boolean, cufeEnCurso: string | null,
  * } | null} */
 let estado = null;
 
@@ -47,7 +57,6 @@ async function guardarEstado() {
   await chrome.storage.local.set({
     [CLAVE_ESTADO]: {
       urlDian: estado.urlDian,
-      endpoint: estado.endpoint,
       cufes: estado.cufes,
       resultados: estado.resultados,
     },
@@ -66,12 +75,8 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
  * que cambia es que un fetch() de un service worker nunca puede llevar las
  * cabeceras de una navegación real (Sec-Fetch-Dest: document, etc.); Chrome
  * las fija él mismo según el tipo de petición y un script no puede pedirlas
- * ni falsearlas. Cuando SÍ se abrió el mismo enlace como pestaña de verdad
- * (a mano, o navegando con la extensión de automatización), nunca falló.
- *
- * Por eso esto abre una pestaña real (oculta, sin robar el foco) en vez de
- * pedir la URL desde el script. Es más lento —una pestaña tarda más que un
- * fetch()— pero es lo que de verdad funciona.
+ * ni falsearlas. Cuando SÍ se abrió el mismo enlace como pestaña de verdad,
+ * nunca falló.
  */
 async function abrirSesion(urlAuth) {
   return new Promise((resolve) => {
@@ -102,9 +107,6 @@ async function abrirSesion(urlAuth) {
 
       const acaboEnLogin = urlFinal.toLowerCase().includes('/user/login');
 
-      // La cookie real vive en el almacén del navegador, no hay que
-      // capturarla a mano: se consulta aparte sólo para poder decir si la
-      // sesión quedó viva o si la DIAN la emitió y la anuló.
       let sesionViva = false;
       try {
         const cookies = await chrome.cookies.getAll({ url: urlAuth });
@@ -140,167 +142,255 @@ async function abrirSesion(urlAuth) {
   });
 }
 
-const HOST_BASE = 'https://catalogo-vpfe.dian.gov.co';
-
 /**
- * Trae los bytes de una URL y los clasifica. No decide éxito/fracaso del
- * lote — sólo mide qué llegó, para que quien llama pruebe la siguiente URL
- * si ésta no era un documento.
+ * Abre una pestaña oculta sobre "Documentos recibidos" y espera a que
+ * termine de cargar (incluye la verificación de Cloudflare, que se resuelve
+ * sola). Se deja UNA sola pestaña abierta para todo el lote — repetir esto
+ * por cada CUFE forzaría a resolver el Turnstile una y otra vez.
  */
-async function probarUrl(url, control) {
-  const res = await fetch(url, {
-    credentials: 'include',
-    redirect: 'follow',
-    signal: control.signal,
-    headers: { Accept: '*/*' },
-  });
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const tipo = res.headers.get('content-type') ?? '';
-  const esZip = bytes.length > 1 && bytes[0] === 0x50 && bytes[1] === 0x4b;
-  const esXml = tipo.includes('xml') || (bytes.length > 5 && bytes[0] === 0x3c);
-  return { ok: res.ok && (esZip || esXml), status: res.status, resOk: res.ok, bytes, esZip, esXml };
-}
-
-/**
- * Busca en el HTML de una página un enlace que de verdad diga "descargar",
- * en vez de seguir adivinando el nombre del endpoint. Regex y no DOMParser
- * a propósito: DOMParser no es fiable en todos los service workers, y aquí
- * sólo hace falta un href, no un árbol DOM completo.
- */
-function extraerEnlaceDescarga(html, origin) {
-  const hrefs = [...html.matchAll(/href\s*=\s*"([^"]+)"/gi)].map((m) => m[1]);
-  const candidato = hrefs.find((h) =>
-    /download/i.test(h) && !/\.(css|js|ico|png|jpe?g|svg|woff2?|ttf)(\?|$)/i.test(h));
-  if (!candidato) return null;
-  try { return new URL(candidato, origin).toString(); } catch { return null; }
-}
-
-async function guardarBytes(r, cufe) {
-  let binario = '';
-  const trozo = 0x8000;
-  for (let i = 0; i < r.bytes.length; i += trozo) {
-    binario += String.fromCharCode(...r.bytes.subarray(i, i + trozo));
-  }
-  await chrome.downloads.download({
-    url: `data:application/octet-stream;base64,${btoa(binario)}`,
-    filename: `DIAN/${cufe}.${r.esZip ? 'zip' : 'xml'}`,
-    conflictAction: 'overwrite',
-    saveAs: false,
-  });
-}
-
-/**
- * Descarga un documento probando VARIAS rutas conocidas en cascada, en vez
- * de apostar a una sola adivinada.
- *
- * Se verificó en vivo (2026-08-15) que `Document/DownloadZipFile` —el
- * endpoint que se usaba desde el principio— NO EXISTE: la DIAN responde
- * con la página de error genérica de IIS ("The resource cannot be
- * found"), no con un error de la aplicación. O sea, la ruta está mal, no
- * el CUFE.
- *
- * Gosocket Corp SpA (el proveedor detrás de este portal, según el propio
- * HTML) documenta públicamente endpoints llamados `DownloadDocumentXml` /
- * `DownloadDocumentPdf` — nombres bien distintos. Se prueban esos, y como
- * último recurso se lee la página pública de detalle del documento
- * (`ShowDocumentToPublic`, también documentada) y se le pregunta a ELLA
- * misma cuál es su enlace de descarga real, en vez de seguir adivinando.
- *
- * Ninguno de estos candidatos se pudo confirmar contra el portal real
- * todavía — no había más tokens disponibles el día que se escribió esto.
- * El primero que se pruebe es siempre el configurado en "Opciones
- * avanzadas", así que si algo de esto falla, corregir ahí no requiere
- * tocar el código.
- */
-async function descargarUno(base, cufe) {
-  const control = new AbortController();
-  const alarma = setTimeout(() => control.abort(), TIMEOUT_MS);
-  try {
-    const candidatos = [];
-    try {
-      const u = construirUrl(base, cufe, 'documentKey');
-      if (!validarHost(u)) candidatos.push(u.toString());
-    } catch { /* endpoint configurado inválido: se ignora, quedan los demás */ }
-    candidatos.push(`${HOST_BASE}/Document/DownloadDocumentXml?trackId=${cufe}`);
-    candidatos.push(`${HOST_BASE}/Document/DownloadDocumentXml/${cufe}`);
-
-    let ultimaUrl = candidatos[0];
-    let ultimoResultado = null;
-    for (const url of candidatos) {
-      if (control.signal.aborted) break;
-      ultimaUrl = url;
-      try {
-        ultimoResultado = await probarUrl(url, control);
-      } catch (err) {
-        ultimoResultado = { error: err };
-        continue;
+async function abrirPestanaRecibidos() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.create({ url: HOST_RECIBIDOS, active: false }, (tab) => {
+      if (chrome.runtime.lastError || !tab?.id) {
+        reject(new Error('No se pudo abrir la pestaña de "Documentos recibidos" de la DIAN.'));
+        return;
       }
-      if (ultimoResultado.ok) {
-        await guardarBytes(ultimoResultado, cufe);
-        return { ok: true };
-      }
-      await dormir(400); // cada intento extra es una petición real a la DIAN
-    }
-
-    // Ninguno de los nombres adivinados funcionó: se lee la página pública
-    // de detalle y se busca ahí su propio enlace de descarga.
-    try {
-      const detalle = `${HOST_BASE}/Document/ShowDocumentToPublic/${cufe}`;
-      const resDet = await fetch(detalle, {
-        credentials: 'include', redirect: 'follow', signal: control.signal,
-        headers: { Accept: 'text/html' },
-      });
-      const html = await resDet.text();
-      const real = extraerEnlaceDescarga(html, HOST_BASE);
-      if (real) {
-        const u = new URL(real);
-        if (!validarHost(u)) {
-          ultimaUrl = real;
-          ultimoResultado = await probarUrl(real, control);
-          if (ultimoResultado.ok) {
-            await guardarBytes(ultimoResultado, cufe);
-            return { ok: true };
-          }
-        }
-      }
-    } catch { /* se queda con el último resultado ya capturado arriba */ }
-
-    if (ultimoResultado?.error) {
-      const abortado = ultimoResultado.error?.name === 'AbortError';
-      return {
-        ok: false,
-        detalle: abortado ? 'La DIAN no respondió a tiempo.' : 'No se pudo contactar con la DIAN.',
-        url: ultimaUrl,
+      const tabId = tab.id;
+      const escuchar = (id, info) => {
+        if (id !== tabId || info.status !== 'complete') return;
+        chrome.tabs.onUpdated.removeListener(escuchar);
+        resolve(tabId);
       };
+      chrome.tabs.onUpdated.addListener(escuchar);
+    });
+  });
+}
+
+// ── Funciones que se inyectan en la pestaña real de la DIAN ─────────────
+// Corren en el contexto de la página (no del service worker): tienen DOM,
+// pueden disparar los mismos eventos que un clic humano, y el Turnstile de
+// esa página ya está resuelto porque la pestaña terminó de cargar.
+
+function scriptBuscarCufe(cufe) {
+  return new Promise((resolve) => {
+    const campo = document.querySelector('#DocumentKey');
+    const boton = document.querySelector('.btn-search');
+    if (!campo || !boton) {
+      resolve({ ok: false, motivo: 'No encontré el formulario de búsqueda — la DIAN pudo haber cambiado el portal.' });
+      return;
     }
-    const muestra = ultimoResultado
-      ? new TextDecoder().decode(ultimoResultado.bytes.slice(0, 500)).replace(/\s+/g, ' ').trim()
-      : undefined;
+    campo.value = cufe;
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+    campo.dispatchEvent(new Event('change', { bubbles: true }));
+    boton.click();
+
+    const vence = Date.now() + 15000;
+    const intento = () => {
+      if (document.querySelector('.download-document')) {
+        resolve({ ok: true, encontrado: true });
+        return;
+      }
+      if (Date.now() > vence) {
+        resolve({ ok: true, encontrado: false });
+        return;
+      }
+      setTimeout(intento, 500);
+    };
+    setTimeout(intento, 1200);
+  });
+}
+
+function scriptClicDescargar() {
+  const boton = document.querySelector('.download-document');
+  if (!boton) return { ok: false, motivo: 'El botón de descargar de esa fila desapareció.' };
+  boton.click();
+  return { ok: true };
+}
+
+function scriptLeerPagina() {
+  return {
+    url: location.href,
+    texto: (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 400),
+  };
+}
+
+async function ejecutarEnPestana(tabId, func, args = []) {
+  const [inyeccion] = await chrome.scripting.executeScript({ target: { tabId }, func, args });
+  return inyeccion?.result;
+}
+
+/** Vuelve a "Documentos recibidos" para poder buscar el siguiente CUFE. */
+async function volverABusqueda(tabId) {
+  await new Promise((resolve) => {
+    const escuchar = (id, info) => {
+      if (id !== tabId || info.status !== 'complete') return;
+      chrome.tabs.onUpdated.removeListener(escuchar);
+      resolve();
+    };
+    chrome.tabs.onUpdated.addListener(escuchar);
+    chrome.tabs.update(tabId, { url: HOST_RECIBIDOS }).catch(() => resolve());
+  });
+}
+
+/** Espera a que chrome.downloads confirme que el archivo terminó de bajar. */
+function esperarDescarga(downloadId) {
+  return new Promise((resolve) => {
+    const vencido = setTimeout(() => {
+      limpiar();
+      resolve({ ok: true, detalle: 'Descargado (no se confirmó el final a tiempo, pero el archivo debería estar).' });
+    }, DESCARGA_TIMEOUT_MS);
+    const onChanged = (delta) => {
+      if (delta.id !== downloadId) return;
+      if (delta.state?.current === 'complete') { limpiar(); resolve({ ok: true }); }
+      if (delta.state?.current === 'interrupted') { limpiar(); resolve({ ok: false, detalle: 'La descarga se interrumpió.' }); }
+    };
+    function limpiar() {
+      clearTimeout(vencido);
+      chrome.downloads.onChanged.removeListener(onChanged);
+    }
+    chrome.downloads.onChanged.addListener(onChanged);
+  });
+}
+
+// Le pone nombre al archivo ANTES de que se guarde: DIAN/<cufe>.<ext>, en
+// vez del nombre que le ponga la DIAN. `estado.cufeEnCurso` identifica de
+// qué CUFE es la descarga que está en marcha justo ahora.
+chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
+  const cufe = estado?.cufeEnCurso;
+  if (!cufe) { suggest(); return; }
+  const esZip = /\.zip($|\?)/i.test(item.filename) || item.mime === 'application/zip';
+  suggest({ filename: `DIAN/${cufe}.${esZip ? 'zip' : 'xml'}`, conflictAction: 'overwrite' });
+});
+
+/**
+ * Busca un CUFE en el portal y, si aparece, hace clic en su botón real de
+ * descargar. El resultado se decide con una carrera: o `chrome.downloads`
+ * confirma que empezó a bajar un archivo (éxito — la DIAN mandó un
+ * documento de verdad), o la pestaña termina navegando a otra URL sin que
+ * haya descarga (la respuesta no era un archivo: sesión vencida, error del
+ * servidor, etc.).
+ */
+async function descargarUno(tabId, cufe) {
+  let busqueda;
+  try {
+    busqueda = await ejecutarEnPestana(tabId, scriptBuscarCufe, [cufe]);
+  } catch {
+    return { ok: false, detalle: 'Se perdió la conexión con la pestaña de la DIAN al buscar. Reintenta.' };
+  }
+  if (!busqueda) return { ok: false, detalle: 'La pestaña de la DIAN no respondió al buscar.' };
+  if (!busqueda.ok) return { ok: false, detalle: busqueda.motivo };
+  if (!busqueda.encontrado) {
+    return { ok: false, detalle: 'La DIAN no muestra este CUFE en "Documentos recibidos" (o la sesión venció).' };
+  }
+
+  const resultado = await new Promise((resolve) => {
+    let terminado = false;
+
+    const vencido = setTimeout(() => {
+      if (terminado) return;
+      terminado = true;
+      limpiar();
+      resolve({ ok: false, detalle: 'La DIAN no entregó nada tras hacer clic en descargar (tiempo agotado).' });
+    }, DESCARGA_TIMEOUT_MS);
+
+    const onCreated = (item) => {
+      if (terminado) return;
+      terminado = true;
+      limpiar();
+      resolve({ ok: true, downloadId: item.id });
+    };
+
+    // Si la pestaña navega a la URL de descarga sin que chrome.downloads
+    // dispare nada, es que la respuesta no era un archivo adjunto (típico
+    // de un error del servidor devuelto como página HTML).
+    const onNavegado = (id, info, tab) => {
+      if (id !== tabId || info.status !== 'complete') return;
+      if (!tab.url || !tab.url.includes('/Document/DownloadZipFiles')) return;
+      if (terminado) return;
+      terminado = true;
+      limpiar();
+      resolve({ ok: false, navegoAError: true });
+    };
+
+    function limpiar() {
+      clearTimeout(vencido);
+      chrome.downloads.onCreated.removeListener(onCreated);
+      chrome.tabs.onUpdated.removeListener(onNavegado);
+    }
+
+    chrome.downloads.onCreated.addListener(onCreated);
+    chrome.tabs.onUpdated.addListener(onNavegado);
+
+    ejecutarEnPestana(tabId, scriptClicDescargar).then((r) => {
+      if (terminado) return;
+      if (!r?.ok) {
+        terminado = true;
+        limpiar();
+        resolve({ ok: false, detalle: r?.motivo || 'No se pudo hacer clic en el botón de descargar.' });
+      }
+    }).catch(() => {
+      if (terminado) return;
+      terminado = true;
+      limpiar();
+      resolve({ ok: false, detalle: 'Se perdió la conexión con la pestaña al hacer clic en descargar.' });
+    });
+  });
+
+  if (resultado.navegoAError) {
+    let diagnostico;
+    try { diagnostico = await ejecutarEnPestana(tabId, scriptLeerPagina); } catch { /* puede seguir cargando */ }
+    await volverABusqueda(tabId);
     return {
       ok: false,
-      detalle: ultimoResultado?.resOk
-        ? 'La DIAN respondió algo que no es un documento. El token puede haber vencido.'
-        : `La DIAN respondió ${ultimoResultado?.status ?? '(sin conexión)'}.`,
-      muestra, url: ultimaUrl, status: ultimoResultado?.status,
+      detalle: 'La DIAN no entregó el archivo (probablemente un error temporal del servidor — no del CUFE).',
+      muestra: diagnostico?.texto,
+      url: diagnostico?.url,
     };
-  } finally {
-    clearTimeout(alarma);
   }
+
+  if (resultado.ok) {
+    const final = await esperarDescarga(resultado.downloadId);
+    if (!final.ok) await volverABusqueda(tabId);
+    return final;
+  }
+
+  return resultado;
 }
 
 async function correrLote() {
   const total = estado.cufes.length;
+
+  const auth = await abrirSesion(estado.urlDian);
+  if (!auth.ok) {
+    estado.corriendo = false;
+    await guardarEstado();
+    emitir('terminado', { ok: 0, errores: total, fatal: auth.error });
+    return;
+  }
+
+  let tabId;
+  try {
+    tabId = await abrirPestanaRecibidos();
+  } catch (err) {
+    estado.corriendo = false;
+    await guardarEstado();
+    emitir('terminado', { ok: 0, errores: total, fatal: err.message });
+    return;
+  }
+
   for (const cufe of estado.cufes) {
     if (estado.cancelado) break;
     if (estado.resultados[cufe]?.ok) continue; // ya bajado en una corrida anterior
 
-    // La construcción de la URL ya no pasa por aquí: descargarUno() prueba
-    // varios candidatos en cascada (ver su comentario), empezando por el
-    // configurado en "Opciones avanzadas".
-    const r = await descargarUno(estado.endpoint || estado.urlDian, cufe);
-    // La URL y la muestra quedan también en el estado guardado, no sólo en
-    // el mensaje en vivo: si se reabre el popup después, el registro tiene
-    // que poder mostrar lo mismo, no sólo "hechos: N".
+    estado.cufeEnCurso = cufe;
+    let r;
+    try {
+      r = await descargarUno(tabId, cufe);
+    } catch (err) {
+      r = { ok: false, detalle: `Error inesperado: ${err?.message ?? err}` };
+    }
+    estado.cufeEnCurso = null;
+
     estado.resultados[cufe] = { ok: r.ok, detalle: r.detalle, muestra: r.muestra, url: r.url };
     await guardarEstado();
     emitir('progreso', {
@@ -310,6 +400,8 @@ async function correrLote() {
 
     await dormir(RITMO_MS);
   }
+
+  try { await chrome.tabs.remove(tabId); } catch { /* puede que ya se haya cerrado */ }
 
   estado.corriendo = false;
   await guardarEstado();
@@ -330,21 +422,29 @@ chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
   return true;
 });
 
+/** null si el enlace es válido; si no, el mensaje de error para mostrar. */
+function errorDeEnlace(urlDian) {
+  let url;
+  try { url = new URL(urlDian); } catch { return 'Ese enlace no parece una URL válida.'; }
+  return validarHost(url) && `Ese enlace no es de la DIAN. Sólo se permiten: ${HOSTS_PERMITIDOS.join(', ')}.`;
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
   (async () => {
     if (msg.tipo === 'probar') {
+      const error = errorDeEnlace(msg.urlDian);
+      if (error) { responder({ ok: false, error }); return; }
       const r = await abrirSesion(msg.urlDian);
       responder(r);
       return;
     }
 
     if (msg.tipo === 'iniciar') {
+      const errorEnlace = errorDeEnlace(msg.urlDian);
+      if (errorEnlace) { responder({ ok: false, error: errorEnlace }); return; }
+
       const cufesValidos = msg.cufes.filter((c) => CUFE_RE.test(c));
 
-      // Reanudar se identifica por la LISTA de CUFEs, no por el enlace: al
-      // reanudar, el enlace SIEMPRE es nuevo (token distinto), pero la lista
-      // de documentos pendientes es la misma. Comparar por urlDian habría
-      // hecho que cada "pide otro token y continúa" perdiera el progreso.
       const guardado = (await chrome.storage.local.get(CLAVE_ESTADO))[CLAVE_ESTADO];
       const mismaLista = guardado
         && guardado.cufes.length === cufesValidos.length
@@ -352,11 +452,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
 
       estado = {
         urlDian: msg.urlDian,
-        endpoint: msg.endpoint || msg.urlDian,
         cufes: cufesValidos,
         resultados: mismaLista ? guardado.resultados : {},
         corriendo: true,
         cancelado: false,
+        cufeEnCurso: null,
       };
       await guardarEstado();
       responder({ ok: true, total: cufesValidos.length });

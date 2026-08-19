@@ -1,8 +1,7 @@
-import { cufesDeTexto, ENDPOINT_POR_DEFECTO } from './dian.js';
+import { cufesDeTexto } from './dian.js';
 
 const $ = (id) => document.getElementById(id);
 const urlDianEl = $('urlDian');
-const endpointEl = $('endpoint');
 const cufesEl = $('cufes');
 const btnProbar = $('btnProbar');
 const btnIniciar = $('btnIniciar');
@@ -16,7 +15,6 @@ const registroEl = $('registro');
 const reanudarEl = $('reanudar');
 
 let corriendo = false;
-endpointEl.value = ENDPOINT_POR_DEFECTO;
 
 function pintarConteo() {
   const n = cufesDeTexto(cufesEl.value).length;
@@ -60,9 +58,12 @@ btnIniciar.addEventListener('click', async () => {
 
   registroEl.innerHTML = '';
   reanudarEl.style.display = 'none';
-  const r = await chrome.runtime.sendMessage({
-    tipo: 'iniciar', urlDian, endpoint: endpointEl.value.trim() || ENDPOINT_POR_DEFECTO, cufes,
-  });
+  const r = await chrome.runtime.sendMessage({ tipo: 'iniciar', urlDian, cufes });
+  if (!r.ok) {
+    estadoEnlaceEl.textContent = r.error ?? 'No se pudo iniciar.';
+    estadoEnlaceEl.className = 'error';
+    return;
+  }
   ponerCorriendo(true);
   actualizarBarra(0, r.total);
 });
@@ -127,7 +128,9 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
   if (msg.tipo === 'terminado') {
     ponerCorriendo(false);
-    resumenEl.textContent = `Listo — ${msg.ok} ok${msg.errores > 0 ? `, ${msg.errores} con problema` : ''}`;
+    resumenEl.textContent = msg.fatal
+      ? `No se pudo iniciar: ${msg.fatal}`
+      : `Listo — ${msg.ok} ok${msg.errores > 0 ? `, ${msg.errores} con problema` : ''}`;
   }
 });
 
