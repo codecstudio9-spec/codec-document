@@ -153,18 +153,32 @@ async function abrirSesion(urlAuth) {
  */
 async function abrirPestanaRecibidos() {
   return new Promise((resolve, reject) => {
+    let terminado = false;
+    const vencido = setTimeout(() => {
+      if (terminado) return;
+      terminado = true;
+      chrome.tabs.onUpdated.removeListener(escuchar);
+      reject(new Error(`"Documentos recibidos" no terminó de cargar en ${TIMEOUT_MS / 1000} segundos.`));
+    }, TIMEOUT_MS);
+    const escuchar = (id, info) => {
+      if (terminado || id !== tabId || info.status !== 'complete') return;
+      terminado = true;
+      clearTimeout(vencido);
+      chrome.tabs.onUpdated.removeListener(escuchar);
+      resolve(tabId);
+    };
+    let tabId = null;
+    chrome.tabs.onUpdated.addListener(escuchar);
     chrome.tabs.create({ url: HOST_RECIBIDOS, active: false }, (tab) => {
+      if (terminado) return;
       if (chrome.runtime.lastError || !tab?.id) {
+        terminado = true;
+        clearTimeout(vencido);
+        chrome.tabs.onUpdated.removeListener(escuchar);
         reject(new Error('No se pudo abrir la pestaña de "Documentos recibidos" de la DIAN.'));
         return;
       }
-      const tabId = tab.id;
-      const escuchar = (id, info) => {
-        if (id !== tabId || info.status !== 'complete') return;
-        chrome.tabs.onUpdated.removeListener(escuchar);
-        resolve(tabId);
-      };
-      chrome.tabs.onUpdated.addListener(escuchar);
+      tabId = tab.id;
     });
   });
 }
@@ -436,6 +450,10 @@ async function correrLote() {
     // es lo que hace que 5.000 CUFEs terminen bajando los 5.000, no sólo
     // los que tuvieron suerte de temporización en el primer intento.
     for (let intento = 1; intento <= INTENTOS_MAX; intento++) {
+      emitir('intento', {
+        cufe, intento, intentosMax: INTENTOS_MAX,
+        hechos: Object.keys(estado.resultados).length, total,
+      });
       try {
         r = await descargarUno(tabId, cufe);
       } catch (err) {

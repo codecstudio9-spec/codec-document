@@ -16,6 +16,7 @@ const barraEl = $('barraRelleno');
 const resumenEl = $('resumen');
 const registroEl = $('registro');
 const reanudarEl = $('reanudar');
+const enCursoEl = $('enCurso');
 
 let corriendo = false;
 
@@ -136,12 +137,19 @@ function filaRegistro(r) {
 }
 
 chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.tipo === 'intento') {
+    enCursoEl.style.display = 'block';
+    const sufijo = msg.intentosMax > 1 ? ` (intento ${msg.intento} de ${msg.intentosMax})` : '';
+    enCursoEl.textContent = `Buscando ${msg.cufe.slice(0, 20)}…${sufijo}`;
+  }
   if (msg.tipo === 'progreso') {
+    enCursoEl.style.display = 'none';
     actualizarBarra(msg.hechos, msg.total);
     registroEl.prepend(filaRegistro(msg));
   }
   if (msg.tipo === 'terminado') {
     ponerCorriendo(false);
+    enCursoEl.style.display = 'none';
     resumenEl.textContent = msg.fatal
       ? `No se pudo iniciar: ${msg.fatal}`
       : `Listo — ${msg.ok} ok${msg.errores > 0 ? `, ${msg.errores} con problema` : ''}`;
