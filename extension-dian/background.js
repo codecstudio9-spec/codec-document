@@ -45,6 +45,7 @@ const HOST_RECIBIDOS = 'https://catalogo-vpfe.dian.gov.co/Document/Received';
  *   corriendo: boolean, cancelado: boolean, cufeEnCurso: string | null,
  * } | null} */
 let estado = null;
+let borradoPendiente = false;
 
 function emitir(tipo, datos = {}) {
   chrome.runtime.sendMessage({ tipo, ...datos }).catch(() => {
@@ -55,7 +56,7 @@ function emitir(tipo, datos = {}) {
 }
 
 async function guardarEstado() {
-  if (!estado) return;
+  if (!estado || borradoPendiente) return;
   await chrome.storage.local.set({
     [CLAVE_ESTADO]: {
       urlDian: estado.urlDian,
@@ -353,6 +354,17 @@ async function descargarUno(tabId, cufe) {
       resolve({ ok: false, detalle: 'La DIAN no entregó nada tras hacer clic en descargar (tiempo agotado).' });
     }, DESCARGA_TIMEOUT_MS);
 
+    // Esta es la única espera larga (hasta 20s) del flujo sin ninguna
+    // llamada real a la API de extensiones de por medio — sólo escuchando.
+    // Se vio en vivo (2026-08-19) un lote que se quedó "congelado" a medio
+    // CUFE sin ningún error: la hipótesis de mayor peso es que Chrome dio
+    // por inactivo al service worker (Manifest V3 lo mata tras un tramo sin
+    // actividad) y con él se perdieron estos listeners, sin aviso para
+    // nadie. Este latido no hace nada útil por sí mismo — sólo genera
+    // actividad real de extensión cada 5s para que el navegador no dé por
+    // terminada esta espera.
+    const latido = setInterval(() => { chrome.tabs.get(tabId).catch(() => {}); }, 5000);
+
     const onCreated = (item) => {
       if (terminado) return;
       terminado = true;
@@ -374,6 +386,7 @@ async function descargarUno(tabId, cufe) {
 
     function limpiar() {
       clearTimeout(vencido);
+      clearInterval(latido);
       chrome.downloads.onCreated.removeListener(onCreated);
       chrome.tabs.onUpdated.removeListener(onNavegado);
     }
@@ -410,8 +423,8 @@ async function descargarUno(tabId, cufe) {
 
   if (resultado.ok) {
     const final = await esperarDescarga(resultado.downloadId);
-    if (!final.ok) await volverABusqueda(tabId);
-    return final;
+    if (!final.ok) { await volverABusqueda(tabId); return final; }
+    return { ...final, downloadId: resultado.downloadId };
   }
 
   return resultado;
@@ -419,6 +432,7 @@ async function descargarUno(tabId, cufe) {
 
 async function correrLote() {
   const total = estado.cufes.length;
+  estado.procesados = 0;
 
   const auth = await abrirSesion(estado.urlDian);
   if (!auth.ok) {
@@ -438,9 +452,17 @@ async function correrLote() {
     return;
   }
 
+  // estado.procesados = posición en la lista, NO
+  // Object.keys(estado.resultados).length: al reanudar una lista ya
+  // intentada, `resultados` llega precargado con las 19 entradas de la
+  // corrida anterior (para no repetir lo ya bajado), así que esa cuenta ya
+  // "marca 19" desde el primer CUFE de esta corrida — se vio en vivo
+  // (2026-08-19) la barra diciendo "19 de 19" mientras seguía atascada en
+  // el CUFE #5. Vive en `estado` (no en una variable local) para que el
+  // mensaje 'estado' del popup también lo pueda leer mientras corre.
   for (const cufe of estado.cufes) {
     if (estado.cancelado) break;
-    if (estado.resultados[cufe]?.ok) continue; // ya bajado en una corrida anterior
+    if (estado.resultados[cufe]?.ok) { estado.procesados++; continue; } // ya bajado en una corrida anterior
 
     estado.cufeEnCurso = cufe;
     let r;
@@ -450,10 +472,7 @@ async function correrLote() {
     // es lo que hace que 5.000 CUFEs terminen bajando los 5.000, no sólo
     // los que tuvieron suerte de temporización en el primer intento.
     for (let intento = 1; intento <= INTENTOS_MAX; intento++) {
-      emitir('intento', {
-        cufe, intento, intentosMax: INTENTOS_MAX,
-        hechos: Object.keys(estado.resultados).length, total,
-      });
+      emitir('intento', { cufe, intento, intentosMax: INTENTOS_MAX, hechos: estado.procesados, total });
       try {
         r = await descargarUno(tabId, cufe);
       } catch (err) {
@@ -465,10 +484,14 @@ async function correrLote() {
     estado.cufeEnCurso = null;
 
     estado.resultados[cufe] = { ok: r.ok, detalle: r.detalle, muestra: r.muestra, url: r.url };
+    estado.procesados++;
+    if (r.ok && r.downloadId != null) {
+      await chrome.storage.local.set({ ultima_descarga_id: r.downloadId });
+    }
     await guardarEstado();
     emitir('progreso', {
       cufe, ok: r.ok, detalle: r.detalle, muestra: r.muestra, url: r.url,
-      hechos: Object.keys(estado.resultados).length, total,
+      hechos: estado.procesados, total,
     });
 
     await dormir(RITMO_MS);
@@ -523,6 +546,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
         && guardado.cufes.length === cufesValidos.length
         && guardado.cufes.every((c, i) => c === cufesValidos[i]);
 
+      borradoPendiente = false;
       estado = {
         urlDian: msg.urlDian,
         cufes: cufesValidos,
@@ -548,15 +572,46 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
       if (estado) {
         responder({
           corriendo: estado.corriendo,
-          hechos: Object.keys(estado.resultados).length,
+          hechos: estado.procesados ?? 0,
           total: estado.cufes.length,
         });
         return;
       }
       const guardado = (await chrome.storage.local.get(CLAVE_ESTADO))[CLAVE_ESTADO];
       responder(guardado
-        ? { corriendo: false, hechos: Object.keys(guardado.resultados).length, total: guardado.cufes.length, reanudable: true }
+        ? {
+            corriendo: false,
+            hechos: Object.values(guardado.resultados).filter((r) => r.ok).length,
+            total: guardado.cufes.length,
+            reanudable: true,
+          }
         : { corriendo: false, hechos: 0, total: 0 });
+      return;
+    }
+
+    if (msg.tipo === 'abrirCarpeta') {
+      // Abre el explorador de archivos justo en el último XML/ZIP que se
+      // bajó (chrome.downloads.show lo selecciona dentro de su carpeta) —
+      // así el usuario ve con sus propios ojos dónde cayeron, sin tener que
+      // explicarle rutas. Si todavía no hay ninguna descarga, cae a la
+      // carpeta de Descargas por defecto.
+      const { ultima_descarga_id } = await chrome.storage.local.get('ultima_descarga_id');
+      if (ultima_descarga_id != null) {
+        chrome.downloads.show(ultima_descarga_id);
+      } else {
+        chrome.downloads.showDefaultFolder();
+      }
+      responder({ ok: true });
+      return;
+    }
+
+    if (msg.tipo === 'borrar') {
+      // Corta cualquier lote en marcha (igual que "Detener") y evita que su
+      // última escritura pendiente resucite lo que se acaba de borrar.
+      if (estado) estado.cancelado = true;
+      borradoPendiente = true;
+      await chrome.storage.local.remove([CLAVE_ESTADO, 'campo_urlDian', 'campo_cufes']);
+      responder({ ok: true });
       return;
     }
 

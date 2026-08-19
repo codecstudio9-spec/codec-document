@@ -9,6 +9,8 @@ const carpetaEl = $('carpeta');
 const btnProbar = $('btnProbar');
 const btnIniciar = $('btnIniciar');
 const btnDetener = $('btnDetener');
+const btnBorrar = $('btnBorrar');
+const btnAbrirCarpeta = $('btnAbrirCarpeta');
 const estadoEnlaceEl = $('estadoEnlace');
 const detalleEl = $('detalle');
 const conteoCufesEl = $('conteoCufes');
@@ -85,6 +87,29 @@ btnIniciar.addEventListener('click', async () => {
 
 btnDetener.addEventListener('click', async () => {
   await chrome.runtime.sendMessage({ tipo: 'detener' });
+});
+
+btnAbrirCarpeta.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ tipo: 'abrirCarpeta' });
+});
+
+btnBorrar.addEventListener('click', async () => {
+  if (corriendo && !confirm('Hay una descarga en curso. ¿Detenerla y borrar todo (enlace, CUFEs y registro)?')) return;
+  if (!corriendo && registroEl.children.length > 0 && !confirm('¿Borrar el enlace, los CUFEs y el registro?')) return;
+
+  await chrome.runtime.sendMessage({ tipo: 'borrar' });
+
+  urlDianEl.value = '';
+  cufesEl.value = '';
+  pintarConteo();
+  registroEl.innerHTML = '';
+  estadoEnlaceEl.textContent = '';
+  estadoEnlaceEl.className = '';
+  detalleEl.style.display = 'none';
+  reanudarEl.style.display = 'none';
+  enCursoEl.style.display = 'none';
+  ponerCorriendo(false);
+  actualizarBarra(0, 0);
 });
 
 function ponerCorriendo(v) {
