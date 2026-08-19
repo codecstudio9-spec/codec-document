@@ -286,7 +286,15 @@ export class DianDownloadWorker {
       const latido = setInterval(() => { chrome.tabs.get(tabId).catch(() => {}); }, 5000);
 
       const onCreated = (item) => {
-        if (extraerCufeDeUrl(item.url) !== cufe) return; // es la descarga de OTRO worker
+        // Sólo se rechaza cuando SÍ se pudo leer un trackId de la URL y no
+        // coincide con este CUFE (es de otro worker, con certeza). Si no se
+        // pudo leer nada (0/25 en la primera prueba en vivo, 2026-08-19 —
+        // la suposición sobre el formato exacto de la URL de descarga nunca
+        // se confirmó contra el portal real), se acepta: es mejor atribuir
+        // mal una descarga real que declarar "tiempo agotado" sobre un
+        // archivo que sí bajó.
+        const cufeDetectado = extraerCufeDeUrl(item.url);
+        if (cufeDetectado != null && cufeDetectado !== cufe) return;
         if (terminado) return;
         terminado = true;
         limpiar();

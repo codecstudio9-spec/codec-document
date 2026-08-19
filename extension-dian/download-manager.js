@@ -47,8 +47,16 @@ export class DownloadManager {
     // atribuye por el trackId de su propia URL, así que funciona igual con
     // 1 worker que con 5 corriendo a la vez sin confundir cuál es cuál.
     chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
-      const cufe = extraerCufeDeUrl(item.url);
-      if (!cufe || !this.cufesEnVuelo.has(cufe)) { suggest(); return; }
+      let cufe = extraerCufeDeUrl(item.url);
+      if (!cufe || !this.cufesEnVuelo.has(cufe)) {
+        // No se pudo confirmar por la URL (ver nota en download-worker.js:
+        // el formato exacto nunca se confirmó contra el portal real). Con
+        // un solo CUFE en vuelo ahora mismo no hay ambigüedad posible — es
+        // ése. Con varios a la vez y sin poder confirmar, se deja el
+        // nombre que ponga la DIAN antes que arriesgar renombrar mal.
+        if (this.cufesEnVuelo.size === 1) cufe = [...this.cufesEnVuelo.keys()][0];
+        else { suggest(); return; }
+      }
       const carpeta = (this.cufesEnVuelo.get(cufe) || CARPETA_DEFECTO).replace(/[\\/:*?"<>|]+/g, '').trim() || CARPETA_DEFECTO;
       const esZip = /\.zip($|\?)/i.test(item.filename) || item.mime === 'application/zip';
       suggest({ filename: `${carpeta}/${cufe}.${esZip ? 'zip' : 'xml'}`, conflictAction: 'overwrite' });
