@@ -223,9 +223,12 @@ async function esperarBusqueda(tabId) {
   while (Date.now() < vence) {
     let r;
     try {
-      r = await ejecutarEnPestana(tabId, scriptComprobarBusqueda);
+      r = await ejecutarEnPestana(tabId, scriptComprobarBusqueda, [], 4000);
     } catch {
-      return false;
+      // Esta comprobación puntual no respondió a tiempo — no es lo mismo
+      // que "no encontrado". Se sigue dentro del presupuesto de 15s en vez
+      // de rendirse en el primer tropiezo.
+      r = undefined;
     }
     if (r?.encontrado) return true;
     await dormir(500);
@@ -247,9 +250,30 @@ function scriptLeerPagina() {
   };
 }
 
-async function ejecutarEnPestana(tabId, func, args = []) {
-  const [inyeccion] = await chrome.scripting.executeScript({ target: { tabId }, func, args });
-  return inyeccion?.result;
+/**
+ * `chrome.scripting.executeScript` no tiene tope de tiempo propio. Se vio en
+ * vivo (2026-08-19) un lote atascado en "Buscando... (intento 2 de 3)" sin
+ * avanzar nunca: el presupuesto de 15s de `esperarBusqueda` sólo se revisa
+ * ENTRE llamadas — si una sola llamada se cuelga (la pestaña ocupada
+ * resolviendo un reto nuevo de Cloudflare, una navegación a medias, etc.),
+ * el reloj nunca se vuelve a mirar y queda esperando para siempre. Por eso
+ * cada llamada individual compite contra su propio tope; si pierde, se
+ * rechaza como cualquier otro fallo de conexión — quien llama ya sabe
+ * manejar eso.
+ */
+async function ejecutarEnPestana(tabId, func, args = [], timeoutMs = 10000) {
+  const ejecucion = chrome.scripting.executeScript({ target: { tabId }, func, args })
+    .then(([inyeccion]) => inyeccion?.result);
+  ejecucion.catch(() => {}); // si pierde la carrera contra el tope y luego también falla, que no quede como rechazo sin manejar
+  let idLimite;
+  const limite = new Promise((_, reject) => {
+    idLimite = setTimeout(() => reject(new Error('La pestaña no respondió a tiempo.')), timeoutMs);
+  });
+  try {
+    return await Promise.race([ejecucion, limite]);
+  } finally {
+    clearTimeout(idLimite);
+  }
 }
 
 /** Vuelve a "Documentos recibidos" para poder buscar el siguiente CUFE. */
@@ -311,7 +335,7 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
 /** Best-effort: no debe tumbar el flujo si también falla. */
 async function diagnosticar(tabId) {
   try {
-    const d = await ejecutarEnPestana(tabId, scriptLeerPagina);
+    const d = await ejecutarEnPestana(tabId, scriptLeerPagina, [], 5000);
     return { muestra: d?.texto, url: d?.url };
   } catch {
     return {};
@@ -321,7 +345,7 @@ async function diagnosticar(tabId) {
 async function descargarUno(tabId, cufe) {
   let clic;
   try {
-    clic = await ejecutarEnPestana(tabId, scriptClicBuscar, [cufe]);
+    clic = await ejecutarEnPestana(tabId, scriptClicBuscar, [cufe], 8000);
   } catch {
     return { ok: false, detalle: 'Se perdió la conexión con la pestaña de la DIAN al buscar. Reintenta.', reintentable: true };
   }
@@ -394,7 +418,7 @@ async function descargarUno(tabId, cufe) {
     chrome.downloads.onCreated.addListener(onCreated);
     chrome.tabs.onUpdated.addListener(onNavegado);
 
-    ejecutarEnPestana(tabId, scriptClicDescargar).then((r) => {
+    ejecutarEnPestana(tabId, scriptClicDescargar, [], 8000).then((r) => {
       if (terminado) return;
       if (!r?.ok) {
         terminado = true;
@@ -411,7 +435,7 @@ async function descargarUno(tabId, cufe) {
 
   if (resultado.navegoAError) {
     let diagnostico;
-    try { diagnostico = await ejecutarEnPestana(tabId, scriptLeerPagina); } catch { /* puede seguir cargando */ }
+    try { diagnostico = await ejecutarEnPestana(tabId, scriptLeerPagina, [], 5000); } catch { /* puede seguir cargando */ }
     await volverABusqueda(tabId);
     return {
       ok: false,
