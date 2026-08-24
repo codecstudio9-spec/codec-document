@@ -11,6 +11,16 @@
 // cada parte imagine cosas distintas sobre el resto, y esa diferencia siempre
 // aparece la semana del evento, que es cuando ya no se puede resolver.
 //
+// Recortado el 2026-08-24 tras una prueba real (una pareja en Colombia
+// intentando llenarlo): tenía 37 campos, varios de ellos detalles operativos
+// (tamaño del equipo, tiempo de respuesta, tarifa por hora extra) que suman
+// fricción sin cambiar si el contrato protege a alguien, más una forma
+// duplicada de agregar texto extra (condiciones especiales Y el campo de IA
+// para redactar cláusulas hacían lo mismo). Se dejó lo que de verdad hay que
+// dejar por escrito. `governing_city` también dejó de asumir un marco de
+// "qué corte de EE. UU." — ahora es sólo el nombre de una ciudad, opcional,
+// que se lee igual si la pareja está en Miami o en Bogotá.
+//
 // La versión en inglés vive en wedding-planner-template.ts y debe mantener los
 // MISMOS ids de campo y las opciones en el MISMO orden: las etiquetas del
 // formulario en español se derivan emparejando ambos archivos por posición
@@ -86,7 +96,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       required: false,
     },
     {
-      id: 'partner_name',
+      id: 'client_partner_name',
       label: 'Nombre de tu pareja',
       type: 'text',
       required: false,
@@ -141,8 +151,8 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       id: 'guest_count',
       label: 'Número aproximado de invitados',
       type: 'number',
-      required: true,
-      helpText: 'Aproximado. Más abajo se fija hasta cuándo se puede ajustar.',
+      required: false,
+      helpText: 'Un aproximado está bien, aunque no sea el número final todavía.',
     },
 
     // ── Alcance ───────────────────────────────────────────────────────────
@@ -176,27 +186,6 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       type: 'number',
       required: false,
       placeholder: '2',
-    },
-    {
-      id: 'event_day_hours',
-      label: 'Horas de acompañamiento el día del evento',
-      type: 'number',
-      required: false,
-      placeholder: '12',
-    },
-    {
-      id: 'team_size',
-      label: 'Personas del equipo el día del evento',
-      type: 'number',
-      required: false,
-      placeholder: '3',
-    },
-    {
-      id: 'response_time_hours',
-      label: 'Tiempo máximo de respuesta a mensajes (horas hábiles)',
-      type: 'number',
-      required: false,
-      placeholder: '24',
     },
     {
       id: 'travel_costs',
@@ -256,12 +245,6 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       required: true,
       placeholder: '15',
     },
-    {
-      id: 'extra_hours_rate',
-      label: 'Valor de cada hora adicional el día del evento',
-      type: 'currency',
-      required: false,
-    },
 
     // ── Protecciones ──────────────────────────────────────────────────────
     {
@@ -281,7 +264,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
         'Escalonada: se retiene el 30% si se cancela con más de 90 días, el 60% entre 89 y 30 días, y el 100% con menos de 30 días',
         'El anticipo no se devuelve; lo demás se devuelve si se avisa con más de 30 días',
         'El anticipo no se devuelve en ningún caso y el saldo pagado tampoco',
-        'Personalizada (se describe en las condiciones especiales)',
+        'Personalizada (se describe en las cláusulas adicionales)',
       ],
     },
     {
@@ -297,17 +280,11 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
     },
     {
       id: 'governing_city',
-      label: 'Ciudad cuyos jueces resuelven una controversia',
+      label: 'Ciudad para resolver una disputa (opcional)',
       type: 'text',
-      required: true,
-      helpText: 'Suele elegirse la ciudad del evento o la de quien contrata.',
-    },
-    {
-      id: 'special_terms',
-      label: 'Condiciones especiales',
-      type: 'textarea',
       required: false,
-      helpText: 'Todo lo acordado que no encaje arriba. Puedes dictarlo.',
+      placeholder: 'ej. Bogotá, Miami, Madrid…',
+      helpText: 'No es obligatorio. Si lo dejas en blanco, el contrato simplemente dice que las partes intentarán resolver cualquier diferencia directamente.',
     },
     {
       id: 'custom_ai_clauses',
@@ -315,7 +292,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       type: 'textarea',
       required: false,
       placeholder: 'Dile a la IA qué quieres, por ejemplo: "Agrega una cláusula donde el valor total pueda aumentar si ambas partes lo acuerdan en una sesión de negociación posterior" o "Agrega un pago adicional de un monto fijo en una fecha específica" — y pulsa "Redactar con IA".',
-      helpText: 'Escribe una instrucción y pulsa "Redactar con IA" para que ella escriba la cláusula por ti, o dicta/escribe la cláusula tú mismo. En los dos casos ves el resultado antes de que entre al contrato, y siempre puedes deshacerlo.',
+      helpText: 'Cualquier otra cosa que quieras dejar por escrito va aquí — escribe una instrucción y pulsa "Redactar con IA" para que ella escriba la cláusula por ti, o dicta/escribe la cláusula tú mismo. En los dos casos ves el resultado antes de que entre al contrato, y siempre puedes deshacerlo.',
     },
   ],
 
@@ -328,7 +305,7 @@ Entre los suscritos:
 
 y
 
-{{client_name}}, identificado(a) con documento número {{client_id}}{{#if partner_name}}, junto con {{partner_name}}{{/if}}, quien en adelante se denominará EL CLIENTE;
+{{client_name}}, identificado(a) con documento número {{client_id}}{{#if client_partner_name}}, junto con {{client_partner_name}}{{/if}}, quien en adelante se denominará EL CLIENTE;
 
 se celebra el presente contrato, que se regirá por las siguientes cláusulas.
 
@@ -346,8 +323,8 @@ Tipo de evento: {{event_type}}
 Fecha: {{event_date}}{{#if event_time}}
 Hora de inicio: {{event_time}}{{/if}}
 Lugar: {{event_venue}}
-Ciudad: {{event_city}}
-Número aproximado de invitados: {{guest_count}}
+Ciudad: {{event_city}}{{#if guest_count}}
+Número aproximado de invitados: {{guest_count}}{{/if}}
 
 La fecha queda reservada para EL CLIENTE únicamente desde el momento en que se paga el anticipo previsto en la cláusula octava. Antes de ese pago, LA PLANNER puede aceptar otro evento para el mismo día.
 
@@ -388,9 +365,8 @@ Las partes reconocen que LA PLANNER trabaja desde {{planner_city}} y que el even
 
 a) LA PLANNER realizará {{onsite_visits}} visita(s) presencial(es) al lugar del evento antes de la fecha. Las visitas adicionales que solicite EL CLIENTE se cobrarán aparte, previo acuerdo escrito.{{#if arrival_days_before}}
 b) LA PLANNER llegará a {{event_city}} con {{arrival_days_before}} día(s) de anticipación y permanecerá disponible hasta el final del evento.{{/if}}
-c) El resto de la planeación se hará por videollamada, teléfono y correo. Las decisiones que se tomen por esos medios tienen el mismo valor que las tomadas en persona, siempre que queden por escrito.{{#if response_time_hours}}
-d) LA PLANNER responderá los mensajes de EL CLIENTE dentro de las {{response_time_hours}} horas hábiles siguientes. Esta obligación no se aplica los días del montaje ni el día del evento, en los que estará dedicada a la ejecución.{{/if}}
-e) Cada parte mantendrá actualizados sus datos de contacto. Las comunicaciones se entienden recibidas cuando se envían a los medios señalados en este contrato.
+c) El resto de la planeación se hará por videollamada, teléfono y correo. Las decisiones que se tomen por esos medios tienen el mismo valor que las tomadas en persona, siempre que queden por escrito.
+d) Cada parte mantendrá actualizados sus datos de contacto. Las comunicaciones se entienden recibidas cuando se envían a los medios señalados en este contrato.
 
 
 SEXTA — PROVEEDORES
@@ -420,11 +396,7 @@ Anticipo para reservar la fecha: {{currency_code}} {{deposit_amount}}, pagadero 
 
 Saldo: {{payment_plan}}
 
-El último pago deberá estar realizado a más tardar {{final_payment_days}} día(s) antes del evento. LA PLANNER no está obligada a ejecutar el evento si el saldo no ha sido pagado en esa fecha.{{#if extra_hours_rate}}
-
-Cada hora de acompañamiento adicional a la pactada el día del evento se cobrará a {{currency_code}} {{extra_hours_rate}}.{{/if}}{{#if event_day_hours}}
-
-El acompañamiento el día del evento es de {{event_day_hours}} horas continuas.{{/if}}{{#if team_size}} LA PLANNER asistirá con un equipo de {{team_size}} persona(s).{{/if}}
+El último pago deberá estar realizado a más tardar {{final_payment_days}} día(s) antes del evento. LA PLANNER no está obligada a ejecutar el evento si el saldo no ha sido pagado en esa fecha.
 
 
 NOVENA — CAMBIOS
@@ -489,13 +461,8 @@ Los conceptos, bocetos, paletas y propuestas creadas por LA PLANNER son suyos ha
 
 Ambas partes guardarán reserva sobre la información personal, familiar y económica que conozcan por razón de este contrato, incluso después de terminado.
 
-{{#if special_terms}}
-DÉCIMA SÉPTIMA — CONDICIONES ESPECIALES
-
-{{special_terms}}
-
-{{/if}}{{#if custom_ai_clauses}}
-DÉCIMA OCTAVA — CLÁUSULAS ADICIONALES PERSONALIZADAS
+{{#if custom_ai_clauses}}
+DÉCIMA SÉPTIMA — CLÁUSULAS ADICIONALES PERSONALIZADAS
 
 {{custom_ai_clauses}}
 
@@ -506,9 +473,9 @@ Este documento recoge todo lo acordado entre las partes y reemplaza cualquier co
 
 Si alguna cláusula resulta inválida, las demás continúan vigentes.
 
-Las partes intentarán resolver de buena fe cualquier diferencia mediante conversación directa y, si no lo logran, acudirán a los jueces de {{governing_city}}, renunciando a cualquier otro fuero.
+Las partes intentarán resolver de buena fe cualquier diferencia mediante conversación directa{{#if governing_city}} y, si no lo logran, acudirán a los jueces de {{governing_city}}, renunciando a cualquier otro fuero{{/if}}.
 
-En señal de aceptación, las partes firman en {{governing_city}}, el {{current_date}}.
+En señal de aceptación, las partes firman{{#if governing_city}} en {{governing_city}}{{/if}}, el {{current_date}}.
 
 
 LA PLANNER
@@ -525,9 +492,9 @@ _______________________________________
 {{client_name}}
 Documento {{client_id}}
 {{client_phone}}{{#if client_email}}
-{{client_email}}{{/if}}{{#if partner_name}}
+{{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{partner_name}}{{/if}}
+{{client_partner_name}}{{/if}}
 
 ---------------------------------------------------------------------------
 

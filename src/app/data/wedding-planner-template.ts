@@ -11,6 +11,16 @@
 // side imagine something different about the rest, and that gap always shows
 // up in the week of the event, when it can no longer be fixed.
 //
+// Trimmed 2026-08-24 after real user feedback (a couple in Colombia trying
+// to fill it out): the form had 37 fields, several of them operational
+// details (team size, reply-time SLA, hourly overtime rate) that add
+// friction without changing whether the contract protects anyone, plus a
+// duplicate way to add extra text (special_terms AND the AI clause-drafting
+// field did the same job). Cut to what actually needs to be pinned down in
+// writing. `governing_city` also stopped assuming a US-style "which court"
+// framing — it's now a plain, optional city name that reads the same
+// whether the couple is in Miami or Bogotá.
+//
 // The Spanish version lives in wedding-planner-es.ts and must keep the SAME
 // field ids and the options in the SAME order: the Spanish form labels are
 // derived by pairing both files positionally (see registrarPareja in
@@ -86,7 +96,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       required: false,
     },
     {
-      id: 'partner_name',
+      id: 'client_partner_name',
       label: "Your partner's name",
       type: 'text',
       required: false,
@@ -141,8 +151,8 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       id: 'guest_count',
       label: 'Approximate number of guests',
       type: 'number',
-      required: true,
-      helpText: 'An estimate. The agreement sets below how late it can still be adjusted.',
+      required: false,
+      helpText: 'An estimate is fine, even if it is not final yet.',
     },
 
     // ── Scope ─────────────────────────────────────────────────────────────
@@ -176,27 +186,6 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       type: 'number',
       required: false,
       placeholder: '2',
-    },
-    {
-      id: 'event_day_hours',
-      label: 'Hours of coverage on the event day',
-      type: 'number',
-      required: false,
-      placeholder: '12',
-    },
-    {
-      id: 'team_size',
-      label: 'Team members on the event day',
-      type: 'number',
-      required: false,
-      placeholder: '3',
-    },
-    {
-      id: 'response_time_hours',
-      label: 'Maximum reply time to messages (business hours)',
-      type: 'number',
-      required: false,
-      placeholder: '24',
     },
     {
       id: 'travel_costs',
@@ -256,12 +245,6 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       required: true,
       placeholder: '15',
     },
-    {
-      id: 'extra_hours_rate',
-      label: 'Rate per extra hour on the event day',
-      type: 'currency',
-      required: false,
-    },
 
     // ── Protections ───────────────────────────────────────────────────────
     {
@@ -281,7 +264,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
         'Tiered: 30% retained if cancelled more than 90 days out, 60% between 89 and 30 days, 100% under 30 days',
         'The deposit is non-refundable; the rest is refunded if cancelled more than 30 days out',
         'Neither the deposit nor any amount already paid is refundable',
-        'Custom (described under special terms)',
+        'Custom (described in additional custom clauses)',
       ],
     },
     {
@@ -297,17 +280,11 @@ export const weddingPlannerTemplate: DocumentTemplate = {
     },
     {
       id: 'governing_city',
-      label: 'City whose courts settle a dispute',
+      label: 'City for resolving a dispute (optional)',
       type: 'text',
-      required: true,
-      helpText: 'Usually the event city or the client home city.',
-    },
-    {
-      id: 'special_terms',
-      label: 'Special terms',
-      type: 'textarea',
       required: false,
-      helpText: 'Anything agreed that does not fit above. You can dictate it.',
+      placeholder: 'e.g. Bogotá, Miami, Madrid…',
+      helpText: 'Not required. Leave it blank and the agreement simply says both parties will try to work out any disagreement directly.',
     },
     {
       id: 'custom_ai_clauses',
@@ -315,7 +292,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       type: 'textarea',
       required: false,
       placeholder: 'Tell the AI what you want, e.g. "Add a clause saying the total fee may increase if both parties agree to it in a later negotiation session" or "Add a payment of a set amount due on a specific date" — then press "Draft with AI".',
-      helpText: 'Type an instruction and press "Draft with AI" to have it write the clause for you, or dictate/write the clause yourself. Either way you see the result before it goes into the contract, and you can always undo it.',
+      helpText: 'Anything else you want in writing goes here — type an instruction and press "Draft with AI" to have it write the clause for you, or dictate/write the clause yourself. Either way you see the result before it goes into the contract, and you can always undo it.',
     },
   ],
 
@@ -328,7 +305,7 @@ Between the undersigned:
 
 and
 
-{{client_name}}, holder of ID number {{client_id}}{{#if partner_name}}, together with {{partner_name}}{{/if}}, hereinafter THE CLIENT;
+{{client_name}}, holder of ID number {{client_id}}{{#if client_partner_name}}, together with {{client_partner_name}}{{/if}}, hereinafter THE CLIENT;
 
 this agreement is entered into under the following terms.
 
@@ -346,8 +323,8 @@ Type of event: {{event_type}}
 Date: {{event_date}}{{#if event_time}}
 Start time: {{event_time}}{{/if}}
 Venue: {{event_venue}}
-City: {{event_city}}
-Approximate number of guests: {{guest_count}}
+City: {{event_city}}{{#if guest_count}}
+Approximate number of guests: {{guest_count}}{{/if}}
 
 The date is held for THE CLIENT only from the moment the deposit set out in clause eight is paid. Before that payment, THE PLANNER may accept another event for the same day.
 
@@ -388,9 +365,8 @@ The parties acknowledge that THE PLANNER works from {{planner_city}} and that th
 
 a) THE PLANNER will make {{onsite_visits}} site visit(s) to the venue before the date. Any additional visit requested by THE CLIENT is charged separately, by prior written agreement.{{#if arrival_days_before}}
 b) THE PLANNER will arrive in {{event_city}} {{arrival_days_before}} day(s) in advance and remain available until the event ends.{{/if}}
-c) The rest of the planning is done by video call, phone and email. Decisions taken through those channels carry the same weight as those taken in person, provided they are put in writing.{{#if response_time_hours}}
-d) THE PLANNER will answer THE CLIENT's messages within {{response_time_hours}} business hours. This does not apply during setup days or on the event day, when she is dedicated to execution.{{/if}}
-e) Each party will keep its contact details current. Communications are deemed received when sent to the channels stated in this agreement.
+c) The rest of the planning is done by video call, phone and email. Decisions taken through those channels carry the same weight as those taken in person, provided they are put in writing.
+d) Each party will keep its contact details current. Communications are deemed received when sent to the channels stated in this agreement.
 
 
 SIX — VENDORS
@@ -420,11 +396,7 @@ Deposit to hold the date: {{currency_code}} {{deposit_amount}}, payable on signi
 
 Balance: {{payment_plan}}
 
-The final payment must be made no later than {{final_payment_days}} day(s) before the event. THE PLANNER is not obliged to run the event if the balance has not been paid by that date.{{#if extra_hours_rate}}
-
-Each hour of coverage beyond the agreed hours on the event day is charged at {{currency_code}} {{extra_hours_rate}}.{{/if}}{{#if event_day_hours}}
-
-Coverage on the event day is {{event_day_hours}} continuous hours.{{/if}}{{#if team_size}} THE PLANNER will attend with a team of {{team_size}} person(s).{{/if}}
+The final payment must be made no later than {{final_payment_days}} day(s) before the event. THE PLANNER is not obliged to run the event if the balance has not been paid by that date.
 
 
 NINE — CHANGES
@@ -489,13 +461,8 @@ The concepts, sketches, palettes and proposals created by THE PLANNER remain her
 
 Both parties will keep confidential the personal, family and financial information they learn by reason of this agreement, including after it ends.
 
-{{#if special_terms}}
-SEVENTEEN — SPECIAL TERMS
-
-{{special_terms}}
-
-{{/if}}{{#if custom_ai_clauses}}
-EIGHTEEN — ADDITIONAL CUSTOM CLAUSES
+{{#if custom_ai_clauses}}
+SEVENTEEN — ADDITIONAL CUSTOM CLAUSES
 
 {{custom_ai_clauses}}
 
@@ -506,9 +473,9 @@ This document contains everything agreed between the parties and supersedes any 
 
 If any clause turns out to be invalid, the remainder stays in force.
 
-The parties will try in good faith to resolve any difference by direct conversation and, failing that, will submit to the courts of {{governing_city}}, waiving any other venue.
+The parties will try in good faith to resolve any difference by direct conversation{{#if governing_city}} and, failing that, will submit to the courts of {{governing_city}}, waiving any other venue{{/if}}.
 
-In witness whereof, the parties sign in {{governing_city}} on {{current_date}}.
+In witness whereof, the parties sign{{#if governing_city}} in {{governing_city}}{{/if}} on {{current_date}}.
 
 
 THE PLANNER
@@ -525,9 +492,9 @@ _______________________________________
 {{client_name}}
 ID {{client_id}}
 {{client_phone}}{{#if client_email}}
-{{client_email}}{{/if}}{{#if partner_name}}
+{{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{partner_name}}{{/if}}
+{{client_partner_name}}{{/if}}
 
 ---------------------------------------------------------------------------
 
