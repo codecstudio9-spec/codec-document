@@ -40,7 +40,10 @@ const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 // Groq's fast/free-tier model — plenty for a structured-JSON legal review;
 // swap this constant for a more powerful model later without touching
 // anything else once the platform can justify the extra cost.
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
+// oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
+// función) y ventana de contexto mayor.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 // Keeps a runaway paste (or someone probing the endpoint) from turning
 // into an enormous, expensive prompt — a real document body is a few

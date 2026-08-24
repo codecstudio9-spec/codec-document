@@ -30,7 +30,10 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
 
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
+// oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
+// función) y ventana de contexto mayor.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 const MAX_TRANSCRIPT_CHARS = 6000;
 const MAX_CAMPOS = 60;
