@@ -5,7 +5,7 @@
 // generally higher-converting search query. Real per-combination legal
 // facts (not a find-and-replace) keep each page differentiated.
 
-export type DocType = 'nda' | 'lease-agreement' | 'independent-contractor' | 'service-agreement' | 'promissory-note' | 'vehicle-bill-of-sale';
+export type DocType = 'nda' | 'lease-agreement' | 'independent-contractor' | 'service-agreement' | 'promissory-note' | 'vehicle-bill-of-sale' | 'wedding-planner';
 
 export interface DocTypeState {
   docType: DocType;
@@ -964,6 +964,167 @@ const VEHICLE_FAQ: Record<string, { qEn: string; qEs: string; aEn: string; aEs: 
   alabama: { qEn: 'When does Alabama require a bill of sale for a vehicle sale?', qEs: '¿Cuándo exige Alabama un contrato de compraventa para la venta de un vehículo?', aEn: 'Specifically when no certificate of title is available. When one is required, it must be notarized or signed by two witnesses, and the vehicle must be registered within 20 days of the sale.', aEs: 'Específicamente cuando no hay un certificado de título disponible. Cuando se requiere uno, debe estar notariado o firmado por dos testigos, y el vehículo debe registrarse dentro de 20 días de la venta.' },
 };
 
+// Wedding planner / event-coordination services agreement — added
+// 2026-08-24. Facts 1 and 2 reuse the SAME statute-of-limitations and
+// e-signature-act citations already verified elsewhere in this file for
+// SERVICE_FACTS/SERVICE_FAQ (the underlying law doesn't change based on
+// what KIND of service the written contract covers, so re-citing it here
+// is not a find-and-replace — it's the same real law, correctly applied to
+// a different document type). Fact 3 is deliberately a general
+// liquidated-damages/deposit-enforceability principle rather than a
+// invented state-specific deposit statute: most states don't have a
+// dedicated "wedding vendor deposit" law, and guessing a section number
+// that doesn't exist is worse than a true general rule stated plainly.
+const WEDDING_PLANNER_FACTS: Record<string, Array<{ en: string; es: string }>> = {
+  california: [
+    { en: 'Written contracts have a 4-year statute of limitations for breach claims (Cal. Civ. Proc. Code §337).', es: 'Los contratos escritos tienen un plazo de prescripción de 4 años para reclamos por incumplimiento (Código de Procedimiento Civil §337).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under California\'s Uniform Electronic Transactions Act (Cal. Civil Code §1633.1 et seq.).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de California (Código Civil §1633.1 y siguientes).' },
+    { en: 'Under California contract law, a deposit or cancellation fee spelled out in writing is generally enforceable as a genuine pre-estimate of the planner\'s loss — not as a punitive penalty — which is exactly why the payment and cancellation terms belong in writing, not left implied.', es: 'Bajo el derecho contractual de California, un depósito o cargo por cancelación detallado por escrito generalmente es exigible como una estimación genuina de la pérdida de la planner — no como una penalización punitiva — precisamente por eso los términos de pago y cancelación deben quedar por escrito, no implícitos.' },
+  ],
+  texas: [
+    { en: 'Written contracts generally have a 4-year statute of limitations for breach claims (Tex. Civ. Prac. & Rem. Code §16.004 / §16.051).', es: 'Los contratos escritos generalmente tienen un plazo de prescripción de 4 años para reclamos por incumplimiento (Código de Práctica Civil y Recursos §16.004 / §16.051).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Texas Uniform Electronic Transactions Act (Tex. Bus. & Com. Code Ch. 322).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Texas (Código de Negocios y Comercio, Cap. 322).' },
+    { en: 'Texas courts generally enforce a deposit or cancellation fee written into the contract as long as it\'s a reasonable estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Texas generalmente hacen cumplir un depósito o cargo por cancelación incluido en el contrato siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  florida: [
+    { en: 'Written contracts have a 5-year statute of limitations for breach claims (Fla. Stat. §95.11(2)(b)) — longer than many neighboring states.', es: 'Los contratos escritos tienen un plazo de prescripción de 5 años para reclamos por incumplimiento (Estatuto §95.11(2)(b)) — más largo que en muchos estados vecinos.' },
+    { en: 'Electronic signatures on a wedding planner agreement are explicitly valid under Florida\'s Electronic Signature Act (Fla. Stat. §668.001).', es: 'Las firmas electrónicas en un contrato de wedding planner son explícitamente válidas bajo la Ley de Firma Electrónica de Florida (Estatuto §668.001).' },
+    { en: 'Florida courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss instead of functioning as a penalty.', es: 'Los tribunales de Florida generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de funcionar como una penalización.' },
+  ],
+  'new-york': [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (N.Y. C.P.L.R. §213) — among the longest windows in the country.', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (C.P.L.R. §213) — uno de los plazos más largos del país.' },
+    { en: 'New York has NOT adopted the Uniform Electronic Transactions Act — electronic signatures on a wedding planner agreement are valid instead under the state\'s own Electronic Signatures and Records Act (N.Y. State Technology Law §301-309).', es: 'Nueva York NO ha adoptado la Ley Uniforme de Transacciones Electrónicas — las firmas electrónicas en un contrato de wedding planner son válidas en cambio bajo la propia Ley de Firmas y Registros Electrónicos del estado (State Technology Law §301-309).' },
+    { en: 'New York courts generally enforce a written deposit or cancellation fee as a reasonable liquidated-damages estimate, but will strike it down if it functions as an unreasonable penalty.', es: 'Los tribunales de Nueva York generalmente hacen cumplir un depósito o cargo por cancelación por escrito como una estimación razonable de daños liquidados, pero lo anularán si funciona como una penalización irrazonable.' },
+  ],
+  illinois: [
+    { en: 'Written contracts have an unusually long 10-year statute of limitations for breach claims (735 ILCS 5/13-206).', es: 'Los contratos escritos tienen un plazo de prescripción inusualmente largo de 10 años para reclamos por incumplimiento (735 ILCS 5/13-206).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Illinois Uniform Electronic Transactions Act (815 ILCS 333/1 et seq.).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Illinois (815 ILCS 333/1 y siguientes).' },
+    { en: 'Illinois courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Illinois generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  pennsylvania: [
+    { en: 'Written contracts have a 4-year statute of limitations for breach claims (42 Pa. C.S. §5525).', es: 'Los contratos escritos tienen un plazo de prescripción de 4 años para reclamos por incumplimiento (42 Pa. C.S. §5525).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Pennsylvania\'s Electronic Transactions Act (73 P.S. §2260.101).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley de Transacciones Electrónicas de Pensilvania (73 P.S. §2260.101).' },
+    { en: 'Pennsylvania courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Pensilvania generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  ohio: [
+    { en: 'Written contracts have an 8-year statute of limitations for breach claims (Ohio Rev. Code §2305.06, shortened from 15 years in a 2021 reform).', es: 'Los contratos escritos tienen un plazo de prescripción de 8 años para reclamos por incumplimiento (Código Revisado §2305.06, acortado de 15 años en una reforma de 2021).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Ohio\'s Uniform Electronic Transactions Act (Ohio Rev. Code Ch. 1306).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Ohio (Código Revisado, Cap. 1306).' },
+    { en: 'Ohio courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Ohio generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  georgia: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (O.C.G.A. §9-3-24).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (O.C.G.A. §9-3-24).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Georgia\'s Uniform Electronic Transactions Act (O.C.G.A. §10-12-1).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Georgia (O.C.G.A. §10-12-1).' },
+    { en: 'Georgia courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Georgia generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  'north-carolina': [
+    { en: 'Written contracts have a notably short 3-year statute of limitations for breach claims (N.C. Gen. Stat. §1-52) — shorter than most other states.', es: 'Los contratos escritos tienen un plazo de prescripción notablemente corto de 3 años para reclamos por incumplimiento (Estatuto §1-52) — más corto que en la mayoría de los otros estados.' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under North Carolina\'s Uniform Electronic Transactions Act (N.C. Gen. Stat. §66-311).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Carolina del Norte (Estatuto §66-311).' },
+    { en: 'North Carolina courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Carolina del Norte generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  michigan: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (MCL §600.5807).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (MCL §600.5807).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Michigan\'s Uniform Electronic Transactions Act (MCL §450.831).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Míchigan (MCL §450.831).' },
+    { en: 'Michigan courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Míchigan generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  'new-jersey': [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (N.J.S.A. 2A:14-1).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (N.J.S.A. 2A:14-1).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under New Jersey\'s Uniform Electronic Transactions Act (N.J.S.A. 12A:12-1).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Nueva Jersey (N.J.S.A. 12A:12-1).' },
+    { en: 'New Jersey courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Nueva Jersey generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  virginia: [
+    { en: 'Written contracts have a 5-year statute of limitations for breach claims (Va. Code §8.01-246).', es: 'Los contratos escritos tienen un plazo de prescripción de 5 años para reclamos por incumplimiento (Código §8.01-246).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Virginia\'s Uniform Electronic Transactions Act (Va. Code §59.1-479).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Virginia (Código §59.1-479).' },
+    { en: 'Virginia courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Virginia generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  washington: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (RCW 4.16.040).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (RCW 4.16.040).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Washington\'s Uniform Electronic Transactions Act (RCW 19.360).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Washington (RCW 19.360).' },
+    { en: 'Washington courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Washington generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  arizona: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (A.R.S. §12-548).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (A.R.S. §12-548).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Arizona\'s Electronic Transactions Act (A.R.S. §44-7001).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley de Transacciones Electrónicas de Arizona (A.R.S. §44-7001).' },
+    { en: 'Arizona courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Arizona generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  massachusetts: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (M.G.L. c.260 §2).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (M.G.L. c.260 §2).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Massachusetts Uniform Electronic Transactions Act (M.G.L. c.110G).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Massachusetts (M.G.L. c.110G).' },
+    { en: 'Massachusetts courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Massachusetts generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  tennessee: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (T.C.A. §28-3-109).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (T.C.A. §28-3-109).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Tennessee Uniform Electronic Transactions Act (T.C.A. §47-10-101).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Tennessee (T.C.A. §47-10-101).' },
+    { en: 'Tennessee courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Tennessee generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  indiana: [
+    { en: 'Written contracts have a notably long 10-year statute of limitations for breach claims (Ind. Code §34-11-2-11).', es: 'Los contratos escritos tienen un plazo de prescripción notablemente largo de 10 años para reclamos por incumplimiento (Ind. Code §34-11-2-11).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Indiana Uniform Electronic Transactions Act (Ind. Code §26-2-8).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Indiana (Ind. Code §26-2-8).' },
+    { en: 'Indiana courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Indiana generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  missouri: [
+    { en: 'Written contracts have a 10-year statute of limitations for breach claims (Mo. Rev. Stat. §516.110) — longer than most neighboring states.', es: 'Los contratos escritos tienen un plazo de prescripción de 10 años para reclamos por incumplimiento (Mo. Rev. Stat. §516.110) — más largo que la mayoría de los estados vecinos.' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Missouri Uniform Electronic Transactions Act (Mo. Rev. Stat. §432.200).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Misuri (Mo. Rev. Stat. §432.200).' },
+    { en: 'Missouri courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Misuri generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  maryland: [
+    { en: 'Written contracts have a notably short 3-year statute of limitations for breach claims (Md. Code, Cts. & Jud. Proc. §5-101).', es: 'Los contratos escritos tienen un plazo de prescripción notablemente corto de 3 años para reclamos por incumplimiento (Md. Code, Cts. & Jud. Proc. §5-101).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Maryland Uniform Electronic Transactions Act (Md. Code, Com. Law §21-101).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Maryland (Md. Code, Com. Law §21-101).' },
+    { en: 'Maryland courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Maryland generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  wisconsin: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (Wis. Stat. §893.43).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (Wis. Stat. §893.43).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Wisconsin Uniform Electronic Transactions Act (Wis. Stat. §137.11).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Wisconsin (Wis. Stat. §137.11).' },
+    { en: 'Wisconsin courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Wisconsin generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  colorado: [
+    { en: 'Written contracts have a notably short 3-year statute of limitations for breach claims (C.R.S. §13-80-101).', es: 'Los contratos escritos tienen un plazo de prescripción notablemente corto de 3 años para reclamos por incumplimiento (C.R.S. §13-80-101).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Colorado Uniform Electronic Transactions Act (C.R.S. §24-71.3-101).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Colorado (C.R.S. §24-71.3-101).' },
+    { en: 'Colorado courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Colorado generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+  minnesota: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (Minn. Stat. §541.05).', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (Minn. Stat. §541.05).' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under the Minnesota Uniform Electronic Transactions Act (Minn. Stat. §325L).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Minesota (Minn. Stat. §325L).' },
+    { en: 'Minnesota courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable estimate of loss rather than a penalty.', es: 'Los tribunales de Minesota generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización.' },
+  ],
+  'south-carolina': [
+    { en: 'Written contracts have a 3-year statute of limitations for breach claims (S.C. Code §15-3-530(1)) — shorter than many neighboring states, so don\'t wait to act on a dispute.', es: 'Los contratos escritos tienen un plazo de prescripción de 3 años para reclamos por incumplimiento (S.C. Code §15-3-530(1)) — más corto que en muchos estados vecinos, así que no esperes para actuar ante una disputa.' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under South Carolina\'s Uniform Electronic Transactions Act (S.C. Code Ann. §26-6-10 et seq.).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Carolina del Sur (S.C. Code Ann. §26-6-10 y siguientes).' },
+    { en: 'South Carolina courts generally enforce a written deposit or cancellation fee as long as it\'s a reasonable pre-estimate of loss rather than a punitive penalty.', es: 'Los tribunales de Carolina del Sur generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que sea una estimación razonable de la pérdida y no una penalización punitiva.' },
+  ],
+  alabama: [
+    { en: 'Written contracts have a 6-year statute of limitations for breach claims (Ala. Code §6-2-34) — longer than most neighboring states.', es: 'Los contratos escritos tienen un plazo de prescripción de 6 años para reclamos por incumplimiento (Ala. Code §6-2-34) — más largo que en la mayoría de los estados vecinos.' },
+    { en: 'Electronic signatures are valid for a wedding planner agreement under Alabama\'s Uniform Electronic Transactions Act (Ala. Code §8-1A-1 et seq.).', es: 'Las firmas electrónicas son válidas para un contrato de wedding planner bajo la Ley Uniforme de Transacciones Electrónicas de Alabama (Ala. Code §8-1A-1 y siguientes).' },
+    { en: 'Alabama courts generally enforce a written deposit or cancellation fee as long as it reasonably estimates the planner\'s loss rather than punishing the client.', es: 'Los tribunales de Alabama generalmente hacen cumplir un depósito o cargo por cancelación por escrito siempre que estime razonablemente la pérdida de la planner en vez de castigar al cliente.' },
+  ],
+};
+
+const WEDDING_PLANNER_FAQ: Record<string, { qEn: string; qEs: string; aEn: string; aEs: string }> = {
+  california: { qEn: 'How long can someone sue over a breached wedding planner agreement in California?', qEs: '¿Cuánto tiempo puede alguien demandar por incumplimiento de un contrato de wedding planner en California?', aEn: '4 years under Cal. Civ. Proc. Code §337, counted from the date of the breach.', aEs: '4 años bajo el Código de Procedimiento Civil §337, contado desde la fecha del incumplimiento.' },
+  texas: { qEn: 'What is the statute of limitations for a wedding planner contract in Texas?', qEs: '¿Cuál es el plazo de prescripción para un contrato de wedding planner en Texas?', aEn: 'Generally 4 years from the date of breach under the Texas Civil Practice and Remedies Code.', aEs: 'Generalmente 4 años desde la fecha del incumplimiento bajo el Código de Práctica Civil y Recursos de Texas.' },
+  florida: { qEn: 'How long is Florida\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuánto dura el plazo de prescripción de Florida para un contrato de wedding planner?', aEn: '5 years under Fla. Stat. §95.11(2)(b) — longer than the 4-year window used in many other states.', aEs: '5 años bajo el Estatuto §95.11(2)(b) — más largo que el plazo de 4 años usado en muchos otros estados.' },
+  'new-york': { qEn: 'What is New York\'s statute of limitations for a wedding planner contract?', qEs: '¿Cuál es el plazo de prescripción de Nueva York para un contrato de wedding planner?', aEn: '6 years for a written contract under N.Y. C.P.L.R. §213 — one of the longer windows in the country.', aEs: '6 años para un contrato escrito bajo el C.P.L.R. §213 — uno de los plazos más largos del país.' },
+  illinois: { qEn: 'Why does Illinois have such a long statute of limitations for a wedding planner contract?', qEs: '¿Por qué tiene Illinois un plazo de prescripción tan largo para un contrato de wedding planner?', aEn: 'Illinois sets a 10-year statute of limitations for written contracts (735 ILCS 5/13-206) — notably longer than most states.', aEs: 'Illinois establece un plazo de prescripción de 10 años para contratos escritos (735 ILCS 5/13-206) — notablemente más largo que la mayoría de los estados.' },
+  pennsylvania: { qEn: 'What is the statute of limitations for a Pennsylvania wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción para un contrato de wedding planner de Pensilvania?', aEn: '4 years under 42 Pa. C.S. §5525, counted from the date of the breach.', aEs: '4 años bajo 42 Pa. C.S. §5525, contado desde la fecha del incumplimiento.' },
+  ohio: { qEn: 'How long is Ohio\'s statute of limitations for a wedding planner contract?', qEs: '¿Cuánto dura el plazo de prescripción de Ohio para un contrato de wedding planner?', aEn: '8 years under Ohio Rev. Code §2305.06 — shortened from 15 years in a 2021 legal reform.', aEs: '8 años bajo el Código Revisado §2305.06 — acortado de 15 años en una reforma legal de 2021.' },
+  georgia: { qEn: 'What is the statute of limitations for a Georgia wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción para un contrato de wedding planner de Georgia?', aEn: '6 years under O.C.G.A. §9-3-24, counted from the date of the breach.', aEs: '6 años bajo O.C.G.A. §9-3-24, contado desde la fecha del incumplimiento.' },
+  'north-carolina': { qEn: 'Why is North Carolina\'s statute of limitations for a wedding planner contract so short?', qEs: '¿Por qué es tan corto el plazo de prescripción de Carolina del Norte para un contrato de wedding planner?', aEn: 'North Carolina sets a 3-year window under N.C. Gen. Stat. §1-52 — notably shorter than most states.', aEs: 'Carolina del Norte fija un plazo de 3 años bajo el Estatuto §1-52 — notablemente más corto que en la mayoría de los estados.' },
+  michigan: { qEn: 'What is the statute of limitations for a Michigan wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción para un contrato de wedding planner de Míchigan?', aEn: '6 years under MCL §600.5807, counted from the date of the breach.', aEs: '6 años bajo MCL §600.5807, contado desde la fecha del incumplimiento.' },
+  'new-jersey': { qEn: 'How long can someone sue over a breached New Jersey wedding planner agreement?', qEs: '¿Cuánto tiempo puede alguien demandar por incumplimiento de un contrato de wedding planner de Nueva Jersey?', aEn: '6 years under N.J.S.A. 2A:14-1, counted from the date of the breach.', aEs: '6 años bajo N.J.S.A. 2A:14-1, contado desde la fecha del incumplimiento.' },
+  virginia: { qEn: 'What is Virginia\'s statute of limitations for a wedding planner contract?', qEs: '¿Cuál es el plazo de prescripción de Virginia para un contrato de wedding planner?', aEn: '5 years under Va. Code §8.01-246, counted from the date of the breach.', aEs: '5 años bajo el Código §8.01-246, contado desde la fecha del incumplimiento.' },
+  washington: { qEn: 'What is Washington\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción de Washington para un contrato de wedding planner?', aEn: '6 years for a written contract under RCW 4.16.040, counted from the date of the breach.', aEs: '6 años para un contrato escrito bajo RCW 4.16.040, contado desde la fecha del incumplimiento.' },
+  arizona: { qEn: 'How long can someone sue over a breached Arizona wedding planner agreement?', qEs: '¿Cuánto tiempo puede alguien demandar por incumplimiento de un contrato de wedding planner de Arizona?', aEn: '6 years under A.R.S. §12-548, counted from the date of the breach.', aEs: '6 años bajo A.R.S. §12-548, contado desde la fecha del incumplimiento.' },
+  massachusetts: { qEn: 'What is Massachusetts\' statute of limitations for a wedding planner contract?', qEs: '¿Cuál es el plazo de prescripción de Massachusetts para un contrato de wedding planner?', aEn: '6 years under M.G.L. c.260 §2, counted from the date of the breach.', aEs: '6 años bajo M.G.L. c.260 §2, contado desde la fecha del incumplimiento.' },
+  tennessee: { qEn: 'How long is Tennessee\'s statute of limitations for a wedding planner contract?', qEs: '¿Cuánto dura el plazo de prescripción de Tennessee para un contrato de wedding planner?', aEn: '6 years under T.C.A. §28-3-109, counted from the date of the breach.', aEs: '6 años bajo T.C.A. §28-3-109, contado desde la fecha del incumplimiento.' },
+  indiana: { qEn: 'Why is Indiana\'s statute of limitations for a wedding planner contract so long?', qEs: '¿Por qué es tan largo el plazo de prescripción de Indiana para un contrato de wedding planner?', aEn: 'Indiana allows 10 years for written contracts (Ind. Code §34-11-2-11) — notably longer than most states.', aEs: 'Indiana permite 10 años para contratos escritos (Ind. Code §34-11-2-11) — notablemente más largo que la mayoría de los estados.' },
+  missouri: { qEn: 'How long is Missouri\'s statute of limitations for a wedding planner contract?', qEs: '¿Cuánto dura el plazo de prescripción de Misuri para un contrato de wedding planner?', aEn: '10 years under Mo. Rev. Stat. §516.110 — longer than the 4-to-6-year window used in many other states.', aEs: '10 años bajo Mo. Rev. Stat. §516.110 — más largo que el plazo de 4 a 6 años usado en muchos otros estados.' },
+  maryland: { qEn: 'Why is Maryland\'s statute of limitations for a wedding planner contract so short?', qEs: '¿Por qué es tan corto el plazo de prescripción de Maryland para un contrato de wedding planner?', aEn: 'Maryland sets a 3-year window under Cts. & Jud. Proc. §5-101 — notably shorter than most states.', aEs: 'Maryland fija un plazo de 3 años bajo Cts. & Jud. Proc. §5-101 — notablemente más corto que la mayoría de los estados.' },
+  wisconsin: { qEn: 'What is Wisconsin\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción de Wisconsin para un contrato de wedding planner?', aEn: '6 years under Wis. Stat. §893.43, counted from the date of the breach.', aEs: '6 años bajo Wis. Stat. §893.43, contado desde la fecha del incumplimiento.' },
+  colorado: { qEn: 'Why is Colorado\'s statute of limitations for a wedding planner contract so short?', qEs: '¿Por qué es tan corto el plazo de prescripción de Colorado para un contrato de wedding planner?', aEn: 'Colorado sets a 3-year window under C.R.S. §13-80-101 — notably shorter than many states.', aEs: 'Colorado fija un plazo de 3 años bajo C.R.S. §13-80-101 — notablemente más corto que muchos estados.' },
+  minnesota: { qEn: 'What is Minnesota\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción de Minesota para un contrato de wedding planner?', aEn: '6 years under Minn. Stat. §541.05, counted from the date of the breach.', aEs: '6 años bajo Minn. Stat. §541.05, contado desde la fecha del incumplimiento.' },
+  'south-carolina': { qEn: 'What is South Carolina\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción de Carolina del Sur para un contrato de wedding planner?', aEn: '3 years under S.C. Code §15-3-530(1), counted from the date of the breach — shorter than many neighboring states.', aEs: '3 años bajo S.C. Code §15-3-530(1), contado desde la fecha del incumplimiento — más corto que en muchos estados vecinos.' },
+  alabama: { qEn: 'What is Alabama\'s statute of limitations for a wedding planner agreement?', qEs: '¿Cuál es el plazo de prescripción de Alabama para un contrato de wedding planner?', aEn: '6 years under Ala. Code §6-2-34, counted from the date of the breach.', aEs: '6 años bajo Ala. Code §6-2-34, contado desde la fecha del incumplimiento.' },
+};
+
 export const DOCTYPE_STATE_CONFIGS: DocTypeState[] = STATES.flatMap((s) => {
   const ndaFaq = NDA_FAQ[s.slug];
   const leaseFaq = LEASE_FAQ[s.slug];
@@ -971,6 +1132,7 @@ export const DOCTYPE_STATE_CONFIGS: DocTypeState[] = STATES.flatMap((s) => {
   const serviceFaq = SERVICE_FAQ[s.slug];
   const noteFaq = NOTE_FAQ[s.slug];
   const vehicleFaq = VEHICLE_FAQ[s.slug];
+  const weddingPlannerFaq = WEDDING_PLANNER_FAQ[s.slug];
   return [
     {
       docType: 'nda' as const,
@@ -1019,6 +1181,14 @@ export const DOCTYPE_STATE_CONFIGS: DocTypeState[] = STATES.flatMap((s) => {
       stateSlug: s.slug, stateName: s.name, stateNameEs: s.nameEs, stateAbbr: s.abbr,
       facts: VEHICLE_FACTS[s.slug],
       faqEn: vehicleFaq.qEn, faqEs: vehicleFaq.qEs, faqAnswerEn: vehicleFaq.aEn, faqAnswerEs: vehicleFaq.aEs,
+    },
+    {
+      docType: 'wedding-planner' as const,
+      docTypeLabelEn: 'Wedding Planner Agreement', docTypeLabelEs: 'Contrato de Wedding Planner',
+      generatorPath: '/generator/wedding-planner',
+      stateSlug: s.slug, stateName: s.name, stateNameEs: s.nameEs, stateAbbr: s.abbr,
+      facts: WEDDING_PLANNER_FACTS[s.slug],
+      faqEn: weddingPlannerFaq.qEn, faqEs: weddingPlannerFaq.qEs, faqAnswerEn: weddingPlannerFaq.aEn, faqAnswerEs: weddingPlannerFaq.aEs,
     },
   ];
 });

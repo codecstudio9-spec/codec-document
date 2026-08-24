@@ -147,6 +147,30 @@ const LeaseAgreementMassachusetts = lazy(() => import("./pages/landings/lease-ag
 const LeaseAgreementTennessee = lazy(() => import("./pages/landings/lease-agreement-tennessee"));
 const LeaseAgreementIndiana = lazy(() => import("./pages/landings/lease-agreement-indiana"));
 const LeaseAgreementMissouri = lazy(() => import("./pages/landings/lease-agreement-missouri"));
+const WeddingPlannerCalifornia = lazy(() => import("./pages/landings/wedding-planner-california"));
+const WeddingPlannerTexas = lazy(() => import("./pages/landings/wedding-planner-texas"));
+const WeddingPlannerFlorida = lazy(() => import("./pages/landings/wedding-planner-florida"));
+const WeddingPlannerNewYork = lazy(() => import("./pages/landings/wedding-planner-new-york"));
+const WeddingPlannerIllinois = lazy(() => import("./pages/landings/wedding-planner-illinois"));
+const WeddingPlannerPennsylvania = lazy(() => import("./pages/landings/wedding-planner-pennsylvania"));
+const WeddingPlannerOhio = lazy(() => import("./pages/landings/wedding-planner-ohio"));
+const WeddingPlannerGeorgia = lazy(() => import("./pages/landings/wedding-planner-georgia"));
+const WeddingPlannerNorthCarolina = lazy(() => import("./pages/landings/wedding-planner-north-carolina"));
+const WeddingPlannerMichigan = lazy(() => import("./pages/landings/wedding-planner-michigan"));
+const WeddingPlannerNewJersey = lazy(() => import("./pages/landings/wedding-planner-new-jersey"));
+const WeddingPlannerVirginia = lazy(() => import("./pages/landings/wedding-planner-virginia"));
+const WeddingPlannerWashington = lazy(() => import("./pages/landings/wedding-planner-washington"));
+const WeddingPlannerArizona = lazy(() => import("./pages/landings/wedding-planner-arizona"));
+const WeddingPlannerMassachusetts = lazy(() => import("./pages/landings/wedding-planner-massachusetts"));
+const WeddingPlannerTennessee = lazy(() => import("./pages/landings/wedding-planner-tennessee"));
+const WeddingPlannerIndiana = lazy(() => import("./pages/landings/wedding-planner-indiana"));
+const WeddingPlannerMissouri = lazy(() => import("./pages/landings/wedding-planner-missouri"));
+const WeddingPlannerMaryland = lazy(() => import("./pages/landings/wedding-planner-maryland"));
+const WeddingPlannerWisconsin = lazy(() => import("./pages/landings/wedding-planner-wisconsin"));
+const WeddingPlannerColorado = lazy(() => import("./pages/landings/wedding-planner-colorado"));
+const WeddingPlannerMinnesota = lazy(() => import("./pages/landings/wedding-planner-minnesota"));
+const WeddingPlannerSouthCarolina = lazy(() => import("./pages/landings/wedding-planner-south-carolina"));
+const WeddingPlannerAlabama = lazy(() => import("./pages/landings/wedding-planner-alabama"));
 const LeaseAgreementMaryland = lazy(() => import("./pages/landings/lease-agreement-maryland"));
 const LeaseAgreementWisconsin = lazy(() => import("./pages/landings/lease-agreement-wisconsin"));
 const LeaseAgreementColorado = lazy(() => import("./pages/landings/lease-agreement-colorado"));
@@ -241,6 +265,7 @@ const IndependentContractorSanJoseCalifornia = lazy(() => import("./pages/landin
 const ServiceAgreementSanJoseCalifornia = lazy(() => import("./pages/landings/service-agreement-san-jose-california"));
 const PromissoryNoteSanJoseCalifornia = lazy(() => import("./pages/landings/promissory-note-san-jose-california"));
 const VehicleBillOfSaleSanJoseCalifornia = lazy(() => import("./pages/landings/vehicle-bill-of-sale-san-jose-california"));
+const WeddingPlannerSanJoseCalifornia = lazy(() => import("./pages/landings/wedding-planner-san-jose-california"));
 // Smart Quotes -- 10 paginas SEO (5 EEUU en ingles, 5 LatAm en espanol,
 // ver quote-seo-content.ts).
 const QuoteGeneratorLanding = lazy(() => import("./pages/landings/quote-generator"));
@@ -879,6 +904,7 @@ export const router = createBrowserRouter([
   { path: "/service-agreement-san-jose-california", Component: ServiceAgreementSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/promissory-note-san-jose-california", Component: PromissoryNoteSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   { path: "/vehicle-bill-of-sale-san-jose-california", Component: VehicleBillOfSaleSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-san-jose-california", Component: WeddingPlannerSanJoseCalifornia, errorElement: <RouteErrorBoundary /> },
   // Blog / content marketing -- 20 articulos + indice
   { path: "/blog", Component: BlogIndex, errorElement: <RouteErrorBoundary /> },
   { path: "/blog/why-digital-signatures-matter-2026", Component: BlogWhyDigitalSignaturesMatter2026, errorElement: <RouteErrorBoundary /> },
@@ -1112,6 +1138,30 @@ export const router = createBrowserRouter([
   { path: "/lease-agreement-tennessee", Component: LeaseAgreementTennessee, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-indiana", Component: LeaseAgreementIndiana, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-missouri", Component: LeaseAgreementMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-california", Component: WeddingPlannerCalifornia, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-texas", Component: WeddingPlannerTexas, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-florida", Component: WeddingPlannerFlorida, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-new-york", Component: WeddingPlannerNewYork, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-illinois", Component: WeddingPlannerIllinois, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-pennsylvania", Component: WeddingPlannerPennsylvania, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-ohio", Component: WeddingPlannerOhio, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-georgia", Component: WeddingPlannerGeorgia, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-north-carolina", Component: WeddingPlannerNorthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-michigan", Component: WeddingPlannerMichigan, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-new-jersey", Component: WeddingPlannerNewJersey, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-virginia", Component: WeddingPlannerVirginia, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-washington", Component: WeddingPlannerWashington, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-arizona", Component: WeddingPlannerArizona, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-massachusetts", Component: WeddingPlannerMassachusetts, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-tennessee", Component: WeddingPlannerTennessee, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-indiana", Component: WeddingPlannerIndiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-missouri", Component: WeddingPlannerMissouri, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-maryland", Component: WeddingPlannerMaryland, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-wisconsin", Component: WeddingPlannerWisconsin, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-colorado", Component: WeddingPlannerColorado, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-minnesota", Component: WeddingPlannerMinnesota, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-south-carolina", Component: WeddingPlannerSouthCarolina, errorElement: <RouteErrorBoundary /> },
+  { path: "/wedding-planner-alabama", Component: WeddingPlannerAlabama, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-maryland", Component: LeaseAgreementMaryland, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-wisconsin", Component: LeaseAgreementWisconsin, errorElement: <RouteErrorBoundary /> },
   { path: "/lease-agreement-colorado", Component: LeaseAgreementColorado, errorElement: <RouteErrorBoundary /> },

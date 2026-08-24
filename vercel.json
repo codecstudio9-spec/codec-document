@@ -1364,6 +1364,106 @@
       "destination": "/vehicle-bill-of-sale-wisconsin.html"
     },
     {
+      "source": "/wedding-planner-alabama",
+      "destination": "/wedding-planner-alabama.html"
+    },
+    {
+      "source": "/wedding-planner-arizona",
+      "destination": "/wedding-planner-arizona.html"
+    },
+    {
+      "source": "/wedding-planner-california",
+      "destination": "/wedding-planner-california.html"
+    },
+    {
+      "source": "/wedding-planner-colorado",
+      "destination": "/wedding-planner-colorado.html"
+    },
+    {
+      "source": "/wedding-planner-florida",
+      "destination": "/wedding-planner-florida.html"
+    },
+    {
+      "source": "/wedding-planner-georgia",
+      "destination": "/wedding-planner-georgia.html"
+    },
+    {
+      "source": "/wedding-planner-illinois",
+      "destination": "/wedding-planner-illinois.html"
+    },
+    {
+      "source": "/wedding-planner-indiana",
+      "destination": "/wedding-planner-indiana.html"
+    },
+    {
+      "source": "/wedding-planner-maryland",
+      "destination": "/wedding-planner-maryland.html"
+    },
+    {
+      "source": "/wedding-planner-massachusetts",
+      "destination": "/wedding-planner-massachusetts.html"
+    },
+    {
+      "source": "/wedding-planner-michigan",
+      "destination": "/wedding-planner-michigan.html"
+    },
+    {
+      "source": "/wedding-planner-minnesota",
+      "destination": "/wedding-planner-minnesota.html"
+    },
+    {
+      "source": "/wedding-planner-missouri",
+      "destination": "/wedding-planner-missouri.html"
+    },
+    {
+      "source": "/wedding-planner-new-jersey",
+      "destination": "/wedding-planner-new-jersey.html"
+    },
+    {
+      "source": "/wedding-planner-new-york",
+      "destination": "/wedding-planner-new-york.html"
+    },
+    {
+      "source": "/wedding-planner-north-carolina",
+      "destination": "/wedding-planner-north-carolina.html"
+    },
+    {
+      "source": "/wedding-planner-ohio",
+      "destination": "/wedding-planner-ohio.html"
+    },
+    {
+      "source": "/wedding-planner-pennsylvania",
+      "destination": "/wedding-planner-pennsylvania.html"
+    },
+    {
+      "source": "/wedding-planner-san-jose-california",
+      "destination": "/wedding-planner-san-jose-california.html"
+    },
+    {
+      "source": "/wedding-planner-south-carolina",
+      "destination": "/wedding-planner-south-carolina.html"
+    },
+    {
+      "source": "/wedding-planner-tennessee",
+      "destination": "/wedding-planner-tennessee.html"
+    },
+    {
+      "source": "/wedding-planner-texas",
+      "destination": "/wedding-planner-texas.html"
+    },
+    {
+      "source": "/wedding-planner-virginia",
+      "destination": "/wedding-planner-virginia.html"
+    },
+    {
+      "source": "/wedding-planner-washington",
+      "destination": "/wedding-planner-washington.html"
+    },
+    {
+      "source": "/wedding-planner-wisconsin",
+      "destination": "/wedding-planner-wisconsin.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

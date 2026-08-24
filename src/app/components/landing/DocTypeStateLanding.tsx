@@ -1,4 +1,4 @@
-import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, ArrowRight, type LucideIcon } from 'lucide-react';
+import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, Heart, ArrowRight, type LucideIcon } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
@@ -16,6 +16,7 @@ const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
   'service-agreement': Handshake,
   'promissory-note': TrendingUp,
   'vehicle-bill-of-sale': Car,
+  'wedding-planner': Heart,
 };
 
 /** Cross-links to the same document type in the other 5 states — the

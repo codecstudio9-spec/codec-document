@@ -1,4 +1,4 @@
-import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, type LucideIcon } from 'lucide-react';
+import { FileSignature, Home, Briefcase, Handshake, TrendingUp, Car, Heart, type LucideIcon } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
@@ -17,6 +17,7 @@ const DOC_TYPE_ICONS: Record<DocType, LucideIcon> = {
   'service-agreement': Handshake,
   'promissory-note': TrendingUp,
   'vehicle-bill-of-sale': Car,
+  'wedding-planner': Heart,
 };
 
 /** Document-type × city page (first: NDA/Lease/etc. in San Jose,
