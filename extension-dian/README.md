@@ -1,6 +1,27 @@
 # Descargador DIAN — extensión de Chrome (beta interna)
 
-## Por qué existe
+## Por qué NO se usa el web service oficial de la DIAN (investigado 2026-08-23)
+
+Antes de reconstruir esto se investigó si `GetXmlByDocumentKey` (parte de
+`WcfDianCustomerServices.svc`, `https://vpfe[-hab].dian.gov.co/`) podía
+reemplazar la automatización de portal. Según la guía oficial de la DIAN
+("Herramienta para el Consumo de Web Services"), ese servicio SOAP se
+autentica con **WS-Security Signature usando un certificado digital X.509
+(.p12) emitido por una entidad certificadora autorizada por ONAC** — un
+certificado que pertenece al NIT registrado como facturador electrónico, no
+al del contador que consulta. Es un mecanismo de autenticación totalmente
+distinto del enlace de token que llega por correo (ese es una cookie de
+sesión ASP.NET para el portal humano `catalogo-vpfe`, no sirve para SOAP).
+
+Un contador que gestiona documentos *recibidos* de decenas de NITs de
+clientes distintos tendría que custodiar el certificado privado (+ PIN) de
+cada uno de esos clientes dentro de la extensión para usar esa vía — mucho
+más riesgo de custodia de credenciales que lo que ya evita el diseño
+actual, e inviable operativamente a la escala que busca Codec. Por eso se
+descartó sin prototipo: no había forma legítima de probarlo sin pedirle a
+un cliente real su certificado privado.
+
+## Por qué existe (la vía que sí se usa)
 
 Se verificó en vivo el 2026-08-14 que la DIAN ata el token de acceso a la
 IP que lo solicitó. El proxy del servidor (`supabase/functions/dian-descargar`)
@@ -66,14 +87,59 @@ adivinar nada.
 - `manifest.json` — Manifest V3. `host_permissions` limitado a los cuatro
   dominios de la DIAN (mismo allowlist que tenía el proxy del servidor).
   Permiso `scripting` para poder buscar y hacer clic dentro de la pestaña
-  real de la DIAN.
-- `background.js` — el service worker. Abre sesión con el enlace del token
-  (pestaña real, no `fetch()`), y para cada CUFE inyecta un script en la
-  pestaña de "Documentos recibidos" que busca y hace clic en el botón de
-  descarga real. Decide éxito/fracaso escuchando `chrome.downloads`
-  (¿empezó a bajar un archivo?) contra la pestaña navegando a una página de
-  error (la respuesta no era un archivo).
+  real de la DIAN. Permiso `alarms` para sobrevivir a que Chrome mate el
+  service worker a mitad de un lote largo (ver abajo).
+- `background.js` — el service worker. Sólo enruta mensajes; toda la
+  lógica vive en los tres módulos siguientes.
+- `dian-session.js` — abre sesión con el enlace del token (pestaña real, no
+  `fetch()`).
+- `download-worker.js` — procesa UN CUFE de punta a punta en su propia
+  pestaña: máquina de estados explícita (`PREPARANDO_PESTANA` →
+  `CONSULTANDO` → `ESPERANDO_RESULTADO` → `DESCARGANDO` →
+  `VERIFICANDO_ARCHIVO` → `COMPLETADO`/`ERROR_*`), cada paso con su propio
+  tope de tiempo más un tope total de respaldo. **Antes de cada CUFE —
+  también tras uno exitoso, no sólo en error — recarga entera "Documentos
+  recibidos" desde cero**, para que un resultado de búsqueda del CUFE
+  anterior no pueda seguir vivo en el DOM cuando arranca el siguiente (esa
+  era la sospecha más probable de por qué el primer CUFE bajaba bien y el
+  resto fallaba, aunque no se pudo confirmar en vivo sin un token real).
+- `download-manager.js` — la cola: reintentos con espera creciente por
+  CUFE (nunca inmediata), persistencia en `chrome.storage.local`,
+  correlación exacta descarga↔CUFE por callback del worker (no por adivinar
+  la URL), auto-baja la concurrencia si la DIAN pide verificación humana, y
+  se revive sola vía `chrome.alarms` si el service worker muere a mitad de
+  un lote de horas — reconstruye la cola desde `chrome.storage` sin que el
+  popup tenga que seguir abierto.
 - `dian.js` — regex de CUFE, validación de host. Calcado a propósito de
   `dian-descargar/index.ts`: es la misma regla de dominio, no debería
   divergir.
 - `popup.html` / `popup.js` — la interfaz.
+
+## Limitaciones conocidas (a propósito, no implementadas todavía)
+
+- **Verificación de contenido real del XML**: hoy se descarta un archivo
+  por MIME (`text/html` → probable bloqueo) y por tamaño mínimo, pero no se
+  abre el archivo para confirmar que es XML bien formado ni que el CUFE de
+  adentro coincide con el pedido. Una extensión MV3 no puede leer del disco
+  lo que ella misma acaba de guardar sin permisos nativos adicionales. La
+  alternativa técnicamente correcta (leer el botón de descarga ya resuelto
+  por Turnstile, hacer `fetch()` del mismo enlace desde la pestaña para
+  traer los bytes ANTES de guardarlos, y sólo entonces escribir el archivo
+  ya validado) no se implementó porque el endpoint se llama
+  `DownloadZipFiles` — probablemente entrega un ZIP, y desempaquetar un ZIP
+  dentro de la extensión requeriría vendorizar una librería de
+  descompresión sin poder probarla contra una respuesta real de la DIAN en
+  este entorno. Queda para cuando haya una sesión real para probarlo.
+- **ZIP final del lote**: no implementado. Requiere leer de vuelta los
+  archivos ya guardados en `Descargas/DIAN/`, algo que un service worker
+  MV3 no puede hacer sin la File System Access API (que sólo existe en una
+  página, no en el service worker) o sin vendorizar otra librería sin
+  poder probarla en vivo.
+- **Detección automática de CUFEs desde el Excel/portal**: sigue siendo
+  copiar/pegar a propósito (ver PARTE 16 del pedido original: no
+  implementar hasta que la descarga básica esté sólida).
+- **Concurrencia adaptativa**: `numWorkers` es configurable (1-5) y se
+  AUTO-reduce a 1 en cuanto la DIAN pide verificación humana (para el
+  resto de esa corrida), pero no auto-escala hacia arriba sola dentro de
+  una corrida — subir de 1 a 2+ workers sigue siendo una decisión manual
+  del usuario, probada primero en tandas chicas.

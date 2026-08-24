@@ -37,6 +37,7 @@ import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
 import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
 import { useLanguage } from '../contexts/language-context';
+import { AbonosPanel } from '../components/wedding/AbonosPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 'loading' | 'esign' | 'biometric' | 'identity_consent' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
@@ -645,6 +646,9 @@ export default function SignTransactionPage() {
             'Este documento ya fue firmado y procesado correctamente. No se admiten cambios adicionales.',
           )}
         </p>
+        {tx?.document_type === 'wedding-planner' && (
+          <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+        )}
       </div>
     );
   }
@@ -685,6 +689,9 @@ export default function SignTransactionPage() {
             : <><Download className="size-4" /> {tr('Download my copy', 'Descargar mi copia')}</>
           }
         </button>
+        {tx?.document_type === 'wedding-planner' && (
+          <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+        )}
       </div>
     );
   }

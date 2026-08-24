@@ -309,6 +309,14 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       required: false,
       helpText: 'Todo lo acordado que no encaje arriba. Puedes dictarlo.',
     },
+    {
+      id: 'custom_ai_clauses',
+      label: 'Cláusulas adicionales personalizadas',
+      type: 'textarea',
+      required: false,
+      placeholder: 'Ejemplo: el valor total puede aumentar si ambas partes lo acuerdan en una sesión de negociación posterior. Ejemplo: un pago adicional de un monto fijo vence en una fecha específica.',
+      helpText: 'Dicta cualquier condición extra con tus propias palabras —un posible cambio de precio acordado en una conversación futura, un pago ligado a una fecha y un monto específicos, cualquier otra cosa— y pulsa "Mejorar con IA" para convertirlo en lenguaje contractual.',
+    },
   ],
 
   template: `CONTRATO DE PLANEACIÓN Y COORDINACIÓN DE EVENTO
@@ -485,6 +493,11 @@ Ambas partes guardarán reserva sobre la información personal, familiar y econ�
 DÉCIMA SÉPTIMA — CONDICIONES ESPECIALES
 
 {{special_terms}}
+
+{{/if}}{{#if custom_ai_clauses}}
+DÉCIMA OCTAVA — CLÁUSULAS ADICIONALES PERSONALIZADAS
+
+{{custom_ai_clauses}}
 
 {{/if}}
 CLÁUSULA FINAL — ACUERDO ÍNTEGRO, MODIFICACIONES Y CONTROVERSIAS

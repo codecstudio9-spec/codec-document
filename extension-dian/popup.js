@@ -153,13 +153,15 @@ function formatearDuracion(seg) {
 function actualizarMetricas(m) {
   const completados = m.completados ?? 0;
   const errores = m.errores ?? 0;
+  const reintentando = m.reintentando ?? 0;
   const total = m.total ?? 0;
   const hechos = completados + errores;
   const pct = total > 0 ? Math.round((hechos / total) * 100) : 0;
   barraEl.style.width = `${pct}%`;
-  resumenEl.textContent = total > 0
-    ? `${hechos} de ${total} (${completados} ok${errores > 0 ? `, ${errores} con error` : ''})`
-    : '';
+  const partes = [`${completados} ok`];
+  if (reintentando > 0) partes.push(`${reintentando} reintentando`);
+  if (errores > 0) partes.push(`${errores} con error`);
+  resumenEl.textContent = total > 0 ? `${hechos} de ${total} (${partes.join(', ')})` : '';
 
   if (total > 0) {
     metricasEl.style.display = 'block';
@@ -173,6 +175,10 @@ function actualizarMetricas(m) {
   if (m.pausadoPorValidacion) {
     bloqueoEl.style.display = 'block';
     bloqueoTextoEl.textContent = m.ultimoBloqueo?.detalle || 'La DIAN pidió una comprobación humana en la pestaña que se abrió.';
+  }
+
+  if (m.numWorkersEfectivo != null && m.numWorkers != null && m.numWorkersEfectivo < m.numWorkers) {
+    resumenEl.textContent += ` — bajé a ${m.numWorkersEfectivo} worker por una verificación humana previa`;
   }
 }
 

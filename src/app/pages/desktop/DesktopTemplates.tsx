@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, ArrowRight, LayoutGrid, type LucideIcon } from 'lucide-react';
+import { Search, FileText, ArrowRight, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
 import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
 import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { compartirFormularioEnBlanco } from '../../utils/compartir-formulario';
 
 export function DesktopTemplates() {
   return (
@@ -159,14 +160,25 @@ function TemplatesContent() {
                   <p className="text-sm font-bold text-slate-900">{name}</p>
                   <p className="mt-1 line-clamp-2 text-xs text-slate-500">{description}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/generator/${t.id}`)}
-                  className="mt-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}
-                >
-                  {language === 'en' ? 'Use template' : 'Usar plantilla'} <ArrowRight className="size-3.5" />
-                </button>
+                <div className="mt-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/generator/${t.id}`)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white"
+                    style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}
+                  >
+                    {language === 'en' ? 'Use template' : 'Usar plantilla'} <ArrowRight className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void compartirFormularioEnBlanco(t.id, name, language)}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: '#F8FAFC', boxShadow: CARD_SHADOW }}
+                    aria-label={language === 'en' ? 'Share blank form' : 'Compartir formulario en blanco'}
+                  >
+                    <Share2 className="size-4 text-slate-400" />
+                  </button>
+                </div>
               </motion.div>
             );
           })

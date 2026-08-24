@@ -309,6 +309,14 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       required: false,
       helpText: 'Anything agreed that does not fit above. You can dictate it.',
     },
+    {
+      id: 'custom_ai_clauses',
+      label: 'Additional custom clauses',
+      type: 'textarea',
+      required: false,
+      placeholder: 'Example: the total fee may increase if both parties agree to it in a later negotiation session. Example: an extra payment of a set amount is due on a specific date.',
+      helpText: 'Dictate any extra condition in your own words — a possible price change agreed in a future conversation, a payment tied to a specific date and amount, anything else — and press "Improve with AI" to turn it into contract language.',
+    },
   ],
 
   template: `EVENT PLANNING AND COORDINATION AGREEMENT
@@ -485,6 +493,11 @@ Both parties will keep confidential the personal, family and financial informati
 SEVENTEEN — SPECIAL TERMS
 
 {{special_terms}}
+
+{{/if}}{{#if custom_ai_clauses}}
+EIGHTEEN — ADDITIONAL CUSTOM CLAUSES
+
+{{custom_ai_clauses}}
 
 {{/if}}
 FINAL CLAUSE — ENTIRE AGREEMENT, AMENDMENTS AND DISPUTES

@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Search, FileText, ArrowRight, LayoutGrid, type LucideIcon } from 'lucide-react';
+import { Search, FileText, ArrowRight, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
 import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
 import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { compartirFormularioEnBlanco } from '../../utils/compartir-formulario';
 
 /** Un círculo del menú de secciones. Algo más pequeño que en escritorio: aquí
  *  van en una tira que se desliza y tienen que caber cuatro o cinco a la vez
@@ -136,28 +137,41 @@ function TemplatesContent() {
             const name = getDocumentTranslation(t.id, 'name', language) || t.name;
             const description = getDocumentTranslation(t.id, 'desc', language) || t.description;
             return (
-              <motion.button
+              <motion.div
                 key={t.id}
                 whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={() => navigate(`/generator/${t.id}`)}
-                className="flex w-full items-center gap-3 bg-white p-4 text-left"
+                className="flex w-full items-center gap-2 bg-white p-4"
                 style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
               >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: acento + '14' }}>
-                  <Icon className="size-5" style={{ color: acento }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-900">{name}</p>
-                  <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{description}</p>
-                </div>
-                <span
-                  className="flex shrink-0 items-center justify-center rounded-xl"
-                  style={{ width: 36, height: 36, background: '#EFF6FF' }}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/generator/${t.id}`)}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
-                  <ArrowRight className="size-4 text-blue-600" />
-                </span>
-              </motion.button>
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: acento + '14' }}>
+                    <Icon className="size-5" style={{ color: acento }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-900">{name}</p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{description}</p>
+                  </div>
+                  <span
+                    className="flex shrink-0 items-center justify-center rounded-xl"
+                    style={{ width: 36, height: 36, background: '#EFF6FF' }}
+                  >
+                    <ArrowRight className="size-4 text-blue-600" />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void compartirFormularioEnBlanco(t.id, name, language)}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: '#F8FAFC' }}
+                  aria-label={language === 'en' ? 'Share blank form' : 'Compartir formulario en blanco'}
+                >
+                  <Share2 className="size-4 text-slate-400" />
+                </button>
+              </motion.div>
             );
           })
         )}

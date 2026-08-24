@@ -5,15 +5,30 @@
 // paso. Varios workers pueden correr esta misma clase en paralelo, cada uno
 // con su propia pestaña — la sesión (cookie) ya es compartida por el
 // navegador, así que no hace falta volver a autenticar por worker.
+//
+// ── Rediseño 2026-08-23: por qué el CUFE 1 bajaba bien y el 2 fallaba ────
+// La versión anterior sólo recargaba "Documentos recibidos" en las rutas de
+// ERROR. Si la descarga del CUFE 1 no navegaba la pestaña (el archivo se
+// guarda por Content-Disposition sin abandonar la página de resultados), la
+// fila `.download-document` del CUFE 1 seguía viva en el DOM cuando
+// arrancaba la búsqueda del CUFE 2 — y `scriptComprobarBusqueda` sólo
+// comprobaba que ESE selector existiera, no que perteneciera al CUFE recién
+// buscado. No hay forma de confirmar esto en vivo sin una sesión real de la
+// DIAN, así que en vez de apostar a un diagnóstico no verificable se
+// elimina la clase entera de bug: CADA CUFE arranca con una recarga
+// completa de la página de búsqueda (nunca AJAX, nunca DOM heredado), así
+// que `.download-document` NO PUEDE existir hasta que el CUFE actual
+// produzca un resultado nuevo. Ver `_prepararPestanaLimpia`.
 
 import { HOSTS_PERMITIDOS } from './dian.js';
 
 export const ESTADOS = Object.freeze({
   PENDIENTE: 'PENDIENTE',
   ASIGNADO: 'ASIGNADO',
-  NAVEGANDO: 'NAVEGANDO',
+  PREPARANDO_PESTANA: 'PREPARANDO_PESTANA',
   CONSULTANDO: 'CONSULTANDO',
-  VALIDANDO: 'VALIDANDO',
+  ESPERANDO_RESULTADO: 'ESPERANDO_RESULTADO',
+  LISTO_PARA_DESCARGAR: 'LISTO_PARA_DESCARGAR',
   DESCARGANDO: 'DESCARGANDO',
   VERIFICANDO_ARCHIVO: 'VERIFICANDO_ARCHIVO',
   COMPLETADO: 'COMPLETADO',
@@ -21,7 +36,6 @@ export const ESTADOS = Object.freeze({
   ERROR_DEFINITIVO: 'ERROR_DEFINITIVO',
   BLOQUEO_DIAN: 'BLOQUEO_DIAN',
   REQUIERE_VALIDACION: 'REQUIERE_VALIDACION',
-  TIMEOUT: 'TIMEOUT',
 });
 
 const HOST_RECIBIDOS = 'https://catalogo-vpfe.dian.gov.co/Document/Received';
@@ -29,6 +43,12 @@ const TIMEOUT_NAVEGACION_MS = 30_000;
 const TIMEOUT_BUSQUEDA_MS = 15_000;
 const TIMEOUT_DESCARGA_MS = 20_000;
 const TIMEOUT_LLAMADA_MS = 8_000; // tope por cada llamada individual a la pestaña
+const TIMEOUT_TOTAL_CUFE_MS = 55_000; // red de seguridad final: ninguna combinación de pasos puede colgar más que esto
+
+// Tamaño mínimo plausible para un XML/ZIP de la DIAN real. Una página de
+// bloqueo o un error servido con MIME "correcto" por accidente casi siempre
+// pesa unos pocos cientos de bytes o menos.
+const TAMANO_MINIMO_BYTES = 300;
 
 // Frases que la propia DIAN muestra cuando activa su control de seguridad
 // (confirmado por el usuario: desde el 28-07-2026 "Buscar documento" puede
@@ -55,6 +75,16 @@ export function extraerCufeDeUrl(url) {
 }
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function conLimite(promesa, ms, mensaje) {
+  let idLimite;
+  const limite = new Promise((_, reject) => { idLimite = setTimeout(() => reject(new Error(mensaje)), ms); });
+  try {
+    return await Promise.race([promesa, limite]);
+  } finally {
+    clearTimeout(idLimite);
+  }
+}
 
 // ── Funciones que se inyectan en la pestaña real de la DIAN ─────────────
 // Síncronas y sin esperas propias a propósito: cualquier espera vive en el
@@ -114,12 +144,22 @@ export class DianDownloadWorker {
     this.cufeActual = null;
     this.estado = 'inactivo';
     this.inicioCufe = null;
+    // Si un CUFE se agotó por el tope TOTAL (no por un tope de paso
+    // individual), la pestaña puede haber quedado en un estado que ningún
+    // selector conocido describe. Más seguro recrearla de cero que
+    // confiar en que un simple reload la arregle.
+    this._pestanaSospechosa = false;
   }
 
   /** Abre su propia pestaña oculta sobre "Documentos recibidos". */
   async iniciar() {
     this.estado = 'abriendo';
-    this.tabId = await new Promise((resolve, reject) => {
+    this.tabId = await this._crearPestana();
+    this.estado = 'listo';
+  }
+
+  _crearPestana() {
+    return new Promise((resolve, reject) => {
       let terminado = false;
       const vencido = setTimeout(() => {
         if (terminado) return;
@@ -148,7 +188,6 @@ export class DianDownloadWorker {
         tabId = tab.id;
       });
     });
-    this.estado = 'listo';
   }
 
   async detener() {
@@ -159,17 +198,42 @@ export class DianDownloadWorker {
     this.estado = 'detenido';
   }
 
-  /** Vuelve a "Documentos recibidos" para poder buscar el siguiente CUFE. */
-  async _volverABusqueda() {
+  /**
+   * Deja la pestaña en un estado 100% conocido antes de procesar un CUFE:
+   * "Documentos recibidos" recién cargado, sin ningún resultado de búsqueda
+   * anterior en el DOM. Se llama SIEMPRE, no sólo tras un error — es la raíz
+   * de que un CUFE no pueda "heredar" el resultado del anterior. Si la
+   * pestaña ya no existe (el usuario la cerró a mano, o Chrome la mató) o
+   * quedó sospechosa por un timeout total, se recrea entera.
+   */
+  async _prepararPestanaLimpia() {
+    if (this.tabId != null && !this._pestanaSospechosa) {
+      try {
+        await chrome.tabs.get(this.tabId);
+      } catch {
+        this.tabId = null; // la pestaña ya no existe
+      }
+    }
+    if (this.tabId == null || this._pestanaSospechosa) {
+      if (this.tabId != null) { try { await chrome.tabs.remove(this.tabId); } catch { /* ya cerrada */ } }
+      this.tabId = await this._crearPestana();
+      this._pestanaSospechosa = false;
+      return;
+    }
     await new Promise((resolve) => {
+      let resuelto = false;
+      const listo = () => { if (resuelto) return; resuelto = true; resolve(); };
       const escuchar = (id, info) => {
         if (id !== this.tabId || info.status !== 'complete') return;
         chrome.tabs.onUpdated.removeListener(escuchar);
-        resolve();
+        listo();
       };
       chrome.tabs.onUpdated.addListener(escuchar);
-      chrome.tabs.update(this.tabId, { url: HOST_RECIBIDOS }).catch(() => resolve());
-      setTimeout(resolve, TIMEOUT_NAVEGACION_MS); // red de seguridad
+      chrome.tabs.update(this.tabId, { url: HOST_RECIBIDOS }).catch(() => {
+        chrome.tabs.onUpdated.removeListener(escuchar);
+        listo();
+      });
+      setTimeout(() => { chrome.tabs.onUpdated.removeListener(escuchar); listo(); }, TIMEOUT_NAVEGACION_MS); // red de seguridad
     });
   }
 
@@ -182,15 +246,7 @@ export class DianDownloadWorker {
     const ejecucion = chrome.scripting.executeScript({ target: { tabId: this.tabId }, func, args })
       .then(([inyeccion]) => inyeccion?.result);
     ejecucion.catch(() => {});
-    let idLimite;
-    const limite = new Promise((_, reject) => {
-      idLimite = setTimeout(() => reject(new Error('La pestaña no respondió a tiempo.')), timeoutMs);
-    });
-    try {
-      return await Promise.race([ejecucion, limite]);
-    } finally {
-      clearTimeout(idLimite);
-    }
+    return conLimite(ejecucion, timeoutMs, 'La pestaña no respondió a tiempo.');
   }
 
   async _diagnostico() {
@@ -203,21 +259,44 @@ export class DianDownloadWorker {
 
   /**
    * Procesa UN CUFE de principio a fin en la pestaña de este worker.
+   * `onDescargaIniciada(downloadId)` se llama de forma SÍNCRONA en cuanto
+   * Chrome confirma que empezó a bajar un archivo — antes de esperar a que
+   * termine — para que el manager pueda asociar ese downloadId al CUFE de
+   * este job sin tener que adivinar por la URL ni por "cuál está en vuelo"
+   * (ver PARTE 7 del pedido: nunca determinar el documento sólo por "la
+   * última descarga creada").
+   *
    * Devuelve { estado, detalle, muestra, url, downloadId, mime, tamano }.
    * `estado` es siempre uno de ESTADOS — nunca lanza.
    */
-  async procesarCufe(cufe) {
+  async procesarCufe(cufe, onDescargaIniciada) {
     this.cufeActual = cufe;
     this.inicioCufe = Date.now();
     this.estado = ESTADOS.ASIGNADO;
 
-    const resultado = await this._procesarInterno(cufe);
-    this.cufeActual = null;
-    this.estado = 'listo';
-    return resultado;
+    try {
+      return await conLimite(
+        this._procesarInterno(cufe, onDescargaIniciada),
+        TIMEOUT_TOTAL_CUFE_MS,
+        'El CUFE no terminó de procesarse dentro del tope total (se recreará la pestaña antes del siguiente).',
+      );
+    } catch (err) {
+      this._pestanaSospechosa = true;
+      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: err.message };
+    } finally {
+      this.cufeActual = null;
+      this.estado = 'listo';
+    }
   }
 
-  async _procesarInterno(cufe) {
+  async _procesarInterno(cufe, onDescargaIniciada) {
+    this.estado = ESTADOS.PREPARANDO_PESTANA;
+    try {
+      await this._prepararPestanaLimpia();
+    } catch (err) {
+      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: `No se pudo preparar la pestaña: ${err.message}` };
+    }
+
     this.estado = ESTADOS.CONSULTANDO;
     let clic;
     try {
@@ -228,9 +307,13 @@ export class DianDownloadWorker {
     if (!clic) return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: 'La pestaña no respondió al buscar.' };
     if (!clic.ok) return { estado: ESTADOS.ERROR_DEFINITIVO, detalle: clic.motivo };
 
+    this.estado = ESTADOS.ESPERANDO_RESULTADO;
     // Presupuesto de 15s, pero revisado con llamadas cortas y acotadas —
     // así un cuelgue puntual (p.ej. la pestaña resolviendo un reto nuevo de
-    // Cloudflare) no bloquea el reloj para siempre.
+    // Cloudflare) no bloquea el reloj para siempre. Como la pestaña siempre
+    // arrancó en blanco (_prepararPestanaLimpia), CUALQUIER aparición de
+    // `.download-document` aquí es necesariamente del CUFE actual — no hay
+    // resultado previo que pueda confundirse con éste.
     const vence = Date.now() + TIMEOUT_BUSQUEDA_MS;
     await dormir(1200);
     let encontrado = false;
@@ -263,11 +346,12 @@ export class DianDownloadWorker {
       };
     }
 
+    this.estado = ESTADOS.LISTO_PARA_DESCARGAR;
     this.estado = ESTADOS.DESCARGANDO;
-    return this._descargar(cufe);
+    return this._descargar(cufe, onDescargaIniciada);
   }
 
-  async _descargar(cufe) {
+  async _descargar(cufe, onDescargaIniciada) {
     const tabId = this.tabId;
     const resultado = await new Promise((resolve) => {
       let terminado = false;
@@ -288,16 +372,15 @@ export class DianDownloadWorker {
       const onCreated = (item) => {
         // Sólo se rechaza cuando SÍ se pudo leer un trackId de la URL y no
         // coincide con este CUFE (es de otro worker, con certeza). Si no se
-        // pudo leer nada (0/25 en la primera prueba en vivo, 2026-08-19 —
-        // la suposición sobre el formato exacto de la URL de descarga nunca
-        // se confirmó contra el portal real), se acepta: es mejor atribuir
-        // mal una descarga real que declarar "tiempo agotado" sobre un
-        // archivo que sí bajó.
+        // pudo leer nada, se acepta igual — el manager ya no depende de
+        // este parseo para atribuir el archivo (ver onDescargaIniciada):
+        // esto sólo evita que ESTE worker robe una descarga ajena.
         const cufeDetectado = extraerCufeDeUrl(item.url);
         if (cufeDetectado != null && cufeDetectado !== cufe) return;
         if (terminado) return;
         terminado = true;
         limpiar();
+        onDescargaIniciada?.(item.id);
         resolve({ ok: true, downloadId: item.id });
       };
 
@@ -356,7 +439,6 @@ export class DianDownloadWorker {
 
     if (resultado.navegoAError) {
       const diag = await this._diagnostico();
-      await this._volverABusqueda();
       if (diag?.retoVisible || (diag?.textoLower && FRASES_BLOQUEO.some((f) => diag.textoLower.includes(f)))) {
         return { estado: ESTADOS.REQUIERE_VALIDACION, detalle: 'La DIAN pidió una comprobación humana al descargar.', muestra: diag?.texto, url: diag?.url };
       }
@@ -380,10 +462,16 @@ export class DianDownloadWorker {
    * "Chrome creó un archivo" no es lo mismo que "el archivo es el XML/ZIP
    * esperado" — si la DIAN devuelve una página HTML de bloqueo, Chrome la
    * puede guardar igual. No leemos el contenido del archivo (una extensión
-   * no tiene acceso genérico al sistema de archivos sin permisos extra),
-   * pero chrome.downloads.search() sí da el tipo MIME real que devolvió el
-   * servidor — un bloqueo casi siempre llega como text/html, nunca como
-   * zip/xml. Ese chequeo, sin leer bytes, ya descarta el caso más común.
+   * MV3 no puede leer del disco lo que ella misma acaba de guardar sin
+   * permisos nativos adicionales — File System Access API sólo existe en
+   * páginas, no en el service worker), pero `chrome.downloads.search()` sí
+   * da el MIME real que devolvió el servidor y el tamaño en bytes — un
+   * bloqueo casi siempre llega como `text/html` y/o unos pocos cientos de
+   * bytes, nunca como un zip/xml de tamaño real. Ese chequeo, sin leer
+   * bytes, descarta el caso más común sin inventar un parser de ZIP a
+   * ciegas (no hay forma de probarlo contra una respuesta real de la DIAN
+   * en este entorno — ver README para el porqué no se implementó algo más
+   * fuerte todavía).
    */
   async _verificarDescarga(downloadId) {
     const final = await new Promise((resolve) => {
@@ -398,7 +486,6 @@ export class DianDownloadWorker {
     });
 
     if (!final.ok) {
-      await this._volverABusqueda();
       return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: final.detalle, downloadId };
     }
 
@@ -417,6 +504,16 @@ export class DianDownloadWorker {
         detalle: `La DIAN devolvió ${mime} en vez de un archivo — probablemente una página de bloqueo guardada como si fuera el documento.`,
         downloadId,
         mime,
+      };
+    }
+
+    if (tamano != null && tamano > 0 && tamano < TAMANO_MINIMO_BYTES) {
+      return {
+        estado: ESTADOS.ERROR_REINTENTABLE,
+        detalle: `El archivo pesa sólo ${tamano} bytes — demasiado pequeño para ser un documento real, probablemente una respuesta de error.`,
+        downloadId,
+        mime,
+        tamano,
       };
     }
 
