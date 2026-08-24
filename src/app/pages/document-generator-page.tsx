@@ -36,6 +36,7 @@ import { SecurityConfigModal } from '../components/SecurityConfigModal';
 import { createSignTransaction, subscribeToTransaction, getSignTransaction, stashSignedTransactionForDownload, type SigningIntent, type SecurityConfig, type SignTransaction } from '../services/sign-transaction-service';
 import { getUserBranding, logoUrlToDataUrl } from '../services/branding-service';
 import { PAISES_FISCALES, resolverPais, etiquetaFiscal, placeholderFiscal } from '../data/paises-fiscales';
+import { detectSignerCountryCode } from '../../lib/geo';
 import { rememberFieldValue, recallFieldValue } from '../utils/field-memory';
 import { saveDocumentRecord } from '../services/documents-service';
 import { nombrePersonaDeValores, tituloDeDocumento } from '../utils/nombre-del-documento';
@@ -542,9 +543,20 @@ function ContenidoGenerador() {
       (template?.fields ?? []).filter(
         (field) =>
           field.id !== 'effective_date' &&
-          field.id !== 'effective_date_of_agreement',
+          field.id !== 'effective_date_of_agreement' &&
+          // `governing_state` sólo tiene sentido cuando `governing_country`
+          // (si el campo existe) está puesto en Estados Unidos — para
+          // cualquier otro país se usa `governing_city`, texto libre, sin
+          // pedirle a alguien en Colombia que elija entre 50 estados de
+          // EE. UU. El valor guardado puede estar en inglés o en español
+          // según el idioma con el que se llenó el campo (ver
+          // document-generator-page.tsx: el <option value> es el texto
+          // crudo de la plantilla activa, no se traduce).
+          (field.id !== 'governing_state' ||
+            formData.governing_country === 'United States' ||
+            formData.governing_country === 'Estados Unidos'),
       ),
-    [template],
+    [template, formData.governing_country],
   );
 
   // Field memory — same "remember what I typed last time, by label, until
@@ -730,6 +742,14 @@ function ContenidoGenerador() {
 
   const getSection = (fieldId: string) => {
     const id = fieldId.toLowerCase();
+    // Va antes que el bloque de abajo a propósito: "governing_state" SÍ
+    // contiene "state", pero es la jurisdicción del contrato, no la
+    // dirección de una parte — sin este chequeo primero caía mezclado
+    // entre los datos de contacto en vez de con governing_country /
+    // governing_city, en la sección de "Detalles del Acuerdo".
+    if (id.includes('governing') || id.includes('jurisdiction')) {
+      return 'agreement';
+    }
     if (id.includes('party') || id.includes('client') || id.includes('contractor') || id.includes('seller') || id.includes('buyer') || id.includes('email') || id.includes('phone') || id.includes('address') || id.includes('state')) {
       return 'parties';
     }
@@ -1150,6 +1170,26 @@ function ContenidoGenerador() {
       return { ...prev, [governingField.id]: selectedState };
     });
   }, [selectedState, template]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autodetecta el país por IP para plantillas que tienen un campo
+  // `governing_country` (hoy sólo wedding-planner) — nunca pisa una
+  // elección manual, y sólo aplica el valor detectado si de verdad es una
+  // de las opciones reales del campo (si algún día se quita un país de la
+  // lista, esto no intenta poner un valor que ya no existe).
+  useEffect(() => {
+    const countryField = template?.fields.find((f) => f.id === 'governing_country');
+    if (!countryField) return;
+    let cancelado = false;
+    detectSignerCountryCode().then((code) => {
+      if (cancelado || !code) return;
+      const pais = resolverPais(code);
+      if (!pais) return;
+      const etiqueta = language === 'en' ? pais.nameEn : pais.nameEs;
+      if (!countryField.options?.includes(etiqueta)) return;
+      setFormData((prev) => (prev.governing_country ? prev : { ...prev, governing_country: etiqueta }));
+    });
+    return () => { cancelado = true; };
+  }, [template, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Realtime listener for sign transaction — activates when share screen is open
   useEffect(() => {

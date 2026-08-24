@@ -279,12 +279,27 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       ],
     },
     {
+      id: 'governing_country',
+      label: 'País',
+      type: 'select',
+      required: true,
+      options: ['Estados Unidos', 'Colombia', 'México', 'Chile', 'Perú', 'Argentina', 'Ecuador'],
+      helpText: 'Se detecta solo según tu ubicación — cámbialo si no es correcto.',
+    },
+    {
+      id: 'governing_state',
+      label: 'Estado de EE. UU. para resolver una disputa',
+      type: 'select',
+      required: false,
+      helpText: 'Solo aparece cuando el país de arriba es Estados Unidos.',
+    },
+    {
       id: 'governing_city',
       label: 'Ciudad para resolver una disputa (opcional)',
       type: 'text',
       required: false,
       placeholder: 'ej. Bogotá, Miami, Madrid…',
-      helpText: 'No es obligatorio. Si lo dejas en blanco, el contrato simplemente dice que las partes intentarán resolver cualquier diferencia directamente.',
+      helpText: 'No es obligatorio. Si lo dejas en blanco, el contrato simplemente nombra el estado/país de arriba.',
     },
     {
       id: 'custom_ai_clauses',
@@ -473,9 +488,9 @@ Este documento recoge todo lo acordado entre las partes y reemplaza cualquier co
 
 Si alguna cláusula resulta inválida, las demás continúan vigentes.
 
-Las partes intentarán resolver de buena fe cualquier diferencia mediante conversación directa{{#if governing_city}} y, si no lo logran, acudirán a los jueces de {{governing_city}}, renunciando a cualquier otro fuero{{/if}}.
+Las partes intentarán resolver de buena fe cualquier diferencia mediante conversación directa y, si no lo logran, acudirán a los jueces competentes de{{#if governing_city}} {{governing_city}},{{/if}}{{#if governing_state}} {{governing_state}},{{/if}} {{governing_country}}, renunciando a cualquier otro fuero.
 
-En señal de aceptación, las partes firman{{#if governing_city}} en {{governing_city}}{{/if}}, el {{current_date}}.
+En señal de aceptación, las partes firman en{{#if governing_city}} {{governing_city}},{{/if}}{{#if governing_state}} {{governing_state}},{{/if}} {{governing_country}}, el {{current_date}}.
 
 
 LA PLANNER

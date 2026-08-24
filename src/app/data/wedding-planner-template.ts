@@ -279,12 +279,27 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       ],
     },
     {
+      id: 'governing_country',
+      label: 'Country',
+      type: 'select',
+      required: true,
+      options: ['United States', 'Colombia', 'Mexico', 'Chile', 'Peru', 'Argentina', 'Ecuador'],
+      helpText: 'Detected automatically from your location — change it if it is wrong.',
+    },
+    {
+      id: 'governing_state',
+      label: 'U.S. state for resolving a dispute',
+      type: 'select',
+      required: false,
+      helpText: 'Only shown when the country above is the United States.',
+    },
+    {
       id: 'governing_city',
       label: 'City for resolving a dispute (optional)',
       type: 'text',
       required: false,
       placeholder: 'e.g. Bogotá, Miami, Madrid…',
-      helpText: 'Not required. Leave it blank and the agreement simply says both parties will try to work out any disagreement directly.',
+      helpText: 'Not required. Leave it blank and the agreement simply names the state/country above.',
     },
     {
       id: 'custom_ai_clauses',
@@ -473,9 +488,9 @@ This document contains everything agreed between the parties and supersedes any 
 
 If any clause turns out to be invalid, the remainder stays in force.
 
-The parties will try in good faith to resolve any difference by direct conversation{{#if governing_city}} and, failing that, will submit to the courts of {{governing_city}}, waiving any other venue{{/if}}.
+The parties will try in good faith to resolve any difference by direct conversation and, failing that, will submit to the competent courts of{{#if governing_city}} {{governing_city}},{{/if}}{{#if governing_state}} {{governing_state}},{{/if}} {{governing_country}}, waiving any other venue.
 
-In witness whereof, the parties sign{{#if governing_city}} in {{governing_city}}{{/if}} on {{current_date}}.
+In witness whereof, the parties sign in{{#if governing_city}} {{governing_city}},{{/if}}{{#if governing_state}} {{governing_state}},{{/if}} {{governing_country}} on {{current_date}}.
 
 
 THE PLANNER
