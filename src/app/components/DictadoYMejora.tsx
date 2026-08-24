@@ -15,7 +15,7 @@ import { useRef, useState } from 'react';
 import { Mic, Square, Sparkles, Loader2, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDictation, unirDictado } from '../hooks/use-dictation';
-import { improveClauseWithAi, AiReviewUpgradeRequiredError } from '../services/ai-review-service';
+import { improveClauseWithAi, draftClauseWithAi, AiReviewUpgradeRequiredError } from '../services/ai-review-service';
 
 interface Props {
   valor: string;
@@ -31,9 +31,17 @@ interface Props {
    *  agradecimiento de una carta de renuncia—. Con el tono de cláusula, ese
    *  texto sale con voz de contrato en vez de con la de quien lo escribe. */
   tono?: 'clause' | 'letter';
+  /** El campo trata lo escrito como una INSTRUCCIÓN ("agrega una cláusula
+   *  donde…") en vez de como el texto final de la cláusula: el botón pasa a
+   *  "Redactar con IA" y la IA REDACTA una cláusula nueva a partir de eso,
+   *  en vez de sólo pulir lo que ya había. Reservado a campos donde eso
+   *  tiene sentido (p.ej. cláusulas personalizadas) — nunca el campo por
+   *  omisión, porque para "qué incluye el servicio" lo escrito SÍ debe ser
+   *  el contenido real, no una instrucción para que la IA lo invente. */
+  modoInstruccion?: boolean;
 }
 
-export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictado, tono = 'clause' }: Props) {
+export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictado, tono = 'clause', modoInstruccion }: Props) {
   const es = language === 'es';
   const [mejorando, setMejorando] = useState(false);
   // Estado, no ref: el botón de deshacer tiene que aparecer y desaparecer
@@ -60,11 +68,16 @@ export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictad
     detener();
     setMejorando(true);
     try {
-      const mejorado = (await improveClauseWithAi(texto, language, tono, contexto ?? '')).trim();
-      if (!mejorado) throw new Error(es ? 'La IA no devolvió texto.' : 'The AI returned no text.');
+      const resultado = modoInstruccion
+        ? await draftClauseWithAi(texto, language, contexto ?? '')
+        : await improveClauseWithAi(texto, language, tono, contexto ?? '');
+      const limpio = resultado.trim();
+      if (!limpio) throw new Error(es ? 'La IA no devolvió texto.' : 'The AI returned no text.');
       setPrevio(valor);
-      onCambio(mejorado);
-      toast.success(es ? 'Texto mejorado. Puedes deshacer.' : 'Text improved. You can undo.');
+      onCambio(limpio);
+      toast.success(modoInstruccion
+        ? (es ? 'Cláusula redactada. Revísala antes de continuar — puedes deshacer.' : 'Clause drafted. Review it before continuing — you can undo.')
+        : (es ? 'Texto mejorado. Puedes deshacer.' : 'Text improved. You can undo.'));
     } catch (e) {
       if (e instanceof AiReviewUpgradeRequiredError) toast.error(e.message);
       else toast.error((e as Error).message || (es ? 'No se pudo mejorar el texto.' : 'Could not improve the text.'));
@@ -109,8 +122,8 @@ export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictad
           className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
         >
           {mejorando
-            ? <><Loader2 className="size-3.5 animate-spin" />{es ? 'Mejorando…' : 'Improving…'}</>
-            : <><Sparkles className="size-3.5" />{es ? 'Mejorar con IA' : 'Improve with AI'}</>}
+            ? <><Loader2 className="size-3.5 animate-spin" />{modoInstruccion ? (es ? 'Redactando…' : 'Drafting…') : (es ? 'Mejorando…' : 'Improving…')}</>
+            : <><Sparkles className="size-3.5" />{modoInstruccion ? (es ? 'Redactar con IA' : 'Draft with AI') : (es ? 'Mejorar con IA' : 'Improve with AI')}</>}
         </button>
       )}
 

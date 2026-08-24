@@ -105,6 +105,39 @@ export async function improveClauseWithAi(
   return String((data as { improvedText?: string })?.improvedText ?? '');
 }
 
+/**
+ * Drafts a NEW clause from a one-line instruction ("agrega una cláusula
+ * donde el cliente deba avisar con 15 días de anticipación") — different
+ * from improveClauseWithAi above, which deliberately never invents text.
+ * See supabase/functions/ai-draft-clause/index.ts for the guardrails
+ * (never invents names/dates/amounts, drafts one clause, declines
+ * abusive/illegal instructions instead of writing them).
+ */
+export async function draftClauseWithAi(
+  instruction: string,
+  language: 'en' | 'es',
+  context = '',
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('ai-draft-clause', {
+    body: { instruction, language, context },
+  });
+
+  if (error) {
+    const context = (error as { context?: Response })?.context;
+    if (context?.status === 402) {
+      throw new AiReviewUpgradeRequiredError(
+        language === 'en' ? 'Drafting clauses with AI is available on paid plans.' : 'Redactar cláusulas con IA está disponible en planes pagos.',
+      );
+    }
+    throw new Error(await extractEdgeFunctionErrorMessage(
+      error,
+      language === 'en' ? 'Could not draft this clause.' : 'No se pudo redactar esta cláusula.',
+    ));
+  }
+
+  return String((data as { draftedText?: string })?.draftedText ?? '');
+}
+
 export interface CotizacionRedactada {
   /** Cuerpo comercial listo para el PDF. */
   proposal: string;

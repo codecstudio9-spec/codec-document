@@ -314,8 +314,8 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       label: 'Additional custom clauses',
       type: 'textarea',
       required: false,
-      placeholder: 'Example: the total fee may increase if both parties agree to it in a later negotiation session. Example: an extra payment of a set amount is due on a specific date.',
-      helpText: 'Dictate any extra condition in your own words — a possible price change agreed in a future conversation, a payment tied to a specific date and amount, anything else — and press "Improve with AI" to turn it into contract language.',
+      placeholder: 'Tell the AI what you want, e.g. "Add a clause saying the total fee may increase if both parties agree to it in a later negotiation session" or "Add a payment of a set amount due on a specific date" — then press "Draft with AI".',
+      helpText: 'Type an instruction and press "Draft with AI" to have it write the clause for you, or dictate/write the clause yourself. Either way you see the result before it goes into the contract, and you can always undo it.',
     },
   ],
 

@@ -36,10 +36,10 @@ export function BotonDictado({ onClick, language, cuantosCampos, className }: Pr
   const sinMovimiento = useReducedMotion();
 
   const subtitulo = cuantosCampos && cuantosCampos > 0
-    ? (es ? `Cuenta los datos en voz alta y la IA rellena los ${cuantosCampos} campos.`
-          : `Say the details out loud and the AI fills in the ${cuantosCampos} fields.`)
-    : (es ? 'Cuenta los datos en voz alta y la IA rellena los campos.'
-          : 'Say the details out loud and the AI fills in the fields.');
+    ? (es ? `Habla o pega un texto (un correo, notas) y la IA rellena los ${cuantosCampos} campos.`
+          : `Speak or paste a text (an email, notes) and the AI fills in the ${cuantosCampos} fields.`)
+    : (es ? 'Habla o pega un texto y la IA rellena los campos.'
+          : 'Speak or paste a text and the AI fills in the fields.');
 
   return (
     <motion.button

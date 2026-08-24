@@ -314,8 +314,8 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       label: 'Cláusulas adicionales personalizadas',
       type: 'textarea',
       required: false,
-      placeholder: 'Ejemplo: el valor total puede aumentar si ambas partes lo acuerdan en una sesión de negociación posterior. Ejemplo: un pago adicional de un monto fijo vence en una fecha específica.',
-      helpText: 'Dicta cualquier condición extra con tus propias palabras —un posible cambio de precio acordado en una conversación futura, un pago ligado a una fecha y un monto específicos, cualquier otra cosa— y pulsa "Mejorar con IA" para convertirlo en lenguaje contractual.',
+      placeholder: 'Dile a la IA qué quieres, por ejemplo: "Agrega una cláusula donde el valor total pueda aumentar si ambas partes lo acuerdan en una sesión de negociación posterior" o "Agrega un pago adicional de un monto fijo en una fecha específica" — y pulsa "Redactar con IA".',
+      helpText: 'Escribe una instrucción y pulsa "Redactar con IA" para que ella escriba la cláusula por ti, o dicta/escribe la cláusula tú mismo. En los dos casos ves el resultado antes de que entre al contrato, y siempre puedes deshacerlo.',
     },
   ],
 

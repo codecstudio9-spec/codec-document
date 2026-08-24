@@ -157,6 +157,11 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                   ? '«Me llamo Duglas Taborda, cédula 1045223, trabajo como analista contable en Comercial ABC desde marzo de 2020 y mi último día será el 30 de agosto.»'
                   : '"My name is John Smith, ID 1045223, I work as an accounting analyst at ABC Trading since March 2020 and my last day will be August 30th."'}
               </p>
+              <p className="mb-3 text-xs text-slate-400">
+                {es
+                  ? 'También puedes PEGAR un texto más largo —un correo, unas notas, la cotización que ya tenías escrita— en vez de hablar: la IA reparte los datos igual.'
+                  : 'You can also PASTE a longer text instead — an email, some notes, a quote you already wrote — the AI spreads the data across the fields the same way.'}
+              </p>
 
               {/* Qué hay que decir, a la vista mientras se habla.
                   Sin esta lista hay que recordar de memoria un formulario de

@@ -51,6 +51,11 @@ type FlowStep = 'form' | 'sign' | 'verify';
  *  quien escribe, en vez de convertirlos en lenguaje jurídico. */
 const CAMPOS_PERSONALES = new Set(['reason', 'personal_message', 'message']);
 
+/** Campos donde lo escrito es una INSTRUCCIÓN para la IA ("agrega una
+ *  cláusula donde…"), no el texto final — el botón pasa a "Redactar con
+ *  IA" y la IA REDACTA la cláusula desde cero en vez de sólo pulirla. */
+const CAMPOS_INSTRUCCION = new Set(['custom_ai_clauses']);
+
 interface CoSigner {
   id: string;
   name: string;
@@ -1280,6 +1285,7 @@ function ContenidoGenerador() {
               language={language}
               contexto={getFieldTranslation(template.id, field.id, 'label', language) || field.label}
               tono={CAMPOS_PERSONALES.has(field.id) ? 'letter' : 'clause'}
+              modoInstruccion={CAMPOS_INSTRUCCION.has(field.id)}
             />
           </>
         )}
