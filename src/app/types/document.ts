@@ -6,6 +6,17 @@ export interface DocumentTemplate {
   price: number;
   fields: DocumentField[];
   template: string;
+  /**
+   * Optional closing disclaimer addressed to every party on the document —
+   * never a contract clause. Kept OUT of `template` on purpose: text
+   * embedded in the flowing body renders wherever the PDF's
+   * natural-signature-position heuristics happen to split it (not
+   * necessarily after the real signatures), and reads as edited-by-anyone
+   * body text in the HTML preview. Rendered separately, in light gray,
+   * strictly after the real signature block — see
+   * PDFGenerator.addSignerNoteWatermark and DocumentPreview's signerNote prop.
+   */
+  signerNote?: string;
 }
 
 export interface DocumentField {

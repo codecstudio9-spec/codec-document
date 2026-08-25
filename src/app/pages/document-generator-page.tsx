@@ -1248,20 +1248,31 @@ function ContenidoGenerador() {
             {getFieldTranslation(template.id, field.id, 'label', language) || field.label}
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </Label>
-          {field.helpText && (
-            <div className="relative group/tip">
-              <button type="button" className="text-slate-400 hover:text-slate-600 transition-colors">
-                <Info className="size-4" />
-              </button>
-              {/* CSS-only tooltip — no portal, no React unmount issue */}
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 hidden group-hover/tip:block">
-                <div className="w-max max-w-[220px] rounded-lg bg-slate-800 px-3 py-2 text-xs leading-relaxed text-white shadow-xl">
-                  {getFieldTranslation(template.id, field.id, 'help', language) || field.helpText}
-                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+          {field.helpText && (() => {
+            const textoAyuda = getFieldTranslation(template.id, field.id, 'help', language) || field.helpText || '';
+            const etiquetaCampo = getFieldTranslation(template.id, field.id, 'label', language) || field.label;
+            return (
+              <div className="relative group/tip">
+                <button
+                  type="button"
+                  onClick={() => speak({ es: `${etiquetaCampo}. ${textoAyuda}`, en: `${etiquetaCampo}. ${textoAyuda}` })}
+                  className="text-slate-400 hover:text-slate-600 active:text-blue-600 transition-colors"
+                  title={language === 'es' ? 'Toca para escuchar la explicación' : 'Tap to hear the explanation'}
+                >
+                  <Info className="size-4" />
+                </button>
+                {/* CSS-only tooltip para escritorio — en móvil (sin hover) el
+                    click de arriba lee el mismo texto en voz alta, porque un
+                    tooltip por hover no existe en pantallas táctiles. */}
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 hidden group-hover/tip:block">
+                  <div className="w-max max-w-[220px] rounded-lg bg-slate-800 px-3 py-2 text-xs leading-relaxed text-white shadow-xl">
+                    {textoAyuda}
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {field.type === 'text' && !isSelect && (

@@ -38,6 +38,7 @@ import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
 import { useLanguage } from '../contexts/language-context';
 import { AbonosPanel } from '../components/wedding/AbonosPanel';
+import { DocumentEvidencePanel } from '../components/wedding/DocumentEvidencePanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 'loading' | 'esign' | 'biometric' | 'identity_consent' | 'selfie' | 'id' | 'sign' | 'done' | 'error' | 'already_signed';
@@ -421,7 +422,7 @@ export default function SignTransactionPage() {
     if (!tx) return;
     setDownloadingCopy(true);
     try {
-      const { content, title, formattedParagraphs } = await buildGuestDocumentContent(tx, language);
+      const { content, title, formattedParagraphs, signerNote } = await buildGuestDocumentContent(tx, language);
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
       const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
       // Conserva tildes y espacios: la limpieza anterior dejaba
@@ -455,6 +456,7 @@ export default function SignTransactionPage() {
           guestIp: tx.recipient_ip,
           guestSignedAt: tx.signed_at,
         },
+        signerNote,
       });
 
       await triggerDownload(blob, fileName);
@@ -647,7 +649,10 @@ export default function SignTransactionPage() {
           )}
         </p>
         {tx?.document_type === 'wedding-planner' && (
-          <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+          <>
+            <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+            <DocumentEvidencePanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+          </>
         )}
       </div>
     );
@@ -690,7 +695,10 @@ export default function SignTransactionPage() {
           }
         </button>
         {tx?.document_type === 'wedding-planner' && (
-          <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+          <>
+            <AbonosPanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+            <DocumentEvidencePanel transactionId={tx.id} esPlanner={Boolean(user?.id && user.id === tx.creator_id)} language={language} />
+          </>
         )}
       </div>
     );

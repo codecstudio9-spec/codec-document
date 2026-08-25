@@ -267,7 +267,7 @@ export function MyDocumentsPage() {
                       <ShieldCheck className="size-3" />
                       E-SIGN &amp; UETA Compliant
                     </div>
-                    {fileUrl && (
+                    {fileUrl ? (
                       <a
                         href={toProxiedPdfUrl(fileUrl)}
                         target="_blank"
@@ -277,7 +277,19 @@ export function MyDocumentsPage() {
                         <Download className="size-3" />
                         {language === 'es' ? 'Ver PDF' : 'View PDF'}
                       </a>
-                    )}
+                    ) : doc.href ? (
+                      // Sin PDF guardado: el documento se envió a firmar y vive en
+                      // sign_transactions — esta pantalla lo arma al abrirlo, y
+                      // ahí mismo (para wedding-planner) están los abonos y la
+                      // subida de documentos de seguimiento.
+                      <Link
+                        to={doc.href}
+                        className="flex items-center justify-center gap-1 rounded-md bg-slate-900 text-white px-3 py-2 text-xs font-semibold"
+                      >
+                        <FileText className="size-3" />
+                        {language === 'es' ? 'Abrir' : 'Open'}
+                      </Link>
+                    ) : null}
                   </article>
                 );
               })}

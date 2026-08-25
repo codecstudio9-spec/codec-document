@@ -21,6 +21,14 @@ export const spanishTemplates: Record<string, string> = {
   'promissory-note': promissoryNoteTemplateES.template,
   'resignation-letter': resignationLetterTemplateES.template,
   'wedding-planner': weddingPlannerTemplateES.template,
-  
 
+
+};
+
+// Nota de cierre para ambas partes, en español — separada de
+// `spanishTemplates` porque vive FUERA del cuerpo de la plantilla (ver
+// DocumentTemplate.signerNote en types/document.ts). Sólo entran aquí los
+// documentos que definen `signerNote` en su plantilla en español.
+export const spanishSignerNotes: Record<string, string> = {
+  'wedding-planner': weddingPlannerTemplateES.signerNote ?? '',
 };

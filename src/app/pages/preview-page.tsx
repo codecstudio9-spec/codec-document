@@ -14,7 +14,7 @@ import { ArrowLeft, Download, Edit, Lock, ShieldCheck, CreditCard, CheckCircle2,
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/language-context';
 import { getDocumentTranslation } from '../data/document-translations';
-import { spanishTemplates } from '../data/templates-es';
+import { spanishTemplates, spanishSignerNotes } from '../data/templates-es';
 import { getStateSpecificTemplate, STATE_NAMES_ES } from '../data/state-variations';
 import { getCountrySpecificResignation } from '../data/resignation-country-variations';
 import { PDFGenerator } from '../services/pdf-generator';
@@ -907,6 +907,13 @@ export function PreviewPage() {
     return base;
   })();
 
+  /** Nota de cierre para ambas partes, en el idioma de exportación — nunca
+   *  editable a mano (no forma parte de plantillaParaVista/editedContent),
+   *  ver signerNote en types/document.ts. */
+  const signerNoteParaVista = exportLanguage === 'es'
+    ? (spanishSignerNotes[template.id] || undefined)
+    : template.signerNote;
+
   const computeExportContent = (): string => {
     // Lo que el usuario reescribió es el documento. Antes el PDF se rearmaba
     // desde la plantilla y descartaba la edición sin avisar, así que lo que se
@@ -1138,6 +1145,7 @@ export function PreviewPage() {
         identityIdDocFront,
         identityIdDocBack,
         identityBiometric,
+        signerNote: signerNoteParaVista,
       });
 
       ultimoPdf.current = { blob, fileName };
@@ -1759,6 +1767,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
                         showWatermark={false}
                         leftSignatureUrl={placedSignatures.find(s => s.id === 'owner')?.dataUrl}
                         rightSignatureUrl={placedSignatures.find(s => s.id !== 'owner')?.dataUrl}
+                        signerNote={signerNoteParaVista}
                       />
                     </div>
                   </div>

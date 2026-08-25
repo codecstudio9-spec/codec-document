@@ -509,16 +509,21 @@ ID {{client_id}}
 {{client_phone}}{{#if client_email}}
 {{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{client_partner_name}}{{/if}}
+{{client_partner_name}}{{/if}}`,
 
----------------------------------------------------------------------------
+  // Closing disclaimer for BOTH parties — kept out of `template` on purpose,
+  // see the signerNote field comment in types/document.ts. Reworded
+  // 2026-08-25: the previous copy lived inside the template body (so it
+  // rendered wherever the PDF's signature-split heuristics happened to put
+  // it — sometimes ahead of the real signatures) and was phrased from the
+  // client's point of view only ("everything you expect to receive"), which
+  // reads as advice for one side of a two-sided agreement. This version is
+  // addressed to whichever party is reading it, planner or client alike.
+  signerNote: `NOTE FOR BOTH PARTIES — not part of the agreement
 
-NOTE FOR THE SIGNER — not part of the agreement
+Check together that clause three really lists everything the planner is expected to deliver. Whatever was discussed over chat and never written there is not contracted, for either side.
 
-· Check that clause three really lists everything you expect to receive.
-  Whatever was discussed over chat and never written there is not contracted.
-· Keep every vendor approval in writing, even by email. That is what
-  prevents last-minute arguments about who authorised what.
-· This is a general model. It does not replace advice from a lawyer in your
-  country, especially for a destination event or high-value budgets.`,
+Keep every vendor approval and every change in writing, even by email. That protects both the planner and the client from last-minute arguments about who authorised what.
+
+This is a general model. It does not replace advice from a lawyer in either party's country, especially for a destination event or high-value budgets.`,
 };

@@ -509,17 +509,22 @@ Documento {{client_id}}
 {{client_phone}}{{#if client_email}}
 {{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{client_partner_name}}{{/if}}
+{{client_partner_name}}{{/if}}`,
 
----------------------------------------------------------------------------
+  // Nota de cierre para AMBAS partes — fuera de `template` a propósito, ver
+  // el comentario del campo signerNote en types/document.ts. Reescrita el
+  // 2026-08-25: la versión anterior vivía dentro del cuerpo de la plantilla
+  // (por eso terminaba donde la heurística de corte de firma del PDF
+  // decidiera ponerla, a veces antes de las firmas reales) y estaba escrita
+  // sólo desde el punto de vista del cliente ("todo lo que esperas
+  // recibir"), lo que suena a consejo para un solo lado de un contrato
+  // entre dos. Esta versión se dirige a quien la esté leyendo, planner o
+  // cliente por igual.
+  signerNote: `NOTA PARA AMBAS PARTES — no forma parte del contrato
 
-NOTA PARA QUIEN FIRMA — no forma parte del contrato
+Revisen juntos que la cláusula tercera diga de verdad todo lo que la planner debe entregar. Lo que se habló por WhatsApp y no quedó escrito ahí, no está contratado, para ninguna de las dos partes.
 
-· Revisa que la cláusula tercera diga de verdad todo lo que esperas recibir.
-  Lo que se habló por WhatsApp y no quedó escrito ahí, no está contratado.
-· Guarda cada aprobación de proveedor por escrito, aunque sea por correo.
-  Es lo que evita discusiones de última hora sobre quién autorizó qué.
-· Este es un modelo general. No reemplaza la asesoría de un abogado de tu
-  país, sobre todo si el evento es en el extranjero o si los valores son
-  altos.`,
+Guarden cada aprobación de proveedor y cada cambio por escrito, aunque sea por correo. Eso protege tanto a la planner como al cliente de discusiones de última hora sobre quién autorizó qué.
+
+Este es un modelo general. No reemplaza la asesoría de un abogado en el país de cualquiera de las partes, sobre todo si el evento es en el extranjero o si los valores son altos.`,
 };

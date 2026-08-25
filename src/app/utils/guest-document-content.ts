@@ -15,7 +15,7 @@
  *   owner-only one (this page has no logged-in owner to authenticate as).
  */
 import { getTemplateById } from '../data/templates';
-import { spanishTemplates } from '../data/templates-es';
+import { spanishTemplates, spanishSignerNotes } from '../data/templates-es';
 import { getStateSpecificTemplate } from '../data/state-variations';
 import { getDocumentTranslation } from '../data/document-translations';
 import { enrichDocumentDataWithDates } from './document-dates';
@@ -26,7 +26,7 @@ import type { SignTransaction } from '../services/sign-transaction-service';
 import type { DocumentData } from '../types/document';
 import { nombrePersonaDeValores, tituloDeDocumento } from './nombre-del-documento';
 
-function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Record<string, unknown>, language: 'en' | 'es'): { content: string; title: string } {
+function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Record<string, unknown>, language: 'en' | 'es'): { content: string; title: string; signerNote?: string } {
   const template = getTemplateById(documentType);
   if (!template) throw new Error('Unknown document type');
   const documentData = rawDocumentData as DocumentData;
@@ -53,6 +53,7 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   return {
     content: normalizeCorruptedText(content),
     title: getDocumentTranslation(template.id, 'name', language),
+    signerNote: language === 'es' ? (spanishSignerNotes[template.id] || undefined) : template.signerNote,
   };
 }
 
@@ -80,7 +81,7 @@ async function interpolateCustomTemplate(documentData: { templateId?: string; va
   return { content, title: titulo, formattedParagraphs };
 }
 
-export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[] }> {
+export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[]; signerNote?: string }> {
   if (tx.document_type === 'custom-template') {
     return interpolateCustomTemplate(tx.document_data as { templateId?: string; values?: Record<string, string> }, language);
   }

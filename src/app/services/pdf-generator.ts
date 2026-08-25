@@ -85,6 +85,17 @@ interface PDFGeneratorOptions {
    * lib/geo.ts + data/signature-jurisdictions.ts) for a signer outside
    * the US. */
   jurisdiction?: SignatureJurisdiction;
+  /**
+   * Optional closing disclaimer addressed to every party on the
+   * document — never a contract clause. Rendered by addSignerNoteWatermark
+   * AFTER the real signature block (mirror or embedded), in light gray,
+   * so it always reads as the app's own note and never as something one
+   * side wrote to the other. Keep it OUT of `content` — text embedded in
+   * the flowing body renders wherever the natural-signature-position
+   * heuristics (splitAtSignatureBlock) happen to split it, which is not
+   * necessarily after the real signatures.
+   */
+  signerNote?: string;
 }
 
 /**
@@ -2424,6 +2435,58 @@ export class PDFGenerator {
     }
   }
 
+  /**
+   * Closing disclaimer for BOTH parties, painted light gray like a
+   * watermark so it reads as the app's own note, never as a clause either
+   * side wrote for the other. Always called AFTER the real signature block
+   * so it lands as the very last thing on the document's own pages —
+   * before the certificate/identity pages, which are a separate legal
+   * artifact, not part of "the sheet".
+   */
+  private addSignerNoteWatermark(note: string) {
+    const paragraphs = note.split(/\n{2,}/).map((p) => p.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+    if (paragraphs.length === 0) return;
+
+    this.addSpacing(1.6);
+    if (this.currentY + 14 > this.pageHeight - this.margin) {
+      this.doc.addPage();
+      this.currentY = this.margin + 6;
+    }
+
+    this.doc.setDrawColor(224, 224, 224);
+    this.doc.setLineWidth(0.2);
+    this.doc.line(this.margin + 30, this.currentY, this.pageWidth - this.margin - 30, this.currentY);
+    this.currentY += 5;
+
+    const FONT_SIZE = 7.5;
+    const GRAY = [172, 172, 172] as const;
+    const setNoteStyle = () => {
+      try { this.doc.setFont('helvetica', 'italic'); } catch { this.setFontSafe('helvetica', 'normal'); }
+      this.doc.setFontSize(FONT_SIZE);
+      this.doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+    };
+    setNoteStyle();
+
+    const textWidth = this.maxWidth - 30;
+    for (const para of paragraphs) {
+      const lines = this.splitTextToSize(para, textWidth);
+      for (const line of lines) {
+        if (this.currentY + this.lineHeight > this.pageHeight - this.margin) {
+          this.doc.addPage();
+          this.currentY = this.margin + 6;
+          setNoteStyle();
+        }
+        const w = this.safeGetTextWidth(line);
+        this.safeText(line, (this.pageWidth - w) / 2, this.currentY);
+        this.currentY += FONT_SIZE * 0.352 * 1.35;
+      }
+      this.currentY += 2.2;
+    }
+
+    this.doc.setTextColor(0, 0, 0);
+    this.setFontSafe('helvetica', 'normal');
+  }
+
   // ── Split document content at the natural signature block ────────────────────
   // Returns { before } = body text, { after } = post-signature content (checklists,
   // state compliance notices, addenda) so the signature image block can be inserted
@@ -2599,6 +2662,10 @@ export class PDFGenerator {
       }
     }
 
+    // Closing disclaimer for both parties — always after the real
+    // signature block, never mixed into `content`.
+    if (opts.signerNote) generator.addSignerNoteWatermark(opts.signerNote);
+
     // Identity verification page (separate page when photos or a biometric result exist)
     if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack || opts.identityBiometric) {
       await generator.addIdentityAuditPage(
@@ -2709,6 +2776,10 @@ export class PDFGenerator {
         );
       }
     }
+
+    // Closing disclaimer for both parties — always after the real
+    // signature block, never mixed into `content`.
+    if (opts.signerNote) generator.addSignerNoteWatermark(opts.signerNote);
 
     // Identity verification page (separate page when photos or a biometric result exist)
     if (opts.identitySelfie || opts.identityIdDoc || opts.identityIdDocFront || opts.identityIdDocBack || opts.identityBiometric) {

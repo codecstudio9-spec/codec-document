@@ -30,6 +30,14 @@ interface DocumentPreviewProps {
    * ciudadanía… 12 de agosto de 2026».
    */
   documentLanguage?: 'en' | 'es';
+  /**
+   * Closing disclaimer for both parties — never part of `template`, always
+   * rendered as its own light-gray block AFTER the document body (and
+   * after any real signature images stamped elsewhere on the page), so it
+   * reads as the app's own note and never as a clause either signer wrote
+   * for the other. See DocumentTemplate.signerNote.
+   */
+  signerNote?: string;
 }
 
 // US Legal Standard document formatting
@@ -452,7 +460,7 @@ function formatDocumentContent(
   return result;
 }
 
-export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl, templateId, documentLanguage }: DocumentPreviewProps) {
+export const DocumentPreview = memo(function DocumentPreview({ template, data, activeFieldId, showWatermark = true, leftSignatureUrl, rightSignatureUrl, templateId, documentLanguage, signerNote }: DocumentPreviewProps) {
   const { language: idiomaInterfaz } = useLanguage();
   const language = documentLanguage ?? idiomaInterfaz;
   const previewContentRef = useRef<HTMLDivElement | null>(null);
@@ -564,6 +572,17 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
         }}
       >
         {formattedContent}
+
+        {signerNote && (
+          <div className="mt-10 pt-4 border-t border-slate-200 text-center" aria-hidden="true">
+            <p
+              className="mx-auto max-w-[85%] whitespace-pre-line text-[9px] italic leading-relaxed text-slate-300"
+              style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+            >
+              {signerNote}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Watermark Overlay */}
