@@ -21,6 +21,21 @@ export interface DocTypeState {
   faqEs: string;
   faqAnswerEn: string;
   faqAnswerEs: string;
+  /**
+   * Optional hero override — when set, DocTypeStateLanding's H1 accent and
+   * subtitle use THIS text instead of the default "{docType} for {state}"
+   * template. Added for the 2026-08-25 "spotlight" batch of state pages
+   * (state-spotlight-seo-content.ts), whose brief requires the hero to
+   * evoke the state without literally naming it (title tag, meta
+   * description, IncludedCards heading and FAQ heading still name the
+   * state normally — that's good for local SEO and wasn't part of the
+   * request). Every one of the original 168 doctype×state combos below
+   * leaves these unset, so their rendering is byte-for-byte unchanged.
+   */
+  heroAccentEn?: string;
+  heroAccentEs?: string;
+  heroSubtitleEn?: string;
+  heroSubtitleEs?: string;
 }
 
 // Single source of truth for "which states does the SEO cluster cover" —

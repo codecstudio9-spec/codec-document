@@ -91,9 +91,10 @@ function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
         icon={DOC_TYPE_ICONS[data.docType]}
         previewLabel={`${data.docTypeLabelEn} Preview`}
         backgroundImage="/imagen4.jpg"
-        titleAccentEn={`${data.docTypeLabelEn} for ${data.stateName}`} titleAccentEs={`${data.docTypeLabelEs} para ${data.stateNameEs}`}
+        titleAccentEn={data.heroAccentEn ?? `${data.docTypeLabelEn} for ${data.stateName}`}
+        titleAccentEs={data.heroAccentEs ?? `${data.docTypeLabelEs} para ${data.stateNameEs}`}
         titleRestEn="" titleRestEs=""
-        subtitleEn={desc} subtitleEs={desc}
+        subtitleEn={data.heroSubtitleEn ?? desc} subtitleEs={data.heroSubtitleEs ?? desc}
         ctaLabelEn={`Create My ${data.docTypeLabelEn}`} ctaLabelEs={`Crear mi ${data.docTypeLabelEs}`}
         ctaHref={data.generatorPath}
         secondaryLabelEn="Sign a Document" secondaryLabelEs="Firmar un Documento"

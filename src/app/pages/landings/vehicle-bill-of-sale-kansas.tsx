@@ -1,0 +1,8 @@
+import { DocTypeStateLanding } from '../../components/landing/DocTypeStateLanding';
+import { STATE_SPOTLIGHT_CONFIGS } from '../../data/state-spotlight-seo-content';
+
+const data = STATE_SPOTLIGHT_CONFIGS.find((d) => d.docType === 'vehicle-bill-of-sale' && d.stateSlug === 'kansas')!;
+
+export default function VehicleBillOfSaleKansas() {
+  return <DocTypeStateLanding data={data} />;
+}
