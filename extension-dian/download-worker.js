@@ -43,6 +43,37 @@
 // — ver `_crearPestana`. Y se separa "la página cargó" de "la seguridad de
 // la página está lista" como dos pasos explícitos y distintos — ver
 // ESPERANDO_SEGURIDAD y `_esperarSeguridadLista`.
+//
+// ── Auditoría 2026-08-25(b): confirmado en vivo — el cambio de arriba SÍ
+// avanza más (la búsqueda y el resultado ya funcionan), pero aparece un
+// fallo nuevo y específico: `[ERROR_DESCARGA] La DIAN no entregó nada tras
+// hacer clic en descargar (tiempo agotado)`. El clic no lanza ningún error
+// (el botón existe, `boton.click()` "funciona"), pero la DIAN nunca
+// entrega el archivo.
+//
+// Causa más probable: `boton.click()` disparado desde
+// `chrome.scripting.executeScript` es un evento SINTÉTICO —
+// `event.isTrusted` vale `false` siempre, por diseño del navegador, sin
+// excepción posible desde JavaScript. Eso alcanza para enviar el
+// formulario de búsqueda (una navegación de formulario no depende de
+// `isTrusted`), pero el botón de descargar está detrás de un token de
+// Cloudflare Turnstile (ver README, sección de descarga) — y es un patrón
+// habitual que ese tipo de verificación exija un gesto de usuario
+// realmente confiable antes de emitir o aceptar el token, precisamente
+// para bloquear automatizaciones como ésta.
+//
+// La única forma de producir un clic con `isTrusted: true` desde una
+// extensión (sin depender de que un humano lo haga) es el Protocolo de
+// DevTools de Chrome (`chrome.debugger` + `Input.dispatchMouseEvent`): ese
+// clic ocurre al nivel del propio navegador, no de la página, así que la
+// página lo recibe exactamente como si viniera de un mouse real. Es la
+// misma técnica que usan por debajo herramientas basadas en Puppeteer/
+// Playwright (que automatizan vía CDP) — coincide con cómo probablemente
+// funcionan QFe Collector/SISCCOT. Ver `_adjuntarDebugger`/`_clicReal`.
+//
+// Contrapartida honesta: `chrome.debugger` muestra una barra amarilla
+// "Codec Document — Descargador DIAN está depurando este navegador"
+// mientras dura el lote — visible a propósito, nunca oculta al usuario.
 
 import { HOSTS_PERMITIDOS } from './dian.js';
 
@@ -171,16 +202,36 @@ function scriptComprobarBusqueda() {
   return { encontrado: !!document.querySelector('.download-document') };
 }
 
-function scriptClicDescargar() {
+/**
+ * Ya NO hace clic — sólo prepara el botón y devuelve dónde está. Ver la
+ * auditoría 2026-08-25(b) al inicio del archivo: `boton.click()` desde
+ * `chrome.scripting.executeScript` es un evento SINTÉTICO
+ * (`isTrusted: false`), y eso alcanza para enviar un formulario de
+ * búsqueda pero no para destrabar un botón detrás de un token de
+ * Cloudflare Turnstile — se vio en vivo que el clic "funcionaba" (no había
+ * error) pero la DIAN nunca entregaba el archivo. El clic real se dispara
+ * aparte, por el Protocolo de DevTools (`_clicReal` en la clase), que sí
+ * produce `isTrusted: true` porque ocurre al nivel del propio Chrome, no
+ * de la página.
+ */
+function scriptPrepararBotonDescargar() {
   const boton = document.querySelector('.download-document');
   if (!boton) return { ok: false, motivo: 'El botón de descargar de esa fila desapareció.' };
   // Portales ASP.NET suelen usar target="_blank" en el enlace de descarga
   // para no perder la página de resultados — eso abre una pestaña nueva por
-  // cada clic. Se quita antes de hacer clic para que navegue en ESTA misma
-  // pestaña (download-manager.js también cierra cualquiera que se cuele).
+  // cada clic. Se quita para que navegue en ESTA misma pestaña
+  // (download-manager.js también cierra cualquiera que se cuele igual).
   boton.removeAttribute('target');
-  boton.click();
-  return { ok: true };
+  // 'instant' (no estándar, pero Chrome la respeta) — con 'auto' un CSS de
+  // la propia DIAN con `scroll-behavior: smooth` dejaría el scroll a medio
+  // terminar cuando se lee `getBoundingClientRect()` dos líneas abajo, y el
+  // clic real caería en las coordenadas viejas.
+  boton.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+  const r = boton.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) {
+    return { ok: false, motivo: 'El botón de descargar existe pero no es visible en la página.' };
+  }
+  return { ok: true, x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
 function scriptDiagnosticoPagina() {
@@ -213,6 +264,11 @@ export class DianDownloadWorker {
     // selector conocido describe. Más seguro recrearla de cero que
     // confiar en que un simple reload la arregle.
     this._pestanaSospechosa = false;
+    // Si chrome.debugger ya está adjunto a this.tabId — ver
+    // _adjuntarDebugger/_soltarDebugger. Se resetea a false cada vez que
+    // se crea una pestaña/ventana nueva (el adjunto es por tabId, uno
+    // viejo ya no sirve para el tabId nuevo).
+    this._debuggerListo = false;
   }
 
   /** Abre su propia pestaña, en su propia ventana, sobre "Documentos recibidos". */
@@ -282,6 +338,7 @@ export class DianDownloadWorker {
   }
 
   async detener() {
+    await this._soltarDebugger();
     if (this.windowId != null) {
       try { await chrome.windows.remove(this.windowId); } catch { /* puede que ya se haya cerrado */ }
     } else if (this.tabId != null) {
@@ -290,6 +347,54 @@ export class DianDownloadWorker {
     this.tabId = null;
     this.windowId = null;
     this.estado = 'detenido';
+  }
+
+  /**
+   * Adjunta el Protocolo de DevTools a la pestaña de este worker — sólo se
+   * necesita antes del primer clic real (`_clicReal`), no al crear la
+   * pestaña, así que se hace perezoso (una vez por tabId, no una vez por
+   * CUFE). Ver la auditoría 2026-08-25(b) al inicio del archivo para el
+   * porqué: un `boton.click()` normal no basta para el botón de descargar.
+   */
+  async _adjuntarDebugger() {
+    if (this._debuggerListo) return;
+    await new Promise((resolve, reject) => {
+      chrome.debugger.attach({ tabId: this.tabId }, '1.3', () => {
+        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+        resolve();
+      });
+    });
+    this._debuggerListo = true;
+  }
+
+  async _soltarDebugger() {
+    if (!this._debuggerListo) return;
+    this._debuggerListo = false;
+    await new Promise((resolve) => {
+      chrome.debugger.detach({ tabId: this.tabId }, () => resolve());
+    });
+  }
+
+  /**
+   * Un clic REAL — `isTrusted: true` — en las coordenadas de página que ya
+   * calculó `scriptPrepararBotonDescargar`. `Input.dispatchMouseEvent`
+   * ocurre al nivel del propio Chrome (como si moviera el mouse un
+   * humano), así que la página no puede distinguirlo de un clic real.
+   * Incluye un `mouseMoved` antes del clic — algunos scripts anti-bot
+   * exigen ver el cursor "llegar" al botón, no sólo el clic suelto.
+   */
+  async _clicReal(x, y) {
+    const enviar = (method, params) => new Promise((resolve, reject) => {
+      chrome.debugger.sendCommand({ tabId: this.tabId }, method, params, (result) => {
+        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+        resolve(result);
+      });
+    });
+    await enviar('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 0 });
+    await dormir(80);
+    await enviar('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
+    await dormir(60);
+    await enviar('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 });
   }
 
   /**
@@ -309,6 +414,7 @@ export class DianDownloadWorker {
       }
     }
     if (this.tabId == null || this._pestanaSospechosa) {
+      this._debuggerListo = false; // el adjunto viejo era para el tabId anterior, ya no sirve
       if (this.windowId != null) { try { await chrome.windows.remove(this.windowId); } catch { /* ya cerrada */ } }
       else if (this.tabId != null) { try { await chrome.tabs.remove(this.tabId); } catch { /* ya cerrada */ } }
       this.windowId = null;
@@ -582,18 +688,34 @@ export class DianDownloadWorker {
       chrome.tabs.onUpdated.addListener(onNavegado);
       chrome.tabs.onCreated.addListener(onPestanaNueva);
 
-      this._ejecutar(scriptClicDescargar, [], TIMEOUT_LLAMADA_MS).then((r) => {
+      // Primero se prepara el botón (quitar target, calcular coordenadas)
+      // con un script normal — eso sí es seguro de hacer por
+      // executeScript, no depende de isTrusted. El CLIC en sí va aparte,
+      // por chrome.debugger (ver _clicReal): un boton.click() sintético
+      // aquí es exactamente lo que se confirmó en vivo que no alcanza
+      // (ver auditoría 2026-08-25(b) al inicio del archivo).
+      this._ejecutar(scriptPrepararBotonDescargar, [], TIMEOUT_LLAMADA_MS).then(async (r) => {
         if (terminado) return;
         if (!r?.ok) {
           terminado = true;
           limpiar();
-          resolve({ ok: false, detalle: r?.motivo || 'No se pudo hacer clic en el botón de descargar.' });
+          resolve({ ok: false, detalle: r?.motivo || 'No se pudo preparar el botón de descargar.' });
+          return;
+        }
+        try {
+          await this._adjuntarDebugger();
+          await this._clicReal(r.x, r.y);
+        } catch (err) {
+          if (terminado) return;
+          terminado = true;
+          limpiar();
+          resolve({ ok: false, detalle: `No se pudo simular un clic real en el botón de descargar: ${err.message}` });
         }
       }).catch(() => {
         if (terminado) return;
         terminado = true;
         limpiar();
-        resolve({ ok: false, detalle: 'Se perdió la conexión con la pestaña al hacer clic en descargar.' });
+        resolve({ ok: false, detalle: 'Se perdió la conexión con la pestaña al preparar el botón de descargar.' });
       });
     });
 

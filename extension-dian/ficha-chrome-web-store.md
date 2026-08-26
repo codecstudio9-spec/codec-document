@@ -57,6 +57,9 @@ Hecha por Codec Document (codecdocument.com), plataforma de firma electrónica y
 **cookies**
 > Se usa únicamente para comprobar si la sesión abierta con la DIAN sigue activa (existe la cookie de sesión y no está vencida), y así poder avisarle al usuario si el enlace del token todavía sirve. No se leen ni se envían los valores de las cookies a ningún sitio.
 
+**debugger**
+> Se usa únicamente para simular, con un clic técnicamente indistinguible de uno real (`isTrusted: true`), la pulsación del botón "Descargar" que la propia página de la DIAN ya muestra — necesario porque el botón está protegido por una verificación (Cloudflare Turnstile) que un clic generado por script normal no logra destrabar. Mientras se usa, Chrome muestra su propio aviso de "esta extensión está depurando la pestaña" — no se oculta ni se puede ocultar. No se usa para leer ni modificar nada de la página, sólo para repetir el mismo clic que el usuario haría a mano.
+
 **externally_connectable (codecdocument.com)**
 > Permite que la aplicación web de Codec Document le pregunte a la extensión "¿estás instalada?" para guiar al usuario correctamente (mostrarle instrucciones de instalación o confirmar que ya puede usarla). Es un solo mensaje de ida y vuelta; no le da a la página web ningún acceso a la sesión de la DIAN ni a los archivos descargados.
 

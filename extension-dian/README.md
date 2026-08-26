@@ -67,6 +67,39 @@ este entorno):**
    siendo los selectores correctos — la DIAN pudo haber cambiado el HTML del
    formulario junto con el nuevo filtro de seguridad.
 
+## Auditoría 2026-08-25(b) — confirmado en vivo: el clic en "Descargar" no bastaba
+
+Con el cambio de arriba (ventanas visibles) SÍ se avanzó: la búsqueda y el
+resultado ya funcionan. Pero apareció un fallo nuevo y consistente:
+`[ERROR_DESCARGA] La DIAN no entregó nada tras hacer clic en descargar
+(tiempo agotado)`. El clic no arroja ningún error — el botón existe,
+`boton.click()` "funciona" — pero la DIAN nunca entrega el archivo.
+
+**Causa:** `boton.click()` disparado desde `chrome.scripting.executeScript`
+es un evento SINTÉTICO — `event.isTrusted` vale `false` siempre, sin
+excepción posible desde JavaScript (esto no es specific de la DIAN, es una
+garantía del propio navegador). Eso alcanza para enviar el formulario de
+búsqueda, pero el botón de descargar está detrás de un token de Cloudflare
+Turnstile — y es común que ese tipo de verificación exija un gesto
+realmente confiable antes de entregar el archivo.
+
+**Fix (v2.3):** el clic en "Descargar" ahora se dispara por el Protocolo de
+DevTools de Chrome (`chrome.debugger` + `Input.dispatchMouseEvent`), que sí
+produce `isTrusted: true` porque ocurre al nivel del propio navegador, no
+de la página — la misma técnica que usan por debajo Puppeteer/Playwright
+(y, casi seguro, herramientas como QFe Collector). Ver
+`_adjuntarDebugger`/`_clicReal` en `download-worker.js`.
+
+**Contrapartida honesta:** esto agrega el permiso `debugger` al manifest, y
+mientras la extensión trabaja, Chrome muestra una barra amarilla
+"...está depurando este navegador" en la parte superior — visible a
+propósito, no se puede (ni se debe) ocultar. Si el usuario le da a
+"Cancelar" en esa barra, el worker pierde el clic real para ese CUFE
+(queda como ERROR_DESCARGA y reintenta más tarde, readjuntando solo).
+
+**Sigue sin confirmarse el criterio final** — falta que un lote real
+termine con archivos físicos en `Descargas/DIAN/`.
+
 ## Por qué NO se usa el web service oficial de la DIAN (investigado 2026-08-23)
 
 Antes de reconstruir esto se investigó si `GetXmlByDocumentKey` (parte de
