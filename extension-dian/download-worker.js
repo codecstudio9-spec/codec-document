@@ -622,11 +622,24 @@ export class DianDownloadWorker {
     const resultado = await new Promise((resolve) => {
       let terminado = false;
 
-      const vencido = setTimeout(() => {
+      const vencido = setTimeout(async () => {
         if (terminado) return;
         terminado = true;
         limpiar();
-        resolve({ ok: false, detalle: 'La DIAN no entregó nada tras hacer clic en descargar (tiempo agotado).' });
+        // Diagnóstico EN EL MOMENTO del timeout — antes esto se perdía, así
+        // que un ERROR_DESCARGA no dejaba ver si el clic real no hizo nada,
+        // si apareció un reto nuevo, o si la página quedó en otro estado.
+        // Con las ventanas ahora visibles (auditoría 2026-08-25), esto es
+        // lo más parecido a que el usuario mire la pantalla en el segundo
+        // exacto sin tener que estar pendiente en vivo.
+        const diag = await this._diagnostico();
+        resolve({
+          ok: false,
+          detalle: 'La DIAN no entregó nada tras hacer clic en descargar (tiempo agotado).',
+          muestra: diag?.texto,
+          url: diag?.url,
+          retoVisible: diag?.retoVisible,
+        });
       }, TIMEOUT_DESCARGA_MS);
 
       // Única espera larga del flujo sin llamadas reales a la API de por
@@ -743,7 +756,14 @@ export class DianDownloadWorker {
     }
 
     if (!resultado.ok) {
-      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_DESCARGA, detalle: resultado.detalle };
+      // Si el timeout alcanzó a tomar un diagnóstico (ver el `vencido` de
+      // arriba), un reto visible en ESE momento se reporta como bloqueo,
+      // no como un error reintentable más — mismo criterio que las otras
+      // ramas de este método.
+      if (resultado.retoVisible) {
+        return { estado: ESTADOS.REQUIERE_VALIDACION, codigoError: CODIGOS_ERROR.ERROR_BLOQUEO, detalle: 'La DIAN mostró una comprobación humana justo tras el clic en descargar.', muestra: resultado.muestra, url: resultado.url };
+      }
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_DESCARGA, detalle: resultado.detalle, muestra: resultado.muestra, url: resultado.url };
     }
 
     this.estado = ESTADOS.VERIFICANDO_ARCHIVO;
