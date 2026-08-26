@@ -193,7 +193,13 @@ function filaRegistro(r) {
   fila.className = ok ? '' : 'err';
   const dur = r.duracionMs != null ? ` (${(r.duracionMs / 1000).toFixed(1)}s)` : '';
   const worker = r.workerId != null ? ` [w${r.workerId}]` : '';
-  fila.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : `— ${r.detalle ?? r.estado}`}${dur}`;
+  // El código (ERROR_SEGURIDAD, ERROR_RESULTADO, etc.) va ANTES del detalle
+  // en texto plano — es lo primero que hay que poder filtrar/buscar en un
+  // registro de miles de filas para saber en qué paso se rompió cada CUFE,
+  // sin depender sólo de leer la frase completa (PARTE 3 del pedido: nunca
+  // un único "ERROR" genérico).
+  const codigo = !ok && r.codigoError ? `[${r.codigoError}] ` : '';
+  fila.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : `— ${codigo}${r.detalle ?? r.estado}`}${dur}`;
 
   if (!ok && (r.url || r.muestra)) {
     const detalles = document.createElement('details');

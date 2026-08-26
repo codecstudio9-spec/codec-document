@@ -19,6 +19,30 @@
 // completa de la página de búsqueda (nunca AJAX, nunca DOM heredado), así
 // que `.download-document` NO PUEDE existir hasta que el CUFE actual
 // produzca un resultado nuevo. Ver `_prepararPestanaLimpia`.
+//
+// ── Auditoría 2026-08-25: "0 XML" + "El campo de seguridad no está
+// completo. Por favor espere que se cargue la página." ──────────────────
+// Es públicamente confirmado (El Tiempo, cuenta oficial de la DIAN) que la
+// DIAN añadió un filtro de seguridad OPERADO POR MICROSOFT que, ante un mal
+// funcionamiento, deja a usuarios REALES atrapados en un "bucle de
+// validación de seguridad" — el mismo síntoma exacto que reportó el
+// contador, no un efecto secundario de esta extensión. Hipótesis principal,
+// no confirmada aún en vivo (hace falta un token real para probarlo): ese
+// filtro depende de señales de que la pestaña está VISIBLE y con foco real
+// (page-visibility, requestAnimationFrame) para terminar de "resolverse" —
+// Chrome estrangula esos mismos temporizadores en una pestaña abierta con
+// `active: false` (exactamente como se abrían todas las pestañas de esta
+// extensión hasta ahora). Una pestaña que Chrome nunca marca como visible
+// puede quedarse esperando esa validación para siempre, y eso es
+// literalmente lo que dice el mensaje: "espere que se cargue la página".
+// Herramientas de escritorio como QFe Collector automatizan un navegador
+// REAL y VISIBLE, nunca una pestaña oculta — coincide con esta hipótesis.
+//
+// Cambio aplicado mientras se confirma en vivo: cada worker abre su pestaña
+// en su PROPIA ventana de Chrome (no oculta dentro de la ventana principal)
+// — ver `_crearPestana`. Y se separa "la página cargó" de "la seguridad de
+// la página está lista" como dos pasos explícitos y distintos — ver
+// ESPERANDO_SEGURIDAD y `_esperarSeguridadLista`.
 
 import { HOSTS_PERMITIDOS } from './dian.js';
 
@@ -26,6 +50,7 @@ export const ESTADOS = Object.freeze({
   PENDIENTE: 'PENDIENTE',
   ASIGNADO: 'ASIGNADO',
   PREPARANDO_PESTANA: 'PREPARANDO_PESTANA',
+  ESPERANDO_SEGURIDAD: 'ESPERANDO_SEGURIDAD',
   CONSULTANDO: 'CONSULTANDO',
   ESPERANDO_RESULTADO: 'ESPERANDO_RESULTADO',
   LISTO_PARA_DESCARGAR: 'LISTO_PARA_DESCARGAR',
@@ -38,8 +63,27 @@ export const ESTADOS = Object.freeze({
   REQUIERE_VALIDACION: 'REQUIERE_VALIDACION',
 });
 
+// Taxonomía de errores (PARTE 3 del pedido del usuario — "no usar un único
+// ERROR"). `ESTADOS` sigue siendo lo que el DownloadManager usa para
+// decidir reintentos/pausas (no se toca esa máquina, ya probada); esto es
+// una etiqueta ADICIONAL, más fina, que viaja en `codigoError` dentro del
+// mismo resultado — para que el registro (popup/CSV) diga EXACTAMENTE en
+// qué paso de la tubería se rompió cada CUFE, en vez de "ERROR_REINTENTABLE"
+// para todo.
+export const CODIGOS_ERROR = Object.freeze({
+  ERROR_PAGINA: 'ERROR_PAGINA', // "Documentos recibidos" no cargó / la pestaña no respondió
+  ERROR_SEGURIDAD: 'ERROR_SEGURIDAD', // el "campo de seguridad" nunca terminó de cargar
+  ERROR_BUSQUEDA: 'ERROR_BUSQUEDA', // no se pudo escribir el CUFE o hacer clic en Buscar
+  ERROR_RESULTADO: 'ERROR_RESULTADO', // buscó, pero la DIAN no mostró un resultado descargable
+  ERROR_DESCARGA: 'ERROR_DESCARGA', // el clic en Descargar no produjo una descarga de Chrome
+  ERROR_ARCHIVO: 'ERROR_ARCHIVO', // Chrome descargó algo, pero no parece el XML/ZIP real
+  ERROR_TIMEOUT: 'ERROR_TIMEOUT', // se agotó el tope total del CUFE sin que ningún paso individual fallara primero
+  ERROR_BLOQUEO: 'ERROR_BLOQUEO', // la DIAN pidió verificación humana (Turnstile/reto visible)
+});
+
 const HOST_RECIBIDOS = 'https://catalogo-vpfe.dian.gov.co/Document/Received';
 const TIMEOUT_NAVEGACION_MS = 30_000;
+const TIMEOUT_SEGURIDAD_MS = 12_000; // cuánto se espera a que el "campo de seguridad" termine de cargar antes de rendirse
 const TIMEOUT_BUSQUEDA_MS = 15_000;
 const TIMEOUT_DESCARGA_MS = 20_000;
 const TIMEOUT_LLAMADA_MS = 8_000; // tope por cada llamada individual a la pestaña
@@ -62,6 +106,25 @@ const FRASES_BLOQUEO = [
   'access denied',
   'sorry, you have been blocked',
   'solicitud bloqueada',
+];
+
+// Distinto de FRASES_BLOQUEO a propósito: esto NO es "la DIAN te bloqueó",
+// es "la DIAN todavía está resolviendo su propio filtro de seguridad y pide
+// esperar" — reportado en vivo por el contador el 2026-08-25 ("El campo de
+// seguridad no está completo. Por favor espere que se cargue la página."),
+// y coincide con el incidente público de un filtro de Microsoft que puede
+// dejar ese chequeo colgado. Tratarlo como bloqueo (pausar todo, pedir un
+// humano) sería peor de lo necesario si de verdad es transitorio; tratarlo
+// como el ERROR_REINTENTABLE genérico de antes lo escondía del registro. Se
+// le da su propia categoría — ver ESPERANDO_SEGURIDAD / _esperarSeguridadLista.
+const FRASES_SEGURIDAD_CARGANDO = [
+  'campo de seguridad no está completo',
+  'campo de seguridad no esta completo',
+  'espere que se cargue la página',
+  'espere que se cargue la pagina',
+  'espere a que se cargue la página',
+  'estamos comprobando que no sea un bot',
+  'comprobando que no sea un bot',
 ];
 
 function esPestanaDian(url) {
@@ -141,6 +204,7 @@ export class DianDownloadWorker {
     this.id = id;
     this.carpeta = opciones.carpeta;
     this.tabId = null;
+    this.windowId = null;
     this.cufeActual = null;
     this.estado = 'inactivo';
     this.inicioCufe = null;
@@ -151,13 +215,25 @@ export class DianDownloadWorker {
     this._pestanaSospechosa = false;
   }
 
-  /** Abre su propia pestaña oculta sobre "Documentos recibidos". */
+  /** Abre su propia pestaña, en su propia ventana, sobre "Documentos recibidos". */
   async iniciar() {
     this.estado = 'abriendo';
     this.tabId = await this._crearPestana();
     this.estado = 'listo';
   }
 
+  /**
+   * Ventana propia — NO una pestaña oculta (`active: false`) dentro de la
+   * ventana principal, como hacía la versión anterior. Ver el comentario
+   * grande de auditoría 2026-08-25 al inicio del archivo: la hipótesis
+   * principal para "0 XML" + el mensaje de "campo de seguridad" es que el
+   * nuevo filtro de la DIAN (operado por Microsoft) necesita que Chrome
+   * marque la pestaña como VISIBLE para terminar de resolverse, y Chrome
+   * estrangula esas mismas señales en una pestaña que nunca es la activa
+   * de su ventana. `focused: false` evita robarle el foco al usuario cada
+   * vez que arranca un worker; la posición se escalona por `id` para que
+   * varias ventanas de varios workers no queden exactamente superpuestas.
+   */
   _crearPestana() {
     return new Promise((resolve, reject) => {
       let terminado = false;
@@ -176,25 +252,43 @@ export class DianDownloadWorker {
         resolve(tabId);
       };
       chrome.tabs.onUpdated.addListener(escuchar);
-      chrome.tabs.create({ url: HOST_RECIBIDOS, active: false }, (tab) => {
-        if (terminado) return;
-        if (chrome.runtime.lastError || !tab?.id) {
-          terminado = true;
-          clearTimeout(vencido);
-          chrome.tabs.onUpdated.removeListener(escuchar);
-          reject(new Error(`Worker ${this.id}: no se pudo abrir la pestaña de la DIAN.`));
-          return;
-        }
-        tabId = tab.id;
-      });
+      const offset = (this.id - 1) * 40;
+      chrome.windows.create(
+        { url: HOST_RECIBIDOS, type: 'normal', focused: false, state: 'normal', width: 480, height: 640, left: 20 + offset, top: 20 + offset },
+        (win) => {
+          if (terminado) return;
+          const tab = win?.tabs?.[0];
+          if (chrome.runtime.lastError || !win?.id || !tab?.id) {
+            terminado = true;
+            clearTimeout(vencido);
+            chrome.tabs.onUpdated.removeListener(escuchar);
+            reject(new Error(`Worker ${this.id}: no se pudo abrir la ventana de la DIAN.`));
+            return;
+          }
+          this.windowId = win.id;
+          tabId = tab.id;
+          // Si la pestaña de la ventana recién creada ya quedó "complete"
+          // antes de enganchar el listener de arriba, ese evento ya no va
+          // a llegar — se resuelve aquí mismo en vez de esperarlo en vano.
+          if (tab.status === 'complete') {
+            terminado = true;
+            clearTimeout(vencido);
+            chrome.tabs.onUpdated.removeListener(escuchar);
+            resolve(tabId);
+          }
+        },
+      );
     });
   }
 
   async detener() {
-    if (this.tabId != null) {
+    if (this.windowId != null) {
+      try { await chrome.windows.remove(this.windowId); } catch { /* puede que ya se haya cerrado */ }
+    } else if (this.tabId != null) {
       try { await chrome.tabs.remove(this.tabId); } catch { /* puede que ya se haya cerrado */ }
     }
     this.tabId = null;
+    this.windowId = null;
     this.estado = 'detenido';
   }
 
@@ -215,7 +309,9 @@ export class DianDownloadWorker {
       }
     }
     if (this.tabId == null || this._pestanaSospechosa) {
-      if (this.tabId != null) { try { await chrome.tabs.remove(this.tabId); } catch { /* ya cerrada */ } }
+      if (this.windowId != null) { try { await chrome.windows.remove(this.windowId); } catch { /* ya cerrada */ } }
+      else if (this.tabId != null) { try { await chrome.tabs.remove(this.tabId); } catch { /* ya cerrada */ } }
+      this.windowId = null;
       this.tabId = await this._crearPestana();
       this._pestanaSospechosa = false;
       return;
@@ -258,6 +354,33 @@ export class DianDownloadWorker {
   }
 
   /**
+   * Paso explícito, separado de "la página cargó" (eso ya lo garantiza
+   * `_prepararPestanaLimpia` al esperar el evento `complete` de la
+   * navegación). Antes de tocar el formulario de búsqueda, confirma que la
+   * DIAN no sigue mostrando su propio mensaje de "todavía estoy resolviendo
+   * el filtro de seguridad, espera" (ver FRASES_SEGURIDAD_CARGANDO) — y si
+   * lo muestra, reintenta el diagnóstico hasta que se aclare o se agote
+   * TIMEOUT_SEGURIDAD_MS. En el caso normal (el mensaje nunca aparece) esto
+   * es un único diagnóstico rápido, no una espera fija.
+   */
+  async _esperarSeguridadLista() {
+    const vence = Date.now() + TIMEOUT_SEGURIDAD_MS;
+    let ultimoDiag = null;
+    while (Date.now() < vence) {
+      const diag = await this._diagnostico();
+      if (diag) ultimoDiag = diag;
+      if (!diag) { await dormir(600); continue; }
+      if (diag.retoVisible || (diag.textoLower && FRASES_BLOQUEO.some((f) => diag.textoLower.includes(f)))) {
+        return { lista: false, bloqueado: true, diag };
+      }
+      const cargandoSeguridad = diag.textoLower && FRASES_SEGURIDAD_CARGANDO.some((f) => diag.textoLower.includes(f));
+      if (!cargandoSeguridad && diag.tieneFormulario) return { lista: true, diag };
+      await dormir(800);
+    }
+    return { lista: false, bloqueado: false, diag: ultimoDiag };
+  }
+
+  /**
    * Procesa UN CUFE de principio a fin en la pestaña de este worker.
    * `onDescargaIniciada(downloadId)` se llama de forma SÍNCRONA en cuanto
    * Chrome confirma que empezó a bajar un archivo — antes de esperar a que
@@ -282,7 +405,7 @@ export class DianDownloadWorker {
       );
     } catch (err) {
       this._pestanaSospechosa = true;
-      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: err.message };
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_TIMEOUT, detalle: err.message };
     } finally {
       this.cufeActual = null;
       this.estado = 'listo';
@@ -294,7 +417,33 @@ export class DianDownloadWorker {
     try {
       await this._prepararPestanaLimpia();
     } catch (err) {
-      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: `No se pudo preparar la pestaña: ${err.message}` };
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_PAGINA, detalle: `No se pudo preparar la pestaña: ${err.message}` };
+    }
+
+    // Paso separado a propósito de "la página cargó" — ver el comentario
+    // grande de auditoría 2026-08-25 al inicio del archivo y
+    // _esperarSeguridadLista. Sin esto se hacía clic en Buscar apenas el
+    // DOM terminaba de cargar, sin confirmar que el propio filtro de
+    // seguridad de la DIAN ya hubiera terminado de resolverse.
+    this.estado = ESTADOS.ESPERANDO_SEGURIDAD;
+    const seguridad = await this._esperarSeguridadLista();
+    if (seguridad.bloqueado) {
+      return {
+        estado: ESTADOS.REQUIERE_VALIDACION,
+        codigoError: CODIGOS_ERROR.ERROR_BLOQUEO,
+        detalle: 'La DIAN pidió una comprobación humana antes de poder buscar.',
+        muestra: seguridad.diag?.texto,
+        url: seguridad.diag?.url,
+      };
+    }
+    if (!seguridad.lista) {
+      return {
+        estado: ESTADOS.ERROR_REINTENTABLE,
+        codigoError: CODIGOS_ERROR.ERROR_SEGURIDAD,
+        detalle: 'La página de la DIAN no terminó de cargar su campo de seguridad a tiempo ("espere que se cargue la página").',
+        muestra: seguridad.diag?.texto,
+        url: seguridad.diag?.url,
+      };
     }
 
     this.estado = ESTADOS.CONSULTANDO;
@@ -302,10 +451,10 @@ export class DianDownloadWorker {
     try {
       clic = await this._ejecutar(scriptClicBuscar, [cufe], TIMEOUT_LLAMADA_MS);
     } catch {
-      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: 'Se perdió la conexión con la pestaña al buscar.' };
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_BUSQUEDA, detalle: 'Se perdió la conexión con la pestaña al buscar.' };
     }
-    if (!clic) return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: 'La pestaña no respondió al buscar.' };
-    if (!clic.ok) return { estado: ESTADOS.ERROR_DEFINITIVO, detalle: clic.motivo };
+    if (!clic) return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_BUSQUEDA, detalle: 'La pestaña no respondió al buscar.' };
+    if (!clic.ok) return { estado: ESTADOS.ERROR_DEFINITIVO, codigoError: CODIGOS_ERROR.ERROR_BUSQUEDA, detalle: clic.motivo };
 
     this.estado = ESTADOS.ESPERANDO_RESULTADO;
     // Presupuesto de 15s, pero revisado con llamadas cortas y acotadas —
@@ -333,13 +482,24 @@ export class DianDownloadWorker {
       if (diag?.retoVisible || (diag?.textoLower && FRASES_BLOQUEO.some((f) => diag.textoLower.includes(f)))) {
         return {
           estado: ESTADOS.REQUIERE_VALIDACION,
+          codigoError: CODIGOS_ERROR.ERROR_BLOQUEO,
           detalle: 'La DIAN pidió una comprobación humana en esta pestaña.',
+          muestra: diag?.texto,
+          url: diag?.url,
+        };
+      }
+      if (diag?.textoLower && FRASES_SEGURIDAD_CARGANDO.some((f) => diag.textoLower.includes(f))) {
+        return {
+          estado: ESTADOS.ERROR_REINTENTABLE,
+          codigoError: CODIGOS_ERROR.ERROR_SEGURIDAD,
+          detalle: 'La DIAN volvió a pedir esperar su campo de seguridad justo al buscar.',
           muestra: diag?.texto,
           url: diag?.url,
         };
       }
       return {
         estado: ESTADOS.ERROR_REINTENTABLE,
+        codigoError: CODIGOS_ERROR.ERROR_RESULTADO,
         detalle: 'La DIAN no muestra este CUFE en "Documentos recibidos" (o la sesión venció).',
         muestra: diag?.texto,
         url: diag?.url,
@@ -440,10 +600,20 @@ export class DianDownloadWorker {
     if (resultado.navegoAError) {
       const diag = await this._diagnostico();
       if (diag?.retoVisible || (diag?.textoLower && FRASES_BLOQUEO.some((f) => diag.textoLower.includes(f)))) {
-        return { estado: ESTADOS.REQUIERE_VALIDACION, detalle: 'La DIAN pidió una comprobación humana al descargar.', muestra: diag?.texto, url: diag?.url };
+        return { estado: ESTADOS.REQUIERE_VALIDACION, codigoError: CODIGOS_ERROR.ERROR_BLOQUEO, detalle: 'La DIAN pidió una comprobación humana al descargar.', muestra: diag?.texto, url: diag?.url };
+      }
+      if (diag?.textoLower && FRASES_SEGURIDAD_CARGANDO.some((f) => diag.textoLower.includes(f))) {
+        return {
+          estado: ESTADOS.ERROR_REINTENTABLE,
+          codigoError: CODIGOS_ERROR.ERROR_SEGURIDAD,
+          detalle: 'La DIAN pidió esperar su campo de seguridad justo al descargar.',
+          muestra: diag?.texto,
+          url: diag?.url,
+        };
       }
       return {
         estado: ESTADOS.ERROR_REINTENTABLE,
+        codigoError: CODIGOS_ERROR.ERROR_DESCARGA,
         detalle: 'La DIAN no entregó el archivo (probablemente un error temporal del servidor — no del CUFE).',
         muestra: diag?.texto,
         url: diag?.url,
@@ -451,7 +621,7 @@ export class DianDownloadWorker {
     }
 
     if (!resultado.ok) {
-      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: resultado.detalle };
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_DESCARGA, detalle: resultado.detalle };
     }
 
     this.estado = ESTADOS.VERIFICANDO_ARCHIVO;
@@ -486,7 +656,7 @@ export class DianDownloadWorker {
     });
 
     if (!final.ok) {
-      return { estado: ESTADOS.ERROR_REINTENTABLE, detalle: final.detalle, downloadId };
+      return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_DESCARGA, detalle: final.detalle, downloadId };
     }
 
     let mime = null;
@@ -501,6 +671,7 @@ export class DianDownloadWorker {
     if (pareceBloqueo) {
       return {
         estado: ESTADOS.ERROR_REINTENTABLE,
+        codigoError: CODIGOS_ERROR.ERROR_ARCHIVO,
         detalle: `La DIAN devolvió ${mime} en vez de un archivo — probablemente una página de bloqueo guardada como si fuera el documento.`,
         downloadId,
         mime,
@@ -510,6 +681,7 @@ export class DianDownloadWorker {
     if (tamano != null && tamano > 0 && tamano < TAMANO_MINIMO_BYTES) {
       return {
         estado: ESTADOS.ERROR_REINTENTABLE,
+        codigoError: CODIGOS_ERROR.ERROR_ARCHIVO,
         detalle: `El archivo pesa sólo ${tamano} bytes — demasiado pequeño para ser un documento real, probablemente una respuesta de error.`,
         downloadId,
         mime,

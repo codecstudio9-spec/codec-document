@@ -1,5 +1,72 @@
 # Descargador DIAN — extensión de Chrome (beta interna)
 
+## Auditoría 2026-08-25 — "0 XML en Descargas/DIAN" + "El campo de seguridad no está completo"
+
+En una prueba con ~59 CUFEs, la cola corría (consultaba, reintentaba) pero
+**0 archivos aparecían realmente en `Descargas/DIAN/`**, y la DIAN mostraba
+repetidamente: *"El campo de seguridad no está completo. Por favor espere
+que se cargue la página."*
+
+**Diagnóstico del flujo completo** (token → sesión → pestaña → página lista
+→ seguridad lista → CUFE → buscar → resultado → descargar →
+`chrome.downloads` → archivo físico): el punto de quiebre es entre "página
+lista" y "seguridad lista" — la v2.1 los trataba como el mismo paso
+(esperaba sólo a que la pestaña terminara de cargar, después hacía clic en
+Buscar de inmediato). Ese mensaje de seguridad nunca estaba en
+`FRASES_BLOQUEO`, así que cuando aparecía cada intento se perdía como un
+`ERROR_REINTENTABLE` genérico e indistinguible de cualquier otro fallo — de
+ahí que el registro no dejara ver dónde se rompía cada CUFE.
+
+**Hipótesis principal (no confirmada aún en vivo — hace falta un token real
+para probarla):** es públicamente confirmado que la DIAN añadió un filtro
+de seguridad **operado por Microsoft** que puede dejar a usuarios reales
+atrapados en un bucle de validación ([El Tiempo, agosto 2026][el-tiempo] —
+la propia cuenta oficial de la DIAN pidió disculpas por el incidente). Ese
+tipo de filtro suele depender de que la página esté *visible* (Page
+Visibility API) para terminar de resolverse — y Chrome estrangula
+temporizadores y `requestAnimationFrame` en cualquier pestaña abierta con
+`active: false`, que es como esta extensión abría TODAS sus pestañas hasta
+la v2.1. Herramientas de escritorio como QFe Collector automatizan un
+navegador real y visible, nunca una pestaña oculta — coincide con la
+hipótesis.
+
+[el-tiempo]: https://www.eltiempo.com/economia/finanzas-personales/usuarios-reportan-fallas-en-la-plataforma-de-facturacion-electronica-de-la-dian-por-bucle-en-la-validacion-de-seguridad-brindo-numeros-de-atencion-3567952
+
+**Cambios de la v2.2 mientras se confirma en vivo:**
+
+1. Cada worker (y la pestaña de autenticación) abre su propia **ventana** de
+   Chrome — no una pestaña oculta dentro de la ventana principal. Con
+   `focused: false` para no robarle el foco al usuario, pero la pestaña sí
+   queda "visible" para Chrome. Ver `_crearPestana` en `download-worker.js`
+   y `abrirSesion` en `dian-session.js`.
+2. "La página cargó" y "el campo de seguridad terminó de cargar" son ahora
+   dos pasos EXPLÍCITOS y distintos (`PREPARANDO_PESTANA` →
+   `ESPERANDO_SEGURIDAD` → `CONSULTANDO`), en vez de asumir que uno implica
+   el otro. Ver `_esperarSeguridadLista`.
+3. Taxonomía de errores granular (`CODIGOS_ERROR` en `download-worker.js`):
+   `ERROR_PAGINA`, `ERROR_SEGURIDAD`, `ERROR_BUSQUEDA`, `ERROR_RESULTADO`,
+   `ERROR_DESCARGA`, `ERROR_ARCHIVO`, `ERROR_TIMEOUT`, `ERROR_BLOQUEO` — ya
+   no un único "ERROR_REINTENTABLE" para todo. Visible en el registro del
+   popup (`[CÓDIGO] detalle`) y en la columna `codigo_error` del CSV
+   exportado.
+
+**Cómo probarlo (necesita un token real — no se pudo verificar en vivo en
+este entorno):**
+
+1. Cargar la extensión actualizada (`chrome://extensions` → recargar).
+2. Probar con un lote CHICO primero (5-10 CUFEs, 1 worker) — no 5.000. Si
+   siguen apareciendo `[ERROR_SEGURIDAD]` en el registro, la hipótesis de
+   arriba está incompleta y hace falta ver la página en vivo (inspeccionar
+   qué exactamente populate ese "campo de seguridad" — probablemente un
+   `iframe`/script del filtro de Microsoft, no necesariamente Cloudflare).
+3. Confirmar el único criterio real de éxito: ¿aparecieron archivos XML/ZIP
+   físicos en `Descargas/DIAN/`? No cuenta como éxito que el popup muestre
+   "completado" sin ese archivo.
+4. Si el problema persiste igual con ventanas visibles, el siguiente sospechoso
+   a investigar (con sesión real) es si `#DocumentKey`/`.btn-search` siguen
+   siendo los selectores correctos — la DIAN pudo haber cambiado el HTML del
+   formulario junto con el nuevo filtro de seguridad.
+
 ## Por qué NO se usa el web service oficial de la DIAN (investigado 2026-08-23)
 
 Antes de reconstruir esto se investigó si `GetXmlByDocumentKey` (parte de

@@ -230,12 +230,13 @@ export class DownloadManager {
   }
 
   exportarCSV() {
-    const filas = [['cufe', 'estado', 'intentos', 'inicio', 'fin', 'duracion_ms', 'worker', 'mime', 'tamano', 'detalle', 'downloadId']];
+    const filas = [['cufe', 'estado', 'codigo_error', 'intentos', 'inicio', 'fin', 'duracion_ms', 'worker', 'mime', 'tamano', 'detalle', 'downloadId']];
     for (const cufe of this.cufes) {
       const d = this.documentos[cufe] || {};
       filas.push([
         cufe,
         d.estado ?? '',
+        d.codigoError ?? '',
         d.intentos ?? 0,
         d.inicio ? new Date(d.inicio).toISOString() : '',
         d.fin ? new Date(d.fin).toISOString() : '',
@@ -406,6 +407,7 @@ export class DownloadManager {
     doc.fin = Date.now();
     doc.duracionMs = doc.fin - doc.inicio;
     doc.detalle = r.detalle;
+    doc.codigoError = r.codigoError ?? null;
     doc.muestra = r.muestra;
     doc.url = r.url;
     if (r.downloadId != null) doc.downloadId = r.downloadId;

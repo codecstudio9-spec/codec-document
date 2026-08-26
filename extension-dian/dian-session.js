@@ -16,6 +16,12 @@ export async function abrirSesion(urlAuth) {
   return new Promise((resolve) => {
     let terminado = false;
     let tabId = null;
+    let windowId = null;
+
+    const cerrarVentana = () => {
+      if (windowId != null) chrome.windows.remove(windowId).catch(() => {});
+      else if (tabId != null) chrome.tabs.remove(tabId).catch(() => {});
+    };
 
     const escuchar = (id, info, tab) => {
       if (id !== tabId || info.status !== 'complete') return;
@@ -26,7 +32,7 @@ export async function abrirSesion(urlAuth) {
       if (terminado) return;
       terminado = true;
       chrome.tabs.onUpdated.removeListener(escuchar);
-      if (tabId != null) chrome.tabs.remove(tabId).catch(() => {});
+      cerrarVentana();
       resolve({
         ok: false,
         error: `La DIAN no respondió en ${TIMEOUT_MS / 1000} segundos. Espera un minuto y reintenta con el mismo enlace.`,
@@ -47,7 +53,7 @@ export async function abrirSesion(urlAuth) {
         sesionViva = cookies.some((c) => /AspNet\.ApplicationCookie/i.test(c.name) && c.value?.length > 20);
       } catch { /* permiso "cookies" ausente en una build vieja; no es crítico */ }
 
-      if (tabId != null) chrome.tabs.remove(tabId).catch(() => {});
+      cerrarVentana();
 
       const ok = !acaboEnLogin && sesionViva;
       resolve({
@@ -62,15 +68,24 @@ export async function abrirSesion(urlAuth) {
     }
 
     chrome.tabs.onUpdated.addListener(escuchar);
-    chrome.tabs.create({ url: urlAuth, active: false }, (tab) => {
-      if (chrome.runtime.lastError || !tab?.id) {
+    // Ventana propia, NO oculta (`active: false`) dentro de la ventana
+    // principal — mismo cambio e hipótesis que download-worker.js (ver su
+    // comentario grande de auditoría 2026-08-25): si el filtro de
+    // seguridad de la DIAN necesita que Chrome marque la pestaña como
+    // visible para completarse, esto también podría afectar el propio
+    // paso de autenticación, no sólo la búsqueda de cada CUFE.
+    chrome.windows.create({ url: urlAuth, type: 'normal', focused: false, width: 480, height: 640, left: 20, top: 20 }, (win) => {
+      const tab = win?.tabs?.[0];
+      if (chrome.runtime.lastError || !win?.id || !tab?.id) {
         clearTimeout(vencido);
         chrome.tabs.onUpdated.removeListener(escuchar);
         terminado = true;
-        resolve({ ok: false, error: 'No se pudo abrir la pestaña para autenticar con la DIAN.' });
+        resolve({ ok: false, error: 'No se pudo abrir la ventana para autenticar con la DIAN.' });
         return;
       }
+      windowId = win.id;
       tabId = tab.id;
+      if (tab.status === 'complete') finalizar(tab.url ?? '');
     });
   });
 }
