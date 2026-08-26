@@ -71,9 +71,11 @@ export async function reviewDocumentWithAi(content: string, language: 'en' | 'es
 /**
  * Polishes the wording of a single clause block the template owner already
  * wrote — the "Mejorar redacción" button in the docx template editor's
- * clause-blocks section. See supabase/functions/ai-improve-clause/index.ts:
- * deliberately narrow (improves existing text, never invents a new clause
- * from scratch), gated to paid plans/admin the same way as the AI review.
+ * clause-blocks section. Also backs preview-page.tsx's SelectionAiBar
+ * (select a clause in the live preview, tell it what to change) via the
+ * `instruction` param. See supabase/functions/ai-improve-clause/index.ts:
+ * without an instruction it never invents a new clause from scratch, gated
+ * to paid plans/admin the same way as the AI review.
  */
 export async function improveClauseWithAi(
   clauseText: string,
@@ -84,9 +86,15 @@ export async function improveClauseWithAi(
   tone: 'clause' | 'letter' = 'clause',
   /** Qué campo es, para que el modelo sepa qué está corrigiendo. */
   context = '',
+  /** Un cambio concreto sobre ESTA cláusula ("agrégale que...", "cambia
+   *  esto para que diga...") — a medio camino entre pulir sin tocar nada
+   *  (sin instrucción) y redactar desde cero con draftClauseWithAi (sin
+   *  texto de partida). Ver el comentario de buildPrompt en
+   *  ai-improve-clause/index.ts. */
+  instruction = '',
 ): Promise<string> {
   const { data, error } = await supabase.functions.invoke('ai-improve-clause', {
-    body: { clauseText, language, tone, context },
+    body: { clauseText, language, tone, context, instruction },
   });
 
   if (error) {

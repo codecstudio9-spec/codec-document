@@ -26,6 +26,7 @@ import { getSignatureAuditByOrder, getSignatureAuditsByOrder } from '../services
 import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { AiReviewPanel } from '../components/ai-review-panel';
+import { SelectionAiBar } from '../components/SelectionAiBar';
 import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } from '../services/analytics-service';
@@ -543,6 +544,7 @@ export function PreviewPage() {
   const [documentBranding, setDocumentBranding] = useState<DocumentBranding>({});
   const [editedContent, setEditedContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   /**
    * ¿El usuario reescribió el documento a mano?
    *
@@ -1742,11 +1744,21 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
             </CardHeader>
             <CardContent className="p-0">
               {isEditing ? (
-                <Textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="font-mono text-xs min-h-[800px] rounded-none border-0 focus-visible:ring-0"
-                />
+                <>
+                  <SelectionAiBar
+                    textareaRef={editTextareaRef}
+                    content={editedContent}
+                    onChange={setEditedContent}
+                    language={language}
+                    documentName={getDocumentTranslation(template.id, 'name', language)}
+                  />
+                  <Textarea
+                    ref={editTextareaRef}
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="font-mono text-xs min-h-[800px] rounded-none border-0 focus-visible:ring-0"
+                  />
+                </>
               ) : (
                 <div
                   ref={previewRef}

@@ -4,8 +4,16 @@
 // it improves EXISTING text (grammar, clarity, formal legal tone), it does
 // NOT invent a new clause from a one-line description — that's a much
 // higher-risk "generate legal text from scratch" feature the user
-// explicitly deferred. Same Deno.serve/service-role/Groq pattern as
-// ai-document-review, gated the same way (paid plan or admin).
+// explicitly deferred (see ai-draft-clause). Same Deno.serve/service-role/
+// Groq pattern as ai-document-review, gated the same way (paid plan or
+// admin).
+//
+// 2026-08-25: also backs "select a clause in the live preview and tell the
+// AI what to change" (preview-page.tsx's SelectionAiBar) — an optional
+// `instruction` field switches buildPrompt from "just polish this" to
+// "apply this specific change to this existing clause, touch nothing
+// else", borrowing ai-draft-clause's guardrail against inventing facts the
+// instruction didn't give.
 //
 // Deploy:
 //   supabase functions deploy ai-improve-clause --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
@@ -47,8 +55,30 @@ function corsHeaders(origin: string | null) {
  * queja o un reproche, se reformula en términos neutros. Una carta de renuncia
  * queda en la hoja de vida laboral de quien la firma.
  */
-function buildPrompt(clauseText: string, language: 'en' | 'es', tone: 'clause' | 'letter', context: string): string {
+function buildPrompt(clauseText: string, language: 'en' | 'es', tone: 'clause' | 'letter', context: string, instruction: string): string {
   const lang = language === 'en' ? 'English' : 'Spanish';
+
+  // Con instrucción: la persona pide un cambio concreto sobre una cláusula
+  // que YA existe ("agrégale que...", "cambia esto para que diga...") — a
+  // medio camino entre improveClauseWithAi (nunca cambia nada, sólo pule) y
+  // draftClauseWithAi (inventa una cláusula entera desde cero, sin texto de
+  // partida). Mismo candado anti-invención que ai-draft-clause: nunca un
+  // nombre/fecha/monto que la instrucción no dio.
+  if (instruction) {
+    return [
+      `You are a legal-document editor. Below is an EXISTING contract clause${context ? ` (the field is: ${context})` : ''}, and a specific instruction for how to change it.`,
+      `Apply ONLY what the instruction asks. Keep every other part of the clause exactly as it is — same obligations, same structure — unless the instruction says otherwise. Respond in ${lang}.`,
+      `NEVER invent a specific name, date, amount, percentage or deadline the instruction did not give you. Where a specific value is genuinely needed and missing, write a bracketed placeholder in ${lang} such as [SPECIFY AMOUNT] / [ESPECIFICAR MONTO] instead of making one up.`,
+      `If the instruction asks for something illegal, deceptive, or that would let one party abuse the other, do NOT apply it — instead respond with exactly one short sentence in ${lang} starting with "REFUSED:" explaining briefly why, and nothing else.`,
+      `Respond with ONLY the full rewritten clause text — no markdown, no quotes, no explanation, no preamble.`,
+      ``,
+      `EXISTING CLAUSE:`,
+      clauseText,
+      ``,
+      `INSTRUCTION:`,
+      instruction,
+    ].join('\n');
+  }
 
   if (tone === 'letter') {
     return [
@@ -130,6 +160,7 @@ Deno.serve(async (req) => {
       language?: 'en' | 'es';
       tone?: 'clause' | 'letter';
       context?: string;
+      instruction?: string;
     };
     const clauseText = String(body.clauseText ?? '').trim();
     const language: 'en' | 'es' = body.language === 'en' ? 'en' : 'es';
@@ -137,6 +168,9 @@ Deno.serve(async (req) => {
     // los llamadores que ya había no lo mandan.
     const tone: 'clause' | 'letter' = body.tone === 'letter' ? 'letter' : 'clause';
     const context = String(body.context ?? '').trim().slice(0, 120);
+    // Cuando viene, "mejorar" pasa a "aplicar este cambio concreto" — ver
+    // buildPrompt. Truncada como MAX_INSTRUCTION_CHARS en ai-draft-clause.
+    const instruction = String(body.instruction ?? '').trim().slice(0, 1500);
 
     if (!clauseText) {
       return new Response(JSON.stringify({ error: 'No clause text provided.' }), {
@@ -154,7 +188,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        messages: [{ role: 'user', content: buildPrompt(truncated, language, tone, context) }],
+        messages: [{ role: 'user', content: buildPrompt(truncated, language, tone, context, instruction) }],
         temperature: 0.3,
       }),
     });
@@ -173,6 +207,12 @@ Deno.serve(async (req) => {
     if (!improvedText) {
       return new Response(JSON.stringify({ error: 'AI returned an empty response.' }), {
         status: 502, headers: corsHeaders(origin),
+      });
+    }
+
+    if (improvedText.startsWith('REFUSED:')) {
+      return new Response(JSON.stringify({ error: improvedText.replace(/^REFUSED:\s*/, '') }), {
+        status: 422, headers: corsHeaders(origin),
       });
     }
 
