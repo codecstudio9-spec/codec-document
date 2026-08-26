@@ -8,6 +8,11 @@
 
 export const CUFE_RE = /^[0-9a-fA-F]{90,100}$/;
 
+// Base de las Edge Functions de IA (dian-explicar-error, dian-extraer-cufes).
+// Públicas y sin sesión a propósito: la extensión no tiene login propio, ver
+// el comentario de cabecera de cada función para el porqué y los límites.
+export const FUNCIONES_URL = 'https://yxzchnldmfsgdtbjurey.supabase.co/functions/v1';
+
 export const HOSTS_PERMITIDOS = [
   'catalogo-vpfe.dian.gov.co',
   'catalogo-vpfe-hab.dian.gov.co',

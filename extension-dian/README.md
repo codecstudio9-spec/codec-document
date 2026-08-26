@@ -1,5 +1,68 @@
 # Descargador DIAN — extensión de Chrome (beta interna)
 
+## v2.4.0 (2026-08-26) — IA para explicar errores y extraer CUFEs de texto sucio
+
+Dos ayudas de IA nuevas, ninguna toca el flujo de descarga en sí ni el reto
+de seguridad de la DIAN — eso sigue siendo intocable a propósito (ver "Por
+qué no se automatiza la comprobación humana" en `background.js`).
+
+1. **"🤖 Explicar con IA"** en cada fila fallida del registro (junto a "Ver
+   URL y respuesta"): manda el código de error + el diagnóstico técnico ya
+   capturado (nunca el CUFE ni datos fiscales) a
+   `supabase/functions/dian-explicar-error/`, que le devuelve al contador 2-3
+   frases en español simple sobre qué pasó y qué hacer — en vez de tener que
+   interpretar un `ERROR_DESCARGA` a secas.
+2. **"🤖 Extraer CUFEs con IA"** junto al cuadro de pegado: refuerzo para
+   cuando lo pegado no es una lista limpia (un correo reenviado, una tabla de
+   Excel con columnas de más) — `cufesDeTexto()` (regex simple) sigue
+   corriendo en cada tecla como antes; este botón manda el texto crudo a
+   `supabase/functions/dian-extraer-cufes/`, que le pide a la IA que
+   identifique candidatos y **los vuelve a validar con el mismo regex antes
+   de devolverlos** — nunca se confía en que la IA devolvió algo bien
+   formado. Sólo agrega lo nuevo al cuadro, nunca reemplaza lo que ya había.
+
+Ambas funciones son públicas (`--no-verify-jwt`): la extensión no tiene
+sesión de Supabase y pedirle al contador que pegue una clave para esto no
+valía la complejidad, dado que lo único que reciben es texto que el propio
+contador ya tenía a la vista (fragmentos de la página de la DIAN, o el texto
+que él mismo pegó). Cada función tiene un límite de tasa básico en memoria
+por IP como única defensa contra abuso — suficiente para el riesgo real
+(gastar cuota de Groq), no para un ataque serio. Si esto se abre más allá de
+los contadores actuales, vale la pena revisar si hace falta algo más fuerte.
+
+Mismo modelo (`openai/gpt-oss-120b` vía Groq) y mismo patrón que el resto de
+funciones de IA de la plataforma (`ai-improve-clause`, etc.) — reusa el
+secreto `GROQ_API_KEY` ya configurado, no se agregó ninguna clave nueva.
+
+## Auditoría 2026-08-25(d) — ejecuciones huérfanas entre CUFEs
+
+Tras la v2.3.2 (re-adjuntar `chrome.debugger` antes de cada clic), el error
+`Debugger is not attached` seguía apareciendo en `chrome://extensions` →
+Errores en algunas corridas. Causa encontrada al re-revisar la arquitectura:
+cuando un CUFE se abandona por timeout (`conLimite`), la promesa que se
+estaba ejecutando NO se cancela — sigue corriendo de fondo y, al terminar
+tarde, puede seguir mutando `this.tabId`/`this.windowId` de la instancia del
+worker, que para entonces ya se reasignó al CUFE siguiente. Esa
+"contaminación cruzada" entre CUFEs explica errores que no cuadraban con lo
+que la pestaña mostraba en el momento del fallo.
+
+**Fix v2.3.3:** contador de generación (`this._gen` / `_vigente(miGen)`) —
+cada llamada a `procesarCufe` saca su propio número de generación; cualquier
+callback que siga vivo tras un abandono se autodescarta al comprobar que ya
+no es vigente antes de tocar estado compartido. También se agregó
+`promesa.catch(() => {})` a la rama perdedora de `conLimite`'s
+`Promise.race` para que un timeout no deje una "Unhandled promise
+rejection" ensuciando el registro de errores.
+
+**Confirmado en vivo (2026-08-26):** tras borrar el registro de errores y
+volver a probar, dejaron de aparecer `Debugger is not attached` y `An
+unknown error occurred when fetching the script` — los dos que persistían
+desde la v2.3.2 eran del registro acumulado de pruebas anteriores, nunca se
+habían borrado con "Borrar todo". **Pendiente todavía:** confirmar que con
+esto los XML aparecen físicamente en `Descargas/DIAN/` en un lote real — que
+el registro de errores quede limpio es una condición necesaria, no la
+prueba final (ver el criterio de éxito al pie de este documento).
+
 ## Auditoría 2026-08-25 — "0 XML en Descargas/DIAN" + "El campo de seguridad no está completo"
 
 En una prueba con ~59 CUFEs, la cola corría (consultaba, reintentaba) pero
@@ -261,8 +324,10 @@ adivinar nada.
   página, no en el service worker) o sin vendorizar otra librería sin
   poder probarla en vivo.
 - **Detección automática de CUFEs desde el Excel/portal**: sigue siendo
-  copiar/pegar a propósito (ver PARTE 16 del pedido original: no
-  implementar hasta que la descarga básica esté sólida).
+  copiar/pegar — la v2.4.0 agregó un botón de IA que rescata CUFEs de texto
+  pegado desordenado (correo reenviado, tabla con columnas de más), pero
+  sigue dependiendo de que el contador pegue el texto a mano; no hay
+  automatización que vaya sola al portal a listar CUFEs de un período.
 - **Concurrencia adaptativa**: `numWorkers` es configurable (1-5) y se
   AUTO-reduce a 1 en cuanto la DIAN pide verificación humana (para el
   resto de esa corrida), pero no auto-escala hacia arriba sola dentro de

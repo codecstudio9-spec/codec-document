@@ -1,4 +1,4 @@
-import { cufesDeTexto } from './dian.js';
+import { cufesDeTexto, FUNCIONES_URL } from './dian.js';
 
 const $ = (id) => document.getElementById(id);
 const urlDianEl = $('urlDian');
@@ -6,6 +6,8 @@ const cufesEl = $('cufes');
 const carpetaEl = $('carpeta');
 const workersEl = $('workers');
 const btnProbar = $('btnProbar');
+const btnExtraerIa = $('btnExtraerIa');
+const extraerIaEstadoEl = $('extraerIaEstado');
 const btnIniciar = $('btnIniciar');
 const btnDetener = $('btnDetener');
 const btnBorrar = $('btnBorrar');
@@ -68,6 +70,50 @@ btnProbar.addEventListener('click', async () => {
       `Terminó en: ${r.urlFinal || '(?)'}`,
       `Sesión: ${r.sesionViva ? 'viva' : 'no la emitió'}`,
     ].join('\n');
+  }
+});
+
+/**
+ * Refuerzo con IA para cuando lo pegado no es una lista limpia (un correo
+ * reenviado, una tabla de Excel con más columnas): el regex de
+ * `cufesDeTexto` ya corre solo en cada tecla, esto es sólo para rescatar lo
+ * que ese regex no reconoce por venir mezclado con más texto. Nunca
+ * reemplaza lo ya encontrado — sólo agrega lo nuevo, y si la IA no está
+ * disponible, avisa y no rompe nada.
+ */
+btnExtraerIa.addEventListener('click', async () => {
+  const texto = cufesEl.value.trim();
+  if (!texto) { extraerIaEstadoEl.textContent = 'Pega primero el texto.'; return; }
+
+  btnExtraerIa.disabled = true;
+  extraerIaEstadoEl.textContent = 'Analizando con IA…';
+  try {
+    const res = await fetch(`${FUNCIONES_URL}/dian-extraer-cufes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    });
+    const datos = await res.json();
+    if (!res.ok || !Array.isArray(datos.cufes)) {
+      extraerIaEstadoEl.textContent = datos.error || 'No se pudo extraer con IA.';
+      return;
+    }
+
+    const yaHabia = new Set(cufesDeTexto(cufesEl.value));
+    const nuevos = datos.cufes.filter((c) => !yaHabia.has(c));
+    if (nuevos.length > 0) {
+      cufesEl.value = [...new Set([...yaHabia, ...datos.cufes])].join('\n');
+      guardarCampo('campo_cufes', cufesEl.value);
+      pintarConteo();
+    }
+
+    extraerIaEstadoEl.textContent = datos.conIa
+      ? `Encontré ${datos.cufes.length} CUFEs en total (${nuevos.length} nuevos con IA).`
+      : `La IA no está disponible ahora — usé sólo el reconocimiento simple (${datos.cufes.length} CUFEs).`;
+  } catch {
+    extraerIaEstadoEl.textContent = 'No se pudo conectar con el servicio de IA.';
+  } finally {
+    btnExtraerIa.disabled = false;
   }
 });
 
@@ -260,10 +306,55 @@ function filaRegistro(r) {
     cuerpo.style.whiteSpace = 'pre-wrap';
     cuerpo.textContent = [r.url, r.muestra].filter(Boolean).join('\n\n');
     detalles.appendChild(cuerpo);
+    detalles.appendChild(botonExplicarConIa(r));
 
     fila.appendChild(detalles);
   }
   return fila;
+}
+
+/**
+ * Traduce el código/detalle técnico de un fallo a una explicación simple
+ * para el contador, vía Groq (misma IA que ya usa la plataforma en el editor
+ * de contratos). Nunca bloquea nada si la IA no responde — sólo informa.
+ */
+function botonExplicarConIa(r) {
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.textContent = '🤖 Explicar con IA';
+  boton.style.marginTop = '5px';
+  boton.style.fontSize = '10px';
+  boton.style.padding = '3px 8px';
+
+  const explicacionEl = document.createElement('div');
+  explicacionEl.style.marginTop = '4px';
+  explicacionEl.style.fontSize = '10.5px';
+  explicacionEl.style.color = '#1e3a8a';
+  explicacionEl.style.display = 'none';
+
+  boton.addEventListener('click', async (ev) => {
+    ev.preventDefault(); // el botón vive dentro de un <details>: sin esto, el clic también abre/cierra el desplegable
+    boton.disabled = true;
+    boton.textContent = 'Pensando…';
+    try {
+      const res = await fetch(`${FUNCIONES_URL}/dian-explicar-error`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigoError: r.codigoError, detalle: r.detalle, muestra: r.muestra, url: r.url }),
+      });
+      const datos = await res.json();
+      explicacionEl.textContent = datos.explicacion || datos.error || 'No se pudo explicar.';
+    } catch {
+      explicacionEl.textContent = 'No se pudo conectar con el servicio de IA.';
+    }
+    explicacionEl.style.display = 'block';
+    boton.style.display = 'none';
+  });
+
+  const contenedor = document.createDocumentFragment();
+  contenedor.appendChild(boton);
+  contenedor.appendChild(explicacionEl);
+  return contenedor;
 }
 
 chrome.runtime.onMessage.addListener((msg) => {
