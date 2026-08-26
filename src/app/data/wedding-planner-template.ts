@@ -207,6 +207,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
         'The client hires and pays each vendor; the planner only coordinates',
         'The planner hires on the client behalf, with prior written approval',
         'Mixed: some hired by the planner, some by the client',
+        'The planner hires and pays vendors under her own business name, then bills the client for the total',
       ],
     },
 
@@ -392,7 +393,7 @@ Under any arrangement:
 
 a) THE CLIENT approves every vendor and every budget in writing before it is confirmed.
 b) THE PLANNER is not liable for the breach, delay or poor quality of a vendor engaged by THE CLIENT. Her duty is to select diligently, to warn of the risks she is aware of, and to do everything reasonable to solve the problem during the event.
-c) Where THE PLANNER contracts on behalf of THE CLIENT, she does so for their account and with the funds they provide. She advances no money of her own unless she accepts to in writing.
+c) Where THE PLANNER contracts on behalf of THE CLIENT, she does so for their account and with the funds they provide, advancing no money of her own unless she accepts to in writing. Where THE PLANNER contracts under her own name, she pays the vendor directly and bills THE CLIENT for that cost under the terms of clause eight.
 d) THE PLANNER will disclose to THE CLIENT any commission, discount or benefit she receives from a vendor.
 
 

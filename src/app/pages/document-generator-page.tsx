@@ -750,7 +750,23 @@ function ContenidoGenerador() {
     if (id.includes('governing') || id.includes('jurisdiction')) {
       return 'agreement';
     }
-    if (id.includes('party') || id.includes('client') || id.includes('contractor') || id.includes('seller') || id.includes('buyer') || id.includes('email') || id.includes('phone') || id.includes('address') || id.includes('state')) {
+    if (
+      id.includes('party') || id.includes('client') || id.includes('contractor') || id.includes('seller') || id.includes('buyer') || id.includes('planner') ||
+      id.includes('email') || id.includes('phone') || id.includes('address') || id.includes('state') ||
+      // Cualquier campo "quién es esta persona" — el nombre o el número de
+      // documento de una parte — cae aquí sin importar cómo se llame su rol
+      // (planner, landlord, tenant, borrower, lender, provider…). Antes la
+      // lista de arriba sólo reconocía un puñado de roles a mano: el campo
+      // "de teléfono"/"de correo" de un rol no listado sí caía en Información
+      // de las Partes (contienen "phone"/"email"), pero su propio nombre e
+      // identificación se iban a Variables Específicas — una sola persona
+      // quedaba partida entre dos secciones distintas del formulario. Es
+      // justo lo que pasaba con planner_name/planner_id en el contrato de
+      // wedding planner. Comprobado contra todos los `_name`/`_id` del
+      // catálogo: ninguno es otra cosa que el nombre o documento de una
+      // parte, así que esta regla no reclasifica nada que no deba.
+      id.endsWith('_name') || id.endsWith('_id')
+    ) {
       return 'parties';
     }
     if (id.includes('date') || id.includes('term') || id.includes('governing') || id.includes('jurisdiction') || id.includes('contract_type')) {

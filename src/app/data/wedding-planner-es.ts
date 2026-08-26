@@ -207,6 +207,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
         'El cliente contrata y paga a cada proveedor; la planner solo coordina',
         'La planner contrata a nombre del cliente, con autorización escrita previa',
         'Mixto: algunos los contrata la planner y otros el cliente',
+        'La planner contrata y paga a los proveedores a nombre propio (de su empresa), y luego factura el total al cliente',
       ],
     },
 
@@ -392,7 +393,7 @@ En cualquier modalidad:
 
 a) EL CLIENTE aprueba por escrito cada proveedor y cada presupuesto antes de que se confirme.
 b) LA PLANNER no responde por el incumplimiento, el retraso o la mala calidad de un proveedor contratado por EL CLIENTE. Su obligación es seleccionarlo con diligencia, advertir los riesgos que conozca, y hacer todo lo razonable para resolver el problema durante el evento.
-c) Cuando LA PLANNER contrate a nombre de EL CLIENTE, lo hace por cuenta de este y con los recursos que este le entregue. No adelanta dinero propio salvo que lo acepte por escrito.
+c) Cuando LA PLANNER contrate a nombre de EL CLIENTE, lo hace por cuenta de este y con los recursos que este le entregue, sin adelantar dinero propio salvo que lo acepte por escrito. Cuando LA PLANNER contrate a nombre propio, paga directamente al proveedor y factura ese costo a EL CLIENTE conforme a la cláusula octava.
 d) LA PLANNER informará a EL CLIENTE de cualquier comisión, descuento o beneficio que reciba de un proveedor.
 
 
