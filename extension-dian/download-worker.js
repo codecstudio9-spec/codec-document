@@ -234,15 +234,39 @@ function scriptPrepararBotonDescargar() {
   return { ok: true, x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
+/**
+ * `texto` (los primeros 400 caracteres de todo `document.body.innerText`)
+ * SIEMPRE cae en el encabezado del formulario de búsqueda — está en la
+ * parte de arriba de la página, y la fila de resultado (con el botón de
+ * descargar) queda más abajo, fuera de esos 400 caracteres. Eso hacía que
+ * un diagnóstico en el momento del timeout de descarga pareciera siempre
+ * "la página muestra el formulario", sin decir nada sobre si el botón de
+ * descargar seguía existiendo o había desaparecido — el dato que de verdad
+ * hace falta para saber si el clic no hizo nada o si el resultado se
+ * invalidó antes de que el clic llegara a ocurrir. `botonDescargaPresente`/
+ * `contextoBoton` llenan ese hueco específicamente.
+ */
 function scriptDiagnosticoPagina() {
   const texto = (document.body?.innerText ?? '').toLowerCase();
   const retoVisible = !!document.querySelector('iframe[src*="challenges.cloudflare.com"]');
+  const boton = document.querySelector('.download-document');
+  let contextoBoton = null;
+  let botonDescargaVisible = false;
+  if (boton) {
+    const fila = boton.closest('tr, .row, li') || boton.parentElement;
+    contextoBoton = (fila?.innerText ?? boton.outerHTML ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    const r = boton.getBoundingClientRect();
+    botonDescargaVisible = r.width > 0 && r.height > 0;
+  }
   return {
     url: location.href,
     texto: (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 400),
     textoLower: texto,
     retoVisible,
     tieneFormulario: !!document.querySelector('#DocumentKey'),
+    botonDescargaPresente: !!boton,
+    botonDescargaVisible,
+    contextoBoton,
   };
 }
 
@@ -633,10 +657,20 @@ export class DianDownloadWorker {
         // lo más parecido a que el usuario mire la pantalla en el segundo
         // exacto sin tener que estar pendiente en vivo.
         const diag = await this._diagnostico();
+        // El dato que de verdad hace falta va PRIMERO: ¿seguía el botón en
+        // el DOM cuando se agotó el tiempo, o el resultado ya había
+        // desaparecido? `diag.texto` (el body completo) casi siempre es
+        // sólo el encabezado del formulario de búsqueda — no dice nada de
+        // esto por sí solo, ver el comentario de scriptDiagnosticoPagina.
+        const estadoBoton = diag == null
+          ? '[No se pudo diagnosticar la pestaña.]'
+          : diag.botonDescargaPresente
+            ? `[El botón de descargar SIGUE en el DOM — visible=${diag.botonDescargaVisible}. Entorno: ${diag.contextoBoton ?? '(sin texto)'}]`
+            : '[El botón de descargar YA NO está en el DOM — el resultado desapareció antes de que el clic pudiera actuar.]';
         resolve({
           ok: false,
           detalle: 'La DIAN no entregó nada tras hacer clic en descargar (tiempo agotado).',
-          muestra: diag?.texto,
+          muestra: [estadoBoton, diag?.texto].filter(Boolean).join('\n\n'),
           url: diag?.url,
           retoVisible: diag?.retoVisible,
         });
