@@ -16,7 +16,8 @@ const estadoEnlaceEl = $('estadoEnlace');
 const detalleEl = $('detalle');
 const conteoCufesEl = $('conteoCufes');
 const barraEl = $('barraRelleno');
-const resumenEl = $('resumen');
+const resumenTextoEl = $('resumenTexto');
+const resumenBadgesEl = $('resumenBadges');
 const registroEl = $('registro');
 const reanudarEl = $('reanudar');
 const enCursoEl = $('enCurso');
@@ -150,6 +151,15 @@ function formatearDuracion(seg) {
   return `${min} min ${rem}s`;
 }
 
+/** Una insignia redondeada de color ("12 ok", "3 reintentando"...) — de un
+ *  vistazo se ve si algo se está acumulando, sin tener que leer una frase. */
+function insignia(clase, texto) {
+  const span = document.createElement('span');
+  span.className = `insignia ${clase}`;
+  span.textContent = texto;
+  return span;
+}
+
 function actualizarMetricas(m) {
   const completados = m.completados ?? 0;
   const errores = m.errores ?? 0;
@@ -158,10 +168,14 @@ function actualizarMetricas(m) {
   const hechos = completados + errores;
   const pct = total > 0 ? Math.round((hechos / total) * 100) : 0;
   barraEl.style.width = `${pct}%`;
-  const partes = [`${completados} ok`];
-  if (reintentando > 0) partes.push(`${reintentando} reintentando`);
-  if (errores > 0) partes.push(`${errores} con error`);
-  resumenEl.textContent = total > 0 ? `${hechos} de ${total} (${partes.join(', ')})` : '';
+
+  resumenTextoEl.textContent = total > 0 ? `${hechos} de ${total}` : '';
+  resumenBadgesEl.innerHTML = '';
+  if (total > 0) {
+    resumenBadgesEl.appendChild(insignia('ok', `${completados} ok`));
+    if (reintentando > 0) resumenBadgesEl.appendChild(insignia('reintentando', `${reintentando} reintentando`));
+    if (errores > 0) resumenBadgesEl.appendChild(insignia('error', `${errores} con error`));
+  }
 
   if (total > 0) {
     metricasEl.style.display = 'block';
@@ -178,9 +192,23 @@ function actualizarMetricas(m) {
   }
 
   if (m.numWorkersEfectivo != null && m.numWorkers != null && m.numWorkersEfectivo < m.numWorkers) {
-    resumenEl.textContent += ` — bajé a ${m.numWorkersEfectivo} worker por una verificación humana previa`;
+    resumenTextoEl.textContent += ` — bajé a ${m.numWorkersEfectivo} worker por una verificación humana previa`;
   }
 }
+
+// Un color por código de error (PARTE 3 del pedido: nunca un único "ERROR"
+// genérico) — de un vistazo, sin leer la frase completa, se ve en qué paso
+// de la tubería se rompió cada CUFE. Ver CODIGOS_ERROR en download-worker.js.
+const ESTILO_CODIGO = {
+  ERROR_PAGINA:    { bg: '#f1f5f9', color: '#475569' },
+  ERROR_SEGURIDAD: { bg: '#fef3c7', color: '#92400e' },
+  ERROR_BUSQUEDA:  { bg: '#fee2e2', color: '#991b1b' },
+  ERROR_RESULTADO: { bg: '#e0e7ff', color: '#3730a3' },
+  ERROR_DESCARGA:  { bg: '#ffedd5', color: '#9a3412' },
+  ERROR_ARCHIVO:   { bg: '#fce7f3', color: '#9d174d' },
+  ERROR_TIMEOUT:   { bg: '#e2e8f0', color: '#334155' },
+  ERROR_BLOQUEO:   { bg: '#fecaca', color: '#7f1d1d' },
+};
 
 /**
  * Una fila del registro. Cuando falla, trae plegada la URL exacta y lo que
@@ -190,16 +218,26 @@ function actualizarMetricas(m) {
 function filaRegistro(r) {
   const ok = r.estado === 'COMPLETADO';
   const fila = document.createElement('div');
-  fila.className = ok ? '' : 'err';
+  fila.className = ok ? 'entrada' : 'entrada err';
   const dur = r.duracionMs != null ? ` (${(r.duracionMs / 1000).toFixed(1)}s)` : '';
   const worker = r.workerId != null ? ` [w${r.workerId}]` : '';
-  // El código (ERROR_SEGURIDAD, ERROR_RESULTADO, etc.) va ANTES del detalle
-  // en texto plano — es lo primero que hay que poder filtrar/buscar en un
-  // registro de miles de filas para saber en qué paso se rompió cada CUFE,
-  // sin depender sólo de leer la frase completa (PARTE 3 del pedido: nunca
-  // un único "ERROR" genérico).
-  const codigo = !ok && r.codigoError ? `[${r.codigoError}] ` : '';
-  fila.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : `— ${codigo}${r.detalle ?? r.estado}`}${dur}`;
+
+  const linea = document.createElement('span');
+  linea.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : '— '}`;
+  fila.appendChild(linea);
+
+  if (!ok && r.codigoError) {
+    const estilo = ESTILO_CODIGO[r.codigoError];
+    const chip = document.createElement('span');
+    chip.className = 'chip-codigo';
+    if (estilo) { chip.style.background = estilo.bg; chip.style.color = estilo.color; }
+    chip.textContent = r.codigoError;
+    fila.appendChild(chip);
+  }
+
+  const resto = document.createElement('span');
+  resto.textContent = `${ok ? '' : (r.detalle ?? r.estado)}${dur}`;
+  fila.appendChild(resto);
 
   if (!ok && (r.url || r.muestra)) {
     const detalles = document.createElement('details');
@@ -249,7 +287,8 @@ chrome.runtime.onMessage.addListener((msg) => {
     enCursoEl.style.display = 'none';
     actualizarMetricas(msg);
     if (msg.fatal) {
-      resumenEl.textContent = `No se pudo iniciar: ${msg.fatal}`;
+      resumenTextoEl.textContent = `No se pudo iniciar: ${msg.fatal}`;
+      resumenBadgesEl.innerHTML = '';
     }
   }
 });
