@@ -74,6 +74,21 @@
 // Contrapartida honesta: `chrome.debugger` muestra una barra amarilla
 // "Codec Document — Descargador DIAN está depurando este navegador"
 // mientras dura el lote — visible a propósito, nunca oculta al usuario.
+//
+// ── Auditoría 2026-08-25(c): confirmado en vivo (consola de errores de la
+// extensión, chrome://extensions → Errores) — el clic real de (b) seguía
+// sin funcionar, y la causa real era otra completamente distinta a
+// Turnstile: `Unchecked runtime.lastError: Debugger is not attached to
+// the tab with id: <N>`. Chrome suelta la sesión de `chrome.debugger` sola
+// en algún punto entre CUFEs (lo más probable: el reload de página que
+// `_prepararPestanaLimpia` hace SIEMPRE antes de cada CUFE invalida la
+// sesión de depuración aunque sea la misma pestaña) — y el flag
+// `_debuggerListo`, que sólo se ponía en `true` una vez y nunca se
+// revisaba de verdad, dejaba que `_clicReal` intentara usar una sesión que
+// ya no existía. Arreglado adjuntando de nuevo antes de CADA clic
+// (tolerando el error de "already attached" como éxito) y reintentando una
+// vez si el clic mismo topa con "not attached" — ver `_adjuntarDebugger`/
+// `_clicReal`.
 
 import { HOSTS_PERMITIDOS } from './dian.js';
 
@@ -374,28 +389,42 @@ export class DianDownloadWorker {
   }
 
   /**
-   * Adjunta el Protocolo de DevTools a la pestaña de este worker — sólo se
-   * necesita antes del primer clic real (`_clicReal`), no al crear la
-   * pestaña, así que se hace perezoso (una vez por tabId, no una vez por
-   * CUFE). Ver la auditoría 2026-08-25(b) al inicio del archivo para el
-   * porqué: un `boton.click()` normal no basta para el botón de descargar.
+   * Adjunta el Protocolo de DevTools a la pestaña de este worker.
+   *
+   * ── Auditoría 2026-08-25(c): confirmado en vivo (consola de errores de
+   * la extensión) — el error real detrás de que `[ERROR_DESCARGA]`
+   * siguiera apareciendo con el clic "real" era:
+   *   "Unchecked runtime.lastError: Debugger is not attached to the tab
+   *   with id: <N>."
+   * Chrome suelta la sesión de `chrome.debugger` sola en algún momento
+   * entre CUFEs — lo más probable, en el reload de página que
+   * `_prepararPestanaLimpia` hace SIEMPRE antes de cada CUFE (una
+   * navegación completa puede invalidar la sesión de depuración aunque la
+   * pestaña sea la misma). El flag `_debuggerListo` de antes confiaba en
+   * que, una vez adjunto, seguía adjunto — y por eso `_clicReal` intentaba
+   * usar una sesión que Chrome ya había cerrado, sin que nada lo
+   * reintentara.
+   *
+   * Ahora se adjunta de nuevo ANTES DE CADA CLIC (no una sola vez por
+   * pestaña) — barato y sin efecto visible si ya estaba adjunto: Chrome
+   * devuelve un error de "already attached" en ese caso, que se trata como
+   * éxito, no como fallo.
    */
   async _adjuntarDebugger() {
-    if (this._debuggerListo) return;
     await new Promise((resolve, reject) => {
       chrome.debugger.attach({ tabId: this.tabId }, '1.3', () => {
-        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+        const err = chrome.runtime.lastError;
+        if (err && !/already attached/i.test(err.message || '')) { reject(new Error(err.message)); return; }
+        this._debuggerListo = true;
         resolve();
       });
     });
-    this._debuggerListo = true;
   }
 
   async _soltarDebugger() {
-    if (!this._debuggerListo) return;
     this._debuggerListo = false;
     await new Promise((resolve) => {
-      chrome.debugger.detach({ tabId: this.tabId }, () => resolve());
+      chrome.debugger.detach({ tabId: this.tabId }, () => { void chrome.runtime.lastError; resolve(); });
     });
   }
 
@@ -406,19 +435,38 @@ export class DianDownloadWorker {
    * humano), así que la página no puede distinguirlo de un clic real.
    * Incluye un `mouseMoved` antes del clic — algunos scripts anti-bot
    * exigen ver el cursor "llegar" al botón, no sólo el clic suelto.
+   *
+   * Si Chrome soltó la sesión de depuración justo antes de este clic (ver
+   * `_adjuntarDebugger`), un único reintento tras re-adjuntar basta — no
+   * hace falta más: `_adjuntarDebugger` ya se llamó justo antes desde
+   * `_descargar`, así que esto sólo cubre la ventana de carrera entre ese
+   * adjunto y el clic mismo.
    */
   async _clicReal(x, y) {
     const enviar = (method, params) => new Promise((resolve, reject) => {
       chrome.debugger.sendCommand({ tabId: this.tabId }, method, params, (result) => {
-        if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+        const err = chrome.runtime.lastError;
+        if (err) { reject(new Error(err.message)); return; }
         resolve(result);
       });
     });
-    await enviar('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 0 });
-    await dormir(80);
-    await enviar('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
-    await dormir(60);
-    await enviar('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 });
+
+    const secuencia = async () => {
+      await enviar('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 0 });
+      await dormir(80);
+      await enviar('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
+      await dormir(60);
+      await enviar('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 });
+    };
+
+    try {
+      await secuencia();
+    } catch (err) {
+      if (!/debugger is not attached/i.test(err.message || '')) throw err;
+      this._debuggerListo = false;
+      await this._adjuntarDebugger();
+      await secuencia();
+    }
   }
 
   /**

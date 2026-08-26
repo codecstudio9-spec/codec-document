@@ -100,6 +100,31 @@ propósito, no se puede (ni se debe) ocultar. Si el usuario le da a
 **Sigue sin confirmarse el criterio final** — falta que un lote real
 termine con archivos físicos en `Descargas/DIAN/`.
 
+## Auditoría 2026-08-25(c) — confirmado en vivo: la causa real no era Turnstile, era el propio `chrome.debugger`
+
+El clic real de la sección anterior seguía sin funcionar. La consola de
+errores de la extensión (`chrome://extensions` → "Errores" en la tarjeta
+de Codec Document) mostró la causa exacta:
+
+> Unchecked runtime.lastError: Debugger is not attached to the tab with id: `<N>`.
+
+Chrome suelta la sesión de `chrome.debugger` sola en algún punto entre
+CUFEs — lo más probable, el reload de página que `_prepararPestanaLimpia`
+hace SIEMPRE antes de cada CUFE (una navegación completa puede invalidar
+la sesión de depuración aunque la pestaña sea la misma). El código
+adjuntaba el debugger una sola vez por pestaña y confiaba en que seguía
+adjunto — así que el clic real intentaba usar una sesión que ya no
+existía, sin que nada lo detectara ni lo reintentara.
+
+**Fix:** ahora se adjunta de nuevo ANTES DE CADA clic (tolerando el error
+de "already attached" como éxito, no como fallo), y si el clic mismo topa
+con "not attached" se reintenta una vez tras re-adjuntar. Ver
+`_adjuntarDebugger`/`_clicReal` en `download-worker.js`.
+
+**Cómo revisar la consola de errores de la extensión** (útil para
+cualquier futuro fallo silencioso de una API de Chrome, no sólo éste):
+`chrome://extensions` → tarjeta de Codec Document → botón "Errores".
+
 ## Por qué NO se usa el web service oficial de la DIAN (investigado 2026-08-23)
 
 Antes de reconstruir esto se investigó si `GetXmlByDocumentKey` (parte de
