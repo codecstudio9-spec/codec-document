@@ -188,6 +188,15 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 async function conLimite(promesa, ms, mensaje) {
   let idLimite;
   const limite = new Promise((_, reject) => { idLimite = setTimeout(() => reject(new Error(mensaje)), ms); });
+  // Si `limite` gana la carrera, `promesa` sigue viva en segundo plano y
+  // puede rechazar más tarde sin que nada la escuche — eso es exactamente
+  // lo que Chrome reporta como "Unhandled promise rejection" en el panel
+  // de Errores de la extensión (auditoría 2026-08-25(d)): un CUFE que se
+  // agotó por el tope TOTAL sigue corriendo huérfano de fondo, y cuando
+  // finalmente falla (contra una pestaña que para entonces ya es la del
+  // SIGUIENTE CUFE — ver `_gen`/`_vigente` en DianDownloadWorker), esa
+  // falla no tenía dónde caer.
+  promesa.catch(() => {});
   try {
     return await Promise.race([promesa, limite]);
   } finally {
@@ -308,6 +317,32 @@ export class DianDownloadWorker {
     // se crea una pestaña/ventana nueva (el adjunto es por tabId, uno
     // viejo ya no sirve para el tabId nuevo).
     this._debuggerListo = false;
+    // ── Auditoría 2026-08-25(d): un CUFE que se agota por el tope TOTAL
+    // (procesarCufe, vía conLimite) sigue corriendo en segundo plano —
+    // nada lo cancela de verdad, sólo se ignora su resultado. Mientras
+    // tanto el worker ya pasó al SIGUIENTE CUFE, que recreó this.tabId/
+    // this.windowId (_prepararPestanaLimpia, por _pestanaSospechosa). La
+    // ejecución huérfana del CUFE anterior sigue leyendo this.tabId más
+    // tarde (p.ej. el diagnóstico del timeout de _descargar) — y para
+    // entonces YA ES el tabId del CUFE nuevo. Eso explica errores que no
+    // tienen nada que ver con lo que se está procesando en ese momento:
+    // "Debugger is not attached" (el debugger real es de otra generación),
+    // "unknown error fetching the script" (executeScript contra una
+    // pestaña en un estado que no corresponde a esa ejecución vieja).
+    //
+    // `_gen` se incrementa en CADA llamada a procesarCufe; cada ejecución
+    // interna guarda el valor que tenía al empezar (`miGen`) y lo revisa
+    // con `_vigente(miGen)` antes de tocar this.tabId/this.windowId/
+    // chrome.debugger después de un await largo — si ya no coincide, esa
+    // generación fue abandonada y no debe seguir actuando sobre lo que
+    // ahora es la pestaña de otro CUFE.
+    this._gen = 0;
+  }
+
+  /** true si `miGen` sigue siendo la generación vigente de este worker —
+   *  ver el comentario grande de _gen en el constructor. */
+  _vigente(miGen) {
+    return miGen === this._gen;
   }
 
   /** Abre su propia pestaña, en su propia ventana, sobre "Documentos recibidos". */
@@ -574,10 +609,15 @@ export class DianDownloadWorker {
     this.cufeActual = cufe;
     this.inicioCufe = Date.now();
     this.estado = ESTADOS.ASIGNADO;
+    // Nueva generación por cada CUFE — ver el comentario grande de `_gen`
+    // en el constructor. Todo lo que siga corriendo de una generación
+    // vieja (porque este CUFE se abandonó por el tope total) debe dejar de
+    // tocar this.tabId/this.windowId/chrome.debugger en cuanto lo note.
+    const miGen = ++this._gen;
 
     try {
       return await conLimite(
-        this._procesarInterno(cufe, onDescargaIniciada),
+        this._procesarInterno(cufe, onDescargaIniciada, miGen),
         TIMEOUT_TOTAL_CUFE_MS,
         'El CUFE no terminó de procesarse dentro del tope total (se recreará la pestaña antes del siguiente).',
       );
@@ -590,13 +630,17 @@ export class DianDownloadWorker {
     }
   }
 
-  async _procesarInterno(cufe, onDescargaIniciada) {
+  async _procesarInterno(cufe, onDescargaIniciada, miGen) {
     this.estado = ESTADOS.PREPARANDO_PESTANA;
     try {
       await this._prepararPestanaLimpia();
     } catch (err) {
       return { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_PAGINA, detalle: `No se pudo preparar la pestaña: ${err.message}` };
     }
+    // Este await pudo haber tardado lo suficiente para que el tope TOTAL
+    // del CUFE ya haya vencido y el worker haya empezado otro — seguir
+    // desde aquí tocaría la pestaña del CUFE NUEVO. Ver `_gen`/`_vigente`.
+    if (!this._vigente(miGen)) throw new Error('CUFE abandonado por timeout total antes de continuar.');
 
     // Paso separado a propósito de "la página cargó" — ver el comentario
     // grande de auditoría 2026-08-25 al inicio del archivo y
@@ -684,12 +728,13 @@ export class DianDownloadWorker {
       };
     }
 
+    if (!this._vigente(miGen)) throw new Error('CUFE abandonado por timeout total antes de descargar.');
     this.estado = ESTADOS.LISTO_PARA_DESCARGAR;
     this.estado = ESTADOS.DESCARGANDO;
-    return this._descargar(cufe, onDescargaIniciada);
+    return this._descargar(cufe, onDescargaIniciada, miGen);
   }
 
-  async _descargar(cufe, onDescargaIniciada) {
+  async _descargar(cufe, onDescargaIniciada, miGen) {
     const tabId = this.tabId;
     const resultado = await new Promise((resolve) => {
       let terminado = false;
@@ -698,6 +743,11 @@ export class DianDownloadWorker {
         if (terminado) return;
         terminado = true;
         limpiar();
+        // Si esta generación ya fue abandonada (el tope TOTAL del CUFE
+        // venció primero y el worker pasó al siguiente), this.tabId ya no
+        // es el de ESTE CUFE — no se debe llamar _diagnostico() con él.
+        // Ver el comentario grande de `_gen` en el constructor.
+        if (!this._vigente(miGen)) { resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
         // Diagnóstico EN EL MOMENTO del timeout — antes esto se perdía, así
         // que un ERROR_DESCARGA no dejaba ver si el clic real no hizo nada,
         // si apareció un reto nuevo, o si la página quedó en otro estado.
@@ -791,6 +841,7 @@ export class DianDownloadWorker {
       // (ver auditoría 2026-08-25(b) al inicio del archivo).
       this._ejecutar(scriptPrepararBotonDescargar, [], TIMEOUT_LLAMADA_MS).then(async (r) => {
         if (terminado) return;
+        if (!this._vigente(miGen)) { terminado = true; limpiar(); resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
         if (!r?.ok) {
           terminado = true;
           limpiar();
@@ -799,6 +850,7 @@ export class DianDownloadWorker {
         }
         try {
           await this._adjuntarDebugger();
+          if (!this._vigente(miGen)) { terminado = true; limpiar(); resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
           await this._clicReal(r.x, r.y);
         } catch (err) {
           if (terminado) return;
