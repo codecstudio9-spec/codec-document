@@ -218,9 +218,23 @@ export function enrichDocumentDataWithDates(
     language,
   );
 
+  // Sólo la cláusula de identificación de las partes cambia de singular a
+  // plural cuando hay pareja — el resto del contrato sigue usando "EL
+  // CLIENTE" como nombre de la parte contratante (igual que muchos contratos
+  // bilaterales lo hacen aun con dos firmantes), para no arriesgar la
+  // concordancia verbal de cada cláusula sin poder probar el resultado en
+  // vivo. Ver la petición del 2026-08-26: pidieron el plural puntualmente
+  // "en la cláusula de identificación de las partes".
+  const clienteDenominacion = templateId === 'wedding-planner'
+    ? (String(data.client_partner_name ?? '').trim()
+        ? (language === 'es' ? 'quienes en adelante se denominarán LOS CLIENTES' : 'hereinafter jointly referred to as THE CLIENTS')
+        : (language === 'es' ? 'quien en adelante se denominará EL CLIENTE' : 'hereinafter THE CLIENT'))
+    : undefined;
+
   return {
     ...humanizarFechasISO(traducirOpciones(data, language, templateId), language),
     ...(tiempoServicio ? { tiempo_servicio: tiempoServicio } : {}),
+    ...(clienteDenominacion ? { client_denomination: clienteDenominacion } : {}),
     current_day: String(day),
     current_month: month,
     current_year: String(year),

@@ -91,16 +91,23 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
     },
     {
       id: 'client_email',
-      label: 'Tu correo',
+      label: 'Correo del cliente',
       type: 'email',
       required: false,
     },
     {
       id: 'client_partner_name',
-      label: 'Nombre de tu pareja',
+      label: 'Nombre de la pareja',
       type: 'text',
       required: false,
       helpText: 'Sólo si se casan los dos y quieres que aparezca en el contrato.',
+    },
+    {
+      id: 'client_partner_id',
+      label: 'Documento de la pareja',
+      type: 'text',
+      required: false,
+      helpText: 'Sólo si llenaste el nombre de la pareja arriba.',
     },
 
     // ── El evento ─────────────────────────────────────────────────────────
@@ -176,9 +183,15 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       id: 'onsite_visits',
       label: 'Visitas presenciales incluidas antes del evento',
       type: 'number',
-      required: true,
+      required: false,
       placeholder: '2',
-      helpText: 'Cuántas veces viaja la planner al lugar del evento antes del día.',
+      helpText: 'Cuántas veces viaja la planner al lugar del evento antes del día. Si no habrá ninguna, marca "No aplica" abajo en vez de dejarlo vacío.',
+    },
+    {
+      id: 'onsite_visits_na',
+      label: 'No aplica — no habrá visitas presenciales antes del evento',
+      type: 'checkbox',
+      required: false,
     },
     {
       id: 'arrival_days_before',
@@ -188,10 +201,24 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       placeholder: '2',
     },
     {
+      id: 'arrival_days_before_na',
+      label: 'No aplica — la planner no necesita llegar con anticipación (ya vive ahí o no aplica)',
+      type: 'checkbox',
+      required: false,
+    },
+    {
+      id: 'self_hosted_venue',
+      label: 'El lugar del evento y/o el alojamiento los provee directamente la planner (su propio hotel, salón o finca)',
+      type: 'checkbox',
+      required: false,
+      helpText: 'Actívalo si la planner organiza el evento en su propio hotel/salón o administra directamente el alojamiento. Si lo activas, puedes dejar vacío "Gastos de viaje, transporte y alojamiento" de abajo.',
+    },
+    {
       id: 'travel_costs',
       label: 'Gastos de viaje, transporte y alojamiento',
       type: 'select',
-      required: true,
+      required: false,
+      helpText: 'Déjalo vacío si ya activaste arriba que la planner provee el lugar y el alojamiento directamente.',
       options: [
         'Incluidos en los honorarios',
         'A cargo del cliente, además de los honorarios',
@@ -321,7 +348,7 @@ Entre los suscritos:
 
 y
 
-{{client_name}}, identificado(a) con documento número {{client_id}}{{#if client_partner_name}}, junto con {{client_partner_name}}{{/if}}, quien en adelante se denominará EL CLIENTE;
+{{client_name}}, identificado(a) con documento número {{client_id}}{{#if client_partner_name}}, junto con {{client_partner_name}}{{#if client_partner_id}}, identificado(a) con documento número {{client_partner_id}}{{/if}}{{/if}}, {{client_denomination}};
 
 se celebra el presente contrato, que se regirá por las siguientes cláusulas.
 
@@ -379,8 +406,9 @@ QUINTA — COORDINACIÓN A DISTANCIA
 
 Las partes reconocen que LA PLANNER trabaja desde {{planner_city}} y que el evento se realiza en {{event_city}}. Por eso acuerdan expresamente:
 
-a) LA PLANNER realizará {{onsite_visits}} visita(s) presencial(es) al lugar del evento antes de la fecha. Las visitas adicionales que solicite EL CLIENTE se cobrarán aparte, previo acuerdo escrito.{{#if arrival_days_before}}
-b) LA PLANNER llegará a {{event_city}} con {{arrival_days_before}} día(s) de anticipación y permanecerá disponible hasta el final del evento.{{/if}}
+a) {{#if onsite_visits}}LA PLANNER realizará {{onsite_visits}} visita(s) presencial(es) al lugar del evento antes de la fecha. Las visitas adicionales que solicite EL CLIENTE se cobrarán aparte, previo acuerdo escrito.{{/if}}{{#if onsite_visits_na}}No se incluyen visitas presenciales de LA PLANNER al lugar del evento antes de la fecha; la planeación previa se hará de forma remota (videollamada, fotos, planos).{{/if}}{{#if arrival_days_before}}
+b) LA PLANNER llegará a {{event_city}} con {{arrival_days_before}} día(s) de anticipación y permanecerá disponible hasta el final del evento.{{/if}}{{#if arrival_days_before_na}}
+b) LA PLANNER no tiene programada una llegada anticipada a {{event_city}}; coordinará su llegada según lo acordado para el día del evento.{{/if}}
 c) El resto de la planeación se hará por videollamada, teléfono y correo. Las decisiones que se tomen por esos medios tienen el mismo valor que las tomadas en persona, siempre que queden por escrito.
 d) Cada parte mantendrá actualizados sus datos de contacto. Las comunicaciones se entienden recibidas cuando se envían a los medios señalados en este contrato.
 
@@ -397,11 +425,11 @@ c) Cuando LA PLANNER contrate a nombre de EL CLIENTE, lo hace por cuenta de este
 d) LA PLANNER informará a EL CLIENTE de cualquier comisión, descuento o beneficio que reciba de un proveedor.
 
 
-SÉPTIMA — GASTOS DE VIAJE
+SÉPTIMA — GASTOS DE VIAJE Y ALOJAMIENTO
 
-Los gastos de transporte, alojamiento y alimentación de LA PLANNER y de su equipo, necesarios para las visitas y para el evento, quedan así: {{travel_costs}}.
+{{#if self_hosted_venue}}El evento se realiza en un lugar de propiedad o bajo administración directa de LA PLANNER, quien provee el espacio y, cuando aplique, el alojamiento asociado, como parte integral de los honorarios y costos ya pactados en este contrato. Por esta razón, no se generarán a cargo de EL CLIENTE cobros adicionales de transporte o alojamiento de LA PLANNER ni de su equipo distintos de los ya incluidos.{{/if}}{{#if travel_costs}}Los gastos de transporte, alojamiento y alimentación de LA PLANNER y de su equipo, necesarios para las visitas y para el evento, quedan así: {{travel_costs}}.
 
-Cuando estén a cargo de EL CLIENTE, LA PLANNER los cotizará por anticipado y los soportará con facturas. EL CLIENTE no está obligado a reembolsar un gasto que no haya aprobado antes.
+Cuando estén a cargo de EL CLIENTE, LA PLANNER los cotizará por anticipado y los soportará con facturas. EL CLIENTE no está obligado a reembolsar un gasto que no haya aprobado antes.{{/if}}
 
 
 OCTAVA — HONORARIOS Y FORMA DE PAGO
@@ -510,7 +538,8 @@ Documento {{client_id}}
 {{client_phone}}{{#if client_email}}
 {{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{client_partner_name}}{{/if}}`,
+{{client_partner_name}}{{#if client_partner_id}}
+Documento {{client_partner_id}}{{/if}}{{/if}}`,
 
   // Nota de cierre para AMBAS partes — fuera de `template` a propósito, ver
   // el comentario del campo signerNote en types/document.ts. Reescrita el

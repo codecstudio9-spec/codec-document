@@ -27,6 +27,9 @@ import { useAuth } from '../contexts/auth-context';
 import { PremiumDownloadModal } from '../components/PremiumDownloadModal';
 import { AiReviewPanel } from '../components/ai-review-panel';
 import { SelectionAiBar } from '../components/SelectionAiBar';
+import { splitIntoClauses, joinClauses, type ClauseSegment } from '../utils/clause-segments';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 import { consumeDocumentLimit72h } from '../services/user-limits-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { markVisitorActivity, markVisitorDocumentType, markVisitorFunnelStep } from '../services/analytics-service';
@@ -44,6 +47,51 @@ export function normalizeCorruptedText(input: string): string {
     .replace(/Ã±/g, 'ñ').replace(/Ã‘/g, 'Ñ').replace(/Â¿/g, '¿').replace(/Â¡/g, '¡')
     .replace(/â€”/g, '—').replace(/â€“/g, '–').replace(/â€œ|â€/g, '"').replace(/â€˜|â€™/g, "'")
     .replace(/â•/g, '═').replace(/Ã/g, 'í');
+}
+
+/**
+ * Una cláusula del editor manual, en su propia caja plegable. Vive fuera del
+ * componente de la página para que cada caja tenga su PROPIO textarea (y por
+ * tanto su propio `useRef`) — con un solo ref compartido, la barra de
+ * selección con IA (`SelectionAiBar`) sólo podría "ver" la caja que estuviera
+ * abierta en último lugar.
+ */
+function ClauseCard({
+  segment, isOpen, onToggle, onChange, language, documentName,
+}: {
+  segment: ClauseSegment;
+  isOpen: boolean;
+  onToggle: () => void;
+  onChange: (body: string) => void;
+  language: 'en' | 'es';
+  documentName: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titulo = segment.heading ?? (language === 'es' ? 'Encabezado y partes' : 'Header and parties');
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">
+        <span className="truncate">{titulo}</span>
+        <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SelectionAiBar
+          textareaRef={textareaRef}
+          content={segment.body}
+          onChange={onChange}
+          language={language}
+          documentName={documentName}
+        />
+        <Textarea
+          ref={textareaRef}
+          value={segment.body}
+          onChange={(e) => onChange(e.target.value)}
+          className="font-mono text-xs min-h-[160px] rounded-none border-0 focus-visible:ring-0"
+        />
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 /**
@@ -545,6 +593,11 @@ export function PreviewPage() {
   const [editedContent, setEditedContent] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  // Cajas por cláusula dentro del editor manual — null cuando el texto no
+  // tiene el patrón de encabezados reconocible (ver clause-segments.ts) y
+  // hay que caer de vuelta al <textarea> único de siempre.
+  const [clauseSegments, setClauseSegments] = useState<ClauseSegment[] | null>(null);
+  const [openClauses, setOpenClauses] = useState<Set<number>>(new Set([0]));
   /**
    * ¿El usuario reescribió el documento a mano?
    *
@@ -1331,8 +1384,35 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
       setIsEditing(false);
       toast.success(t('preview.changesSaved'));
     } else {
+      // Se calcula UNA vez al entrar, no en cada tecla: si se recalculara con
+      // cada cambio, escribir dentro de una caja podría desalinear los
+      // límites de las demás cada vez que el texto cruce por casualidad el
+      // patrón de un encabezado.
+      setClauseSegments(splitIntoClauses(editedContent));
+      setOpenClauses(new Set([0]));
       setIsEditing(true);
     }
+  };
+
+  /** Actualiza sólo el cuerpo de una caja y mantiene `editedContent` (la
+   *  fuente que ya usan la descarga, el guardado y la vista previa) al día —
+   *  las cajas son sólo una forma de mostrar y editar ese mismo texto. */
+  const actualizarClausula = (indice: number, cuerpo: string) => {
+    setClauseSegments((prev) => {
+      if (!prev) return prev;
+      const siguiente = prev.map((s, i) => (i === indice ? { ...s, body: cuerpo } : s));
+      setEditedContent(joinClauses(siguiente));
+      return siguiente;
+    });
+  };
+
+  const alternarClausula = (indice: number) => {
+    setOpenClauses((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(indice)) siguiente.delete(indice);
+      else siguiente.add(indice);
+      return siguiente;
+    });
   };
 
   /** Vuelve al documento generado desde el formulario. */
@@ -1744,21 +1824,42 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
             </CardHeader>
             <CardContent className="p-0">
               {isEditing ? (
-                <>
-                  <SelectionAiBar
-                    textareaRef={editTextareaRef}
-                    content={editedContent}
-                    onChange={setEditedContent}
-                    language={language}
-                    documentName={getDocumentTranslation(template.id, 'name', language)}
-                  />
-                  <Textarea
-                    ref={editTextareaRef}
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    className="font-mono text-xs min-h-[800px] rounded-none border-0 focus-visible:ring-0"
-                  />
-                </>
+                clauseSegments ? (
+                  <div className="divide-y divide-slate-100">
+                    <p className="border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500">
+                      {language === 'es'
+                        ? 'Cada cláusula está en su propia caja — ábrela para leerla, editarla a mano o pedirle a la IA que la cambie.'
+                        : 'Each clause is in its own box — open it to read it, edit it by hand, or ask the AI to change it.'}
+                    </p>
+                    {clauseSegments.map((seg, i) => (
+                      <ClauseCard
+                        key={i}
+                        segment={seg}
+                        isOpen={openClauses.has(i)}
+                        onToggle={() => alternarClausula(i)}
+                        onChange={(body) => actualizarClausula(i, body)}
+                        language={language}
+                        documentName={getDocumentTranslation(template.id, 'name', language)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <SelectionAiBar
+                      textareaRef={editTextareaRef}
+                      content={editedContent}
+                      onChange={setEditedContent}
+                      language={language}
+                      documentName={getDocumentTranslation(template.id, 'name', language)}
+                    />
+                    <Textarea
+                      ref={editTextareaRef}
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                      className="font-mono text-xs min-h-[800px] rounded-none border-0 focus-visible:ring-0"
+                    />
+                  </>
+                )
               ) : (
                 <div
                   ref={previewRef}

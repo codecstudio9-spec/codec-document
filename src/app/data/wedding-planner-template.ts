@@ -91,16 +91,23 @@ export const weddingPlannerTemplate: DocumentTemplate = {
     },
     {
       id: 'client_email',
-      label: 'Your email',
+      label: 'Client email',
       type: 'email',
       required: false,
     },
     {
       id: 'client_partner_name',
-      label: "Your partner's name",
+      label: "Partner's name",
       type: 'text',
       required: false,
       helpText: 'Only if you are both getting married and you want them named in the agreement.',
+    },
+    {
+      id: 'client_partner_id',
+      label: "Partner's ID number",
+      type: 'text',
+      required: false,
+      helpText: "Only if you filled in the partner's name above.",
     },
 
     // ── The event ─────────────────────────────────────────────────────────
@@ -176,9 +183,15 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       id: 'onsite_visits',
       label: 'Site visits included before the event',
       type: 'number',
-      required: true,
+      required: false,
       placeholder: '2',
-      helpText: 'How many times the planner travels to the venue before the day.',
+      helpText: 'How many times the planner travels to the venue before the day. If there will be none, check "N/A" below instead of leaving this blank.',
+    },
+    {
+      id: 'onsite_visits_na',
+      label: 'N/A — no in-person site visits before the event',
+      type: 'checkbox',
+      required: false,
     },
     {
       id: 'arrival_days_before',
@@ -188,10 +201,24 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       placeholder: '2',
     },
     {
+      id: 'arrival_days_before_na',
+      label: "N/A — the planner does not need to arrive early (already local, or it doesn't apply)",
+      type: 'checkbox',
+      required: false,
+    },
+    {
+      id: 'self_hosted_venue',
+      label: "The venue and/or lodging are provided directly by the planner (her own hotel, hall or estate)",
+      type: 'checkbox',
+      required: false,
+      helpText: 'Turn this on when the planner runs the event at her own hotel/hall or handles lodging directly. If you turn it on, you can leave "Travel, transport and lodging costs" below empty.',
+    },
+    {
       id: 'travel_costs',
       label: 'Travel, transport and lodging costs',
       type: 'select',
-      required: true,
+      required: false,
+      helpText: 'Leave it empty if you already checked above that the planner provides the venue and lodging directly.',
       options: [
         'Included in the fee',
         'Paid by the client, on top of the fee',
@@ -321,7 +348,7 @@ Between the undersigned:
 
 and
 
-{{client_name}}, holder of ID number {{client_id}}{{#if client_partner_name}}, together with {{client_partner_name}}{{/if}}, hereinafter THE CLIENT;
+{{client_name}}, holder of ID number {{client_id}}{{#if client_partner_name}}, together with {{client_partner_name}}{{#if client_partner_id}}, holder of ID number {{client_partner_id}}{{/if}}{{/if}}, {{client_denomination}};
 
 this agreement is entered into under the following terms.
 
@@ -379,8 +406,9 @@ FIVE — WORKING FROM A DIFFERENT CITY
 
 The parties acknowledge that THE PLANNER works from {{planner_city}} and that the event takes place in {{event_city}}. They therefore expressly agree:
 
-a) THE PLANNER will make {{onsite_visits}} site visit(s) to the venue before the date. Any additional visit requested by THE CLIENT is charged separately, by prior written agreement.{{#if arrival_days_before}}
-b) THE PLANNER will arrive in {{event_city}} {{arrival_days_before}} day(s) in advance and remain available until the event ends.{{/if}}
+a) {{#if onsite_visits}}THE PLANNER will make {{onsite_visits}} site visit(s) to the venue before the date. Any additional visit requested by THE CLIENT is charged separately, by prior written agreement.{{/if}}{{#if onsite_visits_na}}No in-person site visits by THE PLANNER are included before the date; planning ahead of the event is handled remotely (video call, photos, floor plans).{{/if}}{{#if arrival_days_before}}
+b) THE PLANNER will arrive in {{event_city}} {{arrival_days_before}} day(s) in advance and remain available until the event ends.{{/if}}{{#if arrival_days_before_na}}
+b) THE PLANNER has no early arrival scheduled in {{event_city}}; she will coordinate her arrival as agreed for the day of the event.{{/if}}
 c) The rest of the planning is done by video call, phone and email. Decisions taken through those channels carry the same weight as those taken in person, provided they are put in writing.
 d) Each party will keep its contact details current. Communications are deemed received when sent to the channels stated in this agreement.
 
@@ -397,11 +425,11 @@ c) Where THE PLANNER contracts on behalf of THE CLIENT, she does so for their ac
 d) THE PLANNER will disclose to THE CLIENT any commission, discount or benefit she receives from a vendor.
 
 
-SEVEN — TRAVEL COSTS
+SEVEN — TRAVEL AND LODGING COSTS
 
-Transport, lodging and meal costs for THE PLANNER and her team, needed for the visits and for the event, are handled as follows: {{travel_costs}}.
+{{#if self_hosted_venue}}The event takes place at a venue owned or directly managed by THE PLANNER, who provides the venue and, where it applies, the associated lodging, as an integral part of the fees and costs already agreed in this agreement. For this reason, no additional transport or lodging charges for THE PLANNER or her team, beyond what is already included, will be billed to THE CLIENT.{{/if}}{{#if travel_costs}}Transport, lodging and meal costs for THE PLANNER and her team, needed for the visits and for the event, are handled as follows: {{travel_costs}}.
 
-Where they fall on THE CLIENT, THE PLANNER will quote them in advance and support them with receipts. THE CLIENT is not obliged to reimburse a cost they did not approve beforehand.
+Where they fall on THE CLIENT, THE PLANNER will quote them in advance and support them with receipts. THE CLIENT is not obliged to reimburse a cost they did not approve beforehand.{{/if}}
 
 
 EIGHT — FEE AND PAYMENT
@@ -510,7 +538,8 @@ ID {{client_id}}
 {{client_phone}}{{#if client_email}}
 {{client_email}}{{/if}}{{#if client_partner_name}}
 _______________________________________
-{{client_partner_name}}{{/if}}`,
+{{client_partner_name}}{{#if client_partner_id}}
+ID {{client_partner_id}}{{/if}}{{/if}}`,
 
   // Closing disclaimer for BOTH parties — kept out of `template` on purpose,
   // see the signerNote field comment in types/document.ts. Reworded
