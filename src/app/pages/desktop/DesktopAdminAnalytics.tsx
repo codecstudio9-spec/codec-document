@@ -16,6 +16,7 @@ import { BusinessIntelligenceTab } from '../../components/admin/BusinessIntellig
 import { AnalyticsAccessManager } from '../../components/admin/AnalyticsAccessManager';
 import { VoiceAssistantAnalyticsTab } from '../../components/admin/VoiceAssistantAnalyticsTab';
 import { BonosYRegalosTab } from '../../components/admin/BonosYRegalosTab';
+import { ReviewsAdminTab } from '../../components/admin/ReviewsAdminTab';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
 const PIE_COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#7C3AED', '#06B6D4', '#EC4899'];
@@ -48,7 +49,7 @@ export function DesktopAdminAnalytics() {
 function AdminAnalyticsContent() {
   const { isAdmin } = useAuth();
   const { language } = useLanguage();
-  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz' | 'bonos'>('comercial');
+  const [tab, setTab] = useState<'visitantes' | 'comercial' | 'voz' | 'bonos' | 'reseñas'>('comercial');
   const [range, setRange] = useState<RangeDays>(7);
   const [showAllRecent, setShowAllRecent] = useState(false);
 
@@ -124,7 +125,7 @@ function AdminAnalyticsContent() {
             acceso a analítica puede mirar métricas, pero no crear cupones ni
             regalar documentos — eso es dar dinero. Mismo criterio que
             AnalyticsAccessManager más abajo. */}
-        {(['comercial', 'visitantes', 'voz', ...(isAdmin ? ['bonos' as const] : [])] as const).map((t) => (
+        {(['comercial', 'visitantes', 'voz', ...(isAdmin ? ['bonos' as const, 'reseñas' as const] : [])] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -135,12 +136,15 @@ function AdminAnalyticsContent() {
             {t === 'comercial' ? (language === 'en' ? 'Business' : 'Comercial')
               : t === 'visitantes' ? (language === 'en' ? 'Visitors' : 'Visitantes')
               : t === 'bonos' ? (language === 'en' ? 'Coupons & gifts' : 'Bonos y regalos')
+              : t === 'reseñas' ? (language === 'en' ? 'Reviews' : 'Reseñas')
               : (language === 'en' ? 'Voice Assistant' : 'Asistente de Voz')}
           </button>
         ))}
       </div>
 
       {tab === 'bonos' && isAdmin && <div className="mt-6"><BonosYRegalosTab language={language} /></div>}
+
+      {tab === 'reseñas' && isAdmin && <div className="mt-6"><ReviewsAdminTab language={language} /></div>}
 
       {tab === 'comercial' && (
         <div className="mt-6 space-y-6">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles, FileSpreadsheet } from 'lucide-react';
+import { Bell, Plus, Upload, Receipt, FileText, PenLine, ArrowRight, Check, Clock, FolderOpen, Sparkles, FileSpreadsheet, Star } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { MobileAppShell } from '../../components/mobile/MobileAppShell';
@@ -11,6 +11,7 @@ import { fetchDashboardStats, fetchUnreadSignedCount, type DashboardStats } from
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { ReviewFormModal } from '../../components/ReviewFormModal';
 
 function greeting(language: 'en' | 'es'): string {
   const h = new Date().getHours();
@@ -63,6 +64,7 @@ function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recent, setRecent] = useState<RecentItem[] | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const firstName = (user?.name || user?.email || (language === 'en' ? 'there' : 'ahí')).split(' ')[0].split('@')[0];
 
@@ -273,6 +275,28 @@ function DashboardContent() {
         </div>
         <ArrowRight className="size-4 shrink-0 text-white/40" />
       </motion.button>
+
+      {/* Leave a review — same eligibility hint as desktop (real gate is
+          server-side in submit_review, see reviews-service.ts). */}
+      {(stats?.documentsCreated ?? 0) > 0 && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          type="button"
+          onClick={() => setReviewModalOpen(true)}
+          className="mt-4 flex w-full items-center gap-3 bg-white p-4 text-left"
+          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+        >
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: '#FFFBEB' }}>
+            <Star className="size-5" style={{ color: '#D97706' }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-slate-900">{language === 'en' ? 'How was your experience?' : '¿Cómo te fue?'}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{language === 'en' ? 'Leave a review' : 'Danos tu opinión'}</p>
+          </div>
+          <ArrowRight className="size-4 shrink-0 text-slate-300" />
+        </motion.button>
+      )}
+      <ReviewFormModal open={reviewModalOpen} onOpenChange={setReviewModalOpen} language={language} />
 
       {/* Recent documents */}
       <div className="mt-7">

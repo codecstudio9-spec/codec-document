@@ -22,6 +22,7 @@ import { createSignatureRequest, getSignaturePricingStatus, getSignatureRequestS
 import { voiceAssistant } from '../services/voice-assistant-service';
 import { QRCodeSVG } from 'qrcode.react';
 import { OnboardingModal } from '../components/auth/OnboardingModal';
+import { getApprovedReviews, getReviewsSummary, type PublicReview } from '../services/reviews-service';
 import { useIsMobile } from '../hooks/use-is-mobile';
 
 // pdfjs-dist is ~136KB and only ever needed if a visitor actually uploads
@@ -98,6 +99,28 @@ export function ModernHomePage() {
   // popup explains WHY it appeared (clicked "Sign now" or a free template
   // card while signed out) instead of always showing the default intro.
   const [onboardingContext, setOnboardingContext] = useState<string | undefined>(undefined);
+  // Real customer reviews (see reviews-service.ts) — null while loading,
+  // [] once loaded with zero approved reviews yet (shown as an honest
+  // "be the first" empty state, never filled with invented content).
+  // Writing a review happens inside the dashboard (DesktopDashboardHome /
+  // MobileDashboardHome), not here — a signed-in visitor never actually
+  // lingers on this page long enough to use a form here, see the redirect
+  // effects above (mobile always leaves to /app, desktop leaves to
+  // /dashboard the instant `user` is truthy). This page only displays the
+  // approved reviews and, for a signed-out visitor, offers sign-in with a
+  // post-auth redirect straight to the dashboard where they can write one.
+  const [approvedReviews, setApprovedReviews] = useState<PublicReview[] | null>(null);
+  const [reviewsSummary, setReviewsSummary] = useState<{ avgRating: number; reviewCount: number } | null>(null);
+  useEffect(() => {
+    getApprovedReviews().then(setApprovedReviews).catch(() => setApprovedReviews([]));
+    getReviewsSummary().then(setReviewsSummary).catch(() => setReviewsSummary(null));
+  }, []);
+  const openReviewCta = () => {
+    if (user) { navigate('/dashboard'); return; }
+    localStorage.setItem('codec_post_auth_redirect', '/dashboard');
+    setOnboardingContext(language === 'en' ? 'Sign in to leave a review' : 'Inicia sesión para dejar tu reseña');
+    setOnboardingOpen(true);
+  };
   const requireAuthToSign = () => {
     setOnboardingContext(language === 'en' ? 'To sign, register free first' : 'Para firmar debes registrarte gratis');
     setOnboardingOpen(true);
@@ -601,7 +624,7 @@ export function ModernHomePage() {
           : 'documentos legales gratis, firma electrónica gratis, plantilla NDA gratis, contrato arrendamiento gratis USA, generador contrato gratis, conforme esign act, firma digital gratis, generador documentos legales, firma documentos online gratis'}
         canonicalUrl={typeof window !== 'undefined' ? window.location.origin : SITE_URL}
       />
-      <StructuredData />
+      <StructuredData aggregateRating={reviewsSummary ?? undefined} />
 
       {/* ── Sticky Header ─────────────────────────────────────────────────── */}
       <header
@@ -1865,6 +1888,93 @@ export function ModernHomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Customer reviews ── real, moderated reviews only. See
+          reviews-service.ts / supabase/migrations/20260828120000_add_reviews.sql.
+          Zero fabricated content: an honest empty state until real approved
+          reviews exist, and the average/count shown is computed live from
+          the database, never a hardcoded number. ── */}
+      <section className="relative overflow-hidden bg-white py-16 md:py-28">
+        <div className="container relative mx-auto px-4">
+          <div className="mb-12 text-center">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-600">
+              {language === 'en' ? 'Customer Reviews' : 'Reseñas de Clientes'}
+            </span>
+            <h2
+              className="mt-3 bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
+              style={{ backgroundImage: 'linear-gradient(135deg, #1e293b 0%, #2563eb 55%, #4f46e5 100%)' }}
+            >
+              {language === 'en' ? 'What Real Customers Say' : 'Lo Que Dicen Nuestros Clientes'}
+            </h2>
+            {reviewsSummary && reviewsSummary.reviewCount > 0 && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-slate-500">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className={`size-4 ${i < Math.round(reviewsSummary.avgRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                  ))}
+                </div>
+                <span className="font-bold text-slate-700">{reviewsSummary.avgRating.toFixed(1)}</span>
+                <span>
+                  · {reviewsSummary.reviewCount} {language === 'en'
+                    ? (reviewsSummary.reviewCount === 1 ? 'review' : 'reviews')
+                    : (reviewsSummary.reviewCount === 1 ? 'reseña' : 'reseñas')}
+                </span>
+              </div>
+            )}
+            <p className="mx-auto mt-3 max-w-xl text-slate-500">
+              {language === 'en'
+                ? 'Every review here is from a verified customer who created a real document, checked by us before it goes live — no exceptions.'
+                : 'Cada reseña es de un cliente verificado que generó un documento real, revisada por nosotros antes de publicarse, sin excepciones.'}
+            </p>
+          </div>
+
+          {approvedReviews === null ? (
+            <div className="flex justify-center py-10 text-slate-400">
+              <Sparkles className="size-5 animate-pulse" />
+            </div>
+          ) : approvedReviews.length === 0 ? (
+            <div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+              <p className="text-sm text-slate-500">
+                {language === 'en'
+                  ? "No reviews published yet — we'd rather show none than fake ones. Already used Codec Document?"
+                  : 'Aún no hay reseñas publicadas. Preferimos no mostrar ninguna a inventarlas. ¿Ya usaste Codec Document?'}
+              </p>
+              <button
+                type="button"
+                onClick={openReviewCta}
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-[0_4px_24px_rgba(79,70,229,0.25)] transition-all hover:-translate-y-0.5"
+              >
+                {language === 'en' ? 'Be the first to review' : 'Sé el primero en opinar'}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {approvedReviews.slice(0, 6).map((r) => (
+                  <article key={r.id} className="rounded-2xl border border-slate-200 bg-white p-6">
+                    <div className="mb-3 flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`size-3.5 ${i < r.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                      ))}
+                    </div>
+                    <p className="mb-4 text-sm leading-relaxed text-slate-600">"{r.body}"</p>
+                    <p className="text-sm font-bold text-slate-900">{r.authorName}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="mt-10 text-center">
+                <button
+                  type="button"
+                  onClick={openReviewCta}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-700 transition-all hover:border-indigo-300 hover:text-indigo-600"
+                >
+                  {language === 'en' ? 'Write your own review' : 'Escribe tu propia reseña'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { FileText, PenLine, Clock, LayoutTemplate, Plus, Receipt, Upload, FolderOpen, Check, ArrowRight, Sparkles, FileSpreadsheet } from 'lucide-react';
+import { FileText, PenLine, Clock, LayoutTemplate, Plus, Receipt, Upload, FolderOpen, Check, ArrowRight, Sparkles, FileSpreadsheet, Star } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
@@ -9,6 +9,7 @@ import { fetchDashboardStats, type DashboardStats } from '../../services/mobile-
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { ReviewFormModal } from '../../components/ReviewFormModal';
 
 type RecentItem = { id: string; name: string; status: string; date: string; href: string };
 
@@ -51,6 +52,7 @@ function DashboardHomeContent() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recent, setRecent] = useState<RecentItem[] | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -186,6 +188,33 @@ function DashboardHomeContent() {
         </div>
         <ArrowRight className="size-5 shrink-0 text-white/40" />
       </motion.button>
+
+      {/* Leave a review — only offered to someone who has actually created
+          at least one document. submit_review() still verifies this
+          server-side regardless (see reviews-service.ts), this is just to
+          not show the prompt to a brand-new, empty account. */}
+      {(stats?.documentsCreated ?? 0) > 0 && (
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.99 }}
+          type="button"
+          onClick={() => setReviewModalOpen(true)}
+          className="mt-5 flex w-full items-center gap-5 bg-white p-6 text-left"
+          style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}
+        >
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: '#FFFBEB' }}>
+            <Star className="size-6" style={{ color: '#D97706' }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-black text-slate-900">{language === 'en' ? 'How was your experience?' : '¿Cómo te fue?'}</p>
+            <p className="mt-1 text-sm text-slate-400">
+              {language === 'en' ? 'Leave a review — every submission is checked before it goes public.' : 'Danos tu opinión — revisamos cada reseña antes de publicarla.'}
+            </p>
+          </div>
+          <ArrowRight className="size-5 shrink-0 text-slate-300" />
+        </motion.button>
+      )}
+      <ReviewFormModal open={reviewModalOpen} onOpenChange={setReviewModalOpen} language={language} />
 
       {/* Recent activity */}
       <div className="mt-8">

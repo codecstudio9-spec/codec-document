@@ -23,13 +23,31 @@ interface StructuredDataProps {
    * US-specific legal-compliance wording for this country's actual law.
    * Omit for US-wide pages. */
   country?: StructuredDataCountry;
+  /** Real average rating + count computed live from public.reviews (see
+   * getReviewsSummary() in reviews-service.ts) — ONLY moderated, approved
+   * reviews from customers verified to have actually used the product.
+   * Omit (or pass reviewCount: 0) whenever there are no approved reviews
+   * yet; never hardcode a number here. See the removed-fabricated-rating
+   * note below for why this matters. */
+  aggregateRating?: { avgRating: number; reviewCount: number };
 }
 
-export function StructuredData({ language = 'en', country }: StructuredDataProps = {}) {
+export function StructuredData({ language = 'en', country, aggregateRating }: StructuredDataProps = {}) {
   useEffect(() => {
     const isEs = language === 'es';
     const countryName = country ? (isEs ? country.nameEs : country.name) : (isEs ? 'Estados Unidos' : 'United States');
     const lawBadge = country ? (isEs ? country.lawBadgeEs : country.lawBadgeEn) : (isEs ? 'Ley E-SIGN (15 U.S.C. § 7001) y UETA' : 'the Federal ESIGN Act and UETA');
+    // Only a real, non-zero count from the live reviews table produces this
+    // block — never a placeholder. See the aggregateRating prop doc above.
+    const ratingSchema = aggregateRating && aggregateRating.reviewCount > 0
+      ? {
+        '@type': 'AggregateRating',
+        ratingValue: aggregateRating.avgRating.toFixed(1),
+        reviewCount: String(aggregateRating.reviewCount),
+        bestRating: '5',
+        worstRating: '1',
+      }
+      : undefined;
 
     // ── Organization ──────────────────────────────────────────────────────────
     const organizationSchema = {
@@ -83,12 +101,13 @@ export function StructuredData({ language = 'en', country }: StructuredDataProps
           eligibleRegion: { '@type': 'Country', name: countryName },
         },
       ],
-      // No aggregateRating here on purpose — there is no real review
-      // collection system anywhere in this app to back one. Google's
-      // structured-data guidelines treat a fabricated AggregateRating/
-      // Review as a policy violation (manual action risk: rich results get
-      // suppressed sitewide). Only add this back once genuine, verifiable
-      // customer reviews exist to source the numbers from.
+      // aggregateRating is only ever attached when ratingSchema is real
+      // (a non-zero count from the live, moderated public.reviews table —
+      // see the prop doc above). Google's structured-data guidelines treat
+      // a fabricated AggregateRating/Review as a policy violation (manual
+      // action risk: rich results get suppressed sitewide), so this stays
+      // absent entirely until genuine approved reviews exist.
+      ...(ratingSchema ? { aggregateRating: ratingSchema } : {}),
     };
 
     // ── Product Schema ────────────────────────────────────────────────────────
@@ -112,8 +131,8 @@ export function StructuredData({ language = 'en', country }: StructuredDataProps
         highPrice: '251.99',
         offerCount: '4',
       },
-      // See the SoftwareApplication schema above for why aggregateRating
-      // is intentionally absent here too.
+      // See the SoftwareApplication schema above — same rule applies here.
+      ...(ratingSchema ? { aggregateRating: ratingSchema } : {}),
     };
 
     // ── WebSite ───────────────────────────────────────────────────────────────
@@ -298,7 +317,7 @@ export function StructuredData({ language = 'en', country }: StructuredDataProps
         document.getElementById(`structured-data-${index}`)?.remove();
       });
     };
-  }, [language, country]);
+  }, [language, country, aggregateRating]);
 
   return null;
 }
