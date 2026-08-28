@@ -677,6 +677,13 @@ function agruparOpciones(items: QuoteLineItem[]): Map<string, QuoteLineItem[]> {
  *  este bloque existe para evitar. */
 function bloqueDeOpciones(ctx: Ctx, etiqueta: string, opciones: QuoteLineItem[]): void {
   const { lang } = ctx;
+  // tituloDeSeccion sólo reserva espacio para SÍ MISMA (16mm) — sin este
+  // chequeo previo, un título que sí cabe pero deja menos de 24mm después
+  // se dibuja solo, huérfano al final de la página, con la tabla entera
+  // empezando en la siguiente. El bug real que se vio en producción: la
+  // palabra "Planes" sola al pie de una hoja. Reservando título + cabecera
+  // + una fila de sobra ANTES de dibujar nada, los tres saltan juntos.
+  asegurarEspacio(ctx, 16 + 24 + 10);
   tituloDeSeccion(ctx, etiqueta);
   asegurarEspacio(ctx, 24);
   encabezadoTabla(ctx);
@@ -716,6 +723,8 @@ function tablaDeItems(ctx: Ctx) {
   const regulares = conItems.filter((it) => !(it.option_group || '').trim());
   if (regulares.length === 0) return;
 
+  // Mismo chequeo que en bloqueDeOpciones — ver el comentario ahí.
+  asegurarEspacio(ctx, 16 + 24 + 10);
   tituloDeSeccion(ctx, lang === 'en' ? 'Products & Services' : 'Productos y Servicios');
   asegurarEspacio(ctx, 24);
   encabezadoTabla(ctx);

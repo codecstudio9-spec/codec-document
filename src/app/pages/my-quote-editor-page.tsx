@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Plus, Trash2, Loader, FileText, Send, Copy, CheckCheck,
   ChevronDown, ChevronUp, Eye, CreditCard, XCircle, RefreshCw, Activity, Globe2, PenLine,
-  Palette, SlidersHorizontal, Check, MessageCircle, Mail,
+  Palette, SlidersHorizontal, Check, MessageCircle, Mail, Download,
 } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
@@ -210,6 +210,7 @@ export function MyQuoteEditorPage() {
   const [saving, setSaving] = useState(false);
   const [requestingSignature, setRequestingSignature] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [payingForQuote, setPayingForQuote] = useState(false);
   const [nextFreeSlot, setNextFreeSlot] = useState<Date | null>(null);
@@ -445,9 +446,26 @@ export function MyQuoteEditorPage() {
     }
   };
 
-  /** Client-side only — generates the PDF with the currently selected
-   * template and opens it in a new tab. No save, no upload, so switching
-   * templates to compare them costs nothing. */
+  /** Client-side only — genera el PDF exacto tal como está el formulario
+   * ahora mismo (misma función que usa el envío real). Sin guardar, sin
+   * subir a nada: sirve tanto para comparar plantillas como para que quien
+   * está armando la cotización vea el documento final ANTES de decidir si
+   * lo manda a firmar o no. */
+  const generarPdfDelBorrador = async () => {
+    const branding = user?.id ? await getUserBranding(user.id) : null;
+    const draftQuote = {
+      id: quoteId ?? 'preview', user_id: user?.id ?? '', quote_number: 'PREVIEW',
+      status: 'draft' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      pdf_url: null, signed: false, signature_transaction_id: null,
+      ...buildQuoteInput(),
+    };
+    return generateQuotePdf(
+      draftQuote as Parameters<typeof generateQuotePdf>[0], items,
+      aBrandingDePdf(branding),
+      documentTitle,
+    );
+  };
+
   const handlePreview = async () => {
     if (!clientName.trim()) {
       toast.error(language === 'en' ? 'Add a client name to preview.' : 'Agrega un nombre de cliente para previsualizar.');
@@ -455,24 +473,39 @@ export function MyQuoteEditorPage() {
     }
     setPreviewing(true);
     try {
-      const branding = user?.id ? await getUserBranding(user.id) : null;
-      const draftQuote = {
-        id: quoteId ?? 'preview', user_id: user?.id ?? '', quote_number: 'PREVIEW',
-        status: 'draft' as const, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        pdf_url: null, signed: false, signature_transaction_id: null,
-        ...buildQuoteInput(),
-      };
-      const pdfBytes = await generateQuotePdf(
-        draftQuote as Parameters<typeof generateQuotePdf>[0], items,
-        aBrandingDePdf(branding),
-        documentTitle,
-      );
+      const pdfBytes = await generarPdfDelBorrador();
       const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
       window.open(blobUrl, '_blank');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate preview.' : 'No se pudo generar la vista previa.'));
     } finally {
       setPreviewing(false);
+    }
+  };
+
+  /** Descarga directa del PDF del borrador, sin pasar por firma ni por el
+   *  cliente — para cuando quien cotiza sólo quiere el archivo. */
+  const handleDownload = async () => {
+    if (!clientName.trim()) {
+      toast.error(language === 'en' ? 'Add a client name to download.' : 'Agrega un nombre de cliente para descargar.');
+      return;
+    }
+    setDownloading(true);
+    try {
+      const pdfBytes = await generarPdfDelBorrador();
+      const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
+      const nombreArchivo = `${(projectName || documentTitle || 'cotizacion').replace(/[^a-z0-9-_]+/gi, '-')}.pdf`;
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not download the document.' : 'No se pudo descargar el documento.'));
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -1062,7 +1095,32 @@ export function MyQuoteEditorPage() {
           )}
         </div>
 
+        {/* Ver / descargar el documento ANTES de decidir si se manda a
+            firmar — quien cotiza necesita poder revisar el PDF final con
+            sus propios ojos, o simplemente quedárselo sin pedir firma a
+            nadie, sin que eso implique guardar ni enviar nada todavía. */}
         <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            disabled={previewing}
+            onClick={() => void handlePreview()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-indigo-200 bg-white px-6 py-3 text-sm font-bold text-indigo-700 disabled:opacity-50"
+          >
+            {previewing ? <Loader className="size-4 animate-spin" /> : <Eye className="size-4" />}
+            {language === 'en' ? 'View document' : 'Ver documento'}
+          </button>
+          <button
+            type="button"
+            disabled={downloading}
+            onClick={() => void handleDownload()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 disabled:opacity-50"
+          >
+            {downloading ? <Loader className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {language === 'en' ? 'Download' : 'Descargar'}
+          </button>
+        </div>
+
+        <div className="mt-3 flex gap-3">
           <button
             type="button"
             disabled={saving}
