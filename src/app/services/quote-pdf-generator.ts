@@ -61,6 +61,48 @@ function fmtMoney(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Caracteres Unicode invisibles (espacio de ancho cero, joiners, BOM, soft
+// hyphen, marcas direccionales) que a veces cuela un modelo de IA al
+// redactar texto — sobre todo alrededor de símbolos como "$" o "/". El
+// texto extraído (copiar/pegar) los ignora y se ve normal, pero la fuente
+// estándar de jsPDF (WinAnsi, 8 bits) no tiene glifo para ellos y les da un
+// ancho de avance por defecto en vez de cero — el resultado visual es cada
+// letra separada por un hueco, como si alguien hubiera espaciado el texto
+// a mano. Confirmado reproduciendo el efecto exacto inyectando U+200B entre
+// letras en un PDF de prueba. Se limpia UNA vez, al entrar el texto al
+// generador, para cubrir tanto lo que escribe la IA como lo que alguien
+// pega de Word o de una página web (ahí también aparecen seguido).
+//
+// Construidos desde sus códigos DECIMALES con String.fromCharCode, nunca
+// como caracteres invisibles pegados literalmente en este archivo — eso
+// sería imposible de revisar a simple vista en un editor de código.
+// 173=soft hyphen, 8203-8207=zero-width space/joiners/LTR-RTL marks,
+// 8234-8238=marcas de formato direccional, 8288=word joiner,
+// 65279=BOM/zero-width no-break space, 1564=Arabic letter mark.
+const INVISIBLE_CODES = [173, 8203, 8204, 8205, 8206, 8207, 8234, 8235, 8236, 8237, 8238, 8288, 65279, 1564];
+const INVISIBLES_RE = new RegExp(`[${INVISIBLE_CODES.map((c) => String.fromCharCode(c)).join('')}]`, 'g');
+function limpiarInvisibles(s: string | null | undefined): string {
+  return s ? s.replace(INVISIBLES_RE, '') : '';
+}
+
+function limpiarQuoteYItems(quote: Quote, items: QuoteLineItem[]): { quote: Quote; items: QuoteLineItem[] } {
+  const q: Quote = {
+    ...quote,
+    client_name: limpiarInvisibles(quote.client_name),
+    client_company: quote.client_company ? limpiarInvisibles(quote.client_company) : quote.client_company,
+    client_position: quote.client_position ? limpiarInvisibles(quote.client_position) : quote.client_position,
+    project_name: quote.project_name ? limpiarInvisibles(quote.project_name) : quote.project_name,
+    executive_summary: quote.executive_summary ? limpiarInvisibles(quote.executive_summary) : quote.executive_summary,
+    project_objective: quote.project_objective ? limpiarInvisibles(quote.project_objective) : quote.project_objective,
+    project_scope: quote.project_scope ? limpiarInvisibles(quote.project_scope) : quote.project_scope,
+    proposal_blocks: Object.fromEntries(
+      Object.entries(quote.proposal_blocks ?? {}).map(([k, v]) => [k, typeof v === 'string' ? limpiarInvisibles(v) : v]),
+    ) as ProposalBlocks,
+  };
+  const its = items.map((it) => ({ ...it, description: limpiarInvisibles(it.description) }));
+  return { quote: q, items: its };
+}
+
 const BLOCK_LABELS: Record<keyof ProposalBlocks, { es: string; en: string }> = {
   pitch: { es: 'Propuesta', en: 'Proposal' },
   intro: { es: 'Introducción', en: 'Introduction' },
@@ -823,11 +865,12 @@ function datosDePago(ctx: Ctx) {
 // ── Entrada pública ──────────────────────────────────────────────────────
 
 export async function generateQuotePdf(
-  quote: Quote,
-  items: QuoteLineItem[],
+  quoteCruda: Quote,
+  itemsCrudos: QuoteLineItem[],
   branding: QuotePublicBranding | null,
   documentTitle: string,
 ): Promise<Uint8Array> {
+  const { quote, items } = limpiarQuoteYItems(quoteCruda, itemsCrudos);
   const { layout, color } = parseTemplate(quote.template);
   const lang: Lang = quote.language === 'en' ? 'en' : 'es';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });

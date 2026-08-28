@@ -359,8 +359,20 @@ export function MyQuoteEditorPage() {
   const updateItem = (index: number, patch: Partial<QuoteLineItem>) => {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   };
-  const addItem = () => setItems((prev) => [...prev, { ...EMPTY_ITEM }]);
+  // Etiqueta compartida para "son opciones, no se suman". El control global
+  // de abajo (sonOpciones) solo decide el caso simple —TODO se suma, o TODO
+  // es una alternativa—; el campo por ítem sigue existiendo para el caso
+  // mixto (p. ej. 3 planes + un cargo fijo de instalación que sí se suma).
+  const GRUPO_OPCIONES = language === 'en' ? 'Options' : 'Opciones';
+  // "Son opciones" si CADA ítem ya tiene algún grupo puesto — no importa el
+  // texto exacto (la IA puede haber usado "Planes" en vez de "Opciones"),
+  // lo que importa es si el estado actual es "todo agrupado" o no.
+  const sonOpciones = items.length > 0 && items.every((it) => (it.option_group || '').trim() !== '');
+  const addItem = () => setItems((prev) => [...prev, { ...EMPTY_ITEM, option_group: sonOpciones ? GRUPO_OPCIONES : null }]);
   const removeItem = (index: number) => setItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  const alternarModoOpciones = () => {
+    setItems((prev) => prev.map((it) => ({ ...it, option_group: sonOpciones ? null : GRUPO_OPCIONES })));
+  };
 
   const toggleBlock = (key: string) => {
     setOpenBlocks((prev) => {
@@ -880,7 +892,38 @@ export function MyQuoteEditorPage() {
 
         {/* Line items */}
         <div data-seccion-voz="items" className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="mb-4 text-sm font-bold text-slate-800">{language === 'en' ? 'Products & Services' : 'Productos y Servicios'}</p>
+          <p className="mb-1 text-sm font-bold text-slate-800">{language === 'en' ? 'Products & Services' : 'Productos y Servicios'}</p>
+          {/* Control global del caso simple: TODO se suma (una tienda que
+              cotiza agendas + logos + papel, cada uno se paga aparte) o TODO
+              es una alternativa (3 planes de página web, el cliente elige
+              uno). Para un caso mixto —algunas líneas fijas, otras
+              alternativas— se sigue pudiendo ajustar ítem por ítem más
+              abajo, este switch solo pone o quita el valor por defecto. */}
+          <div className="mb-4 flex items-center gap-2 rounded-2xl bg-slate-50 p-1">
+            <button
+              type="button"
+              onClick={() => { if (sonOpciones) alternarModoOpciones(); }}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition ${!sonOpciones ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-400'}`}
+            >
+              {language === 'en' ? 'Add up all products' : 'Sumar todos los productos'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (!sonOpciones) alternarModoOpciones(); }}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition ${sonOpciones ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-400'}`}
+            >
+              {language === 'en' ? 'These are alternative options' : 'Son opciones — el cliente elige una'}
+            </button>
+          </div>
+          <p className="mb-4 text-[11px] text-slate-400">
+            {sonOpciones
+              ? (language === 'en'
+                ? 'Each product below is shown on its own, and the client picks one — prices are not added together.'
+                : 'Cada producto de abajo se muestra por separado y el cliente elige uno — los precios no se suman.')
+              : (language === 'en'
+                ? 'Every product below adds to the total, like a store quoting several different items at once.'
+                : 'Cada producto de abajo se suma al total, como una tienda cotizando varios artículos distintos a la vez.')}
+          </p>
           <div className="space-y-3">
             {items.map((item, i) => (
               <div key={i} className="rounded-2xl bg-slate-50 p-3">
