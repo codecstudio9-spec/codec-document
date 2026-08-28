@@ -101,6 +101,7 @@ export function PropuestaComercial({
         onItems(r.items.map((it) => ({
           description: it.description, quantity: it.quantity, unit: it.unit,
           unit_price: it.unit_price, discount_pct: it.discount_pct, tax_pct: it.tax_pct,
+          option_group: it.option_group || null,
         })));
       }
 
