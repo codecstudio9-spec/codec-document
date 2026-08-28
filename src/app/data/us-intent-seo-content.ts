@@ -37,7 +37,8 @@ export interface PaginaUS {
   metaDescription: string;
   h1: string;
   /** El grupo temático, para enlazar entre hermanas. */
-  grupo: 'loi' | 'legal' | 'finance' | 'realestate' | 'compare' | 'family' | 'money' | 'lease';
+  grupo: 'loi' | 'legal' | 'finance' | 'realestate' | 'compare' | 'family' | 'money' | 'lease'
+    | 'poa' | 'will' | 'resignation' | 'travel' | 'b2b' | 'free';
   intro: string;
   problema: { titulo: string; texto: string };
   puntos: Array<{ titulo: string; texto: string }>;
@@ -752,6 +753,1058 @@ export const PAGINAS_US: PaginaUS[] = [
     ],
     fotos: [F.oficina, F.hombre, F.escritorio],
     cta: 'Create your service agreement',
+  },
+
+  // ═══════════════ POWER OF ATTORNEY ═══════════════
+  // Bloque nuevo (2026-08-28): power of attorney es uno de los documentos
+  // que la plataforma ya genera (ver src/app/data/templates.ts, id
+  // 'power-of-attorney') y no tenia ninguna pagina de aterrizaje propia —
+  // ni generica ni por estado. Cinco paginas, cada una con un dolor y un
+  // publico real distinto, no la misma pagina con el titulo cambiado.
+  {
+    slug: 'power-of-attorney-template',
+    titleTag: 'Free Power of Attorney Template',
+    metaDescription: 'Name someone to act on your behalf for finances, property or healthcare. Free power of attorney template, previewed and signed online.',
+    h1: 'Power of Attorney',
+    grupo: 'poa',
+    intro: 'A power of attorney names someone you trust — an agent — to act on your behalf. It can be broad, covering nearly everything you could do yourself, or narrow, limited to one bank account or one closing. What decides how it works when you actually need it is not the title on the page, but three details most people skip: when it takes effect, when it ends, and exactly what the agent is allowed to touch.',
+    problema: {
+      titulo: 'The form that never activates when you need it',
+      texto: 'The most common power of attorney mistake is signing a "springing" POA — one that only takes effect if a doctor certifies you are incapacitated — and never checking what that certification actually requires. Some versions need two physicians. Some require a specific form. If your agent cannot produce exactly what the document demands, the power of attorney is legally real but practically useless at the one moment it was written for. A document that activates immediately, held by someone you trust, avoids that entire failure mode.',
+    },
+    puntos: [
+      { titulo: 'Immediate or springing, stated in one clear line', texto: 'Whether the agent\'s authority starts the moment you sign, or only on a triggering event you define — with no ambiguity about who decides the trigger has occurred.' },
+      { titulo: 'Powers listed, not assumed', texto: 'Banking, real estate, taxes, government benefits, business operations — each named power is either granted or it is not. General language like "all my affairs" is exactly what banks and title companies hesitate to honor.' },
+      { titulo: 'A durability clause', texto: 'Under the Uniform Power of Attorney Act, adopted in some form by most states, a POA is durable — it survives your incapacity — unless it says otherwise. Ours states durability explicitly so no one has to research your state\'s default rule under pressure.' },
+      { titulo: 'A clear end date or revocation trigger', texto: 'An open-ended power of attorney with no expiration is a standing risk. Ours can be dated to end automatically, and always spells out exactly how you can revoke it while you are still competent to do so.' },
+    ],
+    ley: {
+      titulo: 'What makes it valid',
+      texto: 'Most states have adopted some version of the Uniform Power of Attorney Act (UPOAA), which sets the default rule that a POA is durable unless the document says otherwise, and requires third parties like banks to accept a properly executed one. Execution requirements vary: most states require notarization, and several also require one or two witnesses. The signature itself — yours, and the notary\'s where required — is valid in electronic form under the ESIGN Act, 15 U.S.C. § 7001, though many banks and county recorders still prefer or require a wet-ink notarized original for real estate transactions specifically. Check your state\'s exact execution rule before relying on this for a real estate closing.',
+    },
+    caso: {
+      titulo: 'A daughter who could not access her father\'s account',
+      texto: 'A man in his seventies signed a power of attorney naming his daughter as agent, using a free template he found online. It said she could act "for all financial matters" but never mentioned durability, and was silent on what happened if he became incapacitated. When a stroke left him unable to manage his affairs, his bank froze the account pending a court-ordered guardianship — the branch manager\'s legal team read the silence on durability as a real risk, not an oversight they were willing to guess about. Two more paragraphs, agreed on the same afternoon he originally signed, would have avoided the six-week court process that followed.',
+    },
+    faq: [
+      { q: 'What is the difference between a power of attorney and a guardianship?', a: 'A power of attorney is something you set up yourself, while you have capacity, naming who acts for you. A guardianship is a court process that happens after you can no longer make that choice, and a judge — not you — decides who is appointed. A valid POA is usually what prevents a guardianship from becoming necessary.' },
+      { q: 'Does a power of attorney need to be notarized?', a: 'In most states, yes, for it to be accepted by banks and third parties, even though a small number of states allow witnesses instead of or in addition to notarization. Requirements vary enough by state that you should confirm your state\'s exact rule before signing.' },
+      { q: 'Can I have more than one agent?', a: 'Yes — you can name co-agents who must act together, co-agents who can each act independently, or a primary agent with a successor named in case the first is unavailable. The document should state which structure applies, since "co-agents" alone is ambiguous.' },
+      { q: 'When does a power of attorney end?', a: 'On the date you specify, if any; when you revoke it in writing while competent; or automatically on your death, at which point the executor named in your will takes over instead. It does not survive death under any circumstances.' },
+    ],
+    fotos: [F.firma, F.mujer, F.escritorio],
+    cta: 'Create your power of attorney',
+  },
+  {
+    slug: 'durable-power-of-attorney',
+    titleTag: 'Durable Power of Attorney Template',
+    metaDescription: 'A durable power of attorney stays valid if you become incapacitated. Free template with a clear durability clause, signed online.',
+    h1: 'Durable Power of Attorney',
+    grupo: 'poa',
+    intro: '"Durable" is the one word in a power of attorney that decides whether it still works on the day it matters most. A standard power of attorney can become void the moment you lose capacity — exactly when your agent needs authority the most. A durable power of attorney is built to survive that moment instead of ending at it.',
+    problema: {
+      titulo: 'Why the word "durable" has to be in the document itself',
+      texto: 'Under the Uniform Power of Attorney Act, most states now default to durability unless the document says otherwise — but not every state has adopted the uniform act, and older templates drafted under prior law sometimes still require explicit durability language to survive incapacity. Relying on a state default you have not personally verified is a real gap. A document that states its own durability in plain language removes the guesswork regardless of which rule your state happens to apply.',
+    },
+    puntos: [
+      { titulo: 'An explicit durability statement', texto: 'A single sentence — "this power of attorney shall not be affected by my subsequent disability or incapacity" — that removes any dependence on a state default rule.' },
+      { titulo: 'Defined incapacity, if the POA is springing', texto: 'If you choose to make authority conditional on incapacity rather than immediate, the document states exactly how that is determined — typically written certification from one or two physicians — instead of leaving it undefined.' },
+      { titulo: 'Powers scoped to what you actually intend', texto: 'Financial accounts, real property, government benefits and business interests are each listed separately, so the agent\'s authority matches what you meant rather than a single sweeping clause open to interpretation.' },
+      { titulo: 'A successor agent named in advance', texto: 'If your first choice cannot serve when the time comes, a named successor prevents the document from becoming useless for the one reason no one plans for — the primary agent being unavailable.' },
+    ],
+    ley: {
+      titulo: 'The legal standard for durability',
+      texto: 'The Uniform Power of Attorney Act (UPOAA), adopted in some form by most states, sets durability as the default for any POA that does not state otherwise. States that have not adopted the UPOAA generally follow older Uniform Probate Code provisions with similar effect, but the safest approach in any state is to state durability explicitly rather than rely on a default. Execution typically requires notarization; some states add a witness requirement. The signature and notarization can be completed and evidenced electronically under the ESIGN Act, 15 U.S.C. § 7001, though banks and title companies handling real property may still require a wet-ink original.',
+    },
+    caso: {
+      titulo: 'The version that was signed but never checked',
+      texto: 'A small business owner signed a power of attorney years before a car accident left her briefly unable to communicate. The document, drafted by a paralegal service years earlier, was silent on durability — a gap that had gone unnoticed because it was never needed until it suddenly was. Her business partner, named as agent, spent nine days establishing with the bank that the POA was still valid, losing a supplier payment deadline in the process. The fix, once discovered, was one sentence.',
+    },
+    faq: [
+      { q: 'Is every power of attorney durable by default?', a: 'In states that have adopted the Uniform Power of Attorney Act, yes, unless the document says otherwise. In states that have not, the default can go the other way. Stating durability explicitly in the document avoids depending on which rule applies where you live.' },
+      { q: 'Can a durable power of attorney be revoked?', a: 'Yes, at any time while you have capacity, by signing a written revocation and notifying your agent and any institutions relying on the original document. Durability affects what happens on incapacity — it does not remove your right to revoke while competent.' },
+      { q: 'Does durable power of attorney cover healthcare decisions?', a: 'Only if it explicitly grants that authority, or if you separately execute a medical power of attorney or healthcare proxy. Financial durable POAs and medical POAs are commonly kept as two separate documents, even when signed on the same day.' },
+      { q: 'What happens to a durable power of attorney at death?', a: 'It ends automatically. A power of attorney only ever operates during your lifetime — after death, authority passes to the executor named in your will, or to whoever a probate court appoints if there is no will.' },
+    ],
+    fotos: [F.tech, F.hombre, F.oficina],
+    cta: 'Create your durable power of attorney',
+  },
+  {
+    slug: 'medical-power-of-attorney',
+    titleTag: 'Medical Power of Attorney Template',
+    metaDescription: 'Name someone to make healthcare decisions if you cannot. Free medical power of attorney / healthcare proxy template, signed online.',
+    h1: 'Medical Power of Attorney',
+    grupo: 'poa',
+    intro: 'A medical power of attorney — called a healthcare proxy in some states — names someone to make medical decisions for you if you cannot make them yourself. It is a different document from a living will: a living will states your own wishes about specific treatments, while a medical power of attorney names a person to interpret and apply those wishes to situations no form could fully anticipate.',
+    problema: {
+      titulo: 'A living will cannot answer a question it never asked',
+      texto: 'Living wills are written in advance, describing preferences for a handful of scenarios — usually terminal illness or permanent unconsciousness. Real medical situations rarely match a checkbox exactly. Without a named healthcare agent empowered to make the judgment call the form did not anticipate, doctors are often left following the closest legal next-of-kin hierarchy, which may not be the person you would have chosen and may not know your actual wishes.',
+    },
+    puntos: [
+      { titulo: 'One clearly named primary agent', texto: 'Not a committee — a single person with clear authority, which avoids the deadlock that can happen when multiple family members disagree at the bedside and no one has final say.' },
+      { titulo: 'A successor agent, named up front', texto: 'If your primary agent is unreachable or unable to serve, a named successor prevents a gap in decision-making at exactly the wrong moment.' },
+      { titulo: 'Explicit authority, not implied authority', texto: 'The document states plainly that the agent can consent to, refuse, or withdraw treatment, access medical records under HIPAA, and speak directly with treating physicians — spelled out so no hospital can treat the scope as ambiguous.' },
+      { titulo: 'Your own general wishes, stated for guidance', texto: 'A short statement of your values and priorities — not a full living will, but enough that your agent is applying your judgment, not guessing at it.' },
+    ],
+    ley: {
+      titulo: 'How healthcare proxies are recognized',
+      texto: 'Every state has a statute authorizing a healthcare power of attorney or proxy, though the exact form requirements differ — some states require witnesses, some require notarization, some accept either, and a small number provide their own statutory form that is preferred by hospitals in that state. HIPAA authorization is commonly included in the same document so the named agent can access medical information immediately, since HIPAA privacy rules otherwise restrict disclosure. This document is signed like any other under the ESIGN Act, 15 U.S.C. § 7001, but hospitals and physicians in your state may expect the state\'s specific statutory language — check your state\'s health department guidance for the preferred form before relying on this for a hospital admission.',
+    },
+    caso: {
+      titulo: 'Two siblings, two opinions, no named decision-maker',
+      texto: 'A woman was hospitalized after a serious accident with no healthcare proxy on file. Her two adult children disagreed about a proposed procedure, and because neither held clear legal authority, the hospital\'s ethics committee had to intervene while the family remained divided for four additional days. She recovered, and afterward signed a medical power of attorney naming one of her children as primary agent — the conversation about who should decide, she said, was harder after the fact than it would have been in advance.',
+    },
+    faq: [
+      { q: 'Is a medical power of attorney the same as a living will?', a: 'No. A living will states your own wishes about specific treatments in advance. A medical power of attorney names a person to make decisions and apply judgment in situations a living will does not cover. Many people execute both together.' },
+      { q: 'Who should I choose as my healthcare agent?', a: 'Someone who knows your values, is willing to advocate for them even under pressure from other family members, and is realistically available in a medical emergency — not necessarily your closest relative if that person would struggle to make hard decisions.' },
+      { q: 'Can my healthcare agent be overruled by family members?', a: 'No, as long as the document is properly executed under your state\'s law — a validly named healthcare agent\'s decisions take priority over next-of-kin, even a spouse, unless a court intervenes.' },
+      { q: 'Does this let my agent access my medical records?', a: 'Only if the document includes HIPAA authorization language, which is why it is included by default here — without it, privacy rules can block even a close family member from getting information quickly.' },
+    ],
+    fotos: [F.mujer, F.revisar, F.tech],
+    cta: 'Create your medical power of attorney',
+  },
+  {
+    slug: 'financial-power-of-attorney',
+    titleTag: 'Financial Power of Attorney Template',
+    metaDescription: 'Authorize someone to manage your bank accounts, bills and property. Free financial power of attorney template, signed online.',
+    h1: 'Financial Power of Attorney',
+    grupo: 'poa',
+    intro: 'A financial power of attorney authorizes someone to manage money matters on your behalf — paying bills, managing bank accounts, handling investments, filing taxes, or running a property. It is the document most often needed on short notice: a deployment, a hospitalization, an extended trip, or simply the practical reality of aging.',
+    problema: {
+      titulo: 'A bank that will not honor a vague grant of authority',
+      texto: 'Banks and brokerages see enough fraud attempts that many now scrutinize powers of attorney closely, and a document with broad, generic language — "authority over all financial matters" — is exactly the kind that triggers extra review, or an outright refusal pending their own legal team\'s sign-off. Institutions respond faster and more reliably to a document that lists specific powers by name, because there is nothing to interpret.',
+    },
+    puntos: [
+      { titulo: 'Powers itemized by category', texto: 'Banking, real estate, tax filing, insurance, retirement accounts, and business interests each get their own line — granted or withheld individually rather than bundled into one catch-all clause.' },
+      { titulo: 'A stated dollar or transaction limit, if you want one', texto: 'Some people want unlimited authority for their agent; others want a ceiling on any single transaction without a second signature. Either is valid — the document should simply say which.' },
+      { titulo: 'Gifting authority addressed directly', texto: 'The power to give away your money or property to others is not implied by general financial authority in most states — it has to be granted explicitly, which is exactly what this document does or does not do, by your choice.' },
+      { titulo: 'A record-keeping obligation for the agent', texto: 'A clause requiring your agent to keep records of transactions made on your behalf protects the agent as much as it protects you, especially if other family members later ask questions.' },
+    ],
+    ley: {
+      titulo: 'What financial institutions look for',
+      texto: 'Under the Uniform Power of Attorney Act, adopted in some form by most states, financial institutions are generally required to accept a properly executed power of attorney and can face liability for unreasonably refusing one — but the UPOAA also protects institutions that request an attorney\'s opinion for certain "hot powers" like gifting, changing beneficiaries, or creating trusts, which must be granted explicitly rather than assumed. Execution typically requires notarization. The signature is valid in electronic form under the ESIGN Act, 15 U.S.C. § 7001, though a growing but still incomplete number of banks accept electronically notarized documents — call ahead if a specific institution\'s policy matters for your situation.',
+    },
+    caso: {
+      titulo: 'A deployment with three weeks to prepare',
+      texto: 'A service member with a sudden overseas deployment order had three weeks to arrange for someone to manage a mortgage payment, a small rental property, and a joint account. A financial power of attorney naming a sibling as agent, itemizing exactly those three areas with a stated transaction limit, was signed, notarized and on file with the bank before departure. The itemized approach meant the bank\'s compliance review took under a day — a broader, vaguer version from a prior version of the same document had previously been flagged for additional review at a different branch.',
+    },
+    faq: [
+      { q: 'Can my agent access my bank account directly with this?', a: 'Once the bank has the executed and notarized document on file, yes — most banks will let the named agent transact on the account within the powers granted. Some banks additionally require their own internal form signed alongside the POA; call ahead to confirm.' },
+      { q: 'Does a financial power of attorney let my agent sell my house?', a: 'Only if real property authority is explicitly granted and the document is recorded with the county where the property sits, which most title companies require before closing. This is a power to name deliberately, not assume.' },
+      { q: 'Can I limit what my agent can do?', a: 'Yes — that is the entire purpose of listing powers individually rather than granting blanket authority. You can authorize bill payment and banking while withholding authority over real estate or gifting, for example.' },
+      { q: 'What stops my agent from misusing this authority?', a: 'Legally, an agent owes you a fiduciary duty and can be held liable for breaching it. Practically, choosing someone trustworthy, keeping the scope specific, and requiring records are the real safeguards — the document alone cannot prevent bad faith, only make it easier to prove.' },
+    ],
+    fotos: [F.escritorio, F.hombre, F.revisar],
+    cta: 'Create your financial power of attorney',
+  },
+  {
+    slug: 'revoke-power-of-attorney',
+    titleTag: 'How to Revoke a Power of Attorney',
+    metaDescription: 'Free revocation of power of attorney template — cancel a POA in writing and notify your former agent and any institutions relying on it.',
+    h1: 'Revoke a Power of Attorney',
+    grupo: 'poa',
+    intro: 'A power of attorney does not expire just because you changed your mind or the relationship with your agent changed. Until you revoke it in writing and notify the people relying on it, the original document can, in practice, remain active — accepted by a bank or title company that never learned it was cancelled.',
+    problema: {
+      titulo: 'Telling your agent is not the same as revoking the document',
+      texto: 'A common and risky assumption is that a verbal conversation — "I don\'t want you handling this anymore" — ends an agent\'s authority. It does not, in any state. The original signed and often notarized power of attorney remains a valid legal instrument until a written, signed revocation exists and, critically, is actually delivered to the agent and to any institution that has a copy on file. A bank that was never notified can, and often will, continue to honor the old document.',
+    },
+    puntos: [
+      { titulo: 'A signed, dated revocation document', texto: 'Stating clearly that the specific power of attorney, identified by its original date and the agent named, is revoked effective immediately.' },
+      { titulo: 'Notice sent to the former agent', texto: 'In writing, ideally by a method that creates a record of delivery, so there is no ambiguity later about whether or when the agent was informed.' },
+      { titulo: 'Notice sent to every institution that has a copy', texto: 'Banks, brokerages, the county recorder if the original was recorded, and any healthcare provider if it covered medical decisions — each needs its own copy of the revocation to actually stop honoring the old document.' },
+      { titulo: 'A new power of attorney, if you still need one', texto: 'Revoking an old POA and executing a new one — naming a different agent, or the same agent with different terms — are commonly done together, and this template supports either.' },
+    ],
+    ley: {
+      titulo: 'The legal requirement to notify',
+      texto: 'Under the Uniform Power of Attorney Act, adopted in some form by most states, a revocation is effective as to the agent once the agent has actual knowledge of it, and effective as to a third party like a bank once that party has actual knowledge or is given notice. A third party who honors a POA without knowledge of its revocation is typically protected from liability — which is precisely why written notice, actually delivered, matters more than the revocation document\'s existence alone. If the original POA was recorded with a county recorder (common when it grants real estate authority), the revocation generally needs to be recorded there as well. The revocation itself can be signed electronically under the ESIGN Act, 15 U.S.C. § 7001, but confirm your state and county\'s recording requirements if real property was involved.',
+    },
+    caso: {
+      titulo: 'The account still open a year after the relationship ended',
+      texto: 'A man signed a financial power of attorney naming a former business partner as agent during a period when they still worked together. Two years later, after the partnership had dissolved acrimoniously, he assumed the document was no longer relevant and never formally revoked it. When a dispute arose over a shared account, he discovered the bank still had the original POA on file and had never been told otherwise — the former partner\'s authority, on paper, had never actually ended. A one-page revocation, sent by certified mail to the bank and the former partner, closed the gap immediately.',
+    },
+    faq: [
+      { q: 'Do I need a lawyer to revoke a power of attorney?', a: 'No — a signed, dated written revocation, delivered to the agent and to any institution relying on the original, is generally sufficient in every state. A lawyer is useful mainly if the situation is contested or the original POA granted significant real estate authority.' },
+      { q: 'Does a power of attorney end automatically if I become incapacitated?', a: 'No — a durable power of attorney is specifically designed to survive incapacity, which is usually the point of having one. A non-durable POA can end at incapacity, but that depends on the original document\'s terms.' },
+      { q: 'Can I revoke a power of attorney if I gave it to a family member?', a: 'Yes, exactly the same way as with any agent. A family relationship does not change the legal mechanics of revocation — you still need a written, delivered revocation to actually end the authority.' },
+      { q: 'What if I can no longer sign because I have lost capacity?', a: 'You generally cannot revoke a POA once you lack the capacity to understand what you are signing — this is one reason to review who holds power of attorney over you periodically, while you still can make that decision yourself.' },
+    ],
+    fotos: [F.oficina, F.revisar, F.escritorio],
+    cta: 'Create your revocation document',
+  },
+
+  // ═══════════════ LAST WILL & TESTAMENT ═══════════════
+  // Otro documento que la plataforma ya genera (templates.ts, id
+  // 'last-will-testament') sin ninguna pagina de aterrizaje propia.
+  {
+    slug: 'last-will-and-testament-template',
+    titleTag: 'Free Last Will and Testament Template',
+    metaDescription: 'Name your beneficiaries, guardians and executor. Free last will and testament template, previewed instantly and signed online.',
+    h1: 'Last Will and Testament',
+    grupo: 'will',
+    intro: 'A last will and testament says who gets what, who takes care of your children if you cannot, and who is in charge of making sure it actually happens. Most adults in the United States do not have one — not because it is complicated, but because it feels like a project with no deadline, until suddenly it does.',
+    problema: {
+      titulo: 'Dying without a will does not mean your wishes get followed by default',
+      texto: 'Without a will, state intestate succession law decides who inherits — a formula based on family relationships that has nothing to do with what you would have chosen. It can hand a share of your estate to an estranged relative, split a family home among heirs who then have to agree on what to do with it, or leave a surviving partner with no legal claim at all if you were never married. A will replaces that formula with your actual decision.',
+    },
+    puntos: [
+      { titulo: 'Beneficiaries named specifically', texto: 'Who receives what — whether that is an equal split, specific items to specific people, or a percentage-based distribution — stated clearly enough that there is nothing left for anyone to interpret.' },
+      { titulo: 'An executor with clear authority', texto: 'The person responsible for carrying out the will: paying final debts, filing what probate requires, and distributing the estate as written. Naming this person avoids a court appointing one for you.' },
+      { titulo: 'Guardians named for minor children', texto: 'If you have children under 18, this is often the single most important clause in the entire document — without it, a court decides who raises them, guided by its own judgment rather than yours.' },
+      { titulo: 'A residuary clause', texto: 'What happens to anything not specifically listed — an account you forgot, a possession you never thought to mention. Without this clause, unlisted assets can fall back into intestate succession even with a will in place.' },
+    ],
+    ley: {
+      titulo: 'What makes a will valid',
+      texto: 'Most states require a will to be signed by the testator and witnessed by two competent adults who are not beneficiaries, following principles from the Uniform Probate Code that many states have adopted in some form. Roughly half the states also recognize holographic (entirely handwritten, unwitnessed) wills, though a typed and properly witnessed will is accepted everywhere and carries less risk of challenge. Notarization is not required for a will to be valid, but a "self-proving affidavit," signed and notarized alongside the witnesses, speeds up probate by letting the court accept the will without tracking down the witnesses later. This is general information, not state-specific legal advice — confirm your state\'s exact witness and execution requirements, since a will that fails them can be thrown out entirely regardless of intent.',
+    },
+    caso: {
+      titulo: 'A blended family with no will at all',
+      texto: 'A man in his second marriage, with one child from his first marriage and two from his second, died without a will. Under his state\'s intestate succession formula, his surviving spouse received half the estate and all three children split the other half equally — an outcome none of them had discussed or expected, and one that left the family home in a three-way ownership dispute between people who did not all get along. He had intended, informally, to leave the house to his spouse and split other assets among the children. None of that was legally relevant, because none of it was written down.',
+    },
+    faq: [
+      { q: 'What happens if I die without a will?', a: 'Your estate is distributed according to your state\'s intestate succession law — a fixed formula based on family relationships, not your actual wishes. It can produce outcomes very different from what you would have chosen, including nothing at all for an unmarried partner.' },
+      { q: 'Do I need a lawyer to write a will?', a: 'Not for most straightforward estates. A properly witnessed will covering your major assets, an executor and guardians for minor children is legally valid without an attorney. Complex situations — significant assets, business ownership, disputes you anticipate — are where legal advice earns its cost.' },
+      { q: 'Can I write my own will and have it hold up in court?', a: 'Yes, as long as it meets your state\'s execution requirements — typically your signature plus two witnesses who are not beneficiaries. The content does not need special legal language; clarity matters more than formality.' },
+      { q: 'How often should I update my will?', a: 'After any major life change — marriage, divorce, a new child, a significant change in assets, or the death of a named executor or guardian. A will written once and never revisited is a common way for outdated intentions to control an estate.' },
+    ],
+    fotos: [F.escritorio, F.mujer, F.oficina],
+    cta: 'Create your will',
+  },
+  {
+    slug: 'will-vs-trust',
+    titleTag: 'Will vs. Trust: What\'s the Difference?',
+    metaDescription: 'A will and a living trust do different jobs. Compare probate, privacy and cost, then create a free will template online.',
+    h1: 'Will vs. Trust',
+    grupo: 'will',
+    intro: 'A will and a living trust both decide who gets your assets, but they get there in almost opposite ways. A will works after you die, through a court process called probate. A living trust works during your life and after it, generally without probate at all. Neither is universally "better" — they solve different problems, and many estate plans eventually use both.',
+    problema: {
+      titulo: 'The word "avoid probate" gets sold harder than it needs to be',
+      texto: 'Trust marketing often leads with "avoid probate" as if probate were always a disaster. For a modest estate in most states, probate is a bounded, procedural process — not the drawn-out nightmare it is sometimes made out to be. A trust genuinely helps in specific situations: significant real estate in multiple states, a strong preference for privacy, or a family history of estate disputes. For a simpler estate, the added cost and ongoing maintenance of a trust can outweigh what it actually saves.',
+    },
+    puntos: [
+      { titulo: 'A will goes through probate; a properly funded trust generally does not', texto: 'Probate is public record and takes time — often months, sometimes longer if contested. Assets titled in a trust\'s name typically bypass that process, transferring according to the trust\'s terms instead.' },
+      { titulo: 'A trust only works if assets are actually retitled into it', texto: 'This is the step people miss most often. Signing a trust document does nothing for a bank account or a house still titled in your own name — the asset has to be formally transferred into the trust to get any of the benefit.' },
+      { titulo: 'A will is simpler to create and update', texto: 'A will is one document, signed and witnessed once. A trust requires ongoing maintenance every time you acquire a new asset, and is generally more involved and costly to set up properly in the first place.' },
+      { titulo: 'A will can still name guardians; a trust cannot', texto: 'Guardianship for minor children is only ever established through a will, regardless of whatever trust structure exists alongside it — this is why estate plans built around a trust still include a will.' },
+    ],
+    ley: {
+      titulo: 'How each is treated legally',
+      texto: 'A will must satisfy your state\'s execution requirements — typically signature plus two witnesses — and only takes legal effect through probate court after death. A revocable living trust is a contract that takes effect the moment it is signed and funded, and generally does not require probate for assets properly titled in its name, though it does not need witnesses in most states, only your signature and often notarization. Both are signed validly in electronic form under the ESIGN Act, 15 U.S.C. § 7001, but the specific formality requirements — witnesses for a will, notarization for a trust in many states — still apply on top of the signature method.',
+    },
+    caso: {
+      titulo: 'A trust that never got funded',
+      texto: 'A couple paid to have a living trust prepared specifically to avoid probate on their family home. They signed the trust documents and filed them away — but never completed the deed transferring the house into the trust\'s name. When the husband died years later, the house was still titled in his individual name, meaning it went through probate anyway, exactly what the trust had been built to prevent. The trust itself was valid; the step that made it useful was simply never finished.',
+    },
+    faq: [
+      { q: 'Do I need both a will and a trust?', a: 'Many estate plans use both — a trust for major assets like real estate, and a "pour-over" will covering anything left outside the trust plus naming guardians for minor children, which a trust cannot do.' },
+      { q: 'Is a trust always better than a will for avoiding taxes?', a: 'A basic revocable living trust does not reduce estate or income taxes on its own — that requires more advanced structures. Its main benefit is avoiding probate and controlling how assets are distributed, not tax reduction.' },
+      { q: 'Can I change a trust after I create it?', a: 'A revocable living trust — the most common kind for this purpose — can be amended or revoked at any time while you are alive and competent, similarly to how a will can be updated.' },
+      { q: 'Is a will enough if I own a modest amount of assets?', a: 'For many people, yes. If your estate is straightforward and probate in your state is not unusually slow or expensive, a well-drafted will can be entirely sufficient without the added cost and maintenance of a trust.' },
+    ],
+    fotos: [F.revisar, F.tech, F.oficina],
+    cta: 'Create your will',
+  },
+  {
+    slug: 'how-to-write-a-will',
+    titleTag: 'How to Write a Will (Step by Step)',
+    metaDescription: 'What a valid will actually needs: beneficiaries, an executor, witnesses and your signature. Free template, written and signed online.',
+    h1: 'How to Write a Will',
+    grupo: 'will',
+    intro: 'Writing a will is less about legal language and more about a handful of decisions, written down clearly and signed correctly. The document does not need to sound like a lawyer wrote it — it needs to say, without ambiguity, who gets what, who is in charge, and who witnessed you sign it.',
+    problema: {
+      titulo: 'The decisions matter more than the wording',
+      texto: 'People delay writing a will because they imagine it requires resolving every possible scenario in advance. In practice, a will needs to answer four questions clearly: who gets your assets, who is your executor, who guards your minor children if applicable, and what happens to anything you did not specifically list. Answering those four questions in plain language, signed correctly, produces a valid will — the perfectionism that delays people is rarely what a court actually requires.',
+    },
+    puntos: [
+      { titulo: 'Start with your executor', texto: 'Choose someone willing and able to handle paperwork, notify creditors, and follow through over months — not necessarily your closest relative, but someone organized and willing to take it on.' },
+      { titulo: 'List assets by category, not by exhaustive inventory', texto: 'Real estate, financial accounts, vehicles and personal property, with specific items called out only where you have a strong preference — the residuary clause covers everything else automatically.' },
+      { titulo: 'Name guardians if you have minor children', texto: 'Include a primary choice and a backup, and have that conversation with both people beforehand — a guardian who finds out from a will after the fact is a genuinely difficult position to put someone in.' },
+      { titulo: 'Sign in front of two witnesses', texto: 'Most states require two witnesses who are not beneficiaries under the will, physically present when you sign. A self-proving affidavit, signed and notarized at the same time, saves your executor time later during probate.' },
+    ],
+    ley: {
+      titulo: 'The formal requirements that actually matter',
+      texto: 'Nearly every state requires the same core elements: you must be of sound mind and legal age (18 in nearly every state), the will must be signed by you, and it must be witnessed by two people who are not beneficiaries under it, present at the same time. Some states permit a will to be entirely handwritten (holographic) without witnesses, but a typed, witnessed will is valid everywhere and far less likely to be challenged in probate. This is general information about common state requirements, not a substitute for checking your specific state\'s rule — a will that fails its state\'s execution requirements can be invalidated entirely, regardless of how clearly it states your wishes.',
+    },
+    caso: {
+      titulo: 'A will finished the same afternoon it was started',
+      texto: 'A single parent with one child and a modest estate had put off writing a will for three years, assuming it would require a lawyer\'s office and multiple appointments. Once she actually sat down to answer the four core questions — executor, beneficiary, guardian, residuary clause — the decisions took about twenty minutes. Printing, reviewing, and signing in front of two coworkers as witnesses took the rest of the afternoon. The document she had been avoiding for years turned out to be a much smaller project than the version she had been picturing.',
+    },
+    faq: [
+      { q: 'Can I write a will without a lawyer?', a: 'Yes, for most straightforward situations. A will is legally valid based on meeting your state\'s execution requirements, not on who drafted it. Complex estates, business ownership, or anticipated disputes are the cases where legal advice adds real value.' },
+      { q: 'Who can be a witness to my will?', a: 'Generally any competent adult who is not a beneficiary under the will. Using a beneficiary as a witness does not always invalidate the will, but it can affect that person\'s inheritance in some states — better to use two people who are not receiving anything under it.' },
+      { q: 'Does my will need to be notarized?', a: 'Not to be valid — witnessing is what makes a will legally effective. Notarization is used to create a "self-proving affidavit," which speeds up probate but is not required for the will itself to hold up.' },
+      { q: 'Where should I keep my will after signing it?', a: 'Somewhere your executor can actually find it — a fireproof safe at home, with a copy or the storage location told to your executor directly. A perfectly valid will that no one can locate after your death causes the same problem as not having one.' },
+    ],
+    fotos: [F.tech, F.hombre, F.mujer],
+    cta: 'Create your will',
+  },
+  {
+    slug: 'what-happens-without-a-will',
+    titleTag: 'What Happens If You Die Without a Will',
+    metaDescription: 'Dying without a will means state intestate succession law decides who inherits — not you. See how it works, then create a free will.',
+    h1: 'Dying Without a Will',
+    grupo: 'will',
+    intro: 'Dying without a will is called dying "intestate," and it does not mean your assets go to the state — that is a common misconception. It means a fixed formula written into your state\'s law decides who inherits, based purely on family relationships, with no room for your actual preferences.',
+    problema: {
+      titulo: 'The formula does not know your family the way you do',
+      texto: 'Intestate succession is a one-size-fits-all sequence: typically spouse and children first, then parents, then siblings, working outward through family relationships. It cannot account for a long-term partner you never married, a stepchild you raised as your own but never legally adopted, a close friend you considered family, or a specific wish to leave more to one child than another. All of that requires a will. Without one, the formula runs regardless of what you actually wanted.',
+    },
+    puntos: [
+      { titulo: 'An unmarried partner typically gets nothing', texto: 'Intestate succession is built around legal relationships — marriage and blood or adoptive relation. A partner you lived with for twenty years but never married generally has no automatic inheritance right at all under most states\' formulas.' },
+      { titulo: 'A surviving spouse often shares with children, not takes everything', texto: 'A common misconception is that a spouse automatically inherits the full estate. In many states, if there are children, the estate is split between the spouse and the children by a fixed formula — which can be a surprise to a surviving spouse expecting to inherit outright.' },
+      { titulo: 'The court appoints your children\'s guardian, not you', texto: 'Without a will naming a guardian, a probate court decides who raises your minor children, based on its own judgment of their best interest — a decision you could have made yourself.' },
+      { titulo: 'The court appoints your estate administrator, not you', texto: 'Without a named executor, the court appoints an administrator, often a family member who petitions for the role, who may not be the person you would have trusted most with the job.' },
+    ],
+    ley: {
+      titulo: 'How intestate succession actually works',
+      texto: 'Every state has its own intestate succession statute, but most follow a similar structure influenced by the Uniform Probate Code: surviving spouse and children first (in shares that vary significantly by state), then parents if there is no spouse or children, then siblings, and outward through more distant relatives if none of those exist. If no legally recognized relative can be found at all, the estate does eventually pass to the state — but this is genuinely rare, since the formula reaches surprisingly distant relatives before that happens. The specific share a spouse or child receives differs meaningfully state by state, which is exactly the kind of detail a will removes entirely by stating your own terms instead.',
+    },
+    caso: {
+      titulo: 'A stepson who received nothing',
+      texto: 'A woman raised her husband\'s son from his prior relationship as her own for fifteen years, but never legally adopted him. When she died unexpectedly without a will, her state\'s intestate succession law recognized only legally adoptive or biological relationships — her stepson, despite the relationship, had no automatic inheritance right at all. Her assets passed instead to her biological siblings, who she had not been close to in years. A one-page will naming him as a beneficiary would have changed the outcome entirely.',
+    },
+    faq: [
+      { q: 'Does everything really go to the state if I have no will?', a: 'Almost never. Intestate succession reaches quite far into extended family — cousins, and sometimes further — before an estate is considered to have no heirs at all. The state inheriting is the rare exception, not the default outcome people often assume.' },
+      { q: 'What happens to my children if I die without a will?', a: 'A probate court decides who becomes their guardian, based on its own assessment of the child\'s best interest, guided by state law rather than your personal preference — which is why naming a guardian is often described as the single most important reason to have a will if you have minor children.' },
+      { q: 'Does my unmarried partner inherit anything if I die without a will?', a: 'Generally, no — intestate succession is built around legal marriage and blood or adoptive relationships. An unmarried partner, regardless of how long the relationship lasted, typically has no automatic right to inherit under most states\' intestate formulas.' },
+      { q: 'How much does probate cost without a will versus with one?', a: 'A will does not eliminate probate, but it usually simplifies and speeds it up considerably by removing disputes over who inherits and who administers the estate — the process without a will is not necessarily more expensive by statute, but disputes and court involvement over unclear succession commonly add real cost and delay.' },
+    ],
+    fotos: [F.oficina, F.escritorio, F.revisar],
+    cta: 'Create your will',
+  },
+  {
+    slug: 'free-will-template',
+    titleTag: 'Free Will Template — Online, No Cost to Start',
+    metaDescription: 'A free last will and testament template you fill out, preview and sign online. No credit card required to start.',
+    h1: 'Free Will Template',
+    grupo: 'will',
+    intro: 'A free will template removes the two reasons people put off estate planning the longest: cost and complexity. This one is filled out through a guided form, previewed exactly as it will print before anything is paid for, and signed online with a verifiable audit trail — no law office appointment required.',
+    problema: {
+      titulo: 'Free does not have to mean generic',
+      texto: 'Many free will templates online are static documents with blanks to fill in by hand — no guidance on what happens if a beneficiary predeceases you, no prompt to name a backup executor, no explanation of witness requirements. A free template that is also a guided, structured process catches the gaps a blank form leaves open, without charging for the difference.',
+    },
+    puntos: [
+      { titulo: 'A guided form, not a blank page', texto: 'Each section — beneficiaries, executor, guardians, residuary clause — is prompted individually, so nothing gets skipped because it was easy to overlook on an unstructured document.' },
+      { titulo: 'Instant preview before anything is paid for', texto: 'See the complete, formatted document exactly as it will look, with your actual information filled in, before deciding whether to download or sign it.' },
+      { titulo: 'Clear guidance on witness requirements', texto: 'The document explains what your state generally requires for execution — typically two witnesses who are not beneficiaries — so signing it correctly does not depend on separate research.' },
+      { titulo: 'No subscription required to create one will', texto: 'The free tier covers document generation and e-signature without a recurring commitment — useful when a single, properly executed will is genuinely all you need.' },
+    ],
+    ley: {
+      titulo: 'A free template still has to meet the same legal bar',
+      texto: 'Cost has no bearing on a will\'s validity — a free, self-prepared will that meets your state\'s execution requirements (signature plus two disinterested witnesses, in most states) is exactly as legally binding as one drafted by an expensive law firm. What matters is meeting the formal requirements, not what the document cost to produce. This is general information; confirm your own state\'s specific execution rule, since a will that fails it can be invalidated in probate regardless of its content.',
+    },
+    caso: {
+      titulo: 'Three years of delay, twenty minutes of actual work',
+      texto: 'A freelance designer had been meaning to write a will since her daughter was born three years earlier, put off each time by the assumption it would cost several hundred dollars and require scheduling an appointment. She started a free template one evening after her daughter was asleep, filled in beneficiaries, an executor and a guardian, previewed the finished document, and had it printed and witnessed by two neighbors within the week. The version she had been picturing — expensive, drawn-out — had never actually matched what the process required.',
+    },
+    faq: [
+      { q: 'Is a free will template as legally valid as a paid one?', a: 'Yes, as long as it meets your state\'s execution requirements. Price does not determine legal validity — proper signing and witnessing does.' },
+      { q: 'What is included in the free tier?', a: 'Document generation with a full preview, and free e-signature capacity that resets periodically — enough for most people to complete and properly execute one will at no cost.' },
+      { q: 'Do I still need witnesses if I use a free online template?', a: 'Yes — witness requirements come from state law, not from how the document was created. You will still need two disinterested witnesses physically present when you sign, regardless of the template\'s source.' },
+      { q: 'Can I update a free will template later if my situation changes?', a: 'Yes — you can generate a new version whenever your circumstances change, which is generally the recommended approach rather than hand-editing an already-signed will.' },
+    ],
+    fotos: [F.mujer, F.tech, F.hombre],
+    cta: 'Create your free will',
+  },
+
+  // ═══════════════ RESIGNATION LETTER ═══════════════
+  // Ya generado por la plataforma (resignation-letter-template.ts), y de
+  // altisimo volumen de busqueda individual — sin ninguna pagina propia.
+  {
+    slug: 'resignation-letter-template',
+    titleTag: 'Free Resignation Letter Template',
+    metaDescription: 'A professional resignation letter template — state your last day, keep it brief, and leave the relationship intact. Free, signed online.',
+    h1: 'Resignation Letter',
+    grupo: 'resignation',
+    intro: 'A resignation letter has one real job: to create a clear, dated record that you resigned, when your last day is, and that you did it professionally. It is not the place to explain everything you have been holding back — that conversation, if it happens at all, happens somewhere else.',
+    problema: {
+      titulo: 'The letter people wish they could take back',
+      texto: 'A resignation letter becomes a permanent part of your employment file, and it is often the last document a former employer keeps on hand when a reference check comes in years later. Letters written in frustration — listing grievances, criticizing management, or venting about specific coworkers — tend to be remembered long after the frustration that prompted them has faded. A short, professional letter costs nothing in the moment and protects the reference later.',
+    },
+    puntos: [
+      { titulo: 'A clear statement of resignation and last day', texto: 'The core of the letter: that you are resigning, from what position, and your final date of employment — stated plainly in the first line, not buried in the middle of a longer explanation.' },
+      { titulo: 'Standard notice period, stated explicitly', texto: 'Two weeks is the common default in the United States, though your contract or company policy may specify something different — the letter should match whatever applies to you.' },
+      { titulo: 'A brief, genuine note of thanks', texto: 'One or two sentences acknowledging the opportunity or specific experience — not required, but the kind of detail that keeps the door open for a future reference or reconnection.' },
+      { titulo: 'An offer to help with the transition', texto: 'A short line offering to help train a replacement or document your responsibilities during the notice period — low-cost to include, and it is exactly what a good reference later remembers.' },
+    ],
+    ley: {
+      titulo: 'What a resignation letter legally does and does not do',
+      texto: 'In the United States, most employment is "at will," meaning either you or your employer can end it at any time, for almost any reason, without a required notice period — a resignation letter is a professional courtesy and a paper record, not a legal requirement in most states or industries. Exceptions exist for employment contracts that specify a notice period or a collective bargaining agreement that sets separate rules. Signed electronically, a resignation letter is treated the same as any other signed document under the ESIGN Act, 15 U.S.C. § 7001 — the signature is valid, though most employers accept an emailed or delivered PDF without requiring any particular signing method.',
+    },
+    caso: {
+      titulo: 'The letter that outlasted the job',
+      texto: 'An employee leaving after a genuinely difficult final few months wrote a long resignation letter detailing specific complaints about a manager, intending it as a form of closure. A colleague who had left the same company a year earlier, and had written a short two-paragraph letter instead, was contacted for a reference by a new employer eighteen months later — the hiring manager specifically mentioned having seen both letters during an internal file review, and described the shorter one as "the professional version." The complaints in the longer letter were accurate. They were also the last thing the company remembered about the person who wrote them.',
+    },
+    faq: [
+      { q: 'How much notice should I give when resigning?', a: 'Two weeks is the standard professional norm in the United States, though it is a courtesy rather than a universal legal requirement — check your employment contract or company handbook for anything different that applies specifically to you.' },
+      { q: 'Should I explain why I am resigning in the letter?', a: 'Generally, no — a resignation letter is a record of the fact and the date, not an explanation. If you want to explain your reasons, that conversation is better had verbally, separately, and selectively.' },
+      { q: 'Can I resign by email instead of a formal letter?', a: 'Yes — an emailed resignation is legally just as effective as a printed one. Attaching a properly formatted letter to the email is common practice and creates a cleaner record than the email body alone.' },
+      { q: 'What if my employer asks me to leave immediately after I resign?', a: 'Employers can generally do this under at-will employment, even if your letter states a future last day. It does not change your resignation date for record purposes, but it does mean your actual final day may be shorter than intended — worth knowing before you submit the letter.' },
+    ],
+    fotos: [F.tech, F.hombre, F.oficina],
+    cta: 'Create your resignation letter',
+  },
+  {
+    slug: 'two-weeks-notice-letter',
+    titleTag: 'Two Weeks Notice Letter Template',
+    metaDescription: 'Give proper two weeks notice with a clear, professional letter. Free template, previewed instantly and signed online.',
+    h1: 'Two Weeks Notice Letter',
+    grupo: 'resignation',
+    intro: 'Two weeks notice is the unwritten standard for leaving a job professionally in the United States — not a legal requirement, but close enough to one in practice that skipping it can affect how you are remembered and referenced. A two weeks notice letter formalizes that courtesy with a clear date and a professional tone.',
+    problema: {
+      titulo: 'Two weeks is a norm, not a law — and that distinction matters both ways',
+      texto: 'Because two weeks notice is customary rather than legally required, some employees skip it entirely, assuming there is no real consequence. There often is one — just not a legal one. Future references, rehire eligibility, and how a departure is remembered internally are all affected by whether notice was given properly. On the other side, some employers respond to a two weeks notice by ending employment immediately, which is also generally legal under at-will employment — the letter protects your record either way.',
+    },
+    puntos: [
+      { titulo: 'The exact last working day, calculated and stated', texto: 'Not "in two weeks" as a vague phrase, but a specific calendar date, calculated from the day you submit the letter — removing any ambiguity about when your employment actually ends.' },
+      { titulo: 'Delivered in writing, even if you also tell your manager in person', texto: 'A verbal resignation followed by a written letter on the same day creates a clean, dated record — relying on a verbal conversation alone leaves your resignation date open to dispute later.' },
+      { titulo: 'A professional, forward-looking tone', texto: 'The letter states the fact and the timeline without editorializing — reserving any additional feedback for an exit interview or a separate, private conversation.' },
+      { titulo: 'An offer to support the transition', texto: 'A short line about training a replacement or documenting open work — costs little to include and is the detail most likely to be remembered well later.' },
+    ],
+    ley: {
+      titulo: 'Is two weeks notice legally required?',
+      texto: 'No — in the United States\' at-will employment framework, which applies in nearly every state, neither the employee nor the employer is required to give any advance notice at all, absent a specific contract or collective bargaining agreement stating otherwise. Two weeks is a professional custom, not a statute. Signing and submitting the letter electronically is valid under the ESIGN Act, 15 U.S.C. § 7001, the same as any other signed document — most employers accept an emailed or portal-submitted letter without requiring any specific format.',
+    },
+    caso: {
+      titulo: 'Walking out versus giving notice, six months later',
+      texto: 'Two employees at the same company left within a few months of each other under similar circumstances — one gave two weeks notice in writing, the other left the same week they decided to go, with no formal letter. Six months later, both applied to positions at companies that called the same former employer for a reference. The one who had given notice received a straightforward, positive reference. The other received a technically accurate but noticeably shorter and more hesitant one — the company\'s HR policy, it turned out, flagged departures without proper notice for a more cautious reference response.',
+    },
+    faq: [
+      { q: 'What happens if I don\'t give two weeks notice?', a: 'There is generally no legal penalty in most at-will employment situations, but it can affect your eligibility for rehire and the tone of future references — some companies have explicit policies treating notice length as a factor in reference responses.' },
+      { q: 'Can my employer make me work the full two weeks?', a: 'No — you can leave earlier if you choose, though it may affect the relationship. Conversely, an employer can also choose to end your employment immediately upon receiving notice, rather than have you work out the two weeks.' },
+      { q: 'Should I give more than two weeks for a senior role?', a: 'It is common practice for more senior or specialized positions, where transition takes longer — three to four weeks is not unusual, though it remains a courtesy rather than a requirement.' },
+      { q: 'Do I still get paid for the two weeks if my employer lets me go early?', a: 'This depends on your state and your employer\'s policy — some employers pay through the original notice period as a courtesy, others do not. Check your employee handbook or state labor department guidance for what applies to you.' },
+    ],
+    fotos: [F.hombre, F.tech, F.escritorio],
+    cta: 'Create your two weeks notice letter',
+  },
+  {
+    slug: 'professional-resignation-letter',
+    titleTag: 'Professional Resignation Letter Template',
+    metaDescription: 'Leave on good terms with a polished, professional resignation letter. Free template, previewed instantly and signed online.',
+    h1: 'Professional Resignation Letter',
+    grupo: 'resignation',
+    intro: 'A professional resignation letter is not defined by fancy language — it is defined by tone, structure, and restraint. It states the facts, keeps emotion out of the record, and leaves the relationship in a state you would be comfortable revisiting years later.',
+    problema: {
+      titulo: 'The letter is a record before it is a message',
+      texto: 'It is easy to think of a resignation letter as something written for your manager, read once, and forgotten. In practice it usually becomes a permanent part of your personnel file — pulled up during a reference check, an internal audit, or a rehire application years later. Writing it with that longer timeline in mind, rather than the emotional state of the moment you are leaving, is what separates a professional letter from one you might later wish had been shorter.',
+    },
+    puntos: [
+      { titulo: 'Structured in a clear, predictable order', texto: 'Statement of resignation, last working day, brief thanks, transition offer, professional closing — in that order, so anyone skimming it gets the essential facts immediately.' },
+      { titulo: 'No criticism, even if warranted', texto: 'Grievances, however valid, belong in an exit interview or a private conversation — not in the document that outlives the job and follows you into future reference checks.' },
+      { titulo: 'Addressed correctly and formatted cleanly', texto: 'Your manager\'s correct name and title, the company name, and a clean, professional layout — small details that reflect the same care as the content itself.' },
+      { titulo: 'A copy for your own records', texto: 'Keep a signed copy for yourself, separate from what you submit to HR or your manager — useful if there is ever a dispute about your resignation date or notice period.' },
+    ],
+    ley: {
+      titulo: 'Does a resignation letter need to follow a legal format?',
+      texto: 'No — there is no statutory format required for a resignation letter in any U.S. state. What matters legally is that it clearly documents your intent to resign and the effective date, since this can matter for unemployment eligibility determinations, final paycheck timing under state labor law, and benefits continuation deadlines. Beyond those practical dates, the format and tone are a professional choice, not a legal one. Signed electronically, it carries the same validity as a printed and signed copy under the ESIGN Act, 15 U.S.C. § 7001.',
+    },
+    caso: {
+      titulo: 'A reference call, four years later',
+      texto: 'A marketing manager resigned from a company after a difficult reorganization, but kept the letter itself entirely professional — brief, appreciative of the opportunity, with a clear last day. Four years later, applying for a director-level role, a background check firm contacted that same company. The HR representative who pulled the file specifically noted the resignation letter\'s tone in the reference summary, describing the departure as "handled well" — a small detail from a two-paragraph letter, still shaping an outcome years after the job itself had ended.',
+    },
+    faq: [
+      { q: 'How long should a professional resignation letter be?', a: 'Short — typically three to five sentences is enough to cover the essential facts. Length does not signal professionalism; clarity and restraint do.' },
+      { q: 'Should I mention my next job in the resignation letter?', a: 'It is optional and not required. Some people mention it briefly as context; others prefer to keep the letter focused solely on the departure itself. Either approach is professionally acceptable.' },
+      { q: 'Can I email a professional resignation letter, or does it need to be printed?', a: 'Email is standard and widely accepted. Attaching a formatted letter to the email, rather than writing the resignation only in the email body, tends to read as more deliberate and professional.' },
+      { q: 'Who should I address the letter to?', a: 'Your direct manager, with HR typically copied — check your company\'s specific policy if one exists, since some organizations have a defined resignation process that specifies exactly who needs to receive it.' },
+    ],
+    fotos: [F.oficina, F.mujer, F.tech],
+    cta: 'Create your resignation letter',
+  },
+  {
+    slug: 'resignation-letter-email-format',
+    titleTag: 'Resignation Letter Email Format',
+    metaDescription: 'How to format a resignation email correctly, with a free downloadable resignation letter to attach. Signed online.',
+    h1: 'Resignation Letter by Email',
+    grupo: 'resignation',
+    intro: 'Resigning by email is standard practice today, especially for remote or hybrid roles where an in-person handoff is not realistic. Getting the format right — a clear subject line, a formatted letter attached rather than buried in the email body — makes the difference between a professional record and a message that reads as an afterthought.',
+    problema: {
+      titulo: 'An email body is not the same as a letter',
+      texto: 'Writing your resignation directly into the body of an email, without a formal attached document, can come across as less deliberate than it is — and it is harder for HR to file cleanly as part of your permanent record. A short, clear email with a properly formatted resignation letter attached covers both: an immediate, easy-to-read message, and a document that holds up as an official record.',
+    },
+    puntos: [
+      { titulo: 'A clear, specific subject line', texto: '"Resignation — [Your Name] — Last Day [Date]" tells the recipient exactly what they are opening before they even read the message, which matters for a document that needs prompt attention from HR.' },
+      { titulo: 'A short email body', texto: 'One or two sentences noting that your resignation letter is attached and your last day, with the full detail — thanks, transition offer, formal notice — living in the attached letter instead.' },
+      { titulo: 'The letter attached as a PDF, not just pasted into the email', texto: 'A properly formatted, signed PDF is what typically gets filed in your personnel record — an email body alone is easy to lose track of once the thread gets buried.' },
+      { titulo: 'Sent to the right people, and copied appropriately', texto: 'Your direct manager as the primary recipient, with HR copied if your company\'s process calls for it — confirm this against your employee handbook if you are unsure.' },
+    ],
+    ley: {
+      titulo: 'Is an email resignation legally valid?',
+      texto: 'Yes — a resignation submitted by email, with or without an attached formal letter, is legally effective in every U.S. state. There is no requirement that a resignation be delivered in any particular format or medium. The ESIGN Act, 15 U.S.C. § 7001, specifically protects the validity of a document because it was created, signed or delivered electronically — an emailed, digitally signed resignation letter carries the same legal weight as a printed one delivered in person.',
+    },
+    caso: {
+      titulo: 'A remote employee with no office to walk into',
+      texto: 'An employee working fully remote for a company headquartered in a different state had never met her manager in person. When she decided to resign, there was no office to walk into and no natural moment for an in-person conversation. She scheduled a short video call to say so directly, then followed up the same day with an email containing a clearly formatted, signed resignation letter attached. HR confirmed receipt within the hour and processed her final pay according to the date stated in the letter — the entire process, start to finish, happened without either party being in the same room.',
+    },
+    faq: [
+      { q: 'Do I need to also submit a paper copy if I resign by email?', a: 'Usually not — most companies now accept and file electronic resignations without requiring a separate paper copy, though it is worth checking your specific employee handbook if your company has an unusually formal process.' },
+      { q: 'Should I still tell my manager in person or by call before sending the email?', a: 'It is generally considered more professional, when feasible, to have a brief conversation first so your manager does not learn of your resignation cold from an email — the email and attached letter then serve as the formal, dated record of that conversation.' },
+      { q: 'What time of day should I send a resignation email?', a: 'Business hours, ideally not right before a major deadline or event your team depends on you for — the timing itself can affect how the departure is remembered, separate from the letter\'s content.' },
+      { q: 'Can I resign by email if my contract requires written notice?', a: 'Yes — email satisfies "written notice" in essentially every context, since it produces a dated, retrievable written record, which is what that kind of contract language is designed to ensure exists.' },
+    ],
+    fotos: [F.tech, F.mujer, F.escritorio],
+    cta: 'Create your resignation letter',
+  },
+
+  // ═══════════════ CHILD TRAVEL CONSENT ═══════════════
+  // Documento existente (child-travel-consent-template) sin ninguna
+  // pagina propia — estacional, alto volumen antes de vacaciones/verano.
+  {
+    slug: 'child-travel-consent-form',
+    titleTag: 'Free Child Travel Consent Form',
+    metaDescription: 'A child travel consent form for when a minor travels without both parents. Free template, previewed instantly and signed online.',
+    h1: 'Child Travel Consent Form',
+    grupo: 'travel',
+    intro: 'A child travel consent form documents that a parent or guardian has authorized a minor to travel without them — with the other parent, a grandparent, a school group, or another adult. Airlines rarely require it for domestic travel, but many international borders, and a growing number of airlines on international routes, do ask for one.',
+    problema: {
+      titulo: 'The form exists because child trafficking checks got stricter, not looser',
+      texto: 'Border agents in many countries have become more attentive to a child travelling with only one adult, or with an adult who is not a legal parent — a reasonable response to a real problem, but one that can catch an innocent family trip off guard at the worst possible moment: the departure gate or the immigration line. A properly prepared consent form is inexpensive insurance against a delay or, in some cases, being denied entry or exit entirely.',
+    },
+    puntos: [
+      { titulo: 'Both parents\' or guardians\' full legal information', texto: 'Names, addresses and contact information for the parent or guardian who is not travelling, so any questioning official can verify the relationship and reach them directly if needed.' },
+      { titulo: 'The accompanying adult identified specifically', texto: 'Who the child is travelling with, their relationship to the child, and their contact information — clear enough that there is no ambiguity about who is responsible during the trip.' },
+      { titulo: 'Travel dates and destination stated', texto: 'A specific date range and destination, rather than an open-ended authorization — some countries and airlines specifically look for this level of detail.' },
+      { titulo: 'Signed by the non-travelling parent or guardian', texto: 'The document only works if it is actually signed by the parent who is not present — an unsigned or improperly authorized form provides no protection at all.' },
+    ],
+    ley: {
+      titulo: 'Is a child travel consent form legally required?',
+      texto: 'There is no single federal requirement in the United States for domestic travel, but several countries require documented parental consent for a minor entering or leaving with only one parent or a non-parent adult, and U.S. Customs and Border Protection recommends carrying one for international travel even though it does not universally mandate it. Airlines on certain international routes independently require it as a condition of boarding. Requirements vary by destination country and change periodically — verify your specific destination\'s current requirement before travelling. The form itself can be signed electronically under the ESIGN Act, 15 U.S.C. § 7001, though notarization, while not universally required, is recommended by the U.S. State Department for international travel since it adds a layer of verification some border officials specifically look for.',
+    },
+    caso: {
+      titulo: 'A grandmother stopped at the gate',
+      texto: 'A grandmother travelling internationally with her two grandchildren, without either parent present, was stopped at the departure gate and asked for documentation proving she had permission to travel with them. She had none — the trip had been arranged informally with the parents\' verbal agreement, which meant nothing to the airline\'s ground staff. The flight nearly departed without them while a phone call to the children\'s mother was arranged to confirm the arrangement verbally. A one-page signed consent form, prepared in the twenty minutes it would have taken before leaving the house, would have avoided the entire situation.',
+    },
+    faq: [
+      { q: 'Do I need a travel consent form for domestic flights within the U.S.?', a: 'Generally no — U.S. domestic travel does not require documented parental consent for a minor travelling with one parent or another adult, though some airlines have their own internal policies worth checking in advance.' },
+      { q: 'Does the consent form need to be notarized?', a: 'Not universally required, but recommended for international travel by the U.S. State Department and specifically requested by some countries\' border officials — notarizing is a low-cost step that removes ambiguity if questioned.' },
+      { q: 'What if only one parent has custody?', a: 'The custodial parent\'s consent is generally what matters, but a copy of the custody order alongside the consent form is a good idea if the child is travelling with the non-custodial parent or another adult, to avoid questions about parental authority.' },
+      { q: 'Does the form need to be in the destination country\'s language?', a: 'Some countries specifically require this. Check your destination\'s current entry requirements before travelling — requirements around language and notarization change and vary significantly by country.' },
+    ],
+    fotos: [F.mujer, F.tech, F.oficina],
+    cta: 'Create your travel consent form',
+  },
+  {
+    slug: 'single-parent-travel-consent-form',
+    titleTag: 'Single Parent Travel Consent Form',
+    metaDescription: 'Travelling internationally alone with your child? Free single-parent travel consent form, previewed instantly and signed online.',
+    h1: 'Single Parent Travel Consent Form',
+    grupo: 'travel',
+    intro: 'A single parent travelling internationally with a child, without the other parent present, is one of the situations border officials scrutinize most closely — not because it is unusual, but because it is the exact profile a genuine custody dispute or abduction case often matches. A consent form from the absent parent is the standard way to remove that question before it is even asked.',
+    problema: {
+      titulo: 'A birth certificate proves parentage, not permission',
+      texto: 'Many single parents assume that carrying the child\'s birth certificate, proving they are in fact the parent, is sufficient documentation for international travel. It proves the relationship, but not that the other parent consented to this specific trip — which is the actual question border officials in many countries are trying to answer. A signed consent form from the other parent, or documentation of sole legal custody if that applies, addresses the real concern directly.',
+    },
+    puntos: [
+      { titulo: 'Consent from the non-travelling parent, if both are living', texto: 'A signed statement authorizing the specific trip, with dates and destination, from the parent who is not travelling — this is what most border officials are specifically looking to see.' },
+      { titulo: 'Sole custody documentation, if that applies instead', texto: 'If you have sole legal custody, a copy of the court order stating so serves the same purpose as a consent form, since it establishes you do not need the other parent\'s permission.' },
+      { titulo: 'A death certificate, if the other parent is deceased', texto: 'Where relevant, this removes any ambiguity immediately rather than requiring an explanation at the border.' },
+      { titulo: 'Your own contact information and the child\'s details', texto: 'Full legal names, dates of birth, and your relationship to the child, alongside the specific travel dates and destination — matched exactly to the child\'s passport.' },
+    ],
+    ley: {
+      titulo: 'What officials are actually checking for',
+      texto: 'Many countries, and U.S. Customs and Border Protection\'s own guidance, specifically flag a single adult travelling internationally with a child of a different last name, or without documentation of parental relationship and consent, for closer questioning. There is no single global standard — some countries require a notarized letter from the absent parent, others accept less formal documentation, and requirements change periodically. The document itself is validly signed in electronic form under the ESIGN Act, 15 U.S.C. § 7001, but notarization is specifically recommended by the U.S. State Department for this exact situation, since it is one border officials are trained to look for.',
+    },
+    caso: {
+      titulo: 'A mother travelling alone with her son',
+      texto: 'A divorced mother travelling internationally with her ten-year-old son, whose last name matched his father\'s rather than hers, was pulled aside for secondary questioning at customs in the destination country. She had the boy\'s birth certificate but no documentation of the father\'s consent or her custody status. After a delay of over an hour and a phone call to the father to confirm the arrangement, she was allowed to proceed. On the return trip, carrying a notarized consent letter prepared in the meantime, the same question was resolved by the border officer in under a minute.',
+    },
+    faq: [
+      { q: 'What if the other parent refuses to sign a consent form?', a: 'This can be a sign of a genuine custody concern and is worth taking seriously rather than travelling anyway — if you have sole legal custody, court documentation of that status can substitute for the other parent\'s consent.' },
+      { q: 'Do I need this form if the other parent is deceased?', a: 'A death certificate generally addresses the question in place of a consent form, since it establishes there is no other parent to have consented.' },
+      { q: 'Is a single parent consent form the same as a general child travel consent form?', a: 'They cover the same underlying need — documented permission for a minor to travel — but this version is written specifically for a single parent travelling alone, which is the scenario that draws the most scrutiny at international borders.' },
+      { q: 'How far in advance should I prepare this document?', a: 'There is no formal deadline, but preparing and, if relevant, notarizing it well before your trip avoids a last-minute scramble — some notary services also require an appointment, which is worth booking in advance during busy travel seasons.' },
+    ],
+    fotos: [F.mujer, F.oficina, F.revisar],
+    cta: 'Create your travel consent form',
+  },
+  {
+    slug: 'international-travel-consent-form-for-minors',
+    titleTag: 'International Travel Consent Form for Minors',
+    metaDescription: 'A parental consent form for a minor travelling internationally without both parents. Free template, previewed and signed online.',
+    h1: 'International Travel Consent for Minors',
+    grupo: 'travel',
+    intro: 'International travel with a minor, when both legal parents are not present, is the specific scenario where a written consent form matters most. Different destinations have different expectations, but the underlying document — who authorized this trip, and for how long — is broadly the same wherever the family is headed.',
+    problema: {
+      titulo: 'Requirements differ by destination, and change without much notice',
+      texto: 'Some countries formally require a notarized parental consent letter as a condition of entry for a minor travelling without both parents; others simply recommend it, but their border officials frequently ask for it anyway in practice. These policies are set by individual countries and airlines, and they do change — a rule that did not apply on a previous trip is not a reliable guide for the next one. Preparing the document as a standard step, regardless of the specific destination\'s formal requirement, avoids being caught by a policy update.',
+    },
+    puntos: [
+      { titulo: 'Full legal names matched exactly to passports', texto: 'The child\'s name, the accompanying adult\'s name, and the absent parent\'s or parents\' names, spelled exactly as they appear on official identification — a mismatch can itself trigger additional questioning.' },
+      { titulo: 'Specific travel dates and itinerary', texto: 'Departure and return dates, and destination country — an open-ended consent form is generally treated with more suspicion than one scoped to a specific, dated trip.' },
+      { titulo: 'The relationship between the child and the accompanying adult', texto: 'Stated clearly — grandparent, aunt, family friend, camp counselor — since this is often the first question asked if the child\'s last name does not match the accompanying adult\'s.' },
+      { titulo: 'Emergency contact and medical authorization', texto: 'Many versions of this form include authorization for the accompanying adult to consent to emergency medical treatment, which some destinations and camps or programs specifically request alongside travel consent.' },
+    ],
+    ley: {
+      titulo: 'A patchwork of requirements, not one federal rule',
+      texto: 'The United States does not have a single federal law requiring a consent form for a minor\'s international travel, but the U.S. State Department strongly recommends notarized written consent from any parent not travelling, and many other countries impose their own entry requirements independent of U.S. law. Airlines on certain international routes have also adopted their own consent-documentation policies as a condition of boarding a minor. Because requirements vary by destination and change over time, verify the current rule for your specific destination before travelling rather than relying on a prior trip\'s experience. The consent form itself is validly executed in electronic form under the ESIGN Act, 15 U.S.C. § 7001, with notarization added as an extra, commonly recommended layer of verification.',
+    },
+    caso: {
+      titulo: 'A school trip with twelve students and one form each',
+      texto: 'A private school organizing an international educational trip for twelve students required every family to submit a signed, notarized parental consent form before the trip, even for students travelling with both parents present as chaperones on the same trip, as a standard risk-management policy covering the group as a whole. One family, unaware of the requirement until the week before departure, had to arrange a same-week notary appointment to avoid their child being excluded from the trip. The school\'s policy, while stricter than any single country legally required, reflected the reality that requirements can vary by destination and by carrier, and a uniform consent form for every student removed that variability entirely.',
+    },
+    faq: [
+      { q: 'Does every country require a child travel consent form?', a: 'No — requirements vary significantly by destination and are not uniform. Some countries formally require it, others do not but their border officials commonly ask anyway. Check your specific destination\'s current requirement before travelling.' },
+      { q: 'Should I get the form notarized even if my destination doesn\'t formally require it?', a: 'It is a reasonable precaution, since notarization adds credibility that can resolve an official\'s question quickly, and some destinations that do not formally require it still respond well to seeing it.' },
+      { q: 'Is one consent form enough for multiple children travelling together?', a: 'Many families use a single form listing all children if they share the same parents and are travelling together, though a form with each child\'s information individually clear is generally the safer approach if there is any doubt.' },
+      { q: 'Does the form expire?', a: 'It is typically scoped to a specific trip and set of dates rather than an ongoing authorization, so a new form is generally prepared for each separate trip rather than reused indefinitely.' },
+    ],
+    fotos: [F.oficina, F.mujer, F.tech],
+    cta: 'Create your travel consent form',
+  },
+
+  // ═══════════════ B2B / EMPRESAS ═══════════════
+  // Ocho paginas centradas en el uso empresarial real de la plataforma:
+  // API, equipos, marca propia (ver company-service.ts / branding-service.ts,
+  // modulo empresarial ya construido) y nuevos marcos de uso para los seis
+  // tipos de documento existentes (nda, service-agreement, independent-
+  // contractor) sin inventar tipos de documento que no existen.
+  {
+    slug: 'electronic-signature-api-for-developers',
+    titleTag: 'Electronic Signature API for Developers',
+    metaDescription: 'Trigger document generation and e-signature workflows from your own product with the Codec Document API. Company account, API keys, webhooks.',
+    h1: 'Electronic Signature API',
+    grupo: 'b2b',
+    intro: 'Some teams do not want a human clicking through a signing flow — they want a document generated and sent for signature automatically, the moment an order is placed, an account is created, or a milestone is hit in their own product. The Codec Document API is built for exactly that: a company account, API keys, and webhooks that fire when a document status changes.',
+    problema: {
+      titulo: 'Manual signing does not scale past a certain volume',
+      texto: 'A five-person team can manage sending contracts by hand. A product generating fifty signup agreements a day, or an operations team issuing hundreds of vendor confirmations a month, cannot — not without either hiring for the manual work or building the automation themselves against a signing tool that was never designed to be called programmatically. An API-first path removes the ceiling entirely.',
+    },
+    puntos: [
+      { titulo: 'Company workspace with role-based API keys', texto: 'A company account (owner, admin, manager, user roles) issues its own API keys, scoped to that workspace — keys are managed centrally, not tied to one individual\'s personal login.' },
+      { titulo: 'Webhooks on document and signature status changes', texto: 'Subscribe to events — document created, sent, viewed, signed, expired — so your own system reacts the moment something changes, instead of polling for updates.' },
+      { titulo: 'Programmatic document generation from your data', texto: 'Send structured data to generate a document from a template, without a human opening the editor — useful for high-volume, repeatable document types like service agreements or NDAs.' },
+      { titulo: 'The same audit trail as manual signatures', texto: 'API-triggered signatures carry the identical SHA-256 hash, IP logging and timestamp evidence as a document signed through the standard interface — automation does not reduce the evidentiary standard.' },
+    ],
+    ley: {
+      titulo: 'Does an API-triggered signature count the same, legally?',
+      texto: 'Yes — the ESIGN Act, 15 U.S.C. § 7001, does not distinguish between a signature captured through a manual web flow and one captured through an API-triggered process. What matters legally is that the signature is attributable to the signer and that the record is retained with integrity, both of which the platform\'s audit trail (identity data, IP address, timestamp, cryptographic hash) preserves regardless of how the signing session was initiated.',
+    },
+    caso: {
+      titulo: 'A marketplace automating vendor onboarding',
+      texto: 'An online marketplace onboarding new sellers needed each one to sign a standard vendor agreement before their storefront went live — a manual process that had been creating a two-to-three-day bottleneck between application approval and go-live. By calling the API to generate and send the agreement automatically the moment an application was approved in their own system, and listening for the signed webhook to flip the seller\'s account to active, the delay dropped to the time it took the vendor to actually read and sign the document — typically under an hour.',
+    },
+    faq: [
+      { q: 'Do I need a company account to use the API?', a: 'Yes — API access is tied to a company workspace, which also gives you role-based team management and shared branding for anything generated through the API.' },
+      { q: 'What happens if a webhook delivery fails?', a: 'The platform retries failed webhook deliveries automatically; you can also poll document status directly through the API as a fallback for any event your endpoint might have missed.' },
+      { q: 'Can I generate documents from data I already have in my own system?', a: 'Yes — that is the core use case. You send the structured fields your template needs, and the API returns a generated document ready to send for signature, without anyone opening the manual editor.' },
+      { q: 'Is there a free tier for API usage?', a: 'API access is part of the company/business plan rather than the individual free tier — reach out through the pricing page for current usage limits and plan options for your expected volume.' },
+    ],
+    fotos: [F.tech, F.escritorio, F.hombre],
+    cta: 'Set up your company API access',
+  },
+  {
+    slug: 'bulk-document-signing-for-teams',
+    titleTag: 'Bulk Document Signing for Teams',
+    metaDescription: 'Generate, send and track NDAs, contracts and agreements across your whole team from one company workspace. Role-based access included.',
+    h1: 'Bulk Document Signing for Teams',
+    grupo: 'b2b',
+    intro: 'A team sending dozens of contracts a week has a different problem than one person sending one contract a month: visibility. Who sent what, to whom, and is it still waiting on a signature? A company workspace puts every team member\'s documents in one shared view, instead of scattered across individual inboxes.',
+    problema: {
+      titulo: 'Individual accounts do not scale into a team process',
+      texto: 'When each team member has their own separate login, tracking a document\'s status means asking the person who sent it — and if that person is out sick or has left the company, the document\'s status can become genuinely hard to find. A shared company workspace, with role-based access, solves this by making every document generated under the company account visible to the people who need to see it, not locked to one individual\'s personal account.',
+    },
+    puntos: [
+      { titulo: 'One company workspace, multiple team members', texto: 'Everyone on the team works under the same company account, with documents and signature requests visible according to their role — owner, admin, manager or user — rather than siloed per person.' },
+      { titulo: 'Domain-based team detection', texto: 'Signing up with a company email address can automatically surface the existing company workspace for that domain, so new hires join the right team instead of starting a separate, disconnected account.' },
+      { titulo: 'Shared branding across every document', texto: 'Your company logo, colors and identity block apply to documents generated by anyone on the team — consistent branding without each person configuring it separately.' },
+      { titulo: 'Centralized visibility into pending signatures', texto: 'See what is sent, what is signed, and what is still waiting — across the whole team\'s activity, not just your own — so nothing sits unnoticed because the one person tracking it is unavailable.' },
+    ],
+    ley: {
+      titulo: 'Does a shared team workspace change how signatures are evidenced?',
+      texto: 'No — each individual signature still carries its own independent audit trail (identity, IP address, timestamp, SHA-256 hash), attributable to the specific signer, regardless of which team member within the company account generated or sent the document. The ESIGN Act, 15 U.S.C. § 7001, and UETA in the states that have adopted it evaluate the validity of each signature on its own evidentiary record, not on the account structure that generated the document.',
+    },
+    caso: {
+      titulo: 'A staffing agency\'s contractor paperwork, no longer scattered',
+      texto: 'A staffing agency placing contractors across multiple client accounts had each recruiter sending independent-contractor agreements from their own personal accounts, with no shared view of who had signed and who had not. When a recruiter left the company mid-quarter, three pending agreements had to be tracked down manually by checking her personal email. After moving to a shared company workspace, every agreement generated by any recruiter became visible under one team view — the same situation, if it happened again, would take a search instead of a manual reconstruction.',
+    },
+    faq: [
+      { q: 'What is the difference between company roles?', a: 'Owner has full control including billing; admin can manage team members and settings; manager can generate and send documents with some restrictions; user has standard document-generation access — the exact permissions per role are configurable from the company settings.' },
+      { q: 'Can a team member see documents another team member sent?', a: 'Depending on the role structure your company sets, yes — that shared visibility is the core benefit over separate individual accounts, though granular permission controls exist for sensitive documents.' },
+      { q: 'How does a new employee join the company workspace instead of creating a separate account?', a: 'Signing up with a company email address matching an existing workspace\'s domain triggers a prompt to join that workspace, rather than automatically creating a disconnected personal account.' },
+      { q: 'Is there a limit to how many team members a company workspace can have?', a: 'Limits depend on the company plan tier — check the pricing page for current team-size allowances, or reach out directly if you are scaling past a standard tier.' },
+    ],
+    fotos: [F.oficina, F.escritorio, F.mujer],
+    cta: 'Set up your company workspace',
+  },
+  {
+    slug: 'white-label-electronic-signature',
+    titleTag: 'Custom-Branded Electronic Signature for Your Business',
+    metaDescription: 'Put your own logo, colors and company identity on every document and signature request. Free to start, no separate branding fee.',
+    h1: 'Custom-Branded Electronic Signature',
+    grupo: 'b2b',
+    intro: 'A contract that arrives with a stranger\'s logo on it — the signing platform\'s branding, not yours — reads as less official to the person receiving it. Custom branding puts your own logo, colors and company details on the documents your business sends, so what your client or vendor sees is your business, not a third-party tool.',
+    problema: {
+      titulo: 'Branding affects how seriously a document is taken',
+      texto: 'A client signing a contract wants to feel like they are dealing with your company directly, not routed through an unfamiliar third-party service they have never heard of. A document that shows your logo, your company address and your identity block reads as a natural extension of your business. One that shows only a generic signing tool\'s branding can create a moment of hesitation — is this really from the company I am working with?',
+    },
+    puntos: [
+      { titulo: 'Your logo, sized and positioned as you choose', texto: 'Upload your logo once in your branding profile, choose its size and position, and it applies automatically to every document you generate from that point forward.' },
+      { titulo: 'Your company\'s full legal and contact identity', texto: 'Legal name, address, EIN, phone, email and website appear on generated documents as your company\'s identity block, not a generic placeholder.' },
+      { titulo: 'Your brand colors and font', texto: 'Primary and secondary brand colors, plus a chosen font, carry through to generated PDFs and quote documents for visual consistency with the rest of your business materials.' },
+      { titulo: 'Applied automatically, not configured per document', texto: 'Set your branding profile once in settings — every document you generate afterward uses it by default, without repeating the setup for each new contract.' },
+    ],
+    ley: {
+      titulo: 'Does custom branding affect a signature\'s legal validity?',
+      texto: 'No — branding is a presentation layer, entirely separate from the underlying signature evidence. Regardless of what logo or company identity appears on the document, the signature itself remains valid under the ESIGN Act, 15 U.S.C. § 7001, backed by the same identity verification, IP logging, timestamp and SHA-256 audit trail used across the platform.',
+    },
+    caso: {
+      titulo: 'A consultancy that looked bigger than it was',
+      texto: 'A two-person consultancy sending service agreements to enterprise clients found that prospects occasionally hesitated when a generic-looking signing request landed in their inbox from an unfamiliar tool. After setting up a branding profile — logo, company colors, full legal identity block — the same agreements arrived looking like they came from a polished, established firm rather than a signing tool neither party had used before. The founder later described it as "the cheapest thing we did that actually mattered" for how prospects perceived the business before a single call had happened.',
+    },
+    faq: [
+      { q: 'Does custom branding cost extra?', a: 'No — branding customization, including logo, colors and company identity, is available without a separate branding fee, though generation and signature volume are still subject to your plan\'s normal limits.' },
+      { q: 'Can I use different branding for different clients or teams?', a: 'The branding profile applies at the account or company level by default; for a company workspace with multiple teams needing distinct branding, reach out to check current configuration options for that use case.' },
+      { q: 'Will the recipient know the document was generated through Codec Document?', a: 'The document itself displays your branding as the primary identity; some platform-level elements, like the signing interface a recipient interacts with, remain part of the underlying signing experience rather than being fully removed.' },
+      { q: 'Where do I set up my branding profile?', a: 'From your account settings, under the branding section — it takes a few minutes to upload a logo, set colors, and fill in your company identity block once.' },
+    ],
+    fotos: [F.escritorio, F.tech, F.oficina],
+    cta: 'Set up your branding',
+  },
+  {
+    slug: 'vendor-agreement-template',
+    titleTag: 'Free Vendor Agreement Template',
+    metaDescription: 'Define terms, pricing and responsibilities with a supplier or vendor. Free vendor agreement template, previewed and signed online.',
+    h1: 'Vendor Agreement',
+    grupo: 'b2b',
+    intro: 'A vendor agreement sets the terms for an ongoing supplier relationship — pricing, delivery, quality standards, and what happens when something goes wrong. Many small and mid-sized businesses run vendor relationships on not much more than a purchase order and a handshake, until a dispute exposes exactly how little was actually agreed in writing.',
+    problema: {
+      titulo: 'A purchase order is not a vendor agreement',
+      texto: 'A purchase order confirms a specific transaction — what is being bought, at what price, delivered when. It generally does not address what happens if delivery is consistently late, if quality falls short of what was expected, or if either side wants to end the relationship. A vendor agreement covers the relationship itself, with the purchase orders that follow operating under its terms — the difference matters the first time something goes wrong mid-relationship rather than on a single order.',
+    },
+    puntos: [
+      { titulo: 'Pricing and payment terms', texto: 'Unit pricing, payment schedule, and what triggers a price change — stated clearly enough that a future price increase is not itself a point of dispute.' },
+      { titulo: 'Delivery and quality standards', texto: 'What counts as on-time delivery, what quality standard applies, and the process for rejecting or returning goods or work that does not meet it.' },
+      { titulo: 'Term and termination', texto: 'How long the relationship runs, how either party ends it, and what notice is required — an open-ended relationship with no exit clause can be harder to unwind than expected.' },
+      { titulo: 'Liability and indemnification', texto: 'Who is responsible if the vendor\'s product or service causes a loss to your business, and to what extent — a standard clause that is easy to skip and expensive to need later.' },
+    ],
+    ley: {
+      titulo: 'How vendor agreements are treated legally',
+      texto: 'A vendor agreement for goods is generally governed by Article 2 of the Uniform Commercial Code, adopted in some form by every state, which sets default rules for delivery, acceptance and remedies that apply unless the contract states otherwise — meaning an agreement that is silent on a point does not leave a true gap, but rather defaults to the UCC\'s standard terms, which may not match what either side actually intended. Agreements for services rather than goods fall instead under general state contract law. The signature itself is valid electronically under the ESIGN Act, 15 U.S.C. § 7001, in every state.',
+    },
+    caso: {
+      titulo: 'A supplier relationship with no written terms at all',
+      texto: 'A small manufacturer had worked with the same packaging supplier for three years on nothing more formal than email confirmations of individual orders. When the supplier began missing delivery windows consistently, the manufacturer discovered there was no written standard for what counted as acceptable delay, no remedy clause, and no clear off-ramp from the relationship without risking a supply gap. A vendor agreement drafted after the fact took weeks of negotiation specifically because both sides were now negotiating from a position of frustration rather than a fresh, cooperative relationship.',
+    },
+    faq: [
+      { q: 'Do I need a vendor agreement for a one-time purchase?', a: 'Usually a purchase order is sufficient for a single, one-off transaction. A vendor agreement earns its value for an ongoing relationship with repeat orders, where consistent terms matter more than a single transaction.' },
+      { q: 'What happens if my vendor agreement is silent on a specific issue?', a: 'Default rules under the Uniform Commercial Code (for goods) or state contract law (for services) fill the gap — but those defaults may not reflect what either party actually intended, which is exactly why addressing key issues explicitly is worth the effort.' },
+      { q: 'Can I use the same vendor agreement for multiple suppliers?', a: 'Yes, as a template — adjusted for each supplier\'s specific pricing, delivery terms and product or service — rather than negotiating a fully new structure with every new vendor relationship.' },
+      { q: 'Should a vendor agreement include an exclusivity clause?', a: 'Only if that reflects the actual relationship — an exclusivity clause obligates you to buy only from that vendor (or them to sell only to you) and should be included deliberately, not by default in every agreement.' },
+    ],
+    fotos: [F.oficina, F.hombre, F.escritorio],
+    cta: 'Create your vendor agreement',
+  },
+  {
+    slug: 'subcontractor-agreement-template',
+    titleTag: 'Free Subcontractor Agreement Template',
+    metaDescription: 'Define scope, payment and liability with a subcontractor on a job. Free subcontractor agreement template, signed online from the field.',
+    h1: 'Subcontractor Agreement',
+    grupo: 'b2b',
+    intro: 'A subcontractor agreement sets the terms between a general contractor and a subcontractor brought on for a specific part of a job — scope, payment, insurance requirements, and who is liable if something goes wrong on site. On a fast-moving project, this is often the document most likely to get skipped in favor of a verbal understanding.',
+    problema: {
+      titulo: 'Verbal agreements do not hold up when a job goes over budget',
+      texto: 'A subcontractor relationship built on a phone call and a handshake works fine until a change order comes up, a payment is delayed, or an injury on site raises a liability question no one discussed in advance. Construction disputes are common precisely because scope and payment terms are frequently left informal, and by the time a disagreement surfaces, both sides may remember the original conversation differently.',
+    },
+    puntos: [
+      { titulo: 'Scope of work tied to the specific job', texto: 'What the subcontractor is responsible for, referencing the specific project and plans — vague scope language is the single most common source of dispute on a construction job.' },
+      { titulo: 'Payment schedule tied to milestones', texto: 'When payment is due — on completion, at defined milestones, or on a schedule — with a clear process for handling delayed payment from either direction.' },
+      { titulo: 'Insurance and liability requirements', texto: 'What insurance coverage the subcontractor must carry and provide proof of, and how liability for damage or injury is allocated between the parties.' },
+      { titulo: 'Change order process for added work', texto: 'How additional work beyond the original scope is requested, priced and approved — signed in the field before the work starts, not negotiated after it is already done.' },
+    ],
+    ley: {
+      titulo: 'How subcontractor agreements are treated legally',
+      texto: 'Subcontractor agreements are governed by general state contract law, with construction-specific statutes in most states covering mechanic\'s liens, prompt payment requirements, and licensing rules for contractors and subcontractors — these vary meaningfully by state and by the size of the job. The agreement itself is validly signed electronically under the ESIGN Act, 15 U.S.C. § 7001, which matters in practice on a job site where signing in the field, from a phone, is often more realistic than returning to an office. This is general information — confirm your state\'s specific licensing and lien-notice requirements before relying on a template alone.',
+    },
+    caso: {
+      titulo: 'A change order that was never signed',
+      texto: 'A general contractor verbally asked a subcontractor to add electrical work beyond the original scope midway through a residential project, with an informal understanding that it would be billed "at the usual rate." When the invoice arrived well above what the general contractor expected, there was no signed change order to confirm what rate had actually been agreed, or that the additional work had been authorized at all. The dispute delayed the project\'s final payment by several weeks — a one-paragraph change order, signed on a phone before the work began, would have settled the rate before either side had a reason to disagree about it.',
+    },
+    faq: [
+      { q: 'What is the difference between a subcontractor agreement and an independent contractor agreement?', a: 'A subcontractor agreement is typically a specific application of independent contractor terms, structured for a construction or trade context — scope tied to a job site, insurance requirements, and lien-related provisions specific to construction.' },
+      { q: 'Can this be signed on-site from a phone?', a: 'Yes — the signing flow works from any mobile browser, which matters specifically for construction work where returning to an office to sign is often impractical.' },
+      { q: 'Does the agreement need to address mechanic\'s liens?', a: 'In most states, yes — subcontractors generally retain lien rights against the property if unpaid, and many states require specific notice language. Confirm your state\'s exact requirement, since failing to include required notice can affect lien rights.' },
+      { q: 'Who is liable if the subcontractor\'s work causes damage?', a: 'This should be addressed explicitly in the agreement\'s liability and insurance clauses — without it, the allocation of responsibility depends on general state law principles that may not match what either party expected.' },
+    ],
+    fotos: [F.tech, F.hombre, F.oficina],
+    cta: 'Create your subcontractor agreement',
+  },
+  {
+    slug: 'consulting-agreement-template',
+    titleTag: 'Free Consulting Agreement Template',
+    metaDescription: 'Define scope, fees, IP ownership and confidentiality with a consultant. Free consulting agreement template, signed online.',
+    h1: 'Consulting Agreement',
+    grupo: 'b2b',
+    intro: 'A consulting agreement covers a specific kind of working relationship — advisory or project-based work, often shorter-term than a standard service engagement, where who owns the resulting work product and what stays confidential matter as much as the fee itself.',
+    problema: {
+      titulo: 'Consulting work creates intellectual property questions a standard contract skips',
+      texto: 'When a consultant produces a strategy document, a piece of code, a design, or an analysis, the default legal assumption in many situations is that the consultant — not the client who paid for it — owns the resulting work product, unless the contract assigns it otherwise. Clients are frequently surprised by this after the engagement, having assumed payment automatically transferred ownership. A consulting agreement that addresses IP assignment explicitly removes that surprise before it happens.',
+    },
+    puntos: [
+      { titulo: 'Scope defined as deliverables, not just hours', texto: 'What the consultant will actually produce or accomplish, not only a time commitment — clearer for both sides to evaluate whether the engagement delivered what was expected.' },
+      { titulo: 'Intellectual property ownership stated explicitly', texto: 'Whether work product transfers to the client on payment, remains with the consultant under license, or splits by category — addressed directly rather than left to default rules neither party may expect.' },
+      { titulo: 'Confidentiality covering both directions', texto: 'The consultant typically sees sensitive client information; the client may also see the consultant\'s own methodology or tools. A mutual confidentiality clause protects both.' },
+      { titulo: 'Independent contractor status confirmed', texto: 'A clause affirming the consultant is not an employee — relevant for tax treatment and for avoiding a misclassification issue if the relationship is examined later.' },
+    ],
+    ley: {
+      titulo: 'IP ownership and worker classification',
+      texto: 'Absent a written assignment, U.S. copyright law generally vests ownership of a created work in its author — the consultant — rather than the paying client, with a narrow "work made for hire" exception that mostly applies to employees, not independent consultants, unless a specific written agreement designates certain categories of work as work for hire. Separately, most states apply some version of an "ABC test" or a multi-factor test to determine whether a consultant is properly classified as an independent contractor rather than a misclassified employee — control over the work, integration into the business, and whether the consultant serves other clients are common factors. The agreement itself is validly signed electronically under the ESIGN Act, 15 U.S.C. § 7001.',
+    },
+    caso: {
+      titulo: 'A rebrand the client thought they owned outright',
+      texto: 'A company hired an independent branding consultant to develop a new visual identity, paid the agreed fee, and began using the resulting logo and brand guidelines across their business. Eighteen months later, expanding into a new market, they discovered the original consulting agreement had never addressed IP ownership — meaning the consultant, under default copyright rules, arguably still held rights to the work. A renegotiation, from a position of the client having already built significant business around the brand, cost considerably more than addressing ownership in the original one-page agreement would have.',
+    },
+    faq: [
+      { q: 'Who owns the work product from a consulting engagement by default?', a: 'Absent an explicit written assignment, the consultant generally retains copyright ownership under U.S. law, even though the client paid for the work — this is a common and costly misunderstanding that a clear IP clause resolves upfront.' },
+      { q: 'Is a consultant the same as an independent contractor for tax purposes?', a: 'Generally yes — a consultant is typically engaged as an independent contractor rather than an employee, which affects tax withholding, benefits eligibility, and how the relationship is classified under state labor law.' },
+      { q: 'Should a consulting agreement include a non-compete clause?', a: 'It depends on the engagement — some include a limited non-solicitation clause instead, since broad non-compete clauses face increasing restrictions in several states and are not always enforceable even where permitted.' },
+      { q: 'How is a consulting agreement different from a service agreement?', a: 'They overlap significantly; "consulting" typically implies advisory, strategic or project-based work, often with more emphasis on IP ownership and confidentiality, while "service agreement" is a broader term covering many kinds of engagements.' },
+    ],
+    fotos: [F.hombre, F.tech, F.revisar],
+    cta: 'Create your consulting agreement',
+  },
+  {
+    slug: 'employee-confidentiality-agreement',
+    titleTag: 'Free Employee Confidentiality Agreement Template',
+    metaDescription: 'Protect trade secrets and client information with a signed employee confidentiality agreement (NDA). Free template, signed online.',
+    h1: 'Employee Confidentiality Agreement',
+    grupo: 'b2b',
+    intro: 'An employee confidentiality agreement — a form of NDA specific to the employment relationship — protects trade secrets, client lists, pricing and internal processes an employee will necessarily be exposed to on the job. It is one of the most commonly signed documents in a new-hire packet, and one of the least often actually enforced when it matters, usually because it was never signed at all.',
+    problema: {
+      titulo: 'The agreement people mean to send on day one, and forget',
+      texto: 'A verbal understanding that "of course you won\'t share client information" is not a confidentiality agreement, and it provides essentially no legal footing if a former employee does exactly that at a competitor. Companies that intend to have every employee sign a confidentiality agreement, but do not build it into a consistent onboarding step, routinely discover the gap only when they need the document and realize it was never actually executed.',
+    },
+    puntos: [
+      { titulo: 'Confidential information defined specifically to the business', texto: 'Client lists, pricing structures, product roadmaps, internal processes — named specifically enough that an employee cannot later argue they did not know something counted as confidential.' },
+      { titulo: 'Survives the employment relationship', texto: 'The obligation not to disclose confidential information continues after the employee leaves — stated with an explicit duration, since silence on this point can be read as the obligation ending with employment.' },
+      { titulo: 'Carve-outs for legally protected disclosures', texto: 'Whistleblower protections and legally required disclosures are excluded from the confidentiality restriction, which keeps the agreement enforceable and avoids overreaching into legally protected conduct.' },
+      { titulo: 'Return of materials on departure', texto: 'A clause requiring return or destruction of confidential materials when employment ends — closing the most common practical gap, where information simply stays on a departing employee\'s personal devices.' },
+    ],
+    ley: {
+      titulo: 'How employee confidentiality agreements are enforced',
+      texto: 'Confidentiality agreements are generally enforceable as ordinary contracts under state law, and trade secret protection specifically is reinforced federally by the Defend Trade Secrets Act (18 U.S.C. § 1836) and, in the states that have adopted it, the Uniform Trade Secrets Act — both of which independently protect genuine trade secrets even without a signed agreement, though a signed confidentiality agreement makes a claim considerably easier to prove. Unlike non-compete clauses, which face growing restrictions or outright bans in several states, confidentiality agreements protecting genuinely confidential information are broadly enforceable nationwide. The signature is valid electronically under the ESIGN Act, 15 U.S.C. § 7001 — signed as part of an onboarding flow the same as any other new-hire document.',
+    },
+    caso: {
+      titulo: 'A departing employee and a client list that mattered',
+      texto: 'A sales-driven company discovered, after a senior salesperson left to join a direct competitor, that the salesperson had taken a full export of the client contact list and pricing history on their way out. When the company sought to enforce a confidentiality obligation, they discovered the employee — hired quickly during a growth period — had never actually signed the confidentiality agreement that was supposed to be part of standard onboarding; it had been included in the offer packet but the signature step had been skipped. The company\'s legal options were considerably weaker without a signed document to point to, despite having every intention of requiring one.',
+    },
+    faq: [
+      { q: 'Is an employee confidentiality agreement the same as a non-compete?', a: 'No — a confidentiality agreement restricts sharing specific protected information; a non-compete restricts working for a competitor entirely. They are often signed together but serve different purposes and are treated very differently under state law.' },
+      { q: 'Can I require existing employees to sign this, not just new hires?', a: 'Yes, though in some states additional consideration — something of value beyond continued employment — may be required to make it enforceable against an existing employee, which varies by state.' },
+      { q: 'Does this protect trade secrets even without a signed agreement?', a: 'Federal and state trade secret law provides some independent protection, but a signed agreement makes the scope of what was considered confidential explicit and considerably easier to enforce in practice.' },
+      { q: 'How long should the confidentiality obligation last after employment ends?', a: 'This varies by what is being protected — some agreements state an indefinite duration for genuine trade secrets, others specify a set number of years for broader business information. The right answer depends on the specific information involved.' },
+    ],
+    fotos: [F.mujer, F.oficina, F.escritorio],
+    cta: 'Create your confidentiality agreement',
+  },
+  {
+    slug: 'pandadoc-alternative',
+    titleTag: 'PandaDoc Alternative — Free to Start',
+    metaDescription: 'A PandaDoc alternative with a free intelligent template editor and ESIGN Act compliant e-signature. No credit card required.',
+    h1: 'PandaDoc Alternative',
+    grupo: 'b2b',
+    intro: 'PandaDoc and similar contract-management platforms are built primarily around proposals and sales documents, priced for teams that need that specific workflow. If what you actually need is a straightforward way to generate and sign standard legal documents — NDAs, contracts, agreements — without a proposal-focused price tag, a more direct tool is often a better fit.',
+    problema: {
+      titulo: 'Paying for proposal features you will never use',
+      texto: 'Contract management platforms built around sales proposals bundle in features — quote builders, CPQ integrations, sales-pipeline tracking — that a business generating standard legal documents has no use for, while still paying a price built around that full feature set. If your actual need is document generation plus e-signature, the proposal-and-sales layer is overhead, not value.',
+    },
+    puntos: [
+      { titulo: 'A free tier that actually generates documents', texto: 'Free legal documents and free e-signatures on a recurring cycle, with no credit card required to start — not just a trial that expires, but a genuine ongoing free tier.' },
+      { titulo: 'An intelligent template editor, not a blank canvas', texto: 'Structured templates for NDAs, service agreements, contractor agreements and more, built with the right clauses already in place — rather than a generic document builder you have to fill in from scratch.' },
+      { titulo: 'ESIGN Act and UETA compliant signatures', texto: 'Every signature carries identity verification, IP logging, timestamp and a SHA-256 audit trail — the same legal-compliance standard a proposal platform offers, without the proposal-focused pricing.' },
+      { titulo: 'Custom branding included, not an add-on tier', texto: 'Your logo, company identity and brand colors on generated documents, available without a separate premium branding fee.' },
+    ],
+    ley: {
+      titulo: 'Legal validity does not depend on which platform you use',
+      texto: 'The ESIGN Act, 15 U.S.C. § 7001, and state UETA adoption govern the legal validity of an electronic signature regardless of the specific software used to capture it — what matters is that the signature is attributable to the signer and the record is retained with integrity. A signature captured through a lighter-weight, document-focused tool is exactly as legally binding as one captured through a larger contract-management platform, provided the underlying evidence — identity, consent, audit trail — is comparably solid.',
+    },
+    caso: {
+      titulo: 'A freelance consultant paying for a sales team she didn\'t have',
+      texto: 'An independent consultant had signed up for a contract-management platform primarily to get NDAs and service agreements signed with new clients, but found herself paying for a tier that included proposal templates, a sales pipeline view, and CPQ features she never opened. Switching to a tool built specifically around document generation and signing cut her monthly cost meaningfully while covering exactly what she actually used — the NDA and service-agreement templates, with her own branding, signed the same way as before.',
+    },
+    faq: [
+      { q: 'Is a free e-signature tool as legally valid as a paid one?', a: 'Yes — legal validity under the ESIGN Act depends on the signature\'s evidentiary record, not the price of the software that captured it.' },
+      { q: 'Can I switch from PandaDoc without losing my existing signed documents?', a: 'Documents already signed on another platform remain valid and stored wherever they currently live; switching tools affects new documents going forward, not the legal status of ones already completed.' },
+      { q: 'Does this include proposal or quote-building features?', a: 'The platform includes a Smart Quotes module for cotizaciones and business proposals as a separate feature, alongside the core legal document generator — worth checking if that specific need applies to you.' },
+      { q: 'What document types are available in the free tier?', a: 'NDA, service agreement, independent contractor agreement, residential lease, promissory note, vehicle bill of sale and several more, all with the free intelligent template editor and free signature allowance.' },
+    ],
+    fotos: [F.tech, F.mujer, F.oficina],
+    cta: 'Start free — no credit card required',
+  },
+
+  // ═══════════════ GRATIS / HUB ═══════════════
+  // Cierre del bloque: intencion "free" de alto valor comercial para los
+  // tipos de documento ya existentes (sin state-page equivalente generico),
+  // mas una pagina hub real que enlaza las paginas de vehicle-bill-of-sale
+  // por estado ya construidas, y la explicacion generica de "sign a PDF".
+  {
+    slug: 'free-nda-generator',
+    titleTag: 'Free NDA Generator — No Credit Card Required',
+    metaDescription: 'Generate a free NDA online: mutual or one-way, previewed instantly and signed with a legally binding electronic signature.',
+    h1: 'Free NDA Generator',
+    grupo: 'free',
+    intro: 'A free NDA generator lets you create a proper non-disclosure agreement — mutual or one-way — without paying for a document you might only need once. Fill in the parties and terms, preview exactly how it will look, and sign it online, all before deciding whether to pay for anything.',
+    problema: {
+      titulo: 'Most "free" NDA templates are a static download, not a real tool',
+      texto: 'A search for a free NDA template commonly turns up a Word document with bracketed placeholders and no guidance on what to actually put in them — mutual or one-way, what counts as confidential, how long the obligation lasts. A generator that walks through those decisions, then shows the finished result before anything is paid for, closes the gap between "free template" and "a document you can actually trust and send."',
+    },
+    puntos: [
+      { titulo: 'Mutual or one-way, chosen up front', texto: 'A one-way NDA protects only the party disclosing information; a mutual NDA protects both — the generator asks which applies to your situation rather than assuming.' },
+      { titulo: 'Confidential information defined, not left generic', texto: 'What counts as confidential for your specific situation, rather than a boilerplate definition that may not cover what you actually need protected.' },
+      { titulo: 'A stated duration for the obligation', texto: 'How long the confidentiality obligation lasts after signing or after the relationship ends — an NDA silent on duration can be read as perpetual, which is not always what either party intends.' },
+      { titulo: 'Free e-signature included', texto: 'Once the NDA is generated, it can be signed online immediately as part of the same free tier, with identity verification and an audit trail — not a separate paid step.' },
+    ],
+    ley: {
+      titulo: 'What makes a free NDA legally enforceable',
+      texto: 'An NDA\'s enforceability comes from its terms and proper execution, not its price — a free, self-generated NDA that clearly defines confidential information, states a reasonable scope and duration, and is properly signed is enforceable the same as an expensive attorney-drafted one. Most states have adopted a version of the Uniform Trade Secrets Act, which independently protects genuine trade secrets, but a signed NDA covers a broader category of information than trade secret law alone and makes a breach considerably easier to prove. Signed electronically, it is valid under the ESIGN Act, 15 U.S.C. § 7001.',
+    },
+    caso: {
+      titulo: 'A founder who nearly skipped it entirely',
+      texto: 'A first-time founder meeting with a potential contractor to discuss a product idea almost skipped an NDA entirely, assuming a "quick free template" search would take longer than the meeting was worth. Using a free NDA generator instead, the mutual NDA was filled in, previewed and both parties signed it from their phones in about six minutes before the call started. The contractor later mentioned, unprompted, that having a properly signed document made her take the conversation more seriously — a side benefit the founder had not anticipated.',
+    },
+    faq: [
+      { q: 'Is a free NDA as legally binding as a paid one?', a: 'Yes — enforceability depends on the terms and proper signing, not the price paid for the document. A well-drafted free NDA, properly signed, is fully enforceable.' },
+      { q: 'What is the difference between a mutual and one-way NDA?', a: 'A one-way NDA protects information disclosed by only one party — common when a company shares information with a vendor or candidate. A mutual NDA protects both parties\' disclosures, common in partnership or investment discussions where both sides share sensitive information.' },
+      { q: 'How many free NDAs can I generate?', a: 'The free tier covers a recurring allowance of free documents and signatures, resetting periodically — enough for most individuals and small teams generating occasional NDAs, without a credit card required to start.' },
+      { q: 'Can I edit the NDA after generating it?', a: 'Yes — you can adjust the terms before sending it for signature, and generate a new version any time your needs change rather than being locked into the first draft.' },
+    ],
+    fotos: [F.tech, F.hombre, F.mujer],
+    cta: 'Generate your free NDA',
+  },
+  {
+    slug: 'free-independent-contractor-agreement',
+    titleTag: 'Free Independent Contractor Agreement Generator',
+    metaDescription: 'Generate a free independent contractor agreement: scope, payment and IP terms, previewed instantly and signed online.',
+    h1: 'Free Independent Contractor Agreement',
+    grupo: 'free',
+    intro: 'A free independent contractor agreement generator covers what most freelance and contractor relationships actually need — scope, payment terms, IP ownership and classification language — without a fee for a document that, for many independent workers, is signed only a handful of times a year.',
+    problema: {
+      titulo: 'The document that protects both sides of a small engagement',
+      texto: 'Independent contractor relationships are often the least formally documented — a short email exchange, a verbal rate agreement, work that starts before terms are settled. That works fine until scope disagreements, late payment, or a dispute over who owns the finished work product turns an informal understanding into a real problem neither side has documentation to resolve cleanly.',
+    },
+    puntos: [
+      { titulo: 'Scope and deliverables stated clearly', texto: 'What the contractor will deliver, by when, generated from a guided form rather than a blank text box — reducing the chance an important term gets left out simply because no one thought to add it.' },
+      { titulo: 'Payment terms and schedule', texto: 'Rate, payment schedule, and what happens if payment is late — set once in the generator, applied consistently across the agreement.' },
+      { titulo: 'Independent contractor status confirmed', texto: 'Language affirming the relationship is not employment — relevant to tax treatment and to the classification tests states apply when the distinction is examined.' },
+      { titulo: 'IP ownership addressed', texto: 'Whether work product transfers to the hiring party or remains with the contractor — a term easy to overlook and expensive to dispute after the fact.' },
+    ],
+    ley: {
+      titulo: 'Contractor status and IP defaults',
+      texto: 'Most states apply some version of an "ABC test" or a multi-factor common-law test to determine whether a worker is properly classified as an independent contractor rather than an employee — factors generally include the degree of control over the work, whether the work is integral to the hiring party\'s business, and whether the worker serves multiple clients. Misclassification carries real tax and labor-law exposure for the hiring business. Separately, absent a written assignment, U.S. copyright law generally leaves ownership of created work with the contractor, not the paying client, unless the agreement states otherwise. The agreement is validly signed electronically under the ESIGN Act, 15 U.S.C. § 7001.',
+    },
+    caso: {
+      titulo: 'A logo the client thought they had bought outright',
+      texto: 'A small business hired a freelance designer for a new logo, paid the agreed flat fee over email with no written agreement, and began using the finished logo on their website and packaging. A year later, wanting to trademark the logo, they discovered — through their trademark attorney — that without a written IP assignment, the designer arguably still held copyright to the artwork despite having been paid for it. A short, free contractor agreement with an explicit IP assignment clause, signed before the first design draft, would have avoided the entire question.',
+    },
+    faq: [
+      { q: 'Is a free contractor agreement enough, or do I need a lawyer?', a: 'For most standard engagements — clear scope, standard payment terms, no unusual liability exposure — a well-drafted free agreement is sufficient. Complex, high-value, or unusually risky engagements are where legal review adds real value.' },
+      { q: 'Does this agreement protect against misclassification risk?', a: 'It includes language affirming contractor status, but classification is ultimately determined by the actual working relationship — control, integration, exclusivity — not by the document\'s wording alone. The agreement helps, but is not a guarantee against a misclassification finding if the actual working relationship looks like employment.' },
+      { q: 'Can I use this for a long-term ongoing engagement, not just a single project?', a: 'Yes — the agreement can be structured for an ongoing relationship with a defined term and renewal terms, rather than only a single, one-off project.' },
+      { q: 'Is there a limit to how many free agreements I can generate?', a: 'The free tier includes a recurring document and signature allowance that resets periodically, without requiring a credit card to start.' },
+    ],
+    fotos: [F.hombre, F.escritorio, F.tech],
+    cta: 'Generate your free contractor agreement',
+  },
+  {
+    slug: 'free-promissory-note-template',
+    titleTag: 'Free Promissory Note Template',
+    metaDescription: 'Generate a free promissory note for a personal or business loan: principal, interest and repayment terms, signed online.',
+    h1: 'Free Promissory Note',
+    grupo: 'free',
+    intro: 'A free promissory note generator turns an informal loan between family, friends or a small business into a proper written record — principal, interest rate, repayment schedule and what happens on default — without a fee for a document many people only ever need once.',
+    problema: {
+      titulo: 'Loans between people who trust each other are exactly where documentation gets skipped',
+      texto: 'A loan between family members or close friends is often the least documented kind of debt, precisely because both sides trust each other and a written note can feel awkward to bring up. That same trust is also what makes it hardest to enforce, or even to remember accurately, if the relationship changes or memories of the original terms start to diverge months or years later.',
+    },
+    puntos: [
+      { titulo: 'Principal amount and interest rate stated clearly', texto: 'The exact amount loaned and, if applicable, the interest rate — with a check against your state\'s usury cap, since some states limit the maximum interest rate that can be charged, especially between individuals.' },
+      { titulo: 'A repayment schedule that is actually specific', texto: 'Lump sum on a set date, or installments on a defined schedule — vague language like "when you can" is the single most common source of dispute in an informal loan.' },
+      { titulo: 'What happens on default', texto: 'Late fees, acceleration of the full balance, or other consequences if a payment is missed — addressed before it happens rather than negotiated in the moment it does.' },
+      { titulo: 'Free e-signature included', texto: 'Both lender and borrower can sign online once the note is generated, creating a dated, verifiable record without a separate paid step.' },
+    ],
+    ley: {
+      titulo: 'What makes a promissory note enforceable',
+      texto: 'A promissory note is a negotiable instrument generally governed by Article 3 of the Uniform Commercial Code, adopted by every state, which sets rules for enforceability, transfer and default. Most states cap the maximum interest rate that can legally be charged — usury laws — and a rate above that cap can render the interest provision unenforceable or, in some states, void the entire note; the specific cap varies significantly by state. The note is validly signed electronically under the ESIGN Act, 15 U.S.C. § 7001, the same as any other contract.',
+    },
+    caso: {
+      titulo: 'A family loan, remembered two different ways',
+      texto: 'A brother loaned his sister a sum of money to cover a short-term gap, on a verbal agreement to pay it back "within a year or so." Fourteen months later, when he asked about repayment, she remembered the original terms as more flexible than he did, and neither had a written record to settle the disagreement. It strained the relationship for months before an informal repayment plan was worked out. A one-page promissory note, signed at the time the money changed hands, would have made the terms a matter of record rather than memory.',
+    },
+    faq: [
+      { q: 'Do I need a promissory note for a loan between family members?', a: 'It is not legally required, but strongly recommended — informal loans between people who trust each other are exactly where disputes over terms are most common, precisely because nothing was written down at the time.' },
+      { q: 'Is there a maximum interest rate I can charge?', a: 'Yes — every state has a usury cap limiting the maximum enforceable interest rate, and it varies significantly by state and by the type of lender. Check your state\'s specific limit before setting a rate above what feels like a standard bank rate.' },
+      { q: 'What happens if the borrower stops paying?', a: 'The note\'s default clause determines the immediate consequence — typically late fees or acceleration of the full remaining balance — and the lender may pursue collection through small claims court for smaller amounts, or a standard civil suit for larger ones.' },
+      { q: 'Can a promissory note be used for a business loan, not just personal?', a: 'Yes — the same structure applies, adjusted for a business borrower and, if relevant, a personal guarantee from a business owner backing the loan.' },
+    ],
+    fotos: [F.escritorio, F.mujer, F.revisar],
+    cta: 'Generate your free promissory note',
+  },
+  {
+    slug: 'vehicle-bill-of-sale-requirements-by-state',
+    titleTag: 'Vehicle Bill of Sale Requirements by State',
+    metaDescription: 'What every state actually requires on a vehicle bill of sale, plus a free template for your state, signed online.',
+    h1: 'Vehicle Bill of Sale Requirements by State',
+    grupo: 'free',
+    intro: 'A vehicle bill of sale is required or strongly recommended in nearly every U.S. state to complete a title transfer, but the exact requirements — notarization, odometer disclosure, specific state-issued forms — vary enough that a generic template downloaded from the wrong source can get rejected at the DMV.',
+    problema: {
+      titulo: 'The document that looks the same everywhere but isn\'t',
+      texto: 'A vehicle bill of sale looks like a simple document — buyer, seller, vehicle, price, signatures — and in most respects it is. The variation that trips people up is procedural: some states require notarization for it to be accepted, some require a state-specific form rather than a generic one, and federal law requires odometer disclosure as part of the same transaction for most vehicles under a certain age, regardless of state.',
+    },
+    puntos: [
+      { titulo: 'Vehicle and party identification, complete', texto: 'VIN, year, make, model, and full legal names and addresses for both buyer and seller — a DMV will reject a bill of sale with an incomplete or mismatched VIN.' },
+      { titulo: 'Sale price and date, stated clearly', texto: 'Needed both for the transfer itself and, in most states, for calculating sales tax due at registration.' },
+      { titulo: 'Odometer disclosure, where federally required', texto: 'Federal law requires odometer disclosure for most vehicles under 20 model years old at the time of sale, either on the title itself or a separate form — check whether your state handles this on the title or requires it within the bill of sale.' },
+      { titulo: '"As-is" or warranty language, stated explicitly', texto: 'Whether the vehicle is sold as-is with no warranty, or with specific representations about its condition — silence on this point can leave the seller more exposed than intended.' },
+    ],
+    ley: {
+      titulo: 'Where requirements actually diverge by state',
+      texto: 'Most states accept a generic bill of sale for a private vehicle sale, but a meaningful number — including states like Louisiana and a handful of others — require notarization specifically for a vehicle bill of sale to be valid for title transfer purposes. Separately, the federal Truth in Mileage Act requires odometer disclosure for most vehicle sales, enforced through each state\'s own DMV process. Some states provide their own official bill-of-sale form that the DMV expects, rather than accepting any generic version. This is general information — confirm your specific state\'s current DMV requirement before relying on any template, since an incorrectly executed bill of sale can delay or block a title transfer.',
+    },
+    caso: {
+      titulo: 'A private sale rejected at the counter',
+      texto: 'A buyer completed a private vehicle purchase using a generic bill of sale template found through a general search, then went to the DMV to register the vehicle. The clerk rejected the document because the state required notarization for vehicle bills of sale specifically, a requirement the generic template had not addressed at all. The buyer had to track down the seller again, days later, to get the document properly notarized before the registration could proceed — a delay that a state-aware template would have avoided from the start.',
+    },
+    faq: [
+      { q: 'Does every state require a notarized bill of sale?', a: 'No — most states accept an unnotarized bill of sale for a private vehicle sale, but a specific set of states require notarization. Confirm your state\'s current requirement before relying on a generic template.' },
+      { q: 'Is a bill of sale the same as a title transfer?', a: 'No — the bill of sale documents the sale transaction itself; the title transfer is the separate DMV process of officially changing registered ownership, which typically requires the bill of sale as supporting documentation.' },
+      { q: 'Do I need odometer disclosure for an older vehicle?', a: 'Federal odometer disclosure requirements generally apply to vehicles under 20 model years old — older vehicles are typically exempt, though your state\'s specific DMV process may still ask for a mileage statement.' },
+      { q: 'Where can I find the state-specific version of this document?', a: 'The platform maintains dedicated vehicle bill of sale pages for individual states with their specific requirements built in — search for your state directly, or start with the general template and confirm your state\'s notarization rule before finalizing.' },
+    ],
+    fotos: [F.tech, F.oficina, F.hombre],
+    cta: 'Create your vehicle bill of sale',
+  },
+  {
+    slug: 'how-to-sign-a-pdf-online-free',
+    titleTag: 'How to Sign a PDF Online for Free',
+    metaDescription: 'Upload any PDF, add your signature, and download it signed — free, with a verifiable audit trail. No account required to try it.',
+    h1: 'How to Sign a PDF Online for Free',
+    grupo: 'free',
+    intro: 'Signing a PDF online does not require printing, signing by hand, and scanning it back in — a habit that persists mostly out of familiarity rather than necessity. Uploading the file, adding a typed or drawn signature, and downloading the signed version takes a few minutes from any device, with no software to install.',
+    problema: {
+      titulo: 'The print-sign-scan cycle survives on habit, not requirement',
+      texto: 'For most documents that need a signature — a form, a simple agreement, an acknowledgment — printing, signing by hand and scanning back in adds friction with no legal benefit over signing electronically. The ESIGN Act settled this legal question in 2000; the habit of printing anyway has simply outlasted the reason for it in a lot of everyday cases.',
+    },
+    puntos: [
+      { titulo: 'Upload any PDF you already have', texto: 'A form, a contract someone else sent you, a document you scanned — the tool works with whatever PDF you already have, not only documents generated on the platform itself.' },
+      { titulo: 'Type, draw, or upload a signature image', texto: 'Choose whichever signing method feels right — a typed name in a signature font, a hand-drawn signature with a mouse or touchscreen, or an uploaded image of your actual signature.' },
+      { titulo: 'Place the signature exactly where it needs to go', texto: 'Drag the signature field to the exact spot on the page, so the signed document looks correctly placed rather than stamped in a generic default location.' },
+      { titulo: 'Download the signed PDF immediately', texto: 'Once signed, the document is available to download right away, with the signing evidence — timestamp, IP address — embedded as part of the record.' },
+    ],
+    ley: {
+      titulo: 'Is a free online signature legally valid?',
+      texto: 'Yes — the Electronic Signatures in Global and National Commerce Act, 15 U.S.C. § 7001, states that a signature, contract or record may not be denied legal effect solely because it is in electronic form, and every state except New York has adopted the Uniform Electronic Transactions Act to the same effect (New York uses its own Electronic Signatures and Records Act, State Technology Law § 304). This applies regardless of whether the signature was free or paid for — validity depends on the signer\'s intent and the record\'s integrity, not the price of the tool used.',
+    },
+    caso: {
+      titulo: 'A rental application signed from a coffee shop',
+      texto: 'A prospective tenant received a rental application PDF by email while away from home with no printer access, and the property manager needed it back the same day to keep the applicant\'s spot in the leasing queue. Instead of waiting until she got home to print, sign and scan it, she uploaded the PDF from her phone at a coffee shop, signed it in under two minutes, and emailed it back before finishing her coffee. The property manager, who received signed applications this way regularly, had no issue accepting it.',
+    },
+    faq: [
+      { q: 'Do I need to create an account to sign a PDF?', a: 'A basic signing flow can often be completed with minimal setup; creating a free account lets you save documents, track signature status, and access your signing history later.' },
+      { q: 'Is a typed signature as valid as a hand-drawn one?', a: 'Yes — under the ESIGN Act, what matters is the signer\'s intent to sign and the retained evidence of that intent, not the specific visual style of the signature mark itself.' },
+      { q: 'Can I sign a document someone else sent me, not just ones I created here?', a: 'Yes — upload any PDF you have received, whether it originated from this platform or somewhere else entirely, and sign it the same way.' },
+      { q: 'Is there a limit on free signatures?', a: 'The free tier includes a recurring signature allowance that resets periodically, without requiring a credit card to start.' },
+    ],
+    fotos: [F.tech, F.mujer, F.hombre],
+    cta: 'Sign a PDF free',
   },
 ];
 
