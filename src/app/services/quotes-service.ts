@@ -42,6 +42,13 @@ export interface QuoteLineItem {
   unit_price: number;
   discount_pct: number;
   tax_pct: number;
+  /** Cuando tiene valor, este ítem es UNA alternativa dentro de un grupo de
+   * opciones (p. ej. "Plan Esencial" / "Plan Profesional" / "Plan Premium",
+   * todos con option_group: "Planes"), no un producto adicional. Los ítems
+   * con el mismo option_group se muestran juntos en el PDF y el cliente
+   * elige uno — por eso quedan FUERA del subtotal/total (ver
+   * computeQuoteTotals), sumarlos daría un total que nadie va a pagar. */
+  option_group?: string | null;
 }
 
 export interface Quote {
@@ -115,7 +122,10 @@ export function computeLineItemTotal(item: QuoteLineItem): number {
 
 export function computeQuoteTotals(items: QuoteLineItem[]): { subtotal: number; discountTotal: number; taxTotal: number; total: number } {
   let subtotal = 0, discountTotal = 0, taxTotal = 0;
+  // Las opciones alternativas (option_group) no se suman al total — el
+  // cliente elige una, no las tres. Ver la nota en QuoteLineItem.
   for (const item of items) {
+    if ((item.option_group || '').trim()) continue;
     const base = item.quantity * item.unit_price;
     const discount = base * (item.discount_pct || 0) / 100;
     const afterDiscount = base - discount;

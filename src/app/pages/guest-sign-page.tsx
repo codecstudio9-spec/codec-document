@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ShieldCheck, Loader, AlertCircle, CheckCircle2,
   FileText, PenLine, Sparkles, ArrowRight, ArrowLeft, ExternalLink,
-  IdCard, Camera, Upload, Lock, Maximize2, XCircle,
+  IdCard, Camera, Upload, Lock, Maximize2, XCircle, Download,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { PdfViewerModal } from '../components/signatures/PdfViewerModal';
@@ -1429,14 +1429,22 @@ export function GuestSignPage() {
 
           {!pdfLoading && !pdfError && pdfDoc && (
             <div className="relative divide-y divide-slate-100 bg-white">
-              <button
-                type="button"
-                onClick={() => setPdfViewerOpen(true)}
-                className="sticky top-2 z-10 ml-auto flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
-                style={{ marginRight: 10 }}
-              >
-                <Maximize2 className="size-3" /> Ver documento completo
-              </button>
+              <div className="sticky top-2 z-10 ml-auto flex w-fit gap-1.5" style={{ marginRight: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setPdfViewerOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                >
+                  <Maximize2 className="size-3" /> Ver documento completo
+                </button>
+                <a
+                  href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                  download
+                  className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                >
+                  <Download className="size-3" /> Descargar
+                </a>
+              </div>
               {Array.from({ length: pdfPageCount }, (_, i) => (
                 <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} />
               ))}
@@ -1757,14 +1765,22 @@ export function GuestSignPage() {
 
             {!pdfLoading && !pdfError && pdfDoc && (
               <div className="relative divide-y divide-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setPdfViewerOpen(true)}
-                  className="sticky top-2 z-10 ml-auto flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
-                  style={{ marginRight: 10 }}
-                >
-                  <Maximize2 className="size-3" /> Ver documento completo
-                </button>
+                <div className="sticky top-2 z-10 ml-auto flex w-fit gap-1.5" style={{ marginRight: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setPdfViewerOpen(true)}
+                    className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                  >
+                    <Maximize2 className="size-3" /> Ver documento completo
+                  </button>
+                  <a
+                    href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                    download
+                    className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
+                  >
+                    <Download className="size-3" /> Descargar
+                  </a>
+                </div>
                 {Array.from({ length: pdfPageCount }, (_, i) => (
                   <PdfPage
                     key={i + 1}

@@ -45,10 +45,21 @@ const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 // función) y ventana de contexto mayor.
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 
-const MAX_PETICION_CHARS = 4000;
+// Subido de 4000/6000: la petición ya no es solo "hazme una cotización de
+// 30 agendas" — alguien puede pegar una propuesta completa que ya escribió
+// en otro lado (varios planes, cada uno con su lista de qué incluye) y
+// espera que la IA la reorganice sin perder el contenido. Ver
+// construirPrompt: el modelo decide entre REDACTAR (petición corta) y
+// REORGANIZAR (ya viene una propuesta completa) según el largo de lo que
+// llega, no según un límite de palabras fijo.
+const MAX_PETICION_CHARS = 12000;
 const MAX_ITEMS = 40;
 const MAX_DESC_CHARS = 300;
-const MAX_PROPUESTA_CHARS = 6000;
+const MAX_PROPUESTA_CHARS = 12000;
+// A partir de este largo, la petición deja de tratarse como "una frase
+// pidiendo una cotización" y pasa a tratarse como una propuesta ya escrita
+// que hay que preservar casi entera, no resumir.
+const UMBRAL_PETICION_LARGA = 700;
 
 function corsHeaders(origin: string | null) {
   return {
@@ -88,6 +99,57 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     contexto.moneda ? `- Currency mentioned by the user: ${contexto.moneda}` : null,
   ].filter(Boolean).join('\n');
 
+  // Dos modos, decididos por el LARGO de lo que llegó, no por una casilla
+  // que el usuario tenga que marcar — porque en la práctica nadie la marca.
+  // Corto ("hazme una cotización de 30 agendas a 30.000 cada una") → la IA
+  // REDACTA desde cero, breve. Largo (una propuesta ya escrita, con
+  // secciones, planes, listas de "incluye/no incluye") → la IA REORGANIZA
+  // y LIMPIA lo que ya existe, sin resumirlo a un párrafo. Perder detalle
+  // que el usuario ya escribió es exactamente la queja que esto corrige.
+  const esPeticionLarga = peticion.length >= UMBRAL_PETICION_LARGA;
+
+  const reglasProposal = esPeticionLarga
+    ? [
+      'RULES FOR "proposal" (the request below is already a full, detailed',
+      'quote someone wrote — your job is to CLEAN IT UP, not shorten it):',
+      '- Keep essentially ALL of the substance: every plan/option/tier, every',
+      '  "incluye"/"no incluye" bullet, every "ideal para" note, every',
+      '  recommendation. Reorganize and tighten sentences for clarity, but do',
+      '  not delete features, bullets or sections just to make it shorter.',
+      '- There is no target word count — a detailed request deserves a',
+      '  detailed proposal. A short request still gets a short one.',
+      '- Preserve the structure the user used: if they wrote three numbered',
+      '  plans each with their own "incluye" list, keep three clearly',
+      '  separated sections in the same order, each with its own bullets.',
+      '- Use "- " at the line start for bullet lists, and a blank line',
+      '  between sections/plans so it reads as distinct blocks, not one wall',
+      '  of text.',
+      '- Do NOT repeat a price next to a plan/item name if that same price',
+      '  will also appear in the items table (see RULES FOR "items" below) —',
+      '  state it once, in the table, to avoid the two ever disagreeing after',
+      '  the user edits a number. It is fine to describe what a plan',
+      '  includes without restating its price in the prose.',
+      '- Do NOT invent warranties, certifications, delivery dates, discounts',
+      '  or legal terms that were not in the original text.',
+      '- No markdown bold, no literal "#" headings — plain text with blank',
+      '  lines and "- " bullets is enough structure.',
+    ]
+    : [
+      'RULES FOR "proposal" (the request below is a short instruction —',
+      'write the quote from scratch):',
+      '- 120 to 320 words. Short paragraphs separated by a blank line.',
+      '- Open by acknowledging what the client needs. Then what is included,',
+      '  then delivery/lead time if the request implies one, then a closing',
+      '  line.',
+      '- Use "- " at the line start for bullet lists of what is included.',
+      '- Do NOT restate the prices or the total: they already appear in the',
+      '  items table right below, and repeating them creates contradictions',
+      '  when the user edits a number.',
+      '- Do NOT invent warranties, certifications, delivery dates, discounts',
+      '  or legal terms that the user did not mention.',
+      '- No headings, no markdown bold, no title. Just the body text.',
+    ];
+
   return [
     `You write commercial quotes. Write everything in ${idioma}.`,
     '',
@@ -105,7 +167,7 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     '{',
     '  "proposal": "the commercial body of the quote, plain text",',
     '  "items": [',
-    '    { "description": "...", "quantity": 30, "unit": "...", "unit_price": 30000, "discount_pct": 0, "tax_pct": 0 }',
+    '    { "description": "...", "quantity": 30, "unit": "...", "unit_price": 30000, "discount_pct": 0, "tax_pct": 0, "option_group": "" }',
     '  ],',
     '  "client": { "name": "...", "phone": "...", "email": "..." }',
     '}',
@@ -120,30 +182,44 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     '- If nothing about the client was said, return "client": {"name":"",',
     '  "phone":"","email":""}.',
     '',
-    'RULES FOR "proposal":',
-    '- 120 to 320 words. Short paragraphs separated by a blank line.',
-    '- Open by acknowledging what the client needs. Then what is included,',
-    '  then delivery/lead time if the request implies one, then a closing line.',
-    '- Use "- " at the line start for bullet lists of what is included.',
-    '- Do NOT restate the prices or the total: they already appear in the',
-    '  items table right below, and repeating them creates contradictions when',
-    '  the user edits a number.',
-    '- Do NOT invent warranties, certifications, delivery dates, discounts or',
-    '  legal terms that the user did not mention.',
-    '- No headings, no markdown bold, no title. Just the body text.',
+    ...reglasProposal,
     '',
     'RULES FOR "items":',
-    '- One entry per distinct product or service in the request.',
+    '- One entry per distinct product, service, OR ALTERNATIVE PLAN/PACKAGE',
+    '  in the request.',
     '- "quantity": the number the user said. If not stated, use 1.',
     '- "unit_price": ONLY a price the user actually stated. If the user did',
     '  not give a price for that line, use 0 — never estimate, never guess a',
     '  market price. A wrong price is the one error that costs the user money.',
     '- "unit": the unit of measure in ' + idioma + ' (e.g. "unidades", "horas",',
     '  "kg", "litros"). If unclear, use "unidades" (or "units" in English).',
+    '  For a plan/package option (see option_group below), use "plan".',
     '- "discount_pct" and "tax_pct": only if the user stated them, else 0.',
     '- Numbers must be plain JSON numbers: no currency symbols, no thousands',
     '  separators, no quotes.',
     '- If the request describes no concrete product, return "items": [].',
+    '',
+    'RULES FOR "option_group" — READ THIS CAREFULLY, it is the single most',
+    'common mistake:',
+    '- Some requests describe several ALTERNATIVE plans/packages/tiers that',
+    '  the client is meant to choose ONE of (signalled by wording like',
+    '  "tres alternativas", "these are the options", "plan A / plan B / plan',
+    '  C", a comparison table between tiers, or "ideal para X" per option).',
+    '  Those are NOT separate products to buy together — they are',
+    '  alternatives. If you add up their prices as one total, you produce a',
+    '  total nobody would ever actually pay, which is a real, damaging error.',
+    '- When you detect this pattern, set "option_group" to the SAME short',
+    '  label (e.g. "Planes", "Options") on every item that belongs to that',
+    '  set of alternatives. Items that do NOT belong to any alternative set —',
+    '  a one-off product, a fixed add-on charge that applies no matter which',
+    '  plan is chosen — get "option_group": "".',
+    '- Do not invent an option_group for a normal list of different products',
+    '  someone is actually buying together (e.g. "10 chairs and 4 tables" are',
+    '  two real line items, not alternatives) — only use it when the text',
+    '  itself frames them as alternative choices.',
+    '- "description" for a plan/option item should be short (the plan name,',
+    '  e.g. "Plan Esencial") — the plan\'s full feature list belongs in the',
+    '  "proposal" text, not crammed into this field.',
   ].filter((l) => l !== '').join('\n');
 }
 
@@ -173,7 +249,10 @@ interface ItemSalida {
   unit_price: number;
   discount_pct: number;
   tax_pct: number;
+  option_group: string;
 }
+
+const MAX_OPTION_GROUP_CHARS = 60;
 
 const MAX_CLIENTE_CHARS = 120;
 
@@ -217,6 +296,7 @@ function validarItems(crudo: unknown): { items: ItemSalida[]; descartados: numbe
       unit_price: unit_price ?? 0,
       discount_pct,
       tax_pct,
+      option_group: String(f.option_group ?? '').trim().slice(0, MAX_OPTION_GROUP_CHARS),
     });
   }
   return { items, descartados };

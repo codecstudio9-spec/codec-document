@@ -921,6 +921,26 @@ export function MyQuoteEditorPage() {
                     />
                   </label>
                 </div>
+                <label className="mt-2 block">
+                  <span className="mb-1 block text-[10px] font-semibold text-slate-400">
+                    {language === 'en'
+                      ? 'Alternative option group (leave empty for a normal item)'
+                      : 'Grupo de opciones alternativas (déjalo vacío si es un ítem normal)'}
+                  </span>
+                  <input
+                    value={item.option_group || ''}
+                    onChange={(e) => updateItem(i, { option_group: e.target.value })}
+                    placeholder={language === 'en' ? 'e.g. "Plans" — same text on every option' : 'ej. "Planes" — el mismo texto en cada opción'}
+                    className={`${inputClass} bg-white text-xs`}
+                  />
+                  {item.option_group?.trim() && (
+                    <span className="mt-1 block text-[10px] text-amber-600">
+                      {language === 'en'
+                        ? "Grouped with every other item using this exact text — shown as a choice, not added to the total."
+                        : 'Se agrupa con cualquier otro ítem que use este mismo texto — se muestra como una opción a elegir, no se suma al total.'}
+                    </span>
+                  )}
+                </label>
                 <p className="mt-1.5 text-right text-xs font-bold text-slate-500">{`$${computeLineItemTotal(item).toFixed(2)}`}</p>
               </div>
             ))}

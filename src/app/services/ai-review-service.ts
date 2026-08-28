@@ -153,6 +153,9 @@ export interface CotizacionRedactada {
   items: Array<{
     description: string; quantity: number; unit: string;
     unit_price: number; discount_pct: number; tax_pct: number;
+    /** Cuando varias filas comparten el mismo valor, son alternativas entre
+     *  sí (p. ej. tres planes) y no se suman — ver QuoteLineItem. */
+    option_group?: string;
   }>;
   /** Datos del cliente que la persona haya dicho al pedir la cotización
    *  («…para Ruth, al 3001234567…»). Cadena vacía en lo que no se dijo —

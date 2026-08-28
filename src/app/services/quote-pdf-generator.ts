@@ -616,49 +616,114 @@ function encabezadoTabla(ctx: Ctx) {
   ctx.y += 5.5;
 }
 
+/** Dibuja una sola fila de la tabla (descripción + cantidades + total de esa
+ *  fila). Compartida entre la tabla normal, que se suma, y cada bloque de
+ *  opciones alternativas, que NO se suma — ver tablaDeItems. */
+function filaDeItem(ctx: Ctx, item: QuoteLineItem, alterna: boolean): void {
+  const { doc, template } = ctx;
+  doc.setFont(ctx.font, 'normal');
+  doc.setFontSize(8.5);
+  const lineasDesc = doc.splitTextToSize((item.description || '').trim() || '—', ANCHO_DESC);
+  const altoFila = Math.max(lineasDesc.length * 4.2, 6) + 2.6;
+
+  // Si la fila no cabe entera, se lleva completa a la página siguiente y se
+  // repite el encabezado. Partir una fila por la mitad es lo que hacía que
+  // la descripción quedara huérfana del precio.
+  if (ctx.y + altoFila > FONDO) {
+    nuevaPagina(ctx);
+    encabezadoTabla(ctx);
+  }
+
+  if (alterna && template !== 'minimal') {
+    doc.setFillColor(248, 249, 251);
+    doc.rect(MARGIN, ctx.y - 3.8, CONTENT_W, altoFila, 'F');
+  }
+
+  doc.setTextColor(45, 45, 45);
+  doc.text(lineasDesc, COL.desc + 2, ctx.y);
+  doc.setTextColor(80, 80, 80);
+  doc.text(String(item.quantity ?? 0), COL.cant, ctx.y, { align: 'right' });
+  if (item.unit) doc.text(String(item.unit).slice(0, 12), COL.unidad, ctx.y);
+  doc.text(fmtMoney(item.unit_price || 0), COL.precio, ctx.y, { align: 'right' });
+  doc.text(item.discount_pct ? `${item.discount_pct}%` : '—', COL.desc_pct, ctx.y, { align: 'right' });
+  doc.text(item.tax_pct ? `${item.tax_pct}%` : '—', COL.iva_pct, ctx.y, { align: 'right' });
+  doc.setFont(ctx.font, 'bold');
+  doc.setTextColor(30, 30, 30);
+  doc.text(fmtMoney(computeLineItemTotal(item)), COL.total - 2, ctx.y, { align: 'right' });
+
+  ctx.y += altoFila;
+}
+
+/** Agrupa por option_group preservando el orden de primera aparición — un
+ *  Map normal ya hace esto en JS, se deja explícito porque es lo que hace
+ *  que "Plan Esencial, Profesional, Premium" salgan en el orden en que se
+ *  escribieron y no reordenados. */
+function agruparOpciones(items: QuoteLineItem[]): Map<string, QuoteLineItem[]> {
+  const grupos = new Map<string, QuoteLineItem[]>();
+  for (const item of items) {
+    const clave = (item.option_group || '').trim();
+    if (!clave) continue;
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave)!.push(item);
+  }
+  return grupos;
+}
+
+/** Un bloque de opciones alternativas (p. ej. "Plan Esencial / Profesional /
+ *  Premium"): mismo formato de fila que la tabla normal, pero cada opción
+ *  es una alternativa completa, no un ítem que se suma a las demás. Por eso
+ *  vive fuera de resumenFinanciero — sumar tres planes distintos como si el
+ *  cliente fuera a comprar los tres a la vez es exactamente el error que
+ *  este bloque existe para evitar. */
+function bloqueDeOpciones(ctx: Ctx, etiqueta: string, opciones: QuoteLineItem[]): void {
+  const { lang } = ctx;
+  tituloDeSeccion(ctx, etiqueta);
+  asegurarEspacio(ctx, 24);
+  encabezadoTabla(ctx);
+
+  let alterna = false;
+  for (const item of opciones) {
+    filaDeItem(ctx, item, alterna);
+    alterna = !alterna;
+  }
+
+  ctx.doc.setFont(ctx.font, 'italic');
+  ctx.doc.setFontSize(7.5);
+  ctx.doc.setTextColor(140, 140, 140);
+  ctx.doc.text(
+    lang === 'en'
+      ? 'The client chooses one of the options above — these are not added together.'
+      : 'El cliente elige una de las opciones anteriores — estos precios no se suman entre sí.',
+    COL.desc, ctx.y,
+  );
+  ctx.y += 8;
+}
+
 function tablaDeItems(ctx: Ctx) {
   const { doc, items, lang, template } = ctx;
   const conItems = items.filter((it) => (it.description || '').trim() || it.unit_price > 0);
   if (conItems.length === 0) return;
+
+  // Las que pertenecen a un option_group son alternativas entre sí (planes,
+  // paquetes) y van en su propio bloque, antes de la tabla que sí se suma —
+  // el cliente decide primero qué opción quiere, y lo que sigue abajo son
+  // los cargos fijos que aplican sin importar cuál elija.
+  const grupos = agruparOpciones(conItems);
+  for (const [clave, opciones] of grupos) {
+    bloqueDeOpciones(ctx, clave, opciones);
+  }
+
+  const regulares = conItems.filter((it) => !(it.option_group || '').trim());
+  if (regulares.length === 0) return;
 
   tituloDeSeccion(ctx, lang === 'en' ? 'Products & Services' : 'Productos y Servicios');
   asegurarEspacio(ctx, 24);
   encabezadoTabla(ctx);
 
   let alterna = false;
-  for (const item of conItems) {
-    doc.setFont(ctx.font, 'normal');
-    doc.setFontSize(8.5);
-    const lineasDesc = doc.splitTextToSize((item.description || '').trim() || '—', ANCHO_DESC);
-    const altoFila = Math.max(lineasDesc.length * 4.2, 6) + 2.6;
-
-    // Si la fila no cabe entera, se lleva completa a la página siguiente y se
-    // repite el encabezado. Partir una fila por la mitad es lo que hacía que
-    // la descripción quedara huérfana del precio.
-    if (ctx.y + altoFila > FONDO) {
-      nuevaPagina(ctx);
-      encabezadoTabla(ctx);
-    }
-
-    if (alterna && template !== 'minimal') {
-      doc.setFillColor(248, 249, 251);
-      doc.rect(MARGIN, ctx.y - 3.8, CONTENT_W, altoFila, 'F');
-    }
+  for (const item of regulares) {
+    filaDeItem(ctx, item, alterna);
     alterna = !alterna;
-
-    doc.setTextColor(45, 45, 45);
-    doc.text(lineasDesc, COL.desc + 2, ctx.y);
-    doc.setTextColor(80, 80, 80);
-    doc.text(String(item.quantity ?? 0), COL.cant, ctx.y, { align: 'right' });
-    if (item.unit) doc.text(String(item.unit).slice(0, 12), COL.unidad, ctx.y);
-    doc.text(fmtMoney(item.unit_price || 0), COL.precio, ctx.y, { align: 'right' });
-    doc.text(item.discount_pct ? `${item.discount_pct}%` : '—', COL.desc_pct, ctx.y, { align: 'right' });
-    doc.text(item.tax_pct ? `${item.tax_pct}%` : '—', COL.iva_pct, ctx.y, { align: 'right' });
-    doc.setFont(ctx.font, 'bold');
-    doc.setTextColor(30, 30, 30);
-    doc.text(fmtMoney(computeLineItemTotal(item)), COL.total - 2, ctx.y, { align: 'right' });
-
-    ctx.y += altoFila;
   }
 
   resumenFinanciero(ctx);
