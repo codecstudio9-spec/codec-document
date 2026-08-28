@@ -174,77 +174,20 @@ export function ModernHomePage() {
   }, [isMobile, user, navigate]);
 
 
-  const premiumTestimonials = [
-    {
-      quote: 'Saved me hours every week. I now close lease agreements in minutes instead of dealing with paper.',
-      author: 'Sarah M.',
-      role: 'Licensed Real Estate Broker · Miami, FL',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=32'
-    },
-    {
-      quote: 'The co-signer QR link is a game changer. My tenants sign remotely with zero friction.',
-      author: 'James T.',
-      role: 'Property Manager · Austin, TX',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=12'
-    },
-    {
-      quote: 'Professional-grade PDFs with biometric verification. My clients think I have an in-house legal team.',
-      author: 'Rachel L.',
-      role: 'Independent Contractor · New York, NY',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=47'
-    },
-    {
-      quote: 'NDA and contractor agreements ready in 4 minutes. The SHA-256 audit trail gives me peace of mind.',
-      author: 'Mike D.',
-      role: 'Landlord & Property Investor · Phoenix, AZ',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=54'
-    },
-    {
-      quote: "Best DocuSign alternative I've found. Full template editor, not just a PDF uploader, and it's free to start.",
-      author: 'Jennifer K.',
-      role: 'Small Business Owner · Los Angeles, CA',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=5'
-    },
-    {
-      quote: 'ESIGN Act compliant documents for all 50 states. Perfect for my multi-state real estate portfolio.',
-      author: 'Robert H.',
-      role: 'Real Estate Investor · Dallas, TX',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=60'
-    },
-    {
-      quote: 'The selfie + ID verification embedded in the PDF is brilliant. No more chasing signatures.',
-      author: 'Sophia N.',
-      role: 'Attorney & Notary · Chicago, IL',
-      stars: 4,
-      avatar: 'https://i.pravatar.cc/120?img=20'
-    },
-    {
-      quote: 'Sent 12 service agreements this month in half the time. The mobile-to-desktop sync is seamless.',
-      author: 'Carlos R.',
-      role: 'General Contractor · Houston, TX',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=15'
-    },
-    {
-      quote: 'I went from 45 minutes per lease to under 5. My broker team uses it daily now.',
-      author: 'Elena C.',
-      role: 'Realtor & Team Lead · Denver, CO',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=40'
-    },
-    {
-      quote: 'The identity verification makes our vendor onboarding bulletproof. Highly recommended.',
-      author: 'David B.',
-      role: 'Director of Operations · Seattle, WA',
-      stars: 5,
-      avatar: 'https://i.pravatar.cc/120?img=9'
-    }
+  // Real, verifiable trust facts only — no invented testimonials/avatars/
+  // ratings here (removed 2026-08-28: the previous "Verified Reviews"
+  // marquee used fabricated names, roles, and pravatar.cc stock avatars,
+  // plus a "50K+ documents signed" stat with no real query backing it —
+  // fake-review content Google's spam policies treat as a real indexing
+  // risk, and simply untrue). Every item below is a real, checkable
+  // product fact instead of a claimed opinion from a nonexistent person.
+  const trustFacts = [
+    { icon: ShieldCheck, en: 'ESIGN Act & UETA compliant e-signatures', es: 'Firmas electrónicas conforme a la Ley ESIGN y UETA' },
+    { icon: Fingerprint, en: 'SHA-256 hash + IP + timestamp on every signature', es: 'Hash SHA-256 + IP + marca de tiempo en cada firma' },
+    { icon: Layers, en: 'State-specific clauses for all 50 U.S. states', es: 'Cláusulas específicas para los 50 estados de EE. UU.' },
+    { icon: FileCheck, en: '6 document types: NDA, lease, contractor, service, promissory note, vehicle bill of sale', es: '6 tipos de documento: NDA, arrendamiento, contratista, servicio, pagaré, compraventa de vehículo' },
+    { icon: CheckCircle2, en: '2 free documents + 2 free e-signatures every 72h, no card required', es: '2 documentos y 2 firmas gratis cada 72 horas, sin tarjeta' },
+    { icon: Sparkles, en: 'Full template editor, not just a flat PDF uploader', es: 'Editor completo de plantillas, no solo un cargador de PDF' },
   ];
   const faqs = language === 'en'
     ? [
@@ -1863,7 +1806,9 @@ export function ModernHomePage() {
         </div>
       </section>
 
-      {/* ── Testimonials ──────────────────────────────────────────────────── */}
+      {/* ── Why trust Codec Document ────────────────────────────────────────
+          Real, checkable product facts — deliberately not a testimonial/
+          review section. See the trustFacts comment above for why. */}
       <section className="relative overflow-hidden bg-slate-950 py-16 text-white md:py-28">
         {/* Soft entry blend from the white section above. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 md:h-36" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.55), transparent)' }} />
@@ -1874,73 +1819,44 @@ export function ModernHomePage() {
         <div className="container relative mx-auto px-4">
           <div className="mb-14 text-center">
             <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-400/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-300">
-              {language === 'en' ? 'Verified Reviews' : 'Reseñas Verificadas'}
+              {language === 'en' ? 'Why Codec Document' : 'Por Qué Codec Document'}
             </span>
             <h2
               className="mt-3 bg-clip-text py-1 text-3xl font-black leading-snug text-transparent md:text-5xl"
               style={{ backgroundImage: 'linear-gradient(135deg, #ffffff 0%, #93c5fd 55%, #c4b5fd 100%)' }}
             >
-              {language === 'en' ? 'Trusted by U.S. Professionals' : 'Confiado por Profesionales en EE. UU.'}
+              {language === 'en' ? 'Built for U.S. Professionals' : 'Hecho para Profesionales en EE. UU.'}
             </h2>
             <p className="mt-3 text-slate-400">
               {language === 'en'
-                ? 'Realtors, landlords, and contractors across all 50 states rely on Codec Document.'
-                : 'Agentes, propietarios y contratistas en los 50 estados confían en Codec Document.'}
+                ? 'What the platform actually does, not marketing claims.'
+                : 'Lo que la plataforma realmente hace, sin afirmaciones de marketing.'}
             </p>
           </div>
 
-          {/* Slow infinite scroll instead of a static grid, same
-              duplicated-list + CSS keyframe technique used elsewhere on
-              this page, paused on hover so a review stays readable. */}
-          <style>{`
-            @keyframes testimonialScroll {
-              0%   { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-          `}</style>
-          <div
-            className="relative -mx-4 overflow-hidden px-4"
-            style={{
-              maskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-            }}
-          >
-            <div
-              className="flex gap-4 py-2"
-              style={{ width: 'max-content', animation: 'testimonialScroll 55s linear infinite' }}
-              onMouseEnter={(e) => { e.currentTarget.style.animationPlayState = 'paused'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.animationPlayState = 'running'; }}
-            >
-              {[...premiumTestimonials.slice(0, 6), ...premiumTestimonials.slice(0, 6)].map((item, idx) => (
-                <article
-                  key={`${item.author}-${idx}`}
-                  className="group relative w-[340px] shrink-0 overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-6 backdrop-blur-md transition-all hover:border-blue-400/20 hover:bg-white/7 hover:shadow-[0_8px_40px_rgba(59,130,246,0.15)]"
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trustFacts.map((fact) => {
+              const Icon = fact.icon;
+              return (
+                <div
+                  key={fact.en}
+                  className="group relative flex items-start gap-3 overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-5 backdrop-blur-md transition-all hover:border-blue-400/20 hover:bg-white/7"
                 >
-                  <div className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 ring-1 ring-blue-500/25 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="mb-3 flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`size-3.5 ${i < item.stars ? 'fill-amber-400 text-amber-400' : 'text-white/15'}`} />
-                    ))}
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <Icon className="size-5 text-white" />
                   </div>
-                  <p className="mb-4 text-sm leading-relaxed text-white/70">"{item.quote}"</p>
-                  <div className="flex items-center gap-3 border-t border-white/8 pt-4">
-                    <img src={item.avatar} alt={item.author} className="size-10 rounded-full object-cover ring-2 ring-white/12" loading="lazy" />
-                    <div>
-                      <p className="text-sm font-bold text-white">{item.author}</p>
-                      <p className="text-xs text-white/40">{item.role}</p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  <p className="text-sm leading-relaxed text-white/80">{language === 'en' ? fact.en : fact.es}</p>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Trust numbers */}
-          <div className="mt-10 grid grid-cols-2 gap-4 border-t border-white/8 pt-8 sm:grid-cols-4 md:mt-14 md:pt-10">
+          {/* Trust numbers — only figures that are actually true of the
+              product (no invented usage/uptime stats). */}
+          <div className="mt-10 grid grid-cols-3 gap-4 border-t border-white/8 pt-8 md:mt-14 md:pt-10">
             {[
-              { num: '50K+', labelEn: 'Documents signed', labelEs: 'Documentos firmados' },
               { num: '50', labelEn: 'U.S. states covered', labelEs: 'Estados cubiertos' },
-              { num: '99.9%', labelEn: 'Uptime SLA', labelEs: 'Disponibilidad SLA' },
+              { num: '6', labelEn: 'Document types', labelEs: 'Tipos de documento' },
               { num: 'SHA-256', labelEn: 'Cryptographic security', labelEs: 'Seguridad criptográfica' },
             ].map((stat) => (
               <div key={stat.num} className="text-center">
