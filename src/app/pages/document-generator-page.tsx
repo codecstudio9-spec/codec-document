@@ -381,7 +381,10 @@ function ContenidoGenerador() {
   // override that only this document (this session) ever sees.
   useEffect(() => {
     const userId = user?.id;
-    if (!designOpen || brandingPrefilledRef.current || !userId) return;
+    // Branding is a document default, not merely a drawer convenience: load
+    // it before any PDF path can run, while keeping all edits local to this
+    // document as before.
+    if (brandingPrefilledRef.current || !userId) return;
     brandingPrefilledRef.current = true;
     void (async () => {
       try {
@@ -395,6 +398,7 @@ function ContenidoGenerador() {
         setBranding((prev) => ({
           ...prev,
           enableLogo: logoDataUrl ? true : prev.enableLogo,
+          enableLogoWatermark: saved.useWatermark || prev.enableLogoWatermark,
           logoDataUrl: logoDataUrl || prev.logoDataUrl,
           logoPosition: saved.logoPosition,
           headerText: prev.headerText || saved.headerText || '',
@@ -411,7 +415,7 @@ function ContenidoGenerador() {
           companyEmail: saved.companyEmail || undefined,
           companyWebsite: saved.companyWebsite || undefined,
         }));
-        toast.success(language === 'en' ? 'Loaded your saved branding — edit freely for this document.' : 'Se cargó tu marca guardada — edítala libremente para este documento.');
+        if (designOpen) toast.success(language === 'en' ? 'Loaded your saved branding — edit freely for this document.' : 'Se cargó tu marca guardada — edítala libremente para este documento.');
       } catch { /* pre-fill is a convenience, never a requirement */ }
     })();
   }, [designOpen, user?.id, language]);

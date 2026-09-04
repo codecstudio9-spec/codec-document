@@ -26,6 +26,53 @@ export interface DocumentEvidence {
 
 const BUCKET = 'tx-evidence';
 
+/** Converts a stored path or legacy Storage URL into a fresh readable URL. */
+export async function resolveEvidenceUrl(value: string, defaultBucket = BUCKET): Promise<string | null> {
+  const reference = value?.trim();
+  if (!reference || reference.startsWith('data:')) return reference || null;
+
+  let bucket = defaultBucket;
+  let path = reference;
+  try {
+    const url = new URL(reference);
+    const match = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+)$/);
+    if (!match) return reference;
+    bucket = decodeURIComponent(match[1]);
+    path = decodeURIComponent(match[2]);
+  } catch {
+    const prefixed = reference.match(/^(tx-evidence|verifications)\/(.+)$/);
+    if (prefixed) {
+      bucket = prefixed[1];
+      path = prefixed[2];
+    }
+  }
+
+  const { data, error } = await publicSupabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+  return !error && data?.signedUrl ? data.signedUrl : null;
+}
+
+/** Resolves and loads an evidence image before jsPDF begins composing pages. */
+export async function resolveEvidenceImageDataUrl(value?: string): Promise<string | undefined> {
+  if (!value) return undefined;
+  if (value.startsWith('data:image/')) return value;
+  const url = await resolveEvidenceUrl(value);
+  if (!url) return undefined;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return undefined;
+    const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) return undefined;
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 /** Sube el archivo y devuelve su RUTA dentro del bucket — nunca una URL
  *  pública, igual que subirComprobante en document-installments-service.ts. */
 export async function subirArchivoEvidencia(

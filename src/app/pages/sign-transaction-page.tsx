@@ -128,16 +128,18 @@ async function uploadEvidenceImage(
 
     const { data: urlData } = publicSupabase.storage
       .from('tx-evidence')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 60 * 60);
 
-    const publicUrl = urlData?.publicUrl;
+    const publicUrl = urlData?.signedUrl;
     if (!publicUrl) {
       console.warn(`[tx-evidence] Could not get public URL for ${type} — falling back to inline base64.`);
       return dataUrl;
     }
 
-    console.log(`[tx-evidence] ${type} uploaded OK:`, publicUrl);
-    return publicUrl;
+    // Persist the path: it never expires. PDF generation creates a fresh
+    // signed URL immediately before embedding the image.
+    console.log(`[tx-evidence] ${type} uploaded OK.`);
+    return filePath;
 
   } catch (err) {
     console.warn(`[tx-evidence] Exception uploading ${type}:`, err, '— falling back to inline base64.');

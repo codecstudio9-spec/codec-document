@@ -404,7 +404,7 @@ function renderPdfHeader(
   // Only render header when user has supplied custom branding (logo or company name).
   // No Codec Document promotional content in the body of a paid legal document.
   const hasLogo = branding?.enableLogo && branding?.logoDataUrl;
-  const hasCompany = branding?.companyLegalName?.trim();
+  const hasCompany = branding?.companyLegalName?.trim() || branding?.headerText?.trim();
 
   if (!hasLogo && !hasCompany) {
     // Minimal top margin line only — keeps top-of-page clean
@@ -420,14 +420,22 @@ function renderPdfHeader(
 
   if (hasLogo) {
     const fmt = branding.logoDataUrl!.includes('image/png') ? 'PNG' : 'JPEG';
-    safePdfAddImage(pdf, branding.logoDataUrl!, fmt, M, 5, 14, 14);
+    const logoX = branding.logoPosition === 'right' ? PW - M - 14 : M;
+    safePdfAddImage(pdf, branding.logoDataUrl!, fmt, logoX, 5, 14, 14);
   }
 
   if (hasCompany) {
     safePdfSetFont(pdf, 'helvetica', 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(30, 30, 60);
-    safePdfText(pdf, hasCompany, PW / 2, 12, { align: 'center' });
+    const companyOnRight = hasLogo && branding.logoPosition !== 'right';
+    safePdfText(
+      pdf,
+      hasCompany,
+      companyOnRight ? PW - M : M,
+      12,
+      companyOnRight ? { align: 'right' } : undefined,
+    );
   }
 
   pdf.setDrawColor(210, 215, 230);
@@ -449,6 +457,25 @@ function safePdfAddImage(
   } catch (err) {
     console.warn('safePdfAddImage failed, skipping image', err, imageData?.slice?.(0, 40));
   }
+}
+
+function renderLogoWatermark(
+  pdf: import('jspdf').jsPDF,
+  branding: import('../types/document').DocumentBranding,
+  PW: number,
+  PH: number,
+) {
+  if (!branding.enableLogoWatermark || !branding.logoDataUrl) return;
+  try {
+    const anyPdf = pdf as any;
+    pdf.saveGraphicsState();
+    if (typeof anyPdf.GState === 'function' && typeof anyPdf.setGState === 'function') {
+      anyPdf.setGState(new anyPdf.GState({ opacity: 0.10 }));
+    }
+    const fmt = branding.logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+    safePdfAddImage(pdf, branding.logoDataUrl, fmt, PW * 0.2, PH * 0.28, PW * 0.6, PH * 0.36);
+    pdf.restoreGraphicsState();
+  } catch { /* watermark is decorative; keep the export usable on failure */ }
 }
 
 function renderPdfFooter(
@@ -1591,6 +1618,8 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
           sCtx.drawImage(captured, 0, sliceStartPx, captured.width, sliceHPx, 0, 0, captured.width, sliceHPx);
           safePdfAddImage(pdf, slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, M + HEADER_H, contentW, sliceHPx / pxPerMm);
         }
+
+        renderLogoWatermark(pdf, documentBranding, PW, PH);
 
         renderPdfFooter(pdf, company, hashSnippet, page + 1, numPages, PW, PH, M, FOOTER_H, exportLanguage);
       }

@@ -3,6 +3,7 @@ import { DocumentBranding } from '../types/document';
 import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signature-jurisdictions';
 import { etiquetaFiscal, nombrePais } from '../data/paises-fiscales';
 import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
+import { resolveEvidenceImageDataUrl } from './document-evidence-service';
 
 interface PDFGeneratorOptions {
   content: string;
@@ -1316,12 +1317,48 @@ export class PDFGenerator {
       this.doc.setFillColor(255, 255, 255);
       this.doc.rect(0, 2.5, this.pageWidth, headerH - 2.5, 'F');
 
+      const hasLogo = Boolean(branding?.enableLogo && branding?.logoDataUrl);
+      const logoOnRight = branding?.logoPosition === 'right';
+      // Codec Document remains visible on every page. A customer's logo is
+      // additional branding, never a replacement for the platform mark.
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(6.5);
       this.doc.setTextColor(37, 99, 235);
-      this.safeText('CODEC DOCUMENT', this.margin, 8);
+      this.safeText(
+        'CODEC DOCUMENT',
+        hasLogo && !logoOnRight ? this.margin + 24 : this.margin,
+        8,
+        undefined,
+      );
+      if (hasLogo) {
+        try {
+          this.drawImageFit(
+            branding!.logoDataUrl!,
+            logoOnRight ? this.pageWidth - this.margin - 22 : this.margin,
+            3.1,
+            22,
+            5.5,
+            logoOnRight ? 'right' : 'left',
+          );
+        } catch { /* broken logos must not block legal-document generation */ }
+      }
 
-      const centerTitle = (branding?.headerText || '').trim();
+      const identityLabel = (branding?.companyLegalName || branding?.headerText || '').trim();
+      if (identityLabel) {
+        this.doc.setFont('helvetica', 'bold');
+        this.doc.setFontSize(6.5);
+        this.doc.setTextColor(37, 99, 235);
+        this.safeText(
+          identityLabel,
+          this.pageWidth / 2,
+          8,
+          { align: 'center' },
+        );
+      }
+
+      const centerTitle = identityLabel !== (branding?.headerText || '').trim()
+        ? (branding?.headerText || '').trim()
+        : '';
       if (centerTitle) {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setFontSize(6);
@@ -1453,8 +1490,14 @@ export class PDFGenerator {
         const logoY = topY - 4;
         // Force fully opaque, vibrant logo in premium header.
         this.doc.setTextColor(0, 0, 0);
+        const logoOnRight = branding.logoPosition !== 'left';
         const puesto = this.drawImageFit(
-          branding.logoDataUrl, this.pageWidth - this.margin - boxW, logoY, boxW, boxH, 'right',
+          branding.logoDataUrl,
+          logoOnRight ? this.pageWidth - this.margin - boxW : this.margin,
+          logoY,
+          boxW,
+          boxH,
+          logoOnRight ? 'right' : 'left',
         );
         logoBottomY = puesto.y + puesto.height;
       } catch {
@@ -1470,8 +1513,9 @@ export class PDFGenerator {
       this.doc.setFont('helvetica', 'normal');
       this.doc.setFontSize(8.5);
       let businessY = topY + 12;
+      const businessOnRight = hasLogo && branding?.logoPosition === 'left';
       for (const ln of companyLines) {
-        this.safeText(ln, this.margin, businessY);
+        this.safeText(ln, businessOnRight ? this.pageWidth - this.margin : this.margin, businessY, businessOnRight ? { align: 'right' } : undefined);
         businessY += 4;
       }
       businessBottomY = businessY;
@@ -2582,7 +2626,13 @@ export class PDFGenerator {
    */
   public static async generate(options: PDFGeneratorOptions): Promise<void> {
     const resolvedSigs = await PDFGenerator.resolveSignatureDataUrls(options.signatures);
-    const opts = { ...options, signatures: resolvedSigs };
+    const [identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack] = await Promise.all([
+      resolveEvidenceImageDataUrl(options.identitySelfie),
+      resolveEvidenceImageDataUrl(options.identityIdDoc),
+      resolveEvidenceImageDataUrl(options.identityIdDocFront),
+      resolveEvidenceImageDataUrl(options.identityIdDocBack),
+    ]);
+    const opts = { ...options, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
@@ -2707,7 +2757,15 @@ export class PDFGenerator {
    */
   public static async generateBlob(options: PDFGeneratorOptions): Promise<Blob> {
     const resolvedSigs = await PDFGenerator.resolveSignatureDataUrls(options.signatures);
-    const opts = { ...options, signatures: resolvedSigs };
+    // Private Storage URLs must be downloaded before jsPDF starts composing
+    // pages; otherwise addImage receives a URL string and renders a fallback.
+    const [identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack] = await Promise.all([
+      resolveEvidenceImageDataUrl(options.identitySelfie),
+      resolveEvidenceImageDataUrl(options.identityIdDoc),
+      resolveEvidenceImageDataUrl(options.identityIdDocFront),
+      resolveEvidenceImageDataUrl(options.identityIdDocBack),
+    ]);
+    const opts = { ...options, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
