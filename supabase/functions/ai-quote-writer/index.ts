@@ -89,6 +89,42 @@ function extraerJson(texto: string): unknown {
   return null;
 }
 
+function redistribuirSinIA(peticion: string, language: 'en' | 'es') {
+  const items: ItemSalida[] = [];
+  const lineas = peticion.split(/\r?\n/).map((linea) => linea.trim()).filter(Boolean);
+  const patronPrecio = /(?:USD|US\$|\$)\s*([\d.,]+)/i;
+
+  for (const linea of lineas) {
+    const coincidencia = linea.match(patronPrecio);
+    if (!coincidencia) continue;
+
+    const unitPrice = num(coincidencia[1], 1_000_000_000);
+    if (unitPrice === null) continue;
+
+    const antesDelPrecio = linea.slice(0, coincidencia.index ?? 0)
+      .replace(/^[-*•\d.)\s]+/, '').trim();
+    if (!antesDelPrecio) continue;
+
+    const unidad = linea.match(/\/\s*([\p{L}]+)\s*$/u)?.[1]
+      ?? (language === 'en' ? 'plan' : 'plan');
+    items.push({
+      description: antesDelPrecio.slice(0, MAX_DESC_CHARS),
+      quantity: 1,
+      unit: unidad.slice(0, 24),
+      unit_price: unitPrice,
+      discount_pct: 0,
+      tax_pct: 0,
+      option_group: '',
+    });
+  }
+
+  return {
+    proposal: peticion.slice(0, MAX_PROPUESTA_CHARS),
+    items,
+    client: { name: '', phone: '', email: '' },
+  };
+}
+
 function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
   cliente?: string; empresa?: string; proyecto?: string; moneda?: string;
 }): string {
@@ -393,7 +429,8 @@ Deno.serve(async (req) => {
     if (!groqRes.ok) {
       const detalle = await groqRes.text().catch(() => '');
       console.error('[ai-quote-writer] Groq falló:', groqRes.status, detalle);
-      return responder({ error: 'No pude escribir la cotización en este momento. Inténtalo de nuevo.' }, origin, 502);
+      const respaldo = redistribuirSinIA(peticion, language);
+      return responder({ ...respaldo, fallback: true }, origin);
     }
 
     const groqJson = await groqRes.json();
@@ -402,7 +439,8 @@ Deno.serve(async (req) => {
 
     if (!parseado) {
       console.error('[ai-quote-writer] respuesta no parseable');
-      return responder({ error: 'Me enredé escribiendo la respuesta. Inténtalo otra vez.' }, origin, 502);
+      const respaldo = redistribuirSinIA(peticion, language);
+      return responder({ ...respaldo, fallback: true }, origin);
     }
 
     const proposal = String(parseado.proposal ?? '').trim().slice(0, MAX_PROPUESTA_CHARS);
