@@ -44,6 +44,7 @@ const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 // oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
 // función) y ventana de contexto mayor.
 const GROQ_MODEL = 'openai/gpt-oss-120b';
+const GROQ_FALLBACK_MODEL = 'llama-3.3-70b-versatile';
 
 // Subido de 4000/6000: la petición ya no es solo "hazme una cotización de
 // 30 agendas" — alguien puede pegar una propuesta completa que ya escribió
@@ -353,26 +354,32 @@ Deno.serve(async (req) => {
       return responder({ error: 'Cuéntame un poco más de lo que necesitas cotizar.' }, origin, 400);
     }
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqPayload = {
+      messages: [{
+        role: 'user',
+        content: construirPrompt(peticion, language, {
+          cliente: body.client_name,
+          empresa: body.client_company,
+          proyecto: body.project_name,
+          moneda: body.currency,
+        }),
+      }],
+      temperature: 0.4,
+      response_format: { type: 'json_object' },
+    };
+
+    const pedirGroq = (model: string) => fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [{
-          role: 'user',
-          content: construirPrompt(peticion, language, {
-            cliente: body.client_name,
-            empresa: body.client_company,
-            proyecto: body.project_name,
-            moneda: body.currency,
-          }),
-        }],
-        // Algo de temperatura: el texto tiene que sonar a persona, no a
-        // plantilla. Los números no dependen de esto — se validan aparte.
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
-      }),
+      body: JSON.stringify({ model, ...groqPayload }),
     });
+
+    let groqRes = await pedirGroq(GROQ_MODEL);
+    if (!groqRes.ok && [400, 404].includes(groqRes.status)) {
+      const detalle = await groqRes.text().catch(() => '');
+      console.warn('[ai-quote-writer] modelo principal no disponible; usando fallback:', groqRes.status, detalle);
+      groqRes = await pedirGroq(GROQ_FALLBACK_MODEL);
+    }
 
     if (!groqRes.ok) {
       const detalle = await groqRes.text().catch(() => '');
