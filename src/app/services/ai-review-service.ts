@@ -160,7 +160,8 @@ export interface CotizacionRedactada {
   /** Datos del cliente que la persona haya dicho al pedir la cotización
    *  («…para Ruth, al 3001234567…»). Cadena vacía en lo que no se dijo —
    *  nunca se adivina, y nunca pisa lo que ya estaba en el formulario. */
-  client: { name: string; phone: string; email: string };
+  client: { name: string; company: string; position: string; phone: string; email: string; address: string };
+  project: { name: string; summary: string; objective: string; scope: string };
 }
 
 /**
@@ -213,8 +214,17 @@ export async function escribirCotizacion(
     items: Array.isArray(d?.items) ? d.items : [],
     client: {
       name: String(c?.name ?? ''),
+      company: String(c?.company ?? ''),
+      position: String(c?.position ?? ''),
       phone: String(c?.phone ?? ''),
       email: String(c?.email ?? ''),
+      address: String(c?.address ?? ''),
+    },
+    project: {
+      name: String((d?.project as { name?: unknown } | undefined)?.name ?? ''),
+      summary: String((d?.project as { summary?: unknown } | undefined)?.summary ?? ''),
+      objective: String((d?.project as { objective?: unknown } | undefined)?.objective ?? ''),
+      scope: String((d?.project as { scope?: unknown } | undefined)?.scope ?? ''),
     },
   };
 }

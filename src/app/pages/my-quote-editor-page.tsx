@@ -1048,6 +1048,18 @@ export function MyQuoteEditorPage() {
             if (c.phone && !clientPhone.trim()) setClientPhone(c.phone);
             if (c.email && !clientEmail.trim()) setClientEmail(c.email);
           }}
+          onAutocompletar={({ client, project }) => {
+            if (client.name && !clientName.trim()) setClientName(client.name);
+            if (client.company && !clientCompany.trim()) setClientCompany(client.company);
+            if (client.position && !clientPosition.trim()) setClientPosition(client.position);
+            if (client.email && !clientEmail.trim()) setClientEmail(client.email);
+            if (client.phone && !clientPhone.trim()) setClientPhone(client.phone);
+            if (client.address && !clientAddress.trim()) setClientAddress(client.address);
+            if (project.name && !projectName.trim()) setProjectName(project.name);
+            if (project.summary && !executiveSummary.trim()) setExecutiveSummary(project.summary);
+            if (project.objective && !projectObjective.trim()) setProjectObjective(project.objective);
+            if (project.scope && !projectScope.trim()) setProjectScope(project.scope);
+          }}
         />
 
         {/* El camino largo: las diez secciones sueltas y los tres textos de

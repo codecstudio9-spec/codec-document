@@ -121,7 +121,7 @@ function redistribuirSinIA(peticion: string, language: 'en' | 'es') {
   return {
     proposal: peticion.slice(0, MAX_PROPUESTA_CHARS),
     items,
-    client: { name: '', phone: '', email: '' },
+    client: { name: '', company: '', position: '', phone: '', email: '', address: '' },
   };
 }
 
@@ -206,7 +206,9 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     '  "items": [',
     '    { "description": "...", "quantity": 30, "unit": "...", "unit_price": 30000, "discount_pct": 0, "tax_pct": 0, "option_group": "" }',
     '  ],',
-    '  "client": { "name": "...", "phone": "...", "email": "..." }',
+    '  "client": { "name": "...", "company": "...", "position": "...",',
+    '    "phone": "...", "email": "...", "address": "..." },',
+    '  "project": { "name": "...", "summary": "...", "objective": "...", "scope": "..." },',
     '}',
     '',
     'RULES FOR "client":',
@@ -218,6 +220,13 @@ function construirPrompt(peticion: string, language: 'en' | 'es', contexto: {
     '  a country code. Do not format, space out, or invent digits.',
     '- If nothing about the client was said, return "client": {"name":"",',
     '  "phone":"","email":""}.',
+    '- Extract company, position and address only when explicitly stated in the',
+    '  request. Otherwise return empty strings.',
+    '',
+    'RULES FOR "project":',
+    '- Extract the project or subject name and any explicit summary, objective',
+    '  or scope from the request. Keep the user\'s meaning and do not invent',
+    '  details. Fields not stated must be empty strings.',
     '',
     ...reglasProposal,
     '',
@@ -296,13 +305,26 @@ const MAX_CLIENTE_CHARS = 120;
 /** Igual de estricto que con los precios, y por la misma razón: esto se
  *  escribe solo en un campo del formulario sin que nadie lo revise letra a
  *  letra primero. Un teléfono mal leído no se nota hasta que alguien llama. */
-function validarCliente(crudo: unknown): { name: string; phone: string; email: string } {
+function validarCliente(crudo: unknown): { name: string; company: string; position: string; phone: string; email: string; address: string } {
   const c = (crudo && typeof crudo === 'object') ? crudo as Record<string, unknown> : {};
   const name = String(c.name ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
+  const company = String(c.company ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
+  const position = String(c.position ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
   const phone = String(c.phone ?? '').replace(/[^\d+]/g, '').slice(0, 20);
   const emailCrudo = String(c.email ?? '').trim().slice(0, MAX_CLIENTE_CHARS);
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCrudo) ? emailCrudo : '';
-  return { name, phone, email };
+  const address = String(c.address ?? '').trim().slice(0, 300);
+  return { name, company, position, phone, email, address };
+}
+
+function validarProyecto(crudo: unknown): { name: string; summary: string; objective: string; scope: string } {
+  const p = (crudo && typeof crudo === 'object') ? crudo as Record<string, unknown> : {};
+  return {
+    name: String(p.name ?? '').trim().slice(0, 300),
+    summary: String(p.summary ?? '').trim().slice(0, 2000),
+    objective: String(p.objective ?? '').trim().slice(0, 2000),
+    scope: String(p.scope ?? '').trim().slice(0, 4000),
+  };
 }
 
 function validarItems(crudo: unknown): { items: ItemSalida[]; descartados: number } {
@@ -435,7 +457,7 @@ Deno.serve(async (req) => {
 
     const groqJson = await groqRes.json();
     const contenido = String(groqJson?.choices?.[0]?.message?.content ?? '');
-    const parseado = extraerJson(contenido) as { proposal?: unknown; items?: unknown; client?: unknown } | null;
+    const parseado = extraerJson(contenido) as { proposal?: unknown; items?: unknown; client?: unknown; project?: unknown } | null;
 
     if (!parseado) {
       console.error('[ai-quote-writer] respuesta no parseable');
@@ -445,14 +467,15 @@ Deno.serve(async (req) => {
 
     const proposal = String(parseado.proposal ?? '').trim().slice(0, MAX_PROPUESTA_CHARS);
     const { items, descartados } = validarItems(parseado.items);
-    const client = validarCliente(parseado.client);
+      const client = validarCliente(parseado.client);
+      const project = validarProyecto(parseado.project);
 
     if (!proposal && items.length === 0) {
       return responder({ error: 'No conseguí sacar nada en claro de esa petición. Cuéntamelo con otras palabras.' }, origin, 502);
     }
     if (descartados) console.warn('[ai-quote-writer] ítems descartados:', descartados);
 
-    return responder({ proposal, items, client, discarded: descartados }, origin);
+    return responder({ proposal, items, client, project, discarded: descartados }, origin);
   } catch (err) {
     console.error('[ai-quote-writer] error:', err);
     return responder({ error: (err as Error).message ?? 'Error inesperado' }, origin, 500);

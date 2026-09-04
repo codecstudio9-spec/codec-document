@@ -47,6 +47,10 @@ interface Props {
    *  puestos en su campo — el llamador decide si pisa lo que ya había
    *  (normalmente no, si el campo no está vacío). */
   onCliente?: (c: { name: string; phone: string; email: string }) => void;
+  onAutocompletar?: (datos: {
+    client: { name: string; company: string; position: string; phone: string; email: string; address: string };
+    project: { name: string; summary: string; objective: string; scope: string };
+  }) => void;
 }
 
 type Via = 'pegar' | 'pedir';
@@ -106,7 +110,10 @@ export function PropuestaComercial({
       }
 
       const huboCliente = Boolean(onCliente && (r.client.name || r.client.phone || r.client.email));
-      if (onCliente && huboCliente) onCliente(r.client);
+      if (onCliente && huboCliente) {
+        onCliente(r.client);
+      }
+      if (onAutocompletar) onAutocompletar({ client: r.client, project: r.project });
 
       const sinPrecio = r.items.filter((i) => !i.unit_price).length;
       const notaCliente = huboCliente
