@@ -1135,6 +1135,12 @@ export function PreviewPage() {
 
     const resolvedEntries = await Promise.all(Array.from(allSrcs).map(async (src) => [src, await ensureImageDataUrl(src)] as const));
     const resolvedMap = Object.fromEntries(resolvedEntries) as Record<string, string | undefined>;
+    const resolvedBranding: DocumentBranding = {
+      ...documentBranding,
+      logoDataUrl: documentBranding.logoDataUrl
+        ? (resolvedMap[documentBranding.logoDataUrl] || documentBranding.logoDataUrl)
+        : documentBranding.logoDataUrl,
+    };
 
     const inlineSigs = placedSignatures.map((s) => ({
       signerName: s.name,
@@ -1144,7 +1150,7 @@ export function PreviewPage() {
       yDocPct: s.yPct,
     }));
 
-    const hiFiOk = await downloadHighFidelityPdf(inlineSigs, exportContent, fileName, resolvedMap);
+    const hiFiOk = await downloadHighFidelityPdf(inlineSigs, exportContent, fileName, resolvedMap, resolvedBranding);
 
     if (!hiFiOk) {
       const orderId = sessionStorage.getItem('paypalOrderId') || localStorage.getItem('paypalOrderId') || '';
@@ -1211,7 +1217,7 @@ export function PreviewPage() {
         language:     exportLanguage,
         state:        selectedState,
         showWatermark: false,
-        branding:     documentBranding,
+        branding:     resolvedBranding,
         auditLog:     enrichedAudit,
         jurisdiction,
         signatures:   fallbackSigs,
@@ -1474,6 +1480,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
     exportContent: string,
     fileName: string,
     resolvedImageMap?: Record<string, string | undefined>,
+    branding: DocumentBranding = documentBranding,
   ): Promise<boolean> => {
     const sourceEl = captureWrapperRef.current ?? documentCanvasRef.current;
     if (!sourceEl) return false;
@@ -1604,7 +1611,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
 
       for (let page = 0; page < numPages; page++) {
         if (page > 0) pdf.addPage();
-        renderPdfHeader(pdf, documentBranding, docTitle, PW, M, HEADER_H);
+        renderPdfHeader(pdf, branding, docTitle, PW, M, HEADER_H);
 
         const sliceStartPx = Math.floor(page * pxPerPage);
         const sliceHPx     = Math.min(Math.ceil(pxPerPage), captured.height - sliceStartPx);
@@ -1619,7 +1626,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
           safePdfAddImage(pdf, slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, M + HEADER_H, contentW, sliceHPx / pxPerMm);
         }
 
-        renderLogoWatermark(pdf, documentBranding, PW, PH);
+        renderLogoWatermark(pdf, branding, PW, PH);
 
         renderPdfFooter(pdf, company, hashSnippet, page + 1, numPages, PW, PH, M, FOOTER_H, exportLanguage);
       }

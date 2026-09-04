@@ -57,9 +57,17 @@ function formatDocumentContent(
 
   const renderTokens = (text: string, keyPrefix: string): React.ReactNode => {
     const hasAny = text.includes(EMPTY_FIELD_TOKEN) || text.includes(ACTIVE_EMPTY_TOKEN) || text.includes(ACTIVE_OPEN);
-    if (!hasAny) return text;
-    const parts = text.split(new RegExp(`(${ACTIVE_OPEN}[^${ACTIVE_CLOSE}]*${ACTIVE_CLOSE}|${ACTIVE_EMPTY_TOKEN}|${EMPTY_FIELD_TOKEN})`, 'g'));
+    const valores = Array.from(datosUsuario).sort((a, b) => b.length - a.length);
+    const valorPattern = valores.length
+      ? new RegExp(`(${valores.map((value) => value.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')).join('|')})`, 'ig')
+      : null;
+    if (!hasAny && !valorPattern) return text;
+    const tokenPattern = `(${ACTIVE_OPEN}[^${ACTIVE_CLOSE}]*${ACTIVE_CLOSE}|${ACTIVE_EMPTY_TOKEN}|${EMPTY_FIELD_TOKEN})`;
+    const parts = text.split(new RegExp(`${tokenPattern}${valorPattern ? `|${valorPattern.source}` : ''}`, 'g'));
     return parts.map((part, i) => {
+      if (valorPattern && valores.some((value) => value.toLowerCase() === part.toLowerCase())) {
+        return <strong key={`${keyPrefix}-uv-${i}`} className="font-bold">{part}</strong>;
+      }
       if (part === EMPTY_FIELD_TOKEN) {
         return <span key={`${keyPrefix}-ef-${i}`} className="inline-flex min-w-[8rem] h-[1.1em] border-b border-slate-400 align-bottom mx-1" aria-hidden="true" />;
       }
@@ -475,7 +483,7 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
    *  número suelto coincidiría con demasiadas cosas. */
   const datosUsuario = useMemo(
     () => new Set(
-      Object.values(data)
+      Object.values(enrichedData)
         .map((v) => String(v ?? '').trim().toUpperCase())
         .filter((v) => v.length >= 4),
     ),
