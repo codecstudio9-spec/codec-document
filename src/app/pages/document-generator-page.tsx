@@ -372,37 +372,43 @@ function ContenidoGenerador() {
   // a big always-expanded card even for people who never touch it.
   const [designOpen, setDesignOpen] = useState(false);
   const brandingPrefilledRef = useRef(false);
+  const brandingRef = useRef(branding);
+  const brandingLoadPromiseRef = useRef<Promise<DocumentBranding> | null>(null);
 
-  // Pre-fill ONLY from the user's saved /my-branding profile, and only
-  // ONCE per mount, right when the drawer is first opened — never again
-  // after that, and never written back to the saved profile from here.
-  // This is the one-directional flow that keeps the two screens from
-  // "cruzándose": Settings supplies defaults, this form is a per-document
-  // override that only this document (this session) ever sees.
+  // Keep an immediately readable copy for navigation handlers. React state is
+  // intentionally asynchronous, while a user can continue to preview or
+  // download before the profile request has resolved.
   useEffect(() => {
+    brandingRef.current = branding;
+  }, [branding]);
+
+  const loadSavedBranding = useCallback(async (): Promise<DocumentBranding> => {
+    if (brandingLoadPromiseRef.current) return brandingLoadPromiseRef.current;
+
     const userId = user?.id;
-    // Branding is a document default, not merely a drawer convenience: load
-    // it before any PDF path can run, while keeping all edits local to this
-    // document as before.
-    if (brandingPrefilledRef.current || !userId) return;
-    brandingPrefilledRef.current = true;
-    void (async () => {
+    if (!userId) return brandingRef.current;
+
+    brandingLoadPromiseRef.current = (async () => {
       try {
         const saved = await getUserBranding(userId);
-        const hasIdentity = saved.companyLegalName || saved.companyAddressLine1 || saved.companyEIN
-          || saved.companyPhone || saved.companyEmail || saved.companyWebsite || saved.headerText || saved.footerText;
-        if (!hasIdentity && !(saved.enableLogoInDocs && saved.companyLogoUrl)) return;
-        const logoDataUrl = saved.enableLogoInDocs && saved.companyLogoUrl
+        const hasSavedBranding = saved.companyLegalName || saved.companyAddressLine1 || saved.companyAddressLine2
+          || saved.companyCity || saved.companyState || saved.companyZip || saved.companyCountry || saved.companyEIN
+          || saved.companyPhone || saved.companyEmail || saved.companyWebsite || saved.headerText || saved.footerText
+          || saved.companyLogoUrl || saved.useWatermark || saved.useGlobalBranding;
+        if (!hasSavedBranding) return brandingRef.current;
+
+        const logoDataUrl = saved.companyLogoUrl
           ? await logoUrlToDataUrl(saved.companyLogoUrl)
           : null;
-        setBranding((prev) => ({
-          ...prev,
-          enableLogo: logoDataUrl ? true : prev.enableLogo,
-          enableLogoWatermark: saved.useWatermark || prev.enableLogoWatermark,
-          logoDataUrl: logoDataUrl || prev.logoDataUrl,
+        const current = brandingRef.current;
+        const next: DocumentBranding = {
+          ...current,
+          enableLogo: saved.enableLogoInDocs ? Boolean(logoDataUrl) : current.enableLogo,
+          enableLogoWatermark: saved.useWatermark ? Boolean(logoDataUrl) : current.enableLogoWatermark,
+          logoDataUrl: logoDataUrl || current.logoDataUrl,
           logoPosition: saved.logoPosition,
-          headerText: prev.headerText || saved.headerText || '',
-          footerText: prev.footerText || saved.footerText || '',
+          headerText: current.headerText || saved.headerText || '',
+          footerText: current.footerText || saved.footerText || '',
           companyLegalName: saved.companyLegalName || undefined,
           companyAddressLine1: saved.companyAddressLine1 || undefined,
           companyAddressLine2: saved.companyAddressLine2 || undefined,
@@ -414,11 +420,37 @@ function ContenidoGenerador() {
           companyPhone: saved.companyPhone || undefined,
           companyEmail: saved.companyEmail || undefined,
           companyWebsite: saved.companyWebsite || undefined,
-        }));
-        if (designOpen) toast.success(language === 'en' ? 'Loaded your saved branding — edit freely for this document.' : 'Se cargó tu marca guardada — edítala libremente para este documento.');
-      } catch { /* pre-fill is a convenience, never a requirement */ }
+        };
+        brandingRef.current = next;
+        setBranding(next);
+        return next;
+      } catch {
+        // A branding fetch must never prevent document creation. Keep any
+        // document-specific changes already present in the editor.
+        return brandingRef.current;
+      }
     })();
-  }, [designOpen, user?.id, language]);
+
+    return brandingLoadPromiseRef.current;
+  }, [user?.id]);
+
+  const persistDocumentSession = useCallback(async () => {
+    const currentBranding = await loadSavedBranding();
+    try {
+      sessionStorage.setItem('documentData', JSON.stringify(formData));
+      sessionStorage.setItem('documentBranding', JSON.stringify(currentBranding));
+      sessionStorage.setItem('documentType', documentType || '');
+    } catch { /* sessionStorage quota exceeded — proceed anyway */ }
+  }, [documentType, formData, loadSavedBranding]);
+
+  // Load the profile early for the editor, and make the same promise available
+  // to all navigation paths below. This avoids exporting the empty default
+  // header while the saved brand is still loading.
+  useEffect(() => {
+    if (brandingPrefilledRef.current || !user?.id) return;
+    brandingPrefilledRef.current = true;
+    void loadSavedBranding();
+  }, [loadSavedBranding, user?.id]);
 
   // Stop all co-signer polling on unmount
   useEffect(() => {
@@ -845,7 +877,7 @@ function ContenidoGenerador() {
     }).map((f) => f.id);
 
   // Saves session data and transitions to the signing step
-  const handleFormNext = () => {
+  const handleFormNext = async () => {
     const missing = getMissingRequiredFields();
     setMissingRequiredFields(missing);
     if (missing.length > 0) {
@@ -866,11 +898,7 @@ function ContenidoGenerador() {
       });
       return;
     }
-    try {
-      sessionStorage.setItem('documentData', JSON.stringify(formData));
-      sessionStorage.setItem('documentBranding', JSON.stringify(branding));
-      sessionStorage.setItem('documentType', documentType || '');
-    } catch { /* sessionStorage quota exceeded — proceed anyway */ }
+    await persistDocumentSession();
 
     // Aquí es donde el documento pasa a existir: el formulario está completo y
     // el usuario avanzó. Registrarlo sólo al enviarlo a firmar o al descargar
@@ -891,20 +919,16 @@ function ContenidoGenerador() {
     if (selected === 'blank_send') setSecurityModalOpen(true);
   };
 
-  const handleFormNextIntent = () => {
+  const handleFormNextIntent = async () => {
     if (intent === 'fill_send' || intent === 'fill_approve') {
       const missing = getMissingRequiredFields();
       setMissingRequiredFields(missing);
       if (missing.length > 0) { toast.error(t('generator.fillAllFields')); return; }
-      try {
-        sessionStorage.setItem('documentData', JSON.stringify(formData));
-        sessionStorage.setItem('documentBranding', JSON.stringify(branding));
-        sessionStorage.setItem('documentType', documentType || '');
-      } catch { /* quota */ }
+      await persistDocumentSession();
       registrarEnMisDocumentos();
       setSecurityModalOpen(true);
     } else {
-      handleFormNext();
+      await handleFormNext();
     }
   };
 
@@ -1039,12 +1063,10 @@ function ContenidoGenerador() {
     }).catch(() => {});
   };
 
-  const handleDownloadSignedDoc = () => {
+  const handleDownloadSignedDoc = async () => {
     if (!activeTx) return;
     stashSignedTransactionForDownload(activeTx, language);
-    try {
-      sessionStorage.setItem('documentBranding', JSON.stringify(branding));
-    } catch { /* sessionStorage quota */ }
+    await persistDocumentSession();
     navigate(`/preview/${activeTx.document_type}`);
   };
   // ─────────────────────────────────────────────────────────────────────────
@@ -1148,6 +1170,7 @@ function ContenidoGenerador() {
     if (coSigners.length > 0) {
       try { sessionStorage.setItem('coSigners', JSON.stringify(coSigners)); } catch { /* quota */ }
     }
+    await persistDocumentSession();
     navigateToPreview();
   };
 
