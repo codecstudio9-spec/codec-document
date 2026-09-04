@@ -44,7 +44,7 @@ const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 // oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
 // función) y ventana de contexto mayor.
 const GROQ_MODEL = 'openai/gpt-oss-120b';
-const GROQ_FALLBACK_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
 // Subido de 4000/6000: la petición ya no es solo "hazme una cotización de
 // 30 agendas" — alguien puede pegar una propuesta completa que ya escribió
@@ -368,10 +368,14 @@ Deno.serve(async (req) => {
       response_format: { type: 'json_object' },
     };
 
-    const pedirGroq = (model: string) => fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const pedirGroq = (model: string, incluirFormatoJson = true) => fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, ...groqPayload }),
+      body: JSON.stringify({
+        model,
+        ...groqPayload,
+        ...(incluirFormatoJson ? {} : { response_format: undefined }),
+      }),
     });
 
     let groqRes = await pedirGroq(GROQ_MODEL);
@@ -379,6 +383,11 @@ Deno.serve(async (req) => {
       const detalle = await groqRes.text().catch(() => '');
       console.warn('[ai-quote-writer] modelo principal no disponible; usando fallback:', groqRes.status, detalle);
       groqRes = await pedirGroq(GROQ_FALLBACK_MODEL);
+    }
+    if (!groqRes.ok && groqRes.status === 400) {
+      const detalle = await groqRes.text().catch(() => '');
+      console.warn('[ai-quote-writer] JSON mode rechazado; reintentando con JSON guiado por prompt:', detalle);
+      groqRes = await pedirGroq(GROQ_FALLBACK_MODEL, false);
     }
 
     if (!groqRes.ok) {
