@@ -71,6 +71,12 @@ const COMPANY_PLANS: Record<string, { amount: number; days: number }> = {
   company_monthly: { amount: 99.99, days: 30 },
   company_annual: { amount: 999.99, days: 365 },
 };
+// Plan Empresa por asientos -- publicado en la pagina publica de precios,
+// distinto del plan plano de arriba (que sigue existiendo para clientes ya
+// activos en /my-company). Minimo 5 asientos aunque se pidan menos: el
+// precio de lista siempre cobra por al menos 5.
+const ENTERPRISE_SEAT_PRICE = 24.99;
+const ENTERPRISE_MIN_SEATS = 5;
 
 type Product =
   | 'doc_single'
@@ -83,6 +89,7 @@ type Product =
   | 'full_access'
   | 'company_monthly'
   | 'company_annual'
+  | 'company_seats_monthly'
   | 'quote_single';
 
 interface RequestBody {
@@ -99,12 +106,14 @@ interface RequestBody {
   // selected) — see the promo branch below for how it's used.
   product?: Product;
   documentId?: string; // required for doc_single / doc_bundle
+  seats?: number;       // required for company_seats_monthly
+  companyName?: string; // company_seats_monthly — only used if the buyer has no company yet
 }
 
 const KNOWN_PRODUCTS = new Set<Product>([
   'doc_single', 'doc_bundle', 'sig_single', 'sig_monthly',
   'sub_monthly', 'sub_semiannual', 'sub_annual', 'full_access',
-  'company_monthly', 'company_annual', 'quote_single',
+  'company_monthly', 'company_annual', 'company_seats_monthly', 'quote_single',
 ]);
 
 function corsHeaders(origin: string | null) {
@@ -115,7 +124,11 @@ function corsHeaders(origin: string | null) {
   };
 }
 
-function expectedAmountFor(product: Product, documentId?: string): number | null {
+function clampSeats(seats: number | undefined): number {
+  return Math.max(ENTERPRISE_MIN_SEATS, Math.floor(Number(seats) || 0));
+}
+
+function expectedAmountFor(product: Product, documentId?: string, seats?: number): number | null {
   switch (product) {
     case 'doc_single':
       return documentId ? (DOCUMENT_PRICES[documentId] ?? DEFAULT_DOC_PRICE) : null;
@@ -132,6 +145,8 @@ function expectedAmountFor(product: Product, documentId?: string): number | null
     case 'company_monthly':
     case 'company_annual':
       return COMPANY_PLANS[product].amount;
+    case 'company_seats_monthly':
+      return Math.round(clampSeats(seats) * ENTERPRISE_SEAT_PRICE * 100) / 100;
     case 'quote_single':
       return QUOTE_SINGLE_PRICE;
     default:
@@ -191,7 +206,7 @@ function extractPaidAmount(order: any): { amount: number; currency: string } | n
 }
 
 // deno-lint-ignore no-explicit-any
-async function grantProduct(admin: any, product: Product, userId: string | null, subscriptionId?: string) {
+async function grantProduct(admin: any, product: Product, userId: string | null, subscriptionId?: string, seats?: number, companyName?: string) {
   if (product === 'sig_single' && userId) {
     const { data: existing } = await admin.from('user_credits').select('credits').eq('user_id', userId).maybeSingle();
     if (existing) {
@@ -247,6 +262,46 @@ async function grantProduct(admin: any, product: Product, userId: string | null,
       plan_billing_cycle: product === 'company_monthly' ? 'monthly' : 'annual',
       updated_at: new Date().toISOString(),
     }).eq('id', membership.company_id);
+  } else if (product === 'company_seats_monthly' && userId) {
+    // Plan Empresa por asientos, vendido desde la página pública de
+    // precios. Si el comprador ya pertenece a una empresa (como
+    // owner/admin) se actualiza esa; si no, se le crea una nueva y queda
+    // como owner — no hace falta pasar primero por /my-company para
+    // empezar a pagar.
+    const grantedSeats = clampSeats(seats);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: membership } = await admin
+      .from('company_members')
+      .select('company_id, role')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    let companyId: string;
+    if (membership) {
+      if (membership.role !== 'owner' && membership.role !== 'admin') {
+        throw new Error('Only a company owner or admin can activate the Enterprise plan');
+      }
+      companyId = membership.company_id;
+    } else {
+      const { data: newCompany, error: createErr } = await admin
+        .from('companies')
+        .insert({ name: (companyName || '').trim() || 'Mi Empresa', owner_user_id: userId })
+        .select('id')
+        .single();
+      if (createErr || !newCompany) throw new Error('Could not create company for the Enterprise plan');
+      companyId = newCompany.id;
+      const { error: memberErr } = await admin
+        .from('company_members')
+        .insert({ company_id: companyId, user_id: userId, role: 'owner' });
+      if (memberErr) throw new Error(`Could not set up company ownership: ${memberErr.message}`);
+    }
+
+    await admin.from('companies').update({
+      plan_active_until: expiresAt,
+      plan_billing_cycle: 'monthly',
+      plan_seats: grantedSeats,
+      updated_at: new Date().toISOString(),
+    }).eq('id', companyId);
   } else if (product.startsWith('sub_') && userId) {
     const plan = SUBSCRIPTION_PLANS[product];
     const expiresAt = new Date(Date.now() + plan.days * 24 * 60 * 60 * 1000).toISOString();
@@ -278,7 +333,7 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as RequestBody;
-    const { orderId, subscriptionId, promoCode, product, documentId, preview } = body;
+    const { orderId, subscriptionId, promoCode, product, documentId, preview, seats, companyName } = body;
 
     // ── Promo code path — no PayPal call, validated entirely server-side ──
     //
@@ -464,11 +519,16 @@ Deno.serve(async (req) => {
       userId = userData?.user?.id ?? null;
     }
 
-    const isCompanyProduct = product === 'company_monthly' || product === 'company_annual';
+    const isCompanyProduct = product === 'company_monthly' || product === 'company_annual' || product === 'company_seats_monthly';
     const needsUser = product === 'sig_single' || product === 'sig_monthly' || isSubProduct || isCompanyProduct || product === 'quote_single';
     if (needsUser && !userId) {
       return new Response(JSON.stringify({ error: 'Authentication required for this product' }), {
         status: 401, headers: corsHeaders(origin),
+      });
+    }
+    if (product === 'company_seats_monthly' && !(Number(seats) >= 1)) {
+      return new Response(JSON.stringify({ error: 'seats is required for the Enterprise plan' }), {
+        status: 400, headers: corsHeaders(origin),
       });
     }
 
@@ -536,7 +596,7 @@ Deno.serve(async (req) => {
       ledgerId = `sub:${subscriptionId}`;
     } else {
       // ── Orders API path (one-time payment) ─────────────────────────────
-      const listaBase = expectedAmountFor(product, documentId);
+      const listaBase = expectedAmountFor(product, documentId, seats);
       if (listaBase === null) {
         return new Response(JSON.stringify({ error: 'Unknown product / missing documentId' }), {
           status: 400, headers: corsHeaders(origin),
@@ -642,7 +702,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Perform the grant, server-side, with the service-role client ───
-    await grantProduct(admin, product, userId, subscriptionId);
+    await grantProduct(admin, product, userId, subscriptionId, seats, companyName);
     // doc_single / doc_bundle: no server-side entitlement table exists for
     // anonymous guest checkout — verification alone is the gate. The client
     // only proceeds to preview-page.tsx after this endpoint returns verified:true.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw, Tag } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw, Tag, UserPlus, Eye, EyeOff, FileText, PenLine, Activity } from 'lucide-react';
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
@@ -9,10 +9,11 @@ import { getPayPalClientId } from '../config/paypal';
 import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
-  addCompanyMember, removeCompanyMember, COMPANY_ROLE_LABELS,
+  addCompanyMember, removeCompanyMember, createCompanyUserWithPassword, getCompanyActivity, COMPANY_ROLE_LABELS,
   listApiKeys, generateApiKey, revokeApiKey,
   listWebhooks, createWebhook, deleteWebhook, WEBHOOK_EVENT_TYPES,
   type MyCompany, type CompanyDomainMatch, type CompanyRole, type Company, type ApiKey, type GeneratedApiKey, type Webhook,
+  type CompanyActivityDocument, type CompanyActivitySignature,
 } from '../services/company-service';
 
 const ROLE_ICONS: Record<CompanyRole, typeof Crown> = { owner: Crown, admin: ShieldCheck, manager: Briefcase, user: UserIcon };
@@ -262,6 +263,96 @@ function WebhooksSection({ language }: { language: 'en' | 'es' }) {
           {language === 'en' ? 'Add webhook' : 'Agregar webhook'}
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Owner/admin only — "super admin" view: every document + signature
+ * created by anyone on the team, not just the caller's own. Backed by
+ * get_company_activity_admin() (SECURITY DEFINER, see
+ * 20260907120000_enterprise_seats_and_team_visibility.sql). A regular
+ * teammate never sees this section and their own "Mis Documentos"/"Firmas"
+ * lists are completely unaffected — this is additive, read-only oversight. */
+function TeamActivitySection({ language }: { language: 'en' | 'es' }) {
+  const [loading, setLoading] = useState(true);
+  const [documents, setDocuments] = useState<CompanyActivityDocument[]>([]);
+  const [signatures, setSignatures] = useState<CompanyActivitySignature[]>([]);
+  const [tab, setTab] = useState<'documents' | 'signatures'>('signatures');
+
+  useEffect(() => {
+    let cancelled = false;
+    getCompanyActivity()
+      .then((data) => { if (!cancelled) { setDocuments(data.documents); setSignatures(data.signatures); } })
+      .catch(() => { if (!cancelled) { setDocuments([]); setSignatures([]); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-800">
+        <Activity className="size-4 text-slate-400" />
+        {language === 'en' ? 'Team activity' : 'Actividad del equipo'}
+      </p>
+      <p className="mb-4 text-xs text-slate-400">
+        {language === 'en'
+          ? 'As owner/admin you see every document and signature your teammates create — each of them still only sees their own.'
+          : 'Como propietario/admin ves todos los documentos y firmas que crea tu equipo — cada uno de ellos sigue viendo solo lo suyo.'}
+      </p>
+
+      <div className="mb-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setTab('signatures')}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${tab === 'signatures' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-500'}`}
+        >
+          <PenLine className="size-3.5" /> {language === 'en' ? 'Signatures' : 'Firmas'} ({signatures.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('documents')}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${tab === 'documents' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-500'}`}
+        >
+          <FileText className="size-3.5" /> {language === 'en' ? 'Documents' : 'Documentos'} ({documents.length})
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-6"><Loader className="size-5 animate-spin text-indigo-500" /></div>
+      ) : tab === 'signatures' ? (
+        <div className="space-y-2">
+          {signatures.map((s) => (
+            <div key={s.id} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5">
+              <PenLine className="size-4 shrink-0 text-slate-400" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-700">{s.document_type}</p>
+                <p className="truncate text-[11px] text-slate-400">{s.author_email} · {fmt(s.created_at)}</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{s.status}</span>
+            </div>
+          ))}
+          {signatures.length === 0 && (
+            <p className="py-2 text-center text-xs text-slate-400">{language === 'en' ? 'No team signatures yet.' : 'Aún no hay firmas del equipo.'}</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {documents.map((d) => (
+            <div key={d.id} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5">
+              <FileText className="size-4 shrink-0 text-slate-400" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-700">{d.document_name}</p>
+                <p className="truncate text-[11px] text-slate-400">{d.author_email} · {fmt(d.created_at)}</p>
+              </div>
+            </div>
+          ))}
+          {documents.length === 0 && (
+            <p className="py-2 text-center text-xs text-slate-400">{language === 'en' ? 'No team documents yet.' : 'Aún no hay documentos del equipo.'}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -553,9 +644,13 @@ export function MyCompanyPage() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
 
+  const [addMode, setAddMode] = useState<'invite' | 'create'>('invite');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<CompanyRole>('user');
   const [inviting, setInviting] = useState(false);
+  const [newFullName, setNewFullName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -610,6 +705,26 @@ export function MyCompanyPage() {
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not add that member.' : 'No se pudo agregar ese miembro.'));
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!inviteEmail.trim() || newPassword.length < 8) {
+      toast.error(language === 'en' ? 'Enter an email and a password of at least 8 characters.' : 'Ingresa un correo y una contraseña de al menos 8 caracteres.');
+      return;
+    }
+    setInviting(true);
+    try {
+      await createCompanyUserWithPassword(inviteEmail.trim(), newPassword, inviteRole, newFullName.trim() || undefined);
+      toast.success(language === 'en' ? 'Account created and added to the team.' : 'Cuenta creada y agregada al equipo.');
+      setInviteEmail('');
+      setNewPassword('');
+      setNewFullName('');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not create the account.' : 'No se pudo crear la cuenta.'));
     } finally {
       setInviting(false);
     }
@@ -709,45 +824,134 @@ export function MyCompanyPage() {
               </div>
 
               {canManage && (
-                <div className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder={language === 'en' ? 'teammate@company.com' : 'colega@empresa.com'}
-                    className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
-                  />
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as CompanyRole)}
-                    className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
-                  >
-                    <option value="user">{COMPANY_ROLE_LABELS.user[language]}</option>
-                    <option value="manager">{COMPANY_ROLE_LABELS.manager[language]}</option>
-                    <option value="admin">{COMPANY_ROLE_LABELS.admin[language]}</option>
-                  </select>
-                  <button
-                    type="button"
-                    disabled={inviting || !inviteEmail.trim()}
-                    onClick={() => void handleInvite()}
-                    className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-                  >
-                    {inviting ? <Loader className="size-4 animate-spin" /> : <Plus className="size-4" />}
-                    {language === 'en' ? 'Add' : 'Agregar'}
-                  </button>
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                  {myCompany.company.plan_seats && (
+                    <p className="mb-3 text-xs font-semibold text-slate-500">
+                      {language === 'en'
+                        ? `${myCompany.members.length} of ${myCompany.company.plan_seats} seats used`
+                        : `${myCompany.members.length} de ${myCompany.company.plan_seats} asientos usados`}
+                    </p>
+                  )}
+
+                  <div className="mb-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAddMode('invite')}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${addMode === 'invite' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-500'}`}
+                    >
+                      {language === 'en' ? 'Invite by email' : 'Invitar por correo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddMode('create')}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${addMode === 'create' ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-500'}`}
+                    >
+                      <UserPlus className="size-3.5" /> {language === 'en' ? 'Create username & password' : 'Crear usuario y contraseña'}
+                    </button>
+                  </div>
+
+                  {addMode === 'invite' ? (
+                    <>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder={language === 'en' ? 'teammate@company.com' : 'colega@empresa.com'}
+                          className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                        />
+                        <select
+                          value={inviteRole}
+                          onChange={(e) => setInviteRole(e.target.value as CompanyRole)}
+                          className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                        >
+                          <option value="user">{COMPANY_ROLE_LABELS.user[language]}</option>
+                          <option value="manager">{COMPANY_ROLE_LABELS.manager[language]}</option>
+                          <option value="admin">{COMPANY_ROLE_LABELS.admin[language]}</option>
+                        </select>
+                        <button
+                          type="button"
+                          disabled={inviting || !inviteEmail.trim()}
+                          onClick={() => void handleInvite()}
+                          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                        >
+                          {inviting ? <Loader className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                          {language === 'en' ? 'Add' : 'Agregar'}
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">
+                        {language === 'en'
+                          ? 'The teammate must already have a Codec Document account with that email.'
+                          : 'El colega ya debe tener una cuenta de Codec Document con ese correo.'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input
+                          type="text"
+                          value={newFullName}
+                          onChange={(e) => setNewFullName(e.target.value)}
+                          placeholder={language === 'en' ? 'Full name (optional)' : 'Nombre completo (opcional)'}
+                          className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                        />
+                        <select
+                          value={inviteRole}
+                          onChange={(e) => setInviteRole(e.target.value as CompanyRole)}
+                          className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-indigo-400"
+                        >
+                          <option value="user">{COMPANY_ROLE_LABELS.user[language]}</option>
+                          <option value="manager">{COMPANY_ROLE_LABELS.manager[language]}</option>
+                          <option value="admin">{COMPANY_ROLE_LABELS.admin[language]}</option>
+                        </select>
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder={language === 'en' ? 'teammate@company.com' : 'colega@empresa.com'}
+                          className="rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                        />
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder={language === 'en' ? 'Password (min. 8 characters)' : 'Contraseña (mín. 8 caracteres)'}
+                            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 pr-9 text-sm outline-none focus:border-indigo-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={inviting || !inviteEmail.trim() || newPassword.length < 8}
+                        onClick={() => void handleCreateUser()}
+                        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        {inviting ? <Loader className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
+                        {language === 'en' ? 'Create account' : 'Crear cuenta'}
+                      </button>
+                      <p className="mt-2 text-xs text-slate-400">
+                        {language === 'en'
+                          ? 'Creates a brand new Codec Document account with the email and password you set — share the password with your teammate yourself.'
+                          : 'Crea una cuenta nueva de Codec Document con el correo y la contraseña que definas — comparte la contraseña con tu colega por tu cuenta.'}
+                      </p>
+                    </>
+                  )}
                 </div>
-              )}
-              {canManage && (
-                <p className="mt-2 text-xs text-slate-400">
-                  {language === 'en'
-                    ? 'The teammate must already have a Codec Document account with that email.'
-                    : 'El colega ya debe tener una cuenta de Codec Document con ese correo.'}
-                </p>
               )}
             </div>
 
-            {/* API keys + Webhooks — owner/admin only, shown here so
-                pricing/features stay out of the main pricing page */}
+            {/* Team activity ("super admin" view) + API keys + Webhooks —
+                owner/admin only, shown here so pricing/features stay out of
+                the main pricing page */}
+            {canManage && <TeamActivitySection language={language} />}
             {canManage && <ApiKeysSection language={language} />}
             {canManage && <WebhooksSection language={language} />}
 

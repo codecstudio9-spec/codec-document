@@ -11,6 +11,7 @@ export type PaypalProduct =
   | 'full_access'
   | 'company_monthly'
   | 'company_annual'
+  | 'company_seats_monthly'
   | 'quote_single';
 
 /**
@@ -51,6 +52,12 @@ export async function verifyPaypalOrder(params: {
    *  descuento a partir del porcentaje guardado y comprueba que lo capturado
    *  coincide; sólo entonces registra el canje. */
   promoCode?: string;
+  /** company_seats_monthly únicamente — cuántos asientos se están pagando
+   *  (el servidor cobra un mínimo de 5 aunque se pida menos). */
+  seats?: number;
+  /** company_seats_monthly únicamente — solo se usa si quien compra todavía
+   *  no pertenece a ninguna empresa (se crea una nueva con este nombre). */
+  companyName?: string;
 }): Promise<{ verified: true; amountPaid: number }> {
   const { data, error } = await supabase.functions.invoke('paypal-verify', {
     body: params,

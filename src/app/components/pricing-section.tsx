@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useLanguage } from '../contexts/language-context';
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
 import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
-import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag } from 'lucide-react';
+import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag, Building2, Minus, Plus } from 'lucide-react';
 import { OnboardingModal } from './auth/OnboardingModal';
+
+// Plan Empresa — por asiento, mínimo 5 usuarios. Vendido aquí (la página
+// pública de precios) además del plan plano existente en /my-company —
+// ver 20260907120000_enterprise_seats_and_team_visibility.sql y el branch
+// 'company_seats_monthly' en la Edge Function paypal-verify.
+const ENTERPRISE_SEAT_PRICE = 24.99;
+const ENTERPRISE_MIN_SEATS = 5;
 
 // User-facing free-plan numbers — deliberately a flat "N per month" claim,
 // not "every 72 hours". The actual quota is enforced as a 2-per-72h rolling
@@ -158,12 +166,20 @@ function ensurePayPalSdk(clientId: string) {
 export function PricingSection() {
   const { language } = useLanguage();
   const { user, isAdmin, refreshSubscription, refreshPurchasedDocuments } = useAuth();
+  const navigate = useNavigate();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [checkoutReady, setCheckoutReady] = useState(false);
+  // Plan Empresa — modal propio (importe dinámico según asientos, en vez
+  // de un Product de precio fijo como los otros 3 planes).
+  const [enterpriseSeats, setEnterpriseSeats] = useState(ENTERPRISE_MIN_SEATS);
+  const [enterpriseModalOpen, setEnterpriseModalOpen] = useState(false);
+  const [enterpriseCompanyName, setEnterpriseCompanyName] = useState('');
+  const [enterpriseCheckoutReady, setEnterpriseCheckoutReady] = useState(false);
+  const enterpriseTotal = useMemo(() => Math.max(ENTERPRISE_MIN_SEATS, enterpriseSeats) * ENTERPRISE_SEAT_PRICE, [enterpriseSeats]);
   // Promo code — same server-side redemption already used by
   // PremiumDownloadModal.tsx / PaypalSignatureCheckout.tsx, this modal was
   // just missing the field to enter one at all.
@@ -283,6 +299,77 @@ export function PricingSection() {
     // texto en pantalla pero cobraría el precio entero.
   }, [API_BASE_URL, PAYPAL_CLIENT_ID, checkoutReady, language, modalOpen, payerEmail, refreshPurchasedDocuments, refreshSubscription, selectedProduct, user?.email, promoParcial]);
 
+  useEffect(() => {
+    if (!enterpriseModalOpen) return;
+    return watchAndUnlockBodyScroll();
+  }, [enterpriseModalOpen]);
+
+  useEffect(() => {
+    if (!enterpriseModalOpen || !enterpriseCheckoutReady) return;
+
+    let cancelled = false;
+
+    const mountButtons = async () => {
+      await ensurePayPalSdk(PAYPAL_CLIENT_ID);
+      if (cancelled) return;
+
+      const container = document.getElementById('paypal-checkout-enterprise-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      await (window as any).paypal.Buttons({
+        style: { layout: 'vertical' },
+        createOrder: (_data: any, actions: any) => actions.order.create({
+          purchase_units: [{
+            description: `${language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'} (${enterpriseSeats} ${language === 'en' ? 'seats' : 'usuarios'})`,
+            custom_id: payerEmail || user?.email || '',
+            amount: { currency_code: 'USD', value: enterpriseTotal.toFixed(2) },
+          }],
+        }),
+        onApprove: async (data: any, actions: any) => {
+          const order = await actions.order.capture();
+          const orderId = order?.id || data?.orderID || data?.orderId || '';
+          try {
+            await verifyPaypalOrder({
+              orderId,
+              product: 'company_seats_monthly',
+              seats: enterpriseSeats,
+              companyName: enterpriseCompanyName,
+            });
+          } catch (err) {
+            toast.error(
+              language === 'en'
+                ? `Could not verify payment: ${err instanceof Error ? err.message : String(err)}`
+                : `No se pudo verificar el pago: ${err instanceof Error ? err.message : String(err)}`,
+            );
+            return;
+          }
+
+          toast.success(language === 'en' ? 'Enterprise plan activated!' : '¡Plan Empresa activado!');
+          closeEnterpriseModal();
+          navigate('/my-company');
+        },
+        onError: () => {
+          toast.error(language === 'en' ? 'Could not initialize PayPal checkout.' : 'No se pudo inicializar el checkout de PayPal.');
+        },
+      }).render('#paypal-checkout-enterprise-container');
+    };
+
+    mountButtons().catch(() => {
+      toast.error(language === 'en' ? 'PayPal failed to load.' : 'PayPal no pudo cargarse.');
+    });
+
+    return () => {
+      cancelled = true;
+      const container = document.getElementById('paypal-checkout-enterprise-container');
+      if (container) { try { container.innerHTML = ''; } catch (_) {} }
+    };
+    // `enterpriseSeats`/`enterpriseTotal` van en las dependencias por la
+    // misma razón que `promoParcial` arriba: el botón de PayPal se crea con
+    // un importe fijo, así que cambiar el número de asientos con el modal
+    // ya abierto necesita reconstruir el botón con el nuevo total.
+  }, [PAYPAL_CLIENT_ID, enterpriseCheckoutReady, enterpriseCompanyName, enterpriseModalOpen, enterpriseSeats, enterpriseTotal, language, navigate, payerEmail, user?.email]);
+
   const restoreBodyScroll = () => {
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
@@ -299,6 +386,23 @@ export function PricingSection() {
 
   const closeModal = () => {
     setModalOpen(false);
+    restoreBodyScroll();
+  };
+
+  const openEnterpriseCheckout = () => {
+    if (!user) {
+      setOnboardingOpen(true);
+      return;
+    }
+    setPayerName(user.name || '');
+    setPayerEmail(user.email || '');
+    setEnterpriseCompanyName('');
+    setEnterpriseCheckoutReady(false);
+    setEnterpriseModalOpen(true);
+  };
+
+  const closeEnterpriseModal = () => {
+    setEnterpriseModalOpen(false);
     restoreBodyScroll();
   };
 
@@ -500,6 +604,97 @@ export function PricingSection() {
             </article>
           ))}
         </div>
+
+        {/* Plan Empresa — banda ancha aparte de la grilla de 4 columnas
+            (Gratis + 3 planes): precio variable por asientos, no encaja en
+            una tarjeta de precio fijo. */}
+        <div className="mt-6 overflow-hidden rounded-3xl border-2 border-slate-800 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl md:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+                <Building2 className="size-3.5" />
+                {language === 'en' ? 'For teams' : 'Para equipos'}
+              </div>
+              <h3 className="text-2xl font-black text-white md:text-3xl">
+                {language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'}
+              </h3>
+              <p className="mt-1.5 text-sm text-slate-300">
+                {language === 'en'
+                  ? 'For teams of 5 or more — a shared workspace with roles, a super-admin who oversees every teammate\'s documents and signatures, and your own company branding.'
+                  : 'Para equipos de 5 o más personas — un espacio compartido con roles, un súper administrador que supervisa los documentos y firmas de todo el equipo, y tu propia marca (branding) en cada documento.'}
+              </p>
+              <ul className="mt-4 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {[
+                  language === 'en' ? 'Everything in every plan above' : 'Todo lo de los planes anteriores',
+                  language === 'en' ? 'Team roles & permissions' : 'Roles y permisos de equipo',
+                  language === 'en' ? 'Super-admin sees all team activity' : 'Súper admin ve toda la actividad del equipo',
+                  language === 'en' ? 'Custom branding on every document' : 'Marca propia en cada documento',
+                  language === 'en' ? 'API access & webhooks' : 'Acceso a API y webhooks',
+                  language === 'en' ? 'Priority support' : 'Soporte prioritario',
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-xs text-slate-300">
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="shrink-0 rounded-2xl bg-white/5 p-5 md:w-72">
+              <p className="text-xs font-semibold text-slate-400">
+                {language === 'en' ? `From $${ENTERPRISE_SEAT_PRICE.toFixed(2)} / user / month` : `Desde $${ENTERPRISE_SEAT_PRICE.toFixed(2)} usd / usuario / mes`}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                {language === 'en' ? `Minimum ${ENTERPRISE_MIN_SEATS} users` : `Mínimo ${ENTERPRISE_MIN_SEATS} usuarios`}
+              </p>
+
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <span className="text-xs font-semibold text-slate-300">{language === 'en' ? 'Users' : 'Usuarios'}</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEnterpriseSeats((n) => Math.max(ENTERPRISE_MIN_SEATS, n - 1))}
+                    className="flex size-7 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20"
+                    aria-label={language === 'en' ? 'Fewer users' : 'Menos usuarios'}
+                  >
+                    <Minus className="size-3.5" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-black text-white">{enterpriseSeats}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEnterpriseSeats((n) => n + 1)}
+                    className="flex size-7 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20"
+                    aria-label={language === 'en' ? 'More users' : 'Más usuarios'}
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <p className="mt-3 text-3xl font-black text-white">
+                ${enterpriseTotal.toFixed(2)}
+                <span className="text-sm font-semibold text-slate-400">/{language === 'en' ? 'mo' : 'mes'}</span>
+              </p>
+              <p className="text-[11px] text-slate-500">
+                ${ENTERPRISE_SEAT_PRICE.toFixed(2)} × {enterpriseSeats} {language === 'en' ? 'users' : 'usuarios'}
+              </p>
+
+              <button
+                type="button"
+                onClick={openEnterpriseCheckout}
+                className="mt-4 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-950/40 transition hover:brightness-110"
+              >
+                {language === 'en' ? 'Get started' : 'Comenzar'}
+              </button>
+              <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                <Lock className="size-3 text-slate-500" />
+                <span className="text-[10px] text-slate-500">
+                  {language === 'en' ? 'Secure · ESIGN compliant' : 'Seguro · ESIGN compliant'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── ESIGN / UETA Trust Strip ────────────────────────────────────────── */}
@@ -653,6 +848,104 @@ export function PricingSection() {
               </div>
             ) : (
               <div id="paypal-checkout-modal-container" className="min-h-[220px]" />
+            )}
+          </div>
+        </div>
+      )}
+
+      {enterpriseModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/60 p-4 py-8 sm:items-center">
+          <div className="my-auto max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-lg font-bold text-slate-900">
+                {language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'}
+              </h4>
+              <button type="button" className="text-sm text-slate-600" onClick={closeEnterpriseModal}>{copy.close}</button>
+            </div>
+
+            <div className="mb-3 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800">
+              {enterpriseSeats} {language === 'en' ? 'users' : 'usuarios'} · ${enterpriseTotal.toFixed(2)} {language === 'en' ? '/ month' : '/ mes'}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 mb-3">
+              <p className="text-sm font-semibold text-slate-900">{copy.customerInfo}</p>
+              <p className="text-xs text-slate-500 mb-2">{copy.fillFields}</p>
+              <div className="grid gap-2">
+                <input
+                  type="text"
+                  value={payerName}
+                  onChange={(e) => setPayerName(e.target.value)}
+                  placeholder={copy.fullName}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  type="email"
+                  value={payerEmail}
+                  onChange={(e) => setPayerEmail(e.target.value)}
+                  placeholder={copy.email}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  value={enterpriseCompanyName}
+                  onChange={(e) => setEnterpriseCompanyName(e.target.value)}
+                  placeholder={language === 'en' ? 'Company name' : 'Nombre de tu empresa'}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                />
+                <p className="text-[11px] text-slate-400">
+                  {language === 'en'
+                    ? 'Only used if you don\'t have a company workspace yet — you can rename it anytime from "My Company".'
+                    : 'Solo se usa si aún no tienes un espacio de empresa — puedes cambiarlo cuando quieras desde "Mi Empresa".'}
+                </p>
+                {!enterpriseCheckoutReady && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const validEmail = /.+@.+\..+/.test(String(payerEmail || '').trim());
+                      if (!payerName.trim() || !validEmail) { toast.error(copy.signInMsg); return; }
+                      setEnterpriseCheckoutReady(true);
+                    }}
+                    className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
+                  >
+                    {copy.continueToPay}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {enterpriseCheckoutReady && !isAdmin && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <ShieldCheck className="size-4 shrink-0 text-emerald-600" />
+                <p className="text-xs font-medium text-emerald-800">
+                  ESIGN Act &amp; UETA Compliant · SHA-256 audit trail · PayPal encrypted checkout
+                </p>
+              </div>
+            )}
+
+            {isAdmin ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-2">
+                <p className="text-sm font-semibold text-emerald-800">
+                  🛡 Admin bypass — {user?.email || 'admin'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.success(
+                      language === 'en'
+                        ? 'Admin bypass — no charge needed for this account.'
+                        : 'Bypass de admin — esta cuenta no necesita pagar.',
+                    );
+                    closeEnterpriseModal();
+                    navigate('/my-company');
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800 transition"
+                >
+                  <ShieldCheck className="size-4" />
+                  {language === 'en' ? 'Go to My Company' : 'Ir a Mi Empresa'}
+                </button>
+              </div>
+            ) : (
+              <div id="paypal-checkout-enterprise-container" className="min-h-[220px]" />
             )}
           </div>
         </div>

@@ -71,11 +71,21 @@ export async function getReviewsSummary(): Promise<ReviewsSummary> {
   };
 }
 
-/** La propia reseña del usuario logueado, si ya envió una (aprobada o no). */
+/** La propia reseña del usuario logueado, si ya envió una (aprobada o no).
+ * Debe filtrar explícitamente por user_id: la policy RLS reviews_select_approved
+ * expone CUALQUIER reseña aprobada (no solo la propia) vía OR con
+ * reviews_select_own, así que sin este filtro un usuario sin reseña propia
+ * podía recibir la reseña aprobada de otra persona y ver "ya enviaste tu
+ * reseña" sin haber escrito nada. */
 export async function getMyReview(): Promise<AdminReview | null> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw new Error(userError.message);
+  if (!userData.user) return null;
+
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
+    .eq('user_id', userData.user.id)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data ? mapRow(data) : null;

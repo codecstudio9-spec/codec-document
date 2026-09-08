@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
+import { loadDocumentBrandingForUser } from '../services/branding-service';
 import { DocumentPreview } from '../components/document-preview';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -709,6 +710,15 @@ export function PreviewPage() {
         if (savedBranding) {
           const branding = safeParseJson<DocumentBranding>(savedBranding);
           if (branding) setDocumentBranding(branding);
+        } else if (user?.id) {
+          // No 'documentBranding' in sessionStorage — this is the case for
+          // any document reached via stashSignedTransactionForDownload()
+          // (sign-transaction-service.ts), which deliberately clears that
+          // key for every signed transaction. Without this fallback, the
+          // final PDF for a signed document rendered with none of the
+          // logo/watermark/header/footer/company-identity configured in
+          // Settings, no matter what the owner had set up.
+          loadDocumentBrandingForUser(user.id).then(setDocumentBranding).catch(() => {});
         }
 
         if (template) {

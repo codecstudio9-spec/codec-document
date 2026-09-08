@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/auth-context';
 import { publicSupabase } from '../../lib/supabase';
 import { isActiveTxStatus, isTerminalTxStatus, subscribeToTransaction, parseIdEvidencePayload, type SignTransaction, type SecurityConfig } from '../services/sign-transaction-service';
 import { PDFGenerator } from '../services/pdf-generator';
+import { loadSignTransactionBrandingForGuest } from '../services/branding-service';
 import { triggerDownload } from '../utils/download';
 import { buildGuestDocumentContent } from '../utils/guest-document-content';
 import { nombreDeArchivo } from '../utils/nombre-del-documento';
@@ -430,6 +431,7 @@ export default function SignTransactionPage() {
       // Conserva tildes y espacios: la limpieza anterior dejaba
       // «Matr-cula-de-Valentina-G-mez.pdf».
       const fileName = nombreDeArchivo(title);
+      const branding = await loadSignTransactionBrandingForGuest(tx.id);
 
       const blob = await PDFGenerator.generateBlob({
         content,
@@ -438,6 +440,7 @@ export default function SignTransactionPage() {
         fileName,
         language,
         showWatermark: false,
+        branding,
         jurisdiction,
         leftSig: tx.sender_signature ? { dataUrl: tx.sender_signature, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
         rightSig: tx.recipient_signature ? { dataUrl: tx.recipient_signature, name: language === 'en' ? 'Signer' : 'Firmante' } : undefined,

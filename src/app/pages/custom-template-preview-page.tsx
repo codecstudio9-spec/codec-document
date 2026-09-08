@@ -30,6 +30,7 @@ import { useLanguage } from '../contexts/language-context';
 import { getDocxTemplateForOwner } from '../services/docx-template-service';
 import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, applyClauseOverrides, applyExtraClauses, type DocxParagraph } from '../../lib/docxTemplateEngine';
 import { PDFGenerator } from '../services/pdf-generator';
+import { loadDocumentBrandingForUser } from '../services/branding-service';
 import { saveDocumentRecord } from '../services/documents-service';
 import { nombrePersonaDeValores, tituloDeDocumento, nombreDeArchivo } from '../utils/nombre-del-documento';
 import { triggerDownload } from '../utils/download';
@@ -108,6 +109,7 @@ export function CustomTemplatePreviewPage() {
       const identityBiometric = identityBiometricRaw ? JSON.parse(identityBiometricRaw) : undefined;
 
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
+      const branding = await loadDocumentBrandingForUser(user.id);
 
       // El documento se llama por la persona de la que es. Treinta matrículas
       // descargadas como «Matricula.pdf» son indistinguibles sin abrirlas.
@@ -125,6 +127,7 @@ export function CustomTemplatePreviewPage() {
         fileName,
         language,
         showWatermark: false,
+        branding,
         jurisdiction,
         leftSig: ownerSigUrl ? { dataUrl: ownerSigUrl, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
         rightSig: recipientSig ? { dataUrl: recipientSig.sigDataUrl, name: recipientSig.name } : undefined,

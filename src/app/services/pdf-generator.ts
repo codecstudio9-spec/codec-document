@@ -1380,6 +1380,18 @@ export class PDFGenerator {
       // Bottom footer
       const footerY = this.pageHeight - 8;
 
+      // Custom footer text (e.g. a company slogan), configured in Settings —
+      // rendered on its own centered line above the standard footer row so
+      // it never crowds out the platform attribution/compliance badge/page
+      // number that always render below it.
+      const customFooter = (branding?.footerText || '').trim();
+      if (customFooter) {
+        this.doc.setFont('helvetica', 'italic');
+        this.doc.setFontSize(6.5);
+        this.doc.setTextColor(71, 85, 105);
+        this.safeText(customFooter.slice(0, 110), this.pageWidth / 2, footerY - 5, { align: 'center' });
+      }
+
       this.doc.setDrawColor(226, 232, 240);
       this.doc.setLineWidth(0.3);
       this.doc.line(this.margin, footerY - 2, this.pageWidth - this.margin, footerY - 2);

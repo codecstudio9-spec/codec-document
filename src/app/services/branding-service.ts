@@ -1,4 +1,5 @@
 import { supabase, publicSupabase } from '../../lib/supabase';
+import type { DocumentBranding } from '../types/document';
 
 export interface UserBranding {
   companyLogoUrl: string | null;
@@ -115,6 +116,74 @@ export async function getDocumentBranding(documentId: string): Promise<UserBrand
   };
 }
 
+/** Used by the guest-facing /sign/:transactionId page's "download my own
+ * copy" button — the guest has no session, so this goes through
+ * get_sign_transaction_branding (SECURITY DEFINER), resolving the
+ * transaction CREATOR's branding profile, not the guest's own (a guest
+ * never has one). Returns the full branding profile (logo, watermark,
+ * header/footer, company identity) — see
+ * 20260907140000_add_sign_transaction_branding.sql. */
+export async function getSignTransactionBranding(transactionId: string): Promise<UserBranding> {
+  const { data, error } = await publicSupabase.rpc('get_sign_transaction_branding', { p_transaction_id: transactionId }).maybeSingle();
+  if (error || !data) return EMPTY_BRANDING;
+  const row = data as Record<string, unknown>;
+  return {
+    companyLogoUrl: (row.company_logo_url as string) ?? null,
+    logoSize: (row.logo_size as UserBranding['logoSize']) ?? 'medium',
+    headerText: (row.header_text as string) ?? null,
+    footerText: (row.footer_text as string) ?? null,
+    useWatermark: Boolean(row.use_watermark),
+    useGlobalBranding: Boolean(row.use_global_branding),
+    enableLogoInDocs: Boolean(row.enable_logo_in_docs),
+    logoPosition: (row.logo_position as UserBranding['logoPosition']) ?? 'left',
+    companyLegalName: (row.company_legal_name as string) ?? null,
+    companyAddressLine1: (row.company_address_line1 as string) ?? null,
+    companyAddressLine2: (row.company_address_line2 as string) ?? null,
+    companyCity: (row.company_city as string) ?? null,
+    companyState: (row.company_state as string) ?? null,
+    companyZip: (row.company_zip as string) ?? null,
+    companyCountry: (row.company_country as string) ?? null,
+    companyEIN: (row.company_ein as string) ?? null,
+    companyPhone: (row.company_phone as string) ?? null,
+    companyEmail: (row.company_email as string) ?? null,
+    companyWebsite: (row.company_website as string) ?? null,
+    brandColorPrimary: null, brandColorSecondary: null, brandFont: null,
+    bankName: null, bankAccount: null, paymentAch: null, paymentZelle: null,
+    paymentNequi: null, paymentDaviplata: null, paymentPaypal: null,
+  };
+}
+
+/** Same mapping as loadDocumentBrandingForUser, but for a guest signer with
+ * no session — resolves the transaction CREATOR's branding via
+ * getSignTransactionBranding instead of the caller's own profile. */
+export async function loadSignTransactionBrandingForGuest(transactionId: string): Promise<DocumentBranding> {
+  try {
+    const saved = await getSignTransactionBranding(transactionId);
+    const logoDataUrl = saved.companyLogoUrl ? await logoUrlToDataUrl(saved.companyLogoUrl) : null;
+    return {
+      enableLogo: saved.enableLogoInDocs ? Boolean(logoDataUrl) : false,
+      enableLogoWatermark: saved.useWatermark ? Boolean(logoDataUrl) : false,
+      logoDataUrl: logoDataUrl || undefined,
+      logoPosition: saved.logoPosition,
+      headerText: saved.headerText || undefined,
+      footerText: saved.footerText || undefined,
+      companyLegalName: saved.companyLegalName || undefined,
+      companyAddressLine1: saved.companyAddressLine1 || undefined,
+      companyAddressLine2: saved.companyAddressLine2 || undefined,
+      companyCity: saved.companyCity || undefined,
+      companyState: saved.companyState || undefined,
+      companyZip: saved.companyZip || undefined,
+      companyCountry: saved.companyCountry || undefined,
+      companyEIN: saved.companyEIN || undefined,
+      companyPhone: saved.companyPhone || undefined,
+      companyEmail: saved.companyEmail || undefined,
+      companyWebsite: saved.companyWebsite || undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
 // SECURITY DEFINER RPC, not a raw `.update()` — same reasoning used
 // throughout this project (a raw update matching 0 rows reports success
 // with no error). `branding` is the FULL desired state, not a partial
@@ -175,6 +244,52 @@ export async function logoUrlToDataUrl(url: string): Promise<string | null> {
     });
   } catch {
     return null;
+  }
+}
+
+/**
+ * Loads a signed-in user's saved branding profile and maps it into the
+ * shape PDFGenerator's `branding` option expects (logo as a base64 data
+ * URL, not a bare hosted URL — jsPDF's addImage needs the former).
+ *
+ * Extracted so every PDF-generation entry point that renders a document
+ * for its OWNER (not a guest signer — see get_sign_transaction_branding
+ * for that case) applies the exact same mapping as
+ * document-generator-page.tsx's "Personalizar Diseño" drawer, instead of
+ * each page re-deriving it slightly differently or, worse, forgetting to
+ * fetch it at all — which is exactly what happened for custom Word-template
+ * documents and any document re-downloaded after
+ * stashSignedTransactionForDownload() clears the sessionStorage-cached
+ * 'documentBranding' (see sign-transaction-service.ts): the branding
+ * configured in Settings (logo, watermark, header/footer, company
+ * identity) silently never made it into the final PDF.
+ */
+export async function loadDocumentBrandingForUser(userId: string): Promise<DocumentBranding> {
+  try {
+    const saved = await getUserBranding(userId);
+    const logoDataUrl = saved.companyLogoUrl ? await logoUrlToDataUrl(saved.companyLogoUrl) : null;
+    return {
+      enableLogo: saved.enableLogoInDocs ? Boolean(logoDataUrl) : false,
+      enableLogoWatermark: saved.useWatermark ? Boolean(logoDataUrl) : false,
+      logoDataUrl: logoDataUrl || undefined,
+      logoPosition: saved.logoPosition,
+      headerText: saved.headerText || undefined,
+      footerText: saved.footerText || undefined,
+      companyLegalName: saved.companyLegalName || undefined,
+      companyAddressLine1: saved.companyAddressLine1 || undefined,
+      companyAddressLine2: saved.companyAddressLine2 || undefined,
+      companyCity: saved.companyCity || undefined,
+      companyState: saved.companyState || undefined,
+      companyZip: saved.companyZip || undefined,
+      companyCountry: saved.companyCountry || undefined,
+      companyEIN: saved.companyEIN || undefined,
+      companyPhone: saved.companyPhone || undefined,
+      companyEmail: saved.companyEmail || undefined,
+      companyWebsite: saved.companyWebsite || undefined,
+    };
+  } catch {
+    // A branding fetch must never block generating/downloading the document.
+    return {};
   }
 }
 
