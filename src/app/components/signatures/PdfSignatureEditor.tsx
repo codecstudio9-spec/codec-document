@@ -384,37 +384,48 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
   };
 
   return (
-    <div className="space-y-3">
-      {/* Con un solo firmante no hay entre quién elegir ni nada que
-          "espejar", así que los chips de firmante y "Colocar en espejo"
-          solo aparecen con 2+ firmantes — con uno solo, sobra la ayuda de
-          voz para dejar más espacio al documento en pantallas de celular. */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3">
-        {signers.length > 1 && signers.map((signer) => {
-          const hasImage = Boolean(signer.imageDataUrl);
-          const isPlaced = placements.some((p) => p.signerId === signer.id);
-          const isActive = activeSignerId === signer.id;
-          return (
-            <button
-              key={signer.id}
-              type="button"
-              disabled={!hasImage}
-              onClick={() => setActiveSignerId(signer.id)}
-              className={[
-                'flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50',
-                isActive ? 'shadow-sm' : 'border-slate-200 text-slate-500 hover:border-slate-300',
-              ].join(' ')}
-              style={isActive ? { borderColor: signer.color, color: signer.color, background: `${signer.color}12` } : undefined}
-            >
-              <span className="flex size-3 shrink-0 rounded-full" style={{ backgroundColor: signer.color }} />
-              {signer.name}
-              {!hasImage && <Loader className="size-3 animate-spin" />}
-              {isPlaced && <CheckCircle className="size-3.5 text-emerald-500" />}
-            </button>
-          );
-        })}
+    <div className="relative space-y-3 pb-24">
+      {/* Botón de ayuda flotante — antes vivía en una barra que, con un
+          solo firmante (sin chips ni "Colocar en espejo" que mostrar),
+          quedaba casi vacía ocupando espacio arriba del documento. */}
+      <button
+        type="button"
+        onClick={() => setShowHelp(true)}
+        aria-label="¿Necesitas ayuda?"
+        className="fixed right-3 top-[38%] z-40 flex size-11 items-center justify-center rounded-full border border-indigo-200 bg-white text-indigo-600 shadow-lg transition hover:bg-indigo-50 active:scale-95"
+      >
+        <HelpCircle className="size-5" />
+      </button>
 
-        {signers.length > 1 && (
+      {/* Con un solo firmante no hay entre quién elegir ni nada que
+          "espejar", así que esta barra (chips + "Colocar en espejo") solo
+          aparece con 2+ firmantes. */}
+      {signers.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3">
+          {signers.map((signer) => {
+            const hasImage = Boolean(signer.imageDataUrl);
+            const isPlaced = placements.some((p) => p.signerId === signer.id);
+            const isActive = activeSignerId === signer.id;
+            return (
+              <button
+                key={signer.id}
+                type="button"
+                disabled={!hasImage}
+                onClick={() => setActiveSignerId(signer.id)}
+                className={[
+                  'flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50',
+                  isActive ? 'shadow-sm' : 'border-slate-200 text-slate-500 hover:border-slate-300',
+                ].join(' ')}
+                style={isActive ? { borderColor: signer.color, color: signer.color, background: `${signer.color}12` } : undefined}
+              >
+                <span className="flex size-3 shrink-0 rounded-full" style={{ backgroundColor: signer.color }} />
+                {signer.name}
+                {!hasImage && <Loader className="size-3 animate-spin" />}
+                {isPlaced && <CheckCircle className="size-3.5 text-emerald-500" />}
+              </button>
+            );
+          })}
+
           <button
             type="button"
             onClick={autoPlaceTwoColumn}
@@ -423,17 +434,8 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
             <LayoutTemplate className="size-3.5" />
             Colocar en espejo
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setShowHelp(true)}
-          className="ml-auto flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100"
-        >
-          <HelpCircle className="size-4" />
-          <span className="hidden sm:inline">¿Necesitas ayuda?</span>
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Zoom + page toolbar */}
       <div className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-1.5">
@@ -587,10 +589,12 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
         </div>
       )}
 
-      {/* Un solo botón hace las dos cosas: si el firmante activo todavía no
-          tiene su firma sobre el documento, la suelta ahí mismo (centrada
-          en la página visible) para que la arrastres a su lugar; una vez
-          colocada, el mismo botón confirma y firma. */}
+      {/* Flotante y siempre a la vista — antes vivía al final del todo, y
+          había que desplazarse hasta abajo del documento para encontrarla.
+          Un solo botón hace las dos cosas: si el firmante activo todavía
+          no tiene su firma sobre el documento, la suelta ahí mismo
+          (centrada en la página visible) para que la arrastres a su
+          lugar; una vez colocada, el mismo botón confirma y firma. */}
       <button
         type="button"
         disabled={isLoading || (!activeSigner && placements.length === 0)}
@@ -598,7 +602,8 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           if (activeSigner && !activeSignerPlaced) { placeActiveSignerHere(); return; }
           onConfirm(placements);
         }}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+        className="fixed inset-x-4 z-40 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-xl shadow-indigo-300/50 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 sm:inset-x-auto sm:right-4 sm:w-72"
+        style={{ bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 8px))' }}
       >
         {isLoading ? (
           <><Loader className="size-5 animate-spin" />Compilando…</>

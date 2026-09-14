@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
-  Loader, RefreshCw, AlertCircle, X, CheckCircle2,
+  Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
   PenLine,
@@ -940,15 +940,24 @@ export function ElectronicSignaturePage() {
     <div className={isDone ? 'min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100' : 'min-h-screen bg-gradient-to-b from-slate-50 to-indigo-50/60 text-slate-800'}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      {/* Compacto a propósito: sin logo/marca ni controles de voz duplicados
-          (ya existe el botón de audífonos global, arrastrable, en el borde
-          derecho — ver GlobalVoiceMuteButton en App.tsx) — así el indicador
-          de pasos (Preparar/Enviar/Esperando/Listo) y el documento suben y
-          dejan más espacio útil en pantallas de celular. */}
+      {/* Compacto a propósito: una sola línea con logo + "Firma Digital"
+          (nunca el bloque grande de antes, que se desbordaba en celular) y
+          sin controles de voz duplicados (ya existe el botón de audífonos
+          global, arrastrable, en el borde derecho — ver GlobalVoiceMuteButton
+          en App.tsx) — así el indicador de pasos (Preparar/Enviar/Esperando/
+          Listo) y el documento suben y dejan más espacio útil en celular. */}
       {!isDone && (
         <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 shadow-sm backdrop-blur-lg">
-          <div className="container mx-auto flex items-center justify-end px-4 py-2">
-            <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+          <div className="container mx-auto flex items-center justify-between px-4 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 shadow-sm">
+                <Shield className="size-4 text-white" />
+              </div>
+              <span className="truncate text-sm font-bold text-slate-800">
+                Codec Document <span className="font-medium text-slate-400">· Firma Digital</span>
+              </span>
+            </div>
+            <Link to="/" className="shrink-0 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
               ← Inicio
             </Link>
           </div>
@@ -1266,8 +1275,27 @@ export function ElectronicSignaturePage() {
 
                 {identityCameraActive ? (
                   <div className="mt-5 space-y-3">
-                    <div className="overflow-hidden rounded-2xl border border-slate-300 bg-black">
-                      <video ref={identityVideoRef} autoPlay playsInline muted className="aspect-video w-full object-cover" />
+                    <div className="relative overflow-hidden rounded-2xl border border-slate-300 bg-black">
+                      <video
+                        ref={identityVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={identityCaptureTarget === 'selfie' ? 'aspect-[3/4] w-full object-cover' : 'aspect-video w-full object-cover'}
+                      />
+                      {/* Guía circular tipo verificación de identidad — solo
+                          para la selfie, no tiene sentido para la cédula. */}
+                      {identityCaptureTarget === 'selfie' && (
+                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                          <div
+                            className="aspect-square h-[68%] rounded-full border-[3px] border-white/90"
+                            style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)' }}
+                          />
+                          <p className="absolute bottom-4 left-0 right-0 text-center text-xs font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+                            Centra tu rostro dentro del círculo
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-3">
                       <button
@@ -1301,7 +1329,11 @@ export function ElectronicSignaturePage() {
                       <div key={slot.key} className="rounded-2xl border border-slate-200 p-3 text-center">
                         {slot.value ? (
                           <>
-                            <img src={slot.value} alt={slot.label} className="mx-auto h-24 w-full rounded-lg object-cover" />
+                            <img
+                              src={slot.value}
+                              alt={slot.label}
+                              className={slot.key === 'selfie' ? 'mx-auto size-24 rounded-full border-2 border-emerald-300 object-cover' : 'mx-auto h-24 w-full rounded-lg object-cover'}
+                            />
                             <p className="mt-2 text-xs font-semibold text-emerald-600">{slot.label} lista</p>
                             <button type="button" onClick={slot.clear} className="mt-1 text-xs font-medium text-slate-400 hover:text-slate-600">
                               Repetir
@@ -1309,7 +1341,7 @@ export function ElectronicSignaturePage() {
                           </>
                         ) : (
                           <>
-                            <div className="flex h-24 items-center justify-center rounded-lg bg-slate-50">
+                            <div className={slot.key === 'selfie' ? 'mx-auto flex size-24 items-center justify-center rounded-full bg-slate-50' : 'flex h-24 items-center justify-center rounded-lg bg-slate-50'}>
                               {slot.key === 'selfie' ? <Camera className="size-6 text-slate-300" /> : <IdCard className="size-6 text-slate-300" />}
                             </div>
                             <p className="mt-2 text-xs font-semibold text-slate-600">{slot.label}</p>
