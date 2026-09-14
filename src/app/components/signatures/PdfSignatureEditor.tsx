@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   CheckCircle, Loader, PlusCircle, FileSignature, LayoutTemplate, ImageOff,
-  Minus, Plus, HelpCircle, X, MousePointerClick,
+  Minus, Plus, HelpCircle, X,
 } from 'lucide-react';
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
@@ -324,21 +324,22 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
     requestAnimationFrame(() => scrollToPage(lastPage));
   }, [signers, pageCount, heightFractionFor]);
 
-  // Tap-to-place: taps only place the currently-armed signer, and only if
-  // they don't already have a placement — once placed, dragging (via
-  // SimpleDraggableSignature, already touch-friendly) is how you move it,
-  // so a stray tap elsewhere on the page can't yank it away by accident.
-  const handlePageTap = (pageNum: number) => (e: React.PointerEvent<HTMLDivElement>) => {
+  // Botón "Firmar": ya no hay que adivinar dónde tocar el documento en
+  // blanco — un tap en "Firmar" suelta la firma del firmante activo,
+  // centrada en la página que se está viendo, ya arrastrable, para que la
+  // persona simplemente la deslice arriba/abajo hasta el lugar correcto
+  // (igual que arrastrar y soltar, sin el paso extra de "tocar a ciegas").
+  // Esto también evita que el documento quede bloqueado para hacer scroll
+  // mientras no hay firma colocada (antes, la superficie del documento
+  // capturaba el primer toque como "colocar aquí" en vez de dejar
+  // desplazar/leer el documento con normalidad).
+  const placeActiveSignerHere = useCallback(() => {
     if (!activeSignerId) return;
     const signer = signers.find((s) => s.id === activeSignerId);
     if (!signer || !signer.imageDataUrl) return;
     if (placements.some((p) => p.signerId === signer.id)) return;
-    const rect = pageContainerRefs.current.get(pageNum)?.getBoundingClientRect();
-    if (!rect) return;
-    const x = clamp(DEFAULT_W / 2, 1 - DEFAULT_W / 2, (e.clientX - rect.left) / rect.width);
-    const y = clamp(DEFAULT_H / 2, 1 - DEFAULT_H / 2, (e.clientY - rect.top) / rect.height);
-    addPlacement(signer, pageNum, x, y);
-  };
+    addPlacement(signer, currentPage || 1, 0.5, 0.5);
+  }, [activeSignerId, signers, placements, currentPage, addPlacement]);
 
   const activeSigner = signers.find((s) => s.id === activeSignerId) ?? null;
   const activeSignerPlaced = activeSigner ? placements.some((p) => p.signerId === activeSigner.id) : false;
@@ -384,9 +385,12 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
 
   return (
     <div className="space-y-3">
-      {/* Signer chips + help */}
+      {/* Con un solo firmante no hay entre quién elegir ni nada que
+          "espejar", así que los chips de firmante y "Colocar en espejo"
+          solo aparecen con 2+ firmantes — con uno solo, sobra la ayuda de
+          voz para dejar más espacio al documento en pantallas de celular. */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3">
-        {signers.map((signer) => {
+        {signers.length > 1 && signers.map((signer) => {
           const hasImage = Boolean(signer.imageDataUrl);
           const isPlaced = placements.some((p) => p.signerId === signer.id);
           const isActive = activeSignerId === signer.id;
@@ -410,14 +414,16 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           );
         })}
 
-        <button
-          type="button"
-          onClick={autoPlaceTwoColumn}
-          className="flex items-center gap-1.5 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:border-indigo-500 hover:bg-indigo-100"
-        >
-          <LayoutTemplate className="size-3.5" />
-          Colocar en espejo
-        </button>
+        {signers.length > 1 && (
+          <button
+            type="button"
+            onClick={autoPlaceTwoColumn}
+            className="flex items-center gap-1.5 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:border-indigo-500 hover:bg-indigo-100"
+          >
+            <LayoutTemplate className="size-3.5" />
+            Colocar en espejo
+          </button>
+        )}
 
         <button
           type="button"
@@ -428,13 +434,6 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
           <span className="hidden sm:inline">¿Necesitas ayuda?</span>
         </button>
       </div>
-
-      {activeSigner && !activeSignerPlaced && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-800">
-          <MousePointerClick className="size-4 shrink-0" />
-          Toca el documento donde quieres la firma de {activeSigner.name}.
-        </div>
-      )}
 
       {/* Zoom + page toolbar */}
       <div className="flex items-center justify-between rounded-xl bg-slate-100 px-3 py-1.5">
@@ -492,8 +491,7 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
                       ref={(el) => { if (el) pageContainerRefs.current.set(pageNum, el); }}
                       data-page-num={pageNum}
                       className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                      style={{ touchAction: activeSigner && !activeSignerPlaced ? 'none' : 'pan-y' }}
-                      onPointerDown={handlePageTap(pageNum)}
+                      style={{ touchAction: 'pan-y' }}
                     >
                       {renderFailed ? (
                         <div className="flex h-64 items-center justify-center text-sm text-slate-400">
@@ -589,16 +587,25 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
         </div>
       )}
 
+      {/* Un solo botón hace las dos cosas: si el firmante activo todavía no
+          tiene su firma sobre el documento, la suelta ahí mismo (centrada
+          en la página visible) para que la arrastres a su lugar; una vez
+          colocada, el mismo botón confirma y firma. */}
       <button
         type="button"
-        disabled={placements.length === 0 || isLoading}
-        onClick={() => onConfirm(placements)}
+        disabled={isLoading || (!activeSigner && placements.length === 0)}
+        onClick={() => {
+          if (activeSigner && !activeSignerPlaced) { placeActiveSignerHere(); return; }
+          onConfirm(placements);
+        }}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {isLoading ? (
           <><Loader className="size-5 animate-spin" />Compilando…</>
+        ) : activeSigner && !activeSignerPlaced ? (
+          <><FileSignature className="size-5" />Firmar</>
         ) : (
-          <><CheckCircle className="size-5" />Firmar</>
+          <><CheckCircle className="size-5" />Confirmar firma</>
         )}
       </button>
 
@@ -615,21 +622,23 @@ export function PdfSignatureEditor({ pdfBytes, signers, onConfirm, isLoading }: 
               </button>
             </div>
             <ol className="mt-3 space-y-3 text-sm text-slate-600">
+              {signers.length > 1 && (
+                <li className="flex gap-2">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
+                  Toca la burbuja del firmante que quieras colocar (se resalta con su color).
+                </li>
+              )}
               <li className="flex gap-2">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
-                Toca la burbuja del firmante que quieras colocar (se resalta con su color).
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">{signers.length > 1 ? 2 : 1}</span>
+                Desplázate por el documento y toca "Firmar" abajo: tu firma aparecerá sobre la página.
               </li>
               <li className="flex gap-2">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
-                Toca el lugar del documento donde quieres que aparezca su firma.
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">{signers.length > 1 ? 3 : 2}</span>
+                Arrástrala arriba o abajo hasta el lugar correcto, o usa la esquina para agrandarla o achicarla.
               </li>
               <li className="flex gap-2">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
-                Arrástrala para moverla, o usa la esquina para agrandarla o achicarla.
-              </li>
-              <li className="flex gap-2">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">4</span>
-                Usa los botones +/- (o pellizca con dos dedos) para hacer zoom, y "Colocar en espejo" para una distribución automática.
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">{signers.length > 1 ? 4 : 3}</span>
+                Usa los botones +/- (o pellizca con dos dedos) para hacer zoom{signers.length > 1 ? ', y "Colocar en espejo" para una distribución automática.' : '.'}, y toca "Confirmar firma" cuando quede bien.
               </li>
             </ol>
             <button

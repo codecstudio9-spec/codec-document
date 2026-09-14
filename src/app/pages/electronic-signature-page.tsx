@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
-  Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
+  Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
   PenLine,
@@ -41,8 +41,6 @@ import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { useVoiceStepGuide } from '../hooks/useVoiceStepGuide';
 import { useVoiceHighlight, VOICE_HIGHLIGHT_CLASSES } from '../hooks/useVoiceHighlight';
-import { VoiceGuideToggle } from '../components/voice/VoiceGuideToggle';
-import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
@@ -942,28 +940,17 @@ export function ElectronicSignaturePage() {
     <div className={isDone ? 'min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100' : 'min-h-screen bg-gradient-to-b from-slate-50 to-indigo-50/60 text-slate-800'}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
+      {/* Compacto a propósito: sin logo/marca ni controles de voz duplicados
+          (ya existe el botón de audífonos global, arrastrable, en el borde
+          derecho — ver GlobalVoiceMuteButton en App.tsx) — así el indicador
+          de pasos (Preparar/Enviar/Esperando/Listo) y el documento suben y
+          dejan más espacio útil en pantallas de celular. */}
       {!isDone && (
         <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 shadow-sm backdrop-blur-lg">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-2 shadow-lg shadow-indigo-200">
-                  <Shield className="size-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
-                    Firma Digital Mutua
-                  </h1>
-                  <p className="text-xs text-slate-500">Powered by Codec Studio · {jurisdiction.badgeEs}</p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <VoiceGuideToggle />
-                <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
-                  ← Inicio
-                </Link>
-              </div>
-            </div>
+          <div className="container mx-auto flex items-center justify-end px-4 py-2">
+            <Link to="/" className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100">
+              ← Inicio
+            </Link>
           </div>
 
           {/* Wizard progress indicator */}
@@ -973,10 +960,6 @@ export function ElectronicSignaturePage() {
             </div>
           )}
         </header>
-      )}
-
-      {!isDone && (
-        <VoiceReplayButton sessionId={voiceSessionId} role="creator" flow="electronic-signature" documentId={documentId} step={step} stepIndex={wizardStep} />
       )}
 
       <main className="container mx-auto max-w-5xl space-y-6 px-4 py-8">
@@ -1168,19 +1151,16 @@ export function ElectronicSignaturePage() {
               antes sin dejar elegir dónde.
               ══════════════════════════════════════════════════════════════ */}
           {step === 'position-creator' && pdfBytes && pdfBytes.length > 0 && (
-            <>
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Paso 1 · Firma</p>
-                <h2 className="mt-1 text-xl font-bold text-slate-900">Coloca tu firma en el documento</h2>
-                <p className="mt-1 text-sm text-slate-600">Arrastra, mueve y redimensiona tu firma hasta que quede donde corresponde.</p>
-              </div>
-              <PdfSignatureEditor
-                pdfBytes={pdfBytes}
-                signers={editorSigners.slice(0, 1)}
-                onConfirm={(placements) => void handleCreatorPlacementConfirm(placements)}
-                isLoading={isLoading}
-              />
-            </>
+            // Sin tarjeta de instrucciones encima — la guía de voz ya dice
+            // "coloca tu firma en el documento", y quitarla le da al PDF
+            // (lo que el cliente realmente necesita ver) todo el espacio
+            // vertical disponible arriba del visor, sobre todo en celular.
+            <PdfSignatureEditor
+              pdfBytes={pdfBytes}
+              signers={editorSigners.slice(0, 1)}
+              onConfirm={(placements) => void handleCreatorPlacementConfirm(placements)}
+              isLoading={isLoading}
+            />
           )}
 
           {/* ══════════════════════════════════════════════════════════════
