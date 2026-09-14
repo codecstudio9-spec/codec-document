@@ -679,14 +679,14 @@ export async function compilePdfWithSignatures(params: {
     const x = Math.max(0, Math.min(pw - sigW, rawX));
     const y = Math.max(0, Math.min(ph - sigH, rawY));
 
-    const PAD = 5, DATE_H = 10, ROLE_H = 9, NAME_H = 12, LINE_H = 13;
-    const TEXT_ZONE = DATE_H + ROLE_H + NAME_H + LINE_H;
-    const IMG_ZONE  = Math.max(10, sigH - TEXT_ZONE);
-
-    // No filled box behind the signature — DocuSign/Adobe Sign-style: just
-    // the (already-transparent) ink, the signing line, and the printed
-    // name/role/date underneath, sitting directly on the page like a real
-    // stamped signature instead of a card floating on top of the content.
+    // Only the ink goes on the original document — no "X" mark, signing
+    // line, printed name, role or date on top of the page content. The
+    // source document must stay exactly as the signer uploaded it, plus
+    // the signature image; who signed, their role and when is recorded
+    // once, legibly, on the certification page (Phase 2 below) instead of
+    // repeated (and overlapping existing page content/printed names) at
+    // every placement.
+    const PAD = 3;
 
     // Fit the signature image into its box preserving aspect ratio — drawing
     // it at the raw box dimensions stretches/squishes it whenever the canvas
@@ -694,22 +694,14 @@ export async function compilePdfWithSignatures(params: {
     const imgDims  = pdfImage.size() as { width: number; height: number };
     const imgAspect = imgDims.width / imgDims.height;
     const maxImgW  = sigW - 2 * PAD;
-    const maxImgH  = IMG_ZONE - 4;
+    const maxImgH  = sigH - 2 * PAD;
     let imgDrawW = maxImgW, imgDrawH = maxImgW / imgAspect;
     if (imgDrawH > maxImgH) { imgDrawH = maxImgH; imgDrawW = maxImgH * imgAspect; }
     page.drawImage(pdfImage, {
-      x: x + PAD + (maxImgW - imgDrawW) / 2,
-      y: y + TEXT_ZONE + 2 + (maxImgH - imgDrawH) / 2,
+      x: x + (sigW - imgDrawW) / 2,
+      y: y + (sigH - imgDrawH) / 2,
       width: imgDrawW, height: imgDrawH, opacity: 0.97,
     });
-    drawBold(page, 'X', { x: x + PAD, y: y + TEXT_ZONE - LINE_H / 2 - 1, size: 8, color: rgb(0.07, 0.10, 0.24) });
-    page.drawLine({ start: { x: x + PAD + 12, y: y + TEXT_ZONE - LINE_H / 2 + 2 }, end: { x: x + sigW - PAD, y: y + TEXT_ZONE - LINE_H / 2 + 2 }, thickness: 0.9, color: rgb(0.35, 0.40, 0.65) });
-
-    const name = (sig.signerName ?? '').trim().toUpperCase().substring(0, 30);
-    if (name) drawBold(page, name, { x: x + PAD, y: y + DATE_H + ROLE_H + PAD + 1, size: Math.max(5.5, Math.min(7.5, sigW / 16)), color: rgb(0.07, 0.08, 0.14) });
-    const role = (sig.signerRole ?? '').trim().substring(0, 34);
-    if (role) page.drawText(role, { x: x + PAD, y: y + DATE_H + PAD + 1, size: Math.max(4.5, Math.min(6, sigW / 22)), font: fontReg, color: rgb(0.35, 0.41, 0.91) });
-    page.drawText(new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()), { x: x + PAD, y: y + PAD, size: 5, font: fontReg, color: rgb(0.50, 0.55, 0.72) });
   }
 
   // Phase 2: certification report page (mirror grid + legal compliance)
@@ -797,7 +789,15 @@ export async function compilePdfWithSignatures(params: {
       reportPage.drawText(nowStr, { x: blockX + Math.max(INNER_PAD, (COL_W - fontReg.widthOfTextAtSize(nowStr, 6)) / 2), y: textAreaTopY - 74, size: 6, font: fontReg, color: rgb(0.55, 0.60, 0.72) });
     }
 
-    // ── U.S. ELECTRONIC SIGNATURE LEGAL COMPLIANCE footer ─────────────────────
+    // ── CUMPLIMIENTO LEGAL DE FIRMA ELECTRÓNICA footer ─────────────────────────
+    // Every other label on this report page (INFORME DE FIRMAS, EVIDENCIA DE
+    // FIRMA, Nombre/Correo/etc.) is already Spanish — this footer used to be
+    // the one exception, always rendering jurisdiction.*En even for a
+    // Colombian/LatAm signer whose own jurisdiction data already carries a
+    // *Es counterpart (see data/signature-jurisdictions.ts). Both real
+    // callers of this function (electronic-signature-page.tsx,
+    // guest-sign-page.tsx) are Spanish-only flows, so this always uses the
+    // Spanish variant now instead of silently mixing languages.
     const LX = MARGIN, LY = MARGIN + 4, LW = PAGE_W - 2 * MARGIN;
 
     reportPage.drawLine({ start: { x: LX, y: LY + LEGAL_H + 8 }, end: { x: LX + LW, y: LY + LEGAL_H + 8 }, thickness: 0.4, color: rgb(0.80, 0.83, 0.91) });
@@ -806,22 +806,22 @@ export async function compilePdfWithSignatures(params: {
 
     const TX = LX + 12;
 
-    // E-SIGN badge
-    const badgeLabel = `${jurisdiction.badgeEn} Compliant`;
+    // Insignia de cumplimiento legal
+    const badgeLabel = `Cumple con ${jurisdiction.badgeEs}`;
     const badgeSz    = 6;
     const BW = fontBold.widthOfTextAtSize(badgeLabel, badgeSz) + 14, BH = 14;
     const BX = LX + LW - BW - 6, BY = LY + LEGAL_H - BH - 6;
     reportPage.drawRectangle({ x: BX, y: BY, width: BW, height: BH, color: rgb(0.35, 0.41, 0.91) });
     drawBold(reportPage, badgeLabel, { x: BX + (BW - fontBold.widthOfTextAtSize(badgeLabel, badgeSz)) / 2, y: BY + 4.5, size: badgeSz, color: rgb(1, 1, 1) });
-    const securedLabel = 'Secured by Codec Studio';
+    const securedLabel = 'Protegido por Codec Studio';
     reportPage.drawText(securedLabel, { x: BX + (BW - fontReg.widthOfTextAtSize(securedLabel, 5.5)) / 2, y: BY - 7, size: 5.5, font: fontReg, color: rgb(0.50, 0.54, 0.66) });
 
-    // Compliance title
-    const compTitle = jurisdiction.certTitleEn;
+    // Título de cumplimiento
+    const compTitle = jurisdiction.certTitleEs;
     drawBold(reportPage, compTitle, { x: TX, y: LY + LEGAL_H - 14, size: 7.5, color: rgb(0.10, 0.14, 0.38) });
 
-    // Legal body (word-wrapped)
-    const legalBody  = jurisdiction.certBodyEn;
+    // Cuerpo legal (con ajuste de línea)
+    const legalBody  = jurisdiction.certBodyEs;
     const lBodyMaxW  = LW - 24 - BW - 10;
     let lBodyLine = '', lBodyY = LY + LEGAL_H - 27;
     for (const w of legalBody.split(' ')) {
@@ -833,8 +833,8 @@ export async function compilePdfWithSignatures(params: {
     }
     if (lBodyLine) { reportPage.drawText(lBodyLine, { x: TX, y: lBodyY, size: 6, font: fontReg, color: rgb(0.30, 0.35, 0.52) }); lBodyY -= 14; }
 
-    // DOCUMENT ID — documents.id from Supabase
-    const auditIdStr = `DOCUMENT ID: ${params.documentId.toUpperCase()}`;
+    // ID DEL DOCUMENTO — documents.id de Supabase
+    const auditIdStr = `ID DEL DOCUMENTO: ${params.documentId.toUpperCase()}`;
     const AIBOXW     = Math.min(LW - 20, fontBold.widthOfTextAtSize(auditIdStr, 7) + 14);
     const AIBY       = lBodyY + (lBodyY > LY + 80 ? 0 : -2);
     reportPage.drawRectangle({ x: TX - 4, y: AIBY - 4, width: AIBOXW, height: 14, color: rgb(0.91, 0.93, 1.00), borderColor: rgb(0.74, 0.79, 0.96), borderWidth: 0.3 });
@@ -845,7 +845,7 @@ export async function compilePdfWithSignatures(params: {
     // by hashing the original PDF, not decorative boilerplate.
     const hashLabel = params.fileHash
       ? `SHA-256: ${params.fileHash.toUpperCase()}`
-      : 'Codec Document Security Services - Electronically signed document with full legal binding.';
+      : 'Codec Document Security Services - Documento firmado electrónicamente con plena validez legal.';
     reportPage.drawText(
       hashLabel,
       { x: TX, y: LY + 7, size: 5.5, font: fontReg, color: rgb(0.55, 0.60, 0.72) },

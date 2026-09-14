@@ -46,14 +46,15 @@ import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
+import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
 
-type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'await-guest' | 'position' | 'compiling' | 'done';
+type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'identity-solo' | 'await-guest' | 'position' | 'compiling' | 'done';
 
 // ── Computed wizard step ───────────────────────────────────────────────────────
 function toWizardStep(step: Step): 1 | 2 | 3 | 4 {
   if (step === 'done') return 4;
   if (step === 'await-guest' || step === 'compiling' || step === 'position') return 3;
-  if (step === 'invite-guest') return 2;
+  if (step === 'invite-guest' || step === 'identity-solo') return 2;
   return 1;
 }
 
@@ -352,6 +353,78 @@ export function ElectronicSignaturePage() {
   // includeCertificationPage comment) instead of just re-finalizing that
   // page-less partial blob as if it were the real final document.
   const [creatorPlacement, setCreatorPlacement] = useState<PlacedSignature | null>(null);
+
+  // ── Verificación de identidad opcional (solo cuando firmas tú solo) ─────────
+  // Solo aplica al camino "Solo yo firmo": el segundo firmante (invitado) ya
+  // tiene su propia captura de selfie/cédula en guest-sign-page.tsx. Es
+  // opcional — "Omitir" salta directo a handleSignAloneOnly sin evidencia.
+  const [selfieDataUrl, setSelfieDataUrl] = useState('');
+  const [idFrontDataUrl, setIdFrontDataUrl] = useState('');
+  const [idBackDataUrl, setIdBackDataUrl] = useState('');
+  const [identityCameraActive, setIdentityCameraActive] = useState(false);
+  const [identityCameraError, setIdentityCameraError] = useState('');
+  const [identityCaptureTarget, setIdentityCaptureTarget] = useState<'selfie' | 'id_front' | 'id_back' | null>(null);
+  const identityVideoRef = useRef<HTMLVideoElement | null>(null);
+  const identityStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    return () => { identityStreamRef.current?.getTracks().forEach((t) => t.stop()); };
+  }, []);
+
+  useEffect(() => {
+    if (!identityCameraActive || !identityStreamRef.current) return;
+    const video = identityVideoRef.current;
+    if (!video) return;
+    video.srcObject = identityStreamRef.current;
+    void video.play().catch(() => {});
+  }, [identityCameraActive, identityCaptureTarget]);
+
+  const startIdentityCamera = async (target: 'selfie' | 'id_front' | 'id_back') => {
+    setIdentityCameraError('');
+    identityStreamRef.current?.getTracks().forEach((t) => t.stop());
+    identityStreamRef.current = null;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: target === 'selfie' ? 'user' : 'environment',
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
+        },
+        audio: false,
+      });
+      identityStreamRef.current = stream;
+      setIdentityCaptureTarget(target);
+      setIdentityCameraActive(true);
+    } catch {
+      setIdentityCameraError('No se pudo acceder a la cámara. Permite el acceso en tu navegador o continúa sin verificación.');
+    }
+  };
+
+  const captureIdentityPhoto = async () => {
+    const target = identityCaptureTarget;
+    const video = identityVideoRef.current;
+    if (!target || !video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1920;
+    canvas.height = video.videoHeight || 1080;
+    const ctx = canvas.getContext('2d')!;
+    if (target === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const rawUrl = canvas.toDataURL('image/jpeg', 0.9);
+    try {
+      if (target === 'selfie') setSelfieDataUrl(await normalizeSelfieEvidence(rawUrl));
+      else if (target === 'id_front') setIdFrontDataUrl(await normalizeIdEvidence(rawUrl));
+      else setIdBackDataUrl(await normalizeIdEvidence(rawUrl));
+    } catch {
+      if (target === 'selfie') setSelfieDataUrl(rawUrl);
+      else if (target === 'id_front') setIdFrontDataUrl(rawUrl);
+      else setIdBackDataUrl(rawUrl);
+    }
+    identityStreamRef.current?.getTracks().forEach((t) => t.stop());
+    identityStreamRef.current = null;
+    setIdentityCameraActive(false);
+    setIdentityCaptureTarget(null);
+  };
 
   // ── Guest ──────────────────────────────────────────────────────────────────
   const [guestName, setGuestName]           = useState('');
@@ -707,6 +780,8 @@ export function ElectronicSignaturePage() {
     }
     setIsLoading(true); setLoadingMsg('Finalizando documento…');
     try {
+      const ip = await getPublicIp();
+      const hasIdentityEvidence = Boolean(selfieDataUrl || idFrontDataUrl || idBackDataUrl);
       const finalBytes = await compilePdfWithSignatures({
         pdfBytes,
         signatures: [{
@@ -720,12 +795,22 @@ export function ElectronicSignaturePage() {
         documentId,
         fileHash,
         jurisdiction,
+        evidence: hasIdentityEvidence ? {
+          signerName: creatorName || 'Firmante 1',
+          signerEmail: creatorEmail || '',
+          selfieDataUrl: selfieDataUrl || undefined,
+          idDataUrl: idFrontDataUrl || undefined,
+          idFrontDataUrl: idFrontDataUrl || undefined,
+          idBackDataUrl: idBackDataUrl || undefined,
+          ip,
+          userAgent: navigator.userAgent,
+          signedAt: new Date().toISOString(),
+        } : undefined,
       });
       const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
       const finalUrl = await uploadPdfToStorage(documentId, finalBlob, `signed-${Date.now()}.pdf`);
       setSignedPdfUrl(finalUrl);
       await finalizeDocument(documentId, finalUrl);
-      const ip = await getPublicIp();
       await insertAuditLog({ documentId, action: 'document_completed_solo', ipAddress: ip, userAgent: navigator.userAgent });
       toast.success('¡Documento certificado! No necesitas ningún invitado.');
       markVisitorActivity('signature', 'creator-signature');
@@ -1150,7 +1235,7 @@ export function ElectronicSignaturePage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => void handleSignAloneOnly()}
+                      onClick={() => setStep('identity-solo')}
                       disabled={isLoading}
                       className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -1181,6 +1266,119 @@ export function ElectronicSignaturePage() {
                 signers={[
                   { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
                   { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
+                ]}
+              />
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+              WIZARD STEP 2b — Verificación de identidad opcional (solo)
+              ══════════════════════════════════════════════════════════════ */}
+          {step === 'identity-solo' && (
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_380px]">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+                <p className="text-xs font-bold uppercase tracking-widest text-indigo-500">Paso 2 · Verificación (opcional)</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Refuerza tu identidad en el certificado</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ya que firmas solo, puedes agregar una selfie y una foto de tu cédula. Quedan únicamente en la
+                  página de evidencia del certificado — nunca sobre el documento original — y son opcionales.
+                </p>
+
+                {identityCameraActive ? (
+                  <div className="mt-5 space-y-3">
+                    <div className="overflow-hidden rounded-2xl border border-slate-300 bg-black">
+                      <video ref={identityVideoRef} autoPlay playsInline muted className="aspect-video w-full object-cover" />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void captureIdentityPhoto()}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-bold text-white shadow-lg"
+                      >
+                        <Camera className="size-4" /> Tomar foto
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          identityStreamRef.current?.getTracks().forEach((t) => t.stop());
+                          identityStreamRef.current = null;
+                          setIdentityCameraActive(false);
+                          setIdentityCaptureTarget(null);
+                        }}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {([
+                      { key: 'selfie' as const, label: 'Selfie', value: selfieDataUrl, clear: () => setSelfieDataUrl('') },
+                      { key: 'id_front' as const, label: 'Cédula (frente)', value: idFrontDataUrl, clear: () => setIdFrontDataUrl('') },
+                      { key: 'id_back' as const, label: 'Cédula (atrás)', value: idBackDataUrl, clear: () => setIdBackDataUrl('') },
+                    ]).map((slot) => (
+                      <div key={slot.key} className="rounded-2xl border border-slate-200 p-3 text-center">
+                        {slot.value ? (
+                          <>
+                            <img src={slot.value} alt={slot.label} className="mx-auto h-24 w-full rounded-lg object-cover" />
+                            <p className="mt-2 text-xs font-semibold text-emerald-600">{slot.label} lista</p>
+                            <button type="button" onClick={slot.clear} className="mt-1 text-xs font-medium text-slate-400 hover:text-slate-600">
+                              Repetir
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex h-24 items-center justify-center rounded-lg bg-slate-50">
+                              {slot.key === 'selfie' ? <Camera className="size-6 text-slate-300" /> : <IdCard className="size-6 text-slate-300" />}
+                            </div>
+                            <p className="mt-2 text-xs font-semibold text-slate-600">{slot.label}</p>
+                            <button
+                              type="button"
+                              onClick={() => void startIdentityCamera(slot.key)}
+                              className="mt-1 text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                            >
+                              Tomar foto
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {identityCameraError && (
+                  <p className="mt-3 text-xs font-medium text-red-600">{identityCameraError}</p>
+                )}
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => void handleSignAloneOnly()}
+                    disabled={isLoading}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isLoading ? 'Firmando…' : 'Confirmar y firmar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelfieDataUrl(''); setIdFrontDataUrl(''); setIdBackDataUrl('');
+                      void handleSignAloneOnly();
+                    }}
+                    disabled={isLoading}
+                    className="rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-50"
+                  >
+                    Omitir y firmar
+                  </button>
+                </div>
+              </div>
+
+              <PdfSignaturePreview
+                pdfBytes={pdfBytes}
+                watermark={hasHitDocumentLimit}
+                signers={[
+                  { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
                 ]}
               />
             </div>
