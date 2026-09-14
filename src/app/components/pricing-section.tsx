@@ -6,15 +6,43 @@ import { toast } from 'sonner';
 import { isAdminEmail } from '../utils/admin-access';
 import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import { watchAndUnlockBodyScroll } from '../utils/paypal-scroll-fix';
-import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag, Building2, Minus, Plus } from 'lucide-react';
+import { CheckCircle2, Gift, Lock, ShieldCheck, Sparkles, Zap, Tag, Building2, Minus, Plus, Layers } from 'lucide-react';
 import { OnboardingModal } from './auth/OnboardingModal';
+import { EnterpriseLeadModal } from './EnterpriseLeadModal';
 
-// Plan Empresa — por asiento, mínimo 5 usuarios. Vendido aquí (la página
-// pública de precios) además del plan plano existente en /my-company —
-// ver 20260907120000_enterprise_seats_and_team_visibility.sql y el branch
-// 'company_seats_monthly' en la Edge Function paypal-verify.
-const ENTERPRISE_SEAT_PRICE = 24.99;
-const ENTERPRISE_MIN_SEATS = 5;
+// Plan Empresa — por asiento, con descuento escalonado por volumen, desde 1
+// usuario (ya no exige un mínimo de 5 a precio plano). Vendido aquí (la
+// página pública de precios) además del plan plano existente en
+// /my-company — ver 20260907120000_enterprise_seats_and_team_visibility.sql
+// y el branch 'company_seats_monthly' en la Edge Function paypal-verify.
+//
+// MUY IMPORTANTE: `businessPricePerSeat` de abajo debe coincidir EXACTO con
+// `pricePerSeat` en supabase/functions/paypal-verify/index.ts — esa función
+// del servidor es la que de verdad valida y cobra el pago; si se cambia un
+// escalón aquí sin cambiarlo allá, el checkout empieza a rechazar pagos
+// (o peor, a cobrar de más/de menos) por "importe no coincide".
+const BUSINESS_LIST_PRICE = 69; // precio de lista sin descuento (1-4 usuarios)
+const BUSINESS_MIN_SEATS = 1;
+const BUSINESS_DEFAULT_SEATS = 5;
+const BUSINESS_DOCS_PER_SEAT_PER_MONTH = 750;
+
+function businessPricePerSeat(seats: number): number {
+  if (seats >= 30) return 49;
+  if (seats >= 20) return 52;
+  if (seats >= 10) return 55;
+  if (seats >= 5) return 59;
+  return BUSINESS_LIST_PRICE;
+}
+
+// Individual paid-plan document allowance — replaces the old, literal
+// "unlimited documents" claim across every plan card. Purely display copy
+// for now: user-limits-service.ts (consumeDocumentLimit72h) still treats
+// any paid plan as fully unmetered (isPremium => always allowed, no
+// monthly counter at all) — actually enforcing this 150/user/month cap
+// would need its own calendar-month counter, separate from the free
+// plan's 72h rolling window, which is a bigger backend change than this
+// pricing-page pass. Flagged to the user rather than silently built.
+const PAID_DOCS_PER_MONTH = 150;
 
 // User-facing free-plan numbers — deliberately a flat "N per month" claim,
 // not "every 72 hours". The actual quota is enforced as a 2-per-72h rolling
@@ -42,8 +70,11 @@ type Product = {
   savingsLabelEn: string;
 };
 
-// Same feature set across all 3 plans — only price/term differ.
+// Same feature set across all 3 plans — only price/term differ. The
+// document-limit line goes first and on its own so it reads as the plan's
+// headline characteristic, not buried in the list — see PAID_DOCS_PER_MONTH.
 const SHARED_FEATURES_EN = [
+  `Up to ${PAID_DOCS_PER_MONTH} documents per month per user`,
   'Access to all legal document templates',
   'Unlimited Smart Quotes',
   'Electronic signatures included',
@@ -54,6 +85,7 @@ const SHARED_FEATURES_EN = [
   'Cloud access',
 ];
 const SHARED_FEATURES_ES = [
+  `Hasta ${PAID_DOCS_PER_MONTH} documentos al mes por usuario`,
   'Acceso a todas las plantillas de documentos legales',
   'Cotizaciones Inteligentes ilimitadas',
   'Firmas electrónicas incluidas',
@@ -71,8 +103,8 @@ const PRODUCTS: Product[] = [
     price: '$29.99',
     titleEs: 'Plan Mensual',
     titleEn: 'Monthly Plan',
-    taglineEs: 'Creación ilimitada de documentos',
-    taglineEn: 'Unlimited document creation',
+    taglineEs: 'Facturación mensual, cancela cuando quieras',
+    taglineEn: 'Monthly billing, cancel anytime',
     descriptionEs: SHARED_FEATURES_ES,
     descriptionEn: SHARED_FEATURES_EN,
     glow: 'rgba(59,130,246,0.45)',
@@ -175,11 +207,22 @@ export function PricingSection() {
   const [checkoutReady, setCheckoutReady] = useState(false);
   // Plan Empresa — modal propio (importe dinámico según asientos, en vez
   // de un Product de precio fijo como los otros 3 planes).
-  const [enterpriseSeats, setEnterpriseSeats] = useState(ENTERPRISE_MIN_SEATS);
+  const [enterpriseSeats, setEnterpriseSeats] = useState(BUSINESS_DEFAULT_SEATS);
   const [enterpriseModalOpen, setEnterpriseModalOpen] = useState(false);
   const [enterpriseCompanyName, setEnterpriseCompanyName] = useState('');
   const [enterpriseCheckoutReady, setEnterpriseCheckoutReady] = useState(false);
-  const enterpriseTotal = useMemo(() => Math.max(ENTERPRISE_MIN_SEATS, enterpriseSeats) * ENTERPRISE_SEAT_PRICE, [enterpriseSeats]);
+  // Cotización personalizada para >30 usuarios / necesidades especiales —
+  // reutiliza el mismo formulario ya usado en la home page.
+  const [enterpriseLeadOpen, setEnterpriseLeadOpen] = useState(false);
+  const clampedSeats = Math.max(BUSINESS_MIN_SEATS, enterpriseSeats);
+  const enterprisePerSeat = useMemo(() => businessPricePerSeat(clampedSeats), [clampedSeats]);
+  const enterpriseTotal = useMemo(() => clampedSeats * enterprisePerSeat, [clampedSeats, enterprisePerSeat]);
+  const enterpriseListTotal = useMemo(() => clampedSeats * BUSINESS_LIST_PRICE, [clampedSeats]);
+  const enterpriseSavingsMonthly = Math.max(0, enterpriseListTotal - enterpriseTotal);
+  const enterpriseSavingsAnnual = enterpriseSavingsMonthly * 12;
+  const enterpriseDocsIncluded = clampedSeats * BUSINESS_DOCS_PER_SEAT_PER_MONTH;
+  const formatNumber = (n: number) => n.toLocaleString(language === 'en' ? 'en-US' : 'es-CO');
+  const seatWord = (n: number) => (language === 'en' ? (n === 1 ? 'user' : 'users') : n === 1 ? 'usuario' : 'usuarios');
   // Promo code — same server-side redemption already used by
   // PremiumDownloadModal.tsx / PaypalSignatureCheckout.tsx, this modal was
   // just missing the field to enter one at all.
@@ -321,7 +364,7 @@ export function PricingSection() {
         style: { layout: 'vertical' },
         createOrder: (_data: any, actions: any) => actions.order.create({
           purchase_units: [{
-            description: `${language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'} (${enterpriseSeats} ${language === 'en' ? 'seats' : 'usuarios'})`,
+            description: `${language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'} (${enterpriseSeats} ${seatWord(enterpriseSeats)})`,
             custom_id: payerEmail || user?.email || '',
             amount: { currency_code: 'USD', value: enterpriseTotal.toFixed(2) },
           }],
@@ -616,12 +659,12 @@ export function PricingSection() {
                 {language === 'en' ? 'For teams' : 'Para equipos'}
               </div>
               <h3 className="text-2xl font-black text-white md:text-3xl">
-                {language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'}
+                {language === 'en' ? 'Business Plan' : 'Plan Empresa'}
               </h3>
               <p className="mt-1.5 text-sm text-slate-300">
                 {language === 'en'
-                  ? 'For teams of 5 or more — a shared workspace with roles, a super-admin who oversees every teammate\'s documents and signatures, and your own company branding.'
-                  : 'Para equipos de 5 o más personas — un espacio compartido con roles, un súper administrador que supervisa los documentos y firmas de todo el equipo, y tu propia marca (branding) en cada documento.'}
+                  ? 'For teams of any size — a shared workspace with roles, a super-admin who oversees every teammate\'s documents and signatures, and your own company branding. The more users, the lower the price per user.'
+                  : 'Para equipos de cualquier tamaño — un espacio compartido con roles, un súper administrador que supervisa los documentos y firmas de todo el equipo, y tu propia marca (branding) en cada documento. A más usuarios, menor precio por usuario.'}
               </p>
               <ul className="mt-4 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {[
@@ -631,6 +674,10 @@ export function PricingSection() {
                   language === 'en' ? 'Custom branding on every document' : 'Marca propia en cada documento',
                   language === 'en' ? 'API access & webhooks' : 'Acceso a API y webhooks',
                   language === 'en' ? 'Priority support' : 'Soporte prioritario',
+                  language === 'en' ? 'Unlimited external signers' : 'Firmantes externos ilimitados',
+                  language === 'en'
+                    ? `${BUSINESS_DOCS_PER_SEAT_PER_MONTH} documents per user / month`
+                    : `${BUSINESS_DOCS_PER_SEAT_PER_MONTH} documentos por usuario al mes`,
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-300">
                     <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-400" />
@@ -638,14 +685,44 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
+
+              {/* Tabla de descuento por volumen — para que el usuario vea de
+                  entrada por qué el precio por usuario baja al subir la
+                  cantidad, sin tener que adivinar moviendo el selector. */}
+              <div className="mt-4 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+                {[
+                  { range: '1–4', price: 69 },
+                  { range: '5–9', price: 59 },
+                  { range: '10–19', price: 55 },
+                  { range: '20–29', price: 52 },
+                  { range: '30+', price: 49 },
+                ].map((tier) => {
+                  const isActiveTier = businessPricePerSeat(clampedSeats) === tier.price;
+                  return (
+                    <div
+                      key={tier.range}
+                      className={`rounded-xl border px-2 py-1.5 text-center transition ${
+                        isActiveTier ? 'border-indigo-400 bg-indigo-500/20' : 'border-white/10 bg-white/5'
+                      }`}
+                    >
+                      <p className="text-[10px] font-semibold text-slate-400">
+                        {tier.range} {language === 'en' ? 'users' : 'usuarios'}
+                      </p>
+                      <p className={`text-sm font-black ${isActiveTier ? 'text-indigo-300' : 'text-white'}`}>
+                        ${tier.price}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="shrink-0 rounded-2xl bg-white/5 p-5 md:w-72">
+            <div className="shrink-0 rounded-2xl bg-white/5 p-5 md:w-80">
               <p className="text-xs font-semibold text-slate-400">
-                {language === 'en' ? `From $${ENTERPRISE_SEAT_PRICE.toFixed(2)} / user / month` : `Desde $${ENTERPRISE_SEAT_PRICE.toFixed(2)} usd / usuario / mes`}
+                {language === 'en' ? `From $${BUSINESS_LIST_PRICE} / user / month` : `Desde $${BUSINESS_LIST_PRICE} usd / usuario / mes`}
               </p>
               <p className="mt-0.5 text-[11px] text-slate-500">
-                {language === 'en' ? `Minimum ${ENTERPRISE_MIN_SEATS} users` : `Mínimo ${ENTERPRISE_MIN_SEATS} usuarios`}
+                {language === 'en' ? 'Price drops automatically as your team grows' : 'El precio baja automáticamente al crecer tu equipo'}
               </p>
 
               <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
@@ -653,16 +730,25 @@ export function PricingSection() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setEnterpriseSeats((n) => Math.max(ENTERPRISE_MIN_SEATS, n - 1))}
+                    onClick={() => setEnterpriseSeats((n) => Math.max(BUSINESS_MIN_SEATS, n - 1))}
                     className="flex size-7 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20"
                     aria-label={language === 'en' ? 'Fewer users' : 'Menos usuarios'}
                   >
                     <Minus className="size-3.5" />
                   </button>
-                  <span className="w-6 text-center text-sm font-black text-white">{enterpriseSeats}</span>
+                  <input
+                    type="number"
+                    min={BUSINESS_MIN_SEATS}
+                    value={enterpriseSeats}
+                    onChange={(e) => {
+                      const n = Math.floor(Number(e.target.value));
+                      setEnterpriseSeats(Number.isFinite(n) ? Math.max(BUSINESS_MIN_SEATS, n) : BUSINESS_MIN_SEATS);
+                    }}
+                    className="w-12 rounded-lg border border-white/10 bg-transparent text-center text-sm font-black text-white outline-none focus:border-indigo-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
                   <button
                     type="button"
-                    onClick={() => setEnterpriseSeats((n) => n + 1)}
+                    onClick={() => setEnterpriseSeats((n) => Math.max(BUSINESS_MIN_SEATS, n) + 1)}
                     className="flex size-7 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20"
                     aria-label={language === 'en' ? 'More users' : 'Más usuarios'}
                   >
@@ -672,12 +758,35 @@ export function PricingSection() {
               </div>
 
               <p className="mt-3 text-3xl font-black text-white">
-                ${enterpriseTotal.toFixed(2)}
+                ${enterpriseTotal.toLocaleString(language === 'en' ? 'en-US' : 'es-CO')}
                 <span className="text-sm font-semibold text-slate-400">/{language === 'en' ? 'mo' : 'mes'}</span>
               </p>
               <p className="text-[11px] text-slate-500">
-                ${ENTERPRISE_SEAT_PRICE.toFixed(2)} × {enterpriseSeats} {language === 'en' ? 'users' : 'usuarios'}
+                ${enterprisePerSeat} × {clampedSeats} {seatWord(clampedSeats)}
               </p>
+
+              {/* Ahorro frente al precio de lista — solo tiene sentido
+                  mostrarlo cuando el escalón actual ya trae descuento. */}
+              {enterpriseSavingsMonthly > 0 && (
+                <div className="mt-2.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-2">
+                  <p className="text-[11px] text-emerald-300">
+                    {language === 'en' ? 'List price' : 'Precio sin descuento'}:{' '}
+                    <span className="line-through">${formatNumber(enterpriseListTotal)}</span>
+                  </p>
+                  <p className="text-xs font-bold text-emerald-300">
+                    {language === 'en'
+                      ? `You save $${formatNumber(enterpriseSavingsMonthly)}/mo · $${formatNumber(enterpriseSavingsAnnual)}/yr`
+                      : `Ahorras $${formatNumber(enterpriseSavingsMonthly)}/mes · $${formatNumber(enterpriseSavingsAnnual)}/año`}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                <Layers className="size-3.5 shrink-0 text-indigo-300" />
+                <p className="text-xs font-semibold text-slate-200">
+                  {formatNumber(enterpriseDocsIncluded)} {language === 'en' ? 'documents included/mo' : 'documentos incluidos/mes'}
+                </p>
+              </div>
 
               <button
                 type="button"
@@ -694,6 +803,28 @@ export function PricingSection() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Enterprise — sin precio fijo, cotización personalizada para
+            equipos grandes/necesidades especiales (>30 usuarios, API,
+            integraciones, migración). Reutiliza el mismo formulario de
+            EnterpriseLeadModal ya usado en la home page. */}
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <h4 className="text-lg font-black text-slate-900">Enterprise</h4>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {language === 'en'
+                ? 'Custom quote for 30+ users, higher volumes, integrations, API, migration, and special implementations.'
+                : 'Cotización personalizada para más de 30 usuarios, volúmenes superiores, integraciones, API, migración e implementaciones especiales.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEnterpriseLeadOpen(true)}
+            className="shrink-0 rounded-xl border-2 border-slate-800 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-800 hover:text-white"
+          >
+            {language === 'en' ? 'Request a quote' : 'Solicitar cotización'}
+          </button>
         </div>
       </div>
 
@@ -863,8 +994,13 @@ export function PricingSection() {
               <button type="button" className="text-sm text-slate-600" onClick={closeEnterpriseModal}>{copy.close}</button>
             </div>
 
-            <div className="mb-3 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800">
-              {enterpriseSeats} {language === 'en' ? 'users' : 'usuarios'} · ${enterpriseTotal.toFixed(2)} {language === 'en' ? '/ month' : '/ mes'}
+            <div className="mb-3 space-y-0.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800">
+              <p>
+                {clampedSeats} {seatWord(clampedSeats)} · ${enterprisePerSeat}/{language === 'en' ? 'user' : 'usuario'} · ${formatNumber(enterpriseTotal)} {language === 'en' ? '/ month' : '/ mes'}
+              </p>
+              <p className="text-xs font-medium text-indigo-600">
+                {formatNumber(enterpriseDocsIncluded)} {language === 'en' ? 'documents included/mo' : 'documentos incluidos/mes'}
+              </p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 mb-3">
@@ -956,6 +1092,8 @@ export function PricingSection() {
         onOpenChange={setOnboardingOpen}
         contextMessage={language === 'en' ? 'Register free for the Free Plan' : 'Regístrate gratis para el Plan Gratuito'}
       />
+
+      <EnterpriseLeadModal open={enterpriseLeadOpen} onOpenChange={setEnterpriseLeadOpen} />
     </section>
   );
 }

@@ -96,8 +96,8 @@ export function StructuredData({ language = 'en', country, aggregateRating }: St
           price: '29.99',
           priceCurrency: 'USD',
           description: isEs
-            ? 'Documentos legales ilimitados, firmas electrónicas ilimitadas, espacio de trabajo en la nube, soporte prioritario.'
-            : 'Unlimited legal documents, unlimited e-signatures, cloud workspace, priority support.',
+            ? 'Hasta 150 documentos legales al mes, firmas electrónicas incluidas, espacio de trabajo en la nube, soporte prioritario.'
+            : 'Up to 150 legal documents per month, e-signatures included, cloud workspace, priority support.',
           eligibleRegion: { '@type': 'Country', name: countryName },
         },
       ],

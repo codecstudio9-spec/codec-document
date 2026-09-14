@@ -82,7 +82,7 @@ const PLAN_META: Record<PlanKey, {
 };
 
 const BENEFITS = [
-  'Unlimited documents',
+  'Up to 150 documents/month',
   'Unlimited signatures',
   'QR remote signing',
   'Cloud workspace',

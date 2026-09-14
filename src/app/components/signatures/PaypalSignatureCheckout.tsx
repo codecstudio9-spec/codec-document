@@ -61,8 +61,8 @@ const DOCUMENT_PLANS: typeof SIGNATURE_PLANS = [
   {
     id: 'monthly',
     price: 29.99,
-    label: 'Documentos Ilimitados',
-    sublabel: 'Plan Mensual completo — sin límites',
+    label: 'Plan Mensual',
+    sublabel: 'Hasta 150 documentos al mes por usuario',
     badge: 'Más Popular',
     icon: <Infinity className="size-5" />,
     color: 'from-emerald-600 to-teal-600',

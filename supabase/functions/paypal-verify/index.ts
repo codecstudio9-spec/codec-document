@@ -73,10 +73,23 @@ const COMPANY_PLANS: Record<string, { amount: number; days: number }> = {
 };
 // Plan Empresa por asientos -- publicado en la pagina publica de precios,
 // distinto del plan plano de arriba (que sigue existiendo para clientes ya
-// activos en /my-company). Minimo 5 asientos aunque se pidan menos: el
-// precio de lista siempre cobra por al menos 5.
-const ENTERPRISE_SEAT_PRICE = 24.99;
-const ENTERPRISE_MIN_SEATS = 5;
+// activos en /my-company). Descuento escalonado por volumen, desde 1
+// asiento -- DEBE coincidir EXACTO con `businessPricePerSeat` en
+// src/app/components/pricing-section.tsx: ese archivo solo decide qué
+// importe se le PIDE a PayPal, esta función es la que de verdad lo
+// verifica y cobra, así que un escalón desincronizado hace que el pago
+// se rechace por "importe no coincide" (o cobre un importe distinto al
+// que el cliente vio en pantalla).
+const ENTERPRISE_LIST_PRICE = 69; // precio de lista sin descuento (1-4 usuarios)
+const ENTERPRISE_MIN_SEATS = 1;
+
+function enterprisePricePerSeat(seats: number): number {
+  if (seats >= 30) return 49;
+  if (seats >= 20) return 52;
+  if (seats >= 10) return 55;
+  if (seats >= 5) return 59;
+  return ENTERPRISE_LIST_PRICE;
+}
 
 type Product =
   | 'doc_single'
@@ -145,8 +158,10 @@ function expectedAmountFor(product: Product, documentId?: string, seats?: number
     case 'company_monthly':
     case 'company_annual':
       return COMPANY_PLANS[product].amount;
-    case 'company_seats_monthly':
-      return Math.round(clampSeats(seats) * ENTERPRISE_SEAT_PRICE * 100) / 100;
+    case 'company_seats_monthly': {
+      const s = clampSeats(seats);
+      return Math.round(s * enterprisePricePerSeat(s) * 100) / 100;
+    }
     case 'quote_single':
       return QUOTE_SINGLE_PRICE;
     default:
