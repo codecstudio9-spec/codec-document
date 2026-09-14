@@ -402,12 +402,35 @@ export function ElectronicSignaturePage() {
     const target = identityCaptureTarget;
     const video = identityVideoRef.current;
     if (!target || !video) return;
+    const vw = video.videoWidth || 1920;
+    const vh = video.videoHeight || 1080;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1920;
-    canvas.height = video.videoHeight || 1080;
     const ctx = canvas.getContext('2d')!;
-    if (target === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Recorta ya en la captura para que quede SOLO la persona (selfie) o
+    // SOLO la tarjeta (cédula) — coincidiendo con la guía que se ve en
+    // pantalla — en vez de guardar el cuadro completo de la cámara con
+    // todo el fondo/habitación alrededor, como pasaba antes.
+    if (target === 'selfie') {
+      const size = Math.round(Math.min(vw, vh) * 0.85);
+      const sx = Math.round((vw - size) / 2);
+      const sy = Math.round((vh - size) / 2);
+      canvas.width = size;
+      canvas.height = size;
+      ctx.translate(size, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+    } else {
+      const CARD_ASPECT = 1.586; // ancho/alto estándar de una cédula/tarjeta
+      let cw = vw * 0.9;
+      let ch = cw / CARD_ASPECT;
+      if (ch > vh * 0.9) { ch = vh * 0.9; cw = ch * CARD_ASPECT; }
+      const sx = Math.round((vw - cw) / 2);
+      const sy = Math.round((vh - ch) / 2);
+      canvas.width = Math.round(cw);
+      canvas.height = Math.round(ch);
+      ctx.drawImage(video, sx, sy, cw, ch, 0, 0, canvas.width, canvas.height);
+    }
     const rawUrl = canvas.toDataURL('image/jpeg', 0.9);
     try {
       if (target === 'selfie') setSelfieDataUrl(await normalizeSelfieEvidence(rawUrl));
@@ -1293,6 +1316,20 @@ export function ElectronicSignaturePage() {
                           />
                           <p className="absolute bottom-4 left-0 right-0 text-center text-xs font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
                             Centra tu rostro dentro del círculo
+                          </p>
+                        </div>
+                      )}
+                      {/* Guía rectangular con la proporción real de una
+                          cédula — misma zona que se recorta al capturar, así
+                          en la foto final no queda fondo/mesa/mano alrededor. */}
+                      {(identityCaptureTarget === 'id_front' || identityCaptureTarget === 'id_back') && (
+                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                          <div
+                            className="w-[90%] rounded-xl border-[3px] border-dashed border-white/90"
+                            style={{ aspectRatio: '1.586', boxShadow: '0 0 0 9999px rgba(0,0,0,0.55)' }}
+                          />
+                          <p className="absolute bottom-4 left-0 right-0 text-center text-xs font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+                            Coloca tu cédula dentro del recuadro
                           </p>
                         </div>
                       )}
