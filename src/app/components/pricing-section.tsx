@@ -21,16 +21,19 @@ import { EnterpriseLeadModal } from './EnterpriseLeadModal';
 // del servidor es la que de verdad valida y cobra el pago; si se cambia un
 // escalón aquí sin cambiarlo allá, el checkout empieza a rechazar pagos
 // (o peor, a cobrar de más/de menos) por "importe no coincide".
-const BUSINESS_LIST_PRICE = 69; // precio de lista sin descuento (1-4 usuarios)
+const BUSINESS_LIST_PRICE = 69; // precio de lista (1-4 usuarios)
 const BUSINESS_MIN_SEATS = 1;
+const BUSINESS_CUSTOM_TIER_SEATS = 30; // a partir de aquí ya no hay precio fijo
 const BUSINESS_DEFAULT_SEATS = 5;
 const BUSINESS_DOCS_PER_SEAT_PER_MONTH = 750;
 
-function businessPricePerSeat(seats: number): number {
-  if (seats >= 30) return 49;
-  if (seats >= 20) return 52;
-  if (seats >= 10) return 55;
-  if (seats >= 5) return 59;
+// Devuelve null a partir de BUSINESS_CUSTOM_TIER_SEATS: ese nivel no tiene
+// precio por asiento fijo, se cotiza aparte con el equipo comercial.
+function businessPricePerSeat(seats: number): number | null {
+  if (seats >= BUSINESS_CUSTOM_TIER_SEATS) return null;
+  if (seats >= 20) return 55;
+  if (seats >= 10) return 59;
+  if (seats >= 5) return 64;
   return BUSINESS_LIST_PRICE;
 }
 
@@ -211,14 +214,15 @@ export function PricingSection() {
   const [enterpriseModalOpen, setEnterpriseModalOpen] = useState(false);
   const [enterpriseCompanyName, setEnterpriseCompanyName] = useState('');
   const [enterpriseCheckoutReady, setEnterpriseCheckoutReady] = useState(false);
-  // Cotización personalizada para >30 usuarios / necesidades especiales —
+  // Cotización personalizada para 30+ usuarios o necesidades especiales,
   // reutiliza el mismo formulario ya usado en la home page.
   const [enterpriseLeadOpen, setEnterpriseLeadOpen] = useState(false);
   const clampedSeats = Math.max(BUSINESS_MIN_SEATS, enterpriseSeats);
+  const isCustomTier = clampedSeats >= BUSINESS_CUSTOM_TIER_SEATS;
   const enterprisePerSeat = useMemo(() => businessPricePerSeat(clampedSeats), [clampedSeats]);
-  const enterpriseTotal = useMemo(() => clampedSeats * enterprisePerSeat, [clampedSeats, enterprisePerSeat]);
+  const enterpriseTotal = useMemo(() => (enterprisePerSeat === null ? null : clampedSeats * enterprisePerSeat), [clampedSeats, enterprisePerSeat]);
   const enterpriseListTotal = useMemo(() => clampedSeats * BUSINESS_LIST_PRICE, [clampedSeats]);
-  const enterpriseSavingsMonthly = Math.max(0, enterpriseListTotal - enterpriseTotal);
+  const enterpriseSavingsMonthly = enterpriseTotal === null ? 0 : Math.max(0, enterpriseListTotal - enterpriseTotal);
   const enterpriseSavingsAnnual = enterpriseSavingsMonthly * 12;
   const enterpriseDocsIncluded = clampedSeats * BUSINESS_DOCS_PER_SEAT_PER_MONTH;
   const formatNumber = (n: number) => n.toLocaleString(language === 'en' ? 'en-US' : 'es-CO');
@@ -348,7 +352,12 @@ export function PricingSection() {
   }, [enterpriseModalOpen]);
 
   useEffect(() => {
-    if (!enterpriseModalOpen || !enterpriseCheckoutReady) return;
+    // isCustomTier (30+ usuarios) nunca debería llegar aquí — ese nivel usa
+    // el botón "Solicitar cotización", no este checkout — pero se revisa
+    // igual antes de montar el botón de PayPal para nunca enviarle un
+    // importe vacío.
+    if (!enterpriseModalOpen || !enterpriseCheckoutReady || isCustomTier || enterpriseTotal === null) return;
+    const totalToCharge = enterpriseTotal;
 
     let cancelled = false;
 
@@ -366,7 +375,7 @@ export function PricingSection() {
           purchase_units: [{
             description: `${language === 'en' ? 'Enterprise Plan' : 'Plan Empresa'} (${enterpriseSeats} ${seatWord(enterpriseSeats)})`,
             custom_id: payerEmail || user?.email || '',
-            amount: { currency_code: 'USD', value: enterpriseTotal.toFixed(2) },
+            amount: { currency_code: 'USD', value: totalToCharge.toFixed(2) },
           }],
         }),
         onApprove: async (data: any, actions: any) => {
@@ -411,7 +420,7 @@ export function PricingSection() {
     // misma razón que `promoParcial` arriba: el botón de PayPal se crea con
     // un importe fijo, así que cambiar el número de asientos con el modal
     // ya abierto necesita reconstruir el botón con el nuevo total.
-  }, [PAYPAL_CLIENT_ID, enterpriseCheckoutReady, enterpriseCompanyName, enterpriseModalOpen, enterpriseSeats, enterpriseTotal, language, navigate, payerEmail, user?.email]);
+  }, [PAYPAL_CLIENT_ID, enterpriseCheckoutReady, enterpriseCompanyName, enterpriseModalOpen, enterpriseSeats, enterpriseTotal, isCustomTier, language, navigate, payerEmail, user?.email]);
 
   const restoreBodyScroll = () => {
     document.body.style.overflow = '';
@@ -663,8 +672,8 @@ export function PricingSection() {
               </h3>
               <p className="mt-1.5 text-sm text-slate-300">
                 {language === 'en'
-                  ? 'For teams of any size — a shared workspace with roles, a super-admin who oversees every teammate\'s documents and signatures, and your own company branding. The more users, the lower the price per user.'
-                  : 'Para equipos de cualquier tamaño — un espacio compartido con roles, un súper administrador que supervisa los documentos y firmas de todo el equipo, y tu propia marca (branding) en cada documento. A más usuarios, menor precio por usuario.'}
+                  ? 'For teams of any size, a shared workspace with roles, a super-admin who oversees every teammate\'s documents and signatures, and your own company branding. The more users, the lower the price per user.'
+                  : 'Para equipos de cualquier tamaño, un espacio compartido con roles, un súper administrador que supervisa los documentos y firmas de todo el equipo, y tu propia marca (branding) en cada documento. A más usuarios, menor precio por usuario.'}
               </p>
               <ul className="mt-4 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {[
@@ -686,18 +695,18 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              {/* Tabla de descuento por volumen — para que el usuario vea de
+              {/* Tabla de descuento por volumen, para que el usuario vea de
                   entrada por qué el precio por usuario baja al subir la
                   cantidad, sin tener que adivinar moviendo el selector. */}
               <div className="mt-4 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
                 {[
-                  { range: '1–4', price: 69 },
-                  { range: '5–9', price: 59 },
-                  { range: '10–19', price: 55 },
-                  { range: '20–29', price: 52 },
-                  { range: '30+', price: 49 },
+                  { range: '1-4', price: 69, custom: false },
+                  { range: '5-9', price: 64, custom: false },
+                  { range: '10-19', price: 59, custom: false },
+                  { range: '20-29', price: 55, custom: false },
+                  { range: '30+', price: null, custom: true },
                 ].map((tier) => {
-                  const isActiveTier = businessPricePerSeat(clampedSeats) === tier.price;
+                  const isActiveTier = tier.custom ? isCustomTier : businessPricePerSeat(clampedSeats) === tier.price;
                   return (
                     <div
                       key={tier.range}
@@ -709,7 +718,9 @@ export function PricingSection() {
                         {tier.range} {language === 'en' ? 'users' : 'usuarios'}
                       </p>
                       <p className={`text-sm font-black ${isActiveTier ? 'text-indigo-300' : 'text-white'}`}>
-                        ${tier.price}
+                        {tier.custom
+                          ? (language === 'en' ? 'Custom' : 'A medida')
+                          : `$${tier.price}`}
                       </p>
                     </div>
                   );
@@ -757,28 +768,43 @@ export function PricingSection() {
                 </div>
               </div>
 
-              <p className="mt-3 text-3xl font-black text-white">
-                ${enterpriseTotal.toLocaleString(language === 'en' ? 'en-US' : 'es-CO')}
-                <span className="text-sm font-semibold text-slate-400">/{language === 'en' ? 'mo' : 'mes'}</span>
-              </p>
-              <p className="text-[11px] text-slate-500">
-                ${enterprisePerSeat} × {clampedSeats} {seatWord(clampedSeats)}
-              </p>
-
-              {/* Ahorro frente al precio de lista — solo tiene sentido
-                  mostrarlo cuando el escalón actual ya trae descuento. */}
-              {enterpriseSavingsMonthly > 0 && (
-                <div className="mt-2.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-2">
-                  <p className="text-[11px] text-emerald-300">
-                    {language === 'en' ? 'List price' : 'Precio sin descuento'}:{' '}
-                    <span className="line-through">${formatNumber(enterpriseListTotal)}</span>
+              {isCustomTier ? (
+                <>
+                  <p className="mt-3 text-2xl font-black text-white">
+                    {language === 'en' ? 'Custom pricing' : 'Precio personalizado'}
                   </p>
-                  <p className="text-xs font-bold text-emerald-300">
+                  <p className="text-[11px] text-slate-500">
                     {language === 'en'
-                      ? `You save $${formatNumber(enterpriseSavingsMonthly)}/mo · $${formatNumber(enterpriseSavingsAnnual)}/yr`
-                      : `Ahorras $${formatNumber(enterpriseSavingsMonthly)}/mes · $${formatNumber(enterpriseSavingsAnnual)}/año`}
+                      ? 'Negotiated with our sales team for 30+ users'
+                      : 'Negociado con nuestro equipo comercial para 30 o más usuarios'}
                   </p>
-                </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-3 text-3xl font-black text-white">
+                    ${enterpriseTotal !== null ? enterpriseTotal.toLocaleString(language === 'en' ? 'en-US' : 'es-CO') : ''}
+                    <span className="text-sm font-semibold text-slate-400">/{language === 'en' ? 'mo' : 'mes'}</span>
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    ${enterprisePerSeat} × {clampedSeats} {seatWord(clampedSeats)}
+                  </p>
+
+                  {/* Ahorro frente al precio de lista, solo tiene sentido
+                      mostrarlo cuando el escalón actual ya trae descuento. */}
+                  {enterpriseSavingsMonthly > 0 && (
+                    <div className="mt-2.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-2">
+                      <p className="text-[11px] text-emerald-300">
+                        {language === 'en' ? 'List price' : 'Precio sin descuento'}:{' '}
+                        <span className="line-through">${formatNumber(enterpriseListTotal)}</span>
+                      </p>
+                      <p className="text-xs font-bold text-emerald-300">
+                        {language === 'en'
+                          ? `You save $${formatNumber(enterpriseSavingsMonthly)}/mo · $${formatNumber(enterpriseSavingsAnnual)}/yr`
+                          : `Ahorras $${formatNumber(enterpriseSavingsMonthly)}/mes · $${formatNumber(enterpriseSavingsAnnual)}/año`}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
@@ -790,10 +816,12 @@ export function PricingSection() {
 
               <button
                 type="button"
-                onClick={openEnterpriseCheckout}
+                onClick={isCustomTier ? () => setEnterpriseLeadOpen(true) : openEnterpriseCheckout}
                 className="mt-4 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-950/40 transition hover:brightness-110"
               >
-                {language === 'en' ? 'Get started' : 'Comenzar'}
+                {isCustomTier
+                  ? (language === 'en' ? 'Request a quote' : 'Solicitar cotización')
+                  : (language === 'en' ? 'Get started' : 'Comenzar')}
               </button>
               <div className="mt-2.5 flex items-center justify-center gap-1.5">
                 <Lock className="size-3 text-slate-500" />
@@ -996,7 +1024,7 @@ export function PricingSection() {
 
             <div className="mb-3 space-y-0.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800">
               <p>
-                {clampedSeats} {seatWord(clampedSeats)} · ${enterprisePerSeat}/{language === 'en' ? 'user' : 'usuario'} · ${formatNumber(enterpriseTotal)} {language === 'en' ? '/ month' : '/ mes'}
+                {clampedSeats} {seatWord(clampedSeats)} · ${enterprisePerSeat}/{language === 'en' ? 'user' : 'usuario'} · ${formatNumber(enterpriseTotal ?? 0)} {language === 'en' ? '/ month' : '/ mes'}
               </p>
               <p className="text-xs font-medium text-indigo-600">
                 {formatNumber(enterpriseDocsIncluded)} {language === 'en' ? 'documents included/mo' : 'documentos incluidos/mes'}

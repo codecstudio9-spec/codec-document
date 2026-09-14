@@ -80,14 +80,19 @@ const COMPANY_PLANS: Record<string, { amount: number; days: number }> = {
 // verifica y cobra, así que un escalón desincronizado hace que el pago
 // se rechace por "importe no coincide" (o cobre un importe distinto al
 // que el cliente vio en pantalla).
-const ENTERPRISE_LIST_PRICE = 69; // precio de lista sin descuento (1-4 usuarios)
+const ENTERPRISE_LIST_PRICE = 69; // precio de lista (1-4 usuarios)
 const ENTERPRISE_MIN_SEATS = 1;
+const ENTERPRISE_CUSTOM_TIER_SEATS = 30; // a partir de aqui no hay pago automatico, se cotiza aparte
 
-function enterprisePricePerSeat(seats: number): number {
-  if (seats >= 30) return 49;
-  if (seats >= 20) return 52;
-  if (seats >= 10) return 55;
-  if (seats >= 5) return 59;
+// Devuelve null a partir de ENTERPRISE_CUSTOM_TIER_SEATS -- ese nivel no
+// tiene precio fijo ni checkout automatico por PayPal, así que un intento
+// de pago con esa cantidad de asientos se rechaza (ver el uso de esta
+// función más abajo).
+function enterprisePricePerSeat(seats: number): number | null {
+  if (seats >= ENTERPRISE_CUSTOM_TIER_SEATS) return null;
+  if (seats >= 20) return 55;
+  if (seats >= 10) return 59;
+  if (seats >= 5) return 64;
   return ENTERPRISE_LIST_PRICE;
 }
 
@@ -160,7 +165,8 @@ function expectedAmountFor(product: Product, documentId?: string, seats?: number
       return COMPANY_PLANS[product].amount;
     case 'company_seats_monthly': {
       const s = clampSeats(seats);
-      return Math.round(s * enterprisePricePerSeat(s) * 100) / 100;
+      const perSeat = enterprisePricePerSeat(s);
+      return perSeat === null ? null : Math.round(s * perSeat * 100) / 100;
     }
     case 'quote_single':
       return QUOTE_SINGLE_PRICE;
@@ -613,7 +619,10 @@ Deno.serve(async (req) => {
       // ── Orders API path (one-time payment) ─────────────────────────────
       const listaBase = expectedAmountFor(product, documentId, seats);
       if (listaBase === null) {
-        return new Response(JSON.stringify({ error: 'Unknown product / missing documentId' }), {
+        const message = product === 'company_seats_monthly'
+          ? `30+ seats does not have automatic checkout, it is quoted with sales`
+          : 'Unknown product / missing documentId';
+        return new Response(JSON.stringify({ error: message }), {
           status: 400, headers: corsHeaders(origin),
         });
       }
