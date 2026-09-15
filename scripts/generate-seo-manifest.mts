@@ -33,6 +33,8 @@ import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
 import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
 import { NECESIDADES_CONTADOR } from '../src/app/data/contador-necesidad-seo-content';
 import { PAGINAS_US } from '../src/app/data/us-intent-seo-content';
+import { CO_FREE_SIGNATURE_CITIES } from '../src/app/data/co-free-signature-city-content';
+import { US_FREE_SIGNATURE_STATES } from '../src/app/data/us-free-signature-state-content';
 
 // `lang` viaja en el manifiesto porque index.html declara `lang="en"` una sola
 // vez para las ~300 rutas, y casi un tercio de ellas son páginas en español
@@ -188,6 +190,26 @@ for (const n of NECESIDADES_CONTADOR) {
 // us-intent-seo-content.ts para el desglose por grupo.
 for (const p of PAGINAS_US) {
   add(`/${p.slug}`, p.titleTag, p.metaDescription, 'en', p.fotos[0]);
+}
+
+// ── Firma digital gratis por ciudad, Colombia (COFreeSignatureLanding.tsx)
+// -- Spanish only (FixedLanguageProvider defaultLanguage="es") ──────────
+for (const c of CO_FREE_SIGNATURE_CITIES) {
+  add(
+    `/firma-digital-gratis-${c.slug}`,
+    `Firma Digital Gratis en ${c.nameEs} | CodecDocument`,
+    `Firma documentos electrónicamente gratis en ${c.nameEs}. Verificación de identidad real, pista de auditoría SHA-256 y plena validez legal bajo la Ley 527 de 1999 y el Decreto 2364 de 2012.`,
+    'es',
+  );
+}
+
+// ── Free digital signature by state, US (USFreeSignatureLanding.tsx) ────
+for (const s of US_FREE_SIGNATURE_STATES) {
+  add(
+    `/free-digital-signature-${s.slug}`,
+    `Free Digital Signature in ${s.name} | CodecDocument`,
+    `Sign documents electronically for free in ${s.name}. Real identity verification, a SHA-256 audit trail, and full legal validity under the E-SIGN Act and ${s.name}'s own Uniform Electronic Transactions Act (${s.lawBadge}).`,
+  );
 }
 
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');

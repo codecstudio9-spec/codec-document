@@ -3,11 +3,26 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Permissions-Policy", "value": "geolocation=(self), camera=(self), microphone=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(self), camera=(self), microphone=()"
+        }
       ]
     },
     {
@@ -410,12 +425,20 @@
       "destination": "/blog/why-digital-signatures-matter-2026.html"
     },
     {
+      "source": "/bulk-document-signing-for-teams",
+      "destination": "/bulk-document-signing-for-teams.html"
+    },
+    {
       "source": "/business-estimate-generator",
       "destination": "/business-estimate-generator.html"
     },
     {
       "source": "/certificar-documentos-online",
       "destination": "/certificar-documentos-online.html"
+    },
+    {
+      "source": "/child-travel-consent-form",
+      "destination": "/child-travel-consent-form.html"
     },
     {
       "source": "/commercial-proposal-generator",
@@ -428,6 +451,10 @@
     {
       "source": "/conciliar-facturas-electronicas-con-contabilidad",
       "destination": "/conciliar-facturas-electronicas-con-contabilidad.html"
+    },
+    {
+      "source": "/consulting-agreement-template",
+      "destination": "/consulting-agreement-template.html"
     },
     {
       "source": "/convertir-xml-dian-a-excel",
@@ -526,8 +553,16 @@
       "destination": "/docusign-alternative.html"
     },
     {
+      "source": "/durable-power-of-attorney",
+      "destination": "/durable-power-of-attorney.html"
+    },
+    {
       "source": "/e-signature-for-financial-services",
       "destination": "/e-signature-for-financial-services.html"
+    },
+    {
+      "source": "/electronic-signature-api-for-developers",
+      "destination": "/electronic-signature-api-for-developers.html"
     },
     {
       "source": "/electronic-signature-for-banks",
@@ -538,12 +573,80 @@
       "destination": "/electronic-signature-for-realtors.html"
     },
     {
+      "source": "/employee-confidentiality-agreement",
+      "destination": "/employee-confidentiality-agreement.html"
+    },
+    {
       "source": "/esign-act-compliance",
       "destination": "/esign-act-compliance.html"
     },
     {
+      "source": "/financial-power-of-attorney",
+      "destination": "/financial-power-of-attorney.html"
+    },
+    {
       "source": "/firma-digital-gratis",
       "destination": "/firma-digital-gratis.html"
+    },
+    {
+      "source": "/firma-digital-gratis-armenia",
+      "destination": "/firma-digital-gratis-armenia.html"
+    },
+    {
+      "source": "/firma-digital-gratis-barranquilla",
+      "destination": "/firma-digital-gratis-barranquilla.html"
+    },
+    {
+      "source": "/firma-digital-gratis-bogota",
+      "destination": "/firma-digital-gratis-bogota.html"
+    },
+    {
+      "source": "/firma-digital-gratis-bucaramanga",
+      "destination": "/firma-digital-gratis-bucaramanga.html"
+    },
+    {
+      "source": "/firma-digital-gratis-cali",
+      "destination": "/firma-digital-gratis-cali.html"
+    },
+    {
+      "source": "/firma-digital-gratis-cartagena",
+      "destination": "/firma-digital-gratis-cartagena.html"
+    },
+    {
+      "source": "/firma-digital-gratis-cucuta",
+      "destination": "/firma-digital-gratis-cucuta.html"
+    },
+    {
+      "source": "/firma-digital-gratis-ibague",
+      "destination": "/firma-digital-gratis-ibague.html"
+    },
+    {
+      "source": "/firma-digital-gratis-manizales",
+      "destination": "/firma-digital-gratis-manizales.html"
+    },
+    {
+      "source": "/firma-digital-gratis-medellin",
+      "destination": "/firma-digital-gratis-medellin.html"
+    },
+    {
+      "source": "/firma-digital-gratis-monteria",
+      "destination": "/firma-digital-gratis-monteria.html"
+    },
+    {
+      "source": "/firma-digital-gratis-pasto",
+      "destination": "/firma-digital-gratis-pasto.html"
+    },
+    {
+      "source": "/firma-digital-gratis-pereira",
+      "destination": "/firma-digital-gratis-pereira.html"
+    },
+    {
+      "source": "/firma-digital-gratis-santa-marta",
+      "destination": "/firma-digital-gratis-santa-marta.html"
+    },
+    {
+      "source": "/firma-digital-gratis-villavicencio",
+      "destination": "/firma-digital-gratis-villavicencio.html"
     },
     {
       "source": "/firma-electronica-argentina",
@@ -614,12 +717,96 @@
       "destination": "/firmar-pdf-gratis.html"
     },
     {
+      "source": "/free-digital-signature-arkansas",
+      "destination": "/free-digital-signature-arkansas.html"
+    },
+    {
+      "source": "/free-digital-signature-connecticut",
+      "destination": "/free-digital-signature-connecticut.html"
+    },
+    {
+      "source": "/free-digital-signature-idaho",
+      "destination": "/free-digital-signature-idaho.html"
+    },
+    {
+      "source": "/free-digital-signature-iowa",
+      "destination": "/free-digital-signature-iowa.html"
+    },
+    {
+      "source": "/free-digital-signature-kansas",
+      "destination": "/free-digital-signature-kansas.html"
+    },
+    {
+      "source": "/free-digital-signature-kentucky",
+      "destination": "/free-digital-signature-kentucky.html"
+    },
+    {
+      "source": "/free-digital-signature-louisiana",
+      "destination": "/free-digital-signature-louisiana.html"
+    },
+    {
+      "source": "/free-digital-signature-mississippi",
+      "destination": "/free-digital-signature-mississippi.html"
+    },
+    {
+      "source": "/free-digital-signature-nebraska",
+      "destination": "/free-digital-signature-nebraska.html"
+    },
+    {
+      "source": "/free-digital-signature-nevada",
+      "destination": "/free-digital-signature-nevada.html"
+    },
+    {
+      "source": "/free-digital-signature-new-mexico",
+      "destination": "/free-digital-signature-new-mexico.html"
+    },
+    {
+      "source": "/free-digital-signature-oklahoma",
+      "destination": "/free-digital-signature-oklahoma.html"
+    },
+    {
+      "source": "/free-digital-signature-oregon",
+      "destination": "/free-digital-signature-oregon.html"
+    },
+    {
+      "source": "/free-digital-signature-utah",
+      "destination": "/free-digital-signature-utah.html"
+    },
+    {
+      "source": "/free-digital-signature-west-virginia",
+      "destination": "/free-digital-signature-west-virginia.html"
+    },
+    {
+      "source": "/free-independent-contractor-agreement",
+      "destination": "/free-independent-contractor-agreement.html"
+    },
+    {
       "source": "/free-lease-agreement-template",
       "destination": "/free-lease-agreement-template.html"
     },
     {
+      "source": "/free-nda-generator",
+      "destination": "/free-nda-generator.html"
+    },
+    {
+      "source": "/free-promissory-note-template",
+      "destination": "/free-promissory-note-template.html"
+    },
+    {
+      "source": "/free-will-template",
+      "destination": "/free-will-template.html"
+    },
+    {
       "source": "/generador-de-cotizaciones",
       "destination": "/generador-de-cotizaciones.html"
+    },
+    {
+      "source": "/how-to-sign-a-pdf-online-free",
+      "destination": "/how-to-sign-a-pdf-online-free.html"
+    },
+    {
+      "source": "/how-to-write-a-will",
+      "destination": "/how-to-write-a-will.html"
     },
     {
       "source": "/importar-facturas-electronicas-a-siigo",
@@ -730,8 +917,16 @@
       "destination": "/independent-contractor-wisconsin.html"
     },
     {
+      "source": "/international-travel-consent-form-for-minors",
+      "destination": "/international-travel-consent-form-for-minors.html"
+    },
+    {
       "source": "/is-an-electronic-signature-legally-binding",
       "destination": "/is-an-electronic-signature-legally-binding.html"
+    },
+    {
+      "source": "/last-will-and-testament-template",
+      "destination": "/last-will-and-testament-template.html"
     },
     {
       "source": "/lease-agreement-alabama",
@@ -906,6 +1101,10 @@
       "destination": "/loan-agreement-electronic-signature.html"
     },
     {
+      "source": "/medical-power-of-attorney",
+      "destination": "/medical-power-of-attorney.html"
+    },
+    {
       "source": "/nda-alabama",
       "destination": "/nda-alabama.html"
     },
@@ -1018,8 +1217,16 @@
       "destination": "/notas-credito-debito-dian-xml.html"
     },
     {
+      "source": "/pandadoc-alternative",
+      "destination": "/pandadoc-alternative.html"
+    },
+    {
       "source": "/postnuptial-agreement",
       "destination": "/postnuptial-agreement.html"
+    },
+    {
+      "source": "/power-of-attorney-template",
+      "destination": "/power-of-attorney-template.html"
     },
     {
       "source": "/prenuptial-agreement",
@@ -1028,6 +1235,10 @@
     {
       "source": "/professional-quote-template",
       "destination": "/professional-quote-template.html"
+    },
+    {
+      "source": "/professional-resignation-letter",
+      "destination": "/professional-resignation-letter.html"
     },
     {
       "source": "/promissory-note-alabama",
@@ -1162,6 +1373,18 @@
       "destination": "/reporte-retenciones-facturas-electronicas.html"
     },
     {
+      "source": "/resignation-letter-email-format",
+      "destination": "/resignation-letter-email-format.html"
+    },
+    {
+      "source": "/resignation-letter-template",
+      "destination": "/resignation-letter-template.html"
+    },
+    {
+      "source": "/revoke-power-of-attorney",
+      "destination": "/revoke-power-of-attorney.html"
+    },
+    {
       "source": "/san-jose-california",
       "destination": "/san-jose-california.html"
     },
@@ -1270,6 +1493,18 @@
       "destination": "/service-agreement-wisconsin.html"
     },
     {
+      "source": "/single-parent-travel-consent-form",
+      "destination": "/single-parent-travel-consent-form.html"
+    },
+    {
+      "source": "/subcontractor-agreement-template",
+      "destination": "/subcontractor-agreement-template.html"
+    },
+    {
+      "source": "/two-weeks-notice-letter",
+      "destination": "/two-weeks-notice-letter.html"
+    },
+    {
       "source": "/ueta-vs-esign-act",
       "destination": "/ueta-vs-esign-act.html"
     },
@@ -1346,6 +1581,10 @@
       "destination": "/vehicle-bill-of-sale-pennsylvania.html"
     },
     {
+      "source": "/vehicle-bill-of-sale-requirements-by-state",
+      "destination": "/vehicle-bill-of-sale-requirements-by-state.html"
+    },
+    {
       "source": "/vehicle-bill-of-sale-san-jose-california",
       "destination": "/vehicle-bill-of-sale-san-jose-california.html"
     },
@@ -1372,6 +1611,10 @@
     {
       "source": "/vehicle-bill-of-sale-wisconsin",
       "destination": "/vehicle-bill-of-sale-wisconsin.html"
+    },
+    {
+      "source": "/vendor-agreement-template",
+      "destination": "/vendor-agreement-template.html"
     },
     {
       "source": "/wedding-planner-alabama",
@@ -1472,6 +1715,18 @@
     {
       "source": "/wedding-planner-wisconsin",
       "destination": "/wedding-planner-wisconsin.html"
+    },
+    {
+      "source": "/what-happens-without-a-will",
+      "destination": "/what-happens-without-a-will.html"
+    },
+    {
+      "source": "/white-label-electronic-signature",
+      "destination": "/white-label-electronic-signature.html"
+    },
+    {
+      "source": "/will-vs-trust",
+      "destination": "/will-vs-trust.html"
     },
     {
       "source": "/((?!api/).*)",

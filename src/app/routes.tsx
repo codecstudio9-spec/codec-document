@@ -270,6 +270,44 @@ const FirmaElectronicaArgentina = lazy(() => import("./pages/landings/firma-elec
 const FirmaElectronicaEcuador = lazy(() => import("./pages/landings/firma-electronica-ecuador"));
 const FirmaElectronicaGratis = lazy(() => import("./pages/landings/firma-electronica-gratis"));
 
+// "Firma digital gratis en [ciudad]" -- 15 ciudades colombianas, ninguna
+// con pagina propia todavia (ver co-free-signature-city-content.ts).
+const FirmaDigitalGratisBogota = lazy(() => import("./pages/landings/firma-digital-gratis-bogota"));
+const FirmaDigitalGratisMedellin = lazy(() => import("./pages/landings/firma-digital-gratis-medellin"));
+const FirmaDigitalGratisCali = lazy(() => import("./pages/landings/firma-digital-gratis-cali"));
+const FirmaDigitalGratisBarranquilla = lazy(() => import("./pages/landings/firma-digital-gratis-barranquilla"));
+const FirmaDigitalGratisCartagena = lazy(() => import("./pages/landings/firma-digital-gratis-cartagena"));
+const FirmaDigitalGratisCucuta = lazy(() => import("./pages/landings/firma-digital-gratis-cucuta"));
+const FirmaDigitalGratisBucaramanga = lazy(() => import("./pages/landings/firma-digital-gratis-bucaramanga"));
+const FirmaDigitalGratisPereira = lazy(() => import("./pages/landings/firma-digital-gratis-pereira"));
+const FirmaDigitalGratisSantaMarta = lazy(() => import("./pages/landings/firma-digital-gratis-santa-marta"));
+const FirmaDigitalGratisIbague = lazy(() => import("./pages/landings/firma-digital-gratis-ibague"));
+const FirmaDigitalGratisManizales = lazy(() => import("./pages/landings/firma-digital-gratis-manizales"));
+const FirmaDigitalGratisVillavicencio = lazy(() => import("./pages/landings/firma-digital-gratis-villavicencio"));
+const FirmaDigitalGratisPasto = lazy(() => import("./pages/landings/firma-digital-gratis-pasto"));
+const FirmaDigitalGratisMonteria = lazy(() => import("./pages/landings/firma-digital-gratis-monteria"));
+const FirmaDigitalGratisArmenia = lazy(() => import("./pages/landings/firma-digital-gratis-armenia"));
+
+// "Free digital signature in [state]" -- 15 US states, none of them
+// previously covered by any state page on the site (see
+// us-free-signature-state-content.ts). First English page family built
+// around "free digital signature" -- the gratis cluster above is ES only.
+const FreeDigitalSignatureLouisiana = lazy(() => import("./pages/landings/free-digital-signature-louisiana"));
+const FreeDigitalSignatureKentucky = lazy(() => import("./pages/landings/free-digital-signature-kentucky"));
+const FreeDigitalSignatureOregon = lazy(() => import("./pages/landings/free-digital-signature-oregon"));
+const FreeDigitalSignatureOklahoma = lazy(() => import("./pages/landings/free-digital-signature-oklahoma"));
+const FreeDigitalSignatureConnecticut = lazy(() => import("./pages/landings/free-digital-signature-connecticut"));
+const FreeDigitalSignatureUtah = lazy(() => import("./pages/landings/free-digital-signature-utah"));
+const FreeDigitalSignatureNevada = lazy(() => import("./pages/landings/free-digital-signature-nevada"));
+const FreeDigitalSignatureIowa = lazy(() => import("./pages/landings/free-digital-signature-iowa"));
+const FreeDigitalSignatureArkansas = lazy(() => import("./pages/landings/free-digital-signature-arkansas"));
+const FreeDigitalSignatureMississippi = lazy(() => import("./pages/landings/free-digital-signature-mississippi"));
+const FreeDigitalSignatureKansas = lazy(() => import("./pages/landings/free-digital-signature-kansas"));
+const FreeDigitalSignatureNewMexico = lazy(() => import("./pages/landings/free-digital-signature-new-mexico"));
+const FreeDigitalSignatureNebraska = lazy(() => import("./pages/landings/free-digital-signature-nebraska"));
+const FreeDigitalSignatureIdaho = lazy(() => import("./pages/landings/free-digital-signature-idaho"));
+const FreeDigitalSignatureWestVirginia = lazy(() => import("./pages/landings/free-digital-signature-west-virginia"));
+
 // Diferida como todas las demas. Importada de forma estatica, el contenido de
 // las 25 paginas SEO -- mas de 60 KB de texto -- viajaba dentro del bundle
 // principal y se descargaba en CADA visita a cualquier pantalla del producto,
@@ -888,6 +926,41 @@ export const router = createBrowserRouter([
     Component: CertificarDocumentosOnline,
     errorElement: <RouteErrorBoundary />,
   },
+  // "Firma digital gratis en [ciudad]" -- 15 ciudades colombianas (ver
+  // co-free-signature-city-content.ts). Ninguna tenia pagina propia antes.
+  { path: "/firma-digital-gratis-bogota", Component: FirmaDigitalGratisBogota, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-medellin", Component: FirmaDigitalGratisMedellin, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-cali", Component: FirmaDigitalGratisCali, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-barranquilla", Component: FirmaDigitalGratisBarranquilla, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-cartagena", Component: FirmaDigitalGratisCartagena, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-cucuta", Component: FirmaDigitalGratisCucuta, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-bucaramanga", Component: FirmaDigitalGratisBucaramanga, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-pereira", Component: FirmaDigitalGratisPereira, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-santa-marta", Component: FirmaDigitalGratisSantaMarta, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-ibague", Component: FirmaDigitalGratisIbague, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-manizales", Component: FirmaDigitalGratisManizales, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-villavicencio", Component: FirmaDigitalGratisVillavicencio, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-pasto", Component: FirmaDigitalGratisPasto, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-monteria", Component: FirmaDigitalGratisMonteria, errorElement: <RouteErrorBoundary /> },
+  { path: "/firma-digital-gratis-armenia", Component: FirmaDigitalGratisArmenia, errorElement: <RouteErrorBoundary /> },
+  // "Free digital signature in [state]" -- 15 US states (ver
+  // us-free-signature-state-content.ts). Primera familia en ingles del
+  // angulo "gratis"; ninguno de estos 15 estados tenia pagina propia.
+  { path: "/free-digital-signature-louisiana", Component: FreeDigitalSignatureLouisiana, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-kentucky", Component: FreeDigitalSignatureKentucky, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-oregon", Component: FreeDigitalSignatureOregon, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-oklahoma", Component: FreeDigitalSignatureOklahoma, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-connecticut", Component: FreeDigitalSignatureConnecticut, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-utah", Component: FreeDigitalSignatureUtah, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-nevada", Component: FreeDigitalSignatureNevada, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-iowa", Component: FreeDigitalSignatureIowa, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-arkansas", Component: FreeDigitalSignatureArkansas, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-mississippi", Component: FreeDigitalSignatureMississippi, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-kansas", Component: FreeDigitalSignatureKansas, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-new-mexico", Component: FreeDigitalSignatureNewMexico, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-nebraska", Component: FreeDigitalSignatureNebraska, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-idaho", Component: FreeDigitalSignatureIdaho, errorElement: <RouteErrorBoundary /> },
+  { path: "/free-digital-signature-west-virginia", Component: FreeDigitalSignatureWestVirginia, errorElement: <RouteErrorBoundary /> },
   // Fase 4 -- SEO por profesion (8 paginas, ver profession-seo-content.ts).
   {
     path: "/firma-electronica-para-abogados",
