@@ -16,6 +16,7 @@ import {
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { openDocumentUrl } from '../../utils/open-document-url';
 
 type UnifiedDoc = { id: string; kind: 'own' | 'associated'; name: string; status: string; date: string; href: string | null; color: string | null; daysLeft: number | null };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
@@ -314,7 +315,7 @@ function DesktopDocCard({
 
   const openDoc = () => {
     if (!doc.href) return;
-    if (doc.href.startsWith('http')) window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
+    if (doc.href.startsWith('http')) openDocumentUrl(toProxiedPdfUrl(doc.href));
     else navigate(doc.href);
   };
 

@@ -99,7 +99,29 @@ export async function triggerDownloadFromUrl(url: string, fileName: string): Pro
     const objectUrl = window.URL.createObjectURL(blob);
     await createTemporaryDownloadLink(objectUrl, fileName);
   } catch (error) {
-    console.error('download.ts: Failed to download from URL, falling back to anchor', { url, fileName, error });
+    // The direct fetch 400s/401s for anything stored in the private
+    // `documents-private` bucket (see signatureService.ts) — the stored URL
+    // is only ever a bucket/path reference, not something meant to be
+    // fetched with zero auth. Lazily import to avoid a circular dependency
+    // (signatureService.ts doesn't import this module, but keeping the
+    // import local here documents that this is a fallback path, not the
+    // common case).
+    console.error('download.ts: direct fetch failed, trying signed-URL fallback', { url, fileName, error });
+    try {
+      const { getSignedUrlFallback } = await import('../../lib/signatureService');
+      const signedUrl = await getSignedUrlFallback(url);
+      if (signedUrl) {
+        const response = await fetch(signedUrl, { credentials: 'omit' });
+        if (response.ok) {
+          const blob = await response.blob();
+          const objectUrl = window.URL.createObjectURL(blob);
+          await createTemporaryDownloadLink(objectUrl, fileName);
+          return;
+        }
+      }
+    } catch (fallbackError) {
+      console.error('download.ts: signed-URL fallback also failed', { url, fileName, fallbackError });
+    }
     await createTemporaryDownloadLink(url, fileName);
   }
 }

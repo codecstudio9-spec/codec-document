@@ -134,7 +134,16 @@ export async function finalizeDocument(
 
 // ─── Storage ────────────────────────────────────────────────────────────────
 
-const BUCKET = 'documents-bucket';
+// documents-private (not documents-bucket) — see
+// supabase/migrations/20260915130000_create_documents_private_bucket.sql.
+// documents-bucket is a legacy PUBLIC bucket (anyone with an object path can
+// fetch it with zero auth, confirmed in the 2026-09-15 enterprise-readiness
+// security audit); every NEW original PDF / signed PDF / signature image
+// upload goes to this private bucket instead. Already-uploaded documents
+// keep their old documents-bucket URLs untouched — see
+// [[project_security_audit_enterprise_readiness]] for why that's a
+// deliberate scope limit, not an oversight.
+const BUCKET = 'documents-private';
 
 export async function uploadPdfToStorage(
   documentId: string,
@@ -155,14 +164,18 @@ export async function uploadPdfToStorage(
 }
 
 /**
- * getPublicUrl() only actually works if the `documents-bucket` bucket is
- * flagged "Public" in Supabase — a setting separate from the storage.objects
- * RLS policy. If it's private (default when a bucket is created from the
- * dashboard without explicitly checking "Public"), the "public" URL 400s for
- * anyone without a session, even though the RLS policy
- * (`public_read_documents_bucket`, unconditional SELECT for that bucket)
- * would happily allow generating a signed URL instead. This lets guest PDF
- * viewers recover from that case without needing to know which one it is.
+ * getPublicUrl() never makes a network call — it just deterministically
+ * glues bucket+path into a fixed URL shape client-side, regardless of
+ * whether the bucket is actually flagged "Public" in Supabase. That's
+ * exactly why it's still safe to call against `documents-private` (a
+ * private bucket): the stored URL is only ever used as a parseable
+ * bucket/path reference, never fetched directly by anything that isn't
+ * prepared to fall back to a signed URL when it 400s/401s — which is what
+ * this function does. Every render/download call site MUST go through this
+ * fallback (or resolve a fresh signed URL some other way) instead of
+ * trusting a stored original_pdf_url/signed_pdf_url/signature_url directly,
+ * or it will simply fail to load for any document uploaded after the
+ * 2026-09-15 private-bucket migration.
  */
 export async function getSignedUrlFallback(publicUrl: string, expiresInSeconds = 3600): Promise<string | null> {
   // Parse the bucket name out of the URL itself instead of assuming it's

@@ -9,6 +9,7 @@ import { fetchDashboardStats, type DashboardStats } from '../../services/mobile-
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { openDocumentUrl } from '../../utils/open-document-url';
 import { ReviewFormModal } from '../../components/ReviewFormModal';
 
 type RecentItem = { id: string; name: string; status: string; date: string; href: string };
@@ -72,7 +73,7 @@ function DashboardHomeContent() {
 
   const openDoc = (href: string) => {
     if (!href) return;
-    if (href.startsWith('http')) window.open(toProxiedPdfUrl(href), '_blank', 'noopener,noreferrer');
+    if (href.startsWith('http')) openDocumentUrl(toProxiedPdfUrl(href));
     else navigate(href);
   };
 

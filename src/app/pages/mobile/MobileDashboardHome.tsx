@@ -11,6 +11,7 @@ import { fetchDashboardStats, fetchUnreadSignedCount, type DashboardStats } from
 import { fetchUserDocuments, fetchAssociatedDocuments, type UserDocument, type AssociatedDocument } from '../../services/documents-service';
 import { BLUE_GRADIENT, DARK_GRADIENT, CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { openDocumentUrl } from '../../utils/open-document-url';
 import { ReviewFormModal } from '../../components/ReviewFormModal';
 
 function greeting(language: 'en' | 'es'): string {
@@ -325,7 +326,7 @@ function DashboardContent() {
               const s = statusLabel(doc.status, language);
               const openDoc = () => {
                 if (!doc.href) return;
-                if (doc.href.startsWith('http')) window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
+                if (doc.href.startsWith('http')) openDocumentUrl(toProxiedPdfUrl(doc.href));
                 else navigate(doc.href);
               };
               return (

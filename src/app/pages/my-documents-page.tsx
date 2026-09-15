@@ -10,6 +10,7 @@ import {
 } from '../services/documents-service';
 import { getTemplateById } from '../data/templates';
 import { toProxiedPdfUrl } from '../utils/pdf-proxy';
+import { openDocumentUrl } from '../utils/open-document-url';
 
 export function MyDocumentsPage() {
   const navigate = useNavigate();
@@ -268,15 +269,14 @@ export function MyDocumentsPage() {
                       E-SIGN &amp; UETA Compliant
                     </div>
                     {fileUrl ? (
-                      <a
-                        href={toProxiedPdfUrl(fileUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => openDocumentUrl(toProxiedPdfUrl(fileUrl))}
                         className="flex items-center justify-center gap-1 rounded-md bg-slate-900 text-white px-3 py-2 text-xs font-semibold"
                       >
                         <Download className="size-3" />
                         {language === 'es' ? 'Ver PDF' : 'View PDF'}
-                      </a>
+                      </button>
                     ) : doc.href ? (
                       // Sin PDF guardado: el documento se envió a firmar y vive en
                       // sign_transactions — esta pantalla lo arma al abrirlo, y

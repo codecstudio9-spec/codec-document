@@ -1506,7 +1506,7 @@ export function GuestSignPage() {
                 setIdFrontDataUrl(normalized);
                 try {
                   const { error } = await publicSupabase.storage
-                    .from('documents-bucket')
+                    .from('documents-private')
                     .upload(`validations/${tokenData.documentId}/id_front.jpg`, file, { upsert: true, contentType: file.type });
                   if (error) throw error;
                 } catch { /* non-fatal — data URL serves as proof */ }
@@ -1523,7 +1523,7 @@ export function GuestSignPage() {
                 setIdBackDataUrl(normalized);
                 try {
                   const { error } = await publicSupabase.storage
-                    .from('documents-bucket')
+                    .from('documents-private')
                     .upload(`validations/${tokenData.documentId}/id_back.jpg`, file, { upsert: true, contentType: file.type });
                   if (error) throw error;
                 } catch { /* non-fatal */ }
@@ -1540,7 +1540,7 @@ export function GuestSignPage() {
                 setSelfieDataUrl(normalized);
                 try {
                   const { error } = await publicSupabase.storage
-                    .from('documents-bucket')
+                    .from('documents-private')
                     .upload(`validations/${tokenData.documentId}/selfie.jpg`, file, { upsert: true, contentType: file.type });
                   if (error) throw error;
                 } catch { /* non-fatal */ }
@@ -1847,7 +1847,7 @@ export function GuestSignPage() {
               // Best-effort upload to storage
               try {
                 const { error } = await publicSupabase.storage
-                  .from('documents-bucket')
+                  .from('documents-private')
                   .upload(`validations/${tokenData.documentId}/id_front.jpg`, file, { upsert: true, contentType: file.type });
                 if (error) throw error;
               } catch { /* non-fatal — data URL serves as proof */ }
@@ -1864,7 +1864,7 @@ export function GuestSignPage() {
               setIdBackDataUrl(normalized);
               try {
                 const { error } = await publicSupabase.storage
-                  .from('documents-bucket')
+                  .from('documents-private')
                   .upload(`validations/${tokenData.documentId}/id_back.jpg`, file, { upsert: true, contentType: file.type });
                 if (error) throw error;
               } catch { /* non-fatal */ }
@@ -1881,7 +1881,7 @@ export function GuestSignPage() {
               setSelfieDataUrl(normalized);
               try {
                 const { error } = await publicSupabase.storage
-                  .from('documents-bucket')
+                  .from('documents-private')
                   .upload(`validations/${tokenData.documentId}/selfie.jpg`, file, { upsert: true, contentType: file.type });
                 if (error) throw error;
               } catch { /* non-fatal */ }

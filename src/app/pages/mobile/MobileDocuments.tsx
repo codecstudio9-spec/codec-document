@@ -17,6 +17,7 @@ import {
 } from '../../services/documents-service';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
+import { openDocumentUrl } from '../../utils/open-document-url';
 
 type UnifiedDoc = {
   id: string;
@@ -330,7 +331,7 @@ function MobileDocRow({
   const openDoc = () => {
     if (!doc.href) return;
     if (doc.href.startsWith('http')) {
-      window.open(toProxiedPdfUrl(doc.href), '_blank', 'noopener,noreferrer');
+      openDocumentUrl(toProxiedPdfUrl(doc.href));
     } else {
       navigate(doc.href);
     }

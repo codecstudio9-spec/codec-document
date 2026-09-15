@@ -289,15 +289,29 @@ export async function fetchAssociatedDocuments(userId: string): Promise<Associat
  * folder is listed and every real object under it is removed instead of
  * guessing two hardcoded names.
  */
-export async function deleteAssociatedDocument(documentId: string): Promise<void> {
+// Documents created before 2026-09-15 have their files in the legacy public
+// `documents-bucket`; anything after that migration lives in the private
+// `documents-private` bucket instead (see signatureService.ts). A given
+// document's files are always entirely in ONE of the two — never split —
+// but this delete path doesn't know which without an extra round trip, so
+// it just best-effort cleans up both; the bucket that never had the file
+// simply 404s per path, which `.catch(() => {})` already treats as fine.
+async function cleanupDocumentFiles(documentId: string, bucket: string): Promise<void> {
   const folder = `documents/${documentId}`;
-  const { data: listed } = await supabase.storage.from('documents-bucket').list(folder).catch(() => ({ data: null }));
+  const { data: listed } = await supabase.storage.from(bucket).list(folder).catch(() => ({ data: null }));
   const paths = [
     ...(listed ?? []).map((f) => `${folder}/${f.name}`),
     `signatures/${documentId}_creator.png`,
     `signatures/${documentId}_guest.png`,
   ];
-  await supabase.storage.from('documents-bucket').remove(paths).catch(() => {});
+  await supabase.storage.from(bucket).remove(paths).catch(() => {});
+}
+
+export async function deleteAssociatedDocument(documentId: string): Promise<void> {
+  await Promise.all([
+    cleanupDocumentFiles(documentId, 'documents-bucket'),
+    cleanupDocumentFiles(documentId, 'documents-private'),
+  ]);
 
   const { error, count } = await supabase
     .from('documents')
