@@ -1,13 +1,55 @@
-import { ArrowRight, Check, Zap } from 'lucide-react';
+import { ArrowRight, Check, Zap, SquareCheck } from 'lucide-react';
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { LandingHero } from './LandingHero';
+import { StateLawHighlights } from './StateLawHighlights';
 import { BenefitCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, PhotoProofSection, type FaqItem } from './LandingSections';
 import { FREE_FEATURE_PAGES, FREE_PLAN_FACTS_ES, type FreeFeatureConfig } from '../../data/free-feature-seo-content';
 import { LATAM_COUNTRIES } from '../../data/latam-signature-seo-content';
+
+/** Real, unique opening paragraphs (only set for firma-digital-gratis so
+ * far) — rendered before the includedItems grid so the page opens with
+ * the reader's actual problem instead of a feature list, per the site's
+ * article content standard. */
+function IntroParagraphs({ paragraphs }: { paragraphs: string[] }) {
+  return (
+    <section className="relative bg-white py-14 md:py-20">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-3xl space-y-5 text-base leading-relaxed text-slate-700">
+          {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** "Before you sign, check" list — same format the site's article
+ * content standard calls for on full articles, adapted here for a
+ * landing page (only set for firma-digital-gratis so far). */
+function ChecklistSection({ items }: { items: string[] }) {
+  return (
+    <section className="relative bg-slate-50 py-16 md:py-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-black text-slate-900 md:text-4xl">Antes de firmar, verifica esto</h2>
+          </div>
+          <div className="space-y-3">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <SquareCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+                <p className="text-sm font-medium leading-relaxed text-slate-700">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /** Free-plan facts block — the one thing EVERY page in this batch must
  * show clearly per the spec, kept as its own component so the exact
@@ -122,6 +164,8 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         ]}
       />
 
+      {page.introParagraphsEs && <IntroParagraphs paragraphs={page.introParagraphsEs} />}
+
       <section className="relative bg-slate-50 py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-5xl">
@@ -147,6 +191,10 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         </div>
       </section>
 
+      {page.countryHighlights && (
+        <StateLawHighlights stateName="Latin America" stateNameEs="Latinoamérica" highlights={page.countryHighlights} />
+      )}
+
       <PhotoProofSection
         image="/images/home/why-1-pointing.jpg"
         captionEn="Así de simple: abre la app, completa, firma."
@@ -156,10 +204,11 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         color={page.color}
       />
       <BenefitCards />
+      {page.checklistEs && <ChecklistSection items={page.checklistEs} />}
       <HowItWorksTimeline
         headingEn="Cómo firmar un documento online" headingEs="Cómo firmar un documento online"
-        lastStepDescEn="Recibe un PDF limpio con pista de auditoría SHA-256 — con validez legal según la ley de tu país."
-        lastStepDescEs="Recibe un PDF limpio con pista de auditoría SHA-256 — con validez legal según la ley de tu país."
+        lastStepDescEn="Recibe un PDF limpio con pista de auditoría SHA-256, con validez legal según la ley de tu país."
+        lastStepDescEs="Recibe un PDF limpio con pista de auditoría SHA-256, con validez legal según la ley de tu país."
       />
       <SocialProofBand
         complianceItems={['Identidad Verificada', 'SHA-256 Audit Trail', 'SSL / TLS Encrypted']}
@@ -167,7 +216,10 @@ export function FreeFeatureLanding({ page }: { page: FreeFeatureConfig }) {
         taglineEs="Usado por freelancers, empresas y profesionales en toda Latinoamérica."
       />
       <FreePlanBlock />
-      <FAQAccordion items={[faq]} heading={<h2 className="text-3xl font-black text-slate-900 md:text-4xl">Preguntas frecuentes</h2>} />
+      <FAQAccordion
+        items={[faq, ...(page.extraFaqs ?? [])]}
+        heading={<h2 className="text-3xl font-black text-slate-900 md:text-4xl">Preguntas frecuentes</h2>}
+      />
       <OtherFreeFeatureLinks current={page.slug} />
       <LandingFooter />
     </div>

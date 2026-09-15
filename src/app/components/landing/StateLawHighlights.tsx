@@ -54,8 +54,8 @@ export function StateLawHighlights({ stateName, stateNameEs, highlights }: {
 
           <p className="mt-6 text-center text-xs text-slate-400">
             {language === 'en'
-              ? 'Laws change frequently — always consult a licensed local attorney before executing a legal document.'
-              : 'Las leyes cambian con frecuencia — consulta siempre con un abogado local antes de ejecutar un documento legal.'}
+              ? 'Laws change frequently, so always consult a licensed local attorney before executing a legal document.'
+              : 'Las leyes cambian con frecuencia, así que consulta siempre con un abogado local antes de ejecutar un documento legal.'}
           </p>
         </div>
       </div>
