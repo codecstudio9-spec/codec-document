@@ -31,11 +31,11 @@ npm install
    cp .env.example .env
    ```
 
-2. **El archivo `.env` ya tiene tus credenciales de Sandbox configuradas:**
+2. **Completa tu archivo `.env` local con tus propias credenciales de Sandbox** (nunca comitees credenciales reales, ni siquiera de Sandbox — usa el dashboard de PayPal Developer para generarlas):
    ```
    NODE_ENV=development
-   PAYPAL_CLIENT_ID=Admipg5R4jQHbYbFjO4J8K_jTXOvQVSH58XDU7IbuZQWaLHjxHDQA7KGsPmpHBgvZfgGfXWjqGdEBZSS
-   PAYPAL_CLIENT_SECRET=EJQe0XnZnavWXyz4FbyUb-KAVhZp3oYm5QS3wA62lTCsq_Yu4pKvReIJSq3SUCTrcX3F3y16z4fEqzYm
+   PAYPAL_CLIENT_ID=tu_client_id_sandbox
+   PAYPAL_CLIENT_SECRET=tu_secret_sandbox
    ```
 
 ## 🚀 Ejecutar el Servidor

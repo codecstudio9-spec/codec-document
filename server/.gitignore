@@ -2,3 +2,8 @@
 node_modules
 npm-debug.log*
 purchases.json
+
+# Contains real signer PII (names, emails, IPs, signature images) — never commit
+*.sqlite
+*.sqlite3
+data/*.sqlite
