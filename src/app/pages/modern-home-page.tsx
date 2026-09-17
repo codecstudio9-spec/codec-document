@@ -169,6 +169,11 @@ export function ModernHomePage() {
   // real geo-detection below when present; the footer link that sets this
   // is exactly for that "let me see the other version" use case.
   const marketOverride = new URLSearchParams(window.location.search).get('market');
+  // See RouteErrorBoundary: when a /app route fails on mobile, preserve a
+  // usable public home instead of immediately redirecting into that same
+  // failing route again. The flag is only a recovery escape hatch; normal
+  // visits retain the app-shell redirect below.
+  const isRecoveryVisit = new URLSearchParams(window.location.search).get('recovery') === '1';
   useEffect(() => {
     detectSignerCountryCode().then((code) => {
       if (!code) return;
@@ -188,16 +193,16 @@ export function ModernHomePage() {
   // signed-out state themselves (compact intro instead of real stats).
   const isMobile = useIsMobile();
   useEffect(() => {
-    if (isMobile) navigate('/app', { replace: true });
-  }, [isMobile, navigate]);
+    if (isMobile && !isRecoveryVisit) navigate('/app', { replace: true });
+  }, [isMobile, isRecoveryVisit, navigate]);
 
   // Mundo 1 (marketing, public) vs Mundo 2 (product, private): a signed-in
   // desktop visitor should never see this landing either, straight into
   // the real dashboard, same as mobile above. Anonymous desktop visitors
   // are completely unaffected, landing stays exactly as-is for SEO/marketing.
   useEffect(() => {
-    if (!isMobile && user) navigate('/dashboard', { replace: true });
-  }, [isMobile, user, navigate]);
+    if (!isMobile && user && !isRecoveryVisit) navigate('/dashboard', { replace: true });
+  }, [isMobile, user, isRecoveryVisit, navigate]);
 
 
   // Real, verifiable trust facts only — no invented testimonials/avatars/

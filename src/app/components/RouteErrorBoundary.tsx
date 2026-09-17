@@ -1,11 +1,19 @@
-import { useRouteError, useNavigate, isRouteErrorResponse } from 'react-router';
+import { useRouteError, isRouteErrorResponse } from 'react-router';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
 
 export function RouteErrorBoundary() {
   const error = useRouteError();
-  const navigate = useNavigate();
   const { language } = useLanguage();
+
+  const recoverAtHome = () => {
+    // `/` normally routes phone-sized viewports back to `/app`. If that
+    // mobile route is the one that failed, a regular router navigation makes
+    // the Inicio button appear broken because it immediately returns here.
+    // Use a one-shot URL flag and a document navigation to guarantee a
+    // working public home screen from any route error.
+    window.location.replace('/?recovery=1');
+  };
 
   if (import.meta.env.DEV) {
     console.error('RouteErrorBoundary caught:', error);
@@ -40,7 +48,7 @@ export function RouteErrorBoundary() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={recoverAtHome}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
           >
             <Home className="size-4" /> {language === 'en' ? 'Home' : 'Inicio'}
