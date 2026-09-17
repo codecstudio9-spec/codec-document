@@ -349,6 +349,25 @@ export async function markDocumentInvitationSigned(token: string): Promise<void>
   } catch { /* non-fatal */ }
 }
 
+/**
+ * Status ('pending' | 'signed') of one invitation, by its own token — used
+ * to show per-signer progress when a document has more than one invited
+ * signer (electronic-signature-page.tsx's extra-signer list). Reads through
+ * `publicSupabase`, matching document_invitations' own "SELECT público por
+ * token" RLS policy — there's no owner-based read policy on this table, so
+ * the creator's browser checks each token it already holds individually
+ * instead of listing by document_id.
+ */
+export async function getInvitationStatus(token: string): Promise<string | null> {
+  const { data, error } = await publicSupabase
+    .from('document_invitations')
+    .select('status')
+    .eq('token', token)
+    .maybeSingle();
+  if (error) { console.error('getInvitationStatus:', error.message); return null; }
+  return (data?.status as string | undefined) ?? null;
+}
+
 export async function verifySigningTokenPublic(token: string): Promise<{
   documentId: string;
   signerId: string;

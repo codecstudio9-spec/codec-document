@@ -4,7 +4,7 @@ import {
   Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
-  PenLine,
+  PenLine, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -27,7 +27,7 @@ import {
   createDocumentRecord, updateDocumentPdfUrl, updateDocumentSignedPdfUrl, uploadPdfToStorage,
   uploadSignatureImage, insertSignature, createSigner, createSigningLink,
   insertSignaturePositions, finalizeDocument, insertAuditLog,
-  getDocumentStatus, compilePdfWithSignatures,
+  getDocumentStatus, compilePdfWithSignatures, getInvitationStatus,
 } from '../../lib/signatureService';
 import {
   consumeDocumentLimit72h,
@@ -257,6 +257,88 @@ function ShareHub({
   );
 }
 
+/** One row per extra signer (3rd, 4th, …) — compact version of ShareHub's
+ * QR+link+share card, since there can be several of these stacked instead
+ * of just one. Each opens their own /guest-sign/ link independently, on
+ * their own device, at their own pace. */
+function ExtraSignerRow({
+  index, name, email, link, status, docName, onRemove,
+}: {
+  index: number;
+  name: string;
+  email: string;
+  link: string;
+  status: 'pending' | 'signed';
+  docName: string;
+  onRemove: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+    toast.success('Enlace copiado al portapapeles.');
+  };
+  const waText = encodeURIComponent(
+    `Estimado ${name || 'firmante'}, Codec Document le ha enviado el documento "${docName}" para su revisión y firma electrónica segura. Acceda aquí: ${link}`,
+  );
+  const mailSubject = encodeURIComponent(`Firma requerida: ${docName}`);
+  const mailBody    = encodeURIComponent(
+    `Estimado ${name || 'firmante'},\n\nCodec Document le ha enviado el documento "${docName}" para su revisión y firma electrónica segura.\n\nAcceda al enlace para firmar:\n${link}\n\nEste enlace expirará en 48 horas.\n\nAtentamente,\nCodec Document`,
+  );
+
+  return (
+    <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className={`flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${status === 'signed' ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
+            {status === 'signed' ? <Check className="size-4" /> : String(index)}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-800 leading-tight">{name}</p>
+            <p className="truncate text-[10px] text-slate-400">{email}</p>
+          </div>
+        </div>
+        {status === 'pending' && (
+          <button type="button" onClick={onRemove} title="Quitar firmante"
+            className="shrink-0 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-500 transition hover:bg-red-100">
+            <X className="size-3" />
+          </button>
+        )}
+      </div>
+
+      {status === 'signed' ? (
+        <p className="px-4 py-3 text-center text-[11px] font-semibold text-emerald-600">Firma recibida ✓</p>
+      ) : (
+        <div className="space-y-2 p-3">
+          <div className="flex items-center gap-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
+            <p className="flex-1 truncate text-[11px] text-slate-500">{link}</p>
+            <button type="button" onClick={handleCopy}
+              className={`shrink-0 flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold transition ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'}`}>
+              {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <a href={`https://wa.me/?text=${waText}`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
+              <MessageCircle className="size-3.5" /> WhatsApp
+            </a>
+            <a href={`mailto:${email}?subject=${mailSubject}&body=${mailBody}`}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-100">
+              <Mail className="size-3.5" /> Correo
+            </a>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-100 px-2.5 py-1.5 text-[10px] font-medium text-amber-700">
+            <span className="size-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            Esperando que firme…
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Replaces whatever step the creator happens to be looking at (Enviar or
  * Esperando — the second signer can finish while either is on screen) the
  * moment the second signature is detected. One unmistakable state — a big
@@ -454,6 +536,22 @@ export function ElectronicSignaturePage() {
   const [guestSigUrl, setGuestSigUrl]       = useState('');
   const [signingToken, setSigningToken]     = useState('');
   const [shareOpen, setShareOpen]           = useState(false);
+
+  // ── Extra signers — documents with more than 2 people (creator + one
+  // guest) used to have no way to invite a 3rd/4th/etc. signer at all: this
+  // page only ever generated the single `signingToken` above. Each extra
+  // signer gets their own independent signing_links row (createSigningLink
+  // already accepted a signerId param for exactly this — the backend was
+  // always multi-signer-capable, only this UI wasn't) — they open their own
+  // /guest-sign/ link on their own device, review the document and place
+  // their own signature themselves, same as the first guest. Nobody needs
+  // to be in the same room, and it doesn't matter which order they sign in.
+  interface ExtraSigner { id: string; name: string; email: string; token: string; status: 'pending' | 'signed' }
+  const [extraSigners, setExtraSigners]           = useState<ExtraSigner[]>([]);
+  const [addingExtraSigner, setAddingExtraSigner] = useState(false);
+  const [addingExtraLoading, setAddingExtraLoading] = useState(false);
+  const [newExtraName, setNewExtraName]           = useState('');
+  const [newExtraEmail, setNewExtraEmail]         = useState('');
 
   // Contextual voice guidance — a real step-by-step companion, not just an
   // opening line: speaks once per step, nudges the creator if they stall
@@ -859,6 +957,46 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  const handleAddExtraSigner = async () => {
+    if (!newExtraName.trim() || !newExtraEmail.trim()) return;
+    setAddingExtraLoading(true);
+    try {
+      const signerId = await createSigner({ documentId, name: newExtraName, email: newExtraEmail });
+      const token    = await createSigningLink({ documentId, signerId, guestName: newExtraName, guestEmail: newExtraEmail });
+      setExtraSigners((prev) => [...prev, { id: signerId, name: newExtraName, email: newExtraEmail, token, status: 'pending' }]);
+      setNewExtraName(''); setNewExtraEmail(''); setAddingExtraSigner(false);
+      toast.success('Firmante agregado — comparte su enlace.');
+    } catch (err) {
+      toast.error(`No se pudo agregar el firmante: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setAddingExtraLoading(false);
+    }
+  };
+
+  const handleRemoveExtraSigner = (id: string) => {
+    setExtraSigners((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  // Polls each still-pending extra signer's own invitation row every 5s —
+  // same document_invitations.status the first guest link already relies
+  // on (via getDocumentStatus/documents.status once ALL invitations are
+  // signed — see finalize_document). Independent per signer: whoever signs
+  // first shows "Firmado ✓" immediately, no matter how long the others take.
+  useEffect(() => {
+    const pending = extraSigners.filter((s) => s.status === 'pending');
+    if (pending.length === 0) return;
+    const interval = setInterval(() => {
+      void Promise.all(pending.map(async (s) => {
+        const status = await getInvitationStatus(s.token);
+        if (status === 'signed') {
+          setExtraSigners((prev) => prev.map((x) => (x.id === s.id ? { ...x, status: 'signed' } : x)));
+        }
+      }));
+    }, 5000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extraSigners.map((s) => `${s.id}:${s.status}`).join(',')]);
+
   // Just re-checks documents.status — the actual compile/upload/finalize
   // already happened (or is happening) on the guest's own browser via
   // guest-sign-page.tsx; this never re-compiles itself (see the effect
@@ -942,13 +1080,14 @@ export function ElectronicSignaturePage() {
   };
 
   // Requirements travel as URL query-params — no extra DB table needed
-  const guestLink = signingToken ? (() => {
+  const buildGuestLink = (token: string) => {
     const qp = new URLSearchParams();
     if (requireIdPhoto) qp.set('req_id',     '1');
     if (requireSelfie)  qp.set('req_selfie', '1');
     const qs = qp.toString();
-    return `${window.location.origin}/guest-sign/${signingToken}${qs ? '?' + qs : ''}`;
-  })() : '';
+    return `${window.location.origin}/guest-sign/${token}${qs ? '?' + qs : ''}`;
+  };
+  const guestLink = signingToken ? buildGuestLink(signingToken) : '';
   const wizardStep    = toWizardStep(step);
   const isDone        = step === 'done';
 
@@ -1261,13 +1400,89 @@ export function ElectronicSignaturePage() {
                   <GuestCompletedBanner guestName={guestName} onContinue={() => setStep('done')} />
                 ) : (
                   /* Sub-estado: hub de distribución */
-                  <ShareHub
-                    link={guestLink}
-                    guestName={guestName}
-                    guestEmail={guestEmail}
-                    docName={fileName.replace(/\.pdf$/i, '')}
-                    onContinue={() => setStep('await-guest')}
-                  />
+                  <>
+                    <ShareHub
+                      link={guestLink}
+                      guestName={guestName}
+                      guestEmail={guestEmail}
+                      docName={fileName.replace(/\.pdf$/i, '')}
+                      onContinue={() => setStep('await-guest')}
+                    />
+
+                    {/* ── Firmantes adicionales — documentos de 3+ personas
+                        (ej.: tú, tu pareja, quien organiza el evento). Cada
+                        uno recibe su propio enlace, independiente de los
+                        demás — no importa el orden ni cuánto tarde cada
+                        quien; el documento queda certificado en cuanto
+                        firman TODOS. ─────────────────────────────────── */}
+                    <div className="mt-6 space-y-3">
+                      {extraSigners.length > 0 && (
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Firmantes adicionales ({extraSigners.filter((s) => s.status === 'signed').length}/{extraSigners.length} firmaron)
+                        </p>
+                      )}
+                      {extraSigners.map((s, i) => (
+                        <ExtraSignerRow
+                          key={s.id}
+                          index={i + 3}
+                          name={s.name}
+                          email={s.email}
+                          link={buildGuestLink(s.token)}
+                          status={s.status}
+                          docName={fileName.replace(/\.pdf$/i, '')}
+                          onRemove={() => handleRemoveExtraSigner(s.id)}
+                        />
+                      ))}
+
+                      {addingExtraSigner ? (
+                        <div className="rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-4">
+                          <p className="text-sm font-bold text-slate-800">Nuevo firmante</p>
+                          <div className="mt-3 space-y-2">
+                            <input
+                              value={newExtraName}
+                              onChange={(e) => setNewExtraName(e.target.value)}
+                              placeholder="Nombre completo"
+                              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            />
+                            <input
+                              value={newExtraEmail}
+                              onChange={(e) => setNewExtraEmail(e.target.value)}
+                              placeholder="Correo electrónico"
+                              type="email"
+                              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                            />
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => { setAddingExtraSigner(false); setNewExtraName(''); setNewExtraEmail(''); }}
+                              className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleAddExtraSigner()}
+                              disabled={!newExtraName.trim() || !newExtraEmail.trim() || addingExtraLoading}
+                              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2 text-sm font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                              {addingExtraLoading ? <Loader className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                              Generar enlace
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setAddingExtraSigner(true)}
+                          className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-indigo-50/20 py-3 text-sm font-semibold text-slate-500 transition hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/60"
+                        >
+                          <Plus className="size-4" />
+                          Añadir otro firmante
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
