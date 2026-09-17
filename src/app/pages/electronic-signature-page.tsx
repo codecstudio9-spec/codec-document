@@ -27,7 +27,7 @@ import {
   createDocumentRecord, updateDocumentPdfUrl, updateDocumentSignedPdfUrl, uploadPdfToStorage,
   uploadSignatureImage, insertSignature, createSigner, createSigningLink,
   insertSignaturePositions, finalizeDocument, insertAuditLog,
-  getDocumentStatus, compilePdfWithSignatures, getInvitationStatus,
+  getDocumentStatus, compilePdfWithSignatures, getSignerStatus,
 } from '../../lib/signatureService';
 import {
   consumeDocumentLimit72h,
@@ -977,18 +977,19 @@ export function ElectronicSignaturePage() {
     setExtraSigners((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Polls each still-pending extra signer's own invitation row every 5s —
-  // same document_invitations.status the first guest link already relies
-  // on (via getDocumentStatus/documents.status once ALL invitations are
-  // signed — see finalize_document). Independent per signer: whoever signs
-  // first shows "Firmado ✓" immediately, no matter how long the others take.
+  // Polls each still-pending extra signer's own `signers.status` row every
+  // 5s (via the same id createSigner returned) — the same row
+  // getDocumentStatus/documents.status ultimately depends on once ALL
+  // signers reach 'completed' (see finalize_document). Independent per
+  // signer: whoever signs first shows "Firmado ✓" immediately, no matter
+  // how long the others take.
   useEffect(() => {
     const pending = extraSigners.filter((s) => s.status === 'pending');
     if (pending.length === 0) return;
     const interval = setInterval(() => {
       void Promise.all(pending.map(async (s) => {
-        const status = await getInvitationStatus(s.token);
-        if (status === 'signed') {
+        const status = await getSignerStatus(s.id);
+        if (status === 'completed') {
           setExtraSigners((prev) => prev.map((x) => (x.id === s.id ? { ...x, status: 'signed' } : x)));
         }
       }));

@@ -350,22 +350,23 @@ export async function markDocumentInvitationSigned(token: string): Promise<void>
 }
 
 /**
- * Status ('pending' | 'signed') of one invitation, by its own token — used
- * to show per-signer progress when a document has more than one invited
- * signer (electronic-signature-page.tsx's extra-signer list). Reads through
- * `publicSupabase`, matching document_invitations' own "SELECT público por
- * token" RLS policy — there's no owner-based read policy on this table, so
- * the creator's browser checks each token it already holds individually
- * instead of listing by document_id.
+ * Status ('pending' | 'completed') of one signer, by their own signer id —
+ * used to show per-signer progress when a document has more than one
+ * invited signer (electronic-signature-page.tsx's extra-signer list).
+ *
+ * Originally written against a `document_invitations` table — verified
+ * live against this project that it never actually existed (nor did its
+ * RPCs), only `signers` does, already populated by create_signer /
+ * try_complete_signer_once for the working 2-signer flow. `signers` has no
+ * SELECT policy at all (guest-signing PII), so this goes through the
+ * get_signer_status SECURITY DEFINER RPC (see
+ * supabase_FIX_finalize_document_multi_signer.sql) instead of a table
+ * query — same reason createSigner/tryCompleteSignerOnce above do.
  */
-export async function getInvitationStatus(token: string): Promise<string | null> {
-  const { data, error } = await publicSupabase
-    .from('document_invitations')
-    .select('status')
-    .eq('token', token)
-    .maybeSingle();
-  if (error) { console.error('getInvitationStatus:', error.message); return null; }
-  return (data?.status as string | undefined) ?? null;
+export async function getSignerStatus(signerId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_signer_status', { p_signer_id: signerId });
+  if (error) { console.error('getSignerStatus:', error.message); return null; }
+  return (data as string | null) ?? null;
 }
 
 export async function verifySigningTokenPublic(token: string): Promise<{
