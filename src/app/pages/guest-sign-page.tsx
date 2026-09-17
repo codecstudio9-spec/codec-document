@@ -45,6 +45,7 @@ import { VoiceReplayButton } from '../components/voice/VoiceReplayButton';
 import { LanguageToggle } from '../components/language-toggle';
 import { logVoiceAssistantEvent } from '../services/voice-assistant-analytics-service';
 import { toProxiedPdfUrl } from '../utils/pdf-proxy';
+import { openDocumentUrl } from '../utils/open-document-url';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
 
@@ -1437,13 +1438,13 @@ export function GuestSignPage() {
                 >
                   <Maximize2 className="size-3" /> Ver documento completo
                 </button>
-                <a
-                  href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                  download
+                <button
+                  type="button"
+                  onClick={() => openDocumentUrl(toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
                   className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
                 >
                   <Download className="size-3" /> Descargar
-                </a>
+                </button>
               </div>
               {Array.from({ length: pdfPageCount }, (_, i) => (
                 <PdfPage key={i + 1} pdfDoc={pdfDoc} pageNumber={i + 1} />
@@ -1773,13 +1774,13 @@ export function GuestSignPage() {
                   >
                     <Maximize2 className="size-3" /> Ver documento completo
                   </button>
-                  <a
-                    href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                    download
+                  <button
+                    type="button"
+                    onClick={() => openDocumentUrl(toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
                     className="flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm"
                   >
                     <Download className="size-3" /> Descargar
-                  </a>
+                  </button>
                 </div>
                 {Array.from({ length: pdfPageCount }, (_, i) => (
                   <PdfPage
