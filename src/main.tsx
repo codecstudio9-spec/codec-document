@@ -16,17 +16,24 @@
   // CURRENT index.html + matching chunk hashes and fixes it silently.
   // Guarded with sessionStorage so a real, persistent failure (offline,
   // broken deploy) reloads once and then shows the actual error instead
-  // of loop-reloading forever.
+  // of loop-reloading forever. A lazy route can fail after `window.load`,
+  // so this guard must remain for the lifetime of the browser tab.
   const RELOAD_GUARD_KEY = 'codec_stale_chunk_reload';
+
   function reloadOnceForStaleChunk() {
-    if (sessionStorage.getItem(RELOAD_GUARD_KEY)) return false;
-    sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
+    try {
+      if (sessionStorage.getItem(RELOAD_GUARD_KEY)) return false;
+      sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
+    } catch {
+      // Storage can be blocked in private or embedded mobile browsers.
+      // Showing the error is safer than an unguarded automatic reload.
+      return false;
+    }
     window.location.reload();
     return true;
   }
   window.addEventListener('vite:preloadError', (event) => {
-    event.preventDefault();
-    reloadOnceForStaleChunk();
+    if (reloadOnceForStaleChunk()) event.preventDefault();
   });
   window.addEventListener('unhandledrejection', (event) => {
     const message = String(event.reason?.message ?? event.reason ?? '');
@@ -34,9 +41,5 @@
       if (reloadOnceForStaleChunk()) event.preventDefault();
     }
   });
-  // A successful load means the current bundle is good — clear the guard
-  // so a genuinely new stale-chunk event later (the next deploy) can
-  // still trigger one reload instead of being silently skipped forever.
-  window.addEventListener('load', () => sessionStorage.removeItem(RELOAD_GUARD_KEY));
 
   createRoot(document.getElementById("root")!).render(<App />);
