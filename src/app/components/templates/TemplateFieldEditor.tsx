@@ -3,11 +3,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { ChevronLeft, ChevronRight, Loader, Type, Calendar, PenLine, Braces, Check, X } from 'lucide-react';
 import { DraggableField } from './DraggableField';
 import type { FieldType, PlacedField } from '../../services/template-service';
+import { PDF_WORKER_SRC } from '../../lib/pdf-worker-url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 const DEFAULT_W = 0.28;
 const DEFAULT_H = 0.035;

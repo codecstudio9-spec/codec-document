@@ -3,11 +3,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ZoomIn, ZoomOut, RotateCcw, Loader } from 'lucide-react';
 import { defaultViewerZoom } from '../../utils/viewport-zoom';
+import { PDF_WORKER_SRC } from '../../lib/pdf-worker-url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 interface PdfViewerModalProps {
   open: boolean;

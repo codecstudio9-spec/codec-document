@@ -101,6 +101,24 @@
 
   <body>
     <div id="root"></div>
+    <!-- Promise.withResolvers polyfill — pdfjs-dist 5.x (the document
+         viewer used to preview and sign PDFs) calls this dozens of times in
+         its main-thread bundle. The API only landed in Safari 17.4 (March
+         2024); on any iPhone on an older iOS, pdf.js throws immediately and
+         the document viewer goes silently blank with nothing to sign — the
+         worker thread gets its own copy of this same polyfill in
+         src/app/lib/pdf-worker-entry.ts. A plain classic script (not
+         type="module") so it runs and finishes before the deferred module
+         script below starts, guaranteeing the polyfill exists first. -->
+    <script>
+      if (typeof Promise.withResolvers !== 'function') {
+        Promise.withResolvers = function () {
+          var resolve, reject;
+          var promise = new Promise(function (res, rej) { resolve = res; reject = rej; });
+          return { promise: promise, resolve: resolve, reject: reject };
+        };
+      }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

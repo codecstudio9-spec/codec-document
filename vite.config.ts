@@ -33,6 +33,13 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  // 'es' instead of Vite's default 'iife': src/app/lib/pdf-worker-entry.ts
+  // (the pdf.js worker wrapper, imported with `?worker&url`) does a dynamic
+  // `import('pdfjs-dist/build/pdf.worker.min.mjs')` so its own
+  // Promise.withResolvers polyfill runs first — that needs code-splitting
+  // for the nested chunk, which Rollup only supports for ES module workers.
+  worker: { format: 'es' },
   server: {
     port: 5174,
     strictPort: true,

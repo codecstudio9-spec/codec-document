@@ -33,8 +33,11 @@ import { useIsMobile } from '../hooks/use-is-mobile';
 let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
 function loadPdfjs() {
   if (!pdfjsPromise) {
-    pdfjsPromise = import('pdfjs-dist').then((mod) => {
-      mod.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    pdfjsPromise = Promise.all([
+      import('pdfjs-dist'),
+      import('../lib/pdf-worker-url'),
+    ]).then(([mod, { PDF_WORKER_SRC }]) => {
+      mod.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
       return mod;
     });
   }

@@ -7,11 +7,9 @@ import {
 import { SimpleDraggableSignature } from './SimpleDraggableSignature';
 import type { PlacedSignature } from './types';
 import { defaultViewerZoom } from '../../utils/viewport-zoom';
+import { PDF_WORKER_SRC } from '../../lib/pdf-worker-url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 export interface EditorSigner {
   id: string;

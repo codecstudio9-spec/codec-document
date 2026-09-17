@@ -46,6 +46,7 @@ import { LanguageToggle } from '../components/language-toggle';
 import { logVoiceAssistantEvent } from '../services/voice-assistant-analytics-service';
 import { toProxiedPdfUrl } from '../utils/pdf-proxy';
 import { openDocumentUrl } from '../utils/open-document-url';
+import { PDF_WORKER_SRC } from '../lib/pdf-worker-url';
 
 const LOGO_HEIGHT: Record<UserBranding['logoSize'], number> = { small: 20, medium: 28, large: 40 };
 
@@ -70,10 +71,7 @@ function GuestBrandingBanner({ branding, onDismiss }: { branding: UserBranding; 
   );
 }
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 interface TokenData {
   documentId: string;

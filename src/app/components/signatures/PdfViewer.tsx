@@ -1,11 +1,9 @@
 import { useEffect, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { SignaturePlacement, Signer } from './types';
+import { PDF_WORKER_SRC } from '../../lib/pdf-worker-url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 interface PdfViewerProps {
   pdfBytes: Uint8Array | null;

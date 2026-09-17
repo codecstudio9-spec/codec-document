@@ -3,11 +3,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { CheckCircle2, FileText, PenLine, Clock, User, Maximize2 } from 'lucide-react';
 import { getSignerRoleLabel } from '../../utils/signer-roles';
 import { PdfViewerModal } from './PdfViewerModal';
+import { PDF_WORKER_SRC } from '../../lib/pdf-worker-url';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
 
 export interface PreviewSigner {
   name: string;
