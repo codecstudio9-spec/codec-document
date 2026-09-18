@@ -25,8 +25,15 @@ export function useIsMobile(breakpointPx = 768): boolean {
       return () => mq.removeEventListener('change', onChange);
     }
 
-    mq.addListener(onChange);
-    return () => mq.removeListener(onChange);
+    if (typeof mq.addListener === 'function') {
+      mq.addListener(onChange);
+      return () => mq.removeListener(onChange);
+    }
+
+    // Some embedded mobile browsers expose matchMedia but no change-event API.
+    // The initial value is still correct; avoid crashing the whole app just
+    // because that browser cannot react to a later orientation/resize.
+    return undefined;
   }, [breakpointPx]);
 
   return isMobile;
