@@ -1,6 +1,35 @@
-async function createTemporaryDownloadLink(href: string, fileName: string) {
+function isIosBrowser() {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+async function createTemporaryDownloadLink(href: string, fileName: string, blob?: Blob) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   if (!href) return;
+
+  // iOS Safari does not reliably honor `download` for blob URLs, especially
+  // after an async PDF generation step. The share sheet is the native save
+  // path; opening the PDF is the fallback when sharing is unavailable.
+  if (isIosBrowser()) {
+    try {
+      if (blob && typeof navigator.share === 'function' && typeof File !== 'undefined') {
+        const file = new File([blob], fileName, { type: blob.type || 'application/pdf' });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: fileName });
+          return;
+        }
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.warn('download.ts: iOS share fallback failed', error);
+    }
+
+    window.open(href, '_blank', 'noopener,noreferrer');
+    // Keep the URL alive long enough for Safari's PDF tab to load it.
+    window.setTimeout(() => window.URL.revokeObjectURL(href), 60_000);
+    return;
+  }
 
   const link = document.createElement('a');
   link.href = href;
@@ -60,7 +89,7 @@ export async function triggerDownload(blob: Blob, fileName: string): Promise<voi
   }
 
   const url = window.URL.createObjectURL(blob);
-  await createTemporaryDownloadLink(url, fileName);
+  await createTemporaryDownloadLink(url, fileName, blob);
 }
 
 export async function triggerDownloadFromBytes(bytes: Uint8Array, fileName: string): Promise<void> {
@@ -76,7 +105,7 @@ export async function triggerDownloadFromBytes(bytes: Uint8Array, fileName: stri
 
   const blob = new Blob([bytes], { type: 'application/pdf' });
   const url = window.URL.createObjectURL(blob);
-  await createTemporaryDownloadLink(url, fileName);
+  await createTemporaryDownloadLink(url, fileName, blob);
 }
 
 export async function triggerDownloadFromUrl(url: string, fileName: string): Promise<void> {
