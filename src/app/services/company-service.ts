@@ -217,6 +217,48 @@ export async function deleteWebhook(webhookId: string): Promise<void> {
   rpcError('deleteWebhook', error);
 }
 
+// ─── Institutional SSO provisioning (platform-admin only) ──────────────────
+// Lets the platform admin pre-register an institution by name + email
+// domain BEFORE any of its users have ever signed in — see
+// supabase/migrations/20260919010000_admin_institution_provisioning.sql.
+// The institution's first user to sign in with that domain (via the
+// DomainJoinPrompt banner, or manually from /my-company) automatically
+// claims it as 'owner'; everyone after that joins as 'user'. Every RPC
+// here is gated server-side by is_admin_user() — a non-admin calling
+// these just gets "Not authorized" from Postgres, never client-trusted.
+
+export interface Institution {
+  id: string;
+  name: string;
+  domain: string;
+  subscription_plan: string;
+  plan_seats: number | null;
+  owner_email: string | null;
+  member_count: number;
+  created_at: string;
+}
+
+export async function adminListInstitutions(): Promise<Institution[]> {
+  const { data, error } = await supabase.rpc('admin_list_institutions');
+  if (error) throw new Error(`adminListInstitutions: ${error.message}`);
+  return (data as Institution[]) ?? [];
+}
+
+export async function adminProvisionInstitution(name: string, domain: string, planSeats: number | null): Promise<Institution> {
+  const { data, error } = await supabase.rpc('admin_provision_institution', {
+    p_name: name,
+    p_domain: domain,
+    p_plan_seats: planSeats,
+  });
+  if (error) throw new Error(`adminProvisionInstitution: ${error.message}`);
+  return data as Institution;
+}
+
+export async function adminDeleteInstitution(companyId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_delete_institution', { p_company_id: companyId });
+  if (error) throw new Error(`adminDeleteInstitution: ${error.message}`);
+}
+
 export const COMPANY_ROLE_LABELS: Record<CompanyRole, { en: string; es: string }> = {
   owner: { en: 'Owner', es: 'Propietario' },
   admin: { en: 'Admin', es: 'Administrador' },

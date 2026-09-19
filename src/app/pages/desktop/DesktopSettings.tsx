@@ -8,6 +8,8 @@ import { useInstallPrompt } from '../../hooks/use-install-prompt';
 import { SUPPORT_EMAIL } from '../../config/site';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { AdminMarketingSettings } from '../../components/settings/AdminMarketingSettings';
+import { MfaSecuritySettings } from '../../components/settings/MfaSecuritySettings';
+import { CerticamaraSettings } from '../../components/settings/CerticamaraSettings';
 
 export function DesktopSettings() {
   return (
@@ -193,6 +195,8 @@ function SettingsContent() {
           </button>
         </div>
 
+        <MfaSecuritySettings />
+        <CerticamaraSettings />
         <AdminMarketingSettings />
 
         {/* Security & support */}

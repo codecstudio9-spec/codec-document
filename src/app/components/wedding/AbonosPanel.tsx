@@ -27,11 +27,22 @@ function formatoMoneda(monto: number, moneda: string, language: 'en' | 'es'): st
 
 function VerComprobante({ path, etiqueta }: { path: string; etiqueta: string }) {
   const [cargando, setCargando] = useState(false);
-  const abrir = async () => {
+  const abrir = () => {
+    // `window.open` DESPUÉS de un `await` cae fuera de la ventana del
+    // gesto del usuario en iOS Safari — con "Bloquear ventanas
+    // emergentes" activado (el valor por defecto), esto no hacía nada,
+    // en silencio, sin error. Abrir la pestaña en blanco YA, de forma
+    // síncrona dentro del clic, y navegarla una vez resuelta la URL
+    // firmada, es el mismo patrón que utils/open-document-url.ts usa
+    // para el resto de la plataforma.
     setCargando(true);
-    const url = await getComprobanteUrl(path).finally(() => setCargando(false));
-    if (url) window.open(url, '_blank', 'noopener');
-    else toast.error('No se pudo abrir el comprobante.');
+    const ventana = window.open('', '_blank');
+    if (ventana) ventana.opener = null;
+    void getComprobanteUrl(path).then((url) => {
+      if (!url) { toast.error('No se pudo abrir el comprobante.'); ventana?.close(); return; }
+      if (ventana && !ventana.closed) ventana.location.href = url;
+      else window.location.href = url;
+    }).finally(() => setCargando(false));
   };
   return (
     <button type="button" onClick={() => void abrir()} disabled={cargando} className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline disabled:opacity-50">

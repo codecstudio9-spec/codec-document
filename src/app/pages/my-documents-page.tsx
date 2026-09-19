@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, FileText, Lock, Pencil, Download, ShieldCheck, Trash2, Check, X, Plus, HardDrive, PenLine } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  ArrowLeft, FileText, Lock, Pencil, Download, ShieldCheck, Trash2, Check, X, Plus, HardDrive, PenLine,
+  Folder, FolderPlus, Loader, Sparkles,
+} from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import {
   fetchUserDocuments, renameDocument, deleteDocumentRecord, type UserDocument,
   fetchAssociatedDocuments, type AssociatedDocument,
+  fetchDocumentFolders, createDocumentFolder, renameDocumentFolder, deleteDocumentFolder, moveDocumentToFolder,
+  type DocumentFolder,
 } from '../services/documents-service';
+import { downloadFolderAsZip } from '../utils/download-folder-zip';
 import { getTemplateById } from '../data/templates';
 import { toProxiedPdfUrl } from '../utils/pdf-proxy';
 import { openDocumentUrl } from '../utils/open-document-url';
@@ -20,6 +27,12 @@ export function MyDocumentsPage() {
 
   const [docs, setDocs] = useState<UserDocument[]>([]);
   const [associatedDocs, setAssociatedDocs] = useState<AssociatedDocument[]>([]);
+  const [folders, setFolders] = useState<DocumentFolder[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [folderModal, setFolderModal] = useState<'create' | DocumentFolder | null>(null);
+  const [folderNameInput, setFolderNameInput] = useState('');
+  const [folderSaving, setFolderSaving] = useState(false);
+  const [zippingFolderId, setZippingFolderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -30,10 +43,98 @@ export function MyDocumentsPage() {
     Promise.all([
       fetchUserDocuments(userId).catch(() => []),
       fetchAssociatedDocuments(userId).catch(() => []),
+      fetchDocumentFolders(userId).catch(() => []),
     ])
-      .then(([userDocs, linked]) => { setDocs(userDocs); setAssociatedDocs(linked); })
+      .then(([userDocs, linked, ownFolders]) => { setDocs(userDocs); setAssociatedDocs(linked); setFolders(ownFolders); })
       .finally(() => setLoading(false));
   }, [session?.user?.id]);
+
+  const handleMoveDoc = async (documentId: string, table: 'user_documents' | 'documents', folderId: string | null) => {
+    try {
+      await moveDocumentToFolder(table, documentId, folderId);
+      if (table === 'user_documents') setDocs((prev) => prev.map((d) => (d.id === documentId ? { ...d, folder_id: folderId } : d)));
+      else setAssociatedDocs((prev) => prev.map((d) => (d.id === documentId ? { ...d, folder_id: folderId } : d)));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'es' ? 'No se pudo mover el documento' : 'Could not move the document'));
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const userId = session?.user?.id;
+    if (!userId || !folderNameInput.trim()) return;
+    setFolderSaving(true);
+    try {
+      const created = await createDocumentFolder(userId, folderNameInput.trim());
+      setFolders((prev) => [...prev, created]);
+      setFolderModal(null);
+      setFolderNameInput('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'es' ? 'No se pudo crear la carpeta' : 'Could not create the folder'));
+    } finally {
+      setFolderSaving(false);
+    }
+  };
+
+  const handleRenameFolder = async () => {
+    if (typeof folderModal !== 'object' || !folderModal || !folderNameInput.trim()) return;
+    setFolderSaving(true);
+    try {
+      await renameDocumentFolder(folderModal.id, folderNameInput.trim());
+      setFolders((prev) => prev.map((f) => (f.id === folderModal.id ? { ...f, name: folderNameInput.trim() } : f)));
+      setFolderModal(null);
+      setFolderNameInput('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'es' ? 'No se pudo renombrar la carpeta' : 'Could not rename the folder'));
+    } finally {
+      setFolderSaving(false);
+    }
+  };
+
+  const handleDeleteFolder = async (folder: DocumentFolder) => {
+    try {
+      await deleteDocumentFolder(folder.id);
+      setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+      setDocs((prev) => prev.map((d) => (d.folder_id === folder.id ? { ...d, folder_id: null } : d)));
+      setAssociatedDocs((prev) => prev.map((d) => (d.folder_id === folder.id ? { ...d, folder_id: null } : d)));
+      if (activeFolderId === folder.id) setActiveFolderId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'es' ? 'No se pudo eliminar la carpeta' : 'Could not delete the folder'));
+    }
+  };
+
+  // Only signed documents (real stored PDFs — signed_pdf_url/original_pdf_url)
+  // go in the zip. `docs` (generated templates) compile client-side in
+  // /preview/:id and have no stored file to fetch; a tx-derived
+  // associatedDocs row has no PDF either (see fetchSignTransactionsAsDocuments).
+  const handleDownloadFolderZip = async (folder: DocumentFolder) => {
+    const entries = associatedDocs
+      .filter((d) => d.folder_id === folder.id)
+      .map((d) => ({ name: d.name, url: d.signed_pdf_url || d.original_pdf_url || '' }))
+      .filter((e) => e.url);
+    if (entries.length === 0) {
+      toast.error(language === 'es' ? 'Esta carpeta no tiene documentos para descargar' : 'This folder has no downloadable documents');
+      return;
+    }
+    setZippingFolderId(folder.id);
+    try {
+      const { ok, failed } = await downloadFolderAsZip(folder.name, entries);
+      if (ok === 0) toast.error(language === 'es' ? 'No se pudo descargar ningún documento de esta carpeta' : 'Could not download any document in this folder');
+      else if (failed > 0) toast.warning(language === 'es' ? `Se descargaron ${ok}, ${failed} fallaron` : `Downloaded ${ok}, ${failed} failed`);
+      else toast.success(language === 'es' ? 'Carpeta descargada' : 'Folder downloaded');
+    } finally {
+      setZippingFolderId(null);
+    }
+  };
+
+  const foldersFilterActive = activeFolderId !== null;
+  const visibleDocs = foldersFilterActive ? docs.filter((d) => d.folder_id === activeFolderId) : docs;
+  const visibleAssociatedDocs = foldersFilterActive ? associatedDocs.filter((d) => d.folder_id === activeFolderId) : associatedDocs;
+  const folderCounts = new Map<string, number>();
+  for (const d of [...docs, ...associatedDocs]) {
+    if (!d.folder_id) continue;
+    folderCounts.set(d.folder_id, (folderCounts.get(d.folder_id) ?? 0) + 1);
+  }
+  const activeFolder = activeFolderId ? folders.find((f) => f.id === activeFolderId) ?? null : null;
 
   // This desktop document list has a direct equivalent in the mobile app
   // shell (Documentos tab) — send mobile visitors there instead of the
@@ -103,6 +204,16 @@ export function MyDocumentsPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => navigate('/crear-documento')}
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-2.5 text-sm font-bold text-white"
+          >
+            <Sparkles className="size-4" /> {language === 'es' ? 'Crear nuevo' : 'Create new'}
+          </button>
+        </div>
+
         {!isPremium && (
           <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <HardDrive className="size-5 shrink-0 text-amber-600" />
@@ -123,6 +234,75 @@ export function MyDocumentsPage() {
             >
               {language === 'es' ? 'Ver planes' : 'See plans'}
             </button>
+          </div>
+        )}
+
+        {!loading && (docs.length > 0 || associatedDocs.length > 0) && (
+          <div className="mb-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveFolderId(null)}
+                className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition"
+                style={activeFolderId === null ? { background: '#0F172A', color: '#fff' } : { background: '#fff', color: '#374151', border: '1px solid #E2E8F0' }}
+              >
+                {language === 'es' ? 'Todas' : 'All'}
+              </button>
+              {folders.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setActiveFolderId(f.id)}
+                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition"
+                  style={activeFolderId === f.id ? { background: f.color ?? '#4F46E5', color: '#fff' } : { background: '#fff', color: '#374151', border: '1px solid #E2E8F0' }}
+                >
+                  <Folder className="size-3" />
+                  {f.name} <span className="opacity-70">{folderCounts.get(f.id) ?? 0}</span>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { setFolderModal('create'); setFolderNameInput(''); }}
+                className="flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-1.5 text-xs font-bold text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
+              >
+                <FolderPlus className="size-3.5" />
+                {language === 'es' ? 'Nueva carpeta' : 'New folder'}
+              </button>
+            </div>
+
+            {activeFolder && (
+              <div className="mt-2.5 flex items-center justify-between rounded-xl border bg-white px-4 py-2.5">
+                <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <Folder className="size-4" style={{ color: activeFolder.color ?? '#4F46E5' }} />
+                  {activeFolder.name}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setFolderModal(activeFolder); setFolderNameInput(activeFolder.name); }}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <Pencil className="size-3.5" /> {language === 'es' ? 'Renombrar' : 'Rename'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={zippingFolderId === activeFolder.id}
+                    onClick={() => void handleDownloadFolderZip(activeFolder)}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {zippingFolderId === activeFolder.id ? <Loader className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+                    {language === 'es' ? 'Descargar .zip' : 'Download .zip'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteFolder(activeFolder)}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="size-3.5" /> {language === 'es' ? 'Eliminar carpeta' : 'Delete folder'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -153,9 +333,16 @@ export function MyDocumentsPage() {
               {language === 'es' ? 'Crear documento' : 'Create document'}
             </button>
           </div>
+        ) : visibleDocs.length === 0 && visibleAssociatedDocs.length === 0 ? (
+          <div className="rounded-xl border bg-white p-10 text-center">
+            <Folder className="size-10 mx-auto text-slate-300" />
+            <p className="mt-3 text-sm font-semibold text-slate-500">
+              {language === 'es' ? 'No hay documentos en esta carpeta' : 'No documents in this folder'}
+            </p>
+          </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {docs.map((doc) => {
+            {visibleDocs.map((doc) => {
               const tpl = getTemplateById(doc.template_id);
               const isRenaming = renamingId === doc.id;
               const createdDate = new Date(doc.created_at).toLocaleDateString(
@@ -212,6 +399,17 @@ export function MyDocumentsPage() {
                     E-SIGN &amp; UETA Compliant
                   </div>
 
+                  {folders.length > 0 && (
+                    <select
+                      value={doc.folder_id ?? ''}
+                      onChange={(e) => void handleMoveDoc(doc.id, 'user_documents', e.target.value || null)}
+                      className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-indigo-400"
+                    >
+                      <option value="">{language === 'es' ? 'Sin carpeta' : 'No folder'}</option>
+                      {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                  )}
+
                   <div className="flex gap-2 pt-1">
                     <Link
                       to={`/preview/${doc.template_id}`}
@@ -236,16 +434,17 @@ export function MyDocumentsPage() {
         )}
 
         {/* ── Documents signed as a guest, associated to this profile ─────── */}
-        {associatedDocs.length > 0 && (
+        {visibleAssociatedDocs.length > 0 && (
           <div className="mt-10">
             <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-800">
               <PenLine className="size-4 text-indigo-600" />
               {language === 'es' ? 'Documentos que firmaste' : 'Documents you signed'}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {associatedDocs.map((doc) => {
+              {visibleAssociatedDocs.map((doc) => {
                 const isCompleted = doc.status === 'completed';
                 const fileUrl = doc.signed_pdf_url || doc.original_pdf_url;
+                const isFoldable = !doc.id.startsWith('tx:');
                 const createdDate = new Date(doc.created_at).toLocaleDateString(
                   language === 'es' ? 'es-US' : 'en-US',
                   { year: 'numeric', month: 'short', day: 'numeric' },
@@ -268,6 +467,16 @@ export function MyDocumentsPage() {
                       <ShieldCheck className="size-3" />
                       E-SIGN &amp; UETA Compliant
                     </div>
+                    {isFoldable && folders.length > 0 && (
+                      <select
+                        value={doc.folder_id ?? ''}
+                        onChange={(e) => void handleMoveDoc(doc.id, 'documents', e.target.value || null)}
+                        className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs text-slate-600 outline-none focus:border-indigo-400"
+                      >
+                        <option value="">{language === 'es' ? 'Sin carpeta' : 'No folder'}</option>
+                        {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </select>
+                    )}
                     {fileUrl ? (
                       <button
                         type="button"
@@ -297,6 +506,43 @@ export function MyDocumentsPage() {
           </div>
         )}
       </main>
+
+      {/* ── Create / rename folder ── */}
+      {folderModal !== null && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setFolderModal(null)}>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">
+                {folderModal === 'create'
+                  ? (language === 'es' ? 'Nueva carpeta' : 'New folder')
+                  : (language === 'es' ? 'Renombrar carpeta' : 'Rename folder')}
+              </h2>
+              <button type="button" onClick={() => setFolderModal(null)} className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
+                <X className="size-4" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              value={folderNameInput}
+              onChange={(e) => setFolderNameInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void (folderModal === 'create' ? handleCreateFolder() : handleRenameFolder()); }}
+              maxLength={60}
+              placeholder={language === 'es' ? 'ej. "Cliente — Acme Corp"' : 'e.g. "Client — Acme Corp"'}
+              className="mb-5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400"
+            />
+            <button
+              type="button"
+              disabled={!folderNameInput.trim() || folderSaving}
+              onClick={() => void (folderModal === 'create' ? handleCreateFolder() : handleRenameFolder())}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {folderSaving
+                ? <><Loader className="size-4 animate-spin" />{language === 'es' ? 'Guardando…' : 'Saving…'}</>
+                : (folderModal === 'create' ? (language === 'es' ? 'Crear' : 'Create') : (language === 'es' ? 'Guardar' : 'Save'))}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

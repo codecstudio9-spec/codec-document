@@ -14,6 +14,8 @@ import {
   listMyQuoteFolders, createQuoteFolder, deleteQuoteFolder, setQuoteFolder, setQuoteName, duplicateQuote,
   type Quote, type QuoteStatus, type QuoteFolder,
 } from '../services/quotes-service';
+import { openDocumentUrl } from '../utils/open-document-url';
+import { toProxiedPdfUrl } from '../utils/pdf-proxy';
 
 type ViewStats = Awaited<ReturnType<typeof getQuoteViewStats>>;
 
@@ -366,9 +368,14 @@ export function MyQuotesPage() {
                   </button>
                   {q.pdf_url && (
                     <>
-                      <a href={q.pdf_url} target="_blank" rel="noopener noreferrer" title={language === 'en' ? 'Download' : 'Descargar'} className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600">
+                      <button
+                        type="button"
+                        title={language === 'en' ? 'Download' : 'Descargar'}
+                        onClick={() => openDocumentUrl(toProxiedPdfUrl(q.pdf_url!))}
+                        className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
+                      >
                         <Download className="size-4" />
-                      </a>
+                      </button>
                       {/* Reenviar una cotización ya hecha. Se comparte el PDF
                           que se guardó al enviarla, no un enlace de firma
                           nuevo: ese ya lo tiene el cliente y generar otro

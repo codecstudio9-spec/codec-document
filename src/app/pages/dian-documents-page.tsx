@@ -75,6 +75,7 @@ import {
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
+import { triggerDownload } from '../utils/download';
 
 /** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
  *  porque aquí encabezan una frase leída en voz alta: «Nota crédito 1234 de
@@ -362,12 +363,10 @@ function ContenidoDian() {
       ...respuestas.map((r) => columnas.map((c) => escapar(r[c])).join(';')),
     ].join('\n');
     // El BOM es lo que hace que Excel en español abra las tildes bien.
-    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `encuesta-dian-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // triggerDownload — iOS Safari no respeta de forma confiable `download`
+    // en una URL blob:, así que esto usa el share sheet nativo en iOS.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    void triggerDownload(blob, `encuesta-dian-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   /** Atajo para narrar. El asistente decide solo si suena: si el contador
@@ -1144,14 +1143,10 @@ function ContenidoDian() {
         lineas as LineaReporte[],
         impuestos as ImpuestoReporte[],
       );
-      const url = URL.createObjectURL(
-        new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-      );
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Reporte documentos electronicos ${new Date().toISOString().slice(0, 10)}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      // triggerDownload — iOS Safari no respeta de forma confiable `download`
+      // en una URL blob:, así que esto usa el share sheet nativo en iOS.
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await triggerDownload(blob, `Reporte documentos electronicos ${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success(`${docs.length} documento(s) exportados en 4 hojas`);
       // Se avisa de las notas crédito ANTES de que abra el archivo. En la hoja
       // de resumen restan, como debe ser; en las de detalle salen en positivo,
@@ -1190,12 +1185,10 @@ function ContenidoDian() {
     const csv = '﻿' + [cab, ...filas]
       .map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';'))
       .join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `documentos-electronicos-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // triggerDownload — iOS Safari no respeta de forma confiable `download`
+    // en una URL blob:, así que esto usa el share sheet nativo en iOS.
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    void triggerDownload(blob, `documentos-electronicos-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const porcentaje = useMemo(

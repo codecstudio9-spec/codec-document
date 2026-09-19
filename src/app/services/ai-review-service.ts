@@ -146,6 +146,53 @@ export async function draftClauseWithAi(
   return String((data as { draftedText?: string })?.draftedText ?? '');
 }
 
+export interface AiFormattedSection {
+  heading: string | null;
+  body: string;
+}
+
+export interface AiFormattedDocument {
+  title: string;
+  sections: AiFormattedSection[];
+}
+
+/**
+ * "Crear nuevo" en Mis Documentos — el usuario pega texto que ya generó en
+ * cualquier IA externa y esto lo reestructura en título + secciones con
+ * encabezado, para renderizarlo con la marca de la empresa y, si el
+ * usuario quiere, mandarlo al flujo de firma existente. Ver
+ * supabase/functions/ai-format-pasted-document/index.ts: solo
+ * reestructura, nunca redacta ni altera contenido/datos.
+ */
+export async function formatPastedDocumentWithAi(text: string, language: 'en' | 'es'): Promise<AiFormattedDocument> {
+  const { data, error } = await supabase.functions.invoke('ai-format-pasted-document', {
+    body: { text, language },
+  });
+
+  if (error) {
+    const ctx = (error as { context?: Response })?.context;
+    if (ctx?.status === 402) {
+      throw new AiReviewUpgradeRequiredError(
+        language === 'en'
+          ? 'Creating documents with AI is available on paid plans.'
+          : 'Crear documentos con IA está disponible en planes pagos.',
+      );
+    }
+    throw new Error(await extractEdgeFunctionErrorMessage(
+      error,
+      language === 'en' ? 'Could not format this document.' : 'No se pudo formatear este documento.',
+    ));
+  }
+
+  const d = data as Partial<AiFormattedDocument> | null;
+  return {
+    title: String(d?.title ?? ''),
+    sections: Array.isArray(d?.sections)
+      ? d.sections.map((s) => ({ heading: s?.heading ?? null, body: String(s?.body ?? '') }))
+      : [],
+  };
+}
+
 export interface CotizacionRedactada {
   /** Cuerpo comercial listo para el PDF. */
   proposal: string;

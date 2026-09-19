@@ -503,6 +503,15 @@ export interface EvidenceReportPayload {
   ip?: string;
   userAgent?: string;
   signedAt?: string;
+  /** Set only when the signer completed a WebAuthn platform-authenticator
+   * ceremony (Face ID/Touch ID/Android fingerprint) right before signing
+   * — see utils/webauthn-biometric.ts. There is deliberately no image
+   * here: no browser or OS exposes the actual biometric data to any app,
+   * so this is a verification RESULT (did it succeed, when, on what kind
+   * of authenticator), never a picture of a fingerprint. */
+  biometricVerified?: boolean;
+  biometricLabel?: string;
+  biometricVerifiedAt?: string;
 }
 
 async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | null> {
@@ -523,15 +532,36 @@ async function resolveImageBytes(sig: SignatureToEmbed): Promise<Uint8Array | nu
     return null;
   }
 
-  const candidates = [sig.imageUrl, sig.storageUrl].filter(
-    (u): u is string => Boolean(u) && !u.startsWith('data:'),
-  );
+  // Dedupe: guest-sign-page's reportSigners sets imageUrl === storageUrl
+  // (both just `signature_url` from the DB row), so without this Set the
+  // loop below fetches the exact same failing URL twice before giving up.
+  const candidates = [...new Set(
+    [sig.imageUrl, sig.storageUrl].filter(
+      (u): u is string => Boolean(u) && !u.startsWith('data:'),
+    ),
+  )];
   for (const url of candidates) {
     try {
       const res = await fetch(url, { cache: 'force-cache' });
       if (res.ok) return new Uint8Array(await res.arrayBuffer());
     } catch {
       // try next
+    }
+    // Signature PNGs are stored in the same bucket as the documents
+    // themselves, which went private in the 2026-09-15 migration (see
+    // getSignedUrlFallback's doc comment above) — a stored signature_url
+    // is a getPublicUrl() string that now 401s on every direct fetch.
+    // Without this fallback, resolveImageBytes silently returns null and
+    // the "INFORME DE FIRMAS" report page renders an empty box for that
+    // signer's image instead of their actual signature.
+    try {
+      const signedUrl = await getSignedUrlFallback(url);
+      if (signedUrl) {
+        const res = await fetch(signedUrl, { cache: 'force-cache' });
+        if (res.ok) return new Uint8Array(await res.arrayBuffer());
+      }
+    } catch {
+      // try next candidate
     }
   }
   return null;
@@ -885,7 +915,7 @@ export async function compilePdfWithSignatures(params: {
     );
   }
 
-  if (params.evidence && (params.evidence.selfieDataUrl || params.evidence.idDataUrl || params.evidence.idFrontDataUrl || params.evidence.idBackDataUrl)) {
+  if (params.evidence && (params.evidence.selfieDataUrl || params.evidence.idDataUrl || params.evidence.idFrontDataUrl || params.evidence.idBackDataUrl || params.evidence.biometricVerified)) {
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
     const evidencePage = pdfDoc.addPage([PAGE_W, PAGE_H]);
@@ -901,6 +931,13 @@ export async function compilePdfWithSignatures(params: {
     if (params.evidence.ip) evidencePage.drawText(`IP: ${params.evidence.ip}`, { x: 40, y: bodyY - 50, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
     if (params.evidence.signedAt) evidencePage.drawText(`Timestamp: ${params.evidence.signedAt}`, { x: 40, y: bodyY - 66, size: 9, font: fontReg, color: rgb(0.3, 0.34, 0.45) });
     if (params.evidence.userAgent) evidencePage.drawText(`Navegador: ${params.evidence.userAgent.substring(0, 120)}`, { x: 40, y: bodyY - 82, size: 7.5, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+    if (params.evidence.biometricVerified) {
+      const bioDate = params.evidence.biometricVerifiedAt
+        ? new Date(params.evidence.biometricVerifiedAt).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
+        : '';
+      drawBold(evidencePage, `✓ Verificación biométrica: ${params.evidence.biometricLabel || 'Face ID / Touch ID / Huella'}`, { x: 40, y: bodyY - 100, size: 8.5, color: rgb(0.05, 0.45, 0.25) });
+      if (bioDate) evidencePage.drawText(`Confirmada: ${bioDate}`, { x: 40, y: bodyY - 114, size: 7.5, font: fontReg, color: rgb(0.45, 0.5, 0.6) });
+    }
 
     const selfieSource = params.evidence.selfieDataUrl;
     const idFrontSource = params.evidence.idFrontDataUrl ?? params.evidence.idDataUrl;

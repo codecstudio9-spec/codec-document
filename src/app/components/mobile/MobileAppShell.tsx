@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { MobileBottomNav } from './MobileBottomNav';
 import { OnboardingModal } from '../auth/OnboardingModal';
+import { DomainJoinPrompt } from '../company/DomainJoinPrompt';
 import { MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT, GLOW_TOP_LEFT } from '../../styles/mobile-theme';
 
 const MobileSignInContext = createContext<() => void>(() => {});
@@ -56,6 +57,9 @@ export function MobileAppShell({ children }: { children: ReactNode }) {
             className="relative z-10"
             style={{ paddingBottom: 88 }}
           >
+            <div className="px-4 pt-2">
+              <DomainJoinPrompt />
+            </div>
             {children}
           </motion.div>
         </AnimatePresence>

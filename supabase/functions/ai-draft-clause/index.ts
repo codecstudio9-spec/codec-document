@@ -18,20 +18,25 @@
 //
 // Deploy:
 //   supabase functions deploy ai-draft-clause --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reuses the same GROQ_API_KEY already set for ai-improve-clause.
+// Secrets: reuses the same OPENROUTER_API_KEY already set for the other ai-* functions
+// (https://openrouter.ai/keys).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
-// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — esta función se
-// desplegó el 23-08-2026 copiando ese modelo de las funciones hermanas, así
-// que nació ya rota sin que nadie lo notara hasta ahora. Reemplazo oficial
-// recomendado por Groq.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+// Switched from Groq to OpenRouter on 2026-09-19 — the GROQ_API_KEY this
+// project had configured stopped working (every ai-* function was
+// returning 502s), and re-pointing at OpenRouter with a fresh key fixed
+// it immediately. Same model id works unchanged through OpenRouter
+// (routes to whichever upstream provider — DeepInfra, AkashML, etc. —
+// currently serves it), so nothing else about this function needed to
+// change. If this model ever gets deprecated again, check
+// https://openrouter.ai/models for a replacement.
+const AI_MODEL = 'openai/gpt-oss-120b';
 const MAX_INSTRUCTION_CHARS = 1500;
 
 function corsHeaders(origin: string | null) {
@@ -67,7 +72,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!GROQ_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return new Response(JSON.stringify({ error: 'AI clause drafting is not configured on the server yet.' }), {
         status: 500, headers: corsHeaders(origin),
       });
@@ -130,29 +135,33 @@ Deno.serve(async (req) => {
 
     const truncated = instruction.slice(0, MAX_INSTRUCTION_CHARS);
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        // OpenRouter-recommended attribution headers — optional, but they're
+        // what shows up as the app name/link on openrouter.ai's usage dashboard.
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: buildPrompt(truncated, language, context) }],
         temperature: 0.4,
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text().catch(() => '');
-      console.error('[ai-draft-clause] Groq request failed:', groqRes.status, errText);
+    if (!aiRes.ok) {
+      const errText = await aiRes.text().catch(() => '');
+      console.error('[ai-draft-clause] OpenRouter request failed:', aiRes.status, errText);
       return new Response(JSON.stringify({ error: 'AI clause drafting is temporarily unavailable.' }), {
         status: 502, headers: corsHeaders(origin),
       });
     }
 
-    const groqJson = await groqRes.json();
-    const draftedText = String(groqJson?.choices?.[0]?.message?.content ?? '').trim();
+    const aiJson = await aiRes.json();
+    const draftedText = String(aiJson?.choices?.[0]?.message?.content ?? '').trim();
 
     if (!draftedText) {
       return new Response(JSON.stringify({ error: 'AI returned an empty response.' }), {

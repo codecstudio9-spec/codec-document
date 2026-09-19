@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Check, Loader, X } from 'lucide-react';
+import { Check, Folder, Loader, X } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
-import { DOCUMENT_COLORS } from '../services/documents-service';
+import { DOCUMENT_COLORS, type DocumentFolder } from '../services/documents-service';
 
 interface DocumentEditModalProps {
   open: boolean;
@@ -9,21 +9,33 @@ interface DocumentEditModalProps {
   initialColor: string | null;
   isSaving?: boolean;
   onClose: () => void;
-  onSave: (name: string, color: string | null) => void;
+  /** `folderId` is only passed through when `folders` is non-empty — see
+   * onSave below. */
+  onSave: (name: string, color: string | null, folderId: string | null) => void;
+  /** Omit (or pass an empty array) to hide the folder picker entirely —
+   * used for documents that can't be filed into a folder (e.g. a
+   * synthetic sign_transaction row with no real DB row to update). */
+  folders?: DocumentFolder[];
+  initialFolderId?: string | null;
 }
 
-/** Rename + accent-color editor, shared by the desktop and mobile
+/** Rename + accent-color + folder editor, shared by the desktop and mobile
  * document lists — a document card only reads "Contrato" or "Acuerdo"
- * out of context; letting the owner rename it and tag it with a color is
- * how they actually recognize whose document it is at a glance later. */
-export function DocumentEditModal({ open, initialName, initialColor, isSaving, onClose, onSave }: DocumentEditModalProps) {
+ * out of context; letting the owner rename it, tag it with a color and
+ * file it into a folder is how they actually recognize and find whose
+ * document it is later. */
+export function DocumentEditModal({
+  open, initialName, initialColor, isSaving, onClose, onSave,
+  folders = [], initialFolderId = null,
+}: DocumentEditModalProps) {
   const { language } = useLanguage();
   const [name, setName] = useState(initialName);
   const [color, setColor] = useState<string | null>(initialColor);
+  const [folderId, setFolderId] = useState<string | null>(initialFolderId);
 
   useEffect(() => {
-    if (open) { setName(initialName); setColor(initialColor); }
-  }, [open, initialName, initialColor]);
+    if (open) { setName(initialName); setColor(initialColor); setFolderId(initialFolderId); }
+  }, [open, initialName, initialColor, initialFolderId]);
 
   if (!open) return null;
 
@@ -80,10 +92,44 @@ export function DocumentEditModal({ open, initialName, initialColor, isSaving, o
           ))}
         </div>
 
+        {folders.length > 0 && (
+          <>
+            <label className="mb-2 block text-xs font-semibold text-slate-500">
+              {language === 'en' ? 'Folder' : 'Carpeta'}
+            </label>
+            <div className="mb-6 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFolderId(null)}
+                className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                style={folderId === null
+                  ? { background: '#0F172A', color: '#fff', borderColor: '#0F172A' }
+                  : { background: '#fff', color: '#64748B', borderColor: '#E2E8F0' }}
+              >
+                {language === 'en' ? 'No folder' : 'Sin carpeta'}
+              </button>
+              {folders.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFolderId(f.id)}
+                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                  style={folderId === f.id
+                    ? { background: f.color ?? '#2563EB', color: '#fff', borderColor: f.color ?? '#2563EB' }
+                    : { background: '#fff', color: '#64748B', borderColor: '#E2E8F0' }}
+                >
+                  <Folder className="size-3" />
+                  {f.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <button
           type="button"
           disabled={!name.trim() || isSaving}
-          onClick={() => onSave(name.trim(), color)}
+          onClick={() => onSave(name.trim(), color, folders.length > 0 ? folderId : initialFolderId)}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSaving ? <><Loader className="size-4 animate-spin" />{language === 'en' ? 'Saving…' : 'Guardando…'}</> : (language === 'en' ? 'Save' : 'Guardar')}

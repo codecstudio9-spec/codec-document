@@ -4,7 +4,7 @@ import {
   Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
-  PenLine, Plus,
+  PenLine, Plus, Fingerprint,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -45,6 +45,9 @@ import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytic
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction, DEFAULT_JURISDICTION } from '../data/signature-jurisdictions';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
+import { consumePendingSignFile } from '../utils/pending-sign-file';
+import { isBiometricAvailable, verifyBiometric } from '../utils/webauthn-biometric';
+import { isCerticamaraConfigured } from '../services/certicamara-service';
 
 type Step = 'upload' | 'creator-sign' | 'position-creator' | 'invite-guest' | 'identity-solo' | 'await-guest' | 'position' | 'compiling' | 'done';
 
@@ -480,6 +483,19 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  const handleVerifyCreatorBiometric = async () => {
+    setVerifyingCreatorBiometric(true);
+    try {
+      const proof = await verifyBiometric(creatorName || 'Firmante');
+      setCreatorBiometric({ label: proof.label, verifiedAt: proof.verifiedAt });
+      toast.success('Verificación biométrica confirmada.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo verificar la biometría.');
+    } finally {
+      setVerifyingCreatorBiometric(false);
+    }
+  };
+
   const captureIdentityPhoto = async () => {
     const target = identityCaptureTarget;
     const video = identityVideoRef.current;
@@ -628,6 +644,22 @@ export function ElectronicSignaturePage() {
   // ── Security requirements (saved to document_requirements table) ──────────
   const [requireIdPhoto, setRequireIdPhoto] = useState(false);
   const [requireSelfie, setRequireSelfie]   = useState(false);
+  const [requireBiometric, setRequireBiometric] = useState(false);
+  // Creator's own optional biometric verification when signing solo (no
+  // guest) — separate from requireBiometric above, which is what the
+  // creator asks of a GUEST. Mirrors the existing selfie/ID-photo split
+  // between "what I require of them" (requireSelfie/requireIdPhoto) and
+  // "what I capture of myself" (selfieDataUrl/idFrontDataUrl/idBackDataUrl
+  // in the identity-solo step below).
+  const [creatorBiometric, setCreatorBiometric] = useState<{ label: string; verifiedAt: string } | null>(null);
+  const [verifyingCreatorBiometric, setVerifyingCreatorBiometric] = useState(false);
+  // Certicámara — infrastructure is built (see certicamara-service.ts +
+  // supabase/functions/certicamara-sign), but there's no real signing
+  // integration yet (no API docs from Certicámara). This just reflects
+  // whether the admin has pasted a key in Configuración → Certicámara —
+  // it does NOT mean certified signing actually works end-to-end yet.
+  const [certicamaraConfigured, setCerticamaraConfigured] = useState(false);
+  useEffect(() => { isCerticamaraConfigured().then(setCerticamaraConfigured).catch(() => {}); }, []);
 
   // ── UI ─────────────────────────────────────────────────────────────────────
   const [isLoading, setIsLoading]     = useState(false);
@@ -800,6 +832,19 @@ export function ElectronicSignaturePage() {
     }
   };
 
+  // "Enviar a firma" from ai-create-document-page.tsx ("Crear nuevo") hands
+  // its generated PDF off here instead of making the user download it and
+  // re-upload it through PdfUploader — same upload path either way
+  // (handleUploadPdf doesn't care whether the File came from a real
+  // <input type="file"> or was constructed from a generated Blob), this
+  // just skips the manual step===upload screen when there's a file
+  // already waiting. See utils/pending-sign-file.ts.
+  useEffect(() => {
+    const pending = consumePendingSignFile();
+    if (pending) void handleUploadPdf(pending);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Only captures WHAT the signature looks like (SignatureModal) and saves
   // it — WHERE it goes on the document used to be hardcoded here
   // (xFraction 0.25/yFraction 0.84/44%×30%), which is exactly why the main
@@ -900,7 +945,7 @@ export function ElectronicSignaturePage() {
     setIsLoading(true); setLoadingMsg('Finalizando documento…');
     try {
       const ip = await getPublicIp();
-      const hasIdentityEvidence = Boolean(selfieDataUrl || idFrontDataUrl || idBackDataUrl);
+      const hasIdentityEvidence = Boolean(selfieDataUrl || idFrontDataUrl || idBackDataUrl || creatorBiometric);
       const finalBytes = await compilePdfWithSignatures({
         pdfBytes,
         signatures: [{
@@ -924,6 +969,9 @@ export function ElectronicSignaturePage() {
           ip,
           userAgent: navigator.userAgent,
           signedAt: new Date().toISOString(),
+          biometricVerified: Boolean(creatorBiometric),
+          biometricLabel: creatorBiometric?.label,
+          biometricVerifiedAt: creatorBiometric?.verifiedAt,
         } : undefined,
       });
       const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
@@ -1074,7 +1122,8 @@ export function ElectronicSignaturePage() {
     setCreatorName(''); setCreatorEmail(''); setCreatorSigDataUrl(''); setCreatorSigUrl(''); setCreatorPlacement(null);
     setGuestName(''); setGuestEmail(''); setGuestSigDataUrl(''); setGuestSigUrl('');
     setSigningToken(''); setSignedPdfUrl(''); setSignedAt(''); setDocumentStatus('pending');
-    setRequireIdPhoto(false); setRequireSelfie(false);
+    setRequireIdPhoto(false); setRequireSelfie(false); setRequireBiometric(false);
+    setCreatorBiometric(null); setVerifyingCreatorBiometric(false);
     setPaywallContext(null); setPaywallNextSlotAt(null); setPendingPlacements(null);
     downloadGateCheckedRef.current = false; setCheckingDownloadGate(false); setDownloadUnlocked(false);
     setError('');
@@ -1083,8 +1132,9 @@ export function ElectronicSignaturePage() {
   // Requirements travel as URL query-params — no extra DB table needed
   const buildGuestLink = (token: string) => {
     const qp = new URLSearchParams();
-    if (requireIdPhoto) qp.set('req_id',     '1');
-    if (requireSelfie)  qp.set('req_selfie', '1');
+    if (requireIdPhoto)   qp.set('req_id',     '1');
+    if (requireSelfie)    qp.set('req_selfie', '1');
+    if (requireBiometric) qp.set('req_bio',    '1');
     const qs = qp.toString();
     return `${window.location.origin}/guest-sign/${token}${qs ? '?' + qs : ''}`;
   };
@@ -1287,13 +1337,31 @@ export function ElectronicSignaturePage() {
                       sub="Validación facial del firmante antes de estampar"
                       Icon={Camera}
                     />
+                    <SecurityToggle
+                      checked={requireBiometric}
+                      onChange={setRequireBiometric}
+                      label="Requiere Face ID / Huella"
+                      sub="El firmante debe verificar con la biometría de su propio dispositivo antes de firmar"
+                      Icon={Fingerprint}
+                    />
                   </div>
 
-                  {(requireIdPhoto || requireSelfie) && (
+                  {(requireIdPhoto || requireSelfie || requireBiometric) && (
                     <p className="mt-3 text-[11px] text-indigo-600 bg-indigo-50 rounded-xl px-3 py-2">
                       ✓ Estos requisitos se enviarán al firmante y se guardarán en la base de datos del documento.
                     </p>
                   )}
+
+                  {/* Certicámara — estado real, no un selector funcional
+                      todavía: la integración con su API sigue pendiente
+                      (ver certicamara-sign/index.ts). Esto solo informa si
+                      la clave ya está guardada. */}
+                  <div className={`mt-3 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[11px] ${certicamaraConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'}`}>
+                    <ShieldCheck className="size-3.5 shrink-0" />
+                    {certicamaraConfigured
+                      ? 'Certicámara: API key configurada — la integración de firma certificada aún está en desarrollo.'
+                      : 'Firma digital certificada (Certicámara): aún no configurada. Actívala en Configuración → Certicámara.'}
+                  </div>
                 </div>
               </div>
 
@@ -1615,6 +1683,33 @@ export function ElectronicSignaturePage() {
                 {identityCameraError && (
                   <p className="mt-3 text-xs font-medium text-red-600">{identityCameraError}</p>
                 )}
+
+                {/* Face ID/Touch ID/huella — separado de la selfie/cédula de
+                    arriba porque no es una foto: es una verificación que
+                    corre en el propio dispositivo y nunca produce una
+                    imagen (ver utils/webauthn-biometric.ts). */}
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${creatorBiometric ? 'bg-emerald-50' : 'bg-slate-50'}`}>
+                      <Fingerprint className={`size-5 ${creatorBiometric ? 'text-emerald-600' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">Face ID / Touch ID / Huella</p>
+                      <p className="text-xs text-slate-400">
+                        {creatorBiometric ? `Confirmada — ${creatorBiometric.label}` : 'Verificación biométrica de tu propio dispositivo (opcional)'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={verifyingCreatorBiometric}
+                    onClick={() => void handleVerifyCreatorBiometric()}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold disabled:opacity-50 ${creatorBiometric ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}
+                  >
+                    {verifyingCreatorBiometric && <Loader className="size-3.5 animate-spin" />}
+                    {creatorBiometric ? 'Verificar de nuevo' : 'Verificar'}
+                  </button>
+                </div>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <button

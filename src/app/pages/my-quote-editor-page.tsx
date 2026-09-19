@@ -29,6 +29,7 @@ import {
   uploadSignatureImage, insertSignature, dataUrlToBlob, sha256Hex, getPublicIp,
 } from '../../lib/signatureService';
 import { SignatureModal } from '../components/signatures/SignatureModal';
+import { triggerDownloadFromBytes } from '../utils/download';
 
 const QUOTE_SINGLE_PRICE = 6.99;
 
@@ -484,11 +485,20 @@ export function MyQuoteEditorPage() {
       return;
     }
     setPreviewing(true);
+    // Abre la pestaña en blanco YA, antes del `await` de más abajo — en
+    // iOS Safari con "Bloquear ventanas emergentes" activado (el valor
+    // por defecto), un window.open() después de un await cae fuera de la
+    // ventana del gesto del usuario y no hace nada, en silencio. Mismo
+    // arreglo que utils/open-document-url.ts.
+    const ventana = window.open('', '_blank');
+    if (ventana) ventana.opener = null;
     try {
       const pdfBytes = await generarPdfDelBorrador();
       const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
-      window.open(blobUrl, '_blank');
+      if (ventana && !ventana.closed) ventana.location.href = blobUrl;
+      else window.location.href = blobUrl;
     } catch (err) {
+      ventana?.close();
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not generate preview.' : 'No se pudo generar la vista previa.'));
     } finally {
       setPreviewing(false);
@@ -505,15 +515,13 @@ export function MyQuoteEditorPage() {
     setDownloading(true);
     try {
       const pdfBytes = await generarPdfDelBorrador();
-      const blobUrl = URL.createObjectURL(new Blob([pdfBytes as BlobPart], { type: 'application/pdf' }));
       const nombreArchivo = `${(projectName || documentTitle || 'cotizacion').replace(/[^a-z0-9-_]+/gi, '-')}.pdf`;
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = nombreArchivo;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      // triggerDownloadFromBytes (not a hand-rolled <a download> click) —
+      // iOS Safari doesn't reliably honor `download` on a blob: URL,
+      // especially right after this async PDF-generation step; this
+      // utility routes through the native share sheet on iOS instead.
+      // See utils/download.ts.
+      await triggerDownloadFromBytes(pdfBytes as Uint8Array, nombreArchivo);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not download the document.' : 'No se pudo descargar el documento.'));
     } finally {

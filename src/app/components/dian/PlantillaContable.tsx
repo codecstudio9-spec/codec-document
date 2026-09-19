@@ -28,6 +28,7 @@ import {
   type PerfilPlantilla,
 } from '../../services/dian-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { triggerDownload } from '../../utils/download';
 
 const PROGRAMAS = ['Siigo', 'Alegra', 'World Office', 'Helisa', 'ContaPyme', 'Otro'];
 const FORMATOS_FECHA = [
@@ -97,14 +98,11 @@ export function PlantillaContable({ cargarDatos, narrar, onCerrar }: Props) {
   };
 
   const descargar = (bytes: Uint8Array, nombre: string) => {
-    const url = URL.createObjectURL(
-      new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-    );
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nombre;
-    a.click();
-    URL.revokeObjectURL(url);
+    // triggerDownload — iOS Safari doesn't reliably honor `download` on a
+    // blob: URL, so this routes through the native share sheet on iOS.
+    // See utils/download.ts.
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    void triggerDownload(blob, nombre);
   };
 
   /** Llena la plantilla recién configurada y, de paso, guarda el perfil. */

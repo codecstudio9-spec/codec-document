@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   ShieldCheck, Loader, AlertCircle, CheckCircle2,
   FileText, PenLine, Sparkles, ArrowRight, ArrowLeft, ExternalLink,
-  IdCard, Camera, Upload, Lock, Maximize2, XCircle, Download,
+  IdCard, Camera, Upload, Lock, Maximize2, XCircle, Download, Fingerprint,
 } from 'lucide-react';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { PdfViewerModal } from '../components/signatures/PdfViewerModal';
@@ -30,6 +30,7 @@ import {
 } from '../../lib/signatureService';
 import { supabase, publicSupabase } from '../../lib/supabase';
 import { normalizeIdEvidence, normalizeSelfieEvidence } from '../utils/evidence-image';
+import { verifyBiometric } from '../utils/webauthn-biometric';
 import { getSignerRoleLabel, inferDocumentTypeHint } from '../utils/signer-roles';
 import { getDocumentBranding, type UserBranding } from '../services/branding-service';
 import { markVisitorActivity, markVisitorFunnelStep } from '../services/analytics-service';
@@ -82,7 +83,7 @@ interface TokenData {
   documentStatus: string;
 }
 
-type SigningRequirements = { requireIdPhoto: boolean; requireSelfie: boolean };
+type SigningRequirements = { requireIdPhoto: boolean; requireSelfie: boolean; requireBiometric: boolean };
 
 // ─── Single PDF page rendered to canvas via pdfjs ────────────────────────────
 function PdfPage({
@@ -175,6 +176,7 @@ function IdentityGate({
   idFrontDataUrl, idBackDataUrl, selfieDataUrl,
   idFrontReady, idBackReady, selfieReady,
   uploadingIdFront, uploadingIdBack, uploadingSelfie,
+  biometricVerified, verifyingBiometric, onVerifyBiometric,
   onIdFrontSelect, onIdBackSelect, onSelfieSelect, onContinue, onBack,
 }: {
   documentId: string;
@@ -189,6 +191,9 @@ function IdentityGate({
   uploadingIdFront: boolean;
   uploadingIdBack: boolean;
   uploadingSelfie: boolean;
+  biometricVerified: boolean;
+  verifyingBiometric: boolean;
+  onVerifyBiometric: () => void;
   onIdFrontSelect: (file: File) => Promise<void>;
   onIdBackSelect: (file: File) => Promise<void>;
   onSelfieSelect:  (file: File) => Promise<void>;
@@ -196,8 +201,9 @@ function IdentityGate({
   onBack: () => void;
 }) {
   const canContinue =
-    (!requirements.requireIdPhoto || (idFrontReady && idBackReady)) &&
-    (!requirements.requireSelfie  || selfieReady);
+    (!requirements.requireIdPhoto   || (idFrontReady && idBackReady)) &&
+    (!requirements.requireSelfie    || selfieReady) &&
+    (!requirements.requireBiometric || biometricVerified);
 
   const { speak } = useVoiceSpeak();
   const logIdentityEvent = (step: string, eventType: 'auto_play' | 'idle_hint') =>
@@ -536,6 +542,32 @@ function IdentityGate({
           </div>
         )}
 
+        {/* Face ID / Touch ID / huella — no es una foto, corre en el propio
+            dispositivo del firmante y nunca produce una imagen (ver
+            utils/webauthn-biometric.ts). */}
+        {requirements.requireBiometric && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`flex size-10 items-center justify-center rounded-xl ${biometricVerified ? 'bg-emerald-100' : 'bg-indigo-50'}`}>
+                {biometricVerified ? <CheckCircle2 className="size-5 text-emerald-600" /> : <Fingerprint className="size-5 text-indigo-600" />}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Face ID / Touch ID / Huella</p>
+                <p className="text-[11px] text-slate-400">Verificación biométrica de tu propio dispositivo</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={verifyingBiometric}
+              onClick={onVerifyBiometric}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold disabled:opacity-50 ${biometricVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'}`}
+            >
+              {verifyingBiometric && <Loader className="size-4 animate-spin" />}
+              {biometricVerified ? 'Verificado — tocar para repetir' : 'Verificar con Face ID / Huella'}
+            </button>
+          </div>
+        )}
+
         {/* Privacy notice */}
         <div className="flex items-start gap-2.5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
           <Lock className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
@@ -557,9 +589,10 @@ function IdentityGate({
           <ShieldCheck className="size-5" />
           {canContinue
             ? 'Continuar a Firmar'
-            : `Sube ${[
+            : `Completa ${[
               requirements.requireIdPhoto && (!idFrontReady || !idBackReady) ? 'frente y reverso del ID' : '',
               requirements.requireSelfie && !selfieReady ? 'la selfie' : '',
+              requirements.requireBiometric && !biometricVerified ? 'la verificación biométrica' : '',
             ].filter(Boolean).join(' y ')} para continuar`}
         </button>
       </div>
@@ -641,7 +674,8 @@ export function GuestSignPage() {
   const urlParams      = new URLSearchParams(window.location.search);
   const reqIdPhoto     = urlParams.get('req_id')     === '1';
   const reqSelfie      = urlParams.get('req_selfie') === '1';
-  const requirements   = { requireIdPhoto: reqIdPhoto, requireSelfie: reqSelfie };
+  const reqBiometric   = urlParams.get('req_bio')    === '1';
+  const requirements   = { requireIdPhoto: reqIdPhoto, requireSelfie: reqSelfie, requireBiometric: reqBiometric };
   const [showIdGate, setShowIdGate] = useState(false);
   const [idFrontDataUrl, setIdFrontDataUrl] = useState('');
   const [idBackDataUrl, setIdBackDataUrl] = useState('');
@@ -652,6 +686,20 @@ export function GuestSignPage() {
   const [uploadingIdFront, setUploadingIdFront] = useState(false);
   const [uploadingIdBack, setUploadingIdBack] = useState(false);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
+  const [biometricProof, setBiometricProof] = useState<{ label: string; verifiedAt: string } | null>(null);
+  const [verifyingBiometric, setVerifyingBiometric] = useState(false);
+  const handleVerifyBiometric = async () => {
+    setVerifyingBiometric(true);
+    try {
+      const proof = await verifyBiometric(guestName || 'Firmante');
+      setBiometricProof({ label: proof.label, verifiedAt: proof.verifiedAt });
+      toast.success('Verificación biométrica confirmada.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo verificar la biometría.');
+    } finally {
+      setVerifyingBiometric(false);
+    }
+  };
 
   // ── Completion ────────────────────────────────────────────────────────────────
   const [isSigning, setIsSigning] = useState(false);
@@ -1094,6 +1142,9 @@ export function GuestSignPage() {
               ip,
               userAgent: auditUserAgent,
               signedAt: new Date().toISOString(),
+              biometricVerified: Boolean(biometricProof),
+              biometricLabel: biometricProof?.label,
+              biometricVerifiedAt: biometricProof?.verifiedAt,
             },
           });
           const finalBlob = new Blob([finalBytes], { type: 'application/pdf' });
@@ -1405,22 +1456,27 @@ export function GuestSignPage() {
             <div className="flex flex-col items-center gap-3 p-4 text-center">
               <AlertCircle className="size-7 text-amber-400" />
               <p className="text-sm text-slate-500">{pdfError}</p>
-              {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
+              {(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
                 <>
                   <iframe
-                    src={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                    src={toProxiedPdfUrl(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                     title="Vista previa del documento"
                     className="h-[65vh] w-full rounded-xl border border-slate-200 bg-white"
                   />
-                  <a
-                    href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  {/* Button, not a raw <a target="_blank"> — iOS Safari
+                      navigates straight to whatever URL is in `href` with no
+                      chance to recover via a signed URL first. openDocumentUrl
+                      HEAD-checks and falls back to a signed URL before
+                      navigating, which is what actually makes this work when
+                      the stored URL points at the private Storage bucket. */}
+                  <button
+                    type="button"
+                    onClick={() => openDocumentUrl(toProxiedPdfUrl(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
                     className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700"
                   >
                     <ExternalLink className="size-4" />
                     Ver documento en nueva pestaña
-                  </a>
+                  </button>
                 </>
               )}
             </div>
@@ -1463,7 +1519,7 @@ export function GuestSignPage() {
             type="button"
             disabled={!hasScrolledToEnd}
             onClick={() => {
-              const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
+              const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady) || (requirements.requireBiometric && !biometricProof);
               if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
             }}
             className={`flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${guestNextHighlighted ? VOICE_HIGHLIGHT_CLASSES : ''}`}
@@ -1497,6 +1553,9 @@ export function GuestSignPage() {
             uploadingIdFront={uploadingIdFront}
             uploadingIdBack={uploadingIdBack}
             uploadingSelfie={uploadingSelfie}
+            biometricVerified={Boolean(biometricProof)}
+            verifyingBiometric={verifyingBiometric}
+            onVerifyBiometric={() => void handleVerifyBiometric()}
             onIdFrontSelect={async (file) => {
               setUploadingIdFront(true);
               try {
@@ -1709,15 +1768,14 @@ export function GuestSignPage() {
               <FileText className="size-3.5 text-slate-400" />
               {tokenData.documentName}
             </span>
-            {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
-              <a
-                href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
+            {(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
+              <button
+                type="button"
+                onClick={() => openDocumentUrl(toProxiedPdfUrl(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
                 className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 transition hover:underline"
               >
                 Abrir <ExternalLink className="size-3" />
-              </a>
+              </button>
             )}
           </div>
 
@@ -1734,7 +1792,7 @@ export function GuestSignPage() {
               <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <AlertCircle className="size-7 text-amber-400" />
                 <p className="text-sm text-slate-500">{pdfError}</p>
-                {(tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
+                {(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl) && (
                   <>
                     {/* Last-resort bypass: the browser's own native PDF
                         plugin renders inside an <iframe> via a completely
@@ -1742,21 +1800,24 @@ export function GuestSignPage() {
                         pipeline, so it can succeed even when that one
                         fails. Not interactive for tap-to-place, but at
                         least Ingrid can read the document — the "Continuar
-                        a Firmar" button below still unlocks either way. */}
+                        a Firmar" button below still unlocks either way.
+                        Prefers workingPdfUrl (the signed URL pdfjs's own
+                        fallback already resolved, if it got that far) over
+                        the raw stored URL, which 401s once the document
+                        lives in the private Storage bucket. */}
                     <iframe
-                      src={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
+                      src={toProxiedPdfUrl(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
                       title="Vista previa del documento"
                       className="h-[60vh] w-full rounded-xl border border-slate-200"
                     />
-                    <a
-                      href={toProxiedPdfUrl(tokenData.signedPdfUrl || tokenData.originalPdfUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openDocumentUrl(toProxiedPdfUrl(workingPdfUrl || tokenData.signedPdfUrl || tokenData.originalPdfUrl))}
                       className="flex items-center gap-1.5 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
                     >
                       <ExternalLink className="size-4" />
                       Ver documento en nueva pestaña
-                    </a>
+                    </button>
                   </>
                 )}
               </div>
@@ -1811,7 +1872,7 @@ export function GuestSignPage() {
           type="button"
           disabled={!hasScrolledToEnd}
           onClick={() => {
-            const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady);
+            const needsGate = (requirements.requireIdPhoto && (!idFrontReady || !idBackReady)) || (requirements.requireSelfie && !selfieReady) || (requirements.requireBiometric && !biometricProof);
             if (needsGate) { setShowIdGate(true); } else { setShowSignPad(true); }
           }}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-base font-bold text-white shadow-lg shadow-indigo-200/70 transition hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1837,6 +1898,9 @@ export function GuestSignPage() {
           uploadingIdFront={uploadingIdFront}
           uploadingIdBack={uploadingIdBack}
           uploadingSelfie={uploadingSelfie}
+          biometricVerified={Boolean(biometricProof)}
+          verifyingBiometric={verifyingBiometric}
+          onVerifyBiometric={() => void handleVerifyBiometric()}
           onIdFrontSelect={async (file) => {
             setUploadingIdFront(true);
             try {

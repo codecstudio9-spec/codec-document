@@ -38,6 +38,7 @@ const MyCompanyPage = lazy(() => import("./pages/my-company-page").then((m) => (
 const MyContactsPage = lazy(() => import("./pages/my-contacts-page").then((m) => ({ default: m.MyContactsPage })));
 const MyQuotesPage = lazy(() => import("./pages/my-quotes-page").then((m) => ({ default: m.MyQuotesPage })));
 const MyQuoteEditorPage = lazy(() => import("./pages/my-quote-editor-page").then((m) => ({ default: m.MyQuoteEditorPage })));
+const AiCreateDocumentPage = lazy(() => import("./pages/ai-create-document-page").then((m) => ({ default: m.AiCreateDocumentPage })));
 const ElectronicSignaturePage = lazy(() => import("./pages/electronic-signature-page").then((m) => ({ default: m.ElectronicSignaturePage })));
 const FreeLegalDocumentsLanding = lazy(() => import("./pages/landings/free-legal-documents"));
 const ElectronicSignatureLanding = lazy(() => import("./pages/landings/electronic-signature"));
@@ -366,6 +367,7 @@ const DesktopSettings = lazy(() => import("./pages/desktop/DesktopSettings").the
 const DesktopNotifications = lazy(() => import("./pages/desktop/DesktopNotifications").then((m) => ({ default: m.DesktopNotifications })));
 const DesktopAI = lazy(() => import("./pages/desktop/DesktopAI").then((m) => ({ default: m.DesktopAI })));
 const DesktopAdminAnalytics = lazy(() => import("./pages/desktop/DesktopAdminAnalytics").then((m) => ({ default: m.DesktopAdminAnalytics })));
+const DesktopAdminInstitutions = lazy(() => import("./pages/desktop/DesktopAdminInstitutions").then((m) => ({ default: m.DesktopAdminInstitutions })));
 // Fase 6 -- ciudad San Jose, California (mismo contenido legal real de
 // California, solo el <title>/meta de Google nombra la ciudad -- ver
 // city-seo-content.ts).
@@ -547,10 +549,28 @@ function ProtectedMyQuoteEditorPage() {
   );
 }
 
+function ProtectedAiCreateDocumentPage() {
+  return (
+    <ProtectedRoute>
+      <AiCreateDocumentPage />
+    </ProtectedRoute>
+  );
+}
+
 function ProtectedAdminAnalyticsPage() {
   return (
     <AdminRoute allowAnalyticsViewer>
       <DesktopAdminAnalytics />
+    </AdminRoute>
+  );
+}
+
+// No `allowAnalyticsViewer` — this provisions real institutional access,
+// not a read-only report, so it stays isAdmin-only.
+function ProtectedAdminInstitutionsPage() {
+  return (
+    <AdminRoute>
+      <DesktopAdminInstitutions />
     </AdminRoute>
   );
 }
@@ -1469,6 +1489,11 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    path: "/crear-documento",
+    Component: ProtectedAiCreateDocumentPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/my-quotes/:id",
     Component: ProtectedMyQuoteEditorPage,
     errorElement: <RouteErrorBoundary />,
@@ -1523,6 +1548,12 @@ export const router = createBrowserRouter([
     // Admin-only — AdminRoute bounces non-admins back to /dashboard.
     path: "/dashboard/admin/analytics",
     Component: ProtectedAdminAnalyticsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Admin-only — AdminRoute bounces non-admins back to /dashboard.
+    path: "/dashboard/admin/institutions",
+    Component: ProtectedAdminInstitutionsPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

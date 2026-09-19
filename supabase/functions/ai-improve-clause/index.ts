@@ -5,8 +5,8 @@
 // NOT invent a new clause from a one-line description — that's a much
 // higher-risk "generate legal text from scratch" feature the user
 // explicitly deferred (see ai-draft-clause). Same Deno.serve/service-role/
-// Groq pattern as ai-document-review, gated the same way (paid plan or
-// admin).
+// OpenRouter pattern as ai-document-review, gated the same way (paid plan
+// or admin).
 //
 // 2026-08-25: also backs "select a clause in the live preview and tell the
 // AI what to change" (preview-page.tsx's SelectionAiBar) — an optional
@@ -17,18 +17,20 @@
 //
 // Deploy:
 //   supabase functions deploy ai-improve-clause --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reuses the same GROQ_API_KEY already set for ai-document-review.
+// Secrets: reuses the same OPENROUTER_API_KEY already set for the other ai-* functions
+// (https://openrouter.ai/keys).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
-// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
-// oficial recomendado por Groq.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+// Switched from Groq to OpenRouter on 2026-09-19 (see ai-draft-clause's
+// comment on this same constant for why) — same model id, different
+// upstream/API key.
+const AI_MODEL = 'openai/gpt-oss-120b';
 const MAX_CLAUSE_CHARS = 4000;
 
 function corsHeaders(origin: string | null) {
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!GROQ_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return new Response(JSON.stringify({ error: 'AI clause improvement is not configured on the server yet.' }), {
         status: 500, headers: corsHeaders(origin),
       });
@@ -180,29 +182,31 @@ Deno.serve(async (req) => {
 
     const truncated = clauseText.slice(0, MAX_CLAUSE_CHARS);
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: buildPrompt(truncated, language, tone, context, instruction) }],
         temperature: 0.3,
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text().catch(() => '');
-      console.error('[ai-improve-clause] Groq request failed:', groqRes.status, errText);
+    if (!aiRes.ok) {
+      const errText = await aiRes.text().catch(() => '');
+      console.error('[ai-improve-clause] OpenRouter request failed:', aiRes.status, errText);
       return new Response(JSON.stringify({ error: 'AI clause improvement is temporarily unavailable.' }), {
         status: 502, headers: corsHeaders(origin),
       });
     }
 
-    const groqJson = await groqRes.json();
-    const improvedText = String(groqJson?.choices?.[0]?.message?.content ?? '').trim();
+    const aiJson = await aiRes.json();
+    const improvedText = String(aiJson?.choices?.[0]?.message?.content ?? '').trim();
 
     if (!improvedText) {
       return new Response(JSON.stringify({ error: 'AI returned an empty response.' }), {

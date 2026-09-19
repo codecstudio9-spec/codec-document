@@ -1,22 +1,25 @@
 // Supabase Edge Function — AI document review (risk + missing-clause
-// analysis) using Groq's free/fast inference API. Matches the
-// notify-completion/paypal-verify pattern: Deno.serve, service-role client,
-// secrets via Deno.env, Bearer JWT resolved to a real user id server-side
-// (never trust a client-supplied plan flag for a paid-feature gate).
+// analysis) using OpenRouter's chat-completions API (proxies many
+// upstream model providers behind one OpenAI-compatible endpoint).
+// Matches the notify-completion/paypal-verify pattern: Deno.serve,
+// service-role client, secrets via Deno.env, Bearer JWT resolved to a
+// real user id server-side (never trust a client-supplied plan flag for
+// a paid-feature gate).
 //
-// Buffered JSON response, NOT streamed — an earlier version tried to pass
-// Groq's raw SSE stream straight through as this function's own Response
-// body, which is a fragile pattern in Supabase's sandboxed Edge Runtime
-// (the upstream ReadableStream isn't guaranteed to survive being returned
-// across the isolate boundary) and broke in production. Groq itself
-// handles streaming fine (confirmed directly) — the problem was proxying
-// it through here. Buffering the full response before replying is the
-// same proven pattern paypal-verify/notify-completion already use.
+// Buffered JSON response, NOT streamed — an earlier version (when this
+// called Groq directly) tried to pass the upstream's raw SSE stream
+// straight through as this function's own Response body, which is a
+// fragile pattern in Supabase's sandboxed Edge Runtime (the upstream
+// ReadableStream isn't guaranteed to survive being returned across the
+// isolate boundary) and broke in production. The upstream itself handles
+// streaming fine (confirmed directly) — the problem was proxying it
+// through here. Buffering the full response before replying is the same
+// proven pattern paypal-verify/notify-completion already use.
 //
 // Deploy:
 //   supabase functions deploy ai-document-review --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
 // Secrets (supabase secrets set):
-//   GROQ_API_KEY=<from console.groq.com/keys>
+//   OPENROUTER_API_KEY=<from https://openrouter.ai/keys>
 // (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by the platform)
 //
 // Gated to paid plans (monthly/semiannual/annual) OR admin — same rule as
@@ -30,20 +33,19 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
 // Kept in sync with src/app/utils/admin-access.ts — Deno can't import that
 // frontend module directly, so the same short hardcoded list is mirrored
 // here for the server-side gate.
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 
-// Groq's fast/free-tier model — plenty for a structured-JSON legal review;
-// swap this constant for a more powerful model later without touching
-// anything else once the platform can justify the extra cost.
-// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
-// oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
-// función) y ventana de contexto mayor.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+// A fast, cheap model via OpenRouter — plenty for a structured-JSON legal
+// review; swap this constant for a more powerful model later without
+// touching anything else once the platform can justify the extra cost.
+// Switched from calling Groq directly to OpenRouter on 2026-09-19 (see
+// ai-draft-clause's comment on this same constant) — same model id.
+const AI_MODEL = 'openai/gpt-oss-120b';
 
 // Keeps a runaway paste (or someone probing the endpoint) from turning
 // into an enormous, expensive prompt — a real document body is a few
@@ -83,7 +85,7 @@ function buildPrompt(content: string, language: 'en' | 'es'): string {
 }
 
 function extractJson(raw: string): ReviewResult {
-  // Groq (like most chat-completion APIs) can wrap JSON in a code fence
+  // The model (like most chat-completion APIs) can wrap JSON in a code fence
   // even when explicitly told not to — strip that before parsing rather
   // than failing the whole request over formatting.
   const cleaned = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -111,7 +113,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!GROQ_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return new Response(JSON.stringify({ error: 'AI review is not configured on the server yet.' }), {
         status: 500, headers: corsHeaders(origin),
       });
@@ -169,36 +171,38 @@ Deno.serve(async (req) => {
 
     const truncated = content.slice(0, MAX_CONTENT_CHARS);
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: buildPrompt(truncated, language) }],
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text().catch(() => '');
-      console.error('[ai-document-review] Groq request failed:', groqRes.status, errText);
+    if (!aiRes.ok) {
+      const errText = await aiRes.text().catch(() => '');
+      console.error('[ai-document-review] OpenRouter request failed:', aiRes.status, errText);
       return new Response(JSON.stringify({ error: 'AI review service is temporarily unavailable.' }), {
         status: 502, headers: corsHeaders(origin),
       });
     }
 
-    const groqJson = await groqRes.json();
-    const rawText = groqJson?.choices?.[0]?.message?.content ?? '';
+    const aiJson = await aiRes.json();
+    const rawText = aiJson?.choices?.[0]?.message?.content ?? '';
 
     let result: ReviewResult;
     try {
       result = extractJson(rawText);
     } catch (parseErr) {
-      console.error('[ai-document-review] Could not parse Groq response as JSON:', rawText, parseErr);
+      console.error('[ai-document-review] Could not parse OpenRouter response as JSON:', rawText, parseErr);
       return new Response(JSON.stringify({ error: 'AI review returned an unexpected response.' }), {
         status: 502, headers: corsHeaders(origin),
       });

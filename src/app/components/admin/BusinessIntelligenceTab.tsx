@@ -14,6 +14,7 @@ import {
 } from '../../services/business-leads-service';
 import { getPromoCodeUsage, type PromoCodeUsage } from '../../services/promo-admin-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
+import { triggerDownload } from '../../utils/download';
 
 function Card({ children }: { children: React.ReactNode }) {
   return <div className="bg-white p-6" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>{children}</div>;
@@ -39,12 +40,11 @@ function StatTile({ icon: Icon, label, value, sub, accent }: {
 }
 
 function downloadCsv(csv: string, filename: string) {
+  // triggerDownload — iOS Safari doesn't reliably honor `download` on a
+  // blob: URL, so this routes through the native share sheet on iOS.
+  // See utils/download.ts.
   const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  void triggerDownload(blob, filename);
 }
 
 const usd = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

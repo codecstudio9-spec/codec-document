@@ -37,11 +37,19 @@ function IconoTipo({ tipo }: { tipo: TipoEvidencia }) {
 
 function VerArchivo({ path, etiqueta }: { path: string; etiqueta: string }) {
   const [cargando, setCargando] = useState(false);
-  const abrir = async () => {
+  const abrir = () => {
+    // Mismo arreglo que AbonosPanel.tsx's VerComprobante — abrir la
+    // pestaña en blanco de forma síncrona dentro del clic, no después de
+    // un `await`, para que iOS Safari con pop-ups bloqueados (el valor
+    // por defecto) no descarte el `window.open` en silencio.
     setCargando(true);
-    const url = await getEvidenciaUrl(path).finally(() => setCargando(false));
-    if (url) window.open(url, '_blank', 'noopener');
-    else toast.error('No se pudo abrir el archivo.');
+    const ventana = window.open('', '_blank');
+    if (ventana) ventana.opener = null;
+    void getEvidenciaUrl(path).then((url) => {
+      if (!url) { toast.error('No se pudo abrir el archivo.'); ventana?.close(); return; }
+      if (ventana && !ventana.closed) ventana.location.href = url;
+      else window.location.href = url;
+    }).finally(() => setCargando(false));
   };
   return (
     <button type="button" onClick={() => void abrir()} disabled={cargando} className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline disabled:opacity-50">

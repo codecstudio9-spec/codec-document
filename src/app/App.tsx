@@ -4,6 +4,7 @@ import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
 import { LanguageProvider } from './contexts/language-context';
 import { AuthProvider } from './contexts/auth-context';
+import { AdminMfaGate } from './components/auth/AdminMfaGate';
 import { CookieBanner } from './components/CookieBanner';
 import { SignedDocumentPopup } from './components/SignedDocumentPopup';
 import { GlobalVoiceMuteButton } from './components/voice/GlobalVoiceMuteButton';
@@ -36,16 +37,18 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <Suspense fallback={<RouteFallback />}>
-          <RouterProvider router={router} />
-        </Suspense>
-        <CookieBanner />
-        <Toaster />
-        <SignedDocumentPopup />
-        <GlobalVoiceMuteButton />
-        <InstallAppPrompt />
-        <MetaPixel />
-        <AvisoDeRegalo />
+        <AdminMfaGate>
+          <Suspense fallback={<RouteFallback />}>
+            <RouterProvider router={router} />
+          </Suspense>
+          <CookieBanner />
+          <Toaster />
+          <SignedDocumentPopup />
+          <GlobalVoiceMuteButton />
+          <InstallAppPrompt />
+          <MetaPixel />
+          <AvisoDeRegalo />
+        </AdminMfaGate>
       </AuthProvider>
     </LanguageProvider>
   );

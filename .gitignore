@@ -18,6 +18,9 @@ build/
 server/.env
 *.env
 
+# Local account/access registry — never commit, contains real account emails
+NOTAS-CUENTAS.md
+
 # Logs
 logs/
 *.log

@@ -20,20 +20,20 @@
 //
 // Deploy:
 //   supabase functions deploy ai-fill-form --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reutiliza el GROQ_API_KEY que ya usan ai-document-review y
-// ai-improve-clause.
+// Secrets: reutiliza el OPENROUTER_API_KEY que ya usan las demás funciones
+// ai-* (https://openrouter.ai/keys).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
-// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
-// oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
-// función) y ventana de contexto mayor.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+// Cambiado de Groq a OpenRouter el 19-09-2026 (ver el comentario de esta
+// misma constante en ai-draft-clause) — mismo id de modelo, con soporte
+// de JSON mode (lo usa esta función) y ventana de contexto mayor.
+const AI_MODEL = 'openai/gpt-oss-120b';
 
 const MAX_TRANSCRIPT_CHARS = 6000;
 const MAX_CAMPOS = 60;
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(origin) });
 
   try {
-    if (!GROQ_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return responder({ error: 'El dictado con IA no está configurado en el servidor.' }, origin, 500);
     }
 
@@ -248,25 +248,30 @@ Deno.serve(async (req) => {
 
     const hoy = new Date().toISOString().slice(0, 10);
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
+      },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: construirPrompt(campos, transcripcion, language, hoy) }],
         temperature: 0.1,
         response_format: { type: 'json_object' },
       }),
     });
 
-    if (!groqRes.ok) {
-      const detalle = await groqRes.text().catch(() => '');
-      console.error('[ai-fill-form] Groq falló:', groqRes.status, detalle);
+    if (!aiRes.ok) {
+      const detalle = await aiRes.text().catch(() => '');
+      console.error('[ai-fill-form] OpenRouter falló:', aiRes.status, detalle);
       return responder({ error: 'El servicio de IA no está disponible en este momento.' }, origin, 502);
     }
 
-    const groqJson = await groqRes.json();
-    const contenido = String(groqJson?.choices?.[0]?.message?.content ?? '');
+    const aiJson = await aiRes.json();
+    const contenido = String(aiJson?.choices?.[0]?.message?.content ?? '');
     const parseado = extraerJson(contenido) as { values?: Record<string, unknown> } | null;
 
     if (!parseado || typeof parseado.values !== 'object' || parseado.values === null) {

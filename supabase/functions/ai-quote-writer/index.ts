@@ -31,20 +31,20 @@
 //
 // Deploy:
 //   supabase functions deploy ai-quote-writer --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reutiliza el GROQ_API_KEY que ya usan las demás funciones de IA.
+// Secrets: reutiliza el OPENROUTER_API_KEY que ya usan las demás funciones de IA.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
 
 const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
-// Groq descontinuó llama-3.3-70b-versatile el 16-08-2026 — reemplazo
-// oficial recomendado por Groq, con soporte de JSON mode (lo usa esta
-// función) y ventana de contexto mayor.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
-const GROQ_FALLBACK_MODEL = 'openai/gpt-oss-20b';
+// Cambiado de Groq a OpenRouter el 19-09-2026 (ver el comentario de esta
+// misma constante en ai-draft-clause) — mismos ids de modelo, con soporte
+// de JSON mode (lo usa esta función) y ventana de contexto mayor.
+const AI_MODEL = 'openai/gpt-oss-120b';
+const AI_FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
 // Subido de 4000/6000: la petición ya no es solo "hazme una cotización de
 // 30 agendas" — alguien puede pegar una propuesta completa que ya escribió
@@ -366,7 +366,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(origin) });
 
   try {
-    if (!GROQ_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       return responder({ error: 'La redacción automática no está configurada en el servidor.' }, origin, 500);
     }
 
@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
       return responder({ error: 'Cuéntame un poco más de lo que necesitas cotizar.' }, origin, 400);
     }
 
-    const groqPayload = {
+    const aiPayload = {
       messages: [{
         role: 'user',
         content: construirPrompt(peticion, language, {
@@ -426,37 +426,42 @@ Deno.serve(async (req) => {
       response_format: { type: 'json_object' },
     };
 
-    const pedirGroq = (model: string, incluirFormatoJson = true) => fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const pedirIA = (model: string, incluirFormatoJson = true) => fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
+      },
       body: JSON.stringify({
         model,
-        ...groqPayload,
+        ...aiPayload,
         ...(incluirFormatoJson ? {} : { response_format: undefined }),
       }),
     });
 
-    let groqRes = await pedirGroq(GROQ_MODEL);
-    if (!groqRes.ok && [400, 404].includes(groqRes.status)) {
-      const detalle = await groqRes.text().catch(() => '');
-      console.warn('[ai-quote-writer] modelo principal no disponible; usando fallback:', groqRes.status, detalle);
-      groqRes = await pedirGroq(GROQ_FALLBACK_MODEL);
+    let aiRes = await pedirIA(AI_MODEL);
+    if (!aiRes.ok && [400, 404].includes(aiRes.status)) {
+      const detalle = await aiRes.text().catch(() => '');
+      console.warn('[ai-quote-writer] modelo principal no disponible; usando fallback:', aiRes.status, detalle);
+      aiRes = await pedirIA(AI_FALLBACK_MODEL);
     }
-    if (!groqRes.ok && groqRes.status === 400) {
-      const detalle = await groqRes.text().catch(() => '');
+    if (!aiRes.ok && aiRes.status === 400) {
+      const detalle = await aiRes.text().catch(() => '');
       console.warn('[ai-quote-writer] JSON mode rechazado; reintentando con JSON guiado por prompt:', detalle);
-      groqRes = await pedirGroq(GROQ_FALLBACK_MODEL, false);
+      aiRes = await pedirIA(AI_FALLBACK_MODEL, false);
     }
 
-    if (!groqRes.ok) {
-      const detalle = await groqRes.text().catch(() => '');
-      console.error('[ai-quote-writer] Groq falló:', groqRes.status, detalle);
+    if (!aiRes.ok) {
+      const detalle = await aiRes.text().catch(() => '');
+      console.error('[ai-quote-writer] OpenRouter falló:', aiRes.status, detalle);
       const respaldo = redistribuirSinIA(peticion, language);
       return responder({ ...respaldo, fallback: true }, origin);
     }
 
-    const groqJson = await groqRes.json();
-    const contenido = String(groqJson?.choices?.[0]?.message?.content ?? '');
+    const aiJson = await aiRes.json();
+    const contenido = String(aiJson?.choices?.[0]?.message?.content ?? '');
     const parseado = extraerJson(contenido) as { proposal?: unknown; items?: unknown; client?: unknown; project?: unknown } | null;
 
     if (!parseado) {

@@ -9,16 +9,17 @@
 // ver con sus propios ojos en la pantalla de la DIAN (código de error,
 // fragmento de página), nunca un CUFE ni un dato fiscal. El límite de tasa
 // de abajo es defensa suficiente para el riesgo real de dejarla pública:
-// gastar tokens de Groq, no exponer nada sensible.
+// gastar tokens de la IA, no exponer nada sensible.
 //
 // Deploy (sin JWT: la llama la extensión sin sesión):
 //   supabase functions deploy dian-explicar-error --no-verify-jwt --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reusa GROQ_API_KEY ya configurado para las otras funciones de IA.
+// Secrets: reusa OPENROUTER_API_KEY ya configurado para las otras funciones de IA.
 
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
-// Mismo modelo que el resto de funciones de IA de la plataforma — Groq
-// descontinuó llama-3.3-70b-versatile el 16-08-2026.
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
+// Mismo modelo que el resto de funciones de IA de la plataforma, servido
+// vía OpenRouter (cambiado de Groq directo el 19-09-2026 — ver el
+// comentario de esta misma constante en ai-draft-clause).
+const AI_MODEL = 'openai/gpt-oss-120b';
 
 const MAX_CAMPO = 600;
 
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
   if (req.method !== 'POST') return new Response('Método no permitido', { status: 405, headers: corsHeaders() });
 
-  if (!GROQ_API_KEY) {
+  if (!OPENROUTER_API_KEY) {
     return new Response(JSON.stringify({ error: 'La explicación con IA no está configurada en el servidor.' }), {
       status: 500, headers: corsHeaders(),
     });
@@ -94,24 +95,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
+      },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: buildPrompt(codigoError, detalle, muestra, url) }],
         temperature: 0.2,
       }),
     });
 
-    if (!groqRes.ok) {
-      console.error('[dian-explicar-error] Groq falló:', groqRes.status, await groqRes.text().catch(() => ''));
+    if (!aiRes.ok) {
+      console.error('[dian-explicar-error] OpenRouter falló:', aiRes.status, await aiRes.text().catch(() => ''));
       return new Response(JSON.stringify({ error: 'La explicación con IA no está disponible ahora mismo.' }), {
         status: 502, headers: corsHeaders(),
       });
     }
 
-    const json = await groqRes.json();
+    const json = await aiRes.json();
     const explicacion = String(json?.choices?.[0]?.message?.content ?? '').trim();
     if (!explicacion) {
       return new Response(JSON.stringify({ error: 'La IA no devolvió nada.' }), { status: 502, headers: corsHeaders() });

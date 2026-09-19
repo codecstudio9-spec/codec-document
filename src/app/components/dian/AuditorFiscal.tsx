@@ -23,6 +23,7 @@ import {
   type DocumentoDian, type RegistroContable, type ResultadoAuditoria,
 } from '../../../lib/dian/auditoria';
 import { generarXlsx } from '../../../lib/dian/xlsx';
+import { triggerDownload } from '../../utils/download';
 
 const pesos = (n: number) =>
   n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
@@ -199,14 +200,13 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
         anchos: [18, 16, 16, 14, 18],
       },
     ]);
-    const url = URL.createObjectURL(new Blob([bytes], {
+    const blob = new Blob([bytes], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Auditoria DIAN vs contabilidad ${new Date().toISOString().slice(0, 10)}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
+    });
+    // triggerDownload — iOS Safari doesn't reliably honor `download` on a
+    // blob: URL, so this routes through the native share sheet on iOS.
+    // See utils/download.ts.
+    void triggerDownload(blob, `Auditoria DIAN vs contabilidad ${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   return (

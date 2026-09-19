@@ -29,6 +29,90 @@ export interface UserDocument {
   created_at: string;
   updated_at: string;
   color: string | null;
+  folder_id: string | null;
+}
+
+// ─── Folders — organize "Mis documentos" into named groups ───────────────
+// One flat table, RLS-scoped to its owner (see
+// supabase/migrations/20260918120000_add_document_folders.sql). A document
+// with folder_id = null is simply unfiled — deleting a folder never
+// deletes what's inside it, it just clears folder_id back to that same
+// unfiled state (see deleteDocumentFolder below).
+export interface DocumentFolder {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string | null;
+  created_at: string;
+}
+
+export async function fetchDocumentFolders(userId: string): Promise<DocumentFolder[]> {
+  const { data, error } = await supabase
+    .from('document_folders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('fetchDocumentFolders:', error); return []; }
+  return (data as DocumentFolder[]) ?? [];
+}
+
+export async function createDocumentFolder(
+  userId: string,
+  name: string,
+  color: string | null = null,
+): Promise<DocumentFolder> {
+  const { data, error } = await supabase
+    .from('document_folders')
+    .insert({ user_id: userId, name: name.trim(), color })
+    .select()
+    .single();
+  if (error) throw new Error(`createDocumentFolder: ${error.message}`);
+  return data as DocumentFolder;
+}
+
+export async function renameDocumentFolder(folderId: string, name: string, color?: string | null): Promise<void> {
+  const patch: Record<string, unknown> = { name: name.trim(), updated_at: new Date().toISOString() };
+  if (color !== undefined) patch.color = color;
+  const { error } = await supabase.from('document_folders').update(patch).eq('id', folderId);
+  if (error) throw new Error(`renameDocumentFolder: ${error.message}`);
+}
+
+// Un-files every document currently in this folder, then drops the folder
+// row — via a SECURITY DEFINER RPC, not a raw client-side `.update()`.
+// `documents` has an UPDATE policy scoped to `status = 'pending'` (see
+// moveDocumentToFolder's comment above); a raw update trying to clear
+// folder_id on an already-signed document in this folder would silently
+// affect 0 rows under that policy, leaving it pointing at a folder that no
+// longer exists. See supabase/migrations/20260918130000_add_folder_rpcs.sql.
+export async function deleteDocumentFolder(folderId: string): Promise<void> {
+  const { data, error } = await supabase.rpc('delete_document_folder', { p_folder_id: folderId });
+  if (error) throw new Error(`deleteDocumentFolder: ${error.message}`);
+  if (!data) throw new Error('deleteDocumentFolder: folder not found, or not yours');
+}
+
+// `table` picks which document actually owns this id — `user_documents`
+// (Step 1-3 generated templates) or `documents` (the signature flow,
+// creator + guests). A synthetic sign_transaction row (id prefixed `tx:`,
+// see fetchSignTransactionsAsDocuments below) has no real row to update and
+// must be filtered out by the caller before this is ever reached.
+//
+// Goes through a SECURITY DEFINER RPC, same reason renameDocument/
+// updateAssociatedDocumentDetails do: `documents` has an UPDATE policy
+// ("documents_update_pending") scoped to `status = 'pending'` for the
+// guest-signing flow — a raw `.update()` against an already-signed
+// document matches 0 rows under that policy and reports success anyway,
+// so folder_id silently never gets saved. Confirmed live: the UI showed
+// the move, a page reload showed it back in "Sin carpeta". See
+// supabase/migrations/20260918130000_add_folder_rpcs.sql.
+export async function moveDocumentToFolder(
+  table: 'user_documents' | 'documents',
+  documentId: string,
+  folderId: string | null,
+): Promise<void> {
+  const rpc = table === 'documents' ? 'update_document_folder' : 'update_user_document_folder';
+  const { data, error } = await supabase.rpc(rpc, { p_document_id: documentId, p_folder_id: folderId });
+  if (error) throw new Error(`moveDocumentToFolder: ${error.message}`);
+  if (!data) throw new Error('moveDocumentToFolder: document not found, not yours, or the folder is not yours');
 }
 
 /** Fixed accent-color palette — a free-text color field invites
@@ -156,12 +240,13 @@ export interface AssociatedDocument {
   created_at: string;
   role: string;
   color: string | null;
+  folder_id: string | null;
   /** A dónde lleva al abrirlo, cuando no hay un PDF guardado que abrir — los
    *  documentos enviados a firmar se arman en su propia pantalla. */
   href?: string;
 }
 
-const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at, color';
+const DOC_COLUMNS = 'id, name, status, original_pdf_url, signed_pdf_url, created_at, color, folder_id';
 
 /**
  * Los documentos enviados a firmar, con la forma que ya renderizan las listas.
@@ -205,6 +290,9 @@ export async function fetchSignTransactionsAsDocuments(userId: string): Promise<
       created_at: tx.created_at,
       role: 'owner',
       color: null,
+      // Synthetic row — there's no real `documents`/`user_documents` id
+      // behind `tx:<uuid>`, so it can never be filed into a folder.
+      folder_id: null,
       href: `/sign/${tx.id}`,
     } as AssociatedDocument & { href: string };
   });

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { DesktopSidebar } from './DesktopSidebar';
 import { DesktopHeader } from './DesktopHeader';
+import { DomainJoinPrompt } from '../company/DomainJoinPrompt';
 import { MOBILE_BG_GRADIENT, GLOW_TOP_RIGHT, GLOW_TOP_LEFT } from '../../styles/mobile-theme';
 
 /**
@@ -47,7 +48,10 @@ export function DesktopAppShell({ children }: { children: ReactNode }) {
           plain DOM order, so no z-index is needed here at all. */}
       <div className="relative" style={{ marginLeft: 280 }}>
         <DesktopHeader />
-        <main className="px-8 py-8">{children}</main>
+        <main className="px-8 py-8">
+          <DomainJoinPrompt />
+          {children}
+        </main>
       </div>
     </div>
   );

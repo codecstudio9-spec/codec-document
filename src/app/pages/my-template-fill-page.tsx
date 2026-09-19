@@ -8,6 +8,7 @@ import { SignatureModal } from '../components/signatures/SignatureModal';
 import { getTemplate, generateFilledDocument, saveFilledDocument, type CustomTemplate, type PlacedField } from '../services/template-service';
 import { markVisitorActivity } from '../services/analytics-service';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
+import { triggerDownload } from '../utils/download';
 
 export function MyTemplateFillPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export function MyTemplateFillPage() {
   const [signingFieldId, setSigningFieldId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const { speak } = useVoiceSpeak();
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function MyTemplateFillPage() {
       const blob = new Blob([bytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setResultUrl(url);
+      setResultBlob(blob);
       toast.success(language === 'en' ? 'Document generated!' : '¡Documento generado!');
       speak({
         es: 'Tu documento se generó correctamente. Descárgalo con el botón verde. Gracias por usar Codec Document.',
@@ -136,17 +139,22 @@ export function MyTemplateFillPage() {
               <p className="text-lg font-black text-emerald-900">{language === 'en' ? 'Document ready!' : '¡Documento listo!'}</p>
               <p className="mt-1 text-sm text-emerald-700">{language === 'en' ? 'Download it below.' : 'Descárgalo abajo.'}</p>
             </div>
-            <a
-              href={resultUrl}
-              download={`${template.name}.pdf`}
+            <button
+              type="button"
+              onClick={() => {
+                // triggerDownload — iOS Safari no respeta de forma confiable
+                // `download` en una URL blob:, así que esto usa el share
+                // sheet nativo en iOS. Ver utils/download.ts.
+                if (resultBlob) void triggerDownload(resultBlob, `${template.name}.pdf`);
+              }}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:scale-[1.01]"
             >
               <Download className="size-5" />
               {language === 'en' ? 'Download PDF' : 'Descargar PDF'}
-            </a>
+            </button>
             <button
               type="button"
-              onClick={() => setResultUrl(null)}
+              onClick={() => { setResultUrl(null); setResultBlob(null); }}
               className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:text-emerald-900"
             >
               <RefreshCw className="size-3.5" />

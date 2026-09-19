@@ -20,10 +20,10 @@
 //
 // Deploy:
 //   supabase functions deploy dian-extraer-cufes --no-verify-jwt --workdir "C:\Users\hp\Downloads\CODEC DOCUMENT (2)\CODEC DOCUMENT" --yes
-// Secrets: reusa GROQ_API_KEY.
+// Secrets: reusa OPENROUTER_API_KEY.
 
-const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
-const GROQ_MODEL = 'openai/gpt-oss-120b';
+const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') ?? '';
+const AI_MODEL = 'openai/gpt-oss-120b';
 // Calcado del mismo regex de extension-dian/dian.js — no puede importarse
 // desde ahí (esto corre en Deno, aquello en el navegador), así que se
 // duplica a propósito y debe mantenerse igual si uno cambia.
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
   const porRegexBase = porRegex(texto);
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'desconocida';
-  if (!GROQ_API_KEY || excedeLimite(ip)) {
+  if (!OPENROUTER_API_KEY || excedeLimite(ip)) {
     // Sin IA disponible (no configurada o límite de tasa alcanzado): se
     // devuelve lo que ya encontraba el regex, nunca un error duro por esto.
     return new Response(JSON.stringify({ cufes: porRegexBase, conIa: false }), { headers: corsHeaders() });
@@ -94,22 +94,27 @@ Deno.serve(async (req) => {
       texto,
     ].join('\n');
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://codecdocument.com',
+        'X-Title': 'Codec Document',
+      },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: AI_MODEL,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
       }),
     });
 
-    if (!groqRes.ok) {
-      console.error('[dian-extraer-cufes] Groq falló:', groqRes.status);
+    if (!aiRes.ok) {
+      console.error('[dian-extraer-cufes] OpenRouter falló:', aiRes.status);
       return new Response(JSON.stringify({ cufes: porRegexBase, conIa: false }), { headers: corsHeaders() });
     }
 
-    const json = await groqRes.json();
+    const json = await aiRes.json();
     const bruto = String(json?.choices?.[0]?.message?.content ?? '').trim()
       .replace(/^```(json)?/i, '').replace(/```$/, '').trim();
 
