@@ -96,8 +96,8 @@ export function MfaSecuritySettings() {
     if (backupCount && backupCount > 0) {
       const confirmed = window.confirm(
         language === 'en'
-          ? `You still have ${backupCount} unused codes — generating new ones invalidates them. Continue?`
-          : `Aún te quedan ${backupCount} códigos sin usar — generar nuevos invalida esos. ¿Continuar?`,
+          ? `You still have ${backupCount} unused codes. Generating new ones invalidates them. Continue?`
+          : `Aún te quedan ${backupCount} códigos sin usar. Generar nuevos invalida esos. ¿Continuar?`,
       );
       if (!confirmed) return;
     }
@@ -168,8 +168,8 @@ export function MfaSecuritySettings() {
               </span>
               <span className="block text-xs text-slate-400">
                 {enforced
-                  ? (language === 'en' ? 'On — required every new session' : 'Activo — se pide en cada nueva sesión')
-                  : (language === 'en' ? 'Off — you sign in with just your password' : 'Apagado — inicias sesión solo con tu contraseña')}
+                  ? (language === 'en' ? 'On, required every new session' : 'Activo, se pide en cada nueva sesión')
+                  : (language === 'en' ? 'Off, you sign in with just your password' : 'Apagado, inicias sesión solo con tu contraseña')}
               </span>
             </div>
             <span
@@ -202,8 +202,8 @@ export function MfaSecuritySettings() {
                   ? (language === 'en' ? 'Generating…' : 'Generando…')
                   : backupCount !== null
                     ? (language === 'en'
-                        ? `${backupCount} unused — tap to generate new ones`
-                        : `${backupCount} sin usar — toca para generar nuevos`)
+                        ? `${backupCount} unused, tap to generate new ones`
+                        : `${backupCount} sin usar, toca para generar nuevos`)
                     : (language === 'en' ? 'Generate recovery codes' : 'Generar códigos de recuperación')}
               </span>
             </div>

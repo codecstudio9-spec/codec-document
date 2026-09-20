@@ -10,6 +10,7 @@ import { AiFormattedDocumentPreview } from '../components/ai-document/AiFormatte
 import { renderHtmlToPdf } from '../utils/render-html-to-pdf';
 import { triggerDownload } from '../utils/download';
 import { setPendingSignFile } from '../utils/pending-sign-file';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import type { DocumentBranding } from '../types/document';
 
 /**
@@ -26,6 +27,7 @@ export function AiCreateDocumentPage() {
   const { session, user } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { speak } = useVoiceSpeak();
   const previewRef = useRef<HTMLDivElement>(null);
 
   const [rawText, setRawText] = useState('');
@@ -38,6 +40,25 @@ export function AiCreateDocumentPage() {
     if (!user?.id) return;
     loadDocumentBrandingForUser(user.id).then(setBranding).catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!session) return;
+    if (formatted) return;
+    speak({
+      es: 'Pega aquí el texto completo de tu documento, sin recortarlo, y toca crear documento. Lo convertimos en un documento profesional con el membrete de tu empresa, listo para descargar o enviar a firmar.',
+      en: 'Paste the complete text of your document here, without cutting it short, and tap create document. We turn it into a professional document with your company letterhead, ready to download or send for signature.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, Boolean(formatted)]);
+
+  useEffect(() => {
+    if (!formatted) return;
+    speak({
+      es: 'Tu documento está listo. Revísalo y usa los botones de arriba para descargarlo o enviarlo a firmar.',
+      en: 'Your document is ready. Review it and use the buttons above to download it or send it for signature.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(formatted)]);
 
   if (!session) {
     return (
@@ -121,8 +142,8 @@ export function AiCreateDocumentPage() {
       </h1>
       <p className="mt-1 text-sm text-slate-500">
         {language === 'en'
-          ? 'Paste text from Word, an email, or any AI tool — we turn it into a real document with your company\'s letterhead, ready to download or send for signature.'
-          : 'Pega texto de Word, un correo, o cualquier IA — lo convertimos en un documento real con el membrete de tu empresa, listo para descargar o enviar a firmar.'}
+          ? 'Paste the complete text from Word, an email, or any AI tool, and we turn it into a real document with your company\'s letterhead, ready to download or send for signature.'
+          : 'Pega el texto completo de Word, un correo, o cualquier IA, y lo convertimos en un documento real con el membrete de tu empresa, listo para descargar o enviar a firmar.'}
       </p>
 
       {!formatted ? (

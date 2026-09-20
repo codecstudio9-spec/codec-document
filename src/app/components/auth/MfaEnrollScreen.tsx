@@ -64,7 +64,7 @@ export function MfaEnrollScreen({ onDone, onLogout, onSkip, onCancel }: Props) {
       setBackupCodes(codes);
     } catch (e) {
       console.error('MfaEnrollScreen: generateBackupCodes failed, continuing without them:', e);
-      toast.warning('No se pudieron generar códigos de respaldo por ahora — podrás generarlos después desde Configuración.');
+      toast.warning('No se pudieron generar códigos de respaldo por ahora. Podrás generarlos después desde Configuración.');
       onDone();
     } finally {
       setVerifying(false);
@@ -160,7 +160,7 @@ export function MfaEnrollScreen({ onDone, onLogout, onSkip, onCancel }: Props) {
             />
             {error && (
               <p className="mt-2 text-center text-xs text-red-600">
-                {error} — revisa que la hora de tu celular esté en automático, no manual.
+                {error}. Revisa que la hora de tu celular esté en automático, no manual.
               </p>
             )}
 
@@ -183,7 +183,7 @@ export function MfaEnrollScreen({ onDone, onLogout, onSkip, onCancel }: Props) {
               onClick={onSkip}
               className="mx-auto mt-5 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
             >
-              Ahora no — desactivar y entrar sin 2FA
+              Ahora no, desactivar y entrar sin 2FA
             </button>
             <button
               type="button"

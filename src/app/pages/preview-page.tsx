@@ -1495,7 +1495,11 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
     const sourceEl = captureWrapperRef.current ?? documentCanvasRef.current;
     if (!sourceEl) return false;
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      // html2canvas-pro, not html2canvas — see utils/render-html-to-pdf.ts
+      // for why: Tailwind v4's oklch() colors crash the original,
+      // unmaintained html2canvas on any element using a standard color
+      // utility class.
+      const html2canvas = (await import('html2canvas-pro')).default;
       const { jsPDF } = await import('jspdf');
 
       // ── 1. Ensure live sig images are loaded before cloning ───────────────

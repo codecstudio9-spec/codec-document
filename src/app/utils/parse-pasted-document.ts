@@ -38,21 +38,49 @@ function looksLikeHeadingLine(line: string): boolean {
   return t.length <= 90 && /:$/.test(t) && !t.slice(0, -1).includes('. ');
 }
 
+// Text pasted from WhatsApp, Word, or a chat tool very often hard-wraps
+// every sentence (or every clause) onto its own line with no blank line
+// between them, even though it reads as ONE continuous paragraph. Joining
+// those lines with a plain space would run sentences together with no
+// punctuation between them ("...del evento. Los desayunos..." becomes
+// "...del evento. Los desayunos..." — fine — but "...serán a $25.000 Los
+// almuerzos..." reads like a typo). A period is inserted between two lines
+// only when the first doesn't already end in sentence punctuation AND the
+// next starts with a capital letter — the same signal a person uses to
+// tell "new sentence" from "this line just wrapped mid-sentence", without
+// ever touching the actual words.
+function joinWrappedLines(block: string): string {
+  const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+  let result = lines[0] ?? '';
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const prevEndsWithPunctuation = /[.:;!?,]$/.test(result);
+    const nextStartsUppercase = /^[A-ZÁÉÍÓÚÑÜ]/.test(line);
+    result += !prevEndsWithPunctuation && nextStartsUppercase ? `. ${line}` : ` ${line}`;
+  }
+  return result;
+}
+
 export function parsePastedDocument(rawText: string, language: 'en' | 'es' = 'es'): FormattedDocument {
   const normalized = rawText.replace(/\r\n?/g, '\n').trim();
-  const blocks = normalized.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  const lines = normalized.split('\n');
 
   let title = language === 'en' ? 'Document' : 'Documento';
-  let bodyBlocks = blocks;
-  // The first paragraph counts as the title only if it's a single short
-  // line — a real title, not the start of running prose that happens not
-  // to have a blank line under it yet, and not a salutation ("Estimado
+  let rest = normalized;
+  // The title is just the first LINE (not the first blank-line-delimited
+  // paragraph) — pasted text very often has the title on its own line
+  // immediately followed by body text with no blank line under it, which
+  // would otherwise glue the title onto the first paragraph. It only
+  // counts as a title if it's short and isn't a salutation ("Estimado
   // señor Pérez," / "Dear Mr. Smith,") — those always end in a comma,
   // titles never do.
-  if (blocks.length > 0 && !blocks[0].includes('\n') && blocks[0].length <= 140 && !/,\s*$/.test(blocks[0])) {
-    title = stripMarkdownHeading(blocks[0]) || title;
-    bodyBlocks = blocks.slice(1);
+  const firstLine = lines[0]?.trim() ?? '';
+  if (firstLine && firstLine.length <= 140 && !/,\s*$/.test(firstLine)) {
+    title = stripMarkdownHeading(firstLine) || title;
+    rest = lines.slice(1).join('\n').trim();
   }
+
+  const blocks = rest.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
 
   const sections: FormattedSection[] = [];
   let pendingHeading: string | null = null;
@@ -66,12 +94,12 @@ export function parsePastedDocument(rawText: string, language: 'en' | 'es' = 'es
     paras = [];
   };
 
-  for (const block of bodyBlocks) {
+  for (const block of blocks) {
     if (!block.includes('\n') && looksLikeHeadingLine(block)) {
       flush();
       pendingHeading = stripMarkdownHeading(block);
     } else {
-      paras.push(block);
+      paras.push(joinWrappedLines(block));
     }
   }
   flush();

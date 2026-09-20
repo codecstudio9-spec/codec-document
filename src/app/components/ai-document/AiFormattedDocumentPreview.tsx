@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import type { DocumentBranding } from '../../types/document';
 import type { FormattedDocument } from '../../utils/parse-pasted-document';
+import { splitKeyInfo } from '../../utils/highlight-key-info';
 
 interface Props {
   document: FormattedDocument;
@@ -71,11 +72,13 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
               <h2 className="mb-1 text-[11px] font-bold uppercase tracking-wide text-black">{section.heading}</h2>
             )}
             {section.body.split(/\n{2,}/).filter((para) => para.trim()).map((para, j) => (
-              // whiteSpace: pre-line — a single line break inside a
-              // paragraph (e.g. an itemized list pasted with one \n
-              // between items, not a full blank line) must still show as
-              // a line break instead of collapsing into a run-on line.
-              <p key={j} className="mb-1.5 text-justify text-[10px] leading-[1.35]" style={{ whiteSpace: 'pre-line' }}>{para}</p>
+              <p key={j} className="mb-1.5 text-justify text-[10px] leading-[1.35]">
+                {splitKeyInfo(para).map((segment, k) => (
+                  segment.bold
+                    ? <strong key={k} className="font-bold">{segment.text}</strong>
+                    : <span key={k}>{segment.text}</span>
+                ))}
+              </p>
             ))}
           </div>
         ))}

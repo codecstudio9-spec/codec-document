@@ -82,8 +82,8 @@ export function MfaChallengeScreen({ factorId, onDone, onLogout, onDisable }: Pr
             />
             {error && (
               <p className="mt-2 text-center text-xs text-red-600">
-                {error} — si el código de la app nunca coincide, revisa que la hora de tu
-                celular esté en automático (no manual); si sigue sin funcionar, usa la opción
+                {error}. Si el código de la app nunca coincide, revisa que la hora de tu
+                celular esté en automático (no manual). Si sigue sin funcionar, usa la opción
                 de abajo para entrar sin 2FA por ahora.
               </p>
             )}
@@ -111,7 +111,7 @@ export function MfaChallengeScreen({ factorId, onDone, onLogout, onDisable }: Pr
               onClick={onDisable}
               className="mx-auto mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
             >
-              No puedo usar el código ahora — entrar sin 2FA
+              No puedo usar el código ahora, entrar sin 2FA
             </button>
           </>
         ) : (
@@ -155,7 +155,7 @@ export function MfaChallengeScreen({ factorId, onDone, onLogout, onDisable }: Pr
               onClick={onDisable}
               className="mx-auto mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
             >
-              Tampoco tengo los códigos de respaldo — entrar sin 2FA
+              Tampoco tengo los códigos de respaldo, entrar sin 2FA
             </button>
           </>
         )}

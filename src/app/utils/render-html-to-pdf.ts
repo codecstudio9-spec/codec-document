@@ -13,7 +13,14 @@
  */
 export async function renderHtmlToPdf(sourceEl: HTMLElement, fileNameForLog = 'documento'): Promise<Blob | null> {
   try {
-    const html2canvas = (await import('html2canvas')).default;
+    // html2canvas-pro, not html2canvas — Tailwind v4's default palette
+    // computes colors as oklch(), which the original html2canvas (last
+    // released years ago, now unmaintained) cannot parse at all; it
+    // throws "unsupported color function oklch" on ANY element in the
+    // captured subtree using a standard Tailwind color utility (slate,
+    // black, etc. all qualify). html2canvas-pro is an actively maintained
+    // fork with the same API that added oklch/lab/lch/color() support.
+    const html2canvas = (await import('html2canvas-pro')).default;
     const { jsPDF } = await import('jspdf');
 
     const sourceW = sourceEl.offsetWidth || 816;
