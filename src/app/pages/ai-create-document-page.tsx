@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, FileText, Loader, Download, PenLine, RotateCcw, Lock } from 'lucide-react';
+import { ArrowLeft, FileText, Loader, Download, PenLine, RotateCcw, Lock, X, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { parsePastedDocument, type FormattedDocument } from '../utils/parse-pasted-document';
 import { loadDocumentBrandingForUser } from '../services/branding-service';
-import { AiFormattedDocumentPreview } from '../components/ai-document/AiFormattedDocumentPreview';
+import { AiFormattedDocumentPreview, type DocumentSigner } from '../components/ai-document/AiFormattedDocumentPreview';
 import { renderHtmlToPdf } from '../utils/render-html-to-pdf';
 import { triggerDownload } from '../utils/download';
 import { setPendingSignFile } from '../utils/pending-sign-file';
@@ -14,9 +14,9 @@ import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import type { DocumentBranding } from '../types/document';
 
 /**
- * "Crear nuevo" — paste text drafted elsewhere (Word, an email, any AI chat
- * tool) and get back a company-branded document, then either download it
- * or hand it straight into the existing signing flow
+ * "Crea un documento nuevo" — paste text drafted elsewhere (Word, an
+ * email, any AI chat tool) and get back a company-branded document, then
+ * either download it or hand it straight into the existing signing flow
  * (electronic-signature-page.tsx already covers every option asked for:
  * self-sign with optional selfie/camera capture, send to someone else
  * without signing, or both). The text→title+sections split is plain string
@@ -31,10 +31,13 @@ export function AiCreateDocumentPage() {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const [rawText, setRawText] = useState('');
+  const [signers, setSigners] = useState<DocumentSigner[]>([]);
   const [formatted, setFormatted] = useState<FormattedDocument | null>(null);
   const [branding, setBranding] = useState<DocumentBranding>({});
   const [exporting, setExporting] = useState<'download' | 'sign' | null>(null);
   const [error, setError] = useState('');
+
+  const namedSigners = signers.filter((s) => s.name.trim());
 
   useEffect(() => {
     if (!user?.id) return;
@@ -45,8 +48,8 @@ export function AiCreateDocumentPage() {
     if (!session) return;
     if (formatted) return;
     speak({
-      es: 'Pega aquí el texto completo de tu documento, sin recortarlo, y toca crear documento. Lo convertimos en un documento profesional con el membrete de tu empresa, listo para descargar o enviar a firmar.',
-      en: 'Paste the complete text of your document here, without cutting it short, and tap create document. We turn it into a professional document with your company letterhead, ready to download or send for signature.',
+      es: 'Pega aquí el texto completo de tu documento, sin recortarlo. Si quieres, agrega el nombre y el número de documento de quienes van a firmar. Si no agregas a nadie, dejamos un espacio de firma en blanco. Cuando estés listo, toca crear documento.',
+      en: 'Paste the complete text of your document here, without cutting it short. If you want, add the name and ID number of everyone who will sign. If you don\'t add anyone, we leave a blank signature space. When you\'re ready, tap create document.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, Boolean(formatted)]);
@@ -143,7 +146,7 @@ export function AiCreateDocumentPage() {
 
       <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900">
         <FileText className="size-6 text-indigo-600" />
-        {language === 'en' ? 'Create new' : 'Crear nuevo'}
+        {language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}
       </h1>
       <p className="mt-1 text-sm text-slate-500">
         {language === 'en'
@@ -163,6 +166,55 @@ export function AiCreateDocumentPage() {
             className="w-full rounded-2xl border border-slate-200 p-4 text-sm text-slate-800 outline-none focus:border-indigo-400"
           />
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+          <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+            <p className="text-sm font-bold text-slate-800">
+              {language === 'en' ? 'Who will sign this document?' : 'Quién firma este documento'}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {language === 'en'
+                ? 'Optional. Add each signer\'s name and ID number to print their signature line. Add no one and we leave a blank signature space instead.'
+                : 'Opcional. Agrega el nombre y número de documento de cada firmante para imprimir su línea de firma. Si no agregas a nadie, dejamos un espacio de firma en blanco.'}
+            </p>
+
+            {signers.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {signers.map((signer, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      value={signer.name}
+                      onChange={(e) => setSigners((prev) => prev.map((s, j) => (j === i ? { ...s, name: e.target.value } : s)))}
+                      placeholder={language === 'en' ? 'Full name' : 'Nombre completo'}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                    <input
+                      value={signer.idNumber}
+                      onChange={(e) => setSigners((prev) => prev.map((s, j) => (j === i ? { ...s, idNumber: e.target.value } : s)))}
+                      placeholder={language === 'en' ? 'ID number' : 'Número de documento'}
+                      className="w-40 shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSigners((prev) => prev.filter((_, j) => j !== i))}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-red-600"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setSigners((prev) => [...prev, { name: '', idNumber: '' }])}
+              className="mt-3 flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <UserPlus className="size-3.5" />
+              {language === 'en' ? 'Add signer' : 'Agregar firmante'}
+            </button>
+          </div>
+
           <button
             type="button"
             disabled={!rawText.trim()}
@@ -205,7 +257,7 @@ export function AiCreateDocumentPage() {
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-6">
-            <AiFormattedDocumentPreview ref={previewRef} document={formatted} branding={branding} language={language} />
+            <AiFormattedDocumentPreview ref={previewRef} document={formatted} branding={branding} language={language} signers={namedSigners} />
           </div>
         </div>
       )}

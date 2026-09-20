@@ -3,23 +3,35 @@ import type { DocumentBranding } from '../../types/document';
 import type { FormattedDocument } from '../../utils/parse-pasted-document';
 import { splitKeyInfo } from '../../utils/highlight-key-info';
 
+export interface DocumentSigner {
+  name: string;
+  idNumber: string;
+}
+
 interface Props {
   document: FormattedDocument;
   branding: DocumentBranding;
   language: 'en' | 'es';
+  signers: DocumentSigner[];
 }
 
-/** Renders the AI-restructured text as a printable, letter-width page —
- * same visual language as document-preview.tsx (Times New Roman, 10px
- * body, justified, generous margins) so a document created here doesn't
- * look out of place next to the platform's other documents. Branding
- * (logo/company info) is baked directly into this HTML rather than drawn
- * per-PDF-page like preview-page.tsx's jsPDF header/footer — the
- * letterhead appears once at the top and the footer text once at the
- * bottom, which is the simpler, correct look for a single business
- * document (as opposed to a repeated running header on every page). */
+/** Renders the pasted text as a printable, letter-width page — same
+ * visual language as document-preview.tsx (Times New Roman, justified,
+ * generous margins) so a document created here doesn't look out of place
+ * next to the platform's other documents. Branding (logo/company info) is
+ * baked directly into this HTML rather than drawn per-PDF-page like
+ * preview-page.tsx's jsPDF header/footer — the letterhead appears once at
+ * the top and the footer text once at the bottom, which is the simpler,
+ * correct look for a single business document (as opposed to a repeated
+ * running header on every page).
+ *
+ * Signature block: with named signers, each gets their own line with
+ * enough blank space above it to actually sign, plus their name and ID
+ * printed underneath (the same convention the source contracts already
+ * use by hand — see the sample this was built against). With no signers
+ * named, it falls back to one generic Firma/Fecha pair. */
 export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(function AiFormattedDocumentPreview(
-  { document, branding, language },
+  { document, branding, language, signers },
   ref,
 ) {
   const companyInfoLines = [
@@ -69,10 +81,10 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
         {document.sections.map((section, i) => (
           <div key={i} className="mb-4">
             {section.heading && (
-              <h2 className="mb-1 text-[11px] font-bold uppercase tracking-wide text-black">{section.heading}</h2>
+              <h2 className="mb-1 text-[12px] font-bold uppercase tracking-wide text-black">{section.heading}</h2>
             )}
             {section.body.split(/\n{2,}/).filter((para) => para.trim()).map((para, j) => (
-              <p key={j} className="mb-1.5 text-justify text-[10px] leading-[1.35]">
+              <p key={j} className="mb-1.5 text-justify text-[11px] leading-[1.4]">
                 {splitKeyInfo(para).map((segment, k) => (
                   segment.bold
                     ? <strong key={k} className="font-bold">{segment.text}</strong>
@@ -83,18 +95,42 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
           </div>
         ))}
 
-        <div className="mt-10 grid grid-cols-2 gap-8">
-          <div>
-            <div className="mb-1 border-t border-black pt-1 text-[10px]">
-              {language === 'en' ? 'Signature' : 'Firma'}
+        {signers.length > 0 ? (
+          <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-10">
+            {signers.map((signer, i) => (
+              <div key={i}>
+                <div className="h-16" />
+                <div className="border-t border-black pt-1 text-[11px]">
+                  {language === 'en' ? 'Signature' : 'Firma'}
+                </div>
+                {signer.name && <p className="mt-1 text-[11px] font-bold">{signer.name}</p>}
+                {signer.idNumber && (
+                  <p className="text-[10px] text-slate-600">
+                    {language === 'en' ? 'ID' : 'C.C.'} {signer.idNumber}
+                  </p>
+                )}
+                <div className="mt-4 w-2/3 border-t border-black pt-1 text-[11px]">
+                  {language === 'en' ? 'Date' : 'Fecha'}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 grid grid-cols-2 gap-8">
+            <div>
+              <div className="h-16" />
+              <div className="border-t border-black pt-1 text-[11px]">
+                {language === 'en' ? 'Signature' : 'Firma'}
+              </div>
+            </div>
+            <div>
+              <div className="h-16" />
+              <div className="border-t border-black pt-1 text-[11px]">
+                {language === 'en' ? 'Date' : 'Fecha'}
+              </div>
             </div>
           </div>
-          <div>
-            <div className="mb-1 border-t border-black pt-1 text-[10px]">
-              {language === 'en' ? 'Date' : 'Fecha'}
-            </div>
-          </div>
-        </div>
+        )}
 
         {branding.footerText && (
           <p className="mt-10 border-t border-slate-200 pt-3 text-center text-[9px] italic text-slate-400">

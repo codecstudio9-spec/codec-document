@@ -210,7 +210,7 @@ export function MyDocumentsPage() {
             onClick={() => navigate('/crear-documento')}
             className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-2.5 text-sm font-bold text-white"
           >
-            <Sparkles className="size-4" /> {language === 'es' ? 'Crear nuevo' : 'Create new'}
+            <Sparkles className="size-4" /> {language === 'es' ? 'Crea un documento nuevo' : 'Create a new document'}
           </button>
         </div>
 
@@ -321,7 +321,7 @@ export function MyDocumentsPage() {
               <p className="text-sm text-slate-500 mt-1">
                 {language === 'es'
                   ? 'Genera y descarga un documento para que aparezca aquí automáticamente.'
-                  : 'Generate and download a document — it will appear here automatically.'}
+                  : 'Generate and download a document and it will appear here automatically.'}
               </p>
             </div>
             <button
@@ -527,7 +527,7 @@ export function MyDocumentsPage() {
               onChange={(e) => setFolderNameInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') void (folderModal === 'create' ? handleCreateFolder() : handleRenameFolder()); }}
               maxLength={60}
-              placeholder={language === 'es' ? 'ej. "Cliente — Acme Corp"' : 'e.g. "Client — Acme Corp"'}
+              placeholder={language === 'es' ? 'ej. "Cliente: Acme Corp"' : 'e.g. "Client: Acme Corp"'}
               className="mb-5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400"
             />
             <button

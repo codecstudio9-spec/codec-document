@@ -157,7 +157,7 @@ function DocumentsContent() {
       setFolders((prev) => prev.filter((f) => f.id !== folder.id));
       setDocs((prev) => prev?.map((d) => (d.folderId === folder.id ? { ...d, folderId: null } : d)) ?? prev);
       if (activeFolderId === folder.id) setActiveFolderId(null);
-      toast.success(language === 'en' ? 'Folder deleted — documents kept, unfiled' : 'Carpeta eliminada — los documentos se conservaron sin carpeta');
+      toast.success(language === 'en' ? 'Folder deleted, documents kept, unfiled' : 'Carpeta eliminada, los documentos se conservaron sin carpeta');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not delete the folder' : 'No se pudo eliminar la carpeta'));
     }
@@ -281,7 +281,7 @@ function DocumentsContent() {
           onClick={() => navigate('/crear-documento')}
           className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-3.5 py-2 text-xs font-bold text-white"
         >
-          <Sparkles className="size-3.5" /> {language === 'en' ? 'Create new' : 'Crear nuevo'}
+          <Sparkles className="size-3.5" /> {language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}
         </button>
       </div>
 
@@ -497,7 +497,7 @@ function DocumentsContent() {
               onChange={(e) => setFolderNameInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') void (folderModal === 'create' ? handleCreateFolder() : handleRenameFolder()); }}
               maxLength={60}
-              placeholder={language === 'en' ? 'e.g. "Client — Acme Corp"' : 'ej. "Cliente — Acme Corp"'}
+              placeholder={language === 'en' ? 'e.g. "Client: Acme Corp"' : 'ej. "Cliente: Acme Corp"'}
               className="mb-5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400"
             />
             <button
