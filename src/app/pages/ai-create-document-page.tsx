@@ -119,7 +119,12 @@ export function AiCreateDocumentPage() {
       const fileName = `${(formatted?.title || 'documento').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)}.pdf`;
       const file = new File([blob], fileName, { type: 'application/pdf' });
       setPendingSignFile(file);
-      navigate('/electronic-signature');
+      // /electronic-signature is the public marketing landing page
+      // (routes.tsx), not the actual signing tool — that lives at
+      // /firma-electronica (ProtectedSignaturePage, which mounts
+      // electronic-signature-page.tsx, the component that actually reads
+      // the pending file via consumePendingSignFile()).
+      navigate('/firma-electronica');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : (language === 'en' ? 'Could not prepare the document for signing' : 'No se pudo preparar el documento para firmar'));
       setExporting(null);
