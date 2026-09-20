@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Loader, LogOut, Copy, Check } from 'lucide-react';
+import { ShieldCheck, Loader, LogOut, Copy, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { enrollTotp, challengeAndVerify, generateBackupCodes } from '../../services/mfa-service';
 import { BackupCodesReveal } from './BackupCodesReveal';
 
 interface Props {
   onDone: () => void;
-  onLogout: () => void;
+  /** Forced-gate context only (reachable if enforcement is on but no
+   * factor is verified yet, e.g. reset from another device) — disables
+   * enforcement and lets the admin in without finishing setup. 2FA is
+   * opt-in; this screen must never be a dead end. */
+  onSkip?: () => void;
+  onLogout?: () => void;
+  /** Voluntary context (opened from Settings) — closes the modal without
+   * touching enforcement. When this is set, onSkip/onLogout are ignored. */
+  onCancel?: () => void;
 }
 
-/** Full-screen, blocking — an admin account can't reach the app at all
- * until 2FA is set up. Shown once, the first time an admin ever signs in
- * after this feature shipped (or after they reset it from Settings). */
-export function MfaEnrollScreen({ onDone, onLogout }: Props) {
+/** Full-screen overlay for setting up a TOTP factor. Reached two ways:
+ * voluntarily from Settings (onCancel set — just closes if the admin
+ * changes their mind), or from AdminMfaGate when enforcement is on but no
+ * factor is verified yet (onSkip/onLogout set — the forced-gate case). */
+export function MfaEnrollScreen({ onDone, onLogout, onSkip, onCancel }: Props) {
   const [loading, setLoading] = useState(true);
   const [factorId, setFactorId] = useState('');
   const [qrCode, setQrCode] = useState('');
@@ -84,13 +93,26 @@ export function MfaEnrollScreen({ onDone, onLogout }: Props) {
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-slate-950/95 p-4">
-      <div className="my-auto w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+      <div className="relative my-auto w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+          >
+            <X className="size-4" />
+          </button>
+        )}
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-indigo-50">
           <ShieldCheck className="size-7 text-indigo-600" />
         </div>
-        <h1 className="text-center text-lg font-bold text-slate-900">Protege tu cuenta de administrador</h1>
+        <h1 className="text-center text-lg font-bold text-slate-900">
+          {onCancel ? 'Activar verificación en dos pasos' : 'Configura la verificación en dos pasos'}
+        </h1>
         <p className="mt-1.5 text-center text-sm text-slate-500">
-          Antes de continuar, activa la verificación en dos pasos con una app como Google Authenticator o Authy.
+          {onCancel
+            ? 'Es opcional: añade un código adicional al iniciar sesión, como capa extra de seguridad.'
+            : 'Actualmente tienes activado "pedir este código al iniciar sesión", pero aún no terminaste de configurarlo en este dispositivo.'}
         </p>
 
         {loading ? (
@@ -101,7 +123,13 @@ export function MfaEnrollScreen({ onDone, onLogout }: Props) {
           <p className="mt-6 text-center text-sm text-red-600">{error}</p>
         ) : (
           <>
-            <div className="mt-6 flex justify-center">
+            <ol className="mt-6 space-y-1.5 text-left text-xs text-slate-500">
+              <li><strong className="text-slate-700">1.</strong> Instala "Google Authenticator" en tu celular (si no la tienes).</li>
+              <li><strong className="text-slate-700">2.</strong> Abre la app, toca el botón "+" y escanea este código QR.</li>
+              <li><strong className="text-slate-700">3.</strong> Escribe abajo el código de 6 dígitos que te muestra la app.</li>
+            </ol>
+
+            <div className="mt-4 flex justify-center">
               {/* Supabase returns `qrCode` as a full data: URI (image/svg+xml)
                   — an <img> handles that directly. An earlier version used
                   dangerouslySetInnerHTML expecting raw SVG markup, which
@@ -110,7 +138,7 @@ export function MfaEnrollScreen({ onDone, onLogout }: Props) {
               <img src={qrCode} alt="Código QR para 2FA" className="size-40 rounded-2xl border border-slate-100 p-3" />
             </div>
             <p className="mt-3 text-center text-xs text-slate-400">
-              Escanea este código QR, o ingresa la clave manualmente:
+              ¿No puedes escanear? Ingresa esta clave manualmente en la app:
             </p>
             <button
               type="button"
@@ -130,7 +158,11 @@ export function MfaEnrollScreen({ onDone, onLogout }: Props) {
               inputMode="numeric"
               className="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-lg font-semibold tracking-widest outline-none focus:border-indigo-400"
             />
-            {error && <p className="mt-2 text-center text-xs text-red-600">{error}</p>}
+            {error && (
+              <p className="mt-2 text-center text-xs text-red-600">
+                {error} — revisa que la hora de tu celular esté en automático, no manual.
+              </p>
+            )}
 
             <button
               type="button"
@@ -144,13 +176,24 @@ export function MfaEnrollScreen({ onDone, onLogout }: Props) {
           </>
         )}
 
-        <button
-          type="button"
-          onClick={onLogout}
-          className="mx-auto mt-5 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
-        >
-          <LogOut className="size-3.5" /> Cerrar sesión
-        </button>
+        {!onCancel && (
+          <>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="mx-auto mt-5 flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
+            >
+              Ahora no — desactivar y entrar sin 2FA
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="mx-auto mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-slate-500"
+            >
+              <LogOut className="size-3.5" /> Cerrar sesión
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

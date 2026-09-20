@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Sparkles, Loader, Download, PenLine, RotateCcw, Lock } from 'lucide-react';
+import { ArrowLeft, FileText, Loader, Download, PenLine, RotateCcw, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
-import {
-  formatPastedDocumentWithAi, AiReviewUpgradeRequiredError, type AiFormattedDocument,
-} from '../services/ai-review-service';
+import { parsePastedDocument, type FormattedDocument } from '../utils/parse-pasted-document';
 import { loadDocumentBrandingForUser } from '../services/branding-service';
 import { AiFormattedDocumentPreview } from '../components/ai-document/AiFormattedDocumentPreview';
 import { renderHtmlToPdf } from '../utils/render-html-to-pdf';
@@ -15,12 +13,14 @@ import { setPendingSignFile } from '../utils/pending-sign-file';
 import type { DocumentBranding } from '../types/document';
 
 /**
- * "Crear nuevo" — paste text drafted elsewhere (any AI chat tool) and get
- * back a professionally structured, company-branded document, then either
- * download it or hand it straight into the existing signing flow
+ * "Crear nuevo" — paste text drafted elsewhere (Word, an email, any AI chat
+ * tool) and get back a company-branded document, then either download it
+ * or hand it straight into the existing signing flow
  * (electronic-signature-page.tsx already covers every option asked for:
  * self-sign with optional selfie/camera capture, send to someone else
- * without signing, or both).
+ * without signing, or both). The text→title+sections split is plain string
+ * parsing (see utils/parse-pasted-document.ts) — reformatting into a
+ * letterhead layout doesn't need an AI call, so this never makes one.
  */
 export function AiCreateDocumentPage() {
   const { session, user } = useAuth();
@@ -29,8 +29,7 @@ export function AiCreateDocumentPage() {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const [rawText, setRawText] = useState('');
-  const [formatting, setFormatting] = useState(false);
-  const [formatted, setFormatted] = useState<AiFormattedDocument | null>(null);
+  const [formatted, setFormatted] = useState<FormattedDocument | null>(null);
   const [branding, setBranding] = useState<DocumentBranding>({});
   const [exporting, setExporting] = useState<'download' | 'sign' | null>(null);
   const [error, setError] = useState('');
@@ -54,21 +53,15 @@ export function AiCreateDocumentPage() {
     );
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!rawText.trim()) return;
-    setFormatting(true);
     setError('');
     try {
-      const result = await formatPastedDocumentWithAi(rawText.trim(), language);
-      setFormatted(result);
+      setFormatted(parsePastedDocument(rawText.trim(), language));
     } catch (e) {
-      const message = e instanceof AiReviewUpgradeRequiredError
-        ? e.message
-        : e instanceof Error ? e.message : (language === 'en' ? 'Could not format the document' : 'No se pudo formatear el documento');
+      const message = e instanceof Error ? e.message : (language === 'en' ? 'Could not format the document' : 'No se pudo formatear el documento');
       setError(message);
       toast.error(message);
-    } finally {
-      setFormatting(false);
     }
   };
 
@@ -123,13 +116,13 @@ export function AiCreateDocumentPage() {
       </button>
 
       <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900">
-        <Sparkles className="size-6 text-indigo-600" />
+        <FileText className="size-6 text-indigo-600" />
         {language === 'en' ? 'Create new' : 'Crear nuevo'}
       </h1>
       <p className="mt-1 text-sm text-slate-500">
         {language === 'en'
-          ? 'Paste text you drafted with any AI tool — we\'ll format it into a professional document with your company branding.'
-          : 'Pega el texto que redactaste con cualquier IA — lo formateamos como un documento profesional con la marca de tu empresa.'}
+          ? 'Paste text from Word, an email, or any AI tool — we turn it into a real document with your company\'s letterhead, ready to download or send for signature.'
+          : 'Pega texto de Word, un correo, o cualquier IA — lo convertimos en un documento real con el membrete de tu empresa, listo para descargar o enviar a firmar.'}
       </p>
 
       {!formatted ? (
@@ -146,14 +139,12 @@ export function AiCreateDocumentPage() {
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <button
             type="button"
-            disabled={!rawText.trim() || formatting}
-            onClick={() => void handleGenerate()}
+            disabled={!rawText.trim()}
+            onClick={handleGenerate}
             className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {formatting ? <Loader className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            {formatting
-              ? (language === 'en' ? 'Formatting…' : 'Formateando…')
-              : (language === 'en' ? 'Generate professional document' : 'Generar documento profesional')}
+            <FileText className="size-4" />
+            {language === 'en' ? 'Create document' : 'Crear documento'}
           </button>
         </div>
       ) : (

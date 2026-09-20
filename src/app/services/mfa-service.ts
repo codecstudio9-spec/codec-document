@@ -85,6 +85,24 @@ export async function unenrollFactor(factorId: string): Promise<void> {
   if (error) throw new Error(`unenrollFactor: ${error.message}`);
 }
 
+// ─── Login enforcement — 2FA is opt-in, off by default ─────────────────────
+// Having a verified TOTP factor does NOT by itself block sign-in anymore.
+// AdminMfaGate only shows the enroll/challenge screens when the admin has
+// explicitly turned this on from Settings, after already confirming their
+// code works. This is what makes 2FA impossible to get locked out of: with
+// enforcement off (the default), a verified factor just sits there unused.
+
+export async function getMfaLoginEnforced(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('get_mfa_login_enforced');
+  if (error) throw new Error(`getMfaLoginEnforced: ${error.message}`);
+  return Boolean(data);
+}
+
+export async function setMfaLoginEnforced(enforce: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_mfa_login_enforced', { p_enforce: enforce });
+  if (error) throw new Error(`setMfaLoginEnforced: ${error.message}`);
+}
+
 // ─── Backup codes — recovery when the TOTP device is lost ─────────────────
 // Supabase Auth has no native backup-code factor type, so these are our
 // own one-time codes (see supabase/migrations/20260918150000_add_mfa_

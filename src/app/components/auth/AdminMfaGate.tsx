@@ -1,18 +1,22 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '../../contexts/auth-context';
-import { getMfaStatus, type MfaStatus } from '../../services/mfa-service';
+import { getMfaStatus, getMfaLoginEnforced, setMfaLoginEnforced, type MfaStatus } from '../../services/mfa-service';
 import { MfaEnrollScreen } from './MfaEnrollScreen';
 import { MfaChallengeScreen } from './MfaChallengeScreen';
 
 type Gate = 'checking' | 'satisfied' | 'needs-enroll' | 'needs-challenge';
 
 /**
- * Blocks the ENTIRE app behind 2FA for isAdmin accounts — mounted once
- * near the root (App.tsx), not tied to any one route, since isAdmin
- * unlocks things outside of AdminRoute-guarded pages too (unlimited
- * usage, etc.). Ordinary users never see this: the status check is
- * skipped entirely when isAdmin is false, so no extra network round trip
- * or friction for the vast majority of sign-ins.
+ * Gates the app behind 2FA for isAdmin accounts — but ONLY when the admin
+ * has explicitly turned that on from Settings (getMfaLoginEnforced),
+ * defaulting to off. 2FA used to be mandatory the moment an account was
+ * admin, with no way out if the TOTP code stopped matching (phone clock
+ * drift, or a re-enrollment that quietly generated a new secret) — that
+ * design could lock an admin out of their own account with no recovery
+ * besides a database fix. Every blocking screen below also has an escape
+ * hatch that disables enforcement and lets them straight in, so that can't
+ * happen again. Ordinary users never see any of this: both the enforcement
+ * check and the status check are skipped entirely when isAdmin is false.
  */
 export function AdminMfaGate({ children }: { children: ReactNode }) {
   const { loading, isAdmin, user, logout } = useAuth();
@@ -23,6 +27,8 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
     if (!isAdmin) { setGate('satisfied'); return; }
     setGate('checking');
     try {
+      const enforced = await getMfaLoginEnforced();
+      if (!enforced) { setGate('satisfied'); return; }
       const s = await getMfaStatus();
       setStatus(s);
       if (!s.hasVerifiedFactor) setGate('needs-enroll');
@@ -34,6 +40,11 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
       // one page load without the re-check, not a broken product.
       setGate('satisfied');
     }
+  };
+
+  const disableAndContinue = async () => {
+    try { await setMfaLoginEnforced(false); } catch { /* still let them in below */ }
+    void recheck();
   };
 
   useEffect(() => {
@@ -51,12 +62,25 @@ export function AdminMfaGate({ children }: { children: ReactNode }) {
   }
 
   if (gate === 'needs-enroll') {
-    return <MfaEnrollScreen onDone={() => void recheck()} onLogout={() => void logout()} />;
+    return (
+      <MfaEnrollScreen
+        onDone={() => void recheck()}
+        onLogout={() => void logout()}
+        onSkip={() => void disableAndContinue()}
+      />
+    );
   }
 
   if (gate === 'needs-challenge') {
     const factorId = status?.factors.find((f) => f.status === 'verified')?.id;
-    return <MfaChallengeScreen factorId={factorId} onDone={() => void recheck()} onLogout={() => void logout()} />;
+    return (
+      <MfaChallengeScreen
+        factorId={factorId}
+        onDone={() => void recheck()}
+        onLogout={() => void logout()}
+        onDisable={() => void disableAndContinue()}
+      />
+    );
   }
 
   return <>{children}</>;

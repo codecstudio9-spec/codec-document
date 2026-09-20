@@ -1,9 +1,9 @@
 import { forwardRef } from 'react';
 import type { DocumentBranding } from '../../types/document';
-import type { AiFormattedDocument } from '../../services/ai-review-service';
+import type { FormattedDocument } from '../../utils/parse-pasted-document';
 
 interface Props {
-  document: AiFormattedDocument;
+  document: FormattedDocument;
   branding: DocumentBranding;
   language: 'en' | 'es';
 }
@@ -70,8 +70,12 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
             {section.heading && (
               <h2 className="mb-1 text-[11px] font-bold uppercase tracking-wide text-black">{section.heading}</h2>
             )}
-            {section.body.split(/\n{2,}/).map((para, j) => (
-              <p key={j} className="mb-1.5 text-justify text-[10px] leading-[1.35]">{para}</p>
+            {section.body.split(/\n{2,}/).filter((para) => para.trim()).map((para, j) => (
+              // whiteSpace: pre-line — a single line break inside a
+              // paragraph (e.g. an itemized list pasted with one \n
+              // between items, not a full blank line) must still show as
+              // a line break instead of collapsing into a run-on line.
+              <p key={j} className="mb-1.5 text-justify text-[10px] leading-[1.35]" style={{ whiteSpace: 'pre-line' }}>{para}</p>
             ))}
           </div>
         ))}
