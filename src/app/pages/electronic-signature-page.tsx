@@ -841,7 +841,9 @@ export function ElectronicSignaturePage() {
   // already waiting. See utils/pending-sign-file.ts.
   useEffect(() => {
     const pending = consumePendingSignFile();
-    if (pending) void handleUploadPdf(pending);
+    if (!pending) return;
+    if (pending.creatorName) setCreatorName(pending.creatorName);
+    void handleUploadPdf(pending.file);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -121,7 +121,10 @@ export function AiCreateDocumentPage() {
       if (!blob) throw new Error(language === 'en' ? 'Could not generate the PDF' : 'No se pudo generar el PDF');
       const fileName = `${(formatted?.title || 'documento').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)}.pdf`;
       const file = new File([blob], fileName, { type: 'application/pdf' });
-      setPendingSignFile(file);
+      // Pre-fills "Tu nombre legal" on the signing tool with the first
+      // named signer, if any, so the sender doesn't retype a name they
+      // already entered here — it stays editable there.
+      setPendingSignFile(file, namedSigners[0]?.name);
       // /electronic-signature is the public marketing landing page
       // (routes.tsx), not the actual signing tool — that lives at
       // /firma-electronica (ProtectedSignaturePage, which mounts

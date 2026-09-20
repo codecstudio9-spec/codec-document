@@ -13,14 +13,24 @@
  * reading so a later, unrelated visit to /electronic-signature never
  * silently auto-loads a stale file.
  */
-let pendingFile: File | null = null;
-
-export function setPendingSignFile(file: File): void {
-  pendingFile = file;
+export interface PendingSignFile {
+  file: File;
+  /** First named signer from "Crea un documento nuevo"'s optional signer
+   * list, if any — lets the signing tool pre-fill "Tu nombre legal"
+   * instead of making the person retype a name they already entered two
+   * steps ago. Just a starting value, not a hard assignment: the field
+   * stays editable in case the sender isn't the signer. */
+  creatorName?: string;
 }
 
-export function consumePendingSignFile(): File | null {
-  const file = pendingFile;
-  pendingFile = null;
-  return file;
+let pending: PendingSignFile | null = null;
+
+export function setPendingSignFile(file: File, creatorName?: string): void {
+  pending = { file, creatorName };
+}
+
+export function consumePendingSignFile(): PendingSignFile | null {
+  const value = pending;
+  pending = null;
+  return value;
 }
