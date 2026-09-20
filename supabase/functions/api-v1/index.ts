@@ -16,8 +16,20 @@
 // existente sin una revision dedicada) — cuando esa fase se construya,
 // esto se ampliara a todos los documentos de company_members.
 //
-// Deploy:
-//   supabase functions deploy api-v1
+// Deploy — MUST include --no-verify-jwt:
+//   supabase functions deploy api-v1 --no-verify-jwt
+//
+// Bug found and fixed 2026-09-20: deployed WITHOUT --no-verify-jwt, the
+// Supabase Edge Functions gateway itself rejects every request whose
+// Authorization header isn't a real Supabase JWT — with a 401
+// "UNAUTHORIZED_INVALID_JWT_FORMAT" thrown by the gateway BEFORE this
+// file's own authenticate() ever runs. Since every real caller of this
+// API sends "Bearer cd_live_..." (never a Supabase JWT, by design — see
+// the comment above), the API was 100% unreachable for any external
+// integration from the day it shipped, regardless of how valid the API
+// key was. --no-verify-jwt is required for exactly the same reason the
+// public dian-* functions in this repo already use it: this function
+// implements its own auth scheme and must not go through Supabase Auth's.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 

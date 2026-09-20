@@ -27,7 +27,7 @@ import {
   createDocumentRecord, updateDocumentPdfUrl, updateDocumentSignedPdfUrl, uploadPdfToStorage,
   uploadSignatureImage, insertSignature, createSigner, createSigningLink,
   insertSignaturePositions, finalizeDocument, insertAuditLog,
-  getDocumentStatus, compilePdfWithSignatures, getSignerStatus,
+  getDocumentStatus, compilePdfWithSignatures, getSignerStatus, cancelSigner,
 } from '../../lib/signatureService';
 import {
   consumeDocumentLimit72h,
@@ -799,7 +799,7 @@ export function ElectronicSignaturePage() {
   // step==='done' effect below) — the whole prepare/sign/invite/wait
   // process is free to go through; only the final unlock-to-download step
   // can ask for payment.
-  const handleUploadPdf = async (file?: File | null) => {
+  const handleUploadPdf = async (file?: File | null, additionalSigners?: { name: string; email: string }[]) => {
     if (!file) return;
     if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
       setError('Solo se permiten archivos PDF.'); return;
@@ -824,6 +824,43 @@ export function ElectronicSignaturePage() {
       toast.success('Documento cargado correctamente.');
       markVisitorActivity('document', 'electronic-signature-upload');
       setStep('creator-sign');
+
+      // Signers #2+ from "Crea un documento nuevo"'s signer list (#1
+      // already became creatorName, above the try block that called this)
+      // — auto-create their real signing_links rows now that the document
+      // exists, instead of making the sender retype names/emails they
+      // already entered there. First one fills the main guest slot
+      // (setGuestName/setGuestEmail/setSigningToken, same fields/state
+      // handleGenerateLink itself would set from a manual click); the
+      // rest become "extra signers", same as manually using "Añadir otro
+      // firmante" one at a time.
+      if (additionalSigners && additionalSigners.length > 0) {
+        try {
+          const [first, ...rest] = additionalSigners;
+          setGuestName(first.name);
+          setGuestEmail(first.email);
+          const firstSignerId = await createSigner({ documentId: docId, name: first.name, email: first.email });
+          const firstToken = await createSigningLink({ documentId: docId, signerId: firstSignerId, guestName: first.name, guestEmail: first.email });
+          setSigningToken(firstToken);
+
+          const extras: ExtraSigner[] = [];
+          for (const signer of rest) {
+            const signerId = await createSigner({ documentId: docId, name: signer.name, email: signer.email });
+            const token = await createSigningLink({ documentId: docId, signerId, guestName: signer.name, guestEmail: signer.email });
+            extras.push({ id: signerId, name: signer.name, email: signer.email, token, status: 'pending' });
+          }
+          if (extras.length > 0) setExtraSigners(extras);
+          toast.success(additionalSigners.length > 1
+            ? `Se generaron los enlaces de firma de ${additionalSigners.length} firmantes.`
+            : 'Se generó el enlace de firma del otro firmante.');
+        } catch (signerErr) {
+          // The document itself uploaded fine — a failure here just means
+          // the sender falls back to the existing manual "Generar enlace"
+          // / "Añadir otro firmante" flow, not a broken upload.
+          console.error('handleUploadPdf: auto-creating additional signers failed:', signerErr);
+          toast.error('El documento se cargó, pero no se pudieron generar los enlaces automáticos de los otros firmantes. Puedes agregarlos manualmente abajo.');
+        }
+      }
     } catch (err) {
       setError(`Error al procesar el documento: ${err instanceof Error ? err.message : String(err)}`);
       toast.error('No se pudo subir el documento.');
@@ -832,18 +869,18 @@ export function ElectronicSignaturePage() {
     }
   };
 
-  // "Enviar a firma" from ai-create-document-page.tsx ("Crear nuevo") hands
-  // its generated PDF off here instead of making the user download it and
-  // re-upload it through PdfUploader — same upload path either way
-  // (handleUploadPdf doesn't care whether the File came from a real
-  // <input type="file"> or was constructed from a generated Blob), this
-  // just skips the manual step===upload screen when there's a file
+  // "Enviar a firma" from ai-create-document-page.tsx ("Crea un documento
+  // nuevo") hands its generated PDF off here instead of making the user
+  // download it and re-upload it through PdfUploader — same upload path
+  // either way (handleUploadPdf doesn't care whether the File came from a
+  // real <input type="file"> or was constructed from a generated Blob),
+  // this just skips the manual step===upload screen when there's a file
   // already waiting. See utils/pending-sign-file.ts.
   useEffect(() => {
     const pending = consumePendingSignFile();
     if (!pending) return;
     if (pending.creatorName) setCreatorName(pending.creatorName);
-    void handleUploadPdf(pending.file);
+    void handleUploadPdf(pending.file, pending.additionalSigners);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1026,7 +1063,18 @@ export function ElectronicSignaturePage() {
   };
 
   const handleRemoveExtraSigner = (id: string) => {
+    // Remove from the DB first — a `signers` row left 'pending' forever
+    // would make finalize_document wait for a signature that's never
+    // coming (see 20260920000000_cancel_signer.sql). Update the visible
+    // list right away regardless of the RPC's own success so the UI
+    // never looks stuck; a failure here just leaves an orphaned pending
+    // signer server-side, which the creator can still see and retry from
+    // the extra-signers count if it ever comes up.
     setExtraSigners((prev) => prev.filter((s) => s.id !== id));
+    void cancelSigner(id).catch((err) => {
+      console.error('handleRemoveExtraSigner: cancelSigner failed:', err);
+      toast.error('Se quitó de la lista, pero no se pudo cancelar su enlace en el servidor.');
+    });
   };
 
   // Polls each still-pending extra signer's own `signers.status` row every

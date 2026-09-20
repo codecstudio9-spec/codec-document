@@ -368,6 +368,7 @@ const DesktopNotifications = lazy(() => import("./pages/desktop/DesktopNotificat
 const DesktopAI = lazy(() => import("./pages/desktop/DesktopAI").then((m) => ({ default: m.DesktopAI })));
 const DesktopAdminAnalytics = lazy(() => import("./pages/desktop/DesktopAdminAnalytics").then((m) => ({ default: m.DesktopAdminAnalytics })));
 const DesktopAdminInstitutions = lazy(() => import("./pages/desktop/DesktopAdminInstitutions").then((m) => ({ default: m.DesktopAdminInstitutions })));
+const DesktopAdminApi = lazy(() => import("./pages/desktop/DesktopAdminApi").then((m) => ({ default: m.DesktopAdminApi })));
 // Fase 6 -- ciudad San Jose, California (mismo contenido legal real de
 // California, solo el <title>/meta de Google nombra la ciudad -- ver
 // city-seo-content.ts).
@@ -571,6 +572,17 @@ function ProtectedAdminInstitutionsPage() {
   return (
     <AdminRoute>
       <DesktopAdminInstitutions />
+    </AdminRoute>
+  );
+}
+
+// Admin-only API key / webhook management — same reasoning as
+// ProtectedAdminInstitutionsPage: this generates real credentials, not a
+// read-only report, so it stays isAdmin-only (no allowAnalyticsViewer).
+function ProtectedAdminApiPage() {
+  return (
+    <AdminRoute>
+      <DesktopAdminApi />
     </AdminRoute>
   );
 }
@@ -1554,6 +1566,12 @@ export const router = createBrowserRouter([
     // Admin-only — AdminRoute bounces non-admins back to /dashboard.
     path: "/dashboard/admin/institutions",
     Component: ProtectedAdminInstitutionsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    // Admin-only — AdminRoute bounces non-admins back to /dashboard.
+    path: "/dashboard/admin/api",
+    Component: ProtectedAdminApiPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

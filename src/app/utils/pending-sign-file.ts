@@ -21,12 +21,23 @@ export interface PendingSignFile {
    * steps ago. Just a starting value, not a hard assignment: the field
    * stays editable in case the sender isn't the signer. */
   creatorName?: string;
+  /** Signers #2+ from that same list (signer #1 became creatorName
+   * above), each with the email needed to actually generate their
+   * signing link. The signing tool auto-creates a real `signers` row +
+   * signing link for every one of these once the document exists —
+   * signer #2 becomes the main guest link, #3 onward become "extra
+   * signers" — instead of making the sender retype names/emails they
+   * already entered here. Signers with no email are left out (a
+   * `signers` link needs one); their printed name/C.C. on the document
+   * itself is unaffected, the sender can still add them manually via
+   * "Añadir otro firmante". */
+  additionalSigners?: { name: string; email: string }[];
 }
 
 let pending: PendingSignFile | null = null;
 
-export function setPendingSignFile(file: File, creatorName?: string): void {
-  pending = { file, creatorName };
+export function setPendingSignFile(file: File, creatorName?: string, additionalSigners?: { name: string; email: string }[]): void {
+  pending = { file, creatorName, additionalSigners };
 }
 
 export function consumePendingSignFile(): PendingSignFile | null {

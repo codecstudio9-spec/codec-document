@@ -6,6 +6,10 @@ import { splitKeyInfo } from '../../utils/highlight-key-info';
 export interface DocumentSigner {
   name: string;
   idNumber: string;
+  /** Only used to auto-generate that signer's signing link when sending
+   * to sign (see ai-create-document-page.tsx's handleSendToSign) — never
+   * printed on the document itself. */
+  email?: string;
 }
 
 interface Props {

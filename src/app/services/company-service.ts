@@ -187,9 +187,10 @@ export async function revokeApiKey(keyId: string): Promise<void> {
   rpcError('revokeApiKey', error);
 }
 
-// ─── Webhooks (Fase 3 — registro + log de eventos; el despachador HTTP
-// en vivo es un incremento aparte, ver el pie de
-// supabase_add_webhooks_migration.sql) ──────────────────────────────────────
+// ─── Webhooks (Fase 3 — registro + log de eventos. El despachador HTTP
+// real es supabase/functions/webhook-dispatcher, corriendo cada 2
+// minutos vía pg_cron desde 2026-09-20, ver
+// 20260920000200_schedule_webhook_dispatcher.sql) ───────────────────────────
 
 export interface Webhook {
   id: string;

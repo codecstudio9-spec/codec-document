@@ -48,8 +48,8 @@ export function AiCreateDocumentPage() {
     if (!session) return;
     if (formatted) return;
     speak({
-      es: 'Pega aquí el texto completo de tu documento, sin recortarlo. Si quieres, agrega el nombre y el número de documento de quienes van a firmar. Si no agregas a nadie, dejamos un espacio de firma en blanco. Cuando estés listo, toca crear documento.',
-      en: 'Paste the complete text of your document here, without cutting it short. If you want, add the name and ID number of everyone who will sign. If you don\'t add anyone, we leave a blank signature space. When you\'re ready, tap create document.',
+      es: 'Pega aquí el texto completo de tu documento, sin recortarlo. Si quieres, agrega el nombre, número de documento y correo de quienes van a firmar. Con el correo, generamos el enlace de firma de cada uno automáticamente al enviar a firmar. Si no agregas a nadie, dejamos un espacio de firma en blanco. Cuando estés listo, toca crear documento.',
+      en: 'Paste the complete text of your document here, without cutting it short. If you want, add the name, ID number, and email of everyone who will sign. With their email, we automatically generate each one\'s signing link when you send this to sign. If you don\'t add anyone, we leave a blank signature space. When you\'re ready, tap create document.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, Boolean(formatted)]);
@@ -121,10 +121,14 @@ export function AiCreateDocumentPage() {
       if (!blob) throw new Error(language === 'en' ? 'Could not generate the PDF' : 'No se pudo generar el PDF');
       const fileName = `${(formatted?.title || 'documento').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)}.pdf`;
       const file = new File([blob], fileName, { type: 'application/pdf' });
-      // Pre-fills "Tu nombre legal" on the signing tool with the first
-      // named signer, if any, so the sender doesn't retype a name they
-      // already entered here — it stays editable there.
-      setPendingSignFile(file, namedSigners[0]?.name);
+      // Signer #1 pre-fills "Tu nombre legal"; signers #2+ (with an
+      // email) auto-become real signing links on the signing tool —
+      // see utils/pending-sign-file.ts.
+      const additionalSigners = namedSigners
+        .slice(1)
+        .filter((s): s is DocumentSigner & { email: string } => Boolean(s.email?.trim()))
+        .map((s) => ({ name: s.name, email: s.email.trim() }));
+      setPendingSignFile(file, namedSigners[0]?.name, additionalSigners);
       // /electronic-signature is the public marketing landing page
       // (routes.tsx), not the actual signing tool — that lives at
       // /firma-electronica (ProtectedSignaturePage, which mounts
@@ -176,14 +180,14 @@ export function AiCreateDocumentPage() {
             </p>
             <p className="mt-0.5 text-xs text-slate-500">
               {language === 'en'
-                ? 'Optional. Add each signer\'s name and ID number to print their signature line. Add no one and we leave a blank signature space instead.'
-                : 'Opcional. Agrega el nombre y número de documento de cada firmante para imprimir su línea de firma. Si no agregas a nadie, dejamos un espacio de firma en blanco.'}
+                ? 'Optional. Add each signer\'s name and ID number to print their signature line. Add an email too and we\'ll automatically create their signing link when you send this to sign. Add no one and we leave a blank signature space instead.'
+                : 'Opcional. Agrega el nombre y número de documento de cada firmante para imprimir su línea de firma. Si además agregas su correo, creamos su enlace de firma automáticamente al enviar a firmar. Si no agregas a nadie, dejamos un espacio de firma en blanco.'}
             </p>
 
             {signers.length > 0 && (
               <div className="mt-3 space-y-2">
                 {signers.map((signer, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 p-2">
                     <input
                       value={signer.name}
                       onChange={(e) => setSigners((prev) => prev.map((s, j) => (j === i ? { ...s, name: e.target.value } : s)))}
@@ -194,7 +198,14 @@ export function AiCreateDocumentPage() {
                       value={signer.idNumber}
                       onChange={(e) => setSigners((prev) => prev.map((s, j) => (j === i ? { ...s, idNumber: e.target.value } : s)))}
                       placeholder={language === 'en' ? 'ID number' : 'Número de documento'}
-                      className="w-40 shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                      className="w-36 shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                    <input
+                      value={signer.email ?? ''}
+                      onChange={(e) => setSigners((prev) => prev.map((s, j) => (j === i ? { ...s, email: e.target.value } : s)))}
+                      placeholder={language === 'en' ? 'Email (optional)' : 'Correo (opcional)'}
+                      type="email"
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                     />
                     <button
                       type="button"
@@ -210,7 +221,7 @@ export function AiCreateDocumentPage() {
 
             <button
               type="button"
-              onClick={() => setSigners((prev) => [...prev, { name: '', idNumber: '' }])}
+              onClick={() => setSigners((prev) => [...prev, { name: '', idNumber: '', email: '' }])}
               className="mt-3 flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             >
               <UserPlus className="size-3.5" />

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Home, FileText, PenLine, LayoutTemplate, FolderOpen, Sparkles, Settings, User, LogOut, BarChart3, Building2 } from 'lucide-react';
+import { Home, FileText, PenLine, LayoutTemplate, FolderOpen, Sparkles, Settings, User, LogOut, BarChart3, Building2, Code2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
@@ -25,6 +25,12 @@ const ADMIN_INSTITUTIONS_NAV_ITEM = {
   to: '/dashboard/admin/institutions', labelEs: 'Instituciones (SSO)', labelEn: 'Institutions (SSO)', icon: Building2,
 } as const;
 
+// Full-admin only, same reasoning as ADMIN_INSTITUTIONS_NAV_ITEM — real
+// credential generation, not a read-only report.
+const ADMIN_API_NAV_ITEM = {
+  to: '/dashboard/admin/api', labelEs: 'API', labelEn: 'API', icon: Code2,
+} as const;
+
 /** Fixed 280px sidebar for the /dashboard/* private app — the desktop
  * counterpart to MobileBottomNav, same active-tab-by-pathname logic. */
 export function DesktopSidebar() {
@@ -35,7 +41,7 @@ export function DesktopSidebar() {
   const navItems = [
     ...NAV_ITEMS,
     ...(isAdmin || isAnalyticsAdmin ? [ADMIN_NAV_ITEM] : []),
-    ...(isAdmin ? [ADMIN_INSTITUTIONS_NAV_ITEM] : []),
+    ...(isAdmin ? [ADMIN_INSTITUTIONS_NAV_ITEM, ADMIN_API_NAV_ITEM] : []),
   ];
 
   const handleLogout = async () => {

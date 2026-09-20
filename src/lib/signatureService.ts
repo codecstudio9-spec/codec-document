@@ -305,6 +305,23 @@ export async function tryCompleteSignerOnce(signerId: string, fromStatus: string
   return Boolean(data);
 }
 
+/**
+ * Removes a still-pending signer (and their signing link) entirely —
+ * used when the creator removes someone from the "extra signers" list
+ * before they've signed. Without this, the `signers` row stayed
+ * 'pending' forever and finalize_document (see
+ * supabase_FIX_finalize_document_multi_signer.sql/
+ * 20260920000000_cancel_signer.sql) would never mark the document
+ * 'completed', even after everyone else actually signed. No-ops (returns
+ * false) if the signer already completed — a signature that already
+ * happened is never silently discarded.
+ */
+export async function cancelSigner(signerId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('cancel_signer', { p_signer_id: signerId });
+  if (error) throw new Error(`cancelSigner: ${error.message}`);
+  return Boolean(data);
+}
+
 // ─── Signing Links ───────────────────────────────────────────────────────────
 // Schema: id, document_id, signer_id, token, expires_at, created_at
 
