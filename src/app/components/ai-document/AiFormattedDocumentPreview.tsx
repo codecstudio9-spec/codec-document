@@ -29,7 +29,10 @@ interface Props {
  * enough blank space above it to actually sign, plus their name and ID
  * printed underneath (the same convention the source contracts already
  * use by hand — see the sample this was built against). With no signers
- * named, it falls back to one generic Firma/Fecha pair. */
+ * named, it falls back to one generic Firma line. No date field here —
+ * the actual signing date is captured electronically once the document
+ * goes through the signing flow, so printing a blank "Fecha" line on the
+ * document itself is redundant. */
 export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(function AiFormattedDocumentPreview(
   { document, branding, language, signers },
   ref,
@@ -99,7 +102,7 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
           <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-10">
             {signers.map((signer, i) => (
               <div key={i}>
-                <div className="h-16" />
+                <div className="h-20" />
                 <div className="border-t border-black pt-1 text-[11px]">
                   {language === 'en' ? 'Signature' : 'Firma'}
                 </div>
@@ -109,25 +112,14 @@ export const AiFormattedDocumentPreview = forwardRef<HTMLDivElement, Props>(func
                     {language === 'en' ? 'ID' : 'C.C.'} {signer.idNumber}
                   </p>
                 )}
-                <div className="mt-4 w-2/3 border-t border-black pt-1 text-[11px]">
-                  {language === 'en' ? 'Date' : 'Fecha'}
-                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="mt-10 grid grid-cols-2 gap-8">
-            <div>
-              <div className="h-16" />
-              <div className="border-t border-black pt-1 text-[11px]">
-                {language === 'en' ? 'Signature' : 'Firma'}
-              </div>
-            </div>
-            <div>
-              <div className="h-16" />
-              <div className="border-t border-black pt-1 text-[11px]">
-                {language === 'en' ? 'Date' : 'Fecha'}
-              </div>
+          <div className="mt-10 w-1/2">
+            <div className="h-20" />
+            <div className="border-t border-black pt-1 text-[11px]">
+              {language === 'en' ? 'Signature' : 'Firma'}
             </div>
           </div>
         )}

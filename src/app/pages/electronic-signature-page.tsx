@@ -966,6 +966,8 @@ export function ElectronicSignaturePage() {
           idDataUrl: idFrontDataUrl || undefined,
           idFrontDataUrl: idFrontDataUrl || undefined,
           idBackDataUrl: idBackDataUrl || undefined,
+          selfieRequired: requireSelfie,
+          idPhotoRequired: requireIdPhoto,
           ip,
           userAgent: navigator.userAgent,
           signedAt: new Date().toISOString(),

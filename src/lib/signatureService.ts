@@ -500,6 +500,15 @@ export interface EvidenceReportPayload {
   idDataUrl?: string;
   idFrontDataUrl?: string;
   idBackDataUrl?: string;
+  /** Whether the sender actually required a selfie/ID photo for THIS
+   * signature — undefined is treated as "yes" for older callers. Without
+   * this, a signer who only did biometric verification (no selfie/ID
+   * requested) still got blank "Selfie biométrica" / "Documento de
+   * identidad" boxes on the evidence page reading "Evidencia en proceso
+   * de sincronización" — there was never anything to sync, that
+   * requirement was simply never asked of them. */
+  selfieRequired?: boolean;
+  idPhotoRequired?: boolean;
   ip?: string;
   userAgent?: string;
   signedAt?: string;
@@ -1010,9 +1019,29 @@ export async function compilePdfWithSignatures(params: {
       });
     };
 
-    await drawEvidenceCard('Selfie biométrica', 'Captura de validación facial', selfieSource, leftX, photoTopY, leftW, leftH);
-    await drawEvidenceCard('Documento de identidad (Frente)', 'Cara frontal del documento oficial', idFrontSource, rightX, photoTopY + rightCardH + rightGap, rightW, rightCardH);
-    await drawEvidenceCard('Documento de identidad (Reverso)', 'Cara posterior con zona de lectura/código', idBackSource, rightX, photoTopY, rightW, rightCardH);
+    const wantsSelfie = params.evidence.selfieRequired !== false;
+    const wantsIdPhoto = params.evidence.idPhotoRequired !== false;
+
+    if (wantsSelfie && wantsIdPhoto) {
+      await drawEvidenceCard('Selfie biométrica', 'Captura de validación facial', selfieSource, leftX, photoTopY, leftW, leftH);
+      await drawEvidenceCard('Documento de identidad (Frente)', 'Cara frontal del documento oficial', idFrontSource, rightX, photoTopY + rightCardH + rightGap, rightW, rightCardH);
+      await drawEvidenceCard('Documento de identidad (Reverso)', 'Cara posterior con zona de lectura/código', idBackSource, rightX, photoTopY, rightW, rightCardH);
+    } else if (wantsSelfie) {
+      // Only the selfie was required (no ID photo) — give it the full
+      // width instead of leaving the ID photo's column blank.
+      const wideW = PAGE_W - 80;
+      await drawEvidenceCard('Selfie biométrica', 'Captura de validación facial', selfieSource, 40, photoTopY, wideW, leftH);
+    } else if (wantsIdPhoto) {
+      // Only the ID photo was required (no selfie) — center the front/back
+      // pair instead of leaving the selfie column blank.
+      const pairW = 232;
+      const pairGap = 24;
+      const pairX = (PAGE_W - pairW * 2 - pairGap) / 2;
+      await drawEvidenceCard('Documento de identidad (Frente)', 'Cara frontal del documento oficial', idFrontSource, pairX, photoTopY, pairW, leftH);
+      await drawEvidenceCard('Documento de identidad (Reverso)', 'Cara posterior con zona de lectura/código', idBackSource, pairX + pairW + pairGap, photoTopY, pairW, leftH);
+    }
+    // Neither required (e.g. only biometric verification was asked for):
+    // no photo cards at all — nothing was ever going to "sync" here.
   }
 
   return pdfDoc.save();

@@ -1139,6 +1139,8 @@ export function GuestSignPage() {
               idDataUrl: idFrontDataUrl || undefined,
               idFrontDataUrl: idFrontDataUrl || undefined,
               idBackDataUrl: idBackDataUrl || undefined,
+              selfieRequired: requirements.requireSelfie,
+              idPhotoRequired: requirements.requireIdPhoto,
               ip,
               userAgent: auditUserAgent,
               signedAt: new Date().toISOString(),
