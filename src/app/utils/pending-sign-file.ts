@@ -32,12 +32,26 @@ export interface PendingSignFile {
    * itself is unaffected, the sender can still add them manually via
    * "Añadir otro firmante". */
   additionalSigners?: { name: string; email: string }[];
+  /** Signers #2+ that were named (and possibly given an ID number) but
+   * left without an email — too little to auto-create a real signing
+   * link (createSigningLink needs an email to send it to), but their
+   * name shouldn't just vanish either. The signing tool queues these and
+   * pre-fills them one at a time into the "invitado"/"otro firmante"
+   * name field as the sender works through the invite step, so the
+   * sender only has to type the email they're missing instead of
+   * retyping a name they already entered in "Crea un documento nuevo". */
+  signersNeedingEmail?: { name: string }[];
 }
 
 let pending: PendingSignFile | null = null;
 
-export function setPendingSignFile(file: File, creatorName?: string, additionalSigners?: { name: string; email: string }[]): void {
-  pending = { file, creatorName, additionalSigners };
+export function setPendingSignFile(
+  file: File,
+  creatorName?: string,
+  additionalSigners?: { name: string; email: string }[],
+  signersNeedingEmail?: { name: string }[],
+): void {
+  pending = { file, creatorName, additionalSigners, signersNeedingEmail };
 }
 
 export function consumePendingSignFile(): PendingSignFile | null {

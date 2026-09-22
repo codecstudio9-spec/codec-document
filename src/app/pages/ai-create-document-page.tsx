@@ -123,12 +123,26 @@ export function AiCreateDocumentPage() {
       const file = new File([blob], fileName, { type: 'application/pdf' });
       // Signer #1 pre-fills "Tu nombre legal"; signers #2+ (with an
       // email) auto-become real signing links on the signing tool —
-      // see utils/pending-sign-file.ts.
-      const additionalSigners = namedSigners
-        .slice(1)
+      // see utils/pending-sign-file.ts. Signers #2+ named WITHOUT an
+      // email can't get a link auto-created (createSigningLink needs
+      // somewhere to send it), but their name shouldn't just silently
+      // disappear either — queue them as signersNeedingEmail so the
+      // signing tool pre-fills their name for the sender, who only has
+      // to add the missing email.
+      const otherSigners = namedSigners.slice(1);
+      const additionalSigners = otherSigners
         .filter((s): s is DocumentSigner & { email: string } => Boolean(s.email?.trim()))
         .map((s) => ({ name: s.name, email: s.email.trim() }));
-      setPendingSignFile(file, namedSigners[0]?.name, additionalSigners);
+      const signersNeedingEmail = otherSigners
+        .filter((s) => !s.email?.trim())
+        .map((s) => ({ name: s.name }));
+      setPendingSignFile(file, namedSigners[0]?.name, additionalSigners, signersNeedingEmail);
+      if (signersNeedingEmail.length > 0) {
+        const names = signersNeedingEmail.map((s) => s.name).join(', ');
+        toast.info(language === 'en'
+          ? `${names} ${signersNeedingEmail.length > 1 ? "don't" : "doesn't"} have an email, so their signing link wasn't created automatically — add it in the next step to send it.`
+          : `${names} no ${signersNeedingEmail.length > 1 ? 'tienen' : 'tiene'} correo, así que su enlace de firma no se generó automáticamente — agrégalo en el siguiente paso para enviárselo.`);
+      }
       // /electronic-signature is the public marketing landing page
       // (routes.tsx), not the actual signing tool — that lives at
       // /firma-electronica (ProtectedSignaturePage, which mounts

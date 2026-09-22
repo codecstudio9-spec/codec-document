@@ -222,7 +222,7 @@ export function PdfSignaturePreview({ pdfBytes, signers, watermark = false }: Pd
   }, [pdfBytes]);
 
   // Universal 2-column mirror grid regardless of signer count
-  const displaySigners = signers.slice(0, 4);
+  const displaySigners = signers;
   const count          = displaySigners.length;
   const needFiller     = count > 0 && count % 2 === 1;
 

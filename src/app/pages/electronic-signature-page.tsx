@@ -16,7 +16,7 @@ import { QRShareModal } from '../components/signatures/QRShareModal';
 import { SignatureTimeline, type TimelineStep } from '../components/signatures/SignatureTimeline';
 import { SignedSuccessScreen } from '../components/signatures/SignedSuccessScreen';
 import { PaypalSignatureCheckout } from '../components/signatures/PaypalSignatureCheckout';
-import { PdfSignaturePreview } from '../components/signatures/PdfSignaturePreview';
+import { PdfSignaturePreview, type PreviewSigner } from '../components/signatures/PdfSignaturePreview';
 import type { PlacedSignature } from '../components/signatures/types';
 
 import { useAuth } from '../contexts/auth-context';
@@ -552,6 +552,12 @@ export function ElectronicSignaturePage() {
   const [guestSigUrl, setGuestSigUrl]       = useState('');
   const [signingToken, setSigningToken]     = useState('');
   const [shareOpen, setShareOpen]           = useState(false);
+  // Signers named in "Crea un documento nuevo" without an email — can't
+  // become a real signing link on their own (createSigningLink needs an
+  // address to send it to), so they're queued here and popped one at a
+  // time into guestName / newExtraName below, instead of the sender
+  // having to remember and retype names they already entered once.
+  const [pendingSignerQueue, setPendingSignerQueue] = useState<{ name: string }[]>([]);
 
   // ── Extra signers — documents with more than 2 people (creator + one
   // guest) used to have no way to invite a 3rd/4th/etc. signer at all: this
@@ -568,6 +574,31 @@ export function ElectronicSignaturePage() {
   const [addingExtraLoading, setAddingExtraLoading] = useState(false);
   const [newExtraName, setNewExtraName]           = useState('');
   const [newExtraEmail, setNewExtraEmail]         = useState('');
+
+  // Everyone after the creator, in the order the preview's "Sección de
+  // firmas" should show them: the main guest slot, then extra signers that
+  // already have a link, then names from "Crea un documento nuevo" still
+  // waiting for an email. The preview used to hardcode exactly two slots
+  // (creator + "Firmante 2"), so a 3rd/4th/5th signer entered there simply
+  // never appeared on the signing screen even though they were queued.
+  const SIGNER_COLORS = ['#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#EF4444', '#6366F1'];
+  const buildOtherPreviewSigners = (guestSignatureDataUrl?: string): PreviewSigner[] => {
+    const queued = pendingSignerQueue.map((s) => s.name);
+    const guestSlotName = guestName || queued[0] || 'Firmante 2';
+    const restQueued = guestName ? queued : queued.slice(1);
+    const names = [
+      { name: guestSlotName, sig: guestSignatureDataUrl },
+      ...extraSigners.map((s) => ({ name: s.name, sig: undefined as string | undefined })),
+      ...restQueued.map((name) => ({ name, sig: undefined as string | undefined })),
+    ];
+    return names.map((n, i) => ({
+      name: n.name,
+      color: SIGNER_COLORS[i % SIGNER_COLORS.length],
+      role: getSignerRoleLabel(resolvedDocumentType, i + 1, 'es'),
+      signatureDataUrl: n.sig || undefined,
+      canSign: false,
+    }));
+  };
 
   // Contextual voice guidance — a real step-by-step companion, not just an
   // opening line: speaks once per step, nudges the creator if they stall
@@ -880,9 +911,21 @@ export function ElectronicSignaturePage() {
     const pending = consumePendingSignFile();
     if (!pending) return;
     if (pending.creatorName) setCreatorName(pending.creatorName);
+    if (pending.signersNeedingEmail?.length) setPendingSignerQueue(pending.signersNeedingEmail);
     void handleUploadPdf(pending.file, pending.additionalSigners);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pops the next queued name into the main guest slot as soon as it's
+  // empty and free to take one — covers both landing on invite-guest with
+  // nothing typed yet, and the sender clearing the field themselves.
+  useEffect(() => {
+    if (step !== 'invite-guest' || signingToken || guestName) return;
+    if (pendingSignerQueue.length === 0) return;
+    setGuestName(pendingSignerQueue[0].name);
+    setPendingSignerQueue((q) => q.slice(1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, signingToken, guestName, pendingSignerQueue]);
 
   // Only captures WHAT the signature looks like (SignatureModal) and saves
   // it — WHERE it goes on the document used to be hardcoded here
@@ -1431,7 +1474,7 @@ export function ElectronicSignaturePage() {
                       setCreatorModalOpen(true);
                     },
                   },
-                  { name: 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
+                  ...buildOtherPreviewSigners(),
                 ]}
               />
             </div>
@@ -1536,6 +1579,12 @@ export function ElectronicSignaturePage() {
                         demás — no importa el orden ni cuánto tarde cada
                         quien; el documento queda certificado en cuanto
                         firman TODOS. ─────────────────────────────────── */}
+                    {pendingSignerQueue.length > 0 && (
+                      <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        Aún faltan por agregar (sin correo todavía): {pendingSignerQueue.map((s) => s.name).join(', ')}.
+                      </p>
+                    )}
+
                     <div className="mt-6 space-y-3">
                       {extraSigners.length > 0 && (
                         <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
@@ -1595,11 +1644,17 @@ export function ElectronicSignaturePage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setAddingExtraSigner(true)}
+                          onClick={() => {
+                            if (pendingSignerQueue.length > 0) {
+                              setNewExtraName(pendingSignerQueue[0].name);
+                              setPendingSignerQueue((q) => q.slice(1));
+                            }
+                            setAddingExtraSigner(true);
+                          }}
                           className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-indigo-50/20 py-3 text-sm font-semibold text-slate-500 transition hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/60"
                         >
                           <Plus className="size-4" />
-                          Añadir otro firmante
+                          {pendingSignerQueue.length > 0 ? `Añadir a ${pendingSignerQueue[0].name}` : 'Añadir otro firmante'}
                         </button>
                       )}
                     </div>
@@ -1613,7 +1668,7 @@ export function ElectronicSignaturePage() {
                 watermark={hasHitDocumentLimit}
                 signers={[
                   { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
-                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: undefined, canSign: false },
+                  ...buildOtherPreviewSigners(),
                 ]}
               />
             </div>
@@ -1866,7 +1921,7 @@ export function ElectronicSignaturePage() {
                 watermark={hasHitDocumentLimit}
                 signers={[
                   { name: creatorName || 'Firmante 1', color: '#3B82F6', role: getSignerRoleLabel(resolvedDocumentType, 0, 'es'), signatureDataUrl: creatorSigDataUrl || undefined, canSign: false },
-                  { name: guestName   || 'Firmante 2', color: '#F59E0B', role: getSignerRoleLabel(resolvedDocumentType, 1, 'es'), signatureDataUrl: guestSigDataUrl || undefined, canSign: false },
+                  ...buildOtherPreviewSigners(guestSigDataUrl),
                 ]}
               />
             </div>
