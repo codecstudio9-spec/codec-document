@@ -25,4 +25,7 @@ if (typeof PromiseCtor.withResolvers !== 'function') {
 // other top-level code in the module, which would run pdf.worker's own code
 // (and hit the same missing API) before the polyfill above ever executes.
 // @ts-expect-error -- pdfjs-dist doesn't ship a .d.ts for this prebuilt file.
-import('pdfjs-dist/build/pdf.worker.min.mjs');
+// Legacy build: bundles core-js polyfills for the other brand-new APIs
+// pdf.js 5.x uses (Map#getOrInsertComputed, Math.sumPrecise, Promise.try…)
+// that iOS Safari still lacks — see the pdfjs-dist alias in vite.config.ts.
+import('pdfjs-dist/legacy/build/pdf.worker.min.mjs');

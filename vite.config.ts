@@ -25,10 +25,19 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: {
+    alias: [
       // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
-    },
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // pdfjs-dist 5.x's default (modern) build calls brand-new JS APIs
+      // with no fallback — Map#getOrInsertComputed, Math.sumPrecise,
+      // Promise.try, Uint8Array#toHex/fromBase64 — that Safari/iOS WebKit
+      // (every iPhone browser, Chrome included) doesn't ship yet, so pdf.js
+      // threw on load and the signing/placement screen rendered blank on
+      // iPhone. The legacy build is the same API with core-js polyfills
+      // bundled in. Exact-match regex so type imports and the worker path
+      // (see src/app/lib/pdf-worker-entry.ts) aren't rewritten by accident.
+      { find: /^pdfjs-dist$/, replacement: 'pdfjs-dist/legacy/build/pdf.mjs' },
+    ],
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
