@@ -82,6 +82,14 @@ function mensajePermisoDenegado(language: 'en' | 'es'): string {
       ? 'Permiso de micrófono bloqueado. Abre Ajustes del iPhone → tu navegador → activa Micrófono, y vuelve a tocar el micrófono.'
       : 'Microphone permission is blocked. Open iPhone Settings → your browser → turn on Microphone, then tap the mic again.';
   }
+  // En Mac el bloqueo puede venir de macOS, no del sitio: si el navegador no
+  // tiene permiso en Privacidad, el sitio nunca verá el micrófono aunque se
+  // le dé permiso en el candado.
+  if (typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent)) {
+    return es
+      ? 'No hay acceso al micrófono. Permítelo en el ícono de la barra de direcciones y revisa que tu navegador esté activado en Ajustes del Sistema → Privacidad y seguridad → Micrófono.'
+      : 'No microphone access. Allow it from the address-bar icon and check that your browser is enabled in System Settings → Privacy & Security → Microphone.';
+  }
   return es
     ? 'No diste permiso al micrófono. Actívalo en el candado de la barra de direcciones.'
     : 'Microphone permission was denied. Enable it from the padlock in the address bar.';
@@ -112,7 +120,7 @@ async function asegurarPermisoMicrofono(): Promise<'ok' | 'denegado' | 'sin-api'
     return 'ok';
   } catch (e) {
     const nombre = (e as { name?: string })?.name;
-    if (nombre === 'NotAllowedError' || nombre === 'SecurityError') return 'denegado';
+    if (nombre === 'NotAllowedError' || nombre === 'SecurityError' || nombre === 'NotReadableError') return 'denegado';
     // Sin micrófono u otro fallo de hardware: que lo intente el reconocedor,
     // que dará su propio error si de verdad no hay audio.
     return 'ok';

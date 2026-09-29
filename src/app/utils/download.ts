@@ -25,7 +25,14 @@ async function createTemporaryDownloadLink(href: string, fileName: string, blob?
       console.warn('download.ts: iOS share fallback failed', error);
     }
 
-    window.open(href, '_blank', 'noopener,noreferrer');
+    // Llegamos aquí después de un `await` (generar el PDF, el menú de
+    // compartir), fuera del gesto del usuario: Safari bloquea la pestaña
+    // nueva en silencio y devuelve null. Sin 'noopener' para poder detectar
+    // ese null; si pasa, se abre en la misma pestaña (el visor de PDF de iOS
+    // muestra todas las páginas y se vuelve con "Atrás").
+    const win = window.open(href, '_blank');
+    if (win) win.opener = null;
+    else window.location.href = href;
     // Keep the URL alive long enough for Safari's PDF tab to load it.
     window.setTimeout(() => window.URL.revokeObjectURL(href), 60_000);
     return;

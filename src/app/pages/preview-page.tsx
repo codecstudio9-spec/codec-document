@@ -140,6 +140,15 @@ export function normalizeLanguageSensitiveFields(data: DocumentData, language: '
   return next;
 }
 
+/** Abre una URL después de un `await`. Safari de iOS bloquea en silencio el
+ *  window.open que ya no está dentro del toque del usuario (devuelve null);
+ *  en ese caso se navega en la misma pestaña en vez de no hacer nada. */
+function abrirFueraDelGesto(url: string) {
+  const win = window.open(url, '_blank');
+  if (win) win.opener = null;
+  else window.location.href = url;
+}
+
 function safeParseJson<T>(value: string | null | undefined): T | null {
   if (!value || value === 'undefined' || value === 'null') return null;
   try {
@@ -1334,9 +1343,9 @@ Generated with Codec Document — ${SITE_URL}`;
     setCompartiendo(true);
     try {
       const url = await obtenerEnlace();
-      window.open(`https://wa.me/?text=${encodeURIComponent(`${textoParaCompartir()}
+      abrirFueraDelGesto(`https://wa.me/?text=${encodeURIComponent(`${textoParaCompartir()}
 
-${url}`)}`, '_blank', 'noopener,noreferrer');
+${url}`)}`);
     } catch (err) {
       console.error('compartirPorWhatsApp:', err);
       toast.error(language === 'es' ? 'No se pudo preparar el enlace.' : 'Could not prepare the link.');
@@ -1404,7 +1413,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
         }
       }
 
-      window.open(`https://wa.me/?text=${encodeURIComponent(textoParaCompartir())}`, '_blank', 'noopener,noreferrer');
+      abrirFueraDelGesto(`https://wa.me/?text=${encodeURIComponent(textoParaCompartir())}`);
       toast.info(language === 'es'
         ? 'El PDF quedó descargado en tu dispositivo: adjúntalo en el chat que se abrió.'
         : 'The PDF was downloaded to your device: attach it in the chat that just opened.');
