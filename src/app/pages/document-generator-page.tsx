@@ -1498,7 +1498,7 @@ function ContenidoGenerador() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-4" data-preview-scroll-container>
+          <div className="max-h-[calc(100dvh-180px)] overflow-y-auto px-4 pb-4" data-preview-scroll-container>
             <DocumentPreview
               template={previewTemplate}
               templateId={template.id}
@@ -2036,7 +2036,7 @@ function ContenidoGenerador() {
               )}
               <Card className="overflow-hidden shadow-lg shadow-slate-200/60 ring-1 ring-slate-200/80">
                 <CardContent className="p-0">
-                  <div className="max-h-[calc(100vh-200px)] overflow-y-auto" data-preview-scroll-container>
+                  <div className="max-h-[calc(100dvh-200px)] overflow-y-auto" data-preview-scroll-container>
                     <DocumentPreview
                       template={previewTemplate}
                       templateId={template.id}
@@ -2328,7 +2328,7 @@ function ContenidoGenerador() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="max-h-[calc(100vh-240px)] overflow-y-auto" data-preview-scroll-container>
+                  <div className="max-h-[calc(100dvh-240px)] overflow-y-auto" data-preview-scroll-container>
                     <DocumentPreview
                       template={previewTemplate}
                       templateId={template.id}
@@ -2352,7 +2352,7 @@ function ContenidoGenerador() {
       {/* â"€â"€ FORM STEP â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       {flowStep === 'form' && (
       <div className="container mx-auto px-4 py-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-73px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100dvh-73px)]">
           {/* Form column — independently scrollable */}
           <div className="space-y-6 py-8 lg:h-full lg:overflow-y-auto lg:pr-2 pb-24">
 

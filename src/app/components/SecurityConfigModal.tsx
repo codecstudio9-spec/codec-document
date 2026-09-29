@@ -150,7 +150,7 @@ export function SecurityConfigModal({ open, language, initialConfig, onConfirm, 
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(10px)' }}
         >
           <motion.div
-            className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden bg-white"
+            className="w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto overflow-x-hidden bg-white"
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1,    y: 0 }}
             exit={{   opacity: 0, scale: 0.94,  y: 12 }}

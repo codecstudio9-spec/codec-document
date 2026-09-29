@@ -60,6 +60,65 @@ function obtenerConstructor(): ConstructorReconocedor | null {
 
 export const dictadoSoportado = (): boolean => obtenerConstructor() !== null;
 
+// iPadOS se presenta como "MacIntel" en el user agent; lo delata la pantalla táctil.
+const esIOS = (): boolean =>
+  typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+/** Instrucciones para reactivar el micrófono, según dónde esté el usuario.
+ *  En iPhone no hay candado en la barra: el ajuste vive en el menú «aA» de
+ *  Safari, o en los Ajustes de iOS si se usa Chrome/Edge/Firefox. */
+function mensajePermisoDenegado(language: 'en' | 'es'): string {
+  const es = language === 'es';
+  if (esIOS()) {
+    const safari = !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+    if (safari) {
+      return es
+        ? 'Permiso de micrófono bloqueado. Toca «aA» en la barra de direcciones → Configuración del sitio web → Micrófono → Permitir, y vuelve a tocar el micrófono.'
+        : 'Microphone permission is blocked. Tap "aA" in the address bar → Website Settings → Microphone → Allow, then tap the mic again.';
+    }
+    return es
+      ? 'Permiso de micrófono bloqueado. Abre Ajustes del iPhone → tu navegador → activa Micrófono, y vuelve a tocar el micrófono.'
+      : 'Microphone permission is blocked. Open iPhone Settings → your browser → turn on Microphone, then tap the mic again.';
+  }
+  return es
+    ? 'No diste permiso al micrófono. Actívalo en el candado de la barra de direcciones.'
+    : 'Microphone permission was denied. Enable it from the padlock in the address bar.';
+}
+
+/**
+ * Pide el micrófono de forma explícita antes de arrancar el reconocedor.
+ *
+ * Sin esto, en iOS el aviso de permiso depende de cómo WebKit enlace el
+ * reconocimiento con el audio, y a veces el primer intento falla sin mostrar
+ * nada. Con `getUserMedia` el navegador enseña su aviso estándar
+ * («¿Permitir micrófono?») y basta con tocar Permitir. El flujo se suelta en
+ * cuanto se concede: el reconocedor abre su propia captura y dos capturas a la
+ * vez en iOS dan error `audio-capture`.
+ *
+ * Si el permiso ya consta como concedido se salta el paso, para no abrir y
+ * cerrar el micrófono en cada toque.
+ */
+async function asegurarPermisoMicrofono(): Promise<'ok' | 'denegado' | 'sin-api'> {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return 'sin-api';
+  try {
+    const estado = await navigator.permissions?.query({ name: 'microphone' as PermissionName });
+    if (estado?.state === 'granted') return 'ok';
+  } catch { /* Permissions API sin soporte para 'microphone': se pregunta igual */ }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+    return 'ok';
+  } catch (e) {
+    const nombre = (e as { name?: string })?.name;
+    if (nombre === 'NotAllowedError' || nombre === 'SecurityError') return 'denegado';
+    // Sin micrófono u otro fallo de hardware: que lo intente el reconocedor,
+    // que dará su propio error si de verdad no hay audio.
+    return 'ok';
+  }
+}
+
 export interface OpcionesDictado {
   language: 'en' | 'es';
   /** Se llama con el texto ya dictado y cerrado, listo para guardar. */
@@ -91,12 +150,25 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
     try { recRef.current?.stop(); } catch { /* ya estaba parado */ }
   }, []);
 
-  const iniciar = useCallback(() => {
+  // Evita que un doble toque mientras aparece el aviso de permiso abra dos
+  // reconocedores.
+  const arrancandoRef = useRef(false);
+
+  const iniciar = useCallback(async () => {
     const Constructor = obtenerConstructor();
     if (!Constructor) {
       onErrorRef.current?.(language === 'es'
         ? 'Tu navegador no permite dictar. Prueba con Chrome.'
         : 'Your browser does not support dictation. Try Chrome.');
+      return;
+    }
+    if (arrancandoRef.current) return;
+    arrancandoRef.current = true;
+    // asegurarPermisoMicrofono nunca lanza: todos sus fallos devuelven un estado.
+    const permiso = await asegurarPermisoMicrofono();
+    arrancandoRef.current = false;
+    if (permiso === 'denegado') {
+      onErrorRef.current?.(mensajePermisoDenegado(language));
       return;
     }
 
@@ -146,13 +218,24 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
       queriendoRef.current = false;
       setEscuchando(false);
       setParcial('');
-      onErrorRef.current?.(
-        codigo === 'not-allowed' || codigo === 'service-not-allowed'
-          ? (language === 'es'
-              ? 'No diste permiso al micrófono. Actívalo en el candado de la barra de direcciones.'
-              : 'Microphone permission was denied. Enable it from the padlock in the address bar.')
-          : (language === 'es' ? 'Se interrumpió el dictado.' : 'Dictation was interrupted.'),
-      );
+      const es = language === 'es';
+      let mensaje: string;
+      if (codigo === 'service-not-allowed' && esIOS()) {
+        // En iOS el reconocimiento usa el motor de Dictado del sistema: si
+        // está apagado, falla aunque el micrófono tenga permiso.
+        mensaje = es
+          ? 'Activa el Dictado del iPhone: Ajustes → General → Teclado → Activar Dictado. Luego vuelve a tocar el micrófono.'
+          : 'Turn on iPhone Dictation: Settings → General → Keyboard → Enable Dictation. Then tap the mic again.';
+      } else if (codigo === 'not-allowed' || codigo === 'service-not-allowed') {
+        mensaje = mensajePermisoDenegado(language);
+      } else if (codigo === 'audio-capture') {
+        mensaje = es
+          ? 'Otra app está usando el micrófono. Ciérrala y vuelve a intentarlo.'
+          : 'Another app is using the microphone. Close it and try again.';
+      } else {
+        mensaje = es ? 'Se interrumpió el dictado.' : 'Dictation was interrupted.';
+      }
+      onErrorRef.current?.(mensaje);
     };
 
     rec.onend = () => {

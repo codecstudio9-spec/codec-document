@@ -1869,7 +1869,7 @@ export function GuestSignPage() {
       </main>
 
       {/* ── Fixed CTA bar ─────────────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 z-40 w-full border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 z-40 w-full border-t border-slate-200 bg-white/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
         <button
           type="button"
           disabled={!hasScrolledToEnd}

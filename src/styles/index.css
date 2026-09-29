@@ -1,3 +1,15 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* iOS Safari hace zoom automático al enfocar cualquier campo con letra menor
+   de 16px, y no deshace el zoom al salir: la página queda descuadrada en
+   cada formulario. `-webkit-touch-callout` sólo existe en iOS, así que esto no
+   toca el diseño en Android ni en escritorio. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
