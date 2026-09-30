@@ -234,6 +234,13 @@ export function useDictation({ language, onTexto, onError }: OpcionesDictado) {
         mensaje = es
           ? 'Activa el Dictado del iPhone: Ajustes → General → Teclado → Activar Dictado. Luego vuelve a tocar el micrófono.'
           : 'Turn on iPhone Dictation: Settings → General → Keyboard → Enable Dictation. Then tap the mic again.';
+      } else if (codigo === 'service-not-allowed'
+        && /Macintosh/.test(navigator.userAgent) && !/Chrome|Chromium|Edg|Firefox/.test(navigator.userAgent)) {
+        // Safari de Mac usa el Dictado de macOS igual que el iPhone: con el
+        // Dictado apagado falla aunque el sitio tenga permiso de micrófono.
+        mensaje = es
+          ? 'Activa el Dictado de tu Mac: Ajustes del Sistema → Teclado → Dictado. Luego vuelve a pulsar el micrófono.'
+          : 'Turn on Mac Dictation: System Settings → Keyboard → Dictation. Then click the mic again.';
       } else if (codigo === 'not-allowed' || codigo === 'service-not-allowed') {
         mensaje = mensajePermisoDenegado(language);
       } else if (codigo === 'audio-capture') {
