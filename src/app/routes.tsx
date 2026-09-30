@@ -5,7 +5,8 @@ import { AdminRoute } from "./components/auth/AdminRoute";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 // Sólo los datos (slugs), no el componente: esto viaja en el bundle
 // principal, así que importar aquí la landing anularía su carga diferida.
-import { PAGINAS_US } from "./data/us-intent-seo-content";
+// Sólo los slugs: el contenido de las páginas vive en su chunk lazy.
+import { SLUGS_PAGINAS_US } from "./data/us-pages-slugs.generated";
 
 // Lazy-loaded route components -- each page's JS downloads only when
 // that route is actually visited, instead of bundling all ~150 pages
@@ -1674,8 +1675,8 @@ export const router = createBrowserRouter([
   // Índice de las páginas por profesión (us-industry-seo-content.ts).
   { path: "/industries", Component: USIndustriesHub, errorElement: <RouteErrorBoundary /> },
 
-  ...PAGINAS_US.map((p) => ({
-    path: `/${p.slug}`,
+  ...SLUGS_PAGINAS_US.map((slug) => ({
+    path: `/${slug}`,
     Component: USIntentLanding,
     errorElement: <RouteErrorBoundary />,
   })),

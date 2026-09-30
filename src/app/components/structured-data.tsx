@@ -53,24 +53,6 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
       }
       : undefined;
 
-    // ── Organization ──────────────────────────────────────────────────────────
-    const organizationSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      name: 'Codec Document',
-      url: SITE_URL,
-      inLanguage: isEs ? 'es' : 'en',
-      description: isEs
-        ? `Generador de documentos legales gratis y plataforma de firma electrónica con validez legal en ${countryName}, conforme a ${lawBadge}. Editor inteligente de plantillas para NDA, contratos de arrendamiento, acuerdos de servicio — sin tarjeta de crédito.`
-        : `Free legal document generator and e-signature platform for ${countryName}, compliant with ${lawBadge}. Intelligent template editor for NDA, lease agreements, service contracts — no credit card required.`,
-      contactPoint: {
-        '@type': 'ContactPoint',
-        contactType: 'Customer Service',
-        availableLanguage: ['English', 'Spanish'],
-      },
-      sameAs: ['https://codecstudio.online/'],
-    };
-
     // ── SoftwareApplication (free tier + paid) ────────────────────────────────
     const softwareSchema = {
       '@context': 'https://schema.org',
@@ -139,20 +121,6 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
       ...(ratingSchema ? { aggregateRating: ratingSchema } : {}),
     };
 
-    // ── WebSite ───────────────────────────────────────────────────────────────
-    const websiteSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'Codec Document',
-      url: SITE_URL,
-      inLanguage: isEs ? 'es' : 'en',
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${SITE_URL}/?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
-      },
-    };
-
     // ── Service ───────────────────────────────────────────────────────────────
     const serviceSchema = {
       '@context': 'https://schema.org',
@@ -214,11 +182,12 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
       },
     };
 
+    // Organization y WebSite van estáticos en index.html (con logo y nombres
+    // alternativos), visibles sin JavaScript. Repetirlos aquí duplicaba la
+    // entidad de la marca en cada página.
     const schemas: Record<string, unknown>[] = [
-      organizationSchema,
       softwareSchema,
       productSchema,
-      websiteSchema,
       serviceSchema,
     ];
 

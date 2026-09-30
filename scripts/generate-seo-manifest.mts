@@ -218,6 +218,20 @@ for (const s of US_FREE_SIGNATURE_STATES) {
   );
 }
 
+// ── Slugs de las páginas de Estados Unidos, para routes.tsx ─────────────
+//
+// routes.tsx sólo necesita los slugs para declarar las rutas, pero importaba
+// el contenido completo (~400 KB de texto) y ese texto acababa en el
+// JavaScript principal que descarga cada visitante, en cualquier página. Este
+// archivo diminuto se regenera en cada build (este script corre antes de
+// `vite build`) y se sube al repo para que funcionen el modo dev y tsc.
+fs.writeFileSync(
+  path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-slugs.generated.ts'),
+  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  + `export const SLUGS_PAGINAS_US: readonly string[] = ${JSON.stringify(PAGINAS_US.map((p) => p.slug), null, 2)};\n`,
+  'utf-8',
+);
+
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');
 fs.writeFileSync(outFile, JSON.stringify(manifest), 'utf-8');
 console.log(`seo-manifest.json written with ${Object.keys(manifest).length} routes`);

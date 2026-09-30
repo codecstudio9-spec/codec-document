@@ -38,7 +38,22 @@ if (!fs.existsSync(shellPath)) {
   process.exit(1);
 }
 
-const shellHtml = fs.readFileSync(shellPath, 'utf-8');
+// ── Portada y respaldo de la app ─────────────────────────────────────────
+//
+// dist/index.html cumplía dos papeles: la portada (/) y el respaldo SPA de
+// todas las pantallas de la app (catch-all de vercel.json). Por eso la
+// portada —la página más importante para Google— llegaba vacía: no se le
+// podía meter contenido sin que apareciera también en /dashboard, /sign…
+//
+// Ahora se separan: el HTML pelado de Vite se copia a dist/app.html (el
+// catch-all de vercel.json apunta ahí) y dist/index.html pasa a ser la
+// portada con su propio contenido estático. app.html se escribe LO PRIMERO:
+// si faltara, todas las pantallas de la app darían 404, así que no puede
+// depender de nada de lo que viene después. Y se usa como base si ya existe,
+// para que correr este script dos veces no herede el contenido de la portada.
+const appShellPath = path.join(distDir, 'app.html');
+if (!fs.existsSync(appShellPath)) fs.copyFileSync(shellPath, appShellPath);
+const shellHtml = fs.readFileSync(appShellPath, 'utf-8');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
 // Contenido estático por ruta (ver el final de generate-seo-manifest.mts).
 // Opcional: si falta, los shells salen como antes, con #root vacío.
@@ -96,4 +111,11 @@ for (const [routePath, { title, description, lang, hero }] of Object.entries(man
   written += 1;
 }
 
-console.log(`generate-seo-shells: wrote ${written} per-route HTML shells into dist/`);
+// La portada: el mismo HTML con su canonical y su contenido estático.
+const portada = snapshots['/'];
+const homeHtml = shellHtml
+  .replace(/(<title>)/, '<link rel="canonical" href="https://www.codecdocument.com/" />\n    $1')
+  .replace('<div id="root"></div>', () => `<div id="root">${portada ? envolver(portada) : ''}</div>`);
+fs.writeFileSync(shellPath, homeHtml, 'utf-8');
+
+console.log(`generate-seo-shells: wrote ${written} per-route HTML shells into dist/ (+ app.html fallback, home ${portada ? 'with' : 'without'} static content)`);

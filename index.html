@@ -95,6 +95,14 @@
     <link rel="preconnect" href="https://accounts.google.com" />
     <link rel="dns-prefetch" href="https://www.paypal.com" />
 
+    <!-- ═══ Entidad de la marca (estática) ═══════════════════════════════════════
+         Organización y sitio web en el HTML, no inyectados por React: así los
+         ven también los rastreadores que no ejecutan JavaScript. Es lo que
+         Google usa para el nombre del sitio y el logo en los resultados.
+         «CodecDocument» (como aparece en los títulos) se declara como nombre
+         alternativo de la misma marca. structured-data.tsx ya no los repite. -->
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.codecdocument.com/#organization","name":"Codec Document","alternateName":["CodecDocument","Codec Document App"],"url":"https://www.codecdocument.com/","logo":{"@type":"ImageObject","url":"https://www.codecdocument.com/logo.png","width":566,"height":556},"description":"Legal document generator and electronic signature platform with identity verification and audit trails, for the United States and Latin America.","sameAs":["https://codecstudio.online/"],"contactPoint":{"@type":"ContactPoint","contactType":"customer service","availableLanguage":["English","Spanish"]}},{"@type":"WebSite","@id":"https://www.codecdocument.com/#website","name":"Codec Document","alternateName":"CodecDocument","url":"https://www.codecdocument.com/","publisher":{"@id":"https://www.codecdocument.com/#organization"},"inLanguage":["en","es"]}]}</script>
+
     <!-- ═══ Inline critical styles ════════════════════════════════════════════ -->
     <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
   </head>

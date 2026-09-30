@@ -46,7 +46,9 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public', 'seo-manif
 const dataBodiesPath = path.join(root, '.seo-bodies.json');
 const dataBodies = fs.existsSync(dataBodiesPath) ? JSON.parse(fs.readFileSync(dataBodiesPath, 'utf-8')) : {};
 // Las que ya salen de los datos no necesitan instantánea.
-const rutas = Object.keys(manifest).filter((r) => !dataBodies[r]);
+// La portada no está en el manifiesto (su shell es dist/index.html, ver
+// generate-seo-shells.mjs) pero es la página que más importa capturar.
+const rutas = ['/', ...Object.keys(manifest).filter((r) => !dataBodies[r])];
 
 // Se ejecuta DENTRO de la página. Recorre #root en orden y devuelve HTML
 // simple: sólo encabezados, párrafos, elementos de lista y enlaces internos.
@@ -107,7 +109,7 @@ async function main() {
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'seo-snap-'));
   const chrome = spawn(CHROME, [
     '--headless=new', '--disable-gpu', `--remote-debugging-port=${PORT}`, `--user-data-dir=${perfil}`,
-    '--no-first-run', '--no-default-browser-check', 'about:blank',
+    '--no-first-run', '--no-default-browser-check', '--window-size=1366,900', '--lang=en-US', 'about:blank',
   ], { stdio: 'ignore' });
 
   let version;
@@ -139,7 +141,13 @@ async function main() {
     const { sessionId } = await cdp('Target.attachToTarget', { targetId, flatten: true });
     try {
       await cdp('Page.enable', {}, sessionId);
-      await cdp('Page.navigate', { url: BASE + ruta }, sessionId);
+      // Se captura lo que ve Googlebot: desde EE. UU., en inglés y en
+      // escritorio. Sin esto, la portada y las páginas que eligen idioma por
+      // IP salían en la versión de quien corre el script (desde Colombia, la
+      // portada LatAm sin las secciones de EE. UU.).
+      await cdp('Emulation.setDeviceMetricsOverride', { width: 1366, height: 900, deviceScaleFactor: 1, mobile: false }, sessionId);
+      await cdp('Page.addScriptToEvaluateOnNewDocument', { source: "try { localStorage.setItem('codec_language', 'en'); } catch {}" }, sessionId);
+      await cdp('Page.navigate', { url: BASE + (ruta === '/' ? '/?market=us' : ruta) }, sessionId);
       // Espera a que React pinte el h1 de la página (las rutas son lazy).
       let datos = null;
       for (let i = 0; i < 40; i++) {
