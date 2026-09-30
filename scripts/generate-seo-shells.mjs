@@ -43,7 +43,15 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
 // Contenido estático por ruta (ver el final de generate-seo-manifest.mts).
 // Opcional: si falta, los shells salen como antes, con #root vacío.
 const bodiesPath = path.join(root, '.seo-bodies.json');
-const bodies = fs.existsSync(bodiesPath) ? JSON.parse(fs.readFileSync(bodiesPath, 'utf-8')) : {};
+const dataBodies = fs.existsSync(bodiesPath) ? JSON.parse(fs.readFileSync(bodiesPath, 'utf-8')) : {};
+// Instantáneas del resto de páginas (scripts/snapshot-seo-bodies.mjs), ya
+// renderizadas en Chrome. Las generadas desde los datos tienen prioridad:
+// nunca quedan desactualizadas respecto al contenido.
+const snapshotsPath = path.join(root, 'seo-snapshots.json');
+const snapshots = fs.existsSync(snapshotsPath) ? JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8')) : {};
+const envolver = (html) =>
+  `<main data-seo-static style="max-width:760px;margin:0 auto;padding:96px 20px 48px;font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#334155">${html}</main>`;
+const bodies = { ...Object.fromEntries(Object.entries(snapshots).map(([k, v]) => [k, envolver(v)])), ...dataBodies };
 
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 

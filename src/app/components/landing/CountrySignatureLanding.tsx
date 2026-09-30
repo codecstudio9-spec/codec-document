@@ -110,8 +110,10 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
         icon={PenLine}
         previewLabel={language === 'en' ? `${country.name} Signature Audit Preview` : `Vista Previa de Firma — ${country.nameEs}`}
         backgroundImage="/imagen3.jpg"
-        titleAccentEn="Sign, Personalize & Certify" titleAccentEs="Firma, Personaliza y Certifica"
-        titleRestEn="Your Documents Online" titleRestEs="tus Documentos en Línea"
+        // El país va en el H1: con el mismo título en las seis páginas de
+        // país, Google no tenía cómo distinguirlas (h1 duplicado en seis URL).
+        titleAccentEn={`Electronic Signature in ${country.name}`} titleAccentEs={`Firma Electrónica en ${country.nameEs}`}
+        titleRestEn="— Sign, Personalize & Certify Your Documents Online" titleRestEs="— Firma, Personaliza y Certifica tus Documentos en Línea"
         subtitleEn={desc} subtitleEs={desc}
         ctaLabelEn="Start Free Now" ctaLabelEs="Empieza Gratis Ahora"
         ctaHref="/firma-electronica"

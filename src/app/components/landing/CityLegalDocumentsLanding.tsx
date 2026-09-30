@@ -60,7 +60,9 @@ function CityLegalDocumentsLandingContent({ city }: { city: CitySeoConfig }) {
         icon={MapPin}
         previewLabel={`${state.name} Document Preview`}
         backgroundImage="/imagen2.jpg"
-        titleAccentEn={state.name} titleAccentEs={state.nameEs}
+        // La ciudad, no el estado: con el estado, el H1 era idéntico al de
+        // /legal-documents-<estado> y las dos páginas competían entre sí.
+        titleAccentEn={`${city.cityName}, ${state.abbreviation}`} titleAccentEs={`${city.cityName}, ${state.abbreviation}`}
         titleRestEn="— Legal Documents & E-Signatures" titleRestEs="— Documentos Legales y Firma Electrónica"
         subtitleEn={heroSubtitle} subtitleEs={heroSubtitle}
         ctaLabelEn="Create a Document" ctaLabelEs="Crear un Documento"

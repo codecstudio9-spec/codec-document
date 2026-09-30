@@ -62,7 +62,9 @@ const add = (routePath: string, title: string, description: string, lang: Idioma
 // resultado de búsqueda. /blog/que-pasa-si-rompen-un-nda estaba en posición
 // 7,6 con 30 impresiones y cero clics, con el título cortado a media frase.
 for (const a of ARTICLES) {
-  add(`/blog/${a.slug}`, a.title, a.metaDescription);
+  // Con el idioma del artículo: sin él, los artículos en español salían con
+  // <html lang="en"> en el HTML que leen los buscadores.
+  add(`/blog/${a.slug}`, a.title, a.metaDescription, a.language);
 }
 
 // ── Document type × state (DocTypeStateLanding.tsx) ─────────────────────
@@ -236,7 +238,7 @@ console.log(`seo-manifest.json written with ${Object.keys(manifest).length} rout
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const enlace = (to: string, label: string) => `<a href="${esc(to)}" style="color:#4338ca">${esc(label)}</a>`;
 const envolver = (html: string) =>
-  `<main style="max-width:760px;margin:0 auto;padding:96px 20px 48px;font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#334155">${html}</main>`;
+  `<main data-seo-static style="max-width:760px;margin:0 auto;padding:96px 20px 48px;font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#334155">${html}</main>`;
 
 const bodies: Record<string, string> = {};
 for (const p of PAGINAS_US) {
