@@ -14,6 +14,7 @@
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:seo-manifest": "tsx scripts/generate-seo-manifest.mts",
     "generate:seo-shells": "node scripts/generate-seo-shells.mjs",
+    "validate:us-pages": "tsx scripts/validate-industry-pages.mts",
     "sync:vercel-rewrites": "node scripts/sync-vercel-rewrites.mjs",
     "build": "npm run validate:legal && npm run generate:seo-manifest && npm run generate:sitemap && vite build && npm run generate:seo-shells",
     "verify:fonts": "node scripts/verify-unicode-fonts.mjs",

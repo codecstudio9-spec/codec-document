@@ -316,6 +316,7 @@ const FreeDigitalSignatureWestVirginia = lazy(() => import("./pages/landings/fre
 // castiga las Core Web Vitals, que Google usa como senal de posicionamiento.
 const ContadorDianLanding = lazy(() => import("./components/landing/ContadorDianLanding"));
 const USIntentLanding = lazy(() => import("./components/landing/USIntentLanding"));
+const USIndustriesHub = lazy(() => import("./components/landing/USIndustriesHub"));
 const FirmarPdfGratis = lazy(() => import("./pages/landings/firmar-pdf-gratis"));
 const FirmaDigitalGratis = lazy(() => import("./pages/landings/firma-digital-gratis"));
 const FirmarDocumentosOnlineGratis = lazy(() => import("./pages/landings/firmar-documentos-online-gratis"));
@@ -1670,6 +1671,9 @@ export const router = createBrowserRouter([
   //
   // Van ANTES del comodin "*", porque react-router resuelve en orden y el
   // comodin se traga cualquier ruta que llegue despues.
+  // Índice de las páginas por profesión (us-industry-seo-content.ts).
+  { path: "/industries", Component: USIndustriesHub, errorElement: <RouteErrorBoundary /> },
+
   ...PAGINAS_US.map((p) => ({
     path: `/${p.slug}`,
     Component: USIntentLanding,

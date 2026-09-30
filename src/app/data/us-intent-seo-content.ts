@@ -29,6 +29,8 @@
  * deliberado de un montón de páginas hiladas.
  */
 
+import { PAGINAS_US_SECTORES } from './us-industry-seo-content';
+
 export interface PaginaUS {
   slug: string;
   /** ≤ 60 caracteres: Google corta ahí. */
@@ -38,7 +40,17 @@ export interface PaginaUS {
   h1: string;
   /** El grupo temático, para enlazar entre hermanas. */
   grupo: 'loi' | 'legal' | 'finance' | 'realestate' | 'compare' | 'family' | 'money' | 'lease'
-    | 'poa' | 'will' | 'resignation' | 'travel' | 'b2b' | 'free';
+    | 'poa' | 'will' | 'resignation' | 'travel' | 'b2b' | 'free' | 'industry';
+  /** Sólo en las páginas por profesión: el nombre corto del público
+   *  («Contractors»), para el índice /industries y las tarjetas hermanas. */
+  audiencia?: string;
+  /** Documentos que ese público usa de verdad, enlazados a páginas que ya
+   *  existen: es lo que convierte una página por profesión en parte de un
+   *  grupo temático en vez de una hoja suelta. */
+  documentos?: Array<{ to: string; label: string }>;
+  /** Sólo en las páginas por profesión: lo que ese público debería dejar por
+   *  escrito antes de empezar. Contenido práctico y propio de cada sector. */
+  checklist?: { titulo: string; items: string[] };
   intro: string;
   problema: { titulo: string; texto: string };
   puntos: Array<{ titulo: string; texto: string }>;
@@ -60,7 +72,7 @@ const F = {
   movil: '/images/contadores/profesional-movil.jpg',
 } as const;
 
-export const PAGINAS_US: PaginaUS[] = [
+const PAGINAS_US_BASE: PaginaUS[] = [
   // ═══════════════ LETTER OF INTENT — el grupo de más demanda ═══════════
   {
     slug: 'letter-of-intent',
@@ -1808,6 +1820,11 @@ export const PAGINAS_US: PaginaUS[] = [
   },
 ];
 
+/** Las páginas por profesión viven en su propio archivo (son treinta y muy
+ *  largas); aquí se suman para que rutas, manifiesto SEO y sitemap las
+ *  recojan sin tocar nada más. */
+export const PAGINAS_US: PaginaUS[] = [...PAGINAS_US_BASE, ...PAGINAS_US_SECTORES];
+
 /** Índice por slug, para resolver la página desde la ruta. */
 export const PAGINA_US_POR_SLUG = new Map(PAGINAS_US.map((p) => [p.slug, p]));
 
@@ -1818,7 +1835,12 @@ export const PAGINA_US_POR_SLUG = new Map(PAGINAS_US.map((p) => [p.slug, p]));
 export function hermanasDe(slug: string, maximo = 3): PaginaUS[] {
   const actual = PAGINA_US_POR_SLUG.get(slug);
   if (!actual) return [];
-  const mismas = PAGINAS_US.filter((p) => p.grupo === actual.grupo && p.slug !== slug);
-  const otras = PAGINAS_US.filter((p) => p.grupo !== actual.grupo && p.slug !== slug);
+  // Se empieza por la página siguiente y se da la vuelta, en vez de tomar
+  // siempre las primeras del grupo: con treinta páginas por profesión, todas
+  // enlazarían a las mismas tres y las demás no recibirían ningún enlace.
+  const grupo = PAGINAS_US.filter((p) => p.grupo === actual.grupo);
+  const i = grupo.findIndex((p) => p.slug === slug);
+  const mismas = [...grupo.slice(i + 1), ...grupo.slice(0, i)];
+  const otras = PAGINAS_US.filter((p) => p.grupo !== actual.grupo);
   return [...mismas, ...otras].slice(0, maximo);
 }

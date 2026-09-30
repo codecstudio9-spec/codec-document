@@ -569,8 +569,128 @@
       "destination": "/electronic-signature-for-banks.html"
     },
     {
+      "source": "/electronic-signature-for-car-dealers",
+      "destination": "/electronic-signature-for-car-dealers.html"
+    },
+    {
+      "source": "/electronic-signature-for-caterers",
+      "destination": "/electronic-signature-for-caterers.html"
+    },
+    {
+      "source": "/electronic-signature-for-childcare-providers",
+      "destination": "/electronic-signature-for-childcare-providers.html"
+    },
+    {
+      "source": "/electronic-signature-for-cleaning-services",
+      "destination": "/electronic-signature-for-cleaning-services.html"
+    },
+    {
+      "source": "/electronic-signature-for-consultants",
+      "destination": "/electronic-signature-for-consultants.html"
+    },
+    {
+      "source": "/electronic-signature-for-contractors",
+      "destination": "/electronic-signature-for-contractors.html"
+    },
+    {
+      "source": "/electronic-signature-for-electricians",
+      "destination": "/electronic-signature-for-electricians.html"
+    },
+    {
+      "source": "/electronic-signature-for-event-planners",
+      "destination": "/electronic-signature-for-event-planners.html"
+    },
+    {
+      "source": "/electronic-signature-for-freelancers",
+      "destination": "/electronic-signature-for-freelancers.html"
+    },
+    {
+      "source": "/electronic-signature-for-hr-teams",
+      "destination": "/electronic-signature-for-hr-teams.html"
+    },
+    {
+      "source": "/electronic-signature-for-hvac-companies",
+      "destination": "/electronic-signature-for-hvac-companies.html"
+    },
+    {
+      "source": "/electronic-signature-for-insurance-agents",
+      "destination": "/electronic-signature-for-insurance-agents.html"
+    },
+    {
+      "source": "/electronic-signature-for-interior-designers",
+      "destination": "/electronic-signature-for-interior-designers.html"
+    },
+    {
+      "source": "/electronic-signature-for-landlords",
+      "destination": "/electronic-signature-for-landlords.html"
+    },
+    {
+      "source": "/electronic-signature-for-landscapers",
+      "destination": "/electronic-signature-for-landscapers.html"
+    },
+    {
+      "source": "/electronic-signature-for-marketing-agencies",
+      "destination": "/electronic-signature-for-marketing-agencies.html"
+    },
+    {
+      "source": "/electronic-signature-for-moving-companies",
+      "destination": "/electronic-signature-for-moving-companies.html"
+    },
+    {
+      "source": "/electronic-signature-for-nonprofits",
+      "destination": "/electronic-signature-for-nonprofits.html"
+    },
+    {
+      "source": "/electronic-signature-for-personal-trainers",
+      "destination": "/electronic-signature-for-personal-trainers.html"
+    },
+    {
+      "source": "/electronic-signature-for-pet-care-businesses",
+      "destination": "/electronic-signature-for-pet-care-businesses.html"
+    },
+    {
+      "source": "/electronic-signature-for-photographers",
+      "destination": "/electronic-signature-for-photographers.html"
+    },
+    {
+      "source": "/electronic-signature-for-plumbers",
+      "destination": "/electronic-signature-for-plumbers.html"
+    },
+    {
+      "source": "/electronic-signature-for-property-managers",
+      "destination": "/electronic-signature-for-property-managers.html"
+    },
+    {
       "source": "/electronic-signature-for-realtors",
       "destination": "/electronic-signature-for-realtors.html"
+    },
+    {
+      "source": "/electronic-signature-for-roofing-contractors",
+      "destination": "/electronic-signature-for-roofing-contractors.html"
+    },
+    {
+      "source": "/electronic-signature-for-salons-and-spas",
+      "destination": "/electronic-signature-for-salons-and-spas.html"
+    },
+    {
+      "source": "/electronic-signature-for-staffing-agencies",
+      "destination": "/electronic-signature-for-staffing-agencies.html"
+    },
+    {
+      "source": "/electronic-signature-for-trucking-companies",
+      "destination": "/electronic-signature-for-trucking-companies.html"
+    },
+    {
+      "source": "/electronic-signature-for-tutors",
+      "destination": "/electronic-signature-for-tutors.html"
+    },
+    {
+      "source": "/electronic-signature-for-web-developers",
+      "destination": "/electronic-signature-for-web-developers.html"
+    },
+    {
+      "source": "/electronic-signature-for-wedding-planners",
+      "destination": "/electronic-signature-for-wedding-planners.html"
     },
     {
       "source": "/employee-confidentiality-agreement",
@@ -915,6 +1035,10 @@
     {
       "source": "/independent-contractor-wisconsin",
       "destination": "/independent-contractor-wisconsin.html"
+    },
+    {
+      "source": "/industries",
+      "destination": "/industries.html"
     },
     {
       "source": "/international-travel-consent-form-for-minors",

@@ -197,6 +197,24 @@ export function LandingFooter() {
               <a href="/is-an-electronic-signature-legally-binding" className="transition hover:text-white">Are e-signatures legal?</a>
             </div>
           )}
+          {language === 'en' && (
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+              <span className="font-semibold text-slate-600">Built for:</span>
+              <a href="/electronic-signature-for-contractors" className="transition hover:text-white">Contractors</a>
+              <span className="text-slate-700">·</span>
+              <a href="/electronic-signature-for-wedding-planners" className="transition hover:text-white">Wedding planners</a>
+              <span className="text-slate-700">·</span>
+              <a href="/electronic-signature-for-hr-teams" className="transition hover:text-white">HR teams</a>
+              <span className="text-slate-700">·</span>
+              <a href="/electronic-signature-for-cleaning-services" className="transition hover:text-white">Cleaning services</a>
+              <span className="text-slate-700">·</span>
+              <a href="/electronic-signature-for-landlords" className="transition hover:text-white">Landlords</a>
+              <span className="text-slate-700">·</span>
+              <a href="/electronic-signature-for-freelancers" className="transition hover:text-white">Freelancers</a>
+              <span className="text-slate-700">·</span>
+              <a href="/industries" className="font-semibold transition hover:text-white">All industries</a>
+            </div>
+          )}
 
           {/* Puerta de entrada al grupo de páginas de contadores (DIAN).
               Sin esto el grupo quedaba cerrado sobre sí mismo: sus 25 páginas

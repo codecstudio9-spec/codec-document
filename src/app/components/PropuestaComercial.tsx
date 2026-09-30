@@ -65,7 +65,7 @@ const EJEMPLO_PEDIDO_EN =
   + 'December in Bogotá."';
 
 export function PropuestaComercial({
-  texto, onTexto, language, clientName, clientCompany, projectName, onItems, onCliente,
+  texto, onTexto, language, clientName, clientCompany, projectName, onItems, onCliente, onAutocompletar,
 }: Props) {
   const es = language === 'es';
   const [via, setVia] = useState<Via>('pegar');

@@ -33,6 +33,8 @@ import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
 import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
 import { NECESIDADES_CONTADOR } from '../src/app/data/contador-necesidad-seo-content';
 import { PAGINAS_US } from '../src/app/data/us-intent-seo-content';
+import { INDUSTRIES_HUB, PAGINAS_US_SECTORES } from '../src/app/data/us-industry-seo-content';
+import { hermanasDe } from '../src/app/data/us-intent-seo-content';
 import { CO_FREE_SIGNATURE_CITIES } from '../src/app/data/co-free-signature-city-content';
 import { US_FREE_SIGNATURE_STATES } from '../src/app/data/us-free-signature-state-content';
 
@@ -191,6 +193,8 @@ for (const n of NECESIDADES_CONTADOR) {
 for (const p of PAGINAS_US) {
   add(`/${p.slug}`, p.titleTag, p.metaDescription, 'en', p.fotos[0]);
 }
+// Índice de las treinta páginas por profesión.
+add(INDUSTRIES_HUB.path, INDUSTRIES_HUB.titleTag, INDUSTRIES_HUB.metaDescription, 'en');
 
 // ── Firma digital gratis por ciudad, Colombia (COFreeSignatureLanding.tsx)
 // -- Spanish only (FixedLanguageProvider defaultLanguage="es") ──────────
@@ -215,3 +219,55 @@ for (const s of US_FREE_SIGNATURE_STATES) {
 const outFile = path.join(process.cwd(), 'public', 'seo-manifest.json');
 fs.writeFileSync(outFile, JSON.stringify(manifest), 'utf-8');
 console.log(`seo-manifest.json written with ${Object.keys(manifest).length} routes`);
+
+// ── Contenido estático para el HTML de cada página de Estados Unidos ────
+//
+// El shell de cada ruta llegaba con <div id="root"></div> vacío: el texto
+// sólo existía después de ejecutar JavaScript. Google lo renderiza, pero en
+// una segunda pasada que puede tardar días; Bing y los rastreadores de IA
+// (GPTBot, ClaudeBot, PerplexityBot) casi nunca ejecutan JS y no veían nada.
+// Aquí se genera el MISMO texto que la página muestra, como HTML simple, y
+// generate-seo-shells.mjs lo mete dentro de #root. createRoot() lo sustituye
+// por la página real en cuanto React arranca, así que no es contenido
+// distinto para bots: es lo que cualquier visitante ve antes de que cargue JS.
+//
+// Va a un archivo aparte (no a public/seo-manifest.json) porque no hace
+// falta servirlo: sólo lo lee el paso de build siguiente.
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const enlace = (to: string, label: string) => `<a href="${esc(to)}" style="color:#4338ca">${esc(label)}</a>`;
+const envolver = (html: string) =>
+  `<main style="max-width:760px;margin:0 auto;padding:96px 20px 48px;font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#334155">${html}</main>`;
+
+const bodies: Record<string, string> = {};
+for (const p of PAGINAS_US) {
+  const esSector = p.grupo === 'industry';
+  const partes: string[] = [
+    `<h1 style="color:#0f172a;line-height:1.2">${esc(p.h1)}</h1>`,
+    `<p>${esc(p.intro)}</p>`,
+    `<h2 style="color:#0f172a">${esc(p.problema.titulo)}</h2><p>${esc(p.problema.texto)}</p>`,
+    `<h2 style="color:#0f172a">${esc(esSector ? `How it helps ${(p.audiencia ?? 'your business').toLowerCase()}` : 'What the template covers')}</h2>`,
+    ...p.puntos.map((x) => `<h3 style="color:#0f172a">${esc(x.titulo)}</h3><p>${esc(x.texto)}</p>`),
+    `<h2 style="color:#0f172a">${esc(p.ley.titulo)}</h2><p>${esc(p.ley.texto)}</p>`,
+    `<h2 style="color:#0f172a">${esc(p.caso.titulo)}</h2><p>${esc(p.caso.texto)}</p>`,
+    ...(p.checklist ? [`<h2 style="color:#0f172a">${esc(p.checklist.titulo)}</h2><ul>${p.checklist.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`] : []),
+    `<h2 style="color:#0f172a">Questions people ask about this</h2>`,
+    ...p.faq.map((f) => `<h3 style="color:#0f172a">${esc(f.q)}</h3><p>${esc(f.a)}</p>`),
+  ];
+  if (p.documentos?.length) {
+    partes.push(`<h2 style="color:#0f172a">Documents ${esc((p.audiencia ?? 'businesses').toLowerCase())} send most</h2><ul>${p.documentos.map((d) => `<li>${enlace(d.to, d.label)}</li>`).join('')}</ul>`);
+  }
+  const hermanas = hermanasDe(p.slug, esSector ? 6 : 3);
+  partes.push(`<h2 style="color:#0f172a">${esSector ? 'Also built for' : 'Related documents'}</h2><ul>${hermanas.map((h) => `<li>${enlace(`/${h.slug}`, esSector && h.audiencia ? h.audiencia : h.h1)}</li>`).join('')}</ul>`);
+  if (esSector) partes.push(`<p>${enlace('/industries', 'See every industry we support')}</p>`);
+  partes.push(`<p>${enlace('/', p.cta)}</p>`);
+  bodies[`/${p.slug}`] = envolver(partes.join(''));
+}
+bodies[INDUSTRIES_HUB.path] = envolver([
+  `<h1 style="color:#0f172a;line-height:1.2">${esc(INDUSTRIES_HUB.h1)}</h1>`,
+  `<p>${esc(INDUSTRIES_HUB.intro)}</p>`,
+  `<ul>${PAGINAS_US_SECTORES.map((p) => `<li>${enlace(`/${p.slug}`, p.audiencia ?? p.h1)}: ${esc(p.metaDescription)}</li>`).join('')}</ul>`,
+].join(''));
+
+const bodiesFile = path.join(process.cwd(), '.seo-bodies.json');
+fs.writeFileSync(bodiesFile, JSON.stringify(bodies), 'utf-8');
+console.log(`.seo-bodies.json written with ${Object.keys(bodies).length} static page bodies`);

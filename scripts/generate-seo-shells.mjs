@@ -40,6 +40,10 @@ if (!fs.existsSync(shellPath)) {
 
 const shellHtml = fs.readFileSync(shellPath, 'utf-8');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+// Contenido estático por ruta (ver el final de generate-seo-manifest.mts).
+// Opcional: si falta, los shells salen como antes, con #root vacío.
+const bodiesPath = path.join(root, '.seo-bodies.json');
+const bodies = fs.existsSync(bodiesPath) ? JSON.parse(fs.readFileSync(bodiesPath, 'utf-8')) : {};
 
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -73,7 +77,10 @@ for (const [routePath, { title, description, lang, hero }] of Object.entries(man
     .replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/, `$1${escapedDesc}$2`)
     .replace(/(<meta\s+property="og:url"\s+content=")[^"]*(")/, `$1https://www.codecdocument.com${routePath}$2`)
     .replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/, `$1${escapedTitle}$2`)
-    .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${escapedDesc}$2`);
+    .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/, `$1${escapedDesc}$2`)
+    // Función de reemplazo, no cadena: el HTML generado puede contener «$»
+    // (precios), que en una cadena de reemplazo se interpretaría como patrón.
+    .replace('<div id="root"></div>', () => `<div id="root">${bodies[routePath] ?? ''}</div>`);
 
   const outPath = path.join(distDir, `${routePath.replace(/^\//, '')}.html`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

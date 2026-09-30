@@ -30,9 +30,13 @@ interface StructuredDataProps {
    * yet; never hardcode a number here. See the removed-fabricated-rating
    * note below for why this matters. */
   aggregateRating?: { avgRating: number; reviewCount: number };
+  /** The page's OWN visible FAQ. When passed, it replaces the generic
+   * site-wide FAQPage below: Google requires FAQ markup to match what the
+   * page actually shows, and the generic block is not on landing pages. */
+  faq?: Array<{ q: string; a: string }>;
 }
 
-export function StructuredData({ language = 'en', country, aggregateRating }: StructuredDataProps = {}) {
+export function StructuredData({ language = 'en', country, aggregateRating, faq }: StructuredDataProps = {}) {
   useEffect(() => {
     const isEs = language === 'es';
     const countryName = country ? (isEs ? country.nameEs : country.name) : (isEs ? 'Estados Unidos' : 'United States');
@@ -225,7 +229,17 @@ export function StructuredData({ language = 'en', country, aggregateRating }: St
     // applicable law and duplicate/contradict that page's own real FAQ
     // (rendered via FAQAccordion with the country's actual law citation).
     // Only attach it for the default US/English case.
-    if (!country && !isEs) {
+    if (faq && faq.length > 0) {
+      schemas.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      });
+    } else if (!country && !isEs) {
       const faqSchema = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
@@ -317,7 +331,7 @@ export function StructuredData({ language = 'en', country, aggregateRating }: St
         document.getElementById(`structured-data-${index}`)?.remove();
       });
     };
-  }, [language, country, aggregateRating]);
+  }, [language, country, aggregateRating, faq]);
 
   return null;
 }

@@ -34,7 +34,10 @@ import { PAGINA_US_POR_SLUG, hermanasDe, type PaginaUS } from '../../data/us-int
 function Contenido({ pagina }: { pagina: PaginaUS }) {
   const url = `${SITE_URL}/${pagina.slug}`;
   const [foto1, foto2, foto3] = pagina.fotos;
-  const hermanas = useMemo(() => hermanasDe(pagina.slug), [pagina.slug]);
+  // Las páginas por profesión son treinta: se muestran seis vecinas en vez
+  // de tres para que el grupo quede bien enlazado entre sí.
+  const esSector = pagina.grupo === 'industry';
+  const hermanas = useMemo(() => hermanasDe(pagina.slug, esSector ? 6 : 3), [pagina.slug, esSector]);
 
   // El acordeón habla los dos idiomas aunque esta página sea sólo inglés:
   // se rellenan ambos con el mismo texto en vez de dejar el español vacío,
@@ -44,7 +47,9 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead title={pagina.titleTag} description={pagina.metaDescription} canonicalUrl={url} />
-      <StructuredData />
+      {/* Su propio FAQ, no el genérico del sitio: Google exige que el marcado
+          coincida con lo que la página muestra. */}
+      <StructuredData faq={pagina.faq} />
       <LandingHeader />
 
       {/* ── Hero ────────────────────────────────────────────────────── */}
@@ -128,7 +133,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-5xl">
             <h2 className="mb-10 text-center text-3xl font-black text-slate-900 md:text-4xl">
-              What the template covers
+              {esSector ? `How it helps ${pagina.audiencia?.toLowerCase() ?? 'your business'}` : 'What the template covers'}
             </h2>
             <div className="grid gap-5 md:grid-cols-2">
               {pagina.puntos.map((p) => (
@@ -168,7 +173,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
           <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-indigo-300">
-                What it looks like in practice
+                {esSector ? 'An illustrative example' : 'What it looks like in practice'}
               </span>
               <h2 className="mt-3 text-3xl font-black leading-tight text-white md:text-4xl">
                 {pagina.caso.titulo}
@@ -188,6 +193,27 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
         </div>
       </section>
 
+      {/* ── Qué dejar por escrito (sólo páginas por profesión) ──────── */}
+      {pagina.checklist && (
+        <section className="bg-white py-16 md:py-20">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-3xl">
+              <h2 className="text-center text-3xl font-black text-slate-900 md:text-4xl">
+                {pagina.checklist.titulo}
+              </h2>
+              <ul className="mt-8 space-y-3">
+                {pagina.checklist.items.map((item) => (
+                  <li key={item} className="flex gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-100">
+                    <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
+
       <FAQAccordion
         items={faq}
         heading={
@@ -197,13 +223,38 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
         }
       />
 
+      {/* ── Documentos que usa este público ─────────────────────────── */}
+      {pagina.documentos && pagina.documentos.length > 0 && (
+        <section className="bg-white py-14">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-5xl">
+              <h2 className="mb-6 text-center text-2xl font-black text-slate-900 md:text-3xl">
+                Documents {pagina.audiencia?.toLowerCase() ?? 'businesses'} send most
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                {pagina.documentos.map((d) => (
+                  <Link
+                    key={d.to}
+                    to={d.to}
+                    className="group flex items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3.5 text-sm font-bold text-slate-800 ring-1 ring-slate-100 transition hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200"
+                  >
+                    {d.label}
+                    <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-indigo-600" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Enlazado interno del grupo ──────────────────────────────── */}
       {hermanas.length > 0 && (
         <section className="bg-slate-50 py-14">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-5xl">
               <h2 className="mb-6 text-center text-xl font-black text-slate-900">
-                Related documents
+                {esSector ? 'Also built for' : 'Related documents'}
               </h2>
               <div className="grid gap-4 md:grid-cols-3">
                 {hermanas.map((h) => (
@@ -214,7 +265,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
                   >
                     <FileText className="mb-2 size-4 text-indigo-500" />
                     <p className="text-sm font-bold text-slate-800 group-hover:text-indigo-700">
-                      {h.h1}
+                      {esSector && h.audiencia ? h.audiencia : h.h1}
                     </p>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
                       {h.metaDescription}
@@ -222,6 +273,13 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
                   </Link>
                 ))}
               </div>
+              {esSector && (
+                <p className="mt-6 text-center">
+                  <Link to="/industries" className="text-sm font-bold text-indigo-600 hover:text-indigo-800">
+                    See every industry we support →
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         </section>
