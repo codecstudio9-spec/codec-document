@@ -23,7 +23,9 @@ const urls = rutas.length
   ? rutas.map((r) => `https://${HOST}${r.startsWith('/') ? r : `/${r}`}`)
   : [...fs.readFileSync(path.join(process.cwd(), 'public', 'sitemap.xml'), 'utf-8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
-const res = await fetch('https://api.indexnow.org/indexnow', {
+// Endpoint de Bing: los avisos se comparten con todos los buscadores de
+// IndexNow, y api.indexnow.org rechazaba (403) claves recién publicadas.
+const res = await fetch('https://www.bing.com/indexnow', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json; charset=utf-8' },
   body: JSON.stringify({ host: HOST, key: KEY, keyLocation: `https://${HOST}/${KEY}.txt`, urlList: urls }),
