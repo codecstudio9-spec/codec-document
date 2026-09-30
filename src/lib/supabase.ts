@@ -22,5 +22,9 @@ export const publicSupabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false,
+    // Clave propia: con la misma que el cliente principal, los dos
+    // compartían el almacenamiento de la sesión (aviso «Multiple
+    // GoTrueClient instances» en cada página) y podían pisarse.
+    storageKey: 'sb-public-anon',
   },
 });
