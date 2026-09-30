@@ -50,7 +50,7 @@ export interface DocxTemplate {
  * Deliberately excludes userId/createdAt (irrelevant to a guest filling it in). */
 export type PublicDocxTemplate = Omit<DocxTemplate, 'userId' | 'createdAt'>;
 
-const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
+export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
   standardSignature: true,
   requireSelfie: false,
   requireIdPhoto: false,

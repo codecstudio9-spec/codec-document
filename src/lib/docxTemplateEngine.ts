@@ -153,6 +153,88 @@ export function detectFields(docxArrayBuffer: ArrayBuffer): DetectedField[] {
   return [...seen.values()];
 }
 
+/** Un párrafo que es el título de un bloque del documento («DATOS DEL
+ *  ESTUDIANTE», «Referencia familiar»): corto, sin variables, sin terminar en
+ *  dos puntos (eso es una etiqueta de campo), y marcado como título por estilo,
+ *  por estar entero en negrita o por estar en mayúsculas. */
+function esTituloDeSeccion(paragraphXml: string, texto: string): boolean {
+  const t = texto.trim();
+  if (t.length < 3 || t.length > 70) return false;
+  if (/\{\{/.test(t)) return false;
+  if (/[:：]$/.test(t)) return false;
+  const palabras = t.split(/\s+/).length;
+  if (palabras > 9) return false;
+  if (/<w:pStyle\s+w:val="(Heading|Ttulo|Titulo|Título|Title)\d*"/i.test(paragraphXml)) return true;
+  const letras = t.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü]/g, '');
+  if (letras.length >= 4 && letras === letras.toUpperCase()) return true;
+  const runs = paragraphXml.match(/<w:r[ >][\s\S]*?<\/w:r>/g) ?? [];
+  const conTexto = runs.filter((r) => /<w:t[^>]*>[^<]*\S[^<]*<\/w:t>/.test(r));
+  return conTexto.length > 0 && conTexto.every((r) => /<w:b(\s+w:val="(1|true|on)")?\s*\/>/.test(r));
+}
+
+/** «DATOS DEL ESTUDIANTE» → «Datos del estudiante». Un título que ya viene
+ *  en mayúsculas y minúsculas se deja como está. */
+function tituloLegible(t: string): string {
+  const limpio = t.trim().replace(/^[\d.)\-–\s]+(?=\D)/, '').replace(/\s+/g, ' ');
+  if (limpio !== limpio.toUpperCase()) return limpio;
+  const bajo = limpio.toLowerCase();
+  return bajo.charAt(0).toUpperCase() + bajo.slice(1);
+}
+
+/**
+ * Para cada variable, el título del bloque del documento donde aparece por
+ * primera vez.
+ *
+ * Existe para las plantillas sin secciones configuradas a mano: el Word ya
+ * está dividido en bloques («Datos del estudiante», «Datos del acudiente»,
+ * «Referencia familiar»…) y el formulario salía como una lista plana donde
+ * «Celular» y «Email» se repetían sin decir de quién eran. Al dictar, ni la
+ * persona ni la IA sabían a qué bloque correspondía cada dato.
+ */
+export function inferSectionsFromDocx(docxArrayBuffer: ArrayBuffer): Map<string, string> {
+  const zip = new PizZip(docxArrayBuffer);
+  const xml = zip.file('word/document.xml')?.asText() ?? '';
+  const porClave = new Map<string, string>();
+  let actual = '';
+  for (const paragraphXml of extractParagraphs(xml)) {
+    const flat = flattenParagraphText(paragraphXml);
+    if (esTituloDeSeccion(paragraphXml, flat)) {
+      actual = tituloLegible(flat);
+      continue;
+    }
+    const re = new RegExp(TAG_RE);
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(flat))) {
+      const { key } = parseTag(match[1]);
+      if (key && actual && !porClave.has(key)) porClave.set(key, actual);
+    }
+  }
+  return porClave;
+}
+
+/**
+ * Inserta en la lista de campos los títulos de sección sacados del documento,
+ * respetando el orden que ya tienen los campos. No toca una plantilla que ya
+ * tenga secciones puestas a mano (esas mandan), ni un documento donde no se
+ * encontraron al menos dos bloques distintos (no habría nada que agrupar).
+ */
+export function withInferredSections(fields: DetectedField[], secciones: Map<string, string>): DetectedField[] {
+  if (fields.some((f) => f.type === 'section')) return fields;
+  const distintas = new Set(fields.map((f) => secciones.get(f.key)).filter(Boolean));
+  if (distintas.size < 2) return fields;
+  const out: DetectedField[] = [];
+  let anterior: string | undefined;
+  fields.forEach((f, i) => {
+    const s = secciones.get(f.key);
+    if (s && s !== anterior) {
+      out.push({ key: `__seccion_auto_${i}`, label: s, type: 'section', required: false });
+      anterior = s;
+    }
+    out.push(f);
+  });
+  return out;
+}
+
 /**
  * Substitutes every {{variable}} in the .docx with its value from `data`
  * (keyed by field key) and returns the merged .docx as bytes. Docxtemplater

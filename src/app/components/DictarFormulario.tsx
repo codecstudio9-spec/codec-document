@@ -19,7 +19,8 @@
  * completo.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { Mic, Square, Sparkles, Loader2, X, Check, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDictation, unirDictado } from '../hooks/use-dictation';
@@ -51,20 +52,51 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
     onError: (m) => toast.error(m),
   });
 
-  const etiqueta = (id: string) => campos.find((c) => c.id === id)?.label ?? id;
+  // Si la etiqueta se repite («Celular» en dos secciones), se le añade la
+  // sección para saber de quién es el dato.
+  const etiqueta = (id: string) => {
+    const c = campos.find((x) => x.id === id);
+    if (!c) return id;
+    const repetida = campos.filter((x) => x.label.trim().toLowerCase() === c.label.trim().toLowerCase()).length > 1;
+    return repetida && c.section ? `${c.label} · ${c.section}` : c.label;
+  };
 
   const yaTiene = (id: string) => {
     const v = datosActuales[id];
     return v !== undefined && v !== '' && v !== false;
   };
 
-  // Obligatorios primero, y dentro de cada grupo los que faltan antes que los
-  // que ya están: lo que hay que decir queda arriba, donde se lee.
-  const ordenados = [...campos].sort((a, b) => {
-    const peso = (c: typeof a) => (yaTiene(c.id) ? 2 : 0) + (c.required ? 0 : 1);
-    return peso(a) - peso(b);
-  });
+  // En el MISMO orden y con las MISMAS secciones que el documento. Antes se
+  // reordenaba por obligatorios y se perdían las secciones: con «Celular» y
+  // «Email» repetidos en varios bloques, quien dictaba no sabía qué decir en
+  // cada parte. Siguiendo el documento, se dicta de arriba abajo sin perderse.
+  const grupos: Array<{ seccion: string; campos: DocumentField[] }> = [];
+  for (const c of campos) {
+    const seccion = c.section ?? '';
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.seccion === seccion) ultimo.campos.push(c);
+    else grupos.push({ seccion, campos: [c] });
+  }
+  const haySecciones = grupos.some((g) => g.seccion);
   const porDecir = campos.filter((c) => !yaTiene(c.id));
+
+  // La asistente explica CÓMO dictar este formulario en concreto: por qué
+  // sección empezar y qué hacer con lo que no aplica. Una sola vez al abrir.
+  const { speak } = useVoiceSpeak();
+  useEffect(() => {
+    const primera = grupos.find((g) => g.seccion);
+    const nombres = grupos.filter((g) => g.seccion).map((g) => g.seccion);
+    speak(haySecciones
+      ? {
+        es: `Este formulario tiene ${nombres.length} secciones: ${nombres.slice(0, 6).join(', ')}. Díctalo en ese orden. Empieza diciendo «${primera?.seccion}» y luego sus datos, por ejemplo: ${primera?.campos.slice(0, 3).map((c) => c.label.toLowerCase()).join(', ')}. Cuando algo no aplique, di «no aplica» y lo dejo como N A. Al terminar, pulsa rellenar campos.`,
+        en: `This form has ${nombres.length} sections: ${nombres.slice(0, 6).join(', ')}. Dictate them in that order. Start by saying "${primera?.seccion}" and then its details, for example: ${primera?.campos.slice(0, 3).map((c) => c.label.toLowerCase()).join(', ')}. When something does not apply, say "not applicable" and I will mark it N A. When you finish, press fill the fields.`,
+      }
+      : {
+        es: 'Pulsa hablar y cuéntame los datos diciendo el nombre de cada uno, por ejemplo: el celular es tres uno uno… Cuando algo no aplique, di «no aplica» y lo dejo como N A. Al terminar, pulsa rellenar campos.',
+        en: 'Press speak and tell me the details, naming each one, for example: the phone number is… When something does not apply, say "not applicable" and I will mark it N A. When you finish, press fill the fields.',
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const analizar = async () => {
     const limpio = texto.trim();
@@ -85,6 +117,17 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
       } else {
         setPropuesta(r.valores);
         setDescartados(r.descartados);
+        // Lo que falta, dicho en voz alta: es lo que hay que completar antes
+        // de poder continuar, y leerlo en una lista larga cuesta más.
+        const faltan = campos.filter((c) => {
+          if (!c.required) return false;
+          const v = r.valores[c.id] ?? datosActuales[c.id];
+          return v === undefined || v === '' || v === false;
+        });
+        const nombresFaltan = faltan.slice(0, 5).map((c) => (c.section ? `${c.label.toLowerCase()} de ${c.section.toLowerCase()}` : c.label.toLowerCase()));
+        speak(faltan.length === 0
+          ? { es: `Listo, entendí ${cuantos} datos y no falta ningún obligatorio. Revísalos y pulsa aplicar.`, en: `Done, I understood ${cuantos} details and no required field is missing. Check them and press apply.` }
+          : { es: `Entendí ${cuantos} datos. Faltan ${faltan.length} obligatorios: ${nombresFaltan.join(', ')}${faltan.length > 5 ? ', y otros' : ''}. Puedes volver y dictarlos, o escribirlos en el formulario.`, en: `I understood ${cuantos} details. ${faltan.length} required fields are missing: ${nombresFaltan.join(', ')}${faltan.length > 5 ? ', and others' : ''}. You can go back and dictate them, or type them in the form.` });
       }
     } catch (e) {
       if (e instanceof AiReviewUpgradeRequiredError) toast.error(e.message);
@@ -176,31 +219,47 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                     ? `Qué puedes decir (${porDecir.length} sin llenar de ${campos.length})`
                     : `What you can say (${porDecir.length} still empty of ${campos.length})`}
                 </summary>
-                <div className="max-h-44 overflow-y-auto border-t border-slate-100 px-3 py-2.5">
-                  <ul className="flex flex-wrap gap-1.5">
-                    {ordenados.map((c) => {
-                      const lleno = yaTiene(c.id);
-                      return (
-                        <li
-                          key={c.id}
-                          className={`rounded-lg px-2 py-1 text-[11px] leading-tight ${
-                            lleno
-                              ? 'bg-slate-50 text-slate-400 line-through'
-                              : c.required
-                                ? 'bg-blue-50 font-semibold text-blue-800'
-                                : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {c.label}
-                          {c.required && !lleno && <span className="ml-0.5 text-red-500">*</span>}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                <div className="max-h-64 overflow-y-auto border-t border-slate-100 px-3 py-2.5">
+                  <div className="space-y-2.5">
+                    {grupos.map((g, gi) => (
+                      <div key={`${g.seccion}-${gi}`}>
+                        {g.seccion && (
+                          <p className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-indigo-600">
+                            <span className="flex size-4 items-center justify-center rounded-full bg-indigo-100 text-[9px] text-indigo-700">{gi + 1}</span>
+                            {g.seccion}
+                          </p>
+                        )}
+                        <ul className="flex flex-wrap gap-1.5">
+                          {g.campos.map((c) => {
+                            const lleno = yaTiene(c.id);
+                            return (
+                              <li
+                                key={c.id}
+                                className={`rounded-lg px-2 py-1 text-[11px] leading-tight ${
+                                  lleno
+                                    ? 'bg-slate-50 text-slate-400 line-through'
+                                    : c.required
+                                      ? 'bg-blue-50 font-semibold text-blue-800'
+                                      : 'bg-slate-100 text-slate-600'
+                                }`}
+                              >
+                                {c.label}
+                                {c.required && !lleno && <span className="ml-0.5 text-red-500">*</span>}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2.5 text-[11px] leading-relaxed text-slate-500">
                     {es
-                      ? 'No hace falta decirlos todos ni en orden. Lo que no digas se queda vacío y lo escribes a mano.'
-                      : 'You do not have to say them all, or in order. Anything you skip stays empty and you type it in.'}
+                      ? (haySecciones
+                        ? 'Dicta sección por sección, de arriba abajo: di el nombre de la sección («datos del acudiente…») y luego sus datos. Si un dato no aplica, di «no aplica» y quedará como N/A.'
+                        : 'Di cada dato con su nombre («el celular es…»). Si un dato no aplica, di «no aplica» y quedará como N/A.')
+                      : (haySecciones
+                        ? 'Dictate section by section, top to bottom: say the section name ("guardian details…") and then its data. If something does not apply, say "not applicable" and it will be filled as N/A.'
+                        : 'Say each detail with its name ("the phone is…"). If something does not apply, say "not applicable" and it will be filled as N/A.')}
                   </p>
                 </div>
               </details>
@@ -225,15 +284,30 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                   ? `Esto es lo que entendí. Se rellenarán ${Object.keys(propuesta).length} campo(s):`
                   : `This is what it understood. ${Object.keys(propuesta).length} field(s) will be filled:`}
               </p>
-              <div className="space-y-1.5">
-                {Object.entries(propuesta).map(([id, v]) => (
-                  <div key={id} className="rounded-xl bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{etiqueta(id)}</p>
-                    <p className="mt-0.5 break-words text-sm text-slate-800">
-                      {typeof v === 'boolean' ? (v ? (es ? 'Sí' : 'Yes') : 'No') : String(v)}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {grupos
+                  .map((g) => ({ ...g, campos: g.campos.filter((c) => c.id in propuesta) }))
+                  .filter((g) => g.campos.length > 0)
+                  .map((g, gi) => (
+                    <div key={`${g.seccion}-${gi}`}>
+                      {g.seccion && (
+                        <p className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-indigo-600">{g.seccion}</p>
+                      )}
+                      <div className="space-y-1.5">
+                        {g.campos.map((c) => {
+                          const v = propuesta[c.id];
+                          return (
+                            <div key={c.id} className="rounded-xl bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{c.label}</p>
+                              <p className={`mt-0.5 break-words text-sm ${v === 'N/A' ? 'font-semibold text-slate-500' : 'text-slate-800'}`}>
+                                {typeof v === 'boolean' ? (v ? (es ? 'Sí' : 'Yes') : 'No') : String(v)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
               </div>
 
               {sobrescribe.length > 0 && (
@@ -265,7 +339,7 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
                     {es ? 'Todavía faltan (obligatorios)' : 'Still missing (required)'}
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                    {faltanObligatorios.map((c) => c.label).join(' · ')}
+                    {faltanObligatorios.map((c) => etiqueta(c.id)).join(' · ')}
                   </p>
                   <p className="mt-1.5 text-[11px] text-slate-400">
                     {es

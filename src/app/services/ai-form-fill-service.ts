@@ -36,6 +36,9 @@ export async function rellenarCamposDictando(
         type: c.type,
         options: c.options,
         required: c.required,
+        // La sección distingue campos con la misma etiqueta («Celular» del
+        // estudiante y de la referencia).
+        section: c.section,
       })),
     },
   });

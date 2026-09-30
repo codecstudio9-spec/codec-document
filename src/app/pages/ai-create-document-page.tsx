@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, FileText, Loader, Download, PenLine, RotateCcw, Lock, X, UserPlus } from 'lucide-react';
+import { ArrowLeft, FileText, Loader, Download, PenLine, RotateCcw, Lock, X, UserPlus, Mic, Square, Upload, FolderPlus, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
@@ -12,6 +12,10 @@ import { triggerDownload } from '../utils/download';
 import { setPendingSignFile } from '../utils/pending-sign-file';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import type { DocumentBranding } from '../types/document';
+import { useDictation, unirDictado } from '../hooks/use-dictation';
+import { textoADocx, contarCampos } from '../utils/text-to-docx-template';
+import { detectFields } from '../../lib/docxTemplateEngine';
+import { createDocxTemplate, uploadDocxTemplateFile, DEFAULT_SECURITY_CONFIG } from '../services/docx-template-service';
 
 /**
  * "Crea un documento nuevo" — paste text drafted elsewhere (Word, an
@@ -34,7 +38,17 @@ export function AiCreateDocumentPage() {
   const [signers, setSigners] = useState<DocumentSigner[]>([]);
   const [formatted, setFormatted] = useState<FormattedDocument | null>(null);
   const [branding, setBranding] = useState<DocumentBranding>({});
-  const [exporting, setExporting] = useState<'download' | 'sign' | null>(null);
+  const [exporting, setExporting] = useState<'download' | 'sign' | 'template' | null>(null);
+  const [importando, setImportando] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Dictar el texto en vez de pegarlo: el mismo reconocimiento de voz que usa
+  // el resto de la plataforma, que añade lo dicho al final de lo escrito.
+  const { escuchando, parcial, alternar: alternarDictado, detener: detenerDictado, soportado: dictadoSoportado } = useDictation({
+    language,
+    onTexto: (trozo) => setRawText((prev) => unirDictado(prev, trozo)),
+    onError: (m) => toast.error(m),
+  });
   const [error, setError] = useState('');
 
   const namedSigners = signers.filter((s) => s.name.trim());
@@ -48,8 +62,8 @@ export function AiCreateDocumentPage() {
     if (!session) return;
     if (formatted) return;
     speak({
-      es: 'Pega aquí el texto completo de tu documento, sin recortarlo. Si quieres, agrega el nombre, número de documento y correo de quienes van a firmar. Con el correo, generamos el enlace de firma de cada uno automáticamente al enviar a firmar. Si no agregas a nadie, dejamos un espacio de firma en blanco. Cuando estés listo, toca crear documento.',
-      en: 'Paste the complete text of your document here, without cutting it short. If you want, add the name, ID number, and email of everyone who will sign. With their email, we automatically generate each one\'s signing link when you send this to sign. If you don\'t add anyone, we leave a blank signature space. When you\'re ready, tap create document.',
+      es: 'Aquí conviertes cualquier texto en un documento con el membrete de tu empresa. Tienes tres formas de traerlo: pegarlo, dictarlo con el botón «Dictar el texto», o importar un Word. Si lo vas a reutilizar, escribe entre corchetes donde va cada dato, por ejemplo corchete nombre del cliente, o deja una raya larga: al guardarlo como plantilla, cada uno se vuelve un campo que se llena o se dicta, y los títulos en mayúsculas se vuelven secciones. Si quieres, agrega quién firma, con su correo, y generamos su enlace de firma. Cuando estés listo, toca crear documento.',
+      en: 'Here you turn any text into a document with your company letterhead. You can bring it in three ways: paste it, dictate it with the "Dictate the text" button, or import a Word file. If you will reuse it, write the detail in brackets where it goes, for example bracket client name, or leave a long line: when you save it as a template, each one becomes a field you can fill in or dictate, and titles in capitals become sections. If you like, add who signs, with their email, and we create their signing link. When you are ready, tap create document.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, Boolean(formatted)]);
@@ -57,8 +71,8 @@ export function AiCreateDocumentPage() {
   useEffect(() => {
     if (!formatted) return;
     speak({
-      es: 'Tu documento está listo. Revísalo y usa los botones de arriba para descargarlo o enviarlo a firmar.',
-      en: 'Your document is ready. Review it and use the buttons above to download it or send it for signature.',
+      es: 'Tu documento está listo. Revísalo. Arriba puedes descargarlo, enviarlo a firmar, o guardarlo como plantilla para volver a usarlo desde Mis plantillas, con formulario, dictado y enlace público.',
+      en: 'Your document is ready. Review it. Above you can download it, send it for signature, or save it as a template to reuse it from My Templates, with a form, dictation and a public link.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Boolean(formatted)]);
@@ -77,7 +91,66 @@ export function AiCreateDocumentPage() {
     );
   }
 
+  /** Trae el texto de un Word o un .txt, para no tener que copiarlo y pegarlo. */
+  const importarArchivo = async (file: File) => {
+    setImportando(true);
+    try {
+      let texto = '';
+      if (/\.docx$/i.test(file.name)) {
+        const mammoth = await import('mammoth');
+        texto = (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+      } else if (/\.(txt|md)$/i.test(file.name) || file.type.startsWith('text/')) {
+        texto = await file.text();
+      } else {
+        throw new Error(language === 'en' ? 'Use a Word (.docx) or text (.txt) file.' : 'Usa un archivo de Word (.docx) o de texto (.txt).');
+      }
+      if (!texto.trim()) throw new Error(language === 'en' ? 'The file has no text.' : 'El archivo no tiene texto.');
+      setRawText(texto.trim());
+      toast.success(language === 'en' ? 'Text imported. Review it and create the document.' : 'Texto importado. Revísalo y crea el documento.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : (language === 'en' ? 'Could not read the file' : 'No se pudo leer el archivo'));
+    } finally {
+      setImportando(false);
+    }
+  };
+
+  /**
+   * Guarda el documento como plantilla en «Mis plantillas»: se arma un Word
+   * con los huecos ([Nombre], ____) convertidos en campos, y se abre en el
+   * editor de plantillas para revisar los campos, las secciones y las firmas.
+   */
+  const guardarComoPlantilla = async () => {
+    if (!user?.id || !rawText.trim()) return;
+    setExporting('template');
+    try {
+      const buf = textoADocx(rawText);
+      const nombre = (formatted?.title || (language === 'en' ? 'New document' : 'Documento nuevo')).slice(0, 120);
+      const archivo = new File([buf], `${nombre.replace(/[\\/:*?"<>|]+/g, '-').slice(0, 60)}.docx`, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+      const url = await uploadDocxTemplateFile(user.id, archivo);
+      const creada = await createDocxTemplate({
+        userId: user.id,
+        name: nombre,
+        docxFileUrl: url,
+        detectedFields: detectFields(buf),
+        signers: [{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }],
+        securityConfig: DEFAULT_SECURITY_CONFIG,
+        instructionsEn: '',
+        instructionsEs: '',
+      });
+      toast.success(language === 'en' ? 'Saved in My Templates' : 'Guardado en Mis plantillas');
+      navigate(`/my-templates/${creada.id}/edit-docx`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : (language === 'en' ? 'Could not save the template' : 'No se pudo guardar la plantilla'));
+      setExporting(null);
+    }
+  };
+
+  const camposDetectados = contarCampos(rawText);
+
   const handleGenerate = () => {
+    detenerDictado();
     if (!rawText.trim()) return;
     setError('');
     try {
@@ -177,8 +250,40 @@ export function AiCreateDocumentPage() {
 
       {!formatted ? (
         <div className="mt-6">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {dictadoSoportado && (
+              <button
+                type="button"
+                onClick={alternarDictado}
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                  escuchando ? 'bg-red-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                }`}
+              >
+                {escuchando ? <Square className="size-3.5 fill-current" /> : <Mic className="size-3.5" />}
+                {escuchando
+                  ? (language === 'en' ? 'Stop dictating' : 'Detener dictado')
+                  : (language === 'en' ? 'Dictate the text' : 'Dictar el texto')}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={importando}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {importando ? <Loader className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+              {language === 'en' ? 'Import Word or .txt' : 'Importar Word o .txt'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".docx,.txt,.md,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void importarArchivo(f); e.target.value = ''; }}
+            />
+          </div>
           <textarea
-            value={rawText}
+            value={rawText + (parcial ? (rawText ? ' ' : '') + parcial : '')}
             onChange={(e) => setRawText(e.target.value)}
             placeholder={language === 'en'
               ? 'Paste your document text here…'
@@ -187,6 +292,23 @@ export function AiCreateDocumentPage() {
             className="w-full rounded-2xl border border-slate-200 p-4 text-sm text-slate-800 outline-none focus:border-indigo-400"
           />
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+          {/* Cómo convertirlo después en plantilla. Los huecos que ya traen
+              los textos de Word o de una IA ([Nombre], ____) son justo los
+              campos del formulario: basta con dejarlos. */}
+          <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
+            <Lightbulb className="mt-0.5 size-3.5 shrink-0" />
+            <span>
+              {language === 'en'
+                ? <>Want to reuse it? Write <b>[Client name]</b> or <b>______</b> where each detail goes. When you save it as a template, each one becomes a field you can fill in or dictate, and titles in CAPITALS become form sections.</>
+                : <>¿Lo vas a reutilizar? Escribe <b>[Nombre del cliente]</b> o <b>______</b> donde va cada dato. Al guardarlo como plantilla, cada uno se vuelve un campo que se llena o se dicta, y los títulos en MAYÚSCULAS se vuelven secciones del formulario.</>}
+              {camposDetectados > 0 && (
+                <b className="ml-1">
+                  {language === 'en' ? `${camposDetectados} field(s) detected.` : `${camposDetectados} campo(s) detectado(s).`}
+                </b>
+              )}
+            </span>
+          </div>
 
           <div className="mt-5 rounded-2xl border border-slate-200 p-4">
             <p className="text-sm font-bold text-slate-800">
@@ -264,6 +386,17 @@ export function AiCreateDocumentPage() {
               <RotateCcw className="size-3.5" /> {language === 'en' ? 'Edit text' : 'Editar texto'}
             </button>
             <div className="flex-1" />
+            <button
+              type="button"
+              disabled={exporting !== null}
+              onClick={() => void guardarComoPlantilla()}
+              title={language === 'en' ? 'Reuse it from My Templates, with a form, dictation and a public link' : 'Reutilízalo desde Mis plantillas, con formulario, dictado y enlace público'}
+              className="flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+            >
+              {exporting === 'template' ? <Loader className="size-3.5 animate-spin" /> : <FolderPlus className="size-3.5" />}
+              {language === 'en' ? 'Save as template' : 'Guardar como plantilla'}
+              {camposDetectados > 0 && <span className="rounded-full bg-indigo-600 px-1.5 text-[10px] text-white">{camposDetectados}</span>}
+            </button>
             <button
               type="button"
               disabled={exporting !== null}

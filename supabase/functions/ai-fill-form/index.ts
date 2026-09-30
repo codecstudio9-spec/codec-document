@@ -36,7 +36,7 @@ const ADMIN_EMAILS = ['douglastabordasanchez@gmail.com'];
 const AI_MODEL = 'openai/gpt-oss-120b';
 
 const MAX_TRANSCRIPT_CHARS = 6000;
-const MAX_CAMPOS = 60;
+const MAX_CAMPOS = 120;
 const MAX_VALOR_CHARS = 2000;
 
 interface CampoEntrada {
@@ -45,7 +45,16 @@ interface CampoEntrada {
   type: string;
   options?: string[];
   required?: boolean;
+  /** Sección del formulario («Datos del estudiante»). Distingue campos con la
+   *  misma etiqueta en bloques distintos. */
+  section?: string;
 }
+
+/** Lo que dice alguien cuando un dato no corresponde. Sólo si aparece algo así
+ *  en lo dictado se acepta un «N/A» del modelo: sin esta comprobación, el
+ *  modelo podría rellenar con N/A cualquier campo del que no se habló. */
+const DIJO_NO_APLICA = /\b(no\s+aplica|no\s+aplican|no\s+tiene|no\s+tengo|no\s+hay|ninguno|ninguna|n\s*\/\s*a|not\s+applicable|does\s+not\s+apply|doesn'?t\s+apply|none)\b/i;
+const VALOR_NA = 'N/A';
 
 function corsHeaders(origin: string | null) {
   return {
@@ -62,13 +71,22 @@ const responder = (cuerpo: unknown, origin: string | null, status = 200) =>
 function construirPrompt(campos: CampoEntrada[], transcripcion: string, language: 'en' | 'es', hoy: string): string {
   const idioma = language === 'en' ? 'English' : 'Spanish';
 
-  const descripcion = campos.map((c) => {
-    const partes = [`- "${c.id}" (${c.type}): ${c.label}`];
-    if (c.options?.length) {
-      partes.push(`  allowed values (copy one EXACTLY): ${c.options.map((o) => JSON.stringify(o)).join(' | ')}`);
+  // Agrupados por sección, en el orden del documento. La persona suele dictar
+  // bloque por bloque («los datos del acudiente son…»), y con la sección
+  // delante el modelo sabe a qué «Celular» o «Email» va cada dato.
+  let seccionActual: string | undefined;
+  const lineas: string[] = [];
+  for (const c of campos) {
+    if ((c.section ?? '') !== (seccionActual ?? '')) {
+      seccionActual = c.section;
+      lineas.push(c.section ? `\nSECTION "${c.section}":` : '\nOTHER FIELDS:');
     }
-    return partes.join('\n');
-  }).join('\n');
+    lineas.push(`- "${c.id}" (${c.type}): ${c.label}`);
+    if (c.options?.length) {
+      lineas.push(`  allowed values (copy one EXACTLY): ${c.options.map((o) => JSON.stringify(o)).join(' | ')}`);
+    }
+  }
+  const descripcion = lineas.join('\n').trim();
 
   return [
     `You extract form values from a person speaking out loud in ${idioma}. Today is ${hoy}.`,
@@ -93,12 +111,18 @@ function construirPrompt(campos: CampoEntrada[], transcripcion: string, language
     `9. A field asking for the NAME of a company, employer or organisation takes the name as spoken ("Centro de Idiomas Universal"). Never put a tax id, NIT, registration number or any bare number there, even if the person said it right next to the name.`,
     `10. A field asking HOW LONG someone has worked somewhere takes a duration ("6 meses", "2 años y 4 meses"). Never a date, and never an ID number.`,
     `11. Do not reuse the same number in two different fields. An ID number belongs only in the ID field; a phone number only in the phone field. If you are unsure which field a number belongs to, omit it.`,
+    `12. Fields are grouped by SECTION, in document order. Several sections can contain fields with the same label (e.g. "Celular" for the student and "Celular" for the family reference). Use what the person said about WHO or WHICH PART the data belongs to (e.g. "la referencia familiar es…", "los datos del acudiente…", "de la oficina…") to put each value in the field of the right section. If the person dictates in order, data follows the order of the sections.`,
+    `13. If the person explicitly says a field does not apply ("no aplica", "no tiene", "ninguno", "not applicable"), set that field to exactly "${VALOR_NA}" — for text fields, and for fields with allowed values only if one of them means not applicable. Never use "${VALOR_NA}" for a field the person did not mention. When they say a whole group does not apply ("todo lo de la oficina no aplica"), set every field of that group to "${VALOR_NA}".`,
+    `14. Email addresses are spoken: join the words, lowercase, turn "arroba" into "@" and "punto" into ".", and remove spaces ("douglas taborda sanchez arroba gmail punto com" → "douglastabordasanchez@gmail.com"). Remove accents inside an email.`,
+    `15. Phone numbers: digits only, no spaces ("311 272 6359" → "3112726359").`,
+    `16. A text field whose label is a date ("Fecha", "Date", "Fecha de nacimiento") takes the date written as DD/MM/YYYY. "Today", "hoy", "la fecha de hoy" means ${hoy}.`,
+    `17. Before answering, go through EVERY section and EVERY field in order and check whether the person said something for it. Do not stop after the first sections.`,
   ].join('\n');
 }
 
 /** Deja pasar sólo lo que encaja con el campo que dice ser. Devuelve el valor
  *  ya normalizado, o null si hay que descartarlo. */
-function validarValor(campo: CampoEntrada, crudo: unknown): string | number | boolean | null {
+function validarValor(campo: CampoEntrada, crudo: unknown, dijoNoAplica: boolean): string | number | boolean | null {
   if (crudo === null || crudo === undefined) return null;
 
   if (campo.type === 'checkbox') {
@@ -112,8 +136,19 @@ function validarValor(campo: CampoEntrada, crudo: unknown): string | number | bo
   const texto = String(crudo).trim();
   if (!texto || texto.length > MAX_VALOR_CHARS) return null;
 
+  // «N/A» sólo vale si la persona dijo de verdad que algo no aplica (lo
+  // comprueba quien llama con DIJO_NO_APLICA) y el campo admite texto libre o
+  // tiene una opción que signifique «no aplica».
+  if (/^(n\/?a|no aplica|not applicable)$/i.test(texto)) {
+    if (!dijoNoAplica) return null;
+    if (campo.options?.length) {
+      return campo.options.find((o) => /^(n\/?a|no aplica|ninguno|ninguna|not applicable|none)$/i.test(o.trim())) ?? null;
+    }
+    if (['date', 'number', 'currency', 'email', 'checkbox'].includes(campo.type)) return null;
+    return VALOR_NA;
+  }
   // Un modelo que no sabe algo a veces devuelve el hueco en vez de callarse.
-  if (/^(n\/?a|none|null|undefined|unknown|desconocido|no especificado|no dice|-{1,3})$/i.test(texto)) return null;
+  if (/^(none|null|undefined|unknown|desconocido|no especificado|no dice|-{1,3})$/i.test(texto)) return null;
 
   if (campo.options?.length) {
     const exacta = campo.options.find((o) => o === texto);
@@ -280,6 +315,7 @@ Deno.serve(async (req) => {
     }
 
     const porId = new Map(campos.map((c) => [c.id, c]));
+    const dijoNoAplica = DIJO_NO_APLICA.test(transcripcion);
     const valores: Record<string, string | number | boolean> = {};
     const descartados: string[] = [];
 
@@ -287,7 +323,7 @@ Deno.serve(async (req) => {
       const campo = porId.get(id);
       // Un id que no estaba en la lista es una alucinación, no un campo.
       if (!campo) { descartados.push(id); continue; }
-      const valor = validarValor(campo, crudo);
+      const valor = validarValor(campo, crudo, dijoNoAplica);
       if (valor === null) { descartados.push(id); continue; }
       valores[id] = valor;
     }

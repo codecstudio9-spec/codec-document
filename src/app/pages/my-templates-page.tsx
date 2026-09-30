@@ -4,6 +4,7 @@ import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { useVoiceSpeak } from '../hooks/useVoiceGuide';
 import { listTemplates, deleteTemplate, type CustomTemplate } from '../services/template-service';
 import {
   listDocxTemplates, deleteDocxTemplate, listPublicExampleTemplates, cloneExampleTemplate,
@@ -18,6 +19,15 @@ import { SITE_URL } from '../config/site';
 export function MyTemplatesPage() {
   const { user } = useAuth();
   const { language } = useLanguage();
+  const { speak } = useVoiceSpeak();
+  // Presentación de la pantalla: qué se puede hacer aquí y por dónde empezar.
+  useEffect(() => {
+    speak({
+      es: 'Estas son tus plantillas: documentos que llenas una vez y reutilizas siempre. Con el botón «Nueva plantilla» puedes subir un Word con campos entre llaves dobles, marcar casillas sobre un PDF, o crear un documento nuevo desde texto pegado, dictado o importado. Si prefieres empezar rápido, abajo tienes plantillas de ejemplo por sector: toca «Usar esta plantilla» y te queda una copia tuya para editar. Cada plantilla se puede llenar dictando y tiene su propio enlace público para que otros la llenen y firmen.',
+      en: 'These are your templates: documents you set up once and reuse every time. With the "New template" button you can upload a Word file with fields in double braces, place boxes on a PDF, or create a new document from pasted, dictated or imported text. To start quickly, below you have example templates by industry: tap "Use this template" to get your own copy to edit. Every template can be filled in by dictating, and has its own public link so others can fill it in and sign.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const navigate = useNavigate();
   // Desktop visitors get this wrapped in the same sidebar/header shell as
   // every other /dashboard/* screen (it's linked from that sidebar's own
@@ -179,6 +189,20 @@ export function MyTemplatesPage() {
                       <span>
                         <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'PDF with boxes' : 'PDF con casillas'}</span>
                         <span className="block text-xs text-slate-400">{language === 'en' ? 'Click to place fields' : 'Clic para colocar campos'}</span>
+                      </span>
+                    </button>
+                    {/* Sin Word a mano: pegar, dictar o importar el texto y
+                        guardarlo como plantilla desde «Crea un documento
+                        nuevo». Los huecos [Nombre] / ____ se vuelven campos. */}
+                    <button
+                      type="button"
+                      onClick={() => { setNewMenuOpen(false); navigate('/crear-documento'); }}
+                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
+                    >
+                      <Sparkles className="size-5 shrink-0 text-blue-500" />
+                      <span>
+                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}</span>
+                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Paste, dictate or import text' : 'Pega, dicta o importa el texto'}</span>
                       </span>
                     </button>
                   </div>

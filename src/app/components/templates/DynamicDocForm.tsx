@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DetectedField } from '../../../lib/docxTemplateEngine';
+import { fetchDocxArrayBuffer, inferSectionsFromDocx, withInferredSections } from '../../../lib/docxTemplateEngine';
 import { rememberFieldValue, recallFieldValue } from '../../utils/field-memory';
 import { DictarFormulario } from '../DictarFormulario';
 import { BotonDictado } from '../BotonDictado';
@@ -25,6 +26,9 @@ interface DynamicDocFormProps {
    * exactly which required fields are still empty instead of only a
    * generic toast. */
   invalidKeys?: Set<string>;
+  /** El Word de la plantilla. Si la plantilla no tiene secciones puestas a
+   *  mano, se sacan de los títulos del propio documento. */
+  docxFileUrl?: string;
 }
 
 /**
@@ -44,8 +48,26 @@ interface DynamicDocFormProps {
  * with more than a few options span both columns so the dropdown/options
  * don't fight a narrow half-width column.
  */
-export function DynamicDocForm({ fields, values, onChange, language, invalidKeys, nombreDocumento, tienePremium = false, mostrarDictado = true }: DynamicDocFormProps) {
+export function DynamicDocForm({ fields: camposOriginales, values, onChange, language, invalidKeys, nombreDocumento, tienePremium = false, mostrarDictado = true, docxFileUrl }: DynamicDocFormProps) {
   const [dictadoAbierto, setDictadoAbierto] = useState(false);
+
+  // Secciones sacadas del Word cuando la plantilla no trae las suyas. Si el
+  // documento no se puede leer, el formulario sale como antes, sin agrupar:
+  // es una ayuda de lectura, nunca un motivo para no poder llenar.
+  const [seccionesDelDocumento, setSeccionesDelDocumento] = useState<Map<string, string>>(new Map());
+  const yaTieneSecciones = camposOriginales.some((f) => f.type === 'section');
+  useEffect(() => {
+    if (!docxFileUrl || yaTieneSecciones) return;
+    let cancelado = false;
+    fetchDocxArrayBuffer(docxFileUrl)
+      .then((buf) => { if (!cancelado) setSeccionesDelDocumento(inferSectionsFromDocx(buf)); })
+      .catch(() => { /* sin secciones automáticas */ });
+    return () => { cancelado = true; };
+  }, [docxFileUrl, yaTieneSecciones]);
+  const fields = useMemo(
+    () => withInferredSections(camposOriginales, seccionesDelDocumento),
+    [camposOriginales, seccionesDelDocumento],
+  );
 
   /**
    * Los campos detectados en el Word, en el formato que entiende el panel de
@@ -57,33 +79,57 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
    * y `choice` se traduce a `select` para que el modelo sepa que tiene que
    * copiar una de las opciones tal cual en vez de inventar el texto.
    */
-  const camposParaDictado: DocumentField[] = useMemo(
-    () => fields
-      .filter((f) => f.type !== 'section')
-      .map((f) => ({
+  const camposParaDictado: DocumentField[] = useMemo(() => {
+    // Cada campo lleva el título de su sección: «Celular» del estudiante y
+    // «Celular» de la referencia son campos distintos, y sin la sección ni
+    // quien dicta ni la IA saben cuál es cuál.
+    let seccion = '';
+    const out: DocumentField[] = [];
+    for (const f of fields) {
+      if (f.type === 'section') { seccion = f.label; continue; }
+      out.push({
         id: f.key,
         label: f.label,
         type: f.type === 'choice' ? 'select' : f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text',
         options: f.options,
         required: f.required,
-      })),
-    [fields],
-  );
+        section: seccion || undefined,
+      });
+    }
+    return out;
+  }, [fields]);
   /**
    * Guía por voz. Las secciones son las que el dueño de la plantilla creó con
    * «Agregar subsección»: sus propios títulos, así que el guion sale de la
    * plantilla y no de una lista fija — cada plantilla de Word es distinta y
    * decir siempre lo mismo no ayudaría a nadie.
    */
+  //
+  // Cada sección dice QUÉ datos lleva: «Referencia familiar: aquí van nombre
+  // completo, celular y parentesco». Antes era la misma frase genérica en
+  // todas, que no ayudaba a saber qué tener a mano ni qué dictar.
   const seccionesDeVoz = useMemo(() => {
     const mapa: Record<string, { es: string; en: string }> = {};
-    for (const f of fields) {
-      if (f.type !== 'section') continue;
-      mapa[f.key] = {
-        es: `Sección ${f.label}. Completa los datos de esta parte del documento.`,
-        en: `Section ${f.label}. Fill in the details for this part of the document.`,
-      };
-    }
+    fields.forEach((f, i) => {
+      if (f.type !== 'section') return;
+      const siguientes: DetectedField[] = [];
+      for (const g of fields.slice(i + 1)) {
+        if (g.type === 'section') break;
+        siguientes.push(g);
+      }
+      const nombres = siguientes.slice(0, 7).map((g) => g.label.toLowerCase());
+      const mas = siguientes.length > 7;
+      const lista = (y: string) => nombres.length <= 1
+        ? nombres.join('')
+        : `${nombres.slice(0, -1).join(', ')} ${y} ${nombres[nombres.length - 1]}`;
+      const obligatorios = siguientes.filter((g) => g.required).length;
+      mapa[f.key] = siguientes.length === 0
+        ? { es: `Sección ${f.label}.`, en: `Section ${f.label}.` }
+        : {
+          es: `Sección ${f.label}. Aquí van ${lista('y')}${mas ? ', entre otros' : ''}.${obligatorios ? ' Los que tienen asterisco son obligatorios; si alguno no aplica, escribe N A.' : ''}`,
+          en: `Section ${f.label}. This part asks for ${lista('and')}${mas ? ', among others' : ''}.${obligatorios ? ' Fields with an asterisk are required; if one does not apply, type N A.' : ''}`,
+        };
+    });
     return mapa;
   }, [fields]);
 
@@ -98,10 +144,19 @@ export function DynamicDocForm({ fields, values, onChange, language, invalidKeys
   // Pre-fill empty fields from the last value remembered for that LABEL,
   // once per field the first time it appears — never overwrites something
   // the user (or the template) already put in `values`.
+  //
+  // Salvo si la etiqueta se repite en el formulario: «Celular» del estudiante
+  // y «Celular» de la referencia comparten etiqueta, y precargar recordaría
+  // el mismo número en los dos.
   const prefilled = useRef(new Set<string>());
   useEffect(() => {
+    const repetidas = new Set(
+      fields.filter((f) => f.type !== 'section').map((f) => f.label.trim().toLowerCase())
+        .filter((l, i, arr) => arr.indexOf(l) !== i),
+    );
     for (const f of fields) {
       if (f.type === 'section' || prefilled.current.has(f.key)) continue;
+      if (repetidas.has(f.label.trim().toLowerCase())) { prefilled.current.add(f.key); continue; }
       prefilled.current.add(f.key);
       if (!values[f.key]?.trim()) {
         const remembered = recallFieldValue(f.label);

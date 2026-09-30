@@ -27,6 +27,10 @@ export interface DocumentField {
   required: boolean;
   options?: string[];
   helpText?: string;
+  /** Título de la sección del formulario donde está el campo («Datos del
+   *  estudiante»). Lo usan el dictado y la IA para distinguir campos con la
+   *  misma etiqueta en secciones distintas. */
+  section?: string;
 }
 
 export interface DocumentData {

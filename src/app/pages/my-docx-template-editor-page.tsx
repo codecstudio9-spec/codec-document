@@ -439,6 +439,23 @@ export function MyDocxTemplateEditorPage() {
               </span>
             </label>
             {error && <p className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
+            {/* Para quien no tiene el Word preparado: «Crea un documento
+                nuevo» arma la plantilla desde texto pegado, dictado o
+                importado, con [Nombre] / ____ como campos. */}
+            <button
+              type="button"
+              onClick={() => navigate('/crear-documento')}
+              className="mt-4 w-full rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-left text-sm transition hover:bg-indigo-50"
+            >
+              <span className="block font-bold text-indigo-800">
+                {language === 'en' ? 'No Word file ready? Create it from text' : '¿No tienes el Word listo? Créalo desde texto'}
+              </span>
+              <span className="mt-0.5 block text-xs text-indigo-700/80">
+                {language === 'en'
+                  ? 'Paste, dictate or import the text, write [Client name] where each detail goes, and save it as a template.'
+                  : 'Pega, dicta o importa el texto, escribe [Nombre del cliente] donde va cada dato y guárdalo como plantilla.'}
+              </span>
+            </button>
           </section>
         ) : (
           <div className="mt-5 space-y-4">
