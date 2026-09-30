@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PAGINAS_US } from '../src/app/data/us-intent-seo-content';
+import { TRADUCCIONES_SECTORES_ES } from '../src/app/data/us-industry-seo-content-es';
 
 const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public', 'seo-manifest.json'), 'utf-8'));
 const rutas = new Set<string>(Object.keys(manifest));
@@ -37,6 +38,18 @@ for (const p of PAGINAS_US) {
     ].join(' '));
     if (total < 600) errores.push(`${p.slug}: sólo ${total} palabras (< 600)`);
     if (!p.audiencia) errores.push(`${p.slug}: falta audiencia`);
+    // La versión en español tiene que existir y estar completa: mismas
+    // secciones y mismo número de puntos, preguntas y elementos de la lista.
+    const es = TRADUCCIONES_SECTORES_ES[p.slug];
+    if (!es) errores.push(`${p.slug}: falta la versión en español`);
+    else {
+      for (const campo of ['audiencia', 'h1', 'intro', 'metaDescription', 'problema', 'ley', 'caso', 'cta'] as const) {
+        if (!es[campo]) errores.push(`${p.slug}: español sin ${campo}`);
+      }
+      if (es.puntos?.length !== p.puntos.length) errores.push(`${p.slug}: español con ${es.puntos?.length} puntos (inglés ${p.puntos.length})`);
+      if (es.faq?.length !== p.faq.length) errores.push(`${p.slug}: español con ${es.faq?.length} preguntas (inglés ${p.faq.length})`);
+      if (es.checklist?.items.length !== p.checklist?.items.length) errores.push(`${p.slug}: lista en español desigual`);
+    }
   }
 
   for (const d of p.documentos ?? []) {

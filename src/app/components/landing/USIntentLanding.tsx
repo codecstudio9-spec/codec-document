@@ -25,11 +25,12 @@ import { ArrowRight, Check, FileText, Scale, ShieldCheck, Sparkles } from 'lucid
 import { SEOHead } from '../seo-head';
 import { StructuredData } from '../structured-data';
 import { SITE_URL } from '../../config/site';
-import { FixedLanguageProvider } from '../../contexts/language-context';
+import { FixedLanguageProvider, useLanguage } from '../../contexts/language-context';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { FAQAccordion } from './LandingSections';
 import { PAGINA_US_POR_SLUG, hermanasDe, type PaginaUS } from '../../data/us-intent-seo-content';
+import { enEspanol, etiquetaDocumentoEs, TEXTOS_US } from '../../data/us-seo-content-es';
 
 function Contenido({ pagina }: { pagina: PaginaUS }) {
   const url = `${SITE_URL}/${pagina.slug}`;
@@ -42,7 +43,18 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
   // El acordeón habla los dos idiomas aunque esta página sea sólo inglés:
   // se rellenan ambos con el mismo texto en vez de dejar el español vacío,
   // que dejaría el acordeón en blanco si alguien cambiara el proveedor.
-  const faq = pagina.faq.map((f) => ({ qEn: f.q, qEs: f.q, aEn: f.a, aEs: f.a }));
+  // Versión en español cuando el visitante elige ES y la página la tiene.
+  // El SEO de arriba (título, meta, datos estructurados) sigue en inglés a
+  // propósito: es el contenido por defecto de la URL, el que ve Googlebot.
+  const { language } = useLanguage();
+  const v = language === 'es' ? enEspanol(pagina) : pagina;
+  const traducida = v !== pagina;
+  const T = TEXTOS_US[traducida ? 'es' : 'en'];
+  const faq = v.faq.map((f) => ({ qEn: f.q, qEs: f.q, aEn: f.a, aEs: f.a }));
+  const nombreHermana = (h: PaginaUS) => {
+    const hv = traducida ? enEspanol(h) : h;
+    return esSector && hv.audiencia ? hv.audiencia : hv.h1;
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -59,39 +71,39 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">
                 <Scale className="size-3" />
-                United States
+                {T.pais}
               </span>
               <h1 className="mt-4 text-balance text-4xl font-black leading-tight text-slate-900 md:text-5xl">
-                {pagina.h1}
+                {v.h1}
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-slate-600">
-                {pagina.intro}
+                {v.intro}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   to="/"
                   className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
                 >
-                  {pagina.cta}
+                  {v.cta}
                   <ArrowRight className="size-4" />
                 </Link>
                 <Link
                   to="/electronic-signature"
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-slate-400"
                 >
-                  How signing works
+                  {T.comoFunciona}
                 </Link>
               </div>
               <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
                 <ShieldCheck className="size-3.5" />
-                Free to start · Valid under the ESIGN Act · Audit trail on every signature
+                {T.confianza}
               </p>
             </div>
 
             <div className="relative">
               <img
                 src={foto1}
-                alt={`${pagina.h1} — preparing and signing the document online`}
+                alt={`${v.h1} — ${T.altFirma}`}
                 loading="eager"
                 width={1000}
                 height={750}
@@ -109,7 +121,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
           <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <img
               src={foto2}
-              alt={`${pagina.problema.titulo} — reviewing the terms before signing`}
+              alt={`${v.problema.titulo} — ${T.altRevisar}`}
               loading="lazy"
               width={1000}
               height={750}
@@ -118,10 +130,10 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
             />
             <div>
               <h2 className="text-3xl font-black leading-tight text-slate-900 md:text-4xl">
-                {pagina.problema.titulo}
+                {v.problema.titulo}
               </h2>
               <p className="mt-5 text-base leading-relaxed text-slate-600">
-                {pagina.problema.texto}
+                {v.problema.texto}
               </p>
             </div>
           </div>
@@ -133,10 +145,10 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-5xl">
             <h2 className="mb-10 text-center text-3xl font-black text-slate-900 md:text-4xl">
-              {esSector ? `How it helps ${pagina.audiencia?.toLowerCase() ?? 'your business'}` : 'What the template covers'}
+              {esSector ? T.comoAyuda(v.audiencia) : T.queCubre}
             </h2>
             <div className="grid gap-5 md:grid-cols-2">
-              {pagina.puntos.map((p) => (
+              {v.puntos.map((p) => (
                 <div key={p.titulo} className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
                   <div className="mb-3 flex size-9 items-center justify-center rounded-xl bg-emerald-50">
                     <Check className="size-4 text-emerald-600" />
@@ -157,11 +169,10 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
             <div className="mb-4 flex size-10 items-center justify-center rounded-2xl bg-slate-900">
               <Scale className="size-5 text-white" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 md:text-3xl">{pagina.ley.titulo}</h2>
-            <p className="mt-4 text-base leading-relaxed text-slate-600">{pagina.ley.texto}</p>
+            <h2 className="text-2xl font-black text-slate-900 md:text-3xl">{v.ley.titulo}</h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-600">{v.ley.texto}</p>
             <p className="mt-5 text-xs leading-relaxed text-slate-400">
-              This is general information about United States law, not legal advice for your
-              situation. Statutes differ by state and change over time.
+              {T.avisoLegal}
             </p>
           </div>
         </div>
@@ -173,16 +184,16 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
           <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-indigo-300">
-                {esSector ? 'An illustrative example' : 'What it looks like in practice'}
+                {esSector ? T.ejemplo : T.enLaPractica}
               </span>
               <h2 className="mt-3 text-3xl font-black leading-tight text-white md:text-4xl">
-                {pagina.caso.titulo}
+                {v.caso.titulo}
               </h2>
-              <p className="mt-5 text-base leading-relaxed text-slate-300">{pagina.caso.texto}</p>
+              <p className="mt-5 text-base leading-relaxed text-slate-300">{v.caso.texto}</p>
             </div>
             <img
               src={foto3}
-              alt={`${pagina.caso.titulo} — the document signed and filed`}
+              alt={`${v.caso.titulo} — ${T.altArchivado}`}
               loading="lazy"
               width={1000}
               height={750}
@@ -194,15 +205,15 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
       </section>
 
       {/* ── Qué dejar por escrito (sólo páginas por profesión) ──────── */}
-      {pagina.checklist && (
+      {v.checklist && (
         <section className="bg-white py-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-3xl">
               <h2 className="text-center text-3xl font-black text-slate-900 md:text-4xl">
-                {pagina.checklist.titulo}
+                {v.checklist.titulo}
               </h2>
               <ul className="mt-8 space-y-3">
-                {pagina.checklist.items.map((item) => (
+                {v.checklist.items.map((item) => (
                   <li key={item} className="flex gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-100">
                     <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                     {item}
@@ -218,27 +229,27 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
         items={faq}
         heading={
           <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-            Questions people ask about this
+            {T.preguntas}
           </h2>
         }
       />
 
       {/* ── Documentos que usa este público ─────────────────────────── */}
-      {pagina.documentos && pagina.documentos.length > 0 && (
+      {v.documentos && v.documentos.length > 0 && (
         <section className="bg-white py-14">
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-5xl">
               <h2 className="mb-6 text-center text-2xl font-black text-slate-900 md:text-3xl">
-                Documents {pagina.audiencia?.toLowerCase() ?? 'businesses'} send most
+                {T.documentosDe(v.audiencia)}
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                {pagina.documentos.map((d) => (
+                {v.documentos.map((d) => (
                   <Link
                     key={d.to}
                     to={d.to}
                     className="group flex items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3.5 text-sm font-bold text-slate-800 ring-1 ring-slate-100 transition hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200"
                   >
-                    {d.label}
+                    {traducida ? etiquetaDocumentoEs(d) : d.label}
                     <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:text-indigo-600" />
                   </Link>
                 ))}
@@ -254,7 +265,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
           <div className="container mx-auto px-4">
             <div className="mx-auto max-w-5xl">
               <h2 className="mb-6 text-center text-xl font-black text-slate-900">
-                {esSector ? 'Also built for' : 'Related documents'}
+                {esSector ? T.tambienPara : T.relacionados}
               </h2>
               <div className="grid gap-4 md:grid-cols-3">
                 {hermanas.map((h) => (
@@ -265,10 +276,10 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
                   >
                     <FileText className="mb-2 size-4 text-indigo-500" />
                     <p className="text-sm font-bold text-slate-800 group-hover:text-indigo-700">
-                      {esSector && h.audiencia ? h.audiencia : h.h1}
+                      {nombreHermana(h)}
                     </p>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
-                      {h.metaDescription}
+                      {(traducida ? enEspanol(h) : h).metaDescription}
                     </p>
                   </Link>
                 ))}
@@ -276,7 +287,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
               {esSector && (
                 <p className="mt-6 text-center">
                   <Link to="/industries" className="text-sm font-bold text-indigo-600 hover:text-indigo-800">
-                    See every industry we support →
+                    {T.verTodas}
                   </Link>
                 </p>
               )}
@@ -289,16 +300,15 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
       <section className="bg-white py-16 md:py-20">
         <div className="container mx-auto px-4 text-center">
           <Sparkles className="mx-auto mb-4 size-6 text-indigo-500" />
-          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{pagina.cta}</h2>
+          <h2 className="text-3xl font-black text-slate-900 md:text-4xl">{v.cta}</h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-slate-600">
-            Fill it in, see exactly how it will look, and sign it online. No account needed for the
-            other party, and every signature carries a verifiable audit trail.
+            {T.cierre}
           </p>
           <Link
             to="/"
             className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
           >
-            {pagina.cta}
+            {v.cta}
             <ArrowRight className="size-4" />
           </Link>
         </div>
