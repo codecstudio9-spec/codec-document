@@ -185,16 +185,16 @@ export function ModernHomePage() {
   const effectiveIsLatam = marketOverride === 'us' ? false : marketOverride === 'latam' ? true : visitorIsLatam;
   const matchedLatamCountry = LATAM_COUNTRIES.find((c) => c.code === visitorCountryCode) ?? null;
 
-  // Mobile app-shell: ANY visitor on a real mobile viewport (signed in or
-  // not) gets the bottom-nav app shell instead of the long-scroll landing
-  // page, this traditional landing below stays desktop-only + a dedicated
-  // marketing/SEO surface, per the explicit "no more scroll-based landing
-  // on mobile" requirement. MobileAppShell/MobileDashboardHome handle the
-  // signed-out state themselves (compact intro instead of real stats).
+  // Móvil: sólo quien ya inició sesión va directo a la app (/app). Antes
+  // TODO visitante móvil era redirigido, y eso incluía a Googlebot smartphone
+  // —el rastreador con el que Google indexa primero—: al ejecutar la página
+  // veía la pantalla de la app y no la portada, así que el contenido de la
+  // portada no contaba para el posicionamiento. Decidido con el usuario el
+  // 2026-09-30: el visitante sin sesión ve la portada completa en móvil.
   const isMobile = useIsMobile();
   useEffect(() => {
-    if (isMobile && !isRecoveryVisit) navigate('/app', { replace: true });
-  }, [isMobile, isRecoveryVisit, navigate]);
+    if (isMobile && user && !isRecoveryVisit) navigate('/app', { replace: true });
+  }, [isMobile, user, isRecoveryVisit, navigate]);
 
   // Mundo 1 (marketing, public) vs Mundo 2 (product, private): a signed-in
   // desktop visitor should never see this landing either, straight into
@@ -612,11 +612,10 @@ export function ModernHomePage() {
     setSignatureMarker({ page: pageNumber, x: safeX, y: safeY });
   };
 
-  // Mobile visitors never see this page's body, they're redirected to
-  // /app by the effect above. Returning null here (instead of rendering
-  // the full landing then redirecting) avoids a flash of the desktop
-  // landing/hero on a phone before the redirect fires.
-  if (isMobile) return null;
+  // Quien va a ser redirigido (móvil con sesión) no ve el cuerpo: evita que
+  // la portada asome un instante antes de saltar a /app. El visitante móvil
+  // sin sesión sí la ve completa (ver el efecto de arriba).
+  if (isMobile && user && !isRecoveryVisit) return null;
 
   return (
     <div className="min-h-screen bg-white" style={{ scrollBehavior: 'smooth' }}>

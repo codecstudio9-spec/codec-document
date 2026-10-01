@@ -188,17 +188,13 @@ export function ModernHero({ onRequireAuth }: { onRequireAuth: () => void }) {
                 exit="exit"
                 transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               >
-                {current === 0 ? (
-                  <h1 className="mb-3 text-3xl font-black leading-[1.1] tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.60)] sm:text-4xl lg:text-[3.1rem]">
-                    <span className="text-blue-400">{language === 'en' ? SLIDES[0].text1En : SLIDES[0].text1Es}</span>{' '}
-                    <span className="text-white">{language === 'en' ? SLIDES[0].text2En : SLIDES[0].text2Es}</span>
-                  </h1>
-                ) : (
-                  <h2 className="mb-3 text-3xl font-black leading-[1.1] tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.60)] sm:text-4xl lg:text-[3.1rem]">
-                    <span className="text-blue-400">{language === 'en' ? SLIDES[current].text1En : SLIDES[current].text1Es}</span>{' '}
-                    <span className="text-white">{language === 'en' ? SLIDES[current].text2En : SLIDES[current].text2Es}</span>
-                  </h2>
-                )}
+                {/* Siempre un h1, sea cual sea la diapositiva: con h1 sólo en la
+                    primera, al avanzar el carrusel la portada se quedaba sin
+                    h1, y Google puede renderizarla en cualquier momento. */}
+                <h1 className="mb-3 text-3xl font-black leading-[1.1] tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.60)] sm:text-4xl lg:text-[3.1rem]">
+                  <span className="text-blue-400">{language === 'en' ? SLIDES[current].text1En : SLIDES[current].text1Es}</span>{' '}
+                  <span className="text-white">{language === 'en' ? SLIDES[current].text2En : SLIDES[current].text2Es}</span>
+                </h1>
                 <p className="text-sm font-medium leading-relaxed text-white/65 drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)] sm:text-base md:text-lg">
                   {language === 'en' ? SLIDES[current].subEn : SLIDES[current].subEs}
                 </p>
