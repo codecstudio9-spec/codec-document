@@ -4,7 +4,7 @@ import {
   Shield, Loader, RefreshCw, AlertCircle, X, CheckCircle2,
   ShieldCheck, IdCard, Camera, Send, MessageCircle, Mail,
   Copy, Check, Lock, FileText, Users, ChevronRight, Upload,
-  PenLine, Plus, Fingerprint,
+  PenLine, Plus, Fingerprint, Smartphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -13,6 +13,7 @@ import { PdfUploader } from '../components/signatures/PdfUploader';
 import { PdfSignatureEditor, type EditorSigner } from '../components/signatures/PdfSignatureEditor';
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { QRShareModal } from '../components/signatures/QRShareModal';
+import { InPersonSignModal } from '../components/signatures/InPersonSignModal';
 import { SignatureTimeline, type TimelineStep } from '../components/signatures/SignatureTimeline';
 import { SignedSuccessScreen } from '../components/signatures/SignedSuccessScreen';
 import { PaypalSignatureCheckout } from '../components/signatures/PaypalSignatureCheckout';
@@ -160,6 +161,7 @@ function ShareHub({
   onContinue: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [inPersonOpen, setInPersonOpen] = useState(false);
   const { speak } = useVoiceSpeak();
   const spokenRef = useRef(false);
   useEffect(() => {
@@ -221,6 +223,28 @@ function ShareHub({
         </div>
       </div>
 
+      {/* Firmante presente: QR a pantalla completa (+ tarjeta NFC en Android) */}
+      <button
+        type="button"
+        onClick={() => setInPersonOpen(true)}
+        className="flex w-full items-center gap-3 rounded-2xl border-2 border-indigo-200 bg-white px-4 py-3.5 text-left transition hover:border-indigo-400 hover:bg-indigo-50/50"
+      >
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100">
+          <Smartphone className="size-5 text-indigo-600" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-800">Firmar en persona</p>
+          <p className="text-[11px] text-slate-500">¿{guestName || 'El firmante'} está contigo? Muéstrale la pantalla y firma desde su teléfono.</p>
+        </div>
+        <ChevronRight className="size-4 shrink-0 text-slate-400" />
+      </button>
+      <InPersonSignModal
+        open={inPersonOpen}
+        onClose={() => setInPersonOpen(false)}
+        link={link}
+        signerName={guestName}
+      />
+
       {/* Share buttons */}
       <div className="grid grid-cols-2 gap-3">
         <a
@@ -276,6 +300,7 @@ function ExtraSignerRow({
   onRemove: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [inPersonOpen, setInPersonOpen] = useState(false);
   const handleCopy = () => {
     void navigator.clipboard.writeText(link);
     setCopied(true);
@@ -332,12 +357,23 @@ function ExtraSignerRow({
               <Mail className="size-3.5" /> Correo
             </a>
           </div>
+          <button type="button" onClick={() => setInPersonOpen(true)}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-[11px] font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700">
+            <Smartphone className="size-3.5" /> Firmar en persona
+          </button>
           <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-100 px-2.5 py-1.5 text-[10px] font-medium text-amber-700">
             <span className="size-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
             Esperando que firme…
           </div>
         </div>
       )}
+      <InPersonSignModal
+        open={inPersonOpen}
+        onClose={() => setInPersonOpen(false)}
+        link={link}
+        signerName={name}
+        signed={status === 'signed'}
+      />
     </div>
   );
 }
@@ -552,6 +588,7 @@ export function ElectronicSignaturePage() {
   const [guestSigUrl, setGuestSigUrl]       = useState('');
   const [signingToken, setSigningToken]     = useState('');
   const [shareOpen, setShareOpen]           = useState(false);
+  const [inPersonOpen, setInPersonOpen]     = useState(false);
   // Signers named in "Crea un documento nuevo" without an email — can't
   // become a real signing link on their own (createSigningLink needs an
   // address to send it to), so they're queued here and popped one at a
@@ -1904,6 +1941,21 @@ export function ElectronicSignaturePage() {
                         ¿Ya firmó? Verificar
                       </button>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setInPersonOpen(true)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2.5 text-sm font-bold text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50"
+                    >
+                      <Smartphone className="size-4" />
+                      Firmar en persona (QR / tarjeta NFC)
+                    </button>
+                    <InPersonSignModal
+                      open={inPersonOpen}
+                      onClose={() => setInPersonOpen(false)}
+                      link={guestLink}
+                      signerName={guestName}
+                    />
 
                     <button
                       type="button"
