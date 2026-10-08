@@ -3,8 +3,8 @@ import { KeyRound, Loader, Trash2, UserPlus, Gift, CalendarClock } from 'lucide-
 import { toast } from 'sonner';
 import {
   grantAnalyticsAccess, revokeAnalyticsAccess, listAnalyticsAdmins,
-  grantFreeMonths, listPlanGifts,
-  type AnalyticsAdminGrant, type PlanGift,
+  grantFreeMonths, grantFreeEnterpriseMonths, listPlanGifts, listEnterprisePlanGifts,
+  type AnalyticsAdminGrant, type PlanGift, type EnterprisePlanGift,
 } from '../../services/analytics-admin-service';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 
@@ -27,14 +27,22 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
   // gestión —dar algo a alguien por su correo— aunque lo que se da sea
   // distinto: aquí acceso, allí plan.
   const [regalos, setRegalos] = useState<PlanGift[]>([]);
+  const [regalosEmpresa, setRegalosEmpresa] = useState<EnterprisePlanGift[]>([]);
   const [correoRegalo, setCorreoRegalo] = useState('');
   const [meses, setMeses] = useState(1);
+  const [tipoPlan, setTipoPlan] = useState<'personal' | 'enterprise'>('personal');
+  const [nombreEmpresa, setNombreEmpresa] = useState('');
   const [notaRegalo, setNotaRegalo] = useState('');
   const [regalando, setRegalando] = useState(false);
 
   const load = () => {
     listAnalyticsAdmins().then(setGrants).catch(() => setGrants([]));
-    listPlanGifts().then(setRegalos).catch(() => {});
+    listPlanGifts().then(setRegalos).catch((err) => {
+      toast.error(err instanceof Error ? err.message : 'No se pudieron cargar los regalos de planes.');
+    });
+    listEnterprisePlanGifts().then(setRegalosEmpresa).catch((err) => {
+      toast.error(err instanceof Error ? err.message : 'No se pudieron cargar los regalos empresariales.');
+    });
   };
 
   const regalarMeses = async () => {
@@ -43,16 +51,22 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
       toast.error(language === 'en' ? 'Enter a valid email.' : 'Escribe un correo válido.');
       return;
     }
+    if (!Number.isInteger(meses) || meses < 1 || meses > 24) {
+      toast.error(language === 'en' ? 'Choose between 1 and 24 months.' : 'Elige entre 1 y 24 meses.');
+      return;
+    }
     setRegalando(true);
     try {
-      const r = await grantFreeMonths(correo, meses, notaRegalo.trim() || undefined);
+      const r = tipoPlan === 'enterprise'
+        ? await grantFreeEnterpriseMonths(correo, meses, nombreEmpresa.trim() || undefined, notaRegalo.trim() || undefined)
+        : await grantFreeMonths(correo, meses, notaRegalo.trim() || undefined);
       const hasta = new Date(r.expiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
         day: 'numeric', month: 'long', year: 'numeric',
       });
       toast.success(language === 'en'
-        ? `${meses} month(s) granted to ${r.email} — active until ${hasta}.`
-        : `${meses} ${meses === 1 ? 'mes regalado' : 'meses regalados'} a ${r.email} — activo hasta el ${hasta}.`);
-      setCorreoRegalo(''); setNotaRegalo('');
+        ? `${meses} ${tipoPlan === 'enterprise' ? 'Enterprise month(s)' : 'month(s)'} granted to ${r.email} — active until ${hasta}.`
+        : `${meses} ${meses === 1 ? 'mes regalado' : 'meses regalados'} del ${tipoPlan === 'enterprise' ? 'Plan Empresarial' : 'plan personal'} a ${r.email} — activo hasta el ${hasta}.`);
+      setCorreoRegalo(''); setNombreEmpresa(''); setNotaRegalo('');
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error');
@@ -167,11 +181,19 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
         </p>
         <p className="mb-4 mt-1 text-xs text-slate-500">
           {language === 'en'
-            ? 'Goes to one person by email and activates on its own — no code to type. If they already have a plan, the time is added to what they have left.'
-            : 'Va a una persona por su correo y se activa sola — no hay código que escribir. Si ya tiene plan, el tiempo se suma a lo que le quede.'}
+            ? 'Grant an individual or Enterprise plan directly to an existing account. Remaining paid time is preserved.'
+            : 'Activa un plan personal o empresarial por correo. Si la empresa aún no existe, crea su espacio con el dominio del correo; podrá unirse al registrarse. El tiempo vigente se conserva.'}
         </p>
 
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <select
+            value={tipoPlan}
+            onChange={(e) => setTipoPlan(e.target.value as 'personal' | 'enterprise')}
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400"
+          >
+            <option value="personal">{language === 'en' ? 'Individual plan' : 'Plan personal'}</option>
+            <option value="enterprise">{language === 'en' ? 'Enterprise plan' : 'Plan Empresarial'}</option>
+          </select>
           <input
             type="email"
             value={correoRegalo}
@@ -179,21 +201,30 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
             placeholder="persona@correo.com"
             className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400"
           />
+          {tipoPlan === 'enterprise' && (
+            <input
+              value={nombreEmpresa}
+              onChange={(e) => setNombreEmpresa(e.target.value)}
+              placeholder={language === 'en' ? 'Company name (optional)' : 'Nombre de la empresa (opcional)'}
+              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400"
+            />
+          )}
           <div className="flex items-center gap-2">
-            <select
-              value={meses}
-              onChange={(e) => setMeses(Number(e.target.value))}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-400"
-            >
-              {[1, 2, 3, 6, 12].map((m) => (
-                <option key={m} value={m}>
-                  {m} {language === 'en' ? (m === 1 ? 'month' : 'months') : (m === 1 ? 'mes' : 'meses')}
-                </option>
-              ))}
-            </select>
+            <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-600">
+              <span>{language === 'en' ? 'Months' : 'Meses'}</span>
+              <input
+                type="number"
+                min={1}
+                max={24}
+                step={1}
+                value={meses}
+                onChange={(e) => setMeses(Number(e.target.value))}
+                className="w-16 bg-transparent text-center font-semibold text-slate-800 outline-none"
+              />
+            </label>
             <button
               type="button"
-              disabled={regalando}
+              disabled={regalando || !Number.isInteger(meses) || meses < 1 || meses > 24}
               onClick={() => void regalarMeses()}
               className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50"
             >
@@ -219,6 +250,23 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
             <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
               <span className="text-xs font-semibold text-slate-700">{r.email}</span>
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-black text-emerald-700">
+                {r.months} {language === 'en' ? (r.months === 1 ? 'month' : 'months') : (r.months === 1 ? 'mes' : 'meses')}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                <CalendarClock className="size-3" />
+                {language === 'en' ? 'until' : 'hasta el'}{' '}
+                {new Date(r.expiresAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+              {r.note && <span className="text-[11px] italic text-slate-400">«{r.note}»</span>}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 space-y-1.5">
+          {regalosEmpresa.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-indigo-50 px-3 py-2">
+              <span className="text-xs font-semibold text-slate-700">{r.companyName} · {r.email}</span>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-black text-indigo-700">
                 {r.months} {language === 'en' ? (r.months === 1 ? 'month' : 'months') : (r.months === 1 ? 'mes' : 'meses')}
               </span>
               <span className="flex items-center gap-1 text-[11px] text-slate-400">

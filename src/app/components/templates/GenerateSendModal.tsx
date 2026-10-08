@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileType2, X, Loader, ArrowRight, Copy, Check, ExternalLink, Shield, Pencil, RotateCcw } from 'lucide-react';
+import { FileType2, X, Loader, ArrowRight, Copy, Check, ExternalLink, Shield, Pencil, RotateCcw, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DocxTemplate } from '../../services/docx-template-service';
 import { createCustomTemplateTransaction } from '../../services/docx-template-service';
@@ -10,6 +10,7 @@ import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
 import { useAuth } from '../../contexts/auth-context';
 import { saveDocumentRecord } from '../../services/documents-service';
+import { sendSigningInvitation } from '../../services/signing-email-service';
 import { nombrePersonaDeValores, tituloDeDocumento } from '../../utils/nombre-del-documento';
 
 interface GenerateSendModalProps {
@@ -41,6 +42,8 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const [generating, setGenerating] = useState(false);
   const [resultLink, setResultLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
 
   const open = Boolean(template);
@@ -48,7 +51,8 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const activeCount = effectiveSecurity ? Object.values(effectiveSecurity).filter(Boolean).length : 0;
 
   const handleClose = () => {
-    setValues({}); setSecurityOverride(null); setResultLink(null); setCopied(false); setShowValidation(false);
+    setValues({}); setSecurityOverride(null); setResultLink(null); setCopied(false);
+    setRecipientEmail(''); setSendingEmail(false); setShowValidation(false);
     onClose();
   };
 
@@ -97,6 +101,21 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const handleCopy = () => {
     if (!resultLink) return;
     navigator.clipboard.writeText(resultLink).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  const handleSendInvitation = async () => {
+    if (!resultLink || !recipientEmail.trim()) return;
+    setSendingEmail(true);
+    try {
+      const transactionId = resultLink.split('/').pop();
+      if (!transactionId) throw new Error('No se pudo identificar el documento para enviar');
+      await sendSigningInvitation(transactionId, recipientEmail.trim());
+      toast.success(language === 'en' ? 'Signing invitation sent.' : 'Invitación de firma enviada.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not send the invitation.' : 'No se pudo enviar la invitación.'));
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   return (
@@ -153,6 +172,24 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                     <a href={resultLink} target="_blank" rel="noreferrer" className="flex shrink-0 items-center justify-center rounded-xl bg-white p-2 text-slate-400 hover:text-slate-700">
                       <ExternalLink className="size-4" />
                     </a>
+                  </div>
+                  <div className="flex w-full flex-col gap-2 sm:flex-row">
+                    <input
+                      type="email"
+                      value={recipientEmail}
+                      onChange={(event) => setRecipientEmail(event.target.value)}
+                      placeholder={language === 'en' ? 'Signer email' : 'Correo de quien va a firmar'}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
+                    />
+                    <button
+                      type="button"
+                      disabled={sendingEmail || !recipientEmail.trim() || !recipientEmail.includes('@')}
+                      onClick={() => void handleSendInvitation()}
+                      className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      {sendingEmail ? <Loader className="size-3.5 animate-spin" /> : <Mail className="size-3.5" />}
+                      {language === 'en' ? 'Send by email' : 'Enviar por correo'}
+                    </button>
                   </div>
                   <button type="button" onClick={handleClose} className="mt-2 text-sm font-semibold text-slate-500 hover:text-slate-700">
                     {language === 'en' ? 'Done' : 'Listo'}

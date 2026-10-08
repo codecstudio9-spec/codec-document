@@ -1,10 +1,9 @@
 # Configuración de las Edge Functions.
 #
 # ── Por qué existe este archivo ──────────────────────────────────────────
-# Dos funciones tienen que responder SIN token de Supabase, porque quien las
-# llama no es el navegador de un usuario sino un servidor de fuera: Wompi
-# avisando de un pago y Resend entregando un correo. Ninguno de los dos puede
-# presentar un JWT nuestro.
+# Tres funciones tienen que responder SIN JWT de usuario: Wompi y Resend no
+# pueden presentar uno; notify-completion se llama desde el flujo público de
+# firma y valida que la transacción ya esté completada antes de enviar.
 #
 # Eso se venía pasando como bandera suelta en la línea de comandos
 # (`--no-verify-jwt`), con dos problemas: no queda escrito en ninguna parte, y
@@ -16,11 +15,18 @@
 # Las dos comprueban la firma del emisor antes de tocar nada:
 #   · wompi-webhook   → firma de eventos de Wompi (WOMPI_EVENTS_SECRET)
 #   · correo-entrante → firma Svix de Resend      (RESEND_INBOUND_SECRET)
-# Y las dos fallan CERRADAS: sin el secreto configurado devuelven error y no
-# procesan nada. La autenticación no desaparece, cambia de sitio.
+#   · notify-completion → solo envía para un UUID de transacción completada
+# El invitador send-signing-invitation sí exige JWT y valida que la sesión sea
+# dueña del documento. El resto falla cerrado según sus propias credenciales.
 
 [functions.wompi-webhook]
 verify_jwt = false
 
 [functions.correo-entrante]
 verify_jwt = false
+
+[functions.notify-completion]
+verify_jwt = false
+
+[functions.send-signing-invitation]
+verify_jwt = true

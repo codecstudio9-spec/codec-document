@@ -567,7 +567,23 @@ export default function SignTransactionPage() {
 
       // Fire-and-forget — a failed/slow email must never block or error out
       // a signature that's already saved. See supabase/functions/notify-completion.
-      void publicSupabase.functions.invoke('notify-completion', { body: { txId: tx.id } }).catch(() => {});
+      void publicSupabase.functions.invoke('notify-completion', { body: { txId: tx.id } })
+        .then(({ error }) => {
+          if (error) {
+            console.error('No se pudieron enviar los correos de confirmación:', error);
+            toast.warning(
+              tr('Your signature was saved, but the confirmation emails could not be sent.', 'Tu firma quedó guardada, pero no se pudieron enviar los correos de confirmación.'),
+              { duration: 8000 },
+            );
+          }
+        })
+        .catch((error: unknown) => {
+          console.error('No se pudieron enviar los correos de confirmación:', error);
+          toast.warning(
+            tr('Your signature was saved, but the confirmation emails could not be sent.', 'Tu firma quedó guardada, pero no se pudieron enviar los correos de confirmación.'),
+            { duration: 8000 },
+          );
+        });
 
       void (async () => {
         try {

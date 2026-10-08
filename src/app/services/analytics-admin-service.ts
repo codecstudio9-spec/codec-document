@@ -23,6 +23,10 @@ export interface PlanGift {
   createdAt: string;
 }
 
+export interface EnterprisePlanGift extends PlanGift {
+  companyName: string;
+}
+
 /** Si esa persona ya tiene plan, el tiempo se SUMA a lo que le quede: un
  *  regalo nunca puede dejar a nadie peor de lo que estaba. */
 export async function grantFreeMonths(email: string, months = 1, note?: string): Promise<{ email: string; expiresAt: string }> {
@@ -34,12 +38,50 @@ export async function grantFreeMonths(email: string, months = 1, note?: string):
   return { email: String(fila?.email ?? email), expiresAt: String(fila?.expires_at ?? '') };
 }
 
+export async function grantFreeEnterpriseMonths(
+  email: string,
+  months: number,
+  companyName?: string,
+  note?: string,
+): Promise<{ email: string; companyName: string; expiresAt: string }> {
+  const { data, error } = await supabase.rpc('admin_grant_free_enterprise_months', {
+    p_email: email,
+    p_months: months,
+    p_company_name: companyName ?? null,
+    p_note: note ?? null,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.email || !row?.company_name || !row?.expires_at) {
+    throw new Error('El servidor no confirmó la activación del plan empresarial');
+  }
+  return {
+    email: String(row.email),
+    companyName: String(row.company_name),
+    expiresAt: String(row.expires_at),
+  };
+}
+
 export async function listPlanGifts(limit = 50): Promise<PlanGift[]> {
   const { data, error } = await supabase.rpc('admin_list_plan_gifts', { p_limit: limit });
-  if (error) return [];
+  if (error) throw new Error(error.message);
   return ((data as any[]) ?? []).map((r) => ({
     id: r.id, email: r.email, months: Number(r.months ?? 0),
     expiresAt: r.expires_at, note: r.note ?? null, createdAt: r.created_at,
+  }));
+}
+
+export async function listEnterprisePlanGifts(limit = 50): Promise<EnterprisePlanGift[]> {
+  const { data, error } = await supabase.rpc('admin_list_enterprise_plan_gifts', { p_limit: limit });
+  if (error) throw new Error(error.message);
+  return ((data as any[]) ?? []).map((r) => ({
+    id: r.id,
+    email: r.email,
+    companyName: r.company_name,
+    months: Number(r.months ?? 0),
+    expiresAt: r.expires_at,
+    note: r.note ?? null,
+    createdAt: r.created_at,
   }));
 }
 

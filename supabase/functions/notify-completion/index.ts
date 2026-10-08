@@ -44,10 +44,20 @@ function humanizeDocType(slug: string): string {
   return slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function escapeHtml(value: string): string {
+  const entities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+}
+
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (!RESEND_API_KEY) {
-    console.warn('[notify-completion] RESEND_API_KEY not configured — skipping send to', to);
-    return;
+    throw new Error('RESEND_API_KEY is not configured');
   }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -58,7 +68,9 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
     body: JSON.stringify({ from: FROM_ADDRESS, to: [to], subject, html }),
   });
   if (!res.ok) {
-    console.error('[notify-completion] Resend send failed for', to, res.status, await res.text().catch(() => ''));
+    const detail = await res.text();
+    console.error('[notify-completion] Resend send failed for', to, res.status, detail);
+    throw new Error(`Resend rejected the email (${res.status})`);
   }
 }
 
@@ -78,12 +90,15 @@ Deno.serve(async (req) => {
 
     const { data: tx } = await admin
       .from('sign_transactions')
-      .select('id, creator_id, document_type, document_data, recipient_email')
+      .select('id, creator_id, document_type, document_data, recipient_email, status')
       .eq('id', txId)
       .maybeSingle();
 
     if (!tx) {
       return new Response(JSON.stringify({ error: 'Transaction not found' }), { status: 404, headers: corsHeaders(origin) });
+    }
+    if (tx.status !== 'completed') {
+      return new Response(JSON.stringify({ error: 'Transaction is not completed' }), { status: 409, headers: corsHeaders(origin) });
     }
 
     // Custom docx templates carry their real name in document_data.templateId
@@ -100,6 +115,7 @@ Deno.serve(async (req) => {
 
     const signerUrl = `${SITE_URL}/sign/${tx.id}`;
     const creatorUrl = `${SITE_URL}/my-documents`;
+    const safeDocumentName = escapeHtml(documentName);
 
     const emailShell = (bodyHtml: string) => `
       <div style="font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
@@ -117,7 +133,7 @@ Deno.serve(async (req) => {
         `Firmaste "${documentName}" — aquí está tu copia`,
         emailShell(`
           <h2 style="color:#0f172a;">Documento firmado con éxito</h2>
-          <p style="color:#475569; line-height:1.6;">Firmaste <strong>${documentName}</strong>. Puedes ver y descargar tu copia en cualquier momento con el siguiente enlace.</p>
+          <p style="color:#475569; line-height:1.6;">Firmaste <strong>${safeDocumentName}</strong>. Puedes ver y descargar tu copia en cualquier momento con el siguiente enlace.</p>
           <a href="${signerUrl}" style="display:inline-block; margin-top:16px; padding:12px 24px; background:#4338ca; color:#fff; text-decoration:none; border-radius:12px; font-weight:bold;">Ver mi documento</a>
         `),
       ));
@@ -132,13 +148,16 @@ Deno.serve(async (req) => {
           `"${documentName}" fue firmado`,
           emailShell(`
             <h2 style="color:#0f172a;">Tu documento fue firmado</h2>
-            <p style="color:#475569; line-height:1.6;"><strong>${documentName}</strong> ya fue firmado y está listo en tu panel de documentos.</p>
+            <p style="color:#475569; line-height:1.6;"><strong>${safeDocumentName}</strong> ya fue firmado y está listo en tu panel de documentos.</p>
             <a href="${creatorUrl}" style="display:inline-block; margin-top:16px; padding:12px 24px; background:#4338ca; color:#fff; text-decoration:none; border-radius:12px; font-weight:bold;">Ver mis documentos</a>
           `),
         ));
       }
     }
 
+    if (sends.length === 0) {
+      throw new Error('No recipient email is available for this completed transaction');
+    }
     await Promise.all(sends);
 
     return new Response(JSON.stringify({ sent: sends.length }), { headers: corsHeaders(origin) });
