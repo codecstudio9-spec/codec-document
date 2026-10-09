@@ -287,35 +287,17 @@ export function MyTemplatesPage() {
                         <Copy className="ml-auto size-3.5 shrink-0 text-slate-300" />
                       </button>
                       <div className="mt-auto flex flex-col gap-2">
-                        {t.userId === user.id && (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
-                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500"
-                            >
-                              <PenLine className="size-3.5" />
-                              {language === 'en' ? 'Edit' : 'Editar'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmingId(t.id)}
-                              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
-                          </div>
-                        )}
+                        {/* Acción principal, como «Use template» en Dropbox Sign:
+                            llenar → enviar a firmar o descargar, en un solo modal. */}
+                        <button
+                          type="button"
+                          onClick={() => setSendTemplate(t)}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
+                        >
+                          <FilePenLine className="size-4" />
+                          {language === 'en' ? 'Use template' : 'Usar plantilla'}
+                        </button>
                         <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSendTemplate(t)}
-                            title={language === 'en' ? 'You fill it in, then send only for a signature' : 'Tú lo llenas, y lo envías solo para firmar'}
-                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2 text-[11px] font-bold text-blue-700 hover:bg-blue-100"
-                          >
-                            <FilePenLine className="size-3.5" />
-                            {language === 'en' ? 'Fill before sending' : 'Llenar antes de enviar'}
-                          </button>
                           <button
                             type="button"
                             onClick={() => handleCopyLink(t.publicSlug, true)}
@@ -325,6 +307,27 @@ export function MyTemplatesPage() {
                             <Send className="size-3.5" />
                             {language === 'en' ? 'Signer fills & signs' : 'Firmante llena y firma'}
                           </button>
+                          {t.userId === user.id && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
+                                title={language === 'en' ? 'Edit template' : 'Editar plantilla'}
+                                className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
+                              >
+                                <PenLine className="size-3.5" />
+                                {language === 'en' ? 'Edit' : 'Editar'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingId(t.id)}
+                                title={language === 'en' ? 'Delete' : 'Eliminar'}
+                                className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </>

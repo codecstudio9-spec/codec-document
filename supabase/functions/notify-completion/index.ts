@@ -18,9 +18,16 @@
 //
 // Fire-and-forget by design: called from the client right after
 // complete_sign_transaction succeeds (see sign-transaction-page.tsx). A
-// failure here must never surface as an error to a signer whose signature
-// was already saved successfully — the caller ignores this function's
-// response.
+// failure here must never block a signer whose signature was already saved.
+//
+// Public (verify_jwt = false), so it's idempotent: each transaction claims
+// completion_notified_at atomically before sending, and a repeat call is a
+// no-op — otherwise anyone holding a /sign/:id link could re-trigger it in a
+// loop and spam the creator. If every send fails the claim is released so a
+// later call can retry.
+//
+// The FROM domain (codecdocument.com) must be verified in Resend — until it
+// is, Resend answers 403 "domain is not verified" and nothing goes out.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -101,6 +108,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Transaction is not completed' }), { status: 409, headers: corsHeaders(origin) });
     }
 
+    const { data: claimed, error: claimError } = await admin
+      .from('sign_transactions')
+      .update({ completion_notified_at: new Date().toISOString() })
+      .eq('id', tx.id)
+      .is('completion_notified_at', null)
+      .select('id');
+    if (claimError) throw claimError;
+    if (!claimed || claimed.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, alreadyNotified: true }), { headers: corsHeaders(origin) });
+    }
+
     // Custom docx templates carry their real name in document_data.templateId
     // (see docx-template-service.ts) rather than a templates.ts slug — look
     // it up so the email says the actual template name, not "custom-template".
@@ -155,12 +173,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Nobody to notify (anonymous creator, signer without email) is a normal
+    // outcome, not an error — the signer shouldn't see a failure toast for it.
     if (sends.length === 0) {
-      throw new Error('No recipient email is available for this completed transaction');
+      return new Response(JSON.stringify({ sent: 0 }), { headers: corsHeaders(origin) });
     }
-    await Promise.all(sends);
 
-    return new Response(JSON.stringify({ sent: sends.length }), { headers: corsHeaders(origin) });
+    const results = await Promise.allSettled(sends);
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
+    if (sent === 0) {
+      await admin.from('sign_transactions').update({ completion_notified_at: null }).eq('id', tx.id);
+      throw (results[0] as PromiseRejectedResult).reason;
+    }
+
+    return new Response(JSON.stringify({ sent, failed: results.length - sent }), { headers: corsHeaders(origin) });
   } catch (err) {
     console.error('[notify-completion] error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message ?? 'Unexpected error' }), {

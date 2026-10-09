@@ -14,6 +14,7 @@ import { PdfSignatureEditor, type EditorSigner } from '../components/signatures/
 import { SignatureModal } from '../components/signatures/SignatureModal';
 import { QRShareModal } from '../components/signatures/QRShareModal';
 import { InPersonSignModal } from '../components/signatures/InPersonSignModal';
+import { sendGuestSigningInvitation } from '../services/signing-email-service';
 import { SignatureTimeline, type TimelineStep } from '../components/signatures/SignatureTimeline';
 import { SignedSuccessScreen } from '../components/signatures/SignedSuccessScreen';
 import { PaypalSignatureCheckout } from '../components/signatures/PaypalSignatureCheckout';
@@ -150,18 +151,42 @@ function SecurityToggle({
   );
 }
 
+// ── Automatic email (Resend) ──────────────────────────────────────────────────
+/** Sends the invitation from notificaciones@codecdocument.com to the email
+ * stored on the signer row — only offered to logged-in creators, since the
+ * edge function checks document ownership against the session. The mailto:
+ * link stays as a fallback for anyone without a session or if Resend fails. */
+function useAutoEmail(onSendEmail?: () => Promise<string>) {
+  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const send = async () => {
+    if (!onSendEmail || state === 'sending') return;
+    setState('sending');
+    try {
+      const to = await onSendEmail();
+      setState('sent');
+      toast.success(`Invitación enviada a ${to}.`);
+    } catch (err) {
+      setState('idle');
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el correo.', { duration: 9000 });
+    }
+  };
+  return { state, send };
+}
+
 // ── Sharing hub (Step 2 after link is generated) ──────────────────────────────
 function ShareHub({
-  link, guestName, guestEmail, docName, onContinue,
+  link, guestName, guestEmail, docName, onContinue, onSendEmail,
 }: {
   link: string;
   guestName: string;
   guestEmail: string;
   docName: string;
   onContinue: () => void;
+  onSendEmail?: () => Promise<string>;
 }) {
   const [copied, setCopied] = useState(false);
   const [inPersonOpen, setInPersonOpen] = useState(false);
+  const autoEmail = useAutoEmail(guestEmail.trim() ? onSendEmail : undefined);
   const { speak } = useVoiceSpeak();
   const spokenRef = useRef(false);
   useEffect(() => {
@@ -260,17 +285,43 @@ function ShareHub({
           </div>
         </a>
 
-        <a
-          href={mailtoUrl}
-          className="flex flex-col items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-4 text-center transition hover:bg-indigo-100"
-        >
-          <Mail className="size-6 text-indigo-600" />
-          <div>
-            <p className="text-sm font-bold text-indigo-800">Correo</p>
-            <p className="text-[10px] text-indigo-600">Notificación formal</p>
-          </div>
-        </a>
+        {onSendEmail && guestEmail.trim() ? (
+          <button
+            type="button"
+            onClick={() => void autoEmail.send()}
+            disabled={autoEmail.state === 'sending'}
+            className={`flex flex-col items-center gap-2 rounded-2xl border px-4 py-4 text-center transition disabled:opacity-70 ${autoEmail.state === 'sent' ? 'border-emerald-200 bg-emerald-50' : 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100'}`}
+          >
+            {autoEmail.state === 'sending' ? <Loader className="size-6 animate-spin text-indigo-600" />
+              : autoEmail.state === 'sent' ? <Check className="size-6 text-emerald-600" />
+              : <Mail className="size-6 text-indigo-600" />}
+            <div>
+              <p className={`text-sm font-bold ${autoEmail.state === 'sent' ? 'text-emerald-800' : 'text-indigo-800'}`}>
+                {autoEmail.state === 'sent' ? 'Correo enviado' : 'Enviar por correo'}
+              </p>
+              <p className={`truncate text-[10px] ${autoEmail.state === 'sent' ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                {autoEmail.state === 'sent' ? 'Toca para reenviar' : `Automático a ${guestEmail}`}
+              </p>
+            </div>
+          </button>
+        ) : (
+          <a
+            href={mailtoUrl}
+            className="flex flex-col items-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-4 text-center transition hover:bg-indigo-100"
+          >
+            <Mail className="size-6 text-indigo-600" />
+            <div>
+              <p className="text-sm font-bold text-indigo-800">Correo</p>
+              <p className="text-[10px] text-indigo-600">Notificación formal</p>
+            </div>
+          </a>
+        )}
       </div>
+      {onSendEmail && guestEmail.trim() && (
+        <a href={mailtoUrl} className="-mt-2 block text-center text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline">
+          o enviarlo desde mi propia app de correo
+        </a>
+      )}
 
       <button
         type="button"
@@ -289,7 +340,7 @@ function ShareHub({
  * of just one. Each opens their own /guest-sign/ link independently, on
  * their own device, at their own pace. */
 function ExtraSignerRow({
-  index, name, email, link, status, docName, onRemove,
+  index, name, email, link, status, docName, onRemove, onSendEmail,
 }: {
   index: number;
   name: string;
@@ -298,9 +349,11 @@ function ExtraSignerRow({
   status: 'pending' | 'signed';
   docName: string;
   onRemove: () => void;
+  onSendEmail?: () => Promise<string>;
 }) {
   const [copied, setCopied] = useState(false);
   const [inPersonOpen, setInPersonOpen] = useState(false);
+  const autoEmail = useAutoEmail(email.trim() ? onSendEmail : undefined);
   const handleCopy = () => {
     void navigator.clipboard.writeText(link);
     setCopied(true);
@@ -352,10 +405,19 @@ function ExtraSignerRow({
               className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
               <MessageCircle className="size-3.5" /> WhatsApp
             </a>
-            <a href={`mailto:${email}?subject=${mailSubject}&body=${mailBody}`}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-100">
-              <Mail className="size-3.5" /> Correo
-            </a>
+            {onSendEmail && email.trim() ? (
+              <button type="button" onClick={() => void autoEmail.send()} disabled={autoEmail.state === 'sending'}
+                title={`Enviar automáticamente a ${email}`}
+                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-bold transition disabled:opacity-70 ${autoEmail.state === 'sent' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'}`}>
+                {autoEmail.state === 'sending' ? <Loader className="size-3.5 animate-spin" /> : autoEmail.state === 'sent' ? <Check className="size-3.5" /> : <Mail className="size-3.5" />}
+                {autoEmail.state === 'sent' ? 'Enviado' : 'Enviar correo'}
+              </button>
+            ) : (
+              <a href={`mailto:${email}?subject=${mailSubject}&body=${mailBody}`}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-100">
+                <Mail className="size-3.5" /> Correo
+              </a>
+            )}
           </div>
           <button type="button" onClick={() => setInPersonOpen(true)}
             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-[11px] font-bold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700">
@@ -1271,6 +1333,11 @@ export function ElectronicSignaturePage() {
     return `${window.location.origin}/guest-sign/${token}${qs ? '?' + qs : ''}`;
   };
   const guestLink = signingToken ? buildGuestLink(signingToken) : '';
+  const sendInvitationEmail = session?.user?.id
+    ? (token: string) => () => sendGuestSigningInvitation(token, {
+        idPhoto: requireIdPhoto, selfie: requireSelfie, biometric: requireBiometric,
+      })
+    : null;
   const wizardStep    = toWizardStep(step);
   const isDone        = step === 'done';
 
@@ -1608,6 +1675,7 @@ export function ElectronicSignaturePage() {
                       guestEmail={guestEmail}
                       docName={fileName.replace(/\.pdf$/i, '')}
                       onContinue={() => setStep('await-guest')}
+                      onSendEmail={sendInvitationEmail && signingToken ? sendInvitationEmail(signingToken) : undefined}
                     />
 
                     {/* ── Firmantes adicionales — documentos de 3+ personas
@@ -1638,6 +1706,7 @@ export function ElectronicSignaturePage() {
                           status={s.status}
                           docName={fileName.replace(/\.pdf$/i, '')}
                           onRemove={() => handleRemoveExtraSigner(s.id)}
+                          onSendEmail={sendInvitationEmail ? sendInvitationEmail(s.token) : undefined}
                         />
                       ))}
 
