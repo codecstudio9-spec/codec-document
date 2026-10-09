@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
@@ -13,6 +13,8 @@ import {
   detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks,
   fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock, type ExtraClause,
 } from '../../lib/docxTemplateEngine';
+import { detectarHuecosEnWord, marcarTextoComoCampo, parrafosParaMarcar } from '../../lib/docxPlaceholders';
+import { MarcarCamposPanel } from '../components/templates/MarcarCamposPanel';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
   listTemplateShares, shareDocxTemplateByEmail, unshareDocxTemplate,
@@ -56,6 +58,10 @@ export function MyDocxTemplateEditorPage() {
   const [loading, setLoading] = useState(isEditMode);
   const [docxFile, setDocxFile] = useState<File | null>(null);
   const [docxFileUrl, setDocxFileUrl] = useState<string | null>(null);
+  // Bytes del Word recién subido (aún sin guardar) — sobre ellos trabaja el
+  // marcado manual de campos. En una plantilla ya guardada no se reescribe el
+  // Word: los documentos ya enviados se vuelven a armar con él.
+  const [docxBuffer, setDocxBuffer] = useState<ArrayBuffer | null>(null);
   const [templateName, setTemplateName] = useState('');
   const [fields, setFields] = useState<DetectedField[]>([]);
   const [fieldsOpen, setFieldsOpen] = useState(false);
@@ -92,8 +98,8 @@ export function MyDocxTemplateEditorPage() {
         en: 'Review the fields detected in your document, adjust the type if needed, define the signers, and save the template to get your public link.',
       }
       : {
-        es: 'Sube tu archivo de Word con variables entre llaves dobles, por ejemplo nombre cliente entre llaves.',
-        en: 'Upload your Word file with variables in double braces, for example client name in braces.',
+        es: 'Sube tu contrato en Word tal como lo usas. Nosotros encontramos los espacios para llenar, y si falta alguno lo marcas con el mouse.',
+        en: 'Upload your Word contract as you use it today. We find the blanks to fill in, and if one is missing you mark it with your mouse.',
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Boolean(docxFileUrl)]);
@@ -135,41 +141,50 @@ export function MyDocxTemplateEditorPage() {
     try {
       const buffer = await file.arrayBuffer();
       let detected = detectFields(buffer);
-      let fileForUpload: File = file;
+      let finalBuffer: ArrayBuffer = buffer;
 
       if (detected.length === 0) {
-        // No {{variables}} typed by hand — this is the common case for a
-        // real contract someone already filled in (or a template migrated
-        // from another platform like ZapSign), where the answers are just
-        // bold text after a label ("Nombre: Juan"). Auto-detect those and
-        // silently rewrite the document to use {{tags}} in those spots —
-        // everything downstream works exactly the same either way.
+        // Un Word "normal", sin {{variables}}: se buscan solos los huecos que
+        // la gente realmente usa. Primero "Etiqueta: **valor en negrita**"
+        // (documentos ya llenos o migrados de otra plataforma), después
+        // ____, ........, [Nombre], <<campo>>, XXXX y texto resaltado.
         try {
-          const { fields: boldFields, transformedDocx } = detectBoldFields(buffer);
+          const { fields: boldFields, transformedDocx } = detectBoldFields(finalBuffer);
           detected = boldFields;
-          fileForUpload = new File(
-            [transformedDocx], file.name,
-            { type: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
-          );
-          toast.success(language === 'en'
-            ? `Detected ${boldFields.length} bold field(s) automatically`
-            : `Se detectaron ${boldFields.length} campo(s) en negrita automáticamente`);
+          finalBuffer = transformedDocx;
         } catch {
-          // Falls through to the "no fields found" error below.
+          // Sin negritas con etiqueta — se sigue con los demás huecos.
+        }
+        try {
+          const huecos = detectarHuecosEnWord(finalBuffer, detected.map((f) => f.key));
+          if (huecos.campos.length > 0) {
+            detected = [...detected, ...huecos.campos];
+            finalBuffer = huecos.docx;
+          }
+        } catch {
+          // Si el Word tiene algo raro, el cliente igual puede marcar a mano.
+        }
+        if (detected.length > 0) {
+          toast.success(language === 'en'
+            ? `We found ${detected.length} field(s) to fill in. Review them below.`
+            : `Encontramos ${detected.length} dato(s) para llenar. Revísalos abajo.`);
+        } else {
+          toast.info(language === 'en'
+            ? 'No blanks found. Select in the document the details that change each time.'
+            : 'No encontramos espacios para llenar. Selecciona en el documento los datos que cambian cada vez.',
+          { duration: 8000 });
         }
       }
+      const fileForUpload: File = finalBuffer === buffer ? file : new File(
+        [finalBuffer], file.name,
+        { type: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+      );
 
-      if (detected.length === 0) {
-        setError(language === 'en'
-          ? 'No {{variables}} or bold values with a label (e.g. "Name: John") were found in this document.'
-          : 'No se encontraron {{variables}} ni valores en negrita con una etiqueta (ej. "Nombre: Juan") en este documento.');
-        return;
-      }
       setFields(detected);
       setFieldsOpen(true);
       setDocxFile(fileForUpload);
+      setDocxBuffer(finalBuffer);
       try {
-        const finalBuffer = fileForUpload === file ? buffer : await fileForUpload.arrayBuffer();
         setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(finalBuffer)));
       } catch {
         setClauseBlocks([]);
@@ -182,6 +197,25 @@ export function MyDocxTemplateEditorPage() {
     } catch {
       setError(language === 'en' ? 'Could not read this .docx file — is it a valid Word document?' : 'No se pudo leer este archivo .docx — ¿es un documento de Word válido?');
     }
+  };
+
+  const parrafosDocumento = useMemo(() => {
+    if (!docxBuffer) return [];
+    try { return parrafosParaMarcar(docxBuffer); } catch { return []; }
+  }, [docxBuffer]);
+
+  const handleMarcarCampo = (texto: string, etiqueta: string): number => {
+    if (!docxBuffer || !docxFile) return 0;
+    const res = marcarTextoComoCampo(docxBuffer, texto, etiqueta, fields.map((f) => f.key));
+    if (!res) return 0;
+    const nuevo = new File([res.docx], docxFile.name, { type: docxFile.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    setDocxBuffer(res.docx);
+    setDocxFile(nuevo);
+    if (docxFileUrl?.startsWith('blob:')) URL.revokeObjectURL(docxFileUrl);
+    setDocxFileUrl(URL.createObjectURL(nuevo));
+    setFields((prev) => [...prev, ...res.campos]);
+    setError('');
+    return res.veces;
   };
 
   const updateField = (key: string, patch: Partial<DetectedField>) => {
@@ -312,7 +346,12 @@ export function MyDocxTemplateEditorPage() {
   const handleSave = async () => {
     if (!user?.id) return;
     if (!templateName.trim()) { setError(language === 'en' ? 'Give your template a name.' : 'Ponle un nombre a tu plantilla.'); return; }
-    if (fields.length === 0) { setError(language === 'en' ? 'Your document needs at least one {{variable}}.' : 'Tu documento necesita al menos una {{variable}}.'); return; }
+    if (fields.filter((f) => f.type !== 'section').length === 0) {
+      setError(language === 'en'
+        ? 'Mark at least one detail that changes each time — select it in the document below.'
+        : 'Marca al menos un dato que cambie cada vez: selecciónalo en el documento de abajo.');
+      return;
+    }
     const invalidFixedSigner = signers.find((s) => s.role === 'fixed' && !s.promotedToField && !s.name?.trim());
     if (invalidFixedSigner) {
       setError(language === 'en' ? 'Give every fixed signer a name, or convert them to a variable.' : 'Ponle nombre a cada firmante fijo, o conviértelo en variable.');
@@ -421,9 +460,20 @@ export function MyDocxTemplateEditorPage() {
               <h2 className="text-xl font-bold text-slate-900">{language === 'en' ? 'Upload your Word document' : 'Sube tu documento de Word'}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {language === 'en'
-                  ? 'Mark every fillable field with {{double braces}}, e.g. {{client_name}}, {{signing_date:date}}, {{payment_method:Cash;Card}}.'
-                  : 'Marca cada campo con {{llaves dobles}}, ej. {{nombre_cliente}}, {{fecha_firma:fecha}}, {{metodo_pago:Efectivo;Tarjeta}}.'}
+                  ? "Upload it exactly as you use it today — you don't need to change anything."
+                  : 'Súbelo tal como lo usas hoy, no tienes que cambiarle nada.'}
               </p>
+              <div className="mx-auto mt-4 grid max-w-lg grid-cols-1 gap-2 text-left text-xs text-slate-600 sm:grid-cols-2">
+                {(language === 'en'
+                  ? [['1', 'We find the blanks on our own', '____, [Client name], XXXX, yellow highlight'], ['2', 'Missing one? Select it', 'Highlight the name or date with your mouse']]
+                  : [['1', 'Encontramos solos los espacios', '____, [Nombre del cliente], XXXX, resaltado amarillo'], ['2', '¿Falta uno? Selecciónalo', 'Marca el nombre o la fecha con el mouse']]
+                ).map(([n, t, d]) => (
+                  <div key={n} className="flex gap-2.5 rounded-xl bg-slate-50 p-3">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">{n}</span>
+                    <span><span className="block font-bold text-slate-800">{t}</span>{d}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <label className="group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/40 px-6 py-10 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
               <input
@@ -481,6 +531,19 @@ export function MyDocxTemplateEditorPage() {
             </div>
             {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
 
+            {/* El documento, con los campos ya detectados a la vista y la opción
+                de marcar los que falten seleccionándolos. Solo antes de guardar
+                por primera vez: el Word de una plantilla ya usada no se
+                reescribe (ver docxBuffer). */}
+            {docxBuffer && !isEditMode && canEditFields && (
+              <MarcarCamposPanel
+                parrafos={parrafosDocumento}
+                campos={fields}
+                language={language}
+                onMarcar={handleMarcarCampo}
+              />
+            )}
+
             {/* Detected fields — collapsible drawer; field DEFINITIONS are
                 admin-only once this user belongs to a company (see
                 canEditFields above), everyone else can still see them. */}
@@ -496,7 +559,7 @@ export function MyDocxTemplateEditorPage() {
                   </div>
                   <div>
                     <p className="text-sm font-black uppercase tracking-wide text-slate-500">
-                      {language === 'en' ? `Detected fields (${fields.length})` : `Campos detectados (${fields.length})`}
+                      {language === 'en' ? `Details filled in each time (${fields.filter((f) => f.type !== 'section').length})` : `Datos que se llenan cada vez (${fields.filter((f) => f.type !== 'section').length})`}
                     </p>
                     {!canEditFields && (
                       <p className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
@@ -555,7 +618,6 @@ export function MyDocxTemplateEditorPage() {
                           ) : canEditFields ? (
                             <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                <code className="shrink-0 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-100">{`{{${f.key}}}`}</code>
                                 <input
                                   value={f.label}
                                   onChange={(e) => updateField(f.key, { label: e.target.value })}

@@ -10,10 +10,10 @@ const CONTENT = {
     en: {
       title: 'How to build a template',
       steps: [
-        { h: 'Write your document in Word', b: 'Open Microsoft Word (or any editor that saves .docx) and write your contract normally.' },
-        { h: 'Mark every fillable spot with {{double braces}}', b: 'e.g. {{client_name}}, {{start_date}}. Use a different variable name for each person — if you used {{full_name}} for the client, use something like {{witness_name}} for the witness, or both will get the same value.' },
-        { h: 'Add a type hint if you need one (optional)', b: '{{signing_date:date}} shows a date picker. {{payment_method:Cash;Card;Transfer}} shows a dropdown with those exact options, separated by semicolons. No hint = a plain text box.' },
-        { h: 'Save as .docx and upload it', b: 'Go to My Templates → New Template → Word with {{variables}}. We detect every {{variable}} automatically — you can still relabel or reclassify any of them before saving.' },
+        { h: 'Upload the Word document you already use', b: 'My Templates → New Template → Upload my Word document. No need to change anything in it first.' },
+        { h: 'We find the blanks for you', b: 'Lines like ______ or ........, [Client name], <<city>>, XXXX and text highlighted in yellow all become fields automatically, named after the text right before them ("ID: ____" → "ID").' },
+        { h: 'Missing one? Select it with your mouse', b: 'In the document preview, highlight what changes each time (a name, an ID number, a date) and give it a name. If it appears several times, all of them are replaced.' },
+        { h: 'Review the list of details', b: 'Rename any field, mark it as a date, number or multiple choice, and decide which ones are required. (Advanced: you can also type {{field_name}} in Word yourself.)' },
         { h: 'Define your signers', b: '"Signer 1" is always the person who opens the public link (variable — you can\'t pre-fill their name). Add any other signer who is always the same person for this template (e.g. your own company rep) as a "fixed" signer with their name/email already filled in.' },
         { h: 'Turn on the security you need', b: 'Selfie, ID photo, ESIGN consent, or biometric (fingerprint/Face ID) — same toggles used everywhere else on Codec Document.' },
         { h: 'Save and share the link', b: 'The link is permanent — everyone who opens it gets their own individually generated, signed document.' },
@@ -22,10 +22,10 @@ const CONTENT = {
     es: {
       title: 'Cómo construir una plantilla',
       steps: [
-        { h: 'Escribe tu documento en Word', b: 'Abre Microsoft Word (o cualquier editor que guarde .docx) y redacta tu contrato normalmente.' },
-        { h: 'Marca cada campo rellenable con {{llaves dobles}}', b: 'ej. {{nombre_cliente}}, {{fecha_inicio}}. Usa un nombre de variable diferente para cada persona — si usaste {{nombre_completo}} para el cliente, usa algo como {{nombre_testigo}} para el testigo, o ambos recibirán el mismo valor.' },
-        { h: 'Agrega una pista de tipo si la necesitas (opcional)', b: '{{fecha_firma:fecha}} muestra un selector de fecha. {{metodo_pago:Efectivo;Tarjeta;Transferencia}} muestra opciones exactas separadas por punto y coma. Sin pista = una casilla de texto normal.' },
-        { h: 'Guarda como .docx y súbelo', b: 'Ve a Mis Plantillas → Nueva Plantilla → Word con {{variables}}. Detectamos cada {{variable}} automáticamente — puedes cambiar el nombre o el tipo de cualquiera antes de guardar.' },
+        { h: 'Sube el Word que ya usas', b: 'Mis Plantillas → Nueva Plantilla → Subir mi documento de Word. No tienes que cambiarle nada antes.' },
+        { h: 'Encontramos solos los espacios para llenar', b: 'Las líneas ______ o ........, [Nombre del cliente], <<ciudad>>, XXXX y el texto resaltado en amarillo se vuelven campos automáticamente, con el nombre de lo que va justo antes («Cédula: ____» → «Cédula»).' },
+        { h: '¿Falta uno? Selecciónalo con el mouse', b: 'En la vista del documento, marca lo que cambia cada vez (un nombre, una cédula, una fecha) y ponle un nombre. Si aparece varias veces, se reemplaza en todas.' },
+        { h: 'Revisa la lista de datos', b: 'Cambia el nombre de cualquier campo, márcalo como fecha, número u opción múltiple, y decide cuáles son obligatorios. (Avanzado: también puedes escribir {{nombre_del_campo}} tú mismo en el Word.)' },
         { h: 'Define tus firmantes', b: '"Firmante 1" siempre es quien abre el enlace público (variable — no puedes prellenar su nombre). Agrega cualquier otro firmante que siempre sea la misma persona en esta plantilla (ej. tu propio representante) como firmante "fijo" con su nombre/correo ya puestos.' },
         { h: 'Activa la seguridad que necesites', b: 'Selfie, foto de identificación, consentimiento ESIGN, o biometría (huella/Face ID) — los mismos interruptores que se usan en el resto de Codec Document.' },
         { h: 'Guarda y comparte el enlace', b: 'El enlace es permanente — cada persona que lo abre obtiene su propio documento generado y firmado individualmente.' },

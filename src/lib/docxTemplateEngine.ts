@@ -534,14 +534,21 @@ function rewriteParagraphBoldFields(
     const contextualLabel = extractContextualLabel(plainTextAcc);
     const trimmedValue = combinedText.trim();
 
-    if (boldRuns.length > 0 && contextualLabel && trimmedValue && trimmedValue.length <= MAX_BOLD_FIELD_VALUE_LENGTH) {
+    if (boldRuns.length > 0 && contextualLabel && trimmedValue && trimmedValue.length <= MAX_BOLD_FIELD_VALUE_LENGTH && !trimmedValue.includes('{{')) {
       const baseKey = slugifyKey(contextualLabel);
       const n = (usedKeyCounts.get(baseKey) ?? 0) + 1;
       usedKeyCounts.set(baseKey, n);
       const key = n > 1 ? `${baseKey}_${n}` : baseKey;
       const label = n > 1 ? `${contextualLabel} (${n})` : contextualLabel;
       const rPrMatch = /<w:rPr>[\s\S]*?<\/w:rPr>/.exec(boldRuns[0].xml);
-      out += `<w:r>${rPrMatch ? rPrMatch[0] : ''}<w:t xml:space="preserve">{{${key}}}</w:t></w:r>`;
+      // Los "gaps" (marcadores, proofErr y, al final del párrafo, el propio
+      // </w:p>) no son texto del valor: se conservan. Antes se descartaban
+      // junto con los runs en negrita, y si el valor era lo último del
+      // renglón el párrafo perdía su cierre y se pegaba con el siguiente.
+      const firstRunIdx = pending.findIndex((t) => t.kind === 'run');
+      const gapsBefore = pending.slice(0, firstRunIdx).map((t) => t.xml).join('');
+      const gapsAfter = pending.slice(firstRunIdx).filter((t) => t.kind === 'gap').map((t) => t.xml).join('');
+      out += `${gapsBefore}<w:r>${rPrMatch ? rPrMatch[0] : ''}<w:t xml:space="preserve">{{${key}}}</w:t></w:r>${gapsAfter}`;
       detected.push({ key, label, type: 'text', required: true });
       plainTextAcc = '';
     } else {

@@ -138,8 +138,8 @@ export function MyTemplatesPage() {
             <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'My Templates' : 'Mis Plantillas'}</h1>
             <p className="mt-1 text-sm text-slate-500">
               {language === 'en'
-                ? 'Upload your own document once, mark the fields, and reuse it every time — the form fills it in automatically.'
-                : 'Sube tu propio documento una vez, marca los campos, y reúsalo cada vez — el formulario lo llena automáticamente.'}
+                ? 'Upload a contract you already use once. Next time you just fill in the details and send it to sign.'
+                : 'Sube una vez un contrato que ya usas. La próxima vez solo llenas los datos y lo envías a firmar.'}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -164,7 +164,7 @@ export function MyTemplatesPage() {
               {newMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setNewMenuOpen(false)} />
-                  <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                  <div className="absolute right-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                     {/* Word/{{variables}} listed first — this is the primary
                         engine going forward; the legacy PDF-by-coordinates
                         option second so muscle memory from before this menu
@@ -176,19 +176,11 @@ export function MyTemplatesPage() {
                     >
                       <FileType2 className="size-5 shrink-0 text-indigo-500" />
                       <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Word with {{variables}}' : 'Word con {{variables}}'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Public link, anyone can fill & sign' : 'Enlace público, cualquiera llena y firma'}</span>
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new'); }}
-                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
-                    >
-                      <FileText className="size-5 shrink-0 text-slate-400" />
-                      <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'PDF with boxes' : 'PDF con casillas'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Click to place fields' : 'Clic para colocar campos'}</span>
+                        <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                          {language === 'en' ? 'Upload my Word document' : 'Subir mi documento de Word'}
+                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-emerald-700">{language === 'en' ? 'Easiest' : 'Más fácil'}</span>
+                        </span>
+                        <span className="block text-xs text-slate-400">{language === 'en' ? 'As is — we find the blanks for you' : 'Tal como está: encontramos los espacios solos'}</span>
                       </span>
                     </button>
                     {/* Sin Word a mano: pegar, dictar o importar el texto y
@@ -201,8 +193,19 @@ export function MyTemplatesPage() {
                     >
                       <Sparkles className="size-5 shrink-0 text-blue-500" />
                       <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Paste, dictate or import text' : 'Pega, dicta o importa el texto'}</span>
+                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Write or paste the text' : 'Escribir o pegar el texto'}</span>
+                        <span className="block text-xs text-slate-400">{language === 'en' ? 'No Word file? Paste or dictate it' : '¿Sin Word? Pégalo o díctalo'}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new'); }}
+                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
+                    >
+                      <FileText className="size-5 shrink-0 text-slate-400" />
+                      <span>
+                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'I only have a PDF' : 'Solo tengo un PDF'}</span>
+                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Click on the PDF where each detail goes' : 'Haz clic en el PDF donde va cada dato'}</span>
                       </span>
                     </button>
                   </div>
@@ -223,6 +226,54 @@ export function MyTemplatesPage() {
             larga. «Usar esta plantilla» clona el ejemplo en una copia
             independiente que el nuevo dueño puede reescribir entera sin tocar
             el original. */}
+        {/* Primera vez: tres caminos explicados en una frase, en vez de un
+            menú desplegable con nombres técnicos. */}
+        {docxTemplates !== null && docxTemplates.length === 0 && templates !== null && templates.length === 0 && (
+          <div className="mt-6 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 to-white p-5 sm:p-6">
+            <p className="text-base font-black text-slate-900">
+              {language === 'en' ? 'Create your first template in 2 minutes' : 'Crea tu primera plantilla en 2 minutos'}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {language === 'en' ? 'Pick how you want to start:' : 'Elige cómo quieres empezar:'}
+            </p>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {[
+                {
+                  icon: <FileType2 className="size-5 text-indigo-600" />,
+                  title: language === 'en' ? 'Upload my Word' : 'Subir mi Word',
+                  desc: language === 'en' ? 'The contract you already use. We find the blanks for you.' : 'El contrato que ya usas. Encontramos solos los espacios para llenar.',
+                  onClick: () => navigate('/my-templates/new-docx'),
+                  primary: true,
+                },
+                {
+                  icon: <Sparkles className="size-5 text-blue-600" />,
+                  title: language === 'en' ? 'Write or paste it' : 'Escribirlo o pegarlo',
+                  desc: language === 'en' ? 'No file? Paste the text or dictate it.' : '¿No tienes el archivo? Pega el texto o díctalo.',
+                  onClick: () => navigate('/crear-documento'),
+                },
+                {
+                  icon: <FilePenLine className="size-5 text-emerald-600" />,
+                  title: language === 'en' ? 'Start from an example' : 'Empezar con un ejemplo',
+                  desc: language === 'en' ? 'Contracts, warranties and more, ready to adapt.' : 'Contratos, garantías y más, listos para adaptar.',
+                  onClick: () => document.getElementById('ejemplos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                },
+              ].map((op) => (
+                <button
+                  key={op.title}
+                  type="button"
+                  onClick={op.onClick}
+                  className={`flex flex-col items-start gap-2 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${op.primary ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-200'}`}
+                >
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-slate-50">{op.icon}</span>
+                  <span className="text-sm font-black text-slate-900">{op.title}</span>
+                  <span className="text-xs leading-relaxed text-slate-500">{op.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div id="ejemplos" className="scroll-mt-6" />
         {examples !== null && examples.length > 0 && (
           <GaleriaEjemplos
             ejemplos={examples}
@@ -235,7 +286,7 @@ export function MyTemplatesPage() {
         {docxTemplates !== null && docxTemplates.length > 0 && (
           <div className="mt-6">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
-              <FileType2 className="size-4" /> {language === 'en' ? 'Word templates (public link)' : 'Plantillas Word (enlace público)'}
+              <FileType2 className="size-4" /> {language === 'en' ? 'Your templates' : 'Tus plantillas'}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {docxTemplates.map((t) => (
