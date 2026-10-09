@@ -1,16 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Home, FileText, PenLine, LayoutTemplate, FolderOpen, Sparkles, Settings, User, LogOut, BarChart3, Building2, Code2 } from 'lucide-react';
+import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut, BarChart3, Building2, Code2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
 
 const NAV_ITEMS = [
   { to: '/dashboard', labelEs: 'Dashboard', labelEn: 'Dashboard', icon: Home },
-  { to: '/dashboard/documents', labelEs: 'Mis Documentos', labelEn: 'My Documents', icon: FileText },
+  // «Documentos prediseñados» (la galería que antes era «Plantillas») vive
+  // ahora dentro de Mis Documentos; /dashboard/templates redirige allá.
+  { to: '/dashboard/documents', labelEs: 'Mis Documentos', labelEn: 'My Documents', icon: FileText, also: ['/dashboard/templates'] },
   { to: '/dashboard/signatures', labelEs: 'Firmas', labelEn: 'Signatures', icon: PenLine },
-  { to: '/dashboard/templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: LayoutTemplate },
-  { to: '/my-templates', labelEs: 'Mis Plantillas', labelEn: 'My Templates', icon: FolderOpen },
+  { to: '/my-templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: LayoutTemplate },
   { to: '/dashboard/ai', labelEs: 'Asistente IA', labelEn: 'AI Assistant', icon: Sparkles },
   { to: '/dashboard/settings', labelEs: 'Configuración', labelEn: 'Settings', icon: Settings },
 ] as const;
@@ -59,9 +60,11 @@ export function DesktopSidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
-        {navItems.map(({ to, labelEs, labelEn, icon: Icon }) => {
+        {navItems.map((item) => {
+          const { to, labelEs, labelEn, icon: Icon } = item;
           const label = language === 'en' ? labelEn : labelEs;
-          const active = to === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(to);
+          const also: readonly string[] = 'also' in item ? item.also : [];
+          const active = to === '/dashboard' ? pathname === '/dashboard' : [to, ...also].some((p) => pathname.startsWith(p));
           return (
             <Link key={to} to={to} className="relative block">
               <motion.div

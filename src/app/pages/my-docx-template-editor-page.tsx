@@ -17,6 +17,7 @@ import { detectarHuecosEnWord, marcarTextoComoCampo, parrafosParaMarcar } from '
 import { MarcarCamposPanel } from '../components/templates/MarcarCamposPanel';
 import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
 import { MIME_DOCX, MIME_GOOGLE_DOC } from '../services/google-drive-picker';
+import { tomarArchivoPendiente } from '../services/archivo-plantilla';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
   listTemplateShares, shareDocxTemplateByEmail, unshareDocxTemplate,
@@ -200,6 +201,15 @@ export function MyDocxTemplateEditorPage() {
       setError(language === 'en' ? 'Could not read this .docx file — is it a valid Word document?' : 'No se pudo leer este archivo .docx — ¿es un documento de Word válido?');
     }
   };
+
+  // Viene de la caja «Sube tu documento» de /my-templates: el Word ya fue
+  // elegido allá, así que se procesa directo sin pedirlo otra vez.
+  useEffect(() => {
+    if (isEditMode) return;
+    const file = tomarArchivoPendiente('docx');
+    if (file) void handleFileSelect(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const parrafosDocumento = useMemo(() => {
     if (!docxBuffer) return [];
@@ -438,7 +448,7 @@ export function MyDocxTemplateEditorPage() {
           </a>
         </div>
         <button type="button" onClick={() => navigate('/my-templates')} className="mt-2 text-sm font-semibold text-slate-500 hover:text-slate-700">
-          {language === 'en' ? 'Back to My Templates' : 'Volver a Mis Plantillas'}
+          {language === 'en' ? 'Back to Templates' : 'Volver a Plantillas'}
         </button>
       </div>
     );
@@ -449,7 +459,7 @@ export function MyDocxTemplateEditorPage() {
       <div className="mx-auto max-w-3xl">
         <button type="button" onClick={() => navigate('/my-templates')} className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700">
           <ArrowLeft className="size-4" />
-          {language === 'en' ? 'My Templates' : 'Mis Plantillas'}
+          {language === 'en' ? 'Templates' : 'Plantillas'}
         </button>
 
         <h1 className="text-2xl font-black text-slate-900">

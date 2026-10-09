@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { FileText, FileType2, Plus, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, ChevronDown, FilePenLine, Send, Building2, Sparkles, Loader } from 'lucide-react';
+import { FileText, FileType2, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, FilePenLine, Send, Building2, Sparkles, Upload, Image as ImageIcon, Loader, FolderOpen, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
@@ -15,6 +15,9 @@ import { GaleriaEjemplos } from '../components/templates/GaleriaEjemplos';
 import { DesktopAppShell } from '../components/desktop/DesktopAppShell';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import { SITE_URL } from '../config/site';
+import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
+import { MIME_DOCX, MIME_GOOGLE_DOC, MIME_PDF } from '../services/google-drive-picker';
+import { ACCEPT_CUALQUIER_DOCUMENTO, prepararArchivoPlantilla } from '../services/archivo-plantilla';
 
 export function MyTemplatesPage() {
   const { user } = useAuth();
@@ -23,8 +26,8 @@ export function MyTemplatesPage() {
   // Presentación de la pantalla: qué se puede hacer aquí y por dónde empezar.
   useEffect(() => {
     speak({
-      es: 'Estas son tus plantillas: documentos que llenas una vez y reutilizas siempre. Con el botón «Nueva plantilla» puedes subir un Word con campos entre llaves dobles, marcar casillas sobre un PDF, o crear un documento nuevo desde texto pegado, dictado o importado. Si prefieres empezar rápido, abajo tienes plantillas de ejemplo por sector: toca «Usar esta plantilla» y te queda una copia tuya para editar. Cada plantilla se puede llenar dictando y tiene su propio enlace público para que otros la llenen y firmen.',
-      en: 'These are your templates: documents you set up once and reuse every time. With the "New template" button you can upload a Word file with fields in double braces, place boxes on a PDF, or create a new document from pasted, dictated or imported text. To start quickly, below you have example templates by industry: tap "Use this template" to get your own copy to edit. Every template can be filled in by dictating, and has its own public link so others can fill it in and sign.',
+      es: 'Aquí están tus plantillas: documentos que preparas una vez y reutilizas siempre. Arriba sube tu documento en Word, en PDF o una foto, tal como lo tienes. Abajo están tus plantillas guardadas y las plantillas prediseñadas, listas para usar.',
+      en: 'These are your templates: documents you set up once and reuse every time. Up top, upload your document as Word, PDF or a photo, just as you have it. Below are your saved templates and the ready-made templates.',
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -40,7 +43,9 @@ export function MyTemplatesPage() {
   const [docxTemplates, setDocxTemplates] = useState<DocxTemplate[] | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const [arrastrando, setArrastrando] = useState(false);
+  const [pestana, setPestana] = useState<'mias' | 'prediseñadas' | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [sendTemplate, setSendTemplate] = useState<DocxTemplate | null>(null);
   const [examples, setExamples] = useState<PublicExampleTemplate[] | null>(null);
@@ -58,6 +63,19 @@ export function MyTemplatesPage() {
   useEffect(() => {
     listPublicExampleTemplates().then(setExamples).catch(() => setExamples([]));
   }, []);
+
+  // Cualquier archivo (Word, PDF o foto) entra por la misma caja y se va al
+  // editor que le corresponde — el cliente no tiene que saber cuál es cuál.
+  const handleArchivo = async (file?: File | null) => {
+    if (!file) return;
+    setSubiendo(true);
+    try {
+      navigate(await prepararArchivoPlantilla(file, language));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err), { duration: 8000 });
+      setSubiendo(false);
+    }
+  };
 
   const handleUseExample = async (example: PublicExampleTemplate) => {
     if (!user?.id) return;
@@ -120,6 +138,12 @@ export function MyTemplatesPage() {
     );
   }
 
+  const cargandoMias = docxTemplates === null || templates === null;
+  const totalMias = (docxTemplates?.length ?? 0) + (templates?.length ?? 0);
+  // Sin plantillas propias todavía, se abre directo en las prediseñadas: una
+  // pestaña vacía como primera impresión no ayuda a nadie.
+  const pestanaActiva = pestana ?? (!cargandoMias && totalMias === 0 ? 'prediseñadas' : 'mias');
+
   const pageContent = (
     <div className="mx-auto max-w-5xl">
       {isMobile && (
@@ -133,287 +157,264 @@ export function MyTemplatesPage() {
         </button>
       )}
 
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'My Templates' : 'Mis Plantillas'}</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {language === 'en'
-                ? 'Upload a contract you already use once. Next time you just fill in the details and send it to sign.'
-                : 'Sube una vez un contrato que ya usas. La próxima vez solo llenas los datos y lo envías a firmar.'}
-            </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Templates' : 'Plantillas'}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {language === 'en'
+              ? 'Upload a document once. Next time you just fill in the details and send it to sign.'
+              : 'Sube un documento una vez. La próxima vez solo llenas los datos y lo envías a firmar.'}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/my-templates/ayuda')}
+            className="flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-600"
+            title={language === 'en' ? 'Help' : 'Ayuda'}
+          >
+            <HelpCircle className="size-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/crear-documento')}
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
+          >
+            <Sparkles className="size-4" />
+            {language === 'en' ? 'New document with AI' : 'Nuevo documento con IA'}
+          </button>
+        </div>
+      </div>
+
+      {/* Una sola caja para lo que el cliente tenga: Word, PDF o una foto.
+          prepararArchivoPlantilla decide a qué editor va — antes había que
+          escoger entre «Word» y «PDF» en un menú sin saber la diferencia. */}
+      <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-8">
+        <div className="mb-5 text-center">
+          <h2 className="text-xl font-bold text-slate-900">{language === 'en' ? 'Upload your document' : 'Sube tu documento'}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {language === 'en'
+              ? "Just as you use it today — we find the blanks to fill in on our own."
+              : 'Tal como lo usas hoy. Nosotros encontramos los espacios para llenar.'}
+          </p>
+        </div>
+        <label
+          onDragEnter={() => setArrastrando(true)}
+          onDragLeave={() => setArrastrando(false)}
+          onDrop={() => setArrastrando(false)}
+          className={`group relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 text-center transition ${arrastrando ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-slate-50/40 hover:border-indigo-400 hover:bg-indigo-50/50'}`}
+        >
+          <input
+            type="file"
+            accept={ACCEPT_CUALQUIER_DOCUMENTO}
+            disabled={subiendo}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            onChange={(e) => { void handleArchivo(e.target.files?.[0]); e.target.value = ''; }}
+          />
+          <div className="mb-3 rounded-2xl bg-white p-4 shadow-sm">
+            {subiendo ? <Loader className="size-8 animate-spin text-indigo-500" /> : <Upload className="size-8 text-slate-500" />}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <p className="text-base font-semibold text-slate-900">
+            {subiendo
+              ? (language === 'en' ? 'Opening your document…' : 'Abriendo tu documento…')
+              : (language === 'en' ? 'Drag your document here' : 'Arrastra tu documento aquí')}
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {[
+              { icon: <FileType2 className="size-3.5 text-indigo-500" />, label: 'Word' },
+              { icon: <FileText className="size-3.5 text-rose-500" />, label: 'PDF' },
+              { icon: <ImageIcon className="size-3.5 text-emerald-500" />, label: language === 'en' ? 'Photo' : 'Foto' },
+            ].map((f) => (
+              <span key={f.label} className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                {f.icon}{f.label}
+              </span>
+            ))}
+          </div>
+          <span className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
+            {language === 'en' ? 'Choose file' : 'Elegir archivo'}
+          </span>
+        </label>
+        <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <GoogleDriveButton
+            mimeTypes={[MIME_DOCX, MIME_GOOGLE_DOC, MIME_PDF]}
+            language={language}
+            onFile={(file) => handleArchivo(file)}
+            className="w-full sm:w-auto"
+          />
+          <button
+            type="button"
+            onClick={() => navigate('/crear-documento')}
+            className="w-full rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-2.5 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50 sm:w-auto"
+          >
+            {language === 'en' ? 'No file? Write, paste or dictate it' : '¿Sin archivo? Escríbelo, pégalo o díctalo'}
+          </button>
+        </div>
+      </section>
+
+      {/* Lo ya guardado y lo listo para usar, en dos pestañas en vez de tres
+          listas apiladas (Word, PDF, ejemplos) que había que recorrer. */}
+      <div className="mt-8 flex gap-1 rounded-2xl bg-slate-100 p-1">
+        {([
+          { key: 'mias' as const, icon: <FolderOpen className="size-4" />, label: language === 'en' ? 'My templates' : 'Mis plantillas', count: cargandoMias ? null : totalMias },
+          { key: 'prediseñadas' as const, icon: <LayoutGrid className="size-4" />, label: language === 'en' ? 'Ready-made templates' : 'Plantillas prediseñadas', count: examples?.length ?? null },
+        ]).map((tab) => {
+          const activa = pestanaActiva === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setPestana(tab.key)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.count !== null && (
+                <span className={`rounded-full px-2 py-0.5 text-[11px] ${activa ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>{tab.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5">
+        {pestanaActiva === 'prediseñadas' ? (
+          examples === null ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white shadow-sm" />)}
+            </div>
+          ) : examples.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">{language === 'en' ? 'No ready-made templates yet.' : 'Todavía no hay plantillas prediseñadas.'}</p>
+          ) : (
+            <GaleriaEjemplos
+              ejemplos={examples}
+              language={language}
+              cloningId={cloningId}
+              onUsar={(ex) => void handleUseExample(ex)}
+              sinTitulo
+            />
+          )
+        ) : cargandoMias ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white shadow-sm" />)}
+          </div>
+        ) : totalMias === 0 ? (
+          <div className="rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-12 text-center">
+            <FolderOpen className="mx-auto mb-3 size-10 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-600">
+              {language === 'en' ? "You don't have any templates yet" : 'Todavía no tienes plantillas'}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              {language === 'en' ? 'Upload a document above, or start from a ready-made one.' : 'Sube un documento arriba, o empieza con una prediseñada.'}
+            </p>
             <button
               type="button"
-              onClick={() => navigate('/my-templates/ayuda')}
-              className="flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-600"
-              title={language === 'en' ? 'Help' : 'Ayuda'}
+              onClick={() => setPestana('prediseñadas')}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white"
             >
-              <HelpCircle className="size-5" />
+              <LayoutGrid className="size-4" />
+              {language === 'en' ? 'See ready-made templates' : 'Ver plantillas prediseñadas'}
             </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setNewMenuOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
-              >
-                <Plus className="size-4" />
-                {language === 'en' ? 'New Template' : 'Nueva Plantilla'}
-                <ChevronDown className={`size-4 transition-transform ${newMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {newMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setNewMenuOpen(false)} />
-                  <div className="absolute right-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                    {/* Word/{{variables}} listed first — this is the primary
-                        engine going forward; the legacy PDF-by-coordinates
-                        option second so muscle memory from before this menu
-                        existed doesn't default users into the wrong one. */}
-                    <button
-                      type="button"
-                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new-docx'); }}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50"
-                    >
-                      <FileType2 className="size-5 shrink-0 text-indigo-500" />
-                      <span>
-                        <span className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
-                          {language === 'en' ? 'Upload my Word document' : 'Subir mi documento de Word'}
-                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black uppercase text-emerald-700">{language === 'en' ? 'Easiest' : 'Más fácil'}</span>
-                        </span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'As is — we find the blanks for you' : 'Tal como está: encontramos los espacios solos'}</span>
-                      </span>
-                    </button>
-                    {/* Sin Word a mano: pegar, dictar o importar el texto y
-                        guardarlo como plantilla desde «Crea un documento
-                        nuevo». Los huecos [Nombre] / ____ se vuelven campos. */}
-                    <button
-                      type="button"
-                      onClick={() => { setNewMenuOpen(false); navigate('/crear-documento'); }}
-                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
-                    >
-                      <Sparkles className="size-5 shrink-0 text-blue-500" />
-                      <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'Write or paste the text' : 'Escribir o pegar el texto'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'No Word file? Paste or dictate it' : '¿Sin Word? Pégalo o díctalo'}</span>
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setNewMenuOpen(false); navigate('/my-templates/new'); }}
-                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-left hover:bg-slate-50"
-                    >
-                      <FileText className="size-5 shrink-0 text-slate-400" />
-                      <span>
-                        <span className="block text-sm font-bold text-slate-800">{language === 'en' ? 'I only have a PDF' : 'Solo tengo un PDF'}</span>
-                        <span className="block text-xs text-slate-400">{language === 'en' ? 'Click on the PDF where each detail goes' : 'Haz clic en el PDF donde va cada dato'}</span>
-                      </span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
-        </div>
-
-        {/* Public example gallery — always visible, even for a brand-new
-            account with zero templates of its own. "Usar esta plantilla"
-            clones it into an independent copy the new owner can freely
-            rewrite (fields, clauses, everything) without touching the
-            original example. */}
-        {/* Galería de ejemplos. Vive en su propio componente porque tiene
-            lógica propia —partir la etiqueta en nombre y sector, agrupar y
-            filtrar— y aquí dentro sólo añadía ruido a una página que ya es
-            larga. «Usar esta plantilla» clona el ejemplo en una copia
-            independiente que el nuevo dueño puede reescribir entera sin tocar
-            el original. */}
-        {/* Primera vez: tres caminos explicados en una frase, en vez de un
-            menú desplegable con nombres técnicos. */}
-        {docxTemplates !== null && docxTemplates.length === 0 && templates !== null && templates.length === 0 && (
-          <div className="mt-6 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 to-white p-5 sm:p-6">
-            <p className="text-base font-black text-slate-900">
-              {language === 'en' ? 'Create your first template in 2 minutes' : 'Crea tu primera plantilla en 2 minutos'}
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {language === 'en' ? 'Pick how you want to start:' : 'Elige cómo quieres empezar:'}
-            </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                {
-                  icon: <FileType2 className="size-5 text-indigo-600" />,
-                  title: language === 'en' ? 'Upload my Word' : 'Subir mi Word',
-                  desc: language === 'en' ? 'The contract you already use. We find the blanks for you.' : 'El contrato que ya usas. Encontramos solos los espacios para llenar.',
-                  onClick: () => navigate('/my-templates/new-docx'),
-                  primary: true,
-                },
-                {
-                  icon: <Sparkles className="size-5 text-blue-600" />,
-                  title: language === 'en' ? 'Write or paste it' : 'Escribirlo o pegarlo',
-                  desc: language === 'en' ? 'No file? Paste the text or dictate it.' : '¿No tienes el archivo? Pega el texto o díctalo.',
-                  onClick: () => navigate('/crear-documento'),
-                },
-                {
-                  icon: <FilePenLine className="size-5 text-emerald-600" />,
-                  title: language === 'en' ? 'Start from an example' : 'Empezar con un ejemplo',
-                  desc: language === 'en' ? 'Contracts, warranties and more, ready to adapt.' : 'Contratos, garantías y más, listos para adaptar.',
-                  onClick: () => document.getElementById('ejemplos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-                },
-              ].map((op) => (
-                <button
-                  key={op.title}
-                  type="button"
-                  onClick={op.onClick}
-                  className={`flex flex-col items-start gap-2 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${op.primary ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-slate-200'}`}
-                >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-slate-50">{op.icon}</span>
-                  <span className="text-sm font-black text-slate-900">{op.title}</span>
-                  <span className="text-xs leading-relaxed text-slate-500">{op.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div id="ejemplos" className="scroll-mt-6" />
-        {examples !== null && examples.length > 0 && (
-          <GaleriaEjemplos
-            ejemplos={examples}
-            language={language}
-            cloningId={cloningId}
-            onUsar={(ex) => void handleUseExample(ex)}
-          />
-        )}
-
-        {docxTemplates !== null && docxTemplates.length > 0 && (
-          <div className="mt-6">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
-              <FileType2 className="size-4" /> {language === 'en' ? 'Your templates' : 'Tus plantillas'}
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {docxTemplates.map((t) => (
-                <div key={t.id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                  {confirmingId === t.id ? (
-                    <div className="flex flex-1 flex-col justify-between gap-3">
-                      <p className="text-sm font-semibold text-red-700">
-                        {language === 'en' ? `Delete "${t.name}"?` : `¿Eliminar "${t.name}"?`}
-                      </p>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => setConfirmingId(null)} className="flex-1 rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600">
-                          {language === 'en' ? 'Cancel' : 'Cancelar'}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deletingId === t.id}
-                          onClick={() => void handleDeleteDocx(t.id)}
-                          className="flex-1 rounded-xl bg-red-600 py-2 text-xs font-bold text-white disabled:opacity-50"
-                        >
-                          {deletingId === t.id ? '…' : (language === 'en' ? 'Delete' : 'Eliminar')}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
-                          <FileType2 className="size-5 text-indigo-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-slate-900">{t.name}</p>
-                          <p className="text-xs text-slate-400">
-                            {t.detectedFields.length} {language === 'en' ? 'field(s)' : 'campo(s)'}
-                          </p>
-                          {t.userId !== user.id && (
-                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
-                              <Building2 className="size-2.5" /> {language === 'en' ? 'Shared with you' : 'Compartida contigo'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {docxTemplates!.map((t) => (
+              <div key={t.id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                {confirmingId === t.id ? (
+                  <div className="flex flex-1 flex-col justify-between gap-3">
+                    <p className="text-sm font-semibold text-red-700">
+                      {language === 'en' ? `Delete "${t.name}"?` : `¿Eliminar "${t.name}"?`}
+                    </p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setConfirmingId(null)} className="flex-1 rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600">
+                        {language === 'en' ? 'Cancel' : 'Cancelar'}
+                      </button>
                       <button
                         type="button"
-                        onClick={() => handleCopyLink(t.publicSlug)}
-                        className="flex items-center gap-1.5 truncate rounded-xl bg-slate-50 px-3 py-2 text-left text-xs font-mono text-slate-500 hover:bg-slate-100"
+                        disabled={deletingId === t.id}
+                        onClick={() => void handleDeleteDocx(t.id)}
+                        className="flex-1 rounded-xl bg-red-600 py-2 text-xs font-bold text-white disabled:opacity-50"
                       >
-                        {copiedSlug === t.publicSlug ? <Check className="size-3.5 shrink-0 text-emerald-600" /> : <Link2 className="size-3.5 shrink-0 text-slate-400" />}
-                        <span className="truncate">/t/{t.publicSlug}</span>
-                        <Copy className="ml-auto size-3.5 shrink-0 text-slate-300" />
+                        {deletingId === t.id ? '…' : (language === 'en' ? 'Delete' : 'Eliminar')}
                       </button>
-                      <div className="mt-auto flex flex-col gap-2">
-                        {/* Acción principal, como «Use template» en Dropbox Sign:
-                            llenar → enviar a firmar o descargar, en un solo modal. */}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
+                        <FileType2 className="size-5 text-indigo-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-slate-900">{t.name}</p>
+                        <p className="text-xs text-slate-400">
+                          <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-indigo-600">Word</span>
+                            {t.detectedFields.length} {language === 'en' ? 'field(s)' : 'campo(s)'}
+                        </p>
+                        {t.userId !== user.id && (
+                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
+                            <Building2 className="size-2.5" /> {language === 'en' ? 'Shared with you' : 'Compartida contigo'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(t.publicSlug)}
+                      className="flex items-center gap-1.5 truncate rounded-xl bg-slate-50 px-3 py-2 text-left text-xs font-mono text-slate-500 hover:bg-slate-100"
+                    >
+                      {copiedSlug === t.publicSlug ? <Check className="size-3.5 shrink-0 text-emerald-600" /> : <Link2 className="size-3.5 shrink-0 text-slate-400" />}
+                      <span className="truncate">/t/{t.publicSlug}</span>
+                      <Copy className="ml-auto size-3.5 shrink-0 text-slate-300" />
+                    </button>
+                    <div className="mt-auto flex flex-col gap-2">
+                      {/* Acción principal, como «Use template» en Dropbox Sign:
+                          llenar → enviar a firmar o descargar, en un solo modal. */}
+                      <button
+                        type="button"
+                        onClick={() => setSendTemplate(t)}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
+                      >
+                        <FilePenLine className="size-4" />
+                        {language === 'en' ? 'Use template' : 'Usar plantilla'}
+                      </button>
+                      <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() => setSendTemplate(t)}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500"
+                          onClick={() => handleCopyLink(t.publicSlug, true)}
+                          title={language === 'en' ? 'Copy the public link — the recipient fills it in and signs' : 'Copia el enlace público — el destinatario lo llena y firma'}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
                         >
-                          <FilePenLine className="size-4" />
-                          {language === 'en' ? 'Use template' : 'Usar plantilla'}
+                          <Send className="size-3.5" />
+                          {language === 'en' ? 'Signer fills & signs' : 'Firmante llena y firma'}
                         </button>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLink(t.publicSlug, true)}
-                            title={language === 'en' ? 'Copy the public link — the recipient fills it in and signs' : 'Copia el enlace público — el destinatario lo llena y firma'}
-                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
-                          >
-                            <Send className="size-3.5" />
-                            {language === 'en' ? 'Signer fills & signs' : 'Firmante llena y firma'}
-                          </button>
-                          {t.userId === user.id && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
-                                title={language === 'en' ? 'Edit template' : 'Editar plantilla'}
-                                className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
-                              >
-                                <PenLine className="size-3.5" />
-                                {language === 'en' ? 'Edit' : 'Editar'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setConfirmingId(t.id)}
-                                title={language === 'en' ? 'Delete' : 'Eliminar'}
-                                className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
-                              >
-                                <Trash2 className="size-4" />
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        {t.userId === user.id && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/my-templates/${t.id}/edit-docx`)}
+                              title={language === 'en' ? 'Edit template' : 'Editar plantilla'}
+                              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
+                            >
+                              <PenLine className="size-3.5" />
+                              {language === 'en' ? 'Edit' : 'Editar'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(t.id)}
+                              title={language === 'en' ? 'Delete' : 'Eliminar'}
+                              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-600"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <GenerateSendModal template={sendTemplate} language={language} onClose={() => setSendTemplate(null)} />
-
-        <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
-          <FileText className="size-4" /> {language === 'en' ? 'PDF templates' : 'Plantillas PDF'}
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {templates === null ? (
-            [0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-white shadow-sm" />)
-          ) : templates.length === 0 ? (
-            <div className="col-span-full rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
-              <FileText className="mx-auto mb-3 size-10 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-500">
-                {language === 'en' ? "You don't have any templates yet" : 'Todavía no tienes plantillas'}
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('/my-templates/new')}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white"
-              >
-                <Plus className="size-4" />
-                {language === 'en' ? 'Create your first template' : 'Crea tu primera plantilla'}
-              </button>
-            </div>
-          ) : (
-            templates.map((t) => (
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+            {templates!.map((t) => (
               <div key={t.id} className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 {confirmingId === t.id ? (
                   <div className="flex flex-1 flex-col justify-between gap-3">
@@ -443,6 +444,7 @@ export function MyTemplatesPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-slate-900">{t.name}</p>
                         <p className="text-xs text-slate-400">
+                          <span className="mr-1.5 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-rose-600">PDF</span>
                           {t.fields.length} {language === 'en' ? 'field(s)' : 'campo(s)'}
                         </p>
                       </div>
@@ -467,9 +469,12 @@ export function MyTemplatesPage() {
                   </>
                 )}
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <GenerateSendModal template={sendTemplate} language={language} onClose={() => setSendTemplate(null)} />
     </div>
   );
 

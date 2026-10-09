@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Search, FileText, ArrowRight, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
-import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
 import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
@@ -10,12 +9,10 @@ import { getDocumentTranslation } from '../../data/document-translations';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { compartirFormularioEnBlanco } from '../../utils/compartir-formulario';
 
+/** La galería se mudó a Mis Documentos → «Documentos prediseñados». La ruta
+ *  se conserva para enlaces viejos y marcadores. */
 export function DesktopTemplates() {
-  return (
-    <DesktopAppShell>
-      <TemplatesContent />
-    </DesktopAppShell>
-  );
+  return <Navigate to="/dashboard/documents?ver=predisenados" replace />;
 }
 
 /**
@@ -64,7 +61,9 @@ function CirculoSeccion({ activa, color, Icono, nombre, cuantas, onClick }: {
   );
 }
 
-function TemplatesContent() {
+/** Documentos listos para llenar (contratos, cartas, recibos…): se elige uno,
+ *  se llenan los datos y se descarga o se envía a firmar. */
+export function DocumentosPredisenados() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [query, setQuery] = useState('');
@@ -80,16 +79,14 @@ function TemplatesContent() {
   }, [query, activeCategory]);
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Templates' : 'Plantillas'}</h1>
-
-      <div className="mt-5 flex items-center gap-3">
+    <div>
+      <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={language === 'en' ? 'Search templates...' : 'Buscar plantillas...'}
+            placeholder={language === 'en' ? 'Search documents...' : 'Buscar documentos...'}
             className="w-full rounded-2xl bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none"
             style={{ boxShadow: CARD_SHADOW }}
           />
@@ -167,7 +164,7 @@ function TemplatesContent() {
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white"
                     style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}
                   >
-                    {language === 'en' ? 'Use template' : 'Usar plantilla'} <ArrowRight className="size-3.5" />
+                    {language === 'en' ? 'Fill in' : 'Llenar'} <ArrowRight className="size-3.5" />
                   </button>
                   <button
                     type="button"

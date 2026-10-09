@@ -90,10 +90,10 @@ function DashboardHomeContent() {
       {/* Quick actions */}
       <div className={`mt-6 grid gap-4 ${verDian ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {[
-          { icon: Plus, label: language === 'en' ? 'Create Document' : 'Crear Documento', onClick: () => navigate('/dashboard/templates'), variant: 'primary' as const },
+          { icon: Plus, label: language === 'en' ? 'Create Document' : 'Crear Documento', onClick: () => navigate('/dashboard/documents?ver=predisenados'), variant: 'primary' as const },
           { icon: Receipt, label: language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes', onClick: () => navigate('/my-quotes'), variant: 'quotes' as const },
           { icon: Upload, label: language === 'en' ? 'Sign Document' : 'Firmar Documento', onClick: () => navigate('/firma-electronica'), variant: 'default' as const },
-          { icon: FolderOpen, label: language === 'en' ? 'View Templates' : 'Ver Plantillas', onClick: () => navigate('/dashboard/templates'), variant: 'default' as const },
+          { icon: FolderOpen, label: language === 'en' ? 'View Templates' : 'Ver Plantillas', onClick: () => navigate('/my-templates'), variant: 'default' as const },
           // Módulo DIAN (Colombia). Visible para todo usuario autenticado:
           // quien limita es la cuota mensual, no el correo. El guardia debe
           // seguir coincidiendo con el de la propia página — si aquí se

@@ -26,6 +26,8 @@ interface Props {
   language: 'en' | 'es';
   cloningId: string | null;
   onUsar: (ex: PublicExampleTemplate) => void;
+  /** Dentro de una pestaña que ya dice «Plantillas prediseñadas». */
+  sinTitulo?: boolean;
 }
 
 /** Paleta por sector. Se elige por el nombre del sector y no al azar, para que
@@ -66,7 +68,7 @@ export function partirEtiqueta(etiqueta: string): { nombre: string; sector: stri
   return { nombre: texto || etiqueta, sector };
 }
 
-export function GaleriaEjemplos({ ejemplos, language, cloningId, onUsar }: Props) {
+export function GaleriaEjemplos({ ejemplos, language, cloningId, onUsar, sinTitulo = false }: Props) {
   const es = language === 'es';
   const [sectorActivo, setSectorActivo] = useState<string | null>(null);
 
@@ -87,7 +89,8 @@ export function GaleriaEjemplos({ ejemplos, language, cloningId, onUsar }: Props
   const visibles = sectorActivo ? tarjetas.filter((t) => t.sector === sectorActivo) : tarjetas;
 
   return (
-    <div className="mt-6">
+    <div className={sinTitulo ? '' : 'mt-6'}>
+      {!sinTitulo && (
       <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
         <Sparkles className="size-4 text-purple-500" />
         {es ? 'Plantillas de ejemplo' : 'Example templates'}
@@ -95,6 +98,7 @@ export function GaleriaEjemplos({ ejemplos, language, cloningId, onUsar }: Props
           {ejemplos.length}
         </span>
       </h2>
+      )}
 
       {/* Filtro por sector. Con nueve ejemplos de nueve rubros distintos, nadie
           lee nueve títulos: busca «el de recursos humanos». */}

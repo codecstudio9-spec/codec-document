@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import {
   Search, FileText, Download, Check, Clock, FileEdit, ArrowUpDown, Trash2, Pencil,
-  CheckCircle2, Circle, Folder, FolderPlus, Loader, X, Sparkles,
+  CheckCircle2, Circle, Folder, FolderPlus, Loader, X, Sparkles, LayoutGrid,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/auth-context';
@@ -22,6 +22,7 @@ import { downloadFolderAsZip } from '../../utils/download-folder-zip';
 import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 import { openDocumentUrl } from '../../utils/open-document-url';
+import { DocumentosPredisenados } from './DesktopTemplates';
 
 type UnifiedDoc = {
   id: string; kind: 'own' | 'associated'; name: string; status: string; date: string;
@@ -53,6 +54,14 @@ function DocumentsContent() {
   const { user } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  // Dos pestañas: lo que el cliente ya generó, y los documentos prediseñados
+  // para generar uno nuevo. En la URL para que «atrás» y los enlaces viejos
+  // a /dashboard/templates caigan en la pestaña correcta.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const verPredisenados = searchParams.get('ver') === 'predisenados';
+  const cambiarPestana = (predisenados: boolean) => {
+    setSearchParams(predisenados ? { ver: 'predisenados' } : {}, { replace: true });
+  };
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
@@ -286,9 +295,43 @@ function DocumentsContent() {
           onClick={() => navigate('/crear-documento')}
           className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-4 py-2.5 text-sm font-bold text-white"
         >
-          <Sparkles className="size-4" /> {language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}
+          <Sparkles className="size-4" /> {language === 'en' ? 'New document with AI' : 'Nuevo documento con IA'}
         </button>
       </div>
+
+      <div className="mt-5 flex max-w-xl gap-1 rounded-2xl bg-slate-100 p-1">
+        {[
+          { predisenados: false, icon: <FileText className="size-4" />, label: language === 'en' ? 'My documents' : 'Mis documentos', count: docs?.length ?? null },
+          { predisenados: true, icon: <LayoutGrid className="size-4" />, label: language === 'en' ? 'Ready-made documents' : 'Documentos prediseñados', count: null },
+        ].map((tab) => {
+          const activa = verPredisenados === tab.predisenados;
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              onClick={() => cambiarPestana(tab.predisenados)}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.count !== null && (
+                <span className={`rounded-full px-2 py-0.5 text-[11px] ${activa ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>{tab.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {verPredisenados ? (
+        <div className="mt-5">
+          <p className="mb-4 text-sm text-slate-500">
+            {language === 'en'
+              ? 'Pick one, fill in your details, and download it or send it to sign. It will show up in "My documents".'
+              : 'Elige uno, llena tus datos y descárgalo o envíalo a firmar. Te queda guardado en «Mis documentos».'}
+          </p>
+          <DocumentosPredisenados />
+        </div>
+      ) : (<>
 
       {selectMode && (
         <div className="mt-5">
@@ -418,6 +461,16 @@ function DocumentsContent() {
           <div className="col-span-3 bg-white px-6 py-16 text-center" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>
             <FileText className="mx-auto mb-2 size-8 text-slate-300" />
             <p className="text-sm font-semibold text-slate-500">{language === 'en' ? 'Nothing here yet' : 'Nada por aquí todavía'}</p>
+            {(docs?.length ?? 0) === 0 && (
+              <button
+                type="button"
+                onClick={() => cambiarPestana(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white"
+              >
+                <LayoutGrid className="size-4" />
+                {language === 'en' ? 'Start from a ready-made document' : 'Empieza con un documento prediseñado'}
+              </button>
+            )}
           </div>
         ) : (
           filtered.map((doc) => {
@@ -468,6 +521,8 @@ function DocumentsContent() {
           })
         )}
       </div>
+
+      </>)}
 
       <DocumentEditModal
         open={editingDoc !== null}

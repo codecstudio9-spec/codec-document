@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
 import { MIME_PDF } from '../services/google-drive-picker';
+import { tomarArchivoPendiente } from '../services/archivo-plantilla';
 import { TemplateFieldEditor } from '../components/templates/TemplateFieldEditor';
 import { createTemplate, uploadTemplateFile, type PlacedField } from '../services/template-service';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
@@ -50,6 +51,14 @@ export function MyTemplateEditorPage() {
     if (!templateName) setTemplateName(file.name.replace(/\.pdf$/i, ''));
   };
 
+  // Viene de la caja «Sube tu documento» de /my-templates (un PDF, o una
+  // foto ya convertida a PDF): se abre directo en el editor.
+  useEffect(() => {
+    const file = tomarArchivoPendiente('pdf');
+    if (file) void handleFileSelect(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSave = async () => {
     if (!user?.id || !pdfFile || !pdfBytes) return;
     if (!templateName.trim()) { setError(language === 'en' ? 'Give your template a name.' : 'Ponle un nombre a tu plantilla.'); return; }
@@ -88,7 +97,7 @@ export function MyTemplateEditorPage() {
         <div className="mb-4 flex items-center justify-between">
           <button type="button" onClick={() => navigate('/my-templates')} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700">
             <ArrowLeft className="size-4" />
-            {language === 'en' ? 'My Templates' : 'Mis Plantillas'}
+            {language === 'en' ? 'Templates' : 'Plantillas'}
           </button>
           <VoiceGuideToggle />
         </div>
