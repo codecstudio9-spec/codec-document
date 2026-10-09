@@ -4,6 +4,8 @@ import { ArrowLeft, Upload, FileText, Save, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
+import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
+import { MIME_PDF } from '../services/google-drive-picker';
 import { TemplateFieldEditor } from '../components/templates/TemplateFieldEditor';
 import { createTemplate, uploadTemplateFile, type PlacedField } from '../services/template-service';
 import { useVoiceSpeak } from '../hooks/useVoiceGuide';
@@ -109,6 +111,9 @@ export function MyTemplateEditorPage() {
                 {language === 'en' ? 'Choose file' : 'Elegir archivo'}
               </span>
             </label>
+            <div className="mt-3 flex justify-center">
+              <GoogleDriveButton mimeTypes={[MIME_PDF]} language={language} onFile={(file) => handleFileSelect(file)} className="w-full sm:w-auto" />
+            </div>
             {error && <p className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
           </section>
         ) : (

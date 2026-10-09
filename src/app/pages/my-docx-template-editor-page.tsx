@@ -15,6 +15,8 @@ import {
 } from '../../lib/docxTemplateEngine';
 import { detectarHuecosEnWord, marcarTextoComoCampo, parrafosParaMarcar } from '../../lib/docxPlaceholders';
 import { MarcarCamposPanel } from '../components/templates/MarcarCamposPanel';
+import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
+import { MIME_DOCX, MIME_GOOGLE_DOC } from '../services/google-drive-picker';
 import {
   createDocxTemplate, updateDocxTemplate, uploadDocxTemplateFile, getDocxTemplateForOwner,
   listTemplateShares, shareDocxTemplateByEmail, unshareDocxTemplate,
@@ -488,6 +490,21 @@ export function MyDocxTemplateEditorPage() {
                 {language === 'en' ? 'Choose file' : 'Elegir archivo'}
               </span>
             </label>
+            {/* Como en Dropbox Sign: además de subir desde el computador, elegirlo
+                de Google Drive. Un Google Docs llega exportado a Word. */}
+            <div className="mt-3 flex items-center gap-3">
+              <span className="h-px flex-1 bg-slate-200" />
+              <span className="text-xs font-semibold text-slate-400">{language === 'en' ? 'or bring it from' : 'o tráelo desde'}</span>
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="mt-3 flex justify-center">
+              <GoogleDriveButton
+                mimeTypes={[MIME_DOCX, MIME_GOOGLE_DOC]}
+                language={language}
+                onFile={(file) => handleFileSelect(file)}
+                className="w-full sm:w-auto"
+              />
+            </div>
             {error && <p className="mt-3 text-sm font-semibold text-red-600">{error}</p>}
             {/* Para quien no tiene el Word preparado: «Crea un documento
                 nuevo» arma la plantilla desde texto pegado, dictado o

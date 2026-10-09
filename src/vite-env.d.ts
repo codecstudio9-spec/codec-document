@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   readonly VITE_PAYPAL_API_URL?: string;
   readonly VITE_GOOGLE_CLIENT_ID?: string;
+  /** Clave de navegador para Google Picker (opcional). */
+  readonly VITE_GOOGLE_API_KEY?: string;
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
