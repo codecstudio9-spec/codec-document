@@ -9,6 +9,7 @@ import { SecurityConfigModal } from '../SecurityConfigModal';
 import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
 import { VistaPreviaDocumento } from './VistaPreviaDocumento';
+import { useVoiceSpeak } from '../../hooks/useVoiceGuide';
 import { useAuth } from '../../contexts/auth-context';
 import { saveDocumentRecord } from '../../services/documents-service';
 import { sendSigningInvitation } from '../../services/signing-email-service';
@@ -87,7 +88,14 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   });
   const [campoActivo, setCampoActivo] = useState<string | null>(null);
   const [pestanaMovil, setPestanaMovil] = useState<'datos' | 'documento'>('datos');
+  const { speak } = useVoiceSpeak();
   const alternarVerDocumento = () => {
+    if (!verDocumento) {
+      speak({
+        es: 'Ahora ves el documento mientras lo llenas. Cada dato que escribes aparece en su lugar; los que faltan se ven en amarillo. Si tocas un dato en el documento, te llevamos a su casilla.',
+        en: 'You now see the document as you fill it in. Each detail you type shows up in place; missing ones are yellow. Tap a detail in the document to jump to its box.',
+      });
+    }
     setVerDocumento((v) => {
       try { localStorage.setItem('codec_ver_documento', v ? '0' : '1'); } catch { /* sin almacenamiento */ }
       return !v;

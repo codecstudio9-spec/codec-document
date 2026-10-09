@@ -70,10 +70,18 @@ export function MyTemplatesPage() {
   const handleArchivo = async (file?: File | null) => {
     if (!file) return;
     setSubiendo(true);
+    speak({
+      es: 'Recibimos tu documento. Lo estamos abriendo para encontrar los espacios que se llenan cada vez.',
+      en: 'We got your document. We are opening it to find the blanks that change each time.',
+    });
     try {
       navigate(await prepararArchivoPlantilla(file, language));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err), { duration: 8000 });
+      speak({
+        es: err instanceof Error ? err.message : 'No pudimos abrir ese archivo. Sube un Word, un PDF o una foto.',
+        en: err instanceof Error ? err.message : "We couldn't open that file. Upload a Word file, a PDF or a photo.",
+      });
       setSubiendo(false);
     }
   };
@@ -255,7 +263,12 @@ export function MyTemplatesPage() {
             <button
               key={tab.key}
               type="button"
-              onClick={() => setPestana(tab.key)}
+              onClick={() => {
+                setPestana(tab.key);
+                speak(tab.key === 'mias'
+                  ? { es: 'Estas son tus plantillas guardadas. Toca «Usar plantilla» para llenarla y enviarla a firmar.', en: 'These are your saved templates. Tap "Use template" to fill one in and send it for signature.' }
+                  : { es: 'Estas son plantillas prediseñadas. Toca «Usar esta plantilla» y te queda una copia tuya para editar.', en: 'These are ready-made templates. Tap "Use this template" to get your own copy to edit.' });
+              }}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-bold transition sm:gap-2 sm:px-3 sm:text-sm ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               {tab.icon}

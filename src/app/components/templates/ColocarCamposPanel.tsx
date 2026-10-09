@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { DetectedField, DetectedFieldType } from '../../../lib/docxTemplateEngine';
 import { parrafosParaMarcar, type PosicionEnDocumento, type RangoEnDocumento } from '../../../lib/docxPlaceholders';
+import { useVoiceSpeak } from '../../hooks/useVoiceGuide';
 
 /**
  * Editor de campos a pantalla completa, al estilo de Dropbox Sign: a la
@@ -119,6 +120,26 @@ export function ColocarCamposPanel({
   const etiquetaRef = useRef(etiquetaDe);
   etiquetaRef.current = etiquetaDe;
   const datos = campos.filter((c) => c.type !== 'section');
+  const { speak } = useVoiceSpeak();
+
+  useEffect(() => {
+    speak({
+      es: 'Este es tu documento tal como se ve. A la izquierda están los campos: arrástralos hasta el lugar exacto del texto donde va cada dato. En el celular, toca el campo y luego toca el lugar. Para mover uno, arrástralo; para quitarlo, toca la equis. Cuando termines, toca Listo.',
+      en: 'This is your document as it looks. The fields are on the left: drag each one to the exact spot in the text where that detail goes. On a phone, tap the field and then tap the spot. To move one, drag it; to remove it, tap the x. When you are done, tap Done.',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Al tomar un campo (sobre todo con toques, donde no se ve el arrastre),
+  // se dice qué hacer a continuación.
+  const tipoEnMano = enMano?.tipo ?? null;
+  useEffect(() => {
+    if (!tipoEnMano) return;
+    speak(tipoEnMano === 'mover'
+      ? { es: 'Ahora toca el nuevo lugar del texto donde va este campo.', en: 'Now tap the new spot in the text where this field goes.' }
+      : { es: 'Ahora toca o suelta el campo en el lugar del texto donde va.', en: 'Now tap or drop the field on the spot in the text where it goes.' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipoEnMano]);
 
   // Las acciones más recientes, para los oyentes puestos a mano en el DOM
   // que dibuja docx-preview (fuera de React).
@@ -256,6 +277,9 @@ export function ColocarCamposPanel({
     setCursor(null);
     if (!item || !pos) return;
     const en = { parrafo: pos.parrafo, offset: pos.offset };
+    speak(item.tipo === 'mover'
+      ? { es: 'Listo, movimos el campo.', en: 'Done, the field was moved.' }
+      : { es: 'Listo, el campo quedó en tu documento.', en: 'Done, the field is now in your document.' });
     if (item.tipo === 'mover') acciones.current.onMover(item.rango, en);
     else if (item.tipo === 'existente') acciones.current.onInsertar(en, { claveExistente: item.clave });
     else acciones.current.onInsertar(en, { etiqueta: item.etiqueta, tipo: item.tipoCampo });

@@ -24,6 +24,7 @@ import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-the
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 import { openDocumentUrl } from '../../utils/open-document-url';
 import { DocumentosPredisenadosMovil } from './MobileTemplates';
+import { useVoiceSpeak } from '../../hooks/useVoiceGuide';
 
 type UnifiedDoc = {
   id: string;
@@ -64,8 +65,12 @@ function DocumentsContent() {
   // que en escritorio (DesktopDocuments).
   const [searchParams, setSearchParams] = useSearchParams();
   const verPredisenados = searchParams.get('ver') === 'predisenados';
+  const { speak } = useVoiceSpeak();
   const cambiarPestana = (predisenados: boolean) => {
     setSearchParams(predisenados ? { ver: 'predisenados' } : {}, { replace: true });
+    speak(predisenados
+      ? { es: 'Estos son documentos prediseñados. Toca el que necesitas, llena tus datos y descárgalo o envíalo a firmar.', en: 'These are ready-made documents. Tap the one you need, fill in your details, and download it or send it for signature.' }
+      : { es: 'Aquí están los documentos que ya generaste. Toca uno para abrirlo, o el botón más para hacer uno nuevo.', en: 'Here are the documents you already created. Tap one to open it, or the plus button to make a new one.' });
   };
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);

@@ -23,6 +23,7 @@ import { CARD_RADIUS, CARD_SHADOW } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 import { openDocumentUrl } from '../../utils/open-document-url';
 import { DocumentosPredisenados } from './DesktopTemplates';
+import { useVoiceSpeak } from '../../hooks/useVoiceGuide';
 
 type UnifiedDoc = {
   id: string; kind: 'own' | 'associated'; name: string; status: string; date: string;
@@ -34,6 +35,15 @@ type UnifiedDoc = {
   table: 'user_documents' | 'documents' | null;
 };
 type Filter = 'all' | 'draft' | 'signed' | 'pending';
+
+const VOZ_MIS_DOCUMENTOS = {
+  es: 'Aquí están los documentos que ya generaste: borradores, pendientes de firma y firmados. Si quieres hacer uno nuevo, abre la pestaña «Documentos prediseñados» o toca «Nuevo documento con IA».',
+  en: 'Here are the documents you already created: drafts, pending signature and signed. To make a new one, open the "Ready-made documents" tab or tap "New document with AI".',
+};
+const VOZ_PREDISENADOS = {
+  es: 'Estos son documentos prediseñados. Busca el que necesitas, toca «Llenar», escribe tus datos y descárgalo o envíalo a firmar. Te queda guardado en Mis documentos.',
+  en: 'These are ready-made documents. Find the one you need, tap "Fill in", type your details, and download it or send it for signature. It is saved in My documents.',
+};
 type SortMode = 'newest' | 'oldest' | 'name';
 
 function classify(status: string): Filter {
@@ -59,9 +69,15 @@ function DocumentsContent() {
   // a /dashboard/templates caigan en la pestaña correcta.
   const [searchParams, setSearchParams] = useSearchParams();
   const verPredisenados = searchParams.get('ver') === 'predisenados';
+  const { speak } = useVoiceSpeak();
   const cambiarPestana = (predisenados: boolean) => {
     setSearchParams(predisenados ? { ver: 'predisenados' } : {}, { replace: true });
+    speak(predisenados ? VOZ_PREDISENADOS : VOZ_MIS_DOCUMENTOS);
   };
+  useEffect(() => {
+    speak(verPredisenados ? VOZ_PREDISENADOS : VOZ_MIS_DOCUMENTOS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);

@@ -621,7 +621,14 @@ export function MyDocxTemplateEditorPage() {
                     <button
                       key={op.modo}
                       type="button"
-                      onClick={() => { setModoCampos(op.modo); if (op.modo === 'arrastrar') setEditorCamposAbierto(true); }}
+                      onClick={() => {
+                        setModoCampos(op.modo);
+                        if (op.modo === 'arrastrar') setEditorCamposAbierto(true);
+                        else speak({
+                          es: 'Selecciona con el mouse el dato que cambia cada vez, como un nombre o una fecha, y ponle un nombre. Las etiquetas moradas son los campos que ya tiene tu plantilla.',
+                          en: 'Select with your mouse the detail that changes each time, like a name or a date, and give it a name. Purple tags are the fields your template already has.',
+                        });
+                      }}
                       className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition sm:text-sm ${modoCampos === op.modo ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       {language === 'en' ? op.en : op.es}
