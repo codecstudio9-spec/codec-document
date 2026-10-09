@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, XCircle, RefreshCw, Tag, UserPlus, Eye, EyeOff, FileText, PenLine, Activity } from 'lucide-react';
-import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js';
+import { ArrowLeft, Building2, Users, Crown, ShieldCheck, Briefcase, User as UserIcon, Loader, Plus, Trash2, Sparkles, Check, Globe2, Webhook as WebhookIcon, Contact, Key, Copy, CheckCheck, CreditCard, UserPlus, Eye, EyeOff, FileText, PenLine, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
-import { getPayPalClientId } from '../config/paypal';
-import { verifyPaypalOrder, redeemPromoCode, consultarDescuento, type DescuentoDeBono } from '../../lib/paypal-verify';
 import {
   createCompany, getMyCompany, findCompanyByMyDomain, joinCompanyByDomain,
   addCompanyMember, removeCompanyMember, createCompanyUserWithPassword, getCompanyActivity, COMPANY_ROLE_LABELS,
@@ -139,9 +136,7 @@ const BUSINESS_PLAN_FEATURES: Array<{ en: string; es: string }> = [
   { en: 'Webhooks for your own systems', es: 'Webhooks para tus propios sistemas' },
 ];
 
-/** The Business plan's price/feature list lives ONLY here — never on the
- * main pricing page — per explicit instruction: company pricing stays
- * hidden until the person themselves clicks into "Empresa". */
+/** Qué incluye el plan Empresa. El precio y el pago están solo en /pricing. */
 function BusinessPlanReveal({ language }: { language: 'en' | 'es' }) {
   const features = BUSINESS_PLAN_FEATURES;
   return (
@@ -149,7 +144,7 @@ function BusinessPlanReveal({ language }: { language: 'en' | 'es' }) {
       <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
         <Sparkles className="size-3" /> {language === 'en' ? 'Business Plan' : 'Plan Empresarial'}
       </span>
-      <p className="text-3xl font-black text-slate-900">$99.99<span className="text-sm font-semibold text-slate-400">/{language === 'en' ? 'mo' : 'mes'}</span></p>
+      <p className="text-lg font-black text-slate-900">{language === 'en' ? 'Everything your team needs' : 'Todo lo que tu equipo necesita'}</p>
       <ul className="mt-4 space-y-2">
         {features.map((f) => (
           <li key={f.en} className="flex items-start gap-2 text-sm text-slate-700">
@@ -158,6 +153,10 @@ function BusinessPlanReveal({ language }: { language: 'en' | 'es' }) {
           </li>
         ))}
       </ul>
+      <Link to="/pricing" className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-500">
+        <CreditCard className="size-3.5" />
+        {language === 'en' ? 'See prices' : 'Ver precios'}
+      </Link>
     </div>
   );
 }
@@ -357,275 +356,38 @@ function TeamActivitySection({ language }: { language: 'en' | 'es' }) {
   );
 }
 
-type BillingCycle = 'monthly' | 'annual';
-
-const COMPANY_PLAN_PRICES: Record<BillingCycle, { price: number; product: 'company_monthly' | 'company_annual' }> = {
-  monthly: { price: 99.99, product: 'company_monthly' },
-  annual: { price: 999.99, product: 'company_annual' },
-};
-
-/** Lives inside <PayPalScriptProvider> — same split as PaypalSignatureCheckout.tsx
- * (reads real SDK load status via usePayPalScriptReducer instead of a nonexistent
- * onError prop on the provider itself). */
-function CompanyBillingButtons({ cycle, onApprove, descuento }: {
-  cycle: BillingCycle;
-  onApprove: (orderId: string) => Promise<void>;
-  /** Bono parcial aplicado. El importe rebajado lo calculó el servidor. */
-  descuento?: DescuentoDeBono | null;
-}) {
-  const [{ isPending, isRejected }] = usePayPalScriptReducer();
-  const plan = COMPANY_PLAN_PRICES[cycle];
-
-  if (isRejected) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center text-xs text-red-600">
-        <XCircle className="size-5" />
-        No se pudo cargar PayPal. Revisa tu conexión o desactiva bloqueadores de anuncios.
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-700 shadow-sm"
-        >
-          <RefreshCw className="size-3.5" />
-          Reintentar
-        </button>
-      </div>
-    );
-  }
-
-  if (isPending) {
-    return (
-      <div className="flex items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm text-slate-500">
-        <Loader className="size-4 animate-spin" />
-        Cargando PayPal…
-      </div>
-    );
-  }
-
-  return (
-    <PayPalButtons
-      key={cycle} // force remount when the billing cycle changes
-      style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 45, tagline: false }}
-      forceReRender={[plan.price, descuento?.discountPct ?? 0]}
-      createOrder={(_data, actions) =>
-        actions.order.create({
-          intent: 'CAPTURE',
-          purchase_units: [
-            {
-              description: `Codec Document · Plan Empresarial (${cycle === 'annual' ? 'Anual' : 'Mensual'})`,
-              amount: {
-                currency_code: 'USD',
-                // Se aplica el PORCENTAJE al precio del ciclo elegido, con la
-                // misma fórmula y el mismo redondeo que usa el servidor al
-                // verificar: si difirieran en un céntimo, el pago se
-                // rechazaría por importe incorrecto.
-                value: (descuento
-                  ? Math.round(plan.price * (100 - descuento.discountPct)) / 100
-                  : plan.price).toFixed(2),
-              },
-            },
-          ],
-          application_context: {
-            brand_name: 'Codec Document',
-            shipping_preference: 'NO_SHIPPING',
-            user_action: 'PAY_NOW',
-          },
-        })
-      }
-      onApprove={async (data, actions) => {
-        const order = await actions.order!.capture();
-        await onApprove(order.id || data.orderID || '');
-      }}
-      onCancel={() => toast.info('Pago cancelado. Puedes intentarlo de nuevo.')}
-      onError={() => toast.error('Error con PayPal. Intenta de nuevo.')}
-    />
-  );
-}
-
-/** Owner/admin only — activates or renews the Business plan by charging
- * $99.99/mes or $999.99/año to the platform's own PayPal account (same
- * PAYPAL_CLIENT_ID used everywhere else). The paypal-verify Edge Function
- * re-verifies the payment with PayPal's REST API and is the only place
- * that actually writes companies.plan_active_until — this component never
- * marks the company as paid on its own. */
-function CompanyBillingSection({ company, language, onRenewed }: { company: Company; language: 'en' | 'es'; onRenewed: () => void }) {
-  const [processing, setProcessing] = useState<BillingCycle | null>(null);
-  const [promoOpen, setPromoOpen] = useState(false);
-  const [promoInput, setPromoInput] = useState('');
-  const [promoLoading, setPromoLoading] = useState(false);
-  const [promoError, setPromoError] = useState('');
-  /** Bono parcial. Se guarda el porcentaje, no el importe: el campo es común
-   *  a los dos ciclos y el precio depende del que se acabe eligiendo. */
-  const [promoParcial, setPromoParcial] = useState<DescuentoDeBono | null>(null);
-  const clientId = getPayPalClientId();
-
+/** Estado del plan, sin cobro: los precios de Empresa (por usuario) y su
+ *  pago viven solo en /pricing, para que no haya dos precios distintos. */
+function CompanyPlanStatus({ company, language }: { company: Company; language: 'en' | 'es' }) {
   const isActive = company.plan_active_until ? new Date(company.plan_active_until) > new Date() : false;
-
-  const handleApprove = async (cycle: BillingCycle, orderId: string) => {
-    setProcessing(cycle);
-    try {
-      await verifyPaypalOrder({
-        orderId,
-        product: COMPANY_PLAN_PRICES[cycle].product,
-        promoCode: promoParcial?.code,
-      });
-      toast.success(language === 'en' ? 'Business plan activated!' : '¡Plan Empresarial activado!');
-      onRenewed();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Payment could not be verified.' : 'No se pudo verificar el pago.'));
-    } finally {
-      setProcessing(null);
-    }
-  };
-
-  const handleApplyPromo = async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-    setPromoLoading(true);
-    setPromoError('');
-    try {
-      // Se consulta con el plan mensual sólo para averiguar el PORCENTAJE:
-      // el campo del bono es común a los dos ciclos, y el importe concreto
-      // depende del que la persona elija después. Por eso más abajo se
-      // guarda el porcentaje y no la cifra.
-      const info = await consultarDescuento(code, { product: COMPANY_PLAN_PRICES.monthly.product });
-      if (info && info.discountPct < 100) {
-        setPromoParcial(info);
-        setPromoError('');
-        toast.success(language === 'en'
-          ? `${info.discountPct}% off applied — pay below to finish.`
-          : `${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
-        return;
-      }
-
-      await redeemPromoCode(code);
-      toast.success(language === 'en' ? 'Code applied — Business plan activated!' : '¡Código aplicado — Plan Empresarial activado!');
-      setPromoInput('');
-      onRenewed();
-    } catch (err) {
-      setPromoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
-    } finally {
-      setPromoLoading(false);
-    }
-  };
-
   return (
-    <div className="rounded-3xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-6 shadow-sm">
-      <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-        <Sparkles className="size-3" /> {language === 'en' ? 'Business Plan' : 'Plan Empresarial'}
-      </span>
-      <p className="flex items-center gap-2 text-lg font-black text-slate-900">
-        <CreditCard className="size-5 text-indigo-500" />
-        {language === 'en' ? 'Activate your subscription' : 'Activa tu suscripción'}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">
-        {language === 'en'
-          ? 'Charges the platform\'s own PayPal account directly — no third-party processor.'
-          : 'Cobra directamente a la cuenta de PayPal de la plataforma — sin intermediarios.'}
-      </p>
-
-      {isActive && (
-        <div className="my-4 flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3">
-          <Check className="size-4 shrink-0 text-emerald-600" />
-          <p className="text-xs font-bold text-emerald-800">
-            {language === 'en' ? 'Active' : 'Activo'} ({company.plan_billing_cycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}) —{' '}
-            {language === 'en' ? 'valid until ' : 'vigente hasta el '}
-            {new Date(company.plan_active_until!).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+    <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <span className={`flex size-10 shrink-0 items-center justify-center rounded-2xl ${isActive ? 'bg-emerald-50' : 'bg-indigo-50'}`}>
+          {isActive ? <Check className="size-5 text-emerald-600" /> : <Sparkles className="size-5 text-indigo-500" />}
+        </span>
+        <div>
+          <p className="text-sm font-bold text-slate-900">
+            {isActive
+              ? (language === 'en' ? 'Business plan active' : 'Plan Empresa activo')
+              : (language === 'en' ? 'No active Business plan' : 'Sin Plan Empresa activo')}
+          </p>
+          <p className="text-xs text-slate-500">
+            {isActive
+              ? `${language === 'en' ? 'Valid until' : 'Vigente hasta el'} ${new Date(company.plan_active_until!).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}${company.plan_seats ? ` · ${company.plan_seats} ${language === 'en' ? 'users' : 'usuarios'}` : ''}`
+              : (language === 'en' ? 'See plans and prices in Pricing.' : 'Mira los planes y precios en Precios.')}
           </p>
         </div>
-      )}
-
-      {clientId ? (
-        <PayPalScriptProvider options={{ clientId, currency: 'USD', intent: 'capture', components: 'buttons' }}>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {(['monthly', 'annual'] as BillingCycle[]).map((planCycle) => (
-              <div
-                key={planCycle}
-                className={`relative flex flex-col rounded-2xl border-2 p-5 ${planCycle === 'annual' ? 'border-indigo-400 bg-white shadow-md' : 'border-slate-200 bg-white/80'}`}
-              >
-                {planCycle === 'annual' && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold text-white shadow">
-                    {language === 'en' ? '2 months free' : '2 meses gratis'}
-                  </span>
-                )}
-                <p className="text-xs font-bold uppercase tracking-wide text-indigo-500">
-                  {planCycle === 'annual' ? (language === 'en' ? 'Annual' : 'Anual') : (language === 'en' ? 'Monthly' : 'Mensual')}
-                </p>
-                <p className="mt-1 text-3xl font-black text-slate-900">
-                  ${COMPANY_PLAN_PRICES[planCycle].price.toFixed(2)}
-                  <span className="text-sm font-semibold text-slate-400">/{planCycle === 'annual' ? (language === 'en' ? 'yr' : 'año') : (language === 'en' ? 'mo' : 'mes')}</span>
-                </p>
-                <ul className="my-3 space-y-1.5">
-                  {BUSINESS_PLAN_FEATURES.slice(0, 3).map((f) => (
-                    <li key={f.en} className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                      <Check className="mt-0.5 size-3 shrink-0 text-indigo-500" />
-                      {language === 'en' ? f.en : f.es}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto pt-2">
-                  {processing === planCycle ? (
-                    <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 py-3 text-xs text-slate-500">
-                      <Loader className="size-3.5 animate-spin" />
-                      {language === 'en' ? 'Activating…' : 'Activando…'}
-                    </div>
-                  ) : (
-                    <CompanyBillingButtons cycle={planCycle} onApprove={(orderId) => handleApprove(planCycle, orderId)} descuento={promoParcial} />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </PayPalScriptProvider>
-      ) : (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
-          <XCircle className="size-4 shrink-0" />
-          PayPal no configurado. Agrega VITE_PAYPAL_CLIENT_ID al .env.local
-        </div>
-      )}
-
-      {/* Discount / free-access code — same redemption path as every other
-          product in the platform (public.promo_codes + paypal-verify). */}
-      <div className="mt-5 border-t border-indigo-100 pt-4">
-        {!promoOpen ? (
-          <button
-            type="button"
-            onClick={() => setPromoOpen(true)}
-            className="mx-auto flex items-center gap-1.5 text-xs font-semibold text-indigo-500 transition hover:text-indigo-700"
-          >
-            <Tag className="size-3.5" />
-            {language === 'en' ? 'Have a discount code?' : '¿Tienes un código de descuento?'}
-          </button>
-        ) : (
-          <div>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-              <Tag className="size-3.5" />
-              {language === 'en' ? 'Discount code' : 'Código de descuento'}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={promoInput}
-                onChange={(e) => { setPromoInput(e.target.value); setPromoError(''); }}
-                onKeyDown={(e) => { if (e.key === 'Enter') void handleApplyPromo(); }}
-                placeholder={language === 'en' ? 'Enter code' : 'Ingresa el código'}
-                autoFocus
-                disabled={promoLoading}
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm uppercase tracking-wide text-slate-700 outline-none focus:border-indigo-400"
-              />
-              <button
-                type="button"
-                onClick={() => void handleApplyPromo()}
-                disabled={promoLoading || !promoInput.trim()}
-                className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40"
-              >
-                {promoLoading ? (language === 'en' ? 'Checking…' : 'Verificando…') : (language === 'en' ? 'Apply' : 'Aplicar')}
-              </button>
-            </div>
-            {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
-          </div>
-        )}
       </div>
+      <Link
+        to="/pricing"
+        className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+      >
+        <CreditCard className="size-3.5" />
+        {isActive
+          ? (language === 'en' ? 'Renew or add users' : 'Renovar o agregar usuarios')
+          : (language === 'en' ? 'See prices' : 'Ver precios')}
+      </Link>
     </div>
   );
 }
@@ -797,7 +559,7 @@ export function MyCompanyPage() {
             </div>
 
             {/* Billing — owner/admin only */}
-            {canManage && <CompanyBillingSection company={myCompany.company} language={language} onRenewed={load} />}
+            {canManage && <CompanyPlanStatus company={myCompany.company} language={language} />}
 
             {/* Members */}
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
