@@ -59,11 +59,16 @@ function formatDocumentContent(
     const hasAny = text.includes(EMPTY_FIELD_TOKEN) || text.includes(ACTIVE_EMPTY_TOKEN) || text.includes(ACTIVE_OPEN);
     const valores = Array.from(datosUsuario).sort((a, b) => b.length - a.length);
     const valorPattern = valores.length
-      ? new RegExp(`(${valores.map((value) => value.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')).join('|')})`, 'ig')
+      ? new RegExp(`(${valores.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'ig')
       : null;
     if (!hasAny && !valorPattern) return text;
     const tokenPattern = `(${ACTIVE_OPEN}[^${ACTIVE_CLOSE}]*${ACTIVE_CLOSE}|${ACTIVE_EMPTY_TOKEN}|${EMPTY_FIELD_TOKEN})`;
-    const parts = text.split(new RegExp(`${tokenPattern}${valorPattern ? `|${valorPattern.source}` : ''}`, 'g'));
+    // split() con dos grupos de captura devuelve `undefined` en el grupo que
+    // no coincidió; sin este filtro, part.toLowerCase() tumbaba toda la vista
+    // previa del generador (/generator/*) en cuanto había datos del usuario.
+    const parts = text
+      .split(new RegExp(`${tokenPattern}${valorPattern ? `|${valorPattern.source}` : ''}`, valorPattern ? 'gi' : 'g'))
+      .filter((part): part is string => part !== undefined);
     return parts.map((part, i) => {
       if (valorPattern && valores.some((value) => value.toLowerCase() === part.toLowerCase())) {
         return <strong key={`${keyPrefix}-uv-${i}`} className="font-bold">{part}</strong>;
