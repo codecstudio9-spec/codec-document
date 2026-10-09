@@ -127,7 +127,10 @@
         };
       }
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Sin <script> de Google Identity aquí: son 85 KB de un tercero que
+         bloqueaban el celular en TODAS las páginas, incluidas las de SEO donde
+         nadie inicia sesión. useGoogleIdentityServices, la portada y el
+         selector de Google Drive lo cargan ellos mismos cuando hace falta. -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
