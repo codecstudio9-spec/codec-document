@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import {
   Plus, FileText, Download, Check, Clock, FileEdit, Trash2, Pencil, CheckCircle2, Circle,
@@ -23,6 +23,7 @@ import { downloadFolderAsZip } from '../../utils/download-folder-zip';
 import { CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT } from '../../styles/mobile-theme';
 import { toProxiedPdfUrl } from '../../utils/pdf-proxy';
 import { openDocumentUrl } from '../../utils/open-document-url';
+import { DocumentosPredisenadosMovil } from './MobileTemplates';
 
 type UnifiedDoc = {
   id: string;
@@ -59,6 +60,13 @@ function DocumentsContent() {
   const { user } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  // Pestañas «Mis documentos» / «Documentos prediseñados», en la URL igual
+  // que en escritorio (DesktopDocuments).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const verPredisenados = searchParams.get('ver') === 'predisenados';
+  const cambiarPestana = (predisenados: boolean) => {
+    setSearchParams(predisenados ? { ver: 'predisenados' } : {}, { replace: true });
+  };
   const [docs, setDocs] = useState<UnifiedDoc[] | null>(null);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
@@ -259,6 +267,15 @@ function DocumentsContent() {
     { key: 'pending', label: language === 'en' ? 'Pending' : 'Pendientes' },
   ];
 
+  if (!user && verPredisenados) {
+    return (
+      <div className="px-4 pt-5">
+        <h1 className="mb-4 text-xl font-black text-slate-900">{language === 'en' ? 'Ready-made documents' : 'Documentos prediseñados'}</h1>
+        <DocumentosPredisenadosMovil />
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="px-4 pt-5">
@@ -281,9 +298,37 @@ function DocumentsContent() {
           onClick={() => navigate('/crear-documento')}
           className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-3.5 py-2 text-xs font-bold text-white"
         >
-          <Sparkles className="size-3.5" /> {language === 'en' ? 'Create a new document' : 'Crea un documento nuevo'}
+          <Sparkles className="size-3.5" /> {language === 'en' ? 'New with AI' : 'Nuevo con IA'}
         </button>
       </div>
+
+      <div className="mt-4 flex gap-1 rounded-2xl bg-slate-100 p-1">
+        {[
+          { predisenados: false, label: language === 'en' ? 'My documents' : 'Mis documentos' },
+          { predisenados: true, label: language === 'en' ? 'Ready-made' : 'Prediseñados' },
+        ].map((tab) => {
+          const activa = verPredisenados === tab.predisenados;
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              onClick={() => cambiarPestana(tab.predisenados)}
+              className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-bold transition ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
+            >
+              {tab.label}
+              {!tab.predisenados && docs !== null && (
+                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${activa ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>{docs.length}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {verPredisenados ? (
+        <div className="mt-4">
+          <DocumentosPredisenadosMovil />
+        </div>
+      ) : (<>
 
       {selectMode && (
         <BulkSelectionBar
@@ -445,12 +490,14 @@ function DocumentsContent() {
         )}
       </div>
 
+      </>)}
+
       {/* Floating create button */}
-      {!selectMode && (
+      {!selectMode && !verPredisenados && (
         <motion.button
           whileTap={{ scale: 0.9 }}
           type="button"
-          onClick={() => navigate('/app/templates')}
+          onClick={() => cambiarPestana(true)}
           className="fixed flex items-center justify-center text-white"
           style={{
             bottom: 96,

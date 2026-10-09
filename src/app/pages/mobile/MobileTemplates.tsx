@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Search, FileText, ArrowRight, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
-import { MobileAppShell } from '../../components/mobile/MobileAppShell';
 import { useLanguage } from '../../contexts/language-context';
 import { documentTemplates } from '../../data/templates';
 import { CATEGORIAS, claveCategoria, nombreCategoria, metaCategoria } from '../../data/categories-meta';
@@ -48,15 +47,14 @@ function CirculoSeccion({ activa, color, Icono, nombre, cuantas, onClick }: {
   );
 }
 
+/** La galería se mudó a Documentos → «Documentos prediseñados», igual que en
+ *  escritorio. La ruta se conserva para los enlaces que ya apuntan aquí. */
 export function MobileTemplates() {
-  return (
-    <MobileAppShell>
-      <TemplatesContent />
-    </MobileAppShell>
-  );
+  return <Navigate to="/app/documents?ver=predisenados" replace />;
 }
 
-function TemplatesContent() {
+/** Documentos listos para llenar, dentro de la pestaña de Documentos. */
+export function DocumentosPredisenadosMovil() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [query, setQuery] = useState('');
@@ -73,25 +71,18 @@ function TemplatesContent() {
 
   return (
     <div>
-      {/* Blue header block — title, subtitle, search all live on the
-          brand color, matching Firmas/Perfil's dark/blue-block treatment
-          so the whole shell isn't just white-on-white. */}
-      <div className="px-4 pb-5 pt-6" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' }}>
-        <h1 className="text-xl font-black text-white">{language === 'en' ? 'Templates' : 'Plantillas'}</h1>
-        <p className="mt-0.5 text-xs text-blue-100">{language === 'en' ? 'Choose a template to get started' : 'Elige una plantilla para empezar'}</p>
-
-        <div className="relative mt-4">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={language === 'en' ? 'Search templates...' : 'Buscar plantillas...'}
-            className="w-full rounded-2xl bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none"
-          />
-        </div>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={language === 'en' ? 'Search documents...' : 'Buscar documentos...'}
+          className="w-full rounded-2xl bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none"
+          style={{ boxShadow: CARD_SHADOW }}
+        />
       </div>
 
-      <div className="px-4 pt-4">
+      <div className="pt-4">
       {/* Secciones en círculos, igual que en escritorio, en tira horizontal
           porque en un teléfono no caben en dos filas. Todos del mismo tamaño
           y alineados: una fila de pastillas de anchos distintos se lee como

@@ -6,7 +6,9 @@ import { GLASS_SURFACE } from '../../styles/mobile-theme';
 
 const TABS = [
   { to: '/app', labelEs: 'Inicio', labelEn: 'Home', icon: Home },
-  { to: '/app/templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: FileText },
+  // Igual que el menú de escritorio: «Plantillas» son las del cliente
+  // (/my-templates); la galería de documentos prediseñados vive en Documentos.
+  { to: '/my-templates', labelEs: 'Plantillas', labelEn: 'Templates', icon: FileText },
   { to: '/app/signatures', labelEs: 'Firmas', labelEn: 'Signatures', icon: PenLine },
   { to: '/app/documents', labelEs: 'Documentos', labelEn: 'Documents', icon: FolderOpen },
   { to: '/app/profile', labelEs: 'Perfil', labelEn: 'Profile', icon: User },

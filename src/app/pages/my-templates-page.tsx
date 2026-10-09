@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { FileText, FileType2, PenLine, Trash2, ArrowLeft, HelpCircle, Link2, Copy, Check, FilePenLine, Send, Building2, Sparkles, Upload, Image as ImageIcon, Loader, FolderOpen, LayoutGrid } from 'lucide-react';
+import { FileText, FileType2, PenLine, Trash2, HelpCircle, Link2, Copy, Check, FilePenLine, Send, Building2, Sparkles, Upload, Image as ImageIcon, Loader, FolderOpen, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
@@ -13,6 +13,7 @@ import {
 import { GenerateSendModal } from '../components/templates/GenerateSendModal';
 import { GaleriaEjemplos } from '../components/templates/GaleriaEjemplos';
 import { DesktopAppShell } from '../components/desktop/DesktopAppShell';
+import { MobileAppShell } from '../components/mobile/MobileAppShell';
 import { useIsMobile } from '../hooks/use-is-mobile';
 import { SITE_URL } from '../config/site';
 import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
@@ -148,17 +149,6 @@ export function MyTemplatesPage() {
 
   const pageContent = (
     <div className="mx-auto max-w-5xl">
-      {isMobile && (
-        <button
-          type="button"
-          onClick={() => navigate('/app')}
-          className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
-        >
-          <ArrowLeft className="size-4" />
-          {language === 'en' ? 'Back' : 'Volver'}
-        </button>
-      )}
-
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Templates' : 'Plantillas'}</h1>
@@ -266,7 +256,7 @@ export function MyTemplatesPage() {
               key={tab.key}
               type="button"
               onClick={() => setPestana(tab.key)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-bold transition sm:gap-2 sm:px-3 sm:text-sm ${activa ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               {tab.icon}
               {tab.label}
@@ -481,7 +471,9 @@ export function MyTemplatesPage() {
   );
 
   if (isMobile) {
-    return <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">{pageContent}</div>;
+    // Con el menú inferior de la app, como Documentos y Firmas: «Plantillas»
+    // es una de sus pestañas.
+    return <MobileAppShell><div className="px-4 pt-5">{pageContent}</div></MobileAppShell>;
   }
   return <DesktopAppShell>{pageContent}</DesktopAppShell>;
 }
