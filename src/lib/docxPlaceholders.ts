@@ -198,7 +198,11 @@ function reemplazosAutomaticos(texto: string, registro: RegistroCampos): Reempla
     // un separador, no un dato.
     const antes = texto.slice(0, s);
     if (m[0][0] === '.' && !antes.trim()) continue;
-    out.push({ start: s, end: e, texto: `{{${registro.nuevo(etiquetaPorContexto(antes))}}}` });
+    // «Firma: ______» es donde va la firma, no un dato que se escribe: si se
+    // volvía campo, el formulario le pedía al cliente «escribir» su firma.
+    const etiqueta = etiquetaPorContexto(antes);
+    if (etiqueta && /^(firma|signature|sign here|firme aqu[ií])\b/i.test(etiqueta.trim())) continue;
+    out.push({ start: s, end: e, texto: `{{${registro.nuevo(etiqueta)}}}` });
     ocupados.push([s, e]);
   }
   return out;

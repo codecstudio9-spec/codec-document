@@ -443,7 +443,7 @@ export default function SignTransactionPage() {
         branding,
         jurisdiction,
         leftSig: tx.sender_signature ? { dataUrl: tx.sender_signature, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
-        rightSig: tx.recipient_signature ? { dataUrl: tx.recipient_signature, name: language === 'en' ? 'Signer' : 'Firmante' } : undefined,
+        rightSig: tx.recipient_signature ? { dataUrl: tx.recipient_signature, name: language === 'en' ? 'Signer' : 'Firmante', signedAt: tx.signed_at ?? undefined } : undefined,
         mirrorLayout: true,
         mirrorLanguage: language,
         identitySelfie: tx.recipient_selfie,

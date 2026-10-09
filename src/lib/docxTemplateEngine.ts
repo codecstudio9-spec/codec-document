@@ -241,13 +241,21 @@ export function withInferredSections(fields: DetectedField[], secciones: Map<str
  * handles the same run-fragmentation problem internally during
  * replacement, so this is robust to however Word split the original tags.
  */
+/** Lo que se imprime en lugar de un campo que quedó vacío. */
+export const ESPACIO_EN_BLANCO = '__________';
+
 export function renderDocxTemplate(docxArrayBuffer: ArrayBuffer, data: Record<string, string>): ArrayBuffer {
   const zip = new PizZip(docxArrayBuffer);
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
     delimiters: { start: '{{', end: '}}' },
-    nullGetter: () => '',
+    // Un dato que nadie llenó se imprime como una línea en blanco, no como
+    // nada: «el cargo de  y cumplirá» parece un error; «el cargo de ______ y
+    // cumplirá» se lee como un espacio por completar.
+    // Sólo para etiquetas simples: una sección {{#x}} o {{@x}} sin dato debe
+    // seguir resolviendo a vacío, no a «______» (que la volvería verdadera).
+    nullGetter: (part: { module?: string }) => (part.module ? '' : ESPACIO_EN_BLANCO),
     // The type-hint DSL (":fecha", ":Opcion1;Opcion2") is part of the tag
     // text itself (e.g. "{{fecha_firma:fecha}}") — docxtemplater otherwise
     // treats the WHOLE tag content as the lookup key, so without this it
@@ -258,7 +266,10 @@ export function renderDocxTemplate(docxArrayBuffer: ArrayBuffer, data: Record<st
     // handles a tag split across XML runs) — only the final lookup key
     // changes, not the fragmentation-robust matching.
     parser: (tag: string) => ({
-      get: (scope: Record<string, unknown>) => scope[tag.split(':')[0].trim()],
+      get: (scope: Record<string, unknown>) => {
+        const v = scope[tag.split(':')[0].trim()];
+        return typeof v === 'string' && !v.trim() ? undefined : v;
+      },
     }),
   });
   try {
@@ -336,9 +347,19 @@ export function extractFormattedParagraphs(docxArrayBuffer: ArrayBuffer): DocxPa
       const sizeMatch = rPr.match(/<w:sz\s+w:val="(\d+)"/);
       const sizePt = sizeMatch ? Number(sizeMatch[1]) / 2 : undefined;
 
-      const textMatches = runXml.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) ?? [];
-      const text = textMatches
-        .map((t) => decodeXmlEntities(t.replace(/^<w:t[^>]*>/, '').replace(/<\/w:t>$/, '')))
+      // En orden de aparición: texto, tabulaciones y saltos de línea. Antes
+      // sólo se leía <w:t>, así que «Nombre: Ana⇥Firma:» salía pegado como
+      // «Nombre: AnaFirma:» y un salto de renglón (Shift+Enter, o un valor de
+      // varias líneas) desaparecía. El salto queda como «\n» dentro del mismo
+      // párrafo —no se parte en dos— porque clause_overrides se guarda por
+      // número de párrafo y partirlo correría todos los índices.
+      const partes = runXml.match(/<w:t[^>]*>[\s\S]*?<\/w:t>|<w:tab\/>|<w:br[^>]*\/>|<w:cr\/>/g) ?? [];
+      const text = partes
+        .map((t) => {
+          if (t.startsWith('<w:tab')) return '    ';
+          if (t.startsWith('<w:br') || t.startsWith('<w:cr')) return '\n';
+          return decodeXmlEntities(t.replace(/^<w:t[^>]*>/, '').replace(/<\/w:t>$/, ''));
+        })
         .join('');
       if (text) runs.push({ text, bold, sizePt });
     }

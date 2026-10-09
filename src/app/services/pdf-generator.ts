@@ -35,8 +35,8 @@ interface PDFGeneratorOptions {
     logoDataUrl?: string;
   };
   // Mirror signature block (side-by-side at bottom of document body)
-  leftSig?: { dataUrl: string; name: string };
-  rightSig?: { dataUrl: string; name: string };
+  leftSig?: { dataUrl: string; name: string; signedAt?: string };
+  rightSig?: { dataUrl: string; name: string; signedAt?: string };
   mirrorLayout?: boolean;
   mirrorLanguage?: 'en' | 'es';
   auditLog?: {
@@ -938,15 +938,20 @@ export class PDFGenerator {
     // isolated by blank-line spacing, never bold, never a bigger font.
     // Only the title itself and the very next line (the "Fecha: ...
     // Número de Contrato: ..." subtitle) are centered.
-    const FIELD_SIZE = 9.5;   // labels/values ("Apellidos: NOMBRE") + section headers
-    const CLAUSE_SIZE = 8.5;  // clause headings + justified legal prose
-    const TITLE_SIZE = 11;
+    // Un poco más grande y con más aire que la calibración original (9.5 /
+    // 8.5 / 11 con interlineado 1.05): a ese tamaño el contrato se veía
+    // apretado y poco profesional. 10.5 pt con interlineado 1.3 y espacio
+    // entre párrafos es lo habitual en un contrato bien maquetado.
+    const FIELD_SIZE = 10.5;
+    const CLAUSE_SIZE = 10.5;
+    const TITLE_SIZE = 14;
+    const LEADING = 1.3;
     let titleAssigned = false;
     let centerNextFieldLine = false;
 
     for (const para of paragraphs) {
       if (para.runs.length === 0) {
-        this.addSpacing(0.12); // a Word blank line ≠ a real paragraph gap
+        this.addSpacing(0.25); // a Word blank line ≠ a real paragraph gap
         continue;
       }
       const text = para.runs.map((r) => r.text).join('');
@@ -955,14 +960,14 @@ export class PDFGenerator {
       if (role === 'title') {
         titleAssigned = true;
         centerNextFieldLine = true; // the "Fecha: ... Número de Contrato: ..." line right after the title is centered too
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.1, spaceBefore: 0, spaceAfter: 2.2 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: TITLE_SIZE }], TITLE_SIZE, 'center', { leading: 1.2, spaceBefore: 2, spaceAfter: 5 });
         continue;
       }
 
       if (role === 'section') {
         // Plain — same weight/size as body, not a "heading" at all, just
         // its own isolated line (matches the reference exactly).
-        this.addMixedRuns([{ text: text.toUpperCase(), bold: false, sizePt: FIELD_SIZE }], FIELD_SIZE, 'left', { leading: 1.1, spaceBefore: 2, spaceAfter: 1 });
+        this.addMixedRuns([{ text: text.toUpperCase(), bold: true, sizePt: FIELD_SIZE }], FIELD_SIZE, 'left', { leading: LEADING, spaceBefore: 4, spaceAfter: 1.5 });
         continue;
       }
 
@@ -979,7 +984,7 @@ export class PDFGenerator {
         const runs = splitAt > 0
           ? this.collapseParagraphChars(chars.map((c, i) => (i < splitAt ? { ...c, bold: true } : c)))
           : para.runs;
-        this.addMixedRuns(runs, CLAUSE_SIZE, 'justify', { leading: 1.05, spaceBefore: 0, spaceAfter: 0.6 });
+        this.addMixedRuns(runs, CLAUSE_SIZE, 'justify', { leading: LEADING, spaceBefore: 0, spaceAfter: 2.4 });
         continue;
       }
 
@@ -988,11 +993,15 @@ export class PDFGenerator {
       // paragraphs (no colon at all) are legal-text density (9pt/1.0)
       // same as a clause body rather than form-field size. The line
       // immediately after the title (date/contract number) centers once.
-      const isFieldLine = text.includes(':');
+      // Renglón de dato («Nombre: Ana») = corto y con algo escrito después de
+      // los dos puntos. Antes bastaba con tener «:» en cualquier parte, así
+      // que un párrafo largo terminado en «…lo siguiente:» se trataba como
+      // dato y, por ir justo después del título, salía centrado.
+      const isFieldLine = /:\s*\S/.test(text) && text.length <= 140;
       const size = isFieldLine ? FIELD_SIZE : CLAUSE_SIZE;
       const align: 'left' | 'justify' | 'center' = isFieldLine ? (centerNextFieldLine ? 'center' : 'left') : 'justify';
-      if (isFieldLine) centerNextFieldLine = false;
-      this.addMixedRuns(para.runs, size, align, { leading: isFieldLine ? 1.1 : 1.05, spaceBefore: 0, spaceAfter: isFieldLine ? 0.5 : 0.6 });
+      centerNextFieldLine = false;
+      this.addMixedRuns(para.runs, size, align, { leading: LEADING, spaceBefore: 0, spaceAfter: isFieldLine ? 1.2 : 2.4 });
     }
   }
 
@@ -1039,13 +1048,17 @@ export class PDFGenerator {
     this.doc.setTextColor(r, g, b);
     const leading = layout?.leading ?? 1.05;
 
-    type Word = { text: string; bold: boolean; size: number };
+    type Word = { text: string; bold: boolean; size: number; salto?: boolean };
     const words: Word[] = [];
     for (const run of runs) {
       const size = run.sizePt && run.sizePt > 0 ? run.sizePt : baseFontSize;
-      for (const part of run.text.split(/(\s+)/)) {
-        if (part) words.push({ text: part, bold: run.bold, size });
-      }
+      // «\n» es un salto de renglón del Word (<w:br/>): corta la línea ahí.
+      run.text.split('\n').forEach((tramo, ti) => {
+        if (ti > 0) words.push({ text: '', bold: run.bold, size, salto: true });
+        for (const part of tramo.split(/([ \t\u00a0]+)/)) {
+          if (part) words.push({ text: part, bold: run.bold, size });
+        }
+      });
     }
     if (words.length === 0) return;
 
@@ -1056,9 +1069,19 @@ export class PDFGenerator {
     };
 
     const lines: Word[][] = [];
+    // Las líneas que terminan en un salto forzado no se justifican: igual que
+    // la última línea de un párrafo.
+    const finForzado = new Set<number>();
     let current: Word[] = [];
     let currentWidth = 0;
     for (const w of words) {
+      if (w.salto) {
+        finForzado.add(lines.length);
+        lines.push(current.length ? current : [{ text: ' ', bold: w.bold, size: w.size }]);
+        current = [];
+        currentWidth = 0;
+        continue;
+      }
       if (current.length === 0 && /^\s+$/.test(w.text)) continue; // never start a line with whitespace
       const width = measure(w);
       if (currentWidth + width > this.maxWidth && current.length > 0) {
@@ -1081,7 +1104,7 @@ export class PDFGenerator {
         this.currentY = this.margin + 6;
       }
       const naturalWidth = lineWords.reduce((sum, w) => sum + measure(w), 0);
-      const isLastLine = li === lines.length - 1;
+      const isLastLine = li === lines.length - 1 || finForzado.has(li);
 
       let x = this.margin;
       if (align === 'center') x = (this.pageWidth - naturalWidth) / 2;
@@ -1248,8 +1271,11 @@ export class PDFGenerator {
         // así dentro de los márgenes. drawImageFit encaja el logo dentro
         // respetando su proporción real: antes se forzaban 82×82 y cualquier
         // logotipo apaisado salía estirado a lo alto en todas las páginas.
-        const cajaW = this.pageWidth * 0.72;
-        const cajaH = this.pageHeight * 0.58;
+        // Más pequeña y más tenue que antes (72%×58% al 10%): a ese tamaño el
+        // logo —que suele traer el nombre escrito— se leía como un segundo
+        // texto encima del contrato y le quitaba seriedad al documento.
+        const cajaW = this.pageWidth * 0.5;
+        const cajaH = this.pageHeight * 0.36;
         const x = (this.pageWidth - cajaW) / 2;
         const y = (this.pageHeight - cajaH) / 2;
 
@@ -1259,7 +1285,7 @@ export class PDFGenerator {
         // que da fe de lo que se firma.
         const anyDoc = this.doc as any;
         if (typeof anyDoc.GState === 'function' && typeof anyDoc.setGState === 'function') {
-          anyDoc.setGState(new anyDoc.GState({ opacity: 0.10 }));
+          anyDoc.setGState(new anyDoc.GState({ opacity: 0.05 }));
         }
 
         this.drawImageFit(branding.logoDataUrl, x, y, cajaW, cajaH);
@@ -1317,60 +1343,47 @@ export class PDFGenerator {
       this.doc.setFillColor(255, 255, 255);
       this.doc.rect(0, 2.5, this.pageWidth, headerH - 2.5, 'F');
 
+      // Franja superior: a la izquierda quién emite el documento (la empresa,
+      // o Codec Document si no hay una configurada) y a la derecha su lema.
+      // Antes el nombre y el lema se pintaban en el MISMO punto centrado y
+      // salían encimados, y el logo pequeño de esta franja quedaba justo
+      // encima del logo grande de la cabecera de la primera página: logo
+      // doble. Ahora el logo de la franja sólo va de la página 2 en adelante.
+      // La atribución a Codec Document sigue en el pie de todas las páginas.
       const hasLogo = Boolean(branding?.enableLogo && branding?.logoDataUrl);
+      const logoEnFranja = hasLogo && i > 1;
       const logoOnRight = branding?.logoPosition === 'right';
-      // Codec Document remains visible on every page. A customer's logo is
-      // additional branding, never a replacement for the platform mark.
-      this.doc.setFont('helvetica', 'bold');
-      this.doc.setFontSize(6.5);
-      this.doc.setTextColor(37, 99, 235);
-      this.safeText(
-        'CODEC DOCUMENT',
-        hasLogo && !logoOnRight ? this.margin + 24 : this.margin,
-        8,
-        undefined,
-      );
-      if (hasLogo) {
+      let anchoLogo = 0;
+      if (logoEnFranja) {
         try {
-          this.drawImageFit(
+          anchoLogo = this.drawImageFit(
             branding!.logoDataUrl!,
-            logoOnRight ? this.pageWidth - this.margin - 22 : this.margin,
-            3.1,
-            22,
-            5.5,
+            logoOnRight ? this.pageWidth - this.margin - 18 : this.margin,
+            3.3,
+            18,
+            5,
             logoOnRight ? 'right' : 'left',
-          );
+          ).width;
         } catch { /* broken logos must not block legal-document generation */ }
       }
 
-      const identityLabel = (branding?.companyLegalName || branding?.headerText || '').trim();
-      if (identityLabel) {
-        this.doc.setFont('helvetica', 'bold');
-        this.doc.setFontSize(6.5);
-        this.doc.setTextColor(37, 99, 235);
-        this.safeText(
-          identityLabel,
-          this.pageWidth / 2,
-          8,
-          { align: 'center' },
-        );
-      }
+      const identityLabel = (branding?.companyLegalName || '').trim() || 'Codec Document';
+      const lema = (branding?.headerText || '').trim();
+      const textoIzqX = anchoLogo && !logoOnRight ? this.margin + anchoLogo + 2.5 : this.margin;
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setFontSize(6.5);
+      this.doc.setTextColor(37, 99, 235);
+      this.safeText(identityLabel.toUpperCase().slice(0, 60), textoIzqX, 7.6);
 
-      const centerTitle = identityLabel !== (branding?.headerText || '').trim()
-        ? (branding?.headerText || '').trim()
-        : '';
-      if (centerTitle) {
-        this.doc.setFont('helvetica', 'normal');
-        this.doc.setFontSize(6);
-        this.doc.setTextColor(71, 85, 105);
-        this.safeText(centerTitle.slice(0, 55), this.pageWidth / 2, 8, { align: 'center' });
-      }
-
-      if (language === 'en' && branding?.companyState) {
+      const derecha = lema && lema.toLowerCase() !== identityLabel.toLowerCase()
+        ? lema.slice(0, 70)
+        : (language === 'en' && branding?.companyState ? `State of ${branding.companyState}` : '');
+      if (derecha) {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setFontSize(6);
         this.doc.setTextColor(100, 116, 139);
-        this.safeText(`State of ${branding.companyState}`, this.pageWidth - this.margin, 8, { align: 'right' });
+        const derechaX = anchoLogo && logoOnRight ? this.pageWidth - this.margin - anchoLogo - 2.5 : this.pageWidth - this.margin;
+        this.safeText(derecha, derechaX, 7.6, { align: 'right' });
       }
 
       this.doc.setDrawColor(226, 232, 240);
@@ -1499,7 +1512,8 @@ export class PDFGenerator {
         // logo 4:1 se aplastaba hasta quedar ilegible en la cabecera.
         const boxW = 28;
         const boxH = 12;
-        const logoY = topY - 4;
+        // Debajo de la franja superior (10 mm): con topY - 4 el logo la tocaba.
+        const logoY = topY + 1;
         // Force fully opaque, vibrant logo in premium header.
         this.doc.setTextColor(0, 0, 0);
         const logoOnRight = branding.logoPosition !== 'left';
@@ -1546,7 +1560,7 @@ export class PDFGenerator {
     );
     this.doc.line(this.margin, dividerY, this.pageWidth - this.margin, dividerY);
 
-    this.currentY = Math.max(this.currentY, dividerY + 10);
+    this.currentY = Math.max(this.currentY, dividerY + 6);
     // Ensure content starts below the 10mm top header band
     this.currentY = Math.max(this.currentY, 16);
   }
@@ -2284,8 +2298,8 @@ export class PDFGenerator {
   // ── Mirror signature block (side-by-side, matches web preview layout) ────────
 
   private addSignatureMirrorBlock(
-    leftSig?: { dataUrl: string; name: string },
-    rightSig?: { dataUrl: string; name: string },
+    leftSig?: { dataUrl: string; name: string; signedAt?: string },
+    rightSig?: { dataUrl: string; name: string; signedAt?: string },
     language: 'en' | 'es' = 'en',
     identitySelfie?: string,
     identityIdDocFront?: string,
@@ -2351,7 +2365,10 @@ export class PDFGenerator {
     const identityIdDoc = identityIdDocFront || identityIdDocBack;
     const hasIdentity = !!(identitySelfie || identityIdDoc || identityBiometric);
     // Space needed: sigs (~44) + optional compact identity strip (~32) + optional biometric badge (~30)
-    const needed = hasIdentity ? 78 + (identityBiometric ? 30 : 0) : 58;
+    // Sin verificación de identidad el bloque mide ~44 mm (8 de aire + 22 de
+    // firma + raya + nombre + fecha). Con 58 se mandaba la firma sola a una
+    // página nueva aunque en la última hubiera sitio de sobra.
+    const needed = hasIdentity ? 78 + (identityBiometric ? 30 : 0) : 46;
     if (this.currentY + needed > this.pageHeight - this.margin) {
       this.doc.addPage();
       this.currentY = this.margin + 6;
@@ -2375,7 +2392,7 @@ export class PDFGenerator {
     const imgH   = 22;
 
     const columna = (
-      sig: { dataUrl: string; name: string } | undefined,
+      sig: { dataUrl: string; name: string; signedAt?: string } | undefined,
       x: number,
       lineY: number,
     ) => {
@@ -2394,9 +2411,24 @@ export class PDFGenerator {
         : (language === 'es' ? 'FIRMA' : 'SIGNATURE');
 
       setFontSafe('helvetica', 'bold');
-      this.doc.setFontSize(8.5);
+      this.doc.setFontSize(9);
       this.doc.setTextColor(0, 0, 0);
-      safeText(rotulo, x + colW / 2, lineY + 4, { align: 'center' });
+      safeText(rotulo, x + colW / 2, lineY + 4.5, { align: 'center' });
+
+      // Debajo del nombre, cuándo firmó: es lo que un lector espera ver junto
+      // a una firma electrónica, en vez de una raya con un rótulo suelto.
+      if (sig?.dataUrl && sig.signedAt) {
+        setFontSafe('helvetica', 'normal');
+        this.doc.setFontSize(7);
+        this.doc.setTextColor(100, 116, 139);
+        safeText(
+          `${language === 'es' ? 'Firmado electrónicamente el' : 'Electronically signed on'} ${PDFGenerator.formatAuditDateTime(new Date(sig.signedAt), language)}`,
+          x + colW / 2,
+          lineY + 8.5,
+          { align: 'center' },
+        );
+        this.doc.setTextColor(0, 0, 0);
+      }
     };
 
     const lineY = this.currentY + imgH + 1;
@@ -2408,7 +2440,7 @@ export class PDFGenerator {
       columna(rightSig, rightX, lineY);
     }
 
-    this.currentY = lineY + 10;
+    this.currentY = lineY + 13;
 
     // ── Identity Verification Strip (inline, no new page) ─────────────────
     if (!hasIdentity) return;
