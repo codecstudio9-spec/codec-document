@@ -41,7 +41,16 @@ const INDICE_POR_SLUG = new Map(INDICE_CO.map((p) => [p.slug, p]));
 const COLOMBIA = LATAM_COUNTRIES.find((c) => c.slug === 'colombia');
 const HUB = { path: '/firma-electronica-colombia', label: 'Firma electrónica en Colombia' };
 
-function Contenido({ pagina }: { pagina: PaginaCO }) {
+/** Lo que trae el índice, para pintar el encabezado mientras llega el resto. */
+function desdeIndiceCO(i: IndiceCO): PaginaCO {
+  return {
+    slug: i.slug, titleTag: i.titleTag, metaDescription: i.metaDescription, h1: i.h1, grupo: i.grupo as PaginaCO['grupo'],
+    intro: i.intro, cta: i.cta, ctaTo: i.ctaTo, fotos: [i.foto, i.foto, i.foto],
+    problema: { titulo: '', texto: '' }, puntos: [], ley: { titulo: '', texto: '' }, caso: { titulo: '', texto: '' }, faq: [],
+  };
+}
+
+function Contenido({ pagina, soloHero = false }: { pagina: PaginaCO; soloHero?: boolean }) {
   const url = `${SITE_URL}/${pagina.slug}`;
   const [foto1, foto2, foto3] = pagina.fotos;
   const hermanas = useMemo(
@@ -55,7 +64,7 @@ function Contenido({ pagina }: { pagina: PaginaCO }) {
       <SEOHead title={pagina.titleTag} description={pagina.metaDescription} canonicalUrl={url} />
       <StructuredData
         language="es"
-        faq={pagina.faq}
+        faq={soloHero ? undefined : pagina.faq}
         country={COLOMBIA ? {
           name: COLOMBIA.name,
           nameEs: COLOMBIA.nameEs,
@@ -115,6 +124,9 @@ function Contenido({ pagina }: { pagina: PaginaCO }) {
         </div>
       </section>
 
+      {/* Sólo el encabezado mientras llega el resto del texto: el mismo alto
+          aproximado, para que nada salte cuando se completa. */}
+      {soloHero ? <div className="min-h-[150vh] bg-white" /> : (<>
       {/* ── El problema ─────────────────────────────────────────────── */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-4">
@@ -265,6 +277,8 @@ function Contenido({ pagina }: { pagina: PaginaCO }) {
         </div>
       </section>
 
+      </>)}
+
       <LandingFooter />
     </div>
   );
@@ -282,7 +296,10 @@ function Cargador({ slug }: { slug: string }) {
       .catch(() => { /* sin red: queda el contenido estático del HTML */ });
     return () => { vivo = false; };
   }, [slug, indice]);
-  if (!pagina) return <div className="min-h-screen bg-white" />;
+  if (!pagina) {
+    if (!indice) return null;
+    return <Contenido pagina={desdeIndiceCO(indice)} soloHero />;
+  }
   return <Contenido pagina={pagina} />;
 }
 

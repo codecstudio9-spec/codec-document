@@ -244,8 +244,12 @@ fs.writeFileSync(
 // USIntentLanding y COIntentLanding cargan sólo el archivo de texto de la
 // página que se está viendo. Para las tarjetas de páginas relacionadas les
 // basta este índice (título, descripción, grupo), sin el texto completo.
+// Incluye lo que pinta el encabezado (título, intro, foto, botón): la página
+// lo muestra de inmediato mientras llega el resto del texto, en vez de una
+// pantalla en blanco. Es lo que Lighthouse mide como contenido principal.
 const indiceUS = PAGINAS_US.map((p) => ({
   slug: p.slug, h1: p.h1, metaDescription: p.metaDescription, grupo: p.grupo,
+  titleTag: p.titleTag, intro: p.intro, cta: p.cta, ...(p.ctaTo ? { ctaTo: p.ctaTo } : {}), foto: p.fotos[0],
   ...(p.audiencia ? { audiencia: p.audiencia } : {}),
   modulo: MODULO_US[p.slug],
   hermanas: hermanasDe(p.slug, p.grupo === 'industry' ? 6 : 3).map((h) => h.slug),
@@ -254,12 +258,13 @@ fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-index.generated.ts'),
   `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
   + `import type { ModuloUS } from './us-intent-seo-content';\n`
-  + `export interface IndiceUS { slug: string; h1: string; metaDescription: string; grupo: string; audiencia?: string; modulo: ModuloUS; hermanas: string[] }\n`
+  + `export interface IndiceUS { slug: string; h1: string; metaDescription: string; grupo: string; titleTag: string; intro: string; cta: string; ctaTo?: string; foto: string; audiencia?: string; modulo: ModuloUS; hermanas: string[] }\n`
   + `export const INDICE_US: readonly IndiceUS[] = ${JSON.stringify(indiceUS)};\n`,
   'utf-8',
 );
 const indiceCO = PAGINAS_CO.map((p) => ({
   slug: p.slug, h1: p.h1, metaDescription: p.metaDescription, grupo: p.grupo,
+  titleTag: p.titleTag, intro: p.intro, cta: p.cta, ctaTo: p.ctaTo, foto: p.fotos[0],
   modulo: MODULO_CO[p.slug],
   hermanas: hermanasCO(p.slug, 3).map((h) => h.slug),
 }));
@@ -267,7 +272,7 @@ fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'co-pages-index.generated.ts'),
   `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
   + `import type { ModuloCO } from './co-intent-seo-content';\n`
-  + `export interface IndiceCO { slug: string; h1: string; metaDescription: string; grupo: string; modulo: ModuloCO; hermanas: string[] }\n`
+  + `export interface IndiceCO { slug: string; h1: string; metaDescription: string; grupo: string; titleTag: string; intro: string; cta: string; ctaTo: string; foto: string; modulo: ModuloCO; hermanas: string[] }\n`
   + `export const INDICE_CO: readonly IndiceCO[] = ${JSON.stringify(indiceCO)};\n`,
   'utf-8',
 );

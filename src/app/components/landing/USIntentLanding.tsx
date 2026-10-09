@@ -46,7 +46,17 @@ const CARGADORES: Record<ModuloUS, () => Promise<PaginaUS[]>> = {
 const INDICE_POR_SLUG = new Map(INDICE_US.map((p) => [p.slug, p]));
 type ModuloEs = typeof import('../../data/us-seo-content-es');
 
-function Contenido({ pagina, es: moduloEs }: { pagina: PaginaUS; es: ModuloEs | null }) {
+/** Una página «a medias» con lo que trae el índice, para pintar el
+ *  encabezado de inmediato. Sólo se usa con soloHero. */
+function desdeIndiceUS(i: IndiceUS): PaginaUS {
+  return {
+    slug: i.slug, titleTag: i.titleTag, metaDescription: i.metaDescription, h1: i.h1, grupo: i.grupo as PaginaUS['grupo'],
+    audiencia: i.audiencia, intro: i.intro, cta: i.cta, ctaTo: i.ctaTo, fotos: [i.foto, i.foto, i.foto],
+    problema: { titulo: '', texto: '' }, puntos: [], ley: { titulo: '', texto: '' }, caso: { titulo: '', texto: '' }, faq: [],
+  };
+}
+
+function Contenido({ pagina, es: moduloEs, soloHero = false }: { pagina: PaginaUS; es: ModuloEs | null; soloHero?: boolean }) {
   const url = `${SITE_URL}/${pagina.slug}`;
   const [foto1, foto2, foto3] = pagina.fotos;
   const ctaTo = pagina.ctaTo ?? '/';
@@ -82,7 +92,7 @@ function Contenido({ pagina, es: moduloEs }: { pagina: PaginaUS; es: ModuloEs | 
       <SEOHead title={pagina.titleTag} description={pagina.metaDescription} canonicalUrl={url} />
       {/* Su propio FAQ, no el genérico del sitio: Google exige que el marcado
           coincida con lo que la página muestra. */}
-      <StructuredData faq={pagina.faq} />
+      <StructuredData faq={soloHero ? undefined : pagina.faq} />
       <LandingHeader />
 
       {/* ── Hero ────────────────────────────────────────────────────── */}
@@ -138,6 +148,9 @@ function Contenido({ pagina, es: moduloEs }: { pagina: PaginaUS; es: ModuloEs | 
         </div>
       </section>
 
+      {/* Sólo el encabezado mientras llega el resto del texto: el mismo alto
+          aproximado, para que nada salte cuando se completa. */}
+      {soloHero ? <div className="min-h-[150vh] bg-white" /> : (<>
       {/* ── El problema ─────────────────────────────────────────────── */}
       <section className="bg-white py-16 md:py-24">
         <div className="container mx-auto px-4">
@@ -337,6 +350,8 @@ function Contenido({ pagina, es: moduloEs }: { pagina: PaginaUS; es: ModuloEs | 
         </div>
       </section>
 
+      </>)}
+
       <LandingFooter />
     </div>
   );
@@ -365,7 +380,10 @@ function Cargador({ slug }: { slug: string }) {
     import('../../data/us-seo-content-es').then(setModuloEs).catch(() => {});
   }, [language, moduloEs]);
 
-  if (!pagina) return <div className="min-h-screen bg-white" />;
+  if (!pagina) {
+    if (!indice) return null;
+    return <Contenido pagina={desdeIndiceUS(indice)} es={null} soloHero />;
+  }
   return <Contenido pagina={pagina} es={language === 'es' ? moduloEs : null} />;
 }
 
