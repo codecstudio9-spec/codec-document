@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   ArrowLeft, Upload, FileType2, Save, Loader, Plus, Trash2, Shield, Copy, Check, ExternalLink,
@@ -224,6 +224,8 @@ export function MyDocxTemplateEditorPage() {
   // Dos formas de armar los campos: marcar texto (la de siempre) o
   // arrastrarlos al lugar exacto, al estilo de Dropbox Sign.
   const [modoCampos, setModoCampos] = useState<'marcar' | 'arrastrar'>('marcar');
+  // El editor de arrastrar ocupa toda la pantalla, como en Dropbox Sign.
+  const [editorCamposAbierto, setEditorCamposAbierto] = useState(false);
 
   /** Guarda un Word editado y deja la lista de campos igual a lo que de
    *  verdad hay en el documento: los que se quitaron del todo desaparecen,
@@ -246,6 +248,8 @@ export function MyDocxTemplateEditorPage() {
     });
     setError('');
   };
+
+  const cerrarEditorCampos = useCallback(() => setEditorCamposAbierto(false), []);
 
   const handleInsertarCampo = (en: PosicionEnDocumento, campo: { claveExistente?: string; etiqueta?: string; tipo?: DetectedField['type'] }) => {
     if (!docxBuffer) return;
@@ -617,7 +621,7 @@ export function MyDocxTemplateEditorPage() {
                     <button
                       key={op.modo}
                       type="button"
-                      onClick={() => setModoCampos(op.modo)}
+                      onClick={() => { setModoCampos(op.modo); if (op.modo === 'arrastrar') setEditorCamposAbierto(true); }}
                       className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition sm:text-sm ${modoCampos === op.modo ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       {language === 'en' ? op.en : op.es}
@@ -632,14 +636,36 @@ export function MyDocxTemplateEditorPage() {
                     onMarcar={handleMarcarCampo}
                   />
                 ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditorCamposAbierto(true)}
+                    className="flex w-full items-center gap-4 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md"
+                  >
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600">
+                      <FileType2 className="size-6 text-white" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-black text-slate-900">
+                        {language === 'en' ? 'Open the document and place the fields' : 'Abrir el documento y colocar los campos'}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-slate-500">
+                        {language === 'en'
+                          ? 'Your Word file full screen, as it looks. Drag each field to the exact spot.'
+                          : 'Tu Word a pantalla completa, tal como se ve. Arrastra cada campo al lugar exacto.'}
+                      </span>
+                    </span>
+                  </button>
+                )}
+                {editorCamposAbierto && modoCampos === 'arrastrar' && (
                   <ColocarCamposPanel
-                    parrafos={parrafosDocumento}
+                    buffer={docxBuffer}
                     campos={fields}
                     language={language}
                     parrafoAdmiteCampo={(i) => parrafoAdmiteCampo(docxBuffer, i)}
                     onInsertar={handleInsertarCampo}
                     onMover={handleMoverCampo}
                     onQuitar={handleQuitarCampo}
+                    onCerrar={cerrarEditorCampos}
                   />
                 )}
               </div>
