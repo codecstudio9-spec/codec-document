@@ -136,6 +136,7 @@ export async function createDocxTemplate(params: {
   detectedFields: DetectedField[]; signers: TemplateSigner[];
   securityConfig: SecurityConfig; instructionsEn: string; instructionsEs: string;
   clauseOverrides?: Record<string, string>; extraClauses?: ExtraClause[];
+  sourceExampleId?: string;
 }): Promise<DocxTemplate> {
   const publicSlug = await generateUniqueSlug(params.name);
   const { data, error } = await supabase
@@ -154,6 +155,7 @@ export async function createDocxTemplate(params: {
       clause_overrides: params.clauseOverrides ?? {},
       extra_clauses: params.extraClauses ?? [],
       public_slug: publicSlug,
+      ...(params.sourceExampleId ? { source_example_id: params.sourceExampleId } : {}),
     })
     .select(ROW_COLUMNS)
     .single();
@@ -193,6 +195,9 @@ export async function listDocxTemplates(userId: string): Promise<DocxTemplate[]>
     .from('templates')
     .select(ROW_COLUMNS)
     .eq('kind', 'docx_variables')
+    // Las prediseñadas originales viven en su propia pestaña; aunque sean
+    // de la cuenta que las publicó, no son «mis plantillas».
+    .eq('is_public_example', false)
     .order('created_at', { ascending: false });
   if (error || !data) return [];
   return (data as DocxTemplateRow[]).map(rowToTemplate);
@@ -295,7 +300,19 @@ export async function listPublicExampleTemplates(): Promise<PublicExampleTemplat
  * without touching the original example. Signers reset to a single
  * default "Signer 1" since the example's own signer setup was tuned for
  * its original use case, not the new owner's. */
-export async function cloneExampleTemplate(exampleId: string, userId: string, language: 'en' | 'es'): Promise<DocxTemplate> {
+export async function cloneExampleTemplate(exampleId: string, userId: string, language: 'en' | 'es'): Promise<DocxTemplate & { yaExistia: boolean }> {
+  // Si la persona ya tiene su copia de este ejemplo, se reabre esa en vez
+  // de crear otra igual.
+  const { data: existente } = await supabase
+    .from('templates')
+    .select(ROW_COLUMNS)
+    .eq('user_id', userId)
+    .eq('source_example_id', exampleId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existente) return { ...rowToTemplate(existente as DocxTemplateRow), yaExistia: true };
+
   const { data, error } = await supabase.rpc('get_public_example_template', { p_id: exampleId }).maybeSingle();
   if (error || !data) throw new Error(language === 'en' ? 'Example template not found.' : 'Plantilla de ejemplo no encontrada.');
   const row = data as {
@@ -303,8 +320,9 @@ export async function cloneExampleTemplate(exampleId: string, userId: string, la
     security_config: unknown; instructions_en: string | null; instructions_es: string | null;
     clause_overrides: unknown; extra_clauses: unknown;
   };
-  return createDocxTemplate({
+  const creada = await createDocxTemplate({
     userId,
+    sourceExampleId: exampleId,
     name: `${row.example_label || row.name} — ${language === 'en' ? 'Copy' : 'Copia'}`,
     docxFileUrl: row.docx_file_url,
     detectedFields: Array.isArray(row.detected_fields) ? (row.detected_fields as DetectedField[]) : [],
@@ -315,6 +333,7 @@ export async function cloneExampleTemplate(exampleId: string, userId: string, la
     clauseOverrides: (row.clause_overrides && typeof row.clause_overrides === 'object') ? (row.clause_overrides as Record<string, string>) : {},
     extraClauses: Array.isArray(row.extra_clauses) ? (row.extra_clauses as ExtraClause[]) : [],
   });
+  return { ...creada, yaExistia: false };
 }
 
 /** Public, anonymous-safe lookup for the /t/:slug fill page — goes

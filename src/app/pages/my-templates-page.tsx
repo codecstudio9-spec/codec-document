@@ -82,7 +82,9 @@ export function MyTemplatesPage() {
     setCloningId(example.id);
     try {
       const created = await cloneExampleTemplate(example.id, user.id, language);
-      toast.success(language === 'en' ? 'Your own editable copy is ready!' : '¡Tu copia editable está lista!');
+      toast.success(created.yaExistia
+        ? (language === 'en' ? 'You already had this one — opening your copy' : 'Ya tenías esta plantilla — abriendo tu copia')
+        : (language === 'en' ? 'Your own editable copy is ready!' : '¡Tu copia editable está lista!'));
       navigate(`/my-templates/${created.id}/edit-docx`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Could not copy this template.' : 'No se pudo copiar esta plantilla.'));
