@@ -134,8 +134,10 @@ class RegistroCampos {
   private porClave = new Map<string, DetectedField>();
   private usos = new Map<string, number>();
 
+  private ocupadas = new Set<string>();
+
   constructor(clavesExistentes: string[] = []) {
-    for (const k of clavesExistentes) this.usos.set(k, 1);
+    for (const k of clavesExistentes) { this.usos.set(k, 1); this.ocupadas.add(k); }
   }
 
   /** Un mismo [Nombre del cliente] repetido es UN campo (se llena una vez). */
@@ -155,9 +157,13 @@ class RegistroCampos {
   nuevo(etiqueta: string | null): string {
     const base = etiqueta ?? `Dato ${this.campos.length + 1}`;
     const claveBase = claveDeEtiqueta(base);
-    const n = (this.usos.get(claveBase) ?? 0) + 1;
+    // Se salta cualquier número ya usado: con «nombre» y «nombre_2» ya en la
+    // plantilla, el siguiente tiene que ser «nombre_3», no otro «nombre_2».
+    let n = (this.usos.get(claveBase) ?? 0) + 1;
+    while (this.ocupadas.has(n > 1 ? `${claveBase}_${n}` : claveBase)) n += 1;
     this.usos.set(claveBase, n);
     const clave = n > 1 ? `${claveBase}_${n}` : claveBase;
+    this.ocupadas.add(clave);
     const campo: DetectedField = {
       key: clave,
       label: n > 1 ? `${etiquetaLegible(base)} (${n})` : etiquetaLegible(base),
@@ -314,4 +320,124 @@ export function marcarTextoComoCampo(
 export function parrafosParaMarcar(buf: ArrayBuffer): string[] {
   const { xml } = leerDocumento(buf);
   return (xml.match(PARAGRAPH_RE) ?? []).map(textoDelParrafo);
+}
+
+// ── Colocar campos arrastrando ─────────────────────────────────────────────
+//
+// La otra forma de armar la plantilla, al estilo de Dropbox Sign: el cliente
+// ve el documento y arrastra un campo al punto exacto donde va, o mueve uno
+// que quedó mal puesto. Las posiciones son (párrafo, carácter) sobre el mismo
+// texto que devuelve parrafosParaMarcar, así que la vista y el Word coinciden.
+
+/** Lo que queda en el texto cuando se quita o se mueve un campo: la línea
+ *  para llenar a mano, no un hueco invisible. */
+export const LINEA_EN_BLANCO = '__________';
+
+export interface PosicionEnDocumento { parrafo: number; offset: number }
+export interface RangoEnDocumento { parrafo: number; start: number; end: number }
+
+/** Como aplicarReemplazos, pero también admite inserciones (start === end):
+ *  se escriben justo antes del carácter `start`, o al final del párrafo. */
+function aplicarEdiciones(parrafo: string, ediciones: Reemplazo[]): string {
+  if (ediciones.length === 0) return parrafo;
+  const total = textoDelParrafo(parrafo).length;
+  const orden = [...ediciones].sort((a, b) => a.start - b.start || a.end - b.end);
+  const inserciones = orden.filter((e) => e.start === e.end);
+  const reemplazos = orden.filter((e) => e.start !== e.end);
+
+  let cursorTexto = 0;
+  return parrafo.replace(TEXT_NODE_RE, (_nodo, _attrs: string | undefined, crudo: string) => {
+    const texto = decode(crudo);
+    const inicio = cursorTexto;
+    const fin = inicio + texto.length;
+    cursorTexto = fin;
+
+    let nuevo = '';
+    for (let i = inicio; i < fin; i++) {
+      for (const ins of inserciones) if (ins.start === i) nuevo += ins.texto;
+      const r = reemplazos.find((x) => i >= x.start && i < x.end);
+      if (!r) { nuevo += texto[i - inicio]; continue; }
+      if (i === r.start) nuevo += r.texto;
+    }
+    if (fin === total) for (const ins of inserciones) if (ins.start === total) nuevo += ins.texto;
+    return `<w:t xml:space="preserve">${encode(nuevo)}</w:t>`;
+  });
+}
+
+function editarParrafos(buf: ArrayBuffer, ediciones: Map<number, Reemplazo[]>): ArrayBuffer {
+  const { zip, xml } = leerDocumento(buf);
+  let indice = -1;
+  const nuevo = xml.replace(PARAGRAPH_RE, (p) => {
+    indice += 1;
+    const propias = ediciones.get(indice);
+    return propias ? aplicarEdiciones(p, propias) : p;
+  });
+  return escribirDocumento(zip, nuevo);
+}
+
+/** Un párrafo sin ningún <w:t> (una línea vacía del Word) no puede recibir
+ *  texto sin inventar un run nuevo con un formato que no es el del documento. */
+export function parrafoAdmiteCampo(buf: ArrayBuffer, parrafo: number): boolean {
+  const { xml } = leerDocumento(buf);
+  const p = (xml.match(PARAGRAPH_RE) ?? [])[parrafo];
+  return Boolean(p && /<w:t(\s[^>]*)?>/.test(p));
+}
+
+/** El {{campo}} con un espacio a cada lado si quedaría pegado a una palabra:
+ *  soltarlo al final de «Estimate» no debe dar «Estimate{{nombre}}». */
+function conEspacios(texto: string, offset: number, tag: string): string {
+  const antes = texto[offset - 1] ?? '';
+  const despues = texto[offset] ?? '';
+  const pegaAntes = antes !== '' && !/[\s(«"'“¿¡/]/.test(antes);
+  const pegaDespues = despues !== '' && !/[\s.,;:)»"'”?!/]/.test(despues);
+  return `${pegaAntes ? ' ' : ''}${tag}${pegaDespues ? ' ' : ''}`;
+}
+
+/** Pone un campo en una posición. Con `claveExistente` reutiliza un dato que
+ *  ya existe («el nombre del cliente aparece también aquí»); si no, crea un
+ *  campo nuevo con esa etiqueta. */
+export function insertarCampo(
+  buf: ArrayBuffer,
+  en: PosicionEnDocumento,
+  opciones: { claveExistente?: string; etiqueta?: string; tipo?: DetectedFieldType },
+  clavesExistentes: string[],
+): ResultadoDeteccion {
+  const registro = new RegistroCampos(clavesExistentes);
+  let clave = opciones.claveExistente;
+  if (!clave) {
+    clave = registro.nuevo(opciones.etiqueta?.trim() || null);
+    const campo = registro.campos[registro.campos.length - 1];
+    if (opciones.tipo) campo.type = opciones.tipo;
+  }
+  const texto = parrafosParaMarcar(buf)[en.parrafo] ?? '';
+  const docx = editarParrafos(buf, new Map([[en.parrafo, [{ start: en.offset, end: en.offset, texto: conEspacios(texto, en.offset, `{{${clave}}}`) }]]]));
+  return { docx, campos: registro.campos };
+}
+
+/** Mueve un {{campo}} a otra posición; donde estaba queda la línea en blanco. */
+export function moverCampo(buf: ArrayBuffer, desde: RangoEnDocumento, hasta: PosicionEnDocumento): ArrayBuffer {
+  // Soltarlo dentro de sí mismo, o justo al lado, no cambia nada.
+  if (desde.parrafo === hasta.parrafo && hasta.offset >= desde.start && hasta.offset <= desde.end) return buf;
+  const parrafos = parrafosParaMarcar(buf);
+  const etiquetaCampo = parrafos[desde.parrafo]?.slice(desde.start, desde.end) ?? '';
+  if (!/^\{\{[^}]+\}\}$/.test(etiquetaCampo)) return buf;
+  const ediciones = new Map<number, Reemplazo[]>();
+  const agregar = (p: number, e: Reemplazo) => ediciones.set(p, [...(ediciones.get(p) ?? []), e]);
+  agregar(desde.parrafo, { start: desde.start, end: desde.end, texto: LINEA_EN_BLANCO });
+  agregar(hasta.parrafo, { start: hasta.offset, end: hasta.offset, texto: conEspacios(parrafos[hasta.parrafo] ?? '', hasta.offset, etiquetaCampo) });
+  return editarParrafos(buf, ediciones);
+}
+
+/** Quita un {{campo}} del texto y deja la línea en blanco en su lugar. */
+export function quitarCampo(buf: ArrayBuffer, rango: RangoEnDocumento): ArrayBuffer {
+  return editarParrafos(buf, new Map([[rango.parrafo, [{ start: rango.start, end: rango.end, texto: LINEA_EN_BLANCO }]]]));
+}
+
+/** Claves de los {{campos}} que siguen en el documento, en orden de aparición. */
+export function clavesEnDocumento(buf: ArrayBuffer): string[] {
+  const vistas = new Set<string>();
+  for (const texto of parrafosParaMarcar(buf)) {
+    for (const m of texto.matchAll(/\{\{\s*([^}:]+?)\s*(?::[^}]*)?\}\}/g)) vistas.add(m[1]);
+  }
+  return [...vistas];
 }

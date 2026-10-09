@@ -13,8 +13,13 @@ import {
   detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks,
   fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock, type ExtraClause,
 } from '../../lib/docxTemplateEngine';
-import { detectarHuecosEnWord, marcarTextoComoCampo, parrafosParaMarcar } from '../../lib/docxPlaceholders';
+import {
+  detectarHuecosEnWord, marcarTextoComoCampo, parrafosParaMarcar,
+  insertarCampo, moverCampo, quitarCampo, clavesEnDocumento, parrafoAdmiteCampo,
+  type PosicionEnDocumento, type RangoEnDocumento,
+} from '../../lib/docxPlaceholders';
 import { MarcarCamposPanel } from '../components/templates/MarcarCamposPanel';
+import { ColocarCamposPanel } from '../components/templates/ColocarCamposPanel';
 import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
 import { MIME_DOCX, MIME_GOOGLE_DOC } from '../services/google-drive-picker';
 import { tomarArchivoPendiente } from '../services/archivo-plantilla';
@@ -215,6 +220,46 @@ export function MyDocxTemplateEditorPage() {
     if (!docxBuffer) return [];
     try { return parrafosParaMarcar(docxBuffer); } catch { return []; }
   }, [docxBuffer]);
+
+  // Dos formas de armar los campos: marcar texto (la de siempre) o
+  // arrastrarlos al lugar exacto, al estilo de Dropbox Sign.
+  const [modoCampos, setModoCampos] = useState<'marcar' | 'arrastrar'>('marcar');
+
+  /** Guarda un Word editado y deja la lista de campos igual a lo que de
+   *  verdad hay en el documento: los que se quitaron del todo desaparecen,
+   *  los nuevos se agregan, y cada uno conserva su nombre y tipo. */
+  const aplicarWordEditado = (docx: ArrayBuffer, nuevos: DetectedField[] = []) => {
+    if (!docxFile) return;
+    const archivo = new File([docx], docxFile.name, { type: docxFile.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    setDocxBuffer(docx);
+    setDocxFile(archivo);
+    if (docxFileUrl?.startsWith('blob:')) URL.revokeObjectURL(docxFileUrl);
+    setDocxFileUrl(URL.createObjectURL(archivo));
+    // Sólo se descarta un campo que estaba en el cuerpo y ya no está: uno que
+    // vive en el encabezado o pie del Word nunca aparece en esta vista y no
+    // se debe perder.
+    const antes = docxBuffer ? new Set(clavesEnDocumento(docxBuffer)) : new Set<string>();
+    const presentes = new Set(clavesEnDocumento(docx));
+    setFields((prev) => {
+      const conocidos = [...prev, ...nuevos.filter((n) => !prev.some((f) => f.key === n.key))];
+      return conocidos.filter((f) => f.type === 'section' || presentes.has(f.key) || !antes.has(f.key));
+    });
+    setError('');
+  };
+
+  const handleInsertarCampo = (en: PosicionEnDocumento, campo: { claveExistente?: string; etiqueta?: string; tipo?: DetectedField['type'] }) => {
+    if (!docxBuffer) return;
+    const res = insertarCampo(docxBuffer, en, campo, fields.map((f) => f.key));
+    aplicarWordEditado(res.docx, res.campos);
+  };
+  const handleMoverCampo = (desde: RangoEnDocumento, hasta: PosicionEnDocumento) => {
+    if (!docxBuffer) return;
+    aplicarWordEditado(moverCampo(docxBuffer, desde, hasta));
+  };
+  const handleQuitarCampo = (rango: RangoEnDocumento) => {
+    if (!docxBuffer) return;
+    aplicarWordEditado(quitarCampo(docxBuffer, rango));
+  };
 
   const handleMarcarCampo = (texto: string, etiqueta: string): number => {
     if (!docxBuffer || !docxFile) return 0;
@@ -563,12 +608,41 @@ export function MyDocxTemplateEditorPage() {
                 por primera vez: el Word de una plantilla ya usada no se
                 reescribe (ver docxBuffer). */}
             {docxBuffer && !isEditMode && canEditFields && (
-              <MarcarCamposPanel
-                parrafos={parrafosDocumento}
-                campos={fields}
-                language={language}
-                onMarcar={handleMarcarCampo}
-              />
+              <div className="space-y-3">
+                <div className="flex gap-1 rounded-2xl bg-slate-100 p-1">
+                  {([
+                    { modo: 'marcar' as const, es: 'Seleccionar el texto', en: 'Select the text' },
+                    { modo: 'arrastrar' as const, es: 'Arrastrar campos', en: 'Drag fields' },
+                  ]).map((op) => (
+                    <button
+                      key={op.modo}
+                      type="button"
+                      onClick={() => setModoCampos(op.modo)}
+                      className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition sm:text-sm ${modoCampos === op.modo ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      {language === 'en' ? op.en : op.es}
+                    </button>
+                  ))}
+                </div>
+                {modoCampos === 'marcar' ? (
+                  <MarcarCamposPanel
+                    parrafos={parrafosDocumento}
+                    campos={fields}
+                    language={language}
+                    onMarcar={handleMarcarCampo}
+                  />
+                ) : (
+                  <ColocarCamposPanel
+                    parrafos={parrafosDocumento}
+                    campos={fields}
+                    language={language}
+                    parrafoAdmiteCampo={(i) => parrafoAdmiteCampo(docxBuffer, i)}
+                    onInsertar={handleInsertarCampo}
+                    onMover={handleMoverCampo}
+                    onQuitar={handleQuitarCampo}
+                  />
+                )}
+              </div>
             )}
 
             {/* Detected fields — collapsible drawer; field DEFINITIONS are

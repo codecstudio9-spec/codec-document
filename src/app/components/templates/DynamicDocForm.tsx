@@ -29,6 +29,9 @@ interface DynamicDocFormProps {
   /** El Word de la plantilla. Si la plantilla no tiene secciones puestas a
    *  mano, se sacan de los títulos del propio documento. */
   docxFileUrl?: string;
+  /** Avisa qué campo se está llenando, para resaltarlo en la vista previa
+   *  del documento (VistaPreviaDocumento). */
+  onCampoEnfocado?: (key: string | null) => void;
 }
 
 /**
@@ -48,7 +51,7 @@ interface DynamicDocFormProps {
  * with more than a few options span both columns so the dropdown/options
  * don't fight a narrow half-width column.
  */
-export function DynamicDocForm({ fields: camposOriginales, values, onChange, language, invalidKeys, nombreDocumento, tienePremium = false, mostrarDictado = true, docxFileUrl }: DynamicDocFormProps) {
+export function DynamicDocForm({ fields: camposOriginales, values, onChange, language, invalidKeys, nombreDocumento, tienePremium = false, mostrarDictado = true, docxFileUrl, onCampoEnfocado }: DynamicDocFormProps) {
   const [dictadoAbierto, setDictadoAbierto] = useState(false);
 
   // Secciones sacadas del Word cuando la plantilla no trae las suyas. Si el
@@ -207,13 +210,19 @@ export function DynamicDocForm({ fields: camposOriginales, values, onChange, lan
         }`;
 
         return (
-          <div key={f.key} className={wide ? 'md:col-span-2' : undefined}>
-            <label className={`mb-1 block text-xs font-bold ${invalid ? 'text-red-600' : 'text-slate-600'}`}>
+          <div
+            key={f.key}
+            className={wide ? 'md:col-span-2' : undefined}
+            onFocusCapture={() => onCampoEnfocado?.(f.key)}
+            onBlurCapture={() => onCampoEnfocado?.(null)}
+          >
+            <label htmlFor={`campo-${f.key}`} className={`mb-1 block text-xs font-bold ${invalid ? 'text-red-600' : 'text-slate-600'}`}>
               {f.label}
               {f.required && <span className="text-red-500"> *</span>}
             </label>
             {f.type === 'choice' ? (
               <select
+                id={`campo-${f.key}`}
                 value={values[f.key] ?? ''}
                 onChange={(e) => onChange(f.key, e.target.value)}
                 onBlur={() => rememberFieldValue(f.label, values[f.key] ?? '')}
@@ -224,6 +233,7 @@ export function DynamicDocForm({ fields: camposOriginales, values, onChange, lan
               </select>
             ) : (
               <input
+                id={`campo-${f.key}`}
                 type={f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}
                 value={values[f.key] ?? ''}
                 onChange={(e) => onChange(f.key, e.target.value)}

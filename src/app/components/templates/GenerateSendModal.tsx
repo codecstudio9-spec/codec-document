@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileType2, X, Loader, Copy, Check, ExternalLink, Shield, Pencil, RotateCcw, Mail, Send, Download, MessageCircle, Smartphone, Plus, AlertTriangle, Link2 } from 'lucide-react';
+import { FileType2, X, Loader, Eye, EyeOff, Copy, Check, ExternalLink, Shield, Pencil, RotateCcw, Mail, Send, Download, MessageCircle, Smartphone, Plus, AlertTriangle, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DocxTemplate } from '../../services/docx-template-service';
 import { createCustomTemplateTransaction } from '../../services/docx-template-service';
@@ -8,6 +8,7 @@ import type { SecurityConfig } from '../../services/sign-transaction-service';
 import { SecurityConfigModal } from '../SecurityConfigModal';
 import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
+import { VistaPreviaDocumento } from './VistaPreviaDocumento';
 import { useAuth } from '../../contexts/auth-context';
 import { saveDocumentRecord } from '../../services/documents-service';
 import { sendSigningInvitation } from '../../services/signing-email-service';
@@ -79,6 +80,20 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const [emailResult, setEmailResult] = useState<{ ok: true; to: string } | { ok: false; error: string } | null>(null);
   const [inPersonOpen, setInPersonOpen] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  // «Ver documento mientras lleno»: opcional, apagado por defecto. Se
+  // recuerda en este navegador para quien lo prefiere siempre abierto.
+  const [verDocumento, setVerDocumento] = useState<boolean>(() => {
+    try { return localStorage.getItem('codec_ver_documento') === '1'; } catch { return false; }
+  });
+  const [campoActivo, setCampoActivo] = useState<string | null>(null);
+  const [pestanaMovil, setPestanaMovil] = useState<'datos' | 'documento'>('datos');
+  const alternarVerDocumento = () => {
+    setVerDocumento((v) => {
+      try { localStorage.setItem('codec_ver_documento', v ? '0' : '1'); } catch { /* sin almacenamiento */ }
+      return !v;
+    });
+    setPestanaMovil('documento');
+  };
 
   // Restore the draft when a template opens; persist it while typing.
   useEffect(() => {
@@ -220,6 +235,8 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
       )}`
     : '';
 
+  const dividido = verDocumento && !resultLink;
+
   return (
     <AnimatePresence>
       {open && template && (
@@ -230,7 +247,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
           onClick={handleClose}
         >
           <motion.div
-            className="max-h-[90vh] w-full max-w-xl overflow-hidden bg-white"
+            className={`max-h-[90vh] w-full overflow-hidden bg-white transition-[max-width] duration-300 ${verDocumento && !resultLink ? 'max-w-6xl' : 'max-w-xl'}`}
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
@@ -250,13 +267,40 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                     {language === 'en' ? 'Fill in the fields, then send for signature or download' : 'Llena los datos y envíalo a firmar o descárgalo'}
                   </p>
                 </div>
+                {!resultLink && (
+                  <button
+                    type="button"
+                    onClick={alternarVerDocumento}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${verDocumento ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'}`}
+                  >
+                    {verDocumento ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                    <span className="hidden sm:inline">
+                      {verDocumento ? (language === 'en' ? 'Hide document' : 'Ocultar documento') : (language === 'en' ? 'See document' : 'Ver documento')}
+                    </span>
+                  </button>
+                )}
                 <button type="button" onClick={handleClose} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                   <X className="size-4" />
                 </button>
               </div>
             </div>
 
-            <div className="max-h-[calc(90vh-88px)] overflow-y-auto p-5 sm:p-7">
+            <div className={dividido ? 'flex h-[calc(90vh-88px)] flex-col md:flex-row' : ''}>
+            {dividido && (
+              <div className="flex shrink-0 gap-1 border-b border-slate-100 bg-slate-50 p-1.5 md:hidden">
+                {(['datos', 'documento'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPestanaMovil(p)}
+                    className={`flex-1 rounded-lg py-2 text-xs font-bold ${pestanaMovil === p ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    {p === 'datos' ? (language === 'en' ? 'Details' : 'Datos') : (language === 'en' ? 'Document' : 'Documento')}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className={`overflow-y-auto p-5 sm:p-7 ${dividido ? `min-h-0 flex-1 md:w-[46%] md:flex-none md:border-r md:border-slate-100 ${pestanaMovil === 'documento' ? 'hidden md:block' : ''}` : 'max-h-[calc(90vh-88px)]'}`}>
               {resultLink ? (
                 <div className="flex flex-col items-center gap-4 py-2 text-center">
                   <div className="rounded-full bg-emerald-100 p-4"><Check className="size-8 text-emerald-600" /></div>
@@ -384,7 +428,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                     </p>
                   </div>
 
-                  <DynamicDocForm nombreDocumento={template.name} tienePremium={tienePremium} docxFileUrl={template.docxFileUrl} fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
+                  <DynamicDocForm onCampoEnfocado={setCampoActivo} nombreDocumento={template.name} tienePremium={tienePremium} docxFileUrl={template.docxFileUrl} fields={template.detectedFields} values={values} onChange={(k, v) => setValues((p) => ({ ...p, [k]: v }))} language={language} invalidKeys={invalidKeys} />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
                     <div className="flex min-w-0 items-center gap-2">
@@ -433,6 +477,20 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                   </div>
                 </div>
               )}
+            </div>
+            {dividido && (
+              <div className={`min-h-0 flex-1 ${pestanaMovil === 'datos' ? 'hidden md:block' : ''}`}>
+                <VistaPreviaDocumento
+                  docxFileUrl={template.docxFileUrl}
+                  clauseOverrides={template.clauseOverrides}
+                  extraClauses={template.extraClauses}
+                  fields={template.detectedFields}
+                  values={values}
+                  language={language}
+                  campoActivo={campoActivo}
+                />
+              </div>
+            )}
             </div>
           </motion.div>
 
