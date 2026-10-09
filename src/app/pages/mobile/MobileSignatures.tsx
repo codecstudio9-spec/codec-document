@@ -210,7 +210,7 @@ function SignaturesContent() {
             )}
             <button
               type="button"
-              onClick={() => navigate('/app/templates')}
+              onClick={() => navigate('/app/documents?ver=predisenados')}
               className="mt-3 text-xs font-bold text-blue-600"
             >
               {language === 'en' ? 'Create a document to sign →' : 'Crear un documento para firmar →'}
@@ -259,12 +259,15 @@ function SignaturesContent() {
         </motion.button>
       )}
 
-      {/* Floating action — start a new signature request */}
+      {/* Botón flotante: firmar un documento nuevo — lo mismo que la tarjeta
+          «Firmar un documento» de arriba. Antes iba a /app/templates, que
+          ahora redirige a los documentos prediseñados, no a firmar. */}
       {!selectMode && (
         <motion.button
           whileTap={{ scale: 0.9 }}
           type="button"
-          onClick={() => navigate('/app/templates')}
+          onClick={() => navigate('/firma-electronica')}
+          aria-label={language === 'en' ? 'Sign a new document' : 'Firmar un documento nuevo'}
           className="fixed flex items-center justify-center text-white"
           style={{
             bottom: 96, right: 20, width: 56, height: 56, borderRadius: 18,
