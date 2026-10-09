@@ -38,7 +38,13 @@ const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '*', '']);
 function isExcluded(p) {
   if (EXCLUDE_EXACT.has(p)) return true;
   if (p.includes(':')) return true; // dynamic route — can't enumerate without importing its data module
-  return EXCLUDE_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`) || p.startsWith(prefix));
+  // Igual que el EXCLUDED de middleware.ts: el prefijo debe ser el segmento
+  // completo («/sign» o «/sign/…»), salvo «/my-», que es un prefijo de
+  // familia. Antes bastaba con empezar por esas letras, y /sign-pdf-on-android
+  // o /signnow-alternative —páginas de SEO— quedaban fuera del sitemap.
+  return EXCLUDE_PREFIXES.some((prefix) => (prefix.endsWith('-')
+    ? p.startsWith(prefix)
+    : p === prefix || p.startsWith(`${prefix}/`)));
 }
 
 function extractPaths(source) {

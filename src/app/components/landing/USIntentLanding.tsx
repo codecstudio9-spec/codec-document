@@ -19,7 +19,7 @@
  * país aquí sería sustituir una afirmación correcta por otra.
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ArrowRight, Check, FileText, Scale, ShieldCheck, Sparkles } from 'lucide-react';
 import { SEOHead } from '../seo-head';
@@ -29,16 +29,36 @@ import { FixedLanguageProvider, useLanguage } from '../../contexts/language-cont
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import { FAQAccordion } from './LandingSections';
-import { PAGINA_US_POR_SLUG, hermanasDe, type PaginaUS } from '../../data/us-intent-seo-content';
-import { enEspanol, etiquetaDocumentoEs, TEXTOS_US } from '../../data/us-seo-content-es';
+import type { PaginaUS, ModuloUS } from '../../data/us-intent-seo-content';
+import { INDICE_US, type IndiceUS } from '../../data/us-pages-index.generated';
+import { TEXTOS_US } from '../../data/us-seo-textos';
 
-function Contenido({ pagina }: { pagina: PaginaUS }) {
+// El texto de cada grupo de páginas vive en su propio archivo y se carga sólo
+// el de la página que se está viendo. Antes este componente importaba el
+// texto de todas las páginas (~240 KB) más todas sus traducciones (~290 KB)
+// para mostrar una sola.
+const CARGADORES: Record<ModuloUS, () => Promise<PaginaUS[]>> = {
+  base: () => import('../../data/us-paginas-base').then((m) => m.PAGINAS_US_BASE),
+  sectores: () => import('../../data/us-industry-seo-content').then((m) => m.PAGINAS_US_SECTORES),
+  producto: () => import('../../data/us-paginas-producto').then((m) => m.PAGINAS_US_PRODUCTO),
+  propietarios: () => import('../../data/us-paginas-propietarios').then((m) => m.PAGINAS_US_PROPIETARIOS),
+};
+const INDICE_POR_SLUG = new Map(INDICE_US.map((p) => [p.slug, p]));
+type ModuloEs = typeof import('../../data/us-seo-content-es');
+
+function Contenido({ pagina, es: moduloEs }: { pagina: PaginaUS; es: ModuloEs | null }) {
   const url = `${SITE_URL}/${pagina.slug}`;
   const [foto1, foto2, foto3] = pagina.fotos;
+  const ctaTo = pagina.ctaTo ?? '/';
   // Las páginas por profesión son treinta: se muestran seis vecinas en vez
   // de tres para que el grupo quede bien enlazado entre sí.
   const esSector = pagina.grupo === 'industry';
-  const hermanas = useMemo(() => hermanasDe(pagina.slug, esSector ? 6 : 3), [pagina.slug, esSector]);
+  const hermanas = useMemo(
+    () => (INDICE_POR_SLUG.get(pagina.slug)?.hermanas ?? []).map((s) => INDICE_POR_SLUG.get(s)).filter((h): h is IndiceUS => Boolean(h)),
+    [pagina.slug],
+  );
+  const enEspanol = (p: PaginaUS) => (moduloEs ? moduloEs.enEspanol(p) : p);
+  const etiquetaDocumentoEs = (d: { to: string; label: string }) => (moduloEs ? moduloEs.etiquetaDocumentoEs(d) : d.label);
 
   // El acordeón habla los dos idiomas aunque esta página sea sólo inglés:
   // se rellenan ambos con el mismo texto en vez de dejar el español vacío,
@@ -51,8 +71,9 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
   const traducida = v !== pagina;
   const T = TEXTOS_US[traducida ? 'es' : 'en'];
   const faq = v.faq.map((f) => ({ qEn: f.q, qEs: f.q, aEn: f.a, aEs: f.a }));
-  const nombreHermana = (h: PaginaUS) => {
-    const hv = traducida ? enEspanol(h) : h;
+  const resumen = (h: IndiceUS) => (traducida && moduloEs ? { ...h, ...moduloEs.resumenEs(h.slug) } : h);
+  const nombreHermana = (h: IndiceUS) => {
+    const hv = resumen(h);
     return esSector && hv.audiencia ? hv.audiencia : hv.h1;
   };
 
@@ -81,7 +102,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  to="/"
+                  to={ctaTo}
                   className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
                 >
                   {v.cta}
@@ -105,6 +126,8 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
                 src={foto1}
                 alt={`${v.h1} — ${T.altFirma}`}
                 loading="eager"
+                // React 18 no reconoce fetchPriority; el atributo HTML va en minúsculas.
+                {...{ fetchpriority: 'high' }}
                 width={1000}
                 height={750}
                 className="w-full rounded-3xl object-cover shadow-2xl"
@@ -279,7 +302,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
                       {nombreHermana(h)}
                     </p>
                     <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
-                      {(traducida ? enEspanol(h) : h).metaDescription}
+                      {resumen(h).metaDescription}
                     </p>
                   </Link>
                 ))}
@@ -305,7 +328,7 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
             {T.cierre}
           </p>
           <Link
-            to="/"
+            to={ctaTo}
             className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-4 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
           >
             {v.cta}
@@ -319,18 +342,44 @@ function Contenido({ pagina }: { pagina: PaginaUS }) {
   );
 }
 
+/** Carga el texto de la página (y las traducciones sólo si se lee en
+ *  español) antes de pintarla. */
+function Cargador({ slug }: { slug: string }) {
+  const { language } = useLanguage();
+  const indice = INDICE_POR_SLUG.get(slug);
+  const [pagina, setPagina] = useState<PaginaUS | null>(null);
+  const [moduloEs, setModuloEs] = useState<ModuloEs | null>(null);
+
+  useEffect(() => {
+    if (!indice) return;
+    let vivo = true;
+    setPagina(null);
+    CARGADORES[indice.modulo]()
+      .then((todas) => { if (vivo) setPagina(todas.find((p) => p.slug === slug) ?? null); })
+      .catch(() => { /* sin red: queda el contenido estático del HTML */ });
+    return () => { vivo = false; };
+  }, [slug, indice]);
+
+  useEffect(() => {
+    if (language !== 'es' || moduloEs) return;
+    import('../../data/us-seo-content-es').then(setModuloEs).catch(() => {});
+  }, [language, moduloEs]);
+
+  if (!pagina) return <div className="min-h-screen bg-white" />;
+  return <Contenido pagina={pagina} es={language === 'es' ? moduloEs : null} />;
+}
+
 export default function USIntentLanding() {
   const { pathname } = useLocation();
   const slug = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-  const pagina = PAGINA_US_POR_SLUG.get(slug);
 
   // Si la ruta no corresponde a ninguna página, no se inventa contenido: se
   // deja que el enrutador siga hasta el 404 real.
-  if (!pagina) return null;
+  if (!INDICE_POR_SLUG.has(slug)) return null;
 
   return (
     <FixedLanguageProvider defaultLanguage="en">
-      <Contenido pagina={pagina} />
+      <Cargador slug={slug} />
     </FixedLanguageProvider>
   );
 }

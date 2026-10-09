@@ -7,6 +7,7 @@ import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 // principal, así que importar aquí la landing anularía su carga diferida.
 // Sólo los slugs: el contenido de las páginas vive en su chunk lazy.
 import { SLUGS_PAGINAS_US } from "./data/us-pages-slugs.generated";
+import { SLUGS_PAGINAS_CO } from "./data/co-pages-slugs.generated";
 
 // Lazy-loaded route components -- each page's JS downloads only when
 // that route is actually visited, instead of bundling all ~150 pages
@@ -317,6 +318,7 @@ const FreeDigitalSignatureWestVirginia = lazy(() => import("./pages/landings/fre
 // castiga las Core Web Vitals, que Google usa como senal de posicionamiento.
 const ContadorDianLanding = lazy(() => import("./components/landing/ContadorDianLanding"));
 const USIntentLanding = lazy(() => import("./components/landing/USIntentLanding"));
+const COIntentLanding = lazy(() => import("./components/landing/COIntentLanding"));
 const USIndustriesHub = lazy(() => import("./components/landing/USIndustriesHub"));
 const FirmarPdfGratis = lazy(() => import("./pages/landings/firmar-pdf-gratis"));
 const FirmaDigitalGratis = lazy(() => import("./pages/landings/firma-digital-gratis"));
@@ -1678,6 +1680,13 @@ export const router = createBrowserRouter([
   ...SLUGS_PAGINAS_US.map((slug) => ({
     path: `/${slug}`,
     Component: USIntentLanding,
+    errorElement: <RouteErrorBoundary />,
+  })),
+
+  // Treinta páginas en español para Colombia (co-intent-seo-content.ts).
+  ...SLUGS_PAGINAS_CO.map((slug) => ({
+    path: `/${slug}`,
+    Component: COIntentLanding,
     errorElement: <RouteErrorBoundary />,
   })),
 

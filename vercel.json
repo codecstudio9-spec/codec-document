@@ -118,8 +118,24 @@
   ],
   "rewrites": [
     {
+      "source": "/acta-de-entrega-de-inmueble",
+      "destination": "/acta-de-entrega-de-inmueble.html"
+    },
+    {
+      "source": "/acuerdo-de-confidencialidad",
+      "destination": "/acuerdo-de-confidencialidad.html"
+    },
+    {
+      "source": "/adobe-sign-alternative",
+      "destination": "/adobe-sign-alternative.html"
+    },
+    {
       "source": "/automatizar-cierre-contable-mensual",
       "destination": "/automatizar-cierre-contable-mensual.html"
+    },
+    {
+      "source": "/autorizacion-tratamiento-de-datos-personales",
+      "destination": "/autorizacion-tratamiento-de-datos-personales.html"
     },
     {
       "source": "/blog/acuerdos-voluntariado-ongs-contratos",
@@ -426,6 +442,10 @@
       "destination": "/blog/why-digital-signatures-matter-2026.html"
     },
     {
+      "source": "/boat-bill-of-sale",
+      "destination": "/boat-bill-of-sale.html"
+    },
+    {
       "source": "/bulk-document-signing-for-teams",
       "destination": "/bulk-document-signing-for-teams.html"
     },
@@ -434,8 +454,20 @@
       "destination": "/business-estimate-generator.html"
     },
     {
+      "source": "/carta-de-renuncia-laboral",
+      "destination": "/carta-de-renuncia-laboral.html"
+    },
+    {
+      "source": "/certificado-laboral",
+      "destination": "/certificado-laboral.html"
+    },
+    {
       "source": "/certificar-documentos-online",
       "destination": "/certificar-documentos-online.html"
+    },
+    {
+      "source": "/change-order-form",
+      "destination": "/change-order-form.html"
     },
     {
       "source": "/child-travel-consent-form",
@@ -450,16 +482,76 @@
       "destination": "/como-descargar-xml-de-la-dian.html"
     },
     {
+      "source": "/como-firmar-un-documento-en-word",
+      "destination": "/como-firmar-un-documento-en-word.html"
+    },
+    {
       "source": "/conciliar-facturas-electronicas-con-contabilidad",
       "destination": "/conciliar-facturas-electronicas-con-contabilidad.html"
+    },
+    {
+      "source": "/consent-form-template",
+      "destination": "/consent-form-template.html"
     },
     {
       "source": "/consulting-agreement-template",
       "destination": "/consulting-agreement-template.html"
     },
     {
+      "source": "/contrato-de-aprendizaje",
+      "destination": "/contrato-de-aprendizaje.html"
+    },
+    {
+      "source": "/contrato-de-arrendamiento-de-local-comercial",
+      "destination": "/contrato-de-arrendamiento-de-local-comercial.html"
+    },
+    {
+      "source": "/contrato-de-arrendamiento-de-vivienda-urbana",
+      "destination": "/contrato-de-arrendamiento-de-vivienda-urbana.html"
+    },
+    {
+      "source": "/contrato-de-comodato",
+      "destination": "/contrato-de-comodato.html"
+    },
+    {
+      "source": "/contrato-de-compraventa-de-vehiculo",
+      "destination": "/contrato-de-compraventa-de-vehiculo.html"
+    },
+    {
+      "source": "/contrato-de-mandato",
+      "destination": "/contrato-de-mandato.html"
+    },
+    {
+      "source": "/contrato-de-prestacion-de-servicios",
+      "destination": "/contrato-de-prestacion-de-servicios.html"
+    },
+    {
+      "source": "/contrato-de-servicio-domestico",
+      "destination": "/contrato-de-servicio-domestico.html"
+    },
+    {
+      "source": "/contrato-de-trabajo-a-termino-fijo",
+      "destination": "/contrato-de-trabajo-a-termino-fijo.html"
+    },
+    {
+      "source": "/contrato-de-trabajo-a-termino-indefinido",
+      "destination": "/contrato-de-trabajo-a-termino-indefinido.html"
+    },
+    {
+      "source": "/contrato-por-obra-o-labor",
+      "destination": "/contrato-por-obra-o-labor.html"
+    },
+    {
+      "source": "/convertir-word-en-plantilla",
+      "destination": "/convertir-word-en-plantilla.html"
+    },
+    {
       "source": "/convertir-xml-dian-a-excel",
       "destination": "/convertir-xml-dian-a-excel.html"
+    },
+    {
+      "source": "/cosigner-agreement",
+      "destination": "/cosigner-agreement.html"
     },
     {
       "source": "/cotizacion-profesional",
@@ -476,6 +568,10 @@
     {
       "source": "/crear-documentos-online-gratis",
       "destination": "/crear-documentos-online-gratis.html"
+    },
+    {
+      "source": "/cuenta-de-cobro",
+      "destination": "/cuenta-de-cobro.html"
     },
     {
       "source": "/descargador-masivo-dian-gratis",
@@ -552,6 +648,10 @@
     {
       "source": "/docusign-alternative",
       "destination": "/docusign-alternative.html"
+    },
+    {
+      "source": "/dropbox-sign-alternative",
+      "destination": "/dropbox-sign-alternative.html"
     },
     {
       "source": "/durable-power-of-attorney",
@@ -698,12 +798,32 @@
       "destination": "/employee-confidentiality-agreement.html"
     },
     {
+      "source": "/employment-offer-letter",
+      "destination": "/employment-offer-letter.html"
+    },
+    {
+      "source": "/enviar-documento-a-firmar-por-whatsapp",
+      "destination": "/enviar-documento-a-firmar-por-whatsapp.html"
+    },
+    {
       "source": "/esign-act-compliance",
       "destination": "/esign-act-compliance.html"
     },
     {
+      "source": "/esignature-for-google-docs",
+      "destination": "/esignature-for-google-docs.html"
+    },
+    {
+      "source": "/fillable-contract-template",
+      "destination": "/fillable-contract-template.html"
+    },
+    {
       "source": "/financial-power-of-attorney",
       "destination": "/financial-power-of-attorney.html"
+    },
+    {
+      "source": "/firma-con-reconocimiento-facial",
+      "destination": "/firma-con-reconocimiento-facial.html"
     },
     {
       "source": "/firma-digital-gratis",
@@ -810,6 +930,14 @@
       "destination": "/firma-electronica-para-contadores.html"
     },
     {
+      "source": "/firma-electronica-para-contratos-de-arriendo",
+      "destination": "/firma-electronica-para-contratos-de-arriendo.html"
+    },
+    {
+      "source": "/firma-electronica-para-contratos-de-trabajo",
+      "destination": "/firma-electronica-para-contratos-de-trabajo.html"
+    },
+    {
       "source": "/firma-electronica-para-empresas",
       "destination": "/firma-electronica-para-empresas.html"
     },
@@ -830,8 +958,16 @@
       "destination": "/firma-electronica-peru.html"
     },
     {
+      "source": "/firmar-documentos-desde-el-celular",
+      "destination": "/firmar-documentos-desde-el-celular.html"
+    },
+    {
       "source": "/firmar-documentos-online-gratis",
       "destination": "/firmar-documentos-online-gratis.html"
+    },
+    {
+      "source": "/firmar-en-persona-con-codigo-qr",
+      "destination": "/firmar-en-persona-con-codigo-qr.html"
     },
     {
       "source": "/firmar-pdf-gratis",
@@ -898,6 +1034,10 @@
       "destination": "/free-digital-signature-west-virginia.html"
     },
     {
+      "source": "/free-esignature-app",
+      "destination": "/free-esignature-app.html"
+    },
+    {
       "source": "/free-independent-contractor-agreement",
       "destination": "/free-independent-contractor-agreement.html"
     },
@@ -922,6 +1062,14 @@
       "destination": "/generador-de-cotizaciones.html"
     },
     {
+      "source": "/general-release-form",
+      "destination": "/general-release-form.html"
+    },
+    {
+      "source": "/how-to-create-a-document-template",
+      "destination": "/how-to-create-a-document-template.html"
+    },
+    {
       "source": "/how-to-sign-a-pdf-online-free",
       "destination": "/how-to-sign-a-pdf-online-free.html"
     },
@@ -932,6 +1080,10 @@
     {
       "source": "/importar-facturas-electronicas-a-siigo",
       "destination": "/importar-facturas-electronicas-a-siigo.html"
+    },
+    {
+      "source": "/in-person-signing",
+      "destination": "/in-person-signing.html"
     },
     {
       "source": "/independent-contractor-agreement-template",
@@ -1154,6 +1306,10 @@
       "destination": "/lease-agreement-wisconsin.html"
     },
     {
+      "source": "/lease-renewal-letter",
+      "destination": "/lease-renewal-letter.html"
+    },
+    {
       "source": "/legal-documents-alabama",
       "destination": "/legal-documents-alabama.html"
     },
@@ -1210,6 +1366,10 @@
       "destination": "/legal-documents-virginia.html"
     },
     {
+      "source": "/letra-de-cambio",
+      "destination": "/letra-de-cambio.html"
+    },
+    {
       "source": "/letter-of-intent",
       "destination": "/letter-of-intent.html"
     },
@@ -1228,6 +1388,10 @@
     {
       "source": "/medical-power-of-attorney",
       "destination": "/medical-power-of-attorney.html"
+    },
+    {
+      "source": "/month-to-month-rental-agreement",
+      "destination": "/month-to-month-rental-agreement.html"
     },
     {
       "source": "/nda-alabama",
@@ -1342,8 +1506,36 @@
       "destination": "/notas-credito-debito-dian-xml.html"
     },
     {
+      "source": "/notice-to-vacate",
+      "destination": "/notice-to-vacate.html"
+    },
+    {
+      "source": "/otrosi-contrato",
+      "destination": "/otrosi-contrato.html"
+    },
+    {
+      "source": "/pagare-con-carta-de-instrucciones",
+      "destination": "/pagare-con-carta-de-instrucciones.html"
+    },
+    {
       "source": "/pandadoc-alternative",
       "destination": "/pandadoc-alternative.html"
+    },
+    {
+      "source": "/payment-plan-agreement",
+      "destination": "/payment-plan-agreement.html"
+    },
+    {
+      "source": "/pet-addendum",
+      "destination": "/pet-addendum.html"
+    },
+    {
+      "source": "/photo-release-form",
+      "destination": "/photo-release-form.html"
+    },
+    {
+      "source": "/poder-especial",
+      "destination": "/poder-especial.html"
     },
     {
       "source": "/postnuptial-agreement",
@@ -1364,6 +1556,10 @@
     {
       "source": "/professional-resignation-letter",
       "destination": "/professional-resignation-letter.html"
+    },
+    {
+      "source": "/promesa-de-compraventa-de-inmueble",
+      "destination": "/promesa-de-compraventa-de-inmueble.html"
     },
     {
       "source": "/promissory-note-alabama",
@@ -1494,6 +1690,14 @@
       "destination": "/real-estate-purchase-agreement.html"
     },
     {
+      "source": "/release-of-liability-form",
+      "destination": "/release-of-liability-form.html"
+    },
+    {
+      "source": "/rental-application-form",
+      "destination": "/rental-application-form.html"
+    },
+    {
       "source": "/reporte-retenciones-facturas-electronicas",
       "destination": "/reporte-retenciones-facturas-electronicas.html"
     },
@@ -1510,8 +1714,20 @@
       "destination": "/revoke-power-of-attorney.html"
     },
     {
+      "source": "/roommate-agreement",
+      "destination": "/roommate-agreement.html"
+    },
+    {
       "source": "/san-jose-california",
       "destination": "/san-jose-california.html"
+    },
+    {
+      "source": "/send-document-for-signature-by-text",
+      "destination": "/send-document-for-signature-by-text.html"
+    },
+    {
+      "source": "/send-documents-for-signature",
+      "destination": "/send-documents-for-signature.html"
     },
     {
       "source": "/service-agreement-alabama",
@@ -1618,12 +1834,32 @@
       "destination": "/service-agreement-wisconsin.html"
     },
     {
+      "source": "/sign-documents-on-iphone",
+      "destination": "/sign-documents-on-iphone.html"
+    },
+    {
+      "source": "/sign-pdf-on-android",
+      "destination": "/sign-pdf-on-android.html"
+    },
+    {
+      "source": "/signnow-alternative",
+      "destination": "/signnow-alternative.html"
+    },
+    {
       "source": "/single-parent-travel-consent-form",
       "destination": "/single-parent-travel-consent-form.html"
     },
     {
       "source": "/subcontractor-agreement-template",
       "destination": "/subcontractor-agreement-template.html"
+    },
+    {
+      "source": "/sublease-agreement",
+      "destination": "/sublease-agreement.html"
+    },
+    {
+      "source": "/turn-word-document-into-fillable-form",
+      "destination": "/turn-word-document-into-fillable-form.html"
     },
     {
       "source": "/two-weeks-notice-letter",
@@ -1852,6 +2088,10 @@
     {
       "source": "/will-vs-trust",
       "destination": "/will-vs-trust.html"
+    },
+    {
+      "source": "/work-order-template",
+      "destination": "/work-order-template.html"
     },
     {
       "source": "/((?!api/).*)",

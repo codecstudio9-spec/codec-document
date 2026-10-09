@@ -1,0 +1,388 @@
+/**
+ * Colombia — independientes (cuenta de cobro, prestación de servicios,
+ * confidencialidad) e inmuebles (arriendo de vivienda y de local, promesa de
+ * compraventa, comodato, acta de entrega). Fuentes en co-intent-seo-content.ts.
+ */
+import type { PaginaCO } from './co-intent-seo-content';
+import { F } from './seo-fotos';
+
+export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
+  // ═══════════════ INDEPENDIENTES ═══════════════
+  {
+    slug: 'cuenta-de-cobro',
+    titleTag: 'Cuenta de cobro: formato y cómo enviarla firmada',
+    metaDescription: 'Qué debe tener una cuenta de cobro en Colombia, quién la puede usar y qué documentos la acompañan. Hazla una vez como plantilla y envíala firmada.',
+    h1: 'Cuenta de cobro',
+    grupo: 'independientes',
+    intro: 'La cuenta de cobro es el documento con el que un independiente que no está obligado a facturar le pide el pago a quien le contrató un servicio. La usan diseñadores, docentes por horas, contratistas del Estado, consultores y miles de personas que trabajan por prestación de servicios. Es sencilla, pero cada mes hay que hacerla de nuevo, y un dato mal puesto puede retrasar el pago semanas.',
+    problema: {
+      titulo: 'La cuenta de cobro devuelta por un detalle',
+      texto: 'El área de pagos devuelve la cuenta porque el número del contrato no coincide, porque falta la firma, porque el periodo cobrado está mal o porque no venía con la planilla de seguridad social. Cada devolución empuja el pago al siguiente corte. Además, muchos independientes siguen haciéndola en Word, copiando la del mes anterior y cambiando fechas a mano: es justo ahí donde aparecen los errores.',
+    },
+    puntos: [
+      { titulo: 'Plantilla con tus datos fijos', texto: 'Tu nombre, cédula, dirección, cuenta bancaria y los datos del contratante quedan fijos en la plantilla. Cada mes llenas solo el periodo, el concepto y el valor.' },
+      { titulo: 'Firmada, no escaneada', texto: 'La firmas desde el celular y la envías en PDF con certificado de firma. No hay que imprimir, firmar y escanear cada mes.' },
+      { titulo: 'El concepto bien descrito', texto: 'Describir el servicio y el periodo con claridad —«honorarios por diseño de piezas gráficas, periodo del 1 al 30 de abril, contrato 045»— evita la mayoría de devoluciones.' },
+      { titulo: 'Historial de todo lo cobrado', texto: 'Cada cuenta de cobro queda archivada con su fecha. Al final del año tienes todo lo que facturaste para tu declaración de renta.' },
+    ],
+    ley: {
+      titulo: 'Quién puede usarla y qué no reemplaza',
+      texto: 'Según el artículo 616-2 del Estatuto Tributario, las personas naturales que venden bienes o prestan servicios y no son responsables de IVA no están obligadas a expedir factura. En esos casos, la cuenta de cobro es el documento con el que piden el pago. Pero la cuenta de cobro por sí sola no es el soporte fiscal del costo para quien paga: el artículo 771-2 del Estatuto exige que el adquirente expida el documento soporte en adquisiciones efectuadas a no obligados a facturar. Tampoco es un título valor ni presta mérito ejecutivo por sí misma. Si tus ingresos superan los topes de responsabilidad de IVA, debes facturar electrónicamente; ante la duda, consulta a un contador.',
+    },
+    caso: {
+      titulo: 'Una docente con tres colegios',
+      texto: 'Una profesora de música en Bogotá trabajaba por horas en tres colegios y cada mes hacía tres cuentas de cobro en Word. Una vez envió a un colegio la cuenta con el valor de otro, y el pago se retrasó cinco semanas. Ahora tiene una plantilla por colegio con sus datos fijos: cada mes llena las horas y el periodo, la firma desde el celular y la envía en PDF.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir una cuenta de cobro',
+      items: [
+        'Ciudad y fecha de expedición, y un número consecutivo.',
+        'Nombre o razón social y NIT o cédula de quien paga.',
+        'Tu nombre completo, cédula, dirección y teléfono.',
+        'El concepto del cobro: servicio prestado, periodo y número de contrato si existe.',
+        'El valor en números y en letras.',
+        'La cuenta bancaria donde quieres recibir el pago.',
+        'Una declaración de que no eres responsable de IVA, si es tu caso, y tu firma.',
+      ],
+    },
+    faq: [
+      { q: '¿Quién puede expedir una cuenta de cobro?', a: 'Las personas naturales que no están obligadas a facturar, en particular las que no son responsables de IVA según el artículo 616-2 del Estatuto Tributario.' },
+      { q: '¿La cuenta de cobro reemplaza la factura?', a: 'No. Es una solicitud de pago. Quien te paga debe expedir el documento soporte electrónico para soportar el costo en su contabilidad.' },
+      { q: '¿Qué documentos acompañan la cuenta de cobro?', a: 'Normalmente el RUT, una certificación bancaria y, si aplica, la planilla de pago de seguridad social como independiente. Cada contratante puede pedir documentos adicionales.' },
+      { q: '¿Puedo firmar la cuenta de cobro electrónicamente?', a: 'Sí. Una cuenta de cobro firmada electrónicamente tiene firma válida según la Ley 527 de 1999 y evita imprimir y escanear cada mes.' },
+    ],
+    fotos: [F.escritorio, F.movil, F.revisar],
+    cta: 'Crear mi plantilla de cuenta de cobro',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-prestacion-de-servicios',
+    titleTag: 'Contrato de prestación de servicios en Colombia',
+    metaDescription: 'Qué debe tener un contrato de prestación de servicios y cómo evitar que se convierta en un contrato laboral. Créalo desde tu modelo y fírmalo en línea.',
+    h1: 'Contrato de prestación de servicios',
+    grupo: 'independientes',
+    intro: 'El contrato de prestación de servicios es el acuerdo con el que una persona o empresa contrata a un independiente para un trabajo concreto, con autonomía y sin relación laboral: un diseño, una asesoría, un desarrollo de software, una consultoría. Bien hecho, protege a las dos partes. Mal hecho —o mal ejecutado—, termina en una demanda por contrato realidad.',
+    problema: {
+      titulo: 'Cuando la prestación de servicios esconde un empleo',
+      texto: 'El riesgo más grande no está en el texto sino en la práctica: un contratista con horario fijo, un jefe que le da órdenes, puesto de trabajo y exclusividad, renovado mes tras mes durante años. En ese caso, aunque el contrato diga «prestación de servicios», un juez puede declarar que existió un contrato de trabajo, con todas sus prestaciones. Un buen contrato describe un servicio con resultados, no un cargo con horario.',
+    },
+    puntos: [
+      { titulo: 'Objeto y entregables concretos', texto: 'Qué se va a entregar, con qué características y en qué plazos. Un objeto definido por resultados es la mejor señal de autonomía.' },
+      { titulo: 'Honorarios y forma de pago', texto: 'Valor total o por entregable, contra qué se paga (cuenta de cobro o factura) y en qué plazo. Evita discusiones mes a mes.' },
+      { titulo: 'Autonomía y sin subordinación', texto: 'El contrato debe reconocer que el contratista organiza su tiempo y sus medios. Y la relación real debe respetarlo.' },
+      { titulo: 'Propiedad intelectual y confidencialidad', texto: 'A quién pertenece lo que se crea y cómo se trata la información del cliente. Para software, diseño y contenido, esta cláusula vale tanto como los honorarios.' },
+    ],
+    ley: {
+      titulo: 'Contrato civil o comercial, no laboral',
+      texto: 'La prestación de servicios entre particulares se rige por el Código Civil o el de Comercio, según el caso. El riesgo está en el artículo 23 del Código Sustantivo del Trabajo, que define los tres elementos del contrato de trabajo —actividad personal, continuada subordinación y salario—, y en el artículo 24, que presume que toda relación de trabajo personal está regida por un contrato de trabajo. El artículo 53 de la Constitución consagra la primacía de la realidad sobre las formas: lo que cuenta es cómo se ejecuta el contrato, no cómo se llama. La firma electrónica le da al contrato el mismo valor que en papel según la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Un diseñador con horario de oficina',
+      texto: 'Una agencia en Medellín contrató a un diseñador por prestación de servicios, pero le exigía estar en la oficina de 8 a 5 y le asignaba tareas diarias. Tres años después, el diseñador demandó y obtuvo el reconocimiento de un contrato de trabajo con sus prestaciones. La agencia hoy contrata a sus independientes por proyectos con entregables definidos, sin horario, y deja todo por escrito.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir un contrato de prestación de servicios',
+      items: [
+        'Identificación de contratante y contratista.',
+        'Objeto del contrato descrito por resultados o entregables.',
+        'Plazo de ejecución y fechas de entrega.',
+        'Honorarios, forma y plazo de pago, y documento con el que se cobra.',
+        'Cláusula de autonomía e independencia del contratista.',
+        'Propiedad intelectual, confidencialidad y causales de terminación.',
+        'Firma de ambas partes.',
+      ],
+    },
+    faq: [
+      { q: '¿El contrato de prestación de servicios genera prestaciones sociales?', a: 'No, porque no es un contrato de trabajo. Pero si en la práctica hay subordinación, horario y salario continuado, un juez puede declarar un contrato laboral y ordenar el pago de prestaciones.' },
+      { q: '¿Es civil o comercial?', a: 'Depende de las partes y del objeto. Entre particulares para servicios profesionales suele ser civil; si el contratista es comerciante y el servicio es mercantil, aplica el Código de Comercio.' },
+      { q: '¿Quién paga la seguridad social?', a: 'El contratista independiente cotiza como independiente. El contratante suele verificar la planilla antes de cada pago.' },
+      { q: '¿Se puede firmar en línea?', a: 'Sí, con plena validez según la Ley 527 de 1999. Cada parte firma desde su celular o computador.' },
+      { q: "¿Debe tener cláusula de terminación?", a: "Sí. Conviene fijar con cuánto preaviso puede terminarse y qué se paga por el trabajo ya entregado." },
+    ],
+    fotos: [F.hombre, F.firma, F.escritorio],
+    cta: 'Crear mi contrato de prestación de servicios',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'acuerdo-de-confidencialidad',
+    titleTag: 'Acuerdo de confidencialidad (NDA) en Colombia',
+    metaDescription: 'Qué debe incluir un acuerdo de confidencialidad válido en Colombia, cuánto debe durar y cómo firmarlo en línea antes de compartir información.',
+    h1: 'Acuerdo de confidencialidad',
+    grupo: 'independientes',
+    intro: 'Antes de mostrarle a alguien tu base de clientes, tus precios, tu código o tu plan de negocio, conviene que firme un acuerdo de confidencialidad. Es un documento corto que dice qué información es confidencial, para qué se puede usar, por cuánto tiempo y qué pasa si se divulga. Firmarlo antes de la primera reunión cuesta minutos; no firmarlo puede costar el negocio.',
+    problema: {
+      titulo: 'La información que salió en la primera reunión',
+      texto: 'Lo habitual es firmar el acuerdo de confidencialidad «después», cuando ya se compartió todo en una llamada o en un correo. En ese momento ya no hay forma de demostrar qué se reveló bajo confidencialidad y qué no. Otro error común es un acuerdo tan genérico —«toda la información es confidencial»— que no permite saber qué estaba protegido. Un buen acuerdo es específico y se firma antes de compartir.',
+    },
+    puntos: [
+      { titulo: 'Qué es confidencial y qué no', texto: 'Define la información protegida —financiera, técnica, comercial, de clientes— y excluye lo que ya es público o lo que la otra parte ya conocía.' },
+      { titulo: 'Para qué se puede usar', texto: 'La información solo puede usarse para el propósito acordado: evaluar un negocio, ejecutar un proyecto. Cualquier otro uso es un incumplimiento.' },
+      { titulo: 'Cuánto dura la obligación', texto: 'La confidencialidad suele extenderse más allá de la relación: dos, tres o cinco años, o indefinidamente para secretos industriales.' },
+      { titulo: 'Firmado antes de la reunión', texto: 'Envía el acuerdo por WhatsApp o correo antes de la primera conversación; la otra parte lo firma desde el celular en un minuto.' },
+    ],
+    ley: {
+      titulo: 'Protección de la información en Colombia',
+      texto: 'Además del contrato, la ley colombiana protege los secretos empresariales. El artículo 16 de la Ley 256 de 1996 considera desleal la divulgación o explotación, sin autorización de su titular, de secretos industriales o de cualquier otra clase de secretos empresariales a los que se haya tenido acceso legítimamente pero con deber de reserva. La Decisión 486 de 2000 de la Comunidad Andina, en sus artículos 260 a 266, define el secreto empresarial y exige que su titular haya tomado medidas razonables para mantenerlo secreto. Un acuerdo de confidencialidad firmado es precisamente una de esas medidas. La firma electrónica le da plena validez según la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Un inversionista que conoció los números',
+      texto: 'Una startup de Bogotá compartió su modelo de precios y su lista de clientes con un posible inversionista sin acuerdo previo. El inversionista no invirtió, y meses después un competidor apareció con una propuesta sospechosamente parecida a sus clientes. Sin acuerdo firmado, demostrar el deber de reserva era casi imposible. Hoy la startup envía su acuerdo de confidencialidad para firma electrónica antes de agendar cualquier reunión con inversionistas.',
+    },
+    checklist: {
+      titulo: "Qué debe incluir un acuerdo de confidencialidad",
+      items: [
+        "Identificación de quien revela y quien recibe la información.",
+        "Definición de la información confidencial y sus exclusiones.",
+        "Propósito permitido para el uso de la información.",
+        "Duración de la obligación de confidencialidad.",
+        "Devolución o destrucción de la información al terminar, y firmas.",
+      ],
+    },
+    faq: [
+      { q: '¿Un acuerdo de confidencialidad es válido en Colombia?', a: 'Sí. Es un contrato como cualquier otro, y además es una de las medidas razonables que la Decisión 486 de la CAN exige para proteger un secreto empresarial.' },
+      { q: '¿Cuánto tiempo debe durar?', a: 'Depende de la información. Para datos comerciales es común entre dos y cinco años después de terminada la relación; para secretos industriales puede pactarse mientras la información siga siendo secreta.' },
+      { q: '¿Puede ser unilateral o mutuo?', a: 'Ambos. Es unilateral si solo una parte comparte información, y mutuo si las dos lo hacen.' },
+      { q: '¿Se puede firmar electrónicamente?', a: 'Sí, y es lo más práctico: se firma antes de la reunión, desde el celular, con plena validez según la Ley 527 de 1999.' },
+      { q: "¿Qué pasa si la otra parte incumple?", a: "Puedes reclamar los perjuicios según el contrato y, si se trata de un secreto empresarial, acudir a las acciones de competencia desleal de la Ley 256 de 1996." },
+    ],
+    fotos: [F.oficina, F.revisar, F.firma],
+    cta: 'Crear mi acuerdo de confidencialidad',
+    ctaTo: '/my-templates',
+  },
+
+  // ═══════════════ INMUEBLES ═══════════════
+  {
+    slug: 'contrato-de-arrendamiento-de-vivienda-urbana',
+    titleTag: 'Contrato de arrendamiento de vivienda urbana 2026',
+    metaDescription: 'Qué exige la Ley 820 de 2003 en un contrato de arriendo de vivienda: canon, reajuste por IPC, depósitos prohibidos y codeudores. Fírmalo en línea.',
+    h1: 'Contrato de arrendamiento de vivienda urbana',
+    grupo: 'inmuebles',
+    intro: 'El contrato de arrendamiento de vivienda urbana es de los más firmados en Colombia y también de los más discutidos: por el aumento anual, por el depósito, por los daños al entregar y por los codeudores. La Ley 820 de 2003 fija reglas que el contrato no puede contradecir, aunque las partes lo quieran. Conocerlas evita cláusulas que no valen y peleas que se pierden.',
+    problema: {
+      titulo: 'Cláusulas que la ley no permite',
+      texto: 'Muchos contratos de arriendo que circulan en internet incluyen cosas que la Ley 820 prohíbe: pedir un depósito en efectivo, subir el canon cada año «según lo que defina el arrendador» o subirlo antes de cumplirse los doce meses. Esas cláusulas no producen efecto, y el arrendador que las aplica se expone a reclamos. Un contrato bien hecho dice lo que la ley permite y deja por escrito lo que de verdad se acordó.',
+    },
+    puntos: [
+      { titulo: 'Canon y reajuste dentro del límite', texto: 'El contrato fija el canon, la fecha de pago y la regla de reajuste: cada doce meses y sin superar el IPC del año anterior. Para los reajustes de 2026, ese tope es 5,10 %, el IPC de 2025.' },
+      { titulo: 'Garantías permitidas', texto: 'En lugar de depósitos en efectivo, prohibidos para vivienda urbana, el contrato puede pedir deudores solidarios, una póliza de arrendamiento u otras garantías personales.' },
+      { titulo: 'Inventario y estado del inmueble', texto: 'El inventario y el acta de entrega, firmados con fotos, son la base para discutir daños al final del contrato.' },
+      { titulo: 'Firma de todos en línea', texto: 'Arrendador, arrendatario y codeudores firman desde su celular, con cédula verificada si lo pides. Todos reciben el mismo PDF sellado.' },
+    ],
+    ley: {
+      titulo: 'Las reglas de la Ley 820 de 2003',
+      texto: 'La Ley 820 de 2003 regula el arrendamiento de vivienda urbana. Su artículo 16 prohíbe exigir depósitos en dinero efectivo u otra clase de cauciones reales para garantizar las obligaciones del arrendatario. El artículo 18 limita el canon mensual al 1 % del valor comercial del inmueble, y el artículo 20 permite reajustarlo cada doce meses de ejecución del contrato, en una proporción que no supere el 100 % del incremento del IPC del año calendario anterior, previa comunicación al arrendatario. El contrato puede ser verbal o escrito (artículo 3); cuando es escrito, la Ley 527 de 1999 permite firmarlo electrónicamente con el mismo valor que en papel.',
+    },
+    caso: {
+      titulo: 'Un aumento que no se pudo cobrar',
+      texto: 'Un arrendador en Bogotá subió el canon un 10 % al cumplirse el año, siguiendo una cláusula de su contrato que decía «el reajuste lo definirá el arrendador». El arrendatario pagó el valor anterior y presentó un reclamo: la Ley 820 limita el reajuste al IPC. El arrendador tuvo que devolver la diferencia. Su nuevo contrato fija el reajuste al IPC y se firma en línea con el arrendatario y los codeudores.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir un contrato de arriendo de vivienda',
+      items: [
+        'Nombre e identificación de arrendador, arrendatario y deudores solidarios.',
+        'Identificación del inmueble: dirección, matrícula inmobiliaria y descripción.',
+        'Canon, fecha y lugar o forma de pago.',
+        'Regla de reajuste anual sin superar el IPC del año anterior.',
+        'Término de duración y condiciones de prórroga.',
+        'Servicios públicos a cargo de cada parte e inventario del inmueble.',
+        'Garantías permitidas (sin depósitos en efectivo) y firmas de todos.',
+      ],
+    },
+    faq: [
+      { q: '¿Cuánto puede subir el arriendo en 2026?', a: 'Para los reajustes que se hagan en 2026, el tope es el IPC de 2025, que el DANE certificó en 5,10 %. Solo se puede reajustar cuando el contrato cumple doce meses con el mismo canon y avisando al arrendatario.' },
+      { q: '¿Me pueden pedir un depósito?', a: 'No en arriendos de vivienda urbana: el artículo 16 de la Ley 820 de 2003 prohíbe exigir depósitos en efectivo u otras cauciones reales. Sí se pueden pedir codeudores o una póliza.' },
+      { q: '¿El contrato tiene que autenticarse en notaría?', a: 'No. La Ley 820 no lo exige. La firma electrónica con verificación de identidad cumple la misma función de prueba.' },
+      { q: '¿Cuánto puede ser el canon máximo?', a: 'El artículo 18 de la Ley 820 lo limita al 1 % del valor comercial del inmueble.' },
+    ],
+    fotos: [F.firma, F.mujer, F.oficina],
+    cta: 'Crear mi contrato de arrendamiento',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-arrendamiento-de-local-comercial',
+    titleTag: 'Contrato de arrendamiento de local comercial',
+    metaDescription: 'El arriendo de local en Colombia se rige por el Código de Comercio: derecho de renovación a los dos años y desahucio de seis meses. Qué incluir y firmarlo.',
+    h1: 'Contrato de arrendamiento de local comercial',
+    grupo: 'inmuebles',
+    intro: 'Arrendar un local no es lo mismo que arrendar un apartamento. El contrato de local comercial no se rige por la Ley 820 de 2003, sino por el Código de Comercio, que protege al comerciante que ha construido su negocio en ese lugar. Muchos propietarios lo descubren cuando quieren recuperar el local y se encuentran con que la ley le da al arrendatario derecho a renovar.',
+    problema: {
+      titulo: 'El propietario que no podía recuperar su local',
+      texto: 'Un local arrendado por años a la misma panadería, un contrato que vence y un propietario que quiere arrendarlo más caro a otro. Si el arrendatario ha ocupado el local al menos dos años con el mismo establecimiento, el Código de Comercio le da derecho a renovar, salvo causales muy concretas, y aun en esas causales el propietario debe avisar con seis meses de anticipación. Ignorar esas reglas termina en contratos prorrogados que el propietario no quería.',
+    },
+    puntos: [
+      { titulo: 'Destinación y establecimiento', texto: 'Qué negocio funciona en el local y si puede cambiarse. La destinación define buena parte de los derechos y riesgos del contrato.' },
+      { titulo: 'Canon, reajuste e IVA', texto: 'En locales comerciales el reajuste lo acuerdan las partes (no aplica el tope del IPC de la Ley 820). Conviene fijar la fórmula y aclarar el IVA cuando corresponda.' },
+      { titulo: 'Duración y fechas de aviso', texto: 'Si el propietario puede necesitar el local, el contrato debe dejar claras las fechas, porque el desahucio debe enviarse con seis meses de anticipación.' },
+      { titulo: 'Firma de todos sin moverse', texto: 'Propietario, arrendatario y codeudores firman en línea, cada uno desde su celular, y el documento queda sellado.' },
+    ],
+    ley: {
+      titulo: 'Los artículos 518 a 524 del Código de Comercio',
+      texto: 'El artículo 518 del Código de Comercio da derecho a la renovación del contrato al comerciante que haya ocupado no menos de dos años consecutivos un inmueble con un mismo establecimiento de comercio, salvo que haya incumplido el contrato, que el propietario necesite el inmueble para su propia habitación o para un establecimiento suyo sustancialmente distinto, o que deba reconstruirse, repararse o demolerse. El artículo 520 exige al propietario desahuciar al arrendatario con no menos de seis meses de anticipación en las causales de necesidad o reconstrucción; si no lo hace, el contrato se renueva en las mismas condiciones. El artículo 519 remite las diferencias sobre el precio de la renovación a un proceso con peritos.',
+    },
+    caso: {
+      titulo: 'Un desahucio enviado tarde',
+      texto: 'Un propietario en Barranquilla quería recuperar su local para abrir su propio negocio, una causal válida. Pero envió el aviso cuatro meses antes del vencimiento, no seis. El contrato se renovó por el mismo término y tuvo que esperar otro año. Desde entonces lleva el control de sus contratos en línea y envía el desahucio firmado electrónicamente con fecha cierta, siete meses antes.',
+    },
+    checklist: {
+      titulo: "Qué debe incluir un contrato de arriendo de local",
+      items: [
+        "Identificación de arrendador, arrendatario y codeudores.",
+        "Dirección, matrícula inmobiliaria y destinación del local.",
+        "Canon, IVA si aplica, fecha de pago y fórmula de reajuste.",
+        "Término de duración y reglas de prórroga y desahucio.",
+        "Mejoras, servicios, garantías y firmas.",
+      ],
+    },
+    faq: [
+      { q: '¿El arriendo de local tiene tope de aumento por IPC?', a: 'No. El tope del IPC de la Ley 820 de 2003 aplica a vivienda urbana. En locales comerciales, el reajuste lo pactan libremente las partes.' },
+      { q: '¿Qué es el derecho de renovación?', a: 'Es el derecho que el artículo 518 del Código de Comercio da al comerciante que ha ocupado el local al menos dos años con el mismo establecimiento a que su contrato se renueve al vencer, salvo las excepciones de la norma.' },
+      { q: '¿Con cuánta anticipación se debe avisar la terminación?', a: 'En las causales de necesidad del inmueble o reconstrucción, el propietario debe desahuciar con no menos de seis meses de anticipación (artículo 520).' },
+      { q: '¿Se puede firmar en línea un arriendo de local?', a: 'Sí. El Código de Comercio no exige una forma especial, y la Ley 527 de 1999 da plena validez a la firma electrónica.' },
+    ],
+    fotos: [F.hombre, F.firma, F.escritorio],
+    cta: 'Crear mi contrato de arriendo de local',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'promesa-de-compraventa-de-inmueble',
+    titleTag: 'Promesa de compraventa de inmueble en Colombia',
+    metaDescription: 'Requisitos de una promesa de compraventa válida (Ley 153 de 1887, art. 89): escrita, con fecha para firmar la escritura. Qué incluir y cómo firmarla.',
+    h1: 'Promesa de compraventa de inmueble',
+    grupo: 'inmuebles',
+    intro: 'Antes de la escritura pública, la venta de una casa o un apartamento suele pasar por una promesa de compraventa: el documento en que comprador y vendedor se obligan a celebrar la venta en una fecha y notaría determinadas, normalmente con una suma de arras. Es un contrato con requisitos estrictos: si le falta uno, puede no producir efecto, y con él se pueden perder las arras.',
+    problema: {
+      titulo: 'La promesa sin fecha de escritura',
+      texto: 'El error más frecuente es una promesa que dice «la escritura se firmará cuando se apruebe el crédito» sin ninguna fecha límite. La ley exige que la promesa contenga un plazo o condición que fije la época en que ha de celebrarse el contrato prometido. Una promesa sin esa época determinada puede ser declarada sin efecto, y la discusión sobre las arras termina en un juzgado.',
+    },
+    puntos: [
+      { titulo: 'El inmueble bien identificado', texto: 'Dirección, matrícula inmobiliaria, cédula catastral y linderos o su referencia. La promesa debe determinar el contrato prometido de forma que solo falte la escritura.' },
+      { titulo: 'Fecha, hora y notaría', texto: 'La época de la escritura debe quedar determinada: fecha, hora y notaría. Si depende de un crédito, una fecha límite.' },
+      { titulo: 'Precio, forma de pago y arras', texto: 'Cuánto se paga, cuándo y cómo, y qué pasa con las arras si alguna parte se retracta o incumple.' },
+      { titulo: 'Firma de comprador y vendedor', texto: 'Comprador y vendedor firman en línea con cédula verificada. La escritura pública, que sí exige notaría, se firma después.' },
+    ],
+    ley: {
+      titulo: 'El artículo 89 de la Ley 153 de 1887',
+      texto: 'Para que la promesa de celebrar un contrato produzca obligación, el artículo 89 de la Ley 153 de 1887 —que subrogó el artículo 1611 del Código Civil— exige que conste por escrito, que el contrato prometido no sea de los que la ley declara ineficaces, que contenga un plazo o condición que fije la época en que ha de celebrarse, y que se determine de tal suerte el contrato que solo falte la tradición de la cosa o las formalidades legales. La compraventa del inmueble en sí requiere escritura pública (artículo 1857 del Código Civil), pero la promesa no: basta el escrito, que puede ser electrónico según la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Arras recuperadas gracias a una fecha',
+      texto: 'Una pareja en Pereira firmó una promesa de compraventa con fecha, hora y notaría para la escritura y entregó $20 millones de arras. El vendedor recibió una mejor oferta y no se presentó a la notaría. Como la promesa cumplía todos los requisitos, la pareja pudo exigir las arras dobladas según lo pactado. La promesa la habían firmado en línea con verificación de cédula.',
+    },
+    checklist: {
+      titulo: 'Requisitos de una promesa de compraventa',
+      items: [
+        'Que conste por escrito, con la identificación completa de prometiente vendedor y prometiente comprador.',
+        'Identificación del inmueble: dirección, matrícula inmobiliaria y cédula catastral.',
+        'Precio, forma de pago y arras, con su tratamiento en caso de retracto o incumplimiento.',
+        'Fecha, hora y notaría para firmar la escritura pública (la época del contrato prometido).',
+        'Quién asume los gastos de notaría, registro e impuestos.',
+        'Firma de todas las partes.',
+      ],
+    },
+    faq: [
+      { q: '¿La promesa de compraventa tiene que ir a notaría?', a: 'No. La promesa solo requiere constar por escrito. La que va a notaría es la escritura pública de compraventa.' },
+      { q: '¿Qué pasa si la promesa no tiene fecha para la escritura?', a: 'Le faltaría uno de los requisitos del artículo 89 de la Ley 153 de 1887, y podría no producir obligación.' },
+      { q: '¿Qué son las arras?', a: 'Una suma que se entrega como garantía o como parte del precio. Si son de retracto, quien se retracta las pierde, o las devuelve dobladas si las recibió.' },
+      { q: '¿Se puede firmar en línea una promesa de compraventa?', a: 'Sí. El requisito es el escrito, y la Ley 527 de 1999 equipara el documento electrónico al escrito y la firma electrónica confiable a la manuscrita.' },
+    ],
+    fotos: [F.oficina, F.firma, F.revisar],
+    cta: 'Crear mi promesa de compraventa',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-comodato',
+    titleTag: 'Contrato de comodato: préstamo de un bien',
+    metaDescription: 'El comodato es el préstamo gratuito de un bien para que se use y se devuelva (art. 2200 del Código Civil). Qué incluir y cómo firmarlo en línea.',
+    h1: 'Contrato de comodato',
+    grupo: 'inmuebles',
+    intro: 'El comodato es el préstamo gratuito de una cosa para que otra persona la use y la devuelva: un apartamento que se presta a un familiar, una bodega que se cede a una fundación, un equipo que una empresa le presta a un cliente. Como no hay pago, mucha gente no lo pone por escrito. Y precisamente porque no hay pago, recuperar el bien sin documento puede ser difícil.',
+    problema: {
+      titulo: 'El apartamento prestado que no se quiere devolver',
+      texto: 'Un padre presta su apartamento a un hijo «mientras se organiza». Años después hay una separación, un cambio de planes o una venta, y quien ocupa el inmueble no quiere salir, o alega que era un regalo. Sin un documento que diga que fue un préstamo, por cuánto tiempo y para qué, la discusión se vuelve un proceso largo. Un comodato escrito dice todo eso en una página.',
+    },
+    puntos: [
+      { titulo: 'Qué se presta y en qué estado', texto: 'Descripción del bien —inmueble, vehículo, equipo— y su estado al momento de entregarlo, idealmente con un inventario.' },
+      { titulo: 'Para qué se puede usar', texto: 'El comodatario solo puede usar el bien para el uso convenido o el ordinario según su naturaleza.' },
+      { titulo: 'Cuándo se devuelve', texto: 'Un plazo o un hecho que marque la restitución. Sin plazo, la ley permite pedir el bien en cualquier momento (comodato precario).' },
+      { titulo: 'Gastos y cuidados', texto: 'Quién paga servicios, administración y reparaciones ordinarias mientras dura el préstamo.' },
+    ],
+    ley: {
+      titulo: 'El comodato en el Código Civil',
+      texto: 'El artículo 2200 del Código Civil define el comodato o préstamo de uso como el contrato en que una de las partes entrega a la otra gratuitamente una especie, mueble o raíz, para que haga uso de ella, con cargo de restituir la misma especie después de terminar el uso. El comodante conserva la propiedad. Cuando no se pacta tiempo ni uso determinado, el artículo 2220 lo considera comodato precario y el comodante puede pedir la restitución en cualquier momento. El contrato puede firmarse electrónicamente con el mismo valor que en papel según la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Una bodega cedida a una fundación',
+      texto: 'Un empresario en Ibagué cedió una bodega a una fundación para guardar donaciones. Firmaron un comodato por dos años con inventario y fotos del estado de la bodega. Cuando necesitó el espacio, la fundación lo devolvió en la fecha pactada sin discusión, y el inventario sirvió para acordar quién arreglaba una puerta dañada.',
+    },
+    checklist: {
+      titulo: "Qué debe incluir un contrato de comodato",
+      items: [
+        "Identificación del comodante y del comodatario.",
+        "Descripción del bien y su estado al entregarlo.",
+        "Uso permitido del bien.",
+        "Plazo o hecho que marca la devolución.",
+        "Quién paga servicios, administración y reparaciones, y firmas.",
+      ],
+    },
+    faq: [
+      { q: '¿El comodato tiene que ser gratuito?', a: 'Sí. Si hay un pago por el uso, ya no es comodato sino arrendamiento.' },
+      { q: '¿Qué es un comodato precario?', a: 'El que no tiene un plazo ni un uso determinado. En ese caso el comodante puede pedir la devolución del bien en cualquier momento.' },
+      { q: '¿Se necesita notaría para un comodato de inmueble?', a: 'No. El comodato no transfiere la propiedad, así que no requiere escritura pública. Basta un documento firmado.' },
+      { q: '¿Se puede firmar en línea?', a: 'Sí, con plena validez según la Ley 527 de 1999. Comodante y comodatario firman desde su celular.' },
+      { q: "¿El comodatario puede prestar el bien a otra persona?", a: "No sin autorización del comodante. El comodato es personal: se presta para el uso de quien lo recibe." },
+      { q: "¿Qué pasa si el bien se daña durante el comodato?", a: "El comodatario responde por los daños causados por su culpa, incluso leve, porque recibe el bien en su solo beneficio. El deterioro natural por el uso convenido no se le cobra." },
+      { q: "¿Se puede convertir un comodato en arriendo?", a: "Sí, firmando un contrato de arrendamiento nuevo con el canon acordado." },
+    ],
+    fotos: [F.mujer, F.firma, F.escritorio],
+    cta: 'Crear mi contrato de comodato',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'acta-de-entrega-de-inmueble',
+    titleTag: 'Acta de entrega de inmueble: modelo y firma',
+    metaDescription: 'Cómo hacer el acta de entrega de un inmueble arrendado con inventario y estado, y firmarla en el mismo apartamento desde el celular con un código QR.',
+    h1: 'Acta de entrega de inmueble',
+    grupo: 'inmuebles',
+    intro: 'El acta de entrega es el documento que dice en qué estado se recibió o se devolvió un inmueble: paredes, pisos, baños, cocina, llaves, medidores. Se hace al inicio del arriendo y al final, y es la prueba principal cuando hay que discutir quién paga un daño. Hecha a mano en una hoja, se pierde. Hecha con fotos y firmada en el mismo lugar, termina con la discusión antes de que empiece.',
+    problema: {
+      titulo: '«Ese daño ya estaba» contra «eso no estaba así»',
+      texto: 'Al terminar un arriendo, la escena se repite: el arrendador encuentra una mancha, una puerta dañada o un vidrio roto, y el arrendatario asegura que ya estaba así cuando llegó. Sin un acta de entrega inicial detallada y firmada, no hay forma de saber quién tiene razón, y la discusión suele terminar en el valor que se descuenta o no de lo pagado.',
+    },
+    puntos: [
+      { titulo: 'Recorrido por espacios', texto: 'Sala, cocina, habitaciones, baños: el estado de pisos, paredes, puertas, ventanas, grifería y electrodomésticos, espacio por espacio.' },
+      { titulo: 'Lecturas, llaves y controles', texto: 'Lectura de medidores de agua, luz y gas, número de llaves y controles entregados. Datos que se olvidan y después cuestan.' },
+      { titulo: 'Fotos que acompañan el acta', texto: 'Las fotos del estado del inmueble, tomadas el mismo día, respaldan cada observación.' },
+      { titulo: 'Firmada ahí mismo con un QR', texto: 'Al terminar el recorrido, el arrendatario escanea un código QR desde su celular y firma el acta en el mismo apartamento. Los dos reciben la copia al instante.' },
+    ],
+    ley: {
+      titulo: 'Por qué el acta es la prueba que cuenta',
+      texto: 'La Ley 820 de 2003 obliga al arrendatario a cuidar el inmueble y a restituirlo al terminar el contrato en el estado en que lo recibió, salvo el deterioro por el uso legítimo, y al arrendador a entregarlo en estado de servir para el fin convenido. El acta de entrega inicial y el acta de restitución son la forma de probar ese estado en cada momento. Firmadas electrónicamente, con fecha y hora registradas, tienen el valor de un documento firmado según la Ley 527 de 1999 y pueden presentarse como prueba documental según el artículo 247 del Código General del Proceso.',
+    },
+    caso: {
+      titulo: 'Un piso de madera rayado',
+      texto: 'Una inmobiliaria en Bucaramanga recibió un apartamento con el piso de madera rayado al terminar un contrato. El arrendatario aseguró que ya estaba así, pero el acta de entrega inicial, firmada con QR en el apartamento tres años antes, incluía fotos del piso en buen estado. El arrendatario aceptó el descuento del arreglo sin discutir.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir el acta de entrega',
+      items: [
+        'Fecha, dirección del inmueble y nombres de quien entrega y quien recibe.',
+        'Estado de cada espacio: pisos, paredes, techos, puertas, ventanas y grifería.',
+        'Electrodomésticos y elementos entregados, con su estado.',
+        'Lecturas de los medidores de agua, luz y gas.',
+        'Número de llaves, tarjetas y controles entregados.',
+        'Fotos de respaldo y firma de las dos partes.',
+      ],
+    },
+    faq: [
+      { q: '¿Es obligatoria el acta de entrega?', a: 'No hay una norma que la exija con ese nombre, pero es la mejor prueba del estado del inmueble al inicio y al final del arriendo.' },
+      { q: '¿Quién la firma?', a: 'Quien entrega y quien recibe: arrendador o inmobiliaria y arrendatario. Conviene que firmen el mismo día del recorrido.' },
+      { q: '¿Puedo firmarla en el apartamento sin papel?', a: 'Sí. Al terminar el recorrido, el arrendatario escanea un código QR con su celular y firma ahí mismo.' },
+      { q: '¿Sirve también para entregar un local o una oficina?', a: 'Sí. El mismo formato sirve para cualquier inmueble; solo cambian los espacios que se describen.' },
+      { q: "¿Se hace un acta al inicio y otra al final?", a: "Sí. El acta de entrega inicial y el acta de restitución permiten comparar el estado del inmueble en los dos momentos." },
+      { q: "¿Qué hago si el arrendatario no quiere firmar el acta?", a: "Deja constancia de su negativa en el documento, con fecha y fotos, y envíaselo por un medio que deje registro." },
+    ],
+    fotos: [F.hombre, F.movil, F.firma],
+    cta: 'Crear mi acta de entrega',
+    ctaTo: '/my-templates',
+  },
+];

@@ -9,6 +9,8 @@ import { LandingHero } from './LandingHero';
 import { CountryLawHighlights } from './CountryLawHighlights';
 import { BenefitCards, IncludedCards, HowItWorksTimeline, SocialProofBand, FAQAccordion, PhotoProofSection } from './LandingSections';
 import { LATAM_COUNTRIES, LATAM_GENERAL_FAQ, type LatamCountryConfig } from '../../data/latam-signature-seo-content';
+import { INDICE_CO } from '../../data/co-pages-index.generated';
+import { Link } from 'react-router';
 
 /** Cross-links to the other 5 LatAm country pages — same reasoning as
  * OtherStateHubs in StateLegalDocumentsLanding.tsx: completes the
@@ -164,8 +166,56 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
         taglineEs={`Usado por freelancers, propietarios, agencias y pequeños negocios en toda ${country.nameEs}.`}
       />
       <FAQAccordion items={[countryFaq, ...LATAM_GENERAL_FAQ]} />
+      {country.slug === 'colombia' && <GuiasColombia />}
       <OtherCountryLinks current={country.slug} />
       <LandingFooter />
     </div>
+  );
+}
+
+/** Las treinta guías de Colombia (co-intent-seo-content.ts), agrupadas. Esta
+ *  página es el eje del grupo: todas enlazan aquí y desde aquí a todas, para
+ *  que Google lo lea como un conjunto deliberado y no como páginas sueltas. */
+const GRUPOS_CO: Array<{ grupo: string; titulo: string }> = [
+  { grupo: 'firma', titulo: 'Firmar en línea' },
+  { grupo: 'laboral', titulo: 'Documentos laborales (reforma Ley 2466 de 2025)' },
+  { grupo: 'independientes', titulo: 'Independientes' },
+  { grupo: 'inmuebles', titulo: 'Arriendo e inmuebles' },
+  { grupo: 'dinero', titulo: 'Préstamos y vehículos' },
+  { grupo: 'tramites', titulo: 'Poderes, mandatos y datos personales' },
+];
+
+function GuiasColombia() {
+  return (
+    <section className="bg-white py-16">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-black text-slate-900 md:text-4xl">Guías y documentos para Colombia</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-base text-slate-600">
+            Qué exige la ley en cada documento, y cómo crearlo desde tu propio modelo y firmarlo en línea.
+          </p>
+          <div className="mt-10 grid gap-8 md:grid-cols-2">
+            {GRUPOS_CO.map(({ grupo, titulo }) => {
+              const paginas = INDICE_CO.filter((p) => p.grupo === grupo);
+              if (paginas.length === 0) return null;
+              return (
+                <div key={grupo}>
+                  <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">{titulo}</h3>
+                  <ul className="space-y-2">
+                    {paginas.map((p) => (
+                      <li key={p.slug}>
+                        <Link to={`/${p.slug}`} className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">
+                          {p.h1}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

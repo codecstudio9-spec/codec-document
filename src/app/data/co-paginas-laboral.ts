@@ -1,0 +1,380 @@
+/**
+ * Colombia — documentos laborales, ya con la reforma laboral (Ley 2466 de
+ * 2025): el indefinido como regla general, término fijo y obra o labor por
+ * escrito, aprendizaje como contrato laboral especial y contrato escrito para
+ * el trabajo doméstico. Fuentes en co-intent-seo-content.ts.
+ */
+import type { PaginaCO } from './co-intent-seo-content';
+import { F } from './seo-fotos';
+
+export const PAGINAS_CO_LABORAL: PaginaCO[] = [
+  {
+    slug: 'contrato-de-trabajo-a-termino-indefinido',
+    titleTag: 'Contrato de trabajo a término indefinido 2026',
+    metaDescription: 'Qué debe tener un contrato a término indefinido en Colombia tras la reforma laboral (Ley 2466 de 2025). Créalo desde tu modelo y fírmalo en línea.',
+    h1: 'Contrato de trabajo a término indefinido',
+    grupo: 'laboral',
+    intro: 'Con la reforma laboral, el contrato a término indefinido dejó de ser una opción entre varias y pasó a ser la regla general en Colombia. Es el contrato que no tiene fecha de terminación pactada: dura mientras subsistan las causas que le dieron origen y la materia del trabajo. Puede celebrarse de palabra, pero hacerlo por escrito es lo que evita las discusiones sobre cargo, salario y jornada que llegan años después.',
+    problema: {
+      titulo: 'El contrato verbal que nadie recuerda igual',
+      texto: 'Un contrato indefinido verbal es válido, pero cuando hay una discusión —un cambio de cargo, un salario que se dice que era otro, una jornada que se amplió sin acuerdo— cada parte recuerda una cosa distinta y la prueba son testigos. Un contrato escrito fija desde el primer día el cargo, las funciones, el salario, la forma de pago, el lugar de trabajo y el periodo de prueba. Es una página y media que evita meses de pelea.',
+    },
+    puntos: [
+      { titulo: 'Las cláusulas que no pueden faltar', texto: 'Identificación de las partes, cargo y funciones, salario y forma de pago, jornada, lugar de trabajo, fecha de inicio y, si se pacta, periodo de prueba. Con esos datos completos el contrato responde casi cualquier pregunta futura.' },
+      { titulo: 'Periodo de prueba por escrito', texto: 'El periodo de prueba solo existe si se pacta por escrito. En el indefinido puede ser de hasta dos meses; si no queda escrito, no hay periodo de prueba.' },
+      { titulo: 'Tu modelo, con los datos de cada persona', texto: 'Subes tu contrato en Word una vez y lo conviertes en plantilla. Para cada contratación llenas nombre, cédula, cargo, salario y fecha, y lo envías a firmar.' },
+      { titulo: 'Firmado antes del primer día', texto: 'El trabajador lo firma desde su celular con su cédula, y el contrato queda archivado con su certificado de firma junto a los demás documentos de la persona.' },
+    ],
+    ley: {
+      titulo: 'Qué cambió con la Ley 2466 de 2025',
+      texto: 'La reforma laboral modificó el artículo 47 del Código Sustantivo del Trabajo para establecer que los trabajadores se vinculan, como regla general, mediante contrato a término indefinido, que tendrá vigencia mientras subsistan las causas que le dieron origen y la materia del trabajo. Los contratos a término fijo, por obra o labor y ocasionales pasan a ser excepciones con requisitos propios. El artículo 37 del Código sigue permitiendo el contrato verbal, y el 76 y siguientes regulan el periodo de prueba, que debe estipularse por escrito. La Circular 0057 de 2026 del Ministerio del Trabajo imparte lineamientos sobre estos cambios.',
+    },
+    caso: {
+      titulo: 'El salario que «siempre había sido» otro',
+      texto: 'Un restaurante en Bogotá contrató a un cocinero de palabra con un salario más una bonificación por turnos de fin de semana. Dos años después, al terminar la relación, el trabajador sostuvo que la bonificación hacía parte del salario y debía incluirse en las prestaciones. Sin contrato escrito, la discusión dependió de testigos. El restaurante hoy firma con cada persona un contrato que dice expresamente qué es salario y qué no.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir tu contrato a término indefinido',
+      items: [
+        'Nombre, cédula y domicilio del empleador y del trabajador.',
+        'Cargo y descripción de las funciones principales.',
+        'Salario, periodicidad de pago y qué pagos no constituyen salario, si los hay.',
+        'Jornada de trabajo y lugar donde se presta el servicio.',
+        'Fecha de inicio de labores.',
+        'Periodo de prueba, si se pacta, con su duración (por escrito).',
+        'Firma del empleador y del trabajador.',
+      ],
+    },
+    faq: [
+      { q: '¿El contrato a término indefinido tiene que ser escrito?', a: 'No es obligatorio: el Código Sustantivo del Trabajo admite el contrato verbal. Pero el periodo de prueba solo vale si se pacta por escrito, y un contrato escrito es la mejor prueba del cargo, el salario y la jornada acordados.' },
+      { q: '¿Qué cambió con la reforma laboral?', a: 'La Ley 2466 de 2025 convirtió el contrato a término indefinido en la regla general de vinculación. Los contratos a término fijo y por obra o labor siguen existiendo, pero como excepciones y con requisitos más estrictos.' },
+      { q: '¿Se puede terminar un contrato indefinido?', a: 'Sí, por las causas que establece el Código Sustantivo del Trabajo: con justa causa, por mutuo acuerdo, por renuncia del trabajador o sin justa causa pagando la indemnización correspondiente.' },
+      { q: '¿Puedo firmarlo en línea?', a: 'Sí. La Ley 527 de 1999 equipara el documento electrónico al escrito y la firma electrónica confiable a la manuscrita.' },
+    ],
+    fotos: [F.oficina, F.firma, F.revisar],
+    cta: 'Crear mi contrato a término indefinido',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-trabajo-a-termino-fijo',
+    titleTag: 'Contrato a término fijo: reglas 2026',
+    metaDescription: 'Contrato a término fijo en Colombia tras la Ley 2466 de 2025: por escrito, máximo 4 años y preaviso de 30 días. Qué incluir y cómo firmarlo en línea.',
+    h1: 'Contrato de trabajo a término fijo',
+    grupo: 'laboral',
+    intro: 'El contrato a término fijo sigue existiendo después de la reforma laboral, pero ya no es la forma por defecto de contratar: es una excepción con reglas estrictas. Debe constar por escrito, no puede durar más de cuatro años y, si no se cumplen sus requisitos, se entiende celebrado a término indefinido desde el inicio. Por eso el papel —o el documento electrónico— dejó de ser un trámite y pasó a definir qué contrato tienes.',
+    problema: {
+      titulo: 'Un fijo mal hecho es un indefinido',
+      texto: 'Muchas empresas siguen contratando «a término fijo» como hace diez años: un contrato de seis meses que se renueva solo, a veces firmado semanas después de que la persona empezó a trabajar. Con la Ley 2466 de 2025, si el contrato a término fijo no consta por escrito, se entiende indefinido desde el inicio de la relación. Y el preaviso de treinta días para no renovarlo sigue siendo la diferencia entre terminar el contrato o encontrarse con que se prorrogó por el mismo término.',
+    },
+    puntos: [
+      { titulo: 'Escrito y firmado desde el inicio', texto: 'El contrato se envía a firmar el mismo día que la persona acepta el trabajo. Así queda escrito antes del primer día, que es lo que exige la norma.' },
+      { titulo: 'Fecha de inicio y de terminación claras', texto: 'El término pactado, la fecha de inicio y la de terminación deben quedar explícitas. Un contrato a término fijo sin término definido no cumple su propia razón de ser.' },
+      { titulo: 'Control de prórrogas y preavisos', texto: 'Como todos tus contratos quedan en un solo lugar con sus fechas, es más fácil saber a cuáles hay que enviar el preaviso de 30 días antes del vencimiento.' },
+      { titulo: 'Preaviso y otrosí firmados igual', texto: 'La carta de preaviso de no renovación y el otrosí de prórroga se firman electrónicamente y quedan archivados con el contrato.' },
+    ],
+    ley: {
+      titulo: 'El artículo 46 del Código Sustantivo del Trabajo, reformado',
+      texto: 'La Ley 2466 de 2025 modificó el artículo 46 del Código Sustantivo del Trabajo: el contrato a término fijo debe celebrarse por escrito y no puede pactarse por un término mayor a cuatro años; si no se cumplen esos requisitos, se entiende celebrado a término indefinido desde el inicio de la relación laboral. Se mantiene el preaviso de treinta días: si ninguna de las partes avisa por escrito su determinación de no prorrogarlo, el contrato se renueva por un periodo igual al inicialmente pactado. Para cumplir el requisito de escritura no hace falta papel: el artículo 6 de la Ley 527 de 1999 equipara el mensaje de datos al escrito.',
+    },
+    caso: {
+      titulo: 'Un contrato de seis meses que se volvió indefinido',
+      texto: 'Una empresa de mensajería en Medellín vinculaba a sus motorizados con contratos de seis meses que se firmaban «cuando pasaran por la oficina». Un trabajador que llevaba dos meses sin firmar fue despedido al terminar el semestre y reclamó que su contrato era indefinido. Sin documento escrito, tenía la ley de su lado. Desde entonces la empresa envía el contrato por WhatsApp el día de la vinculación y no asigna rutas a nadie que no lo haya firmado.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir un contrato a término fijo',
+      items: [
+        'Identificación completa del empleador y del trabajador.',
+        'Término de duración (no mayor a cuatro años), fecha de inicio y fecha de terminación.',
+        'Cargo, funciones, salario, forma de pago, jornada y lugar de trabajo.',
+        'Periodo de prueba, si se pacta: no puede exceder la quinta parte del término inicial ni dos meses.',
+        'Constancia de que el contrato se celebra por escrito y firma de ambas partes antes de iniciar labores.',
+      ],
+    },
+    faq: [
+      { q: '¿Cuánto puede durar un contrato a término fijo?', a: 'Tras la Ley 2466 de 2025, no puede pactarse por un término mayor a cuatro años. Algunas guías interpretan que el contrato inicial más sus prórrogas tampoco debería superar ese límite; conviene revisarlo con la Circular 0057 de 2026 del Ministerio del Trabajo.' },
+      { q: '¿Qué pasa si el contrato a término fijo no es escrito?', a: 'Se entiende celebrado a término indefinido desde el inicio de la relación laboral.' },
+      { q: '¿Cuándo hay que avisar que no se renovará?', a: 'Con al menos treinta días de anticipación al vencimiento, por escrito. Si no se avisa, el contrato se prorroga por el mismo término inicial.' },
+      { q: '¿El preaviso se puede enviar por correo o firmar en línea?', a: 'Sí. La carta de preaviso es un documento escrito y puede firmarse electrónicamente; lo importante es poder probar que el trabajador la recibió a tiempo.' },
+    ],
+    fotos: [F.firma, F.escritorio, F.oficina],
+    cta: 'Crear mi contrato a término fijo',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-por-obra-o-labor',
+    titleTag: 'Contrato por obra o labor en Colombia 2026',
+    metaDescription: 'El contrato por obra o labor debe ser escrito y describir con precisión la labor (Ley 2466 de 2025). Qué incluir y cómo firmarlo desde el celular.',
+    h1: 'Contrato de trabajo por obra o labor',
+    grupo: 'laboral',
+    intro: 'El contrato por obra o labor dura lo que dura una tarea concreta: la construcción de una obra, una cosecha, una temporada de ventas, la implementación de un proyecto. Es muy usado en construcción, agro y servicios, y fue uno de los más afectados por la reforma laboral: ahora debe celebrarse por escrito y describir de forma precisa y detallada la labor contratada.',
+    problema: {
+      titulo: '«Obra o labor» sin decir cuál obra',
+      texto: 'El error clásico es un contrato que dice «por obra o labor determinada» sin decir cuál. Cuando termina la relación, el empleador sostiene que la obra acabó; el trabajador, que la labor era indefinida y el contrato también. Con la Ley 2466 de 2025, si la labor no está descrita con precisión o si el trabajador sigue prestando servicios después de terminada la obra, el vínculo se entiende a término indefinido. La descripción de la labor ya no es un formalismo: es lo que define el contrato.',
+    },
+    puntos: [
+      { titulo: 'La labor descrita con detalle', texto: 'Qué obra, en qué lugar, qué actividades, y qué hecho marca su terminación: la entrega de la obra, el fin de la cosecha, el cierre del proyecto. Cuanto más concreta la descripción, menos espacio para discutir.' },
+      { titulo: 'Un modelo por tipo de proyecto', texto: 'Si contratas por obra con frecuencia, sube tu modelo una vez y llena la descripción de la labor y los datos del trabajador en cada contratación.' },
+      { titulo: 'Firmado en la obra, desde el celular', texto: 'En construcción y agro casi nunca hay oficina cerca. El trabajador firma desde su celular con un enlace o escaneando un código QR en la obra.' },
+      { titulo: 'Liquidación y paz y salvo al final', texto: 'Al terminar la labor, la liquidación y el paz y salvo se firman igual y quedan archivados con el contrato.' },
+    ],
+    ley: {
+      titulo: 'Requisitos tras la reforma laboral',
+      texto: 'La Ley 2466 de 2025 mantiene el contrato por el tiempo que dure la realización de una obra o labor determinada como una de las excepciones al contrato indefinido, pero exige que se celebre por escrito e indique de manera precisa y detallada la labor contratada. Si no se cumple ese requisito, o si el trabajador continúa prestando servicios después de terminada la obra, la relación se entiende a término indefinido. El escrito puede ser electrónico: el artículo 6 de la Ley 527 de 1999 da al mensaje de datos el valor del documento escrito, siempre que pueda consultarse después.',
+    },
+    caso: {
+      titulo: 'Un maestro de obra que siguió en la siguiente obra',
+      texto: 'Una constructora de Villavicencio contrataba a sus maestros de obra por obra o labor, pero los pasaba de un proyecto al siguiente sin contrato nuevo. Cuando uno de ellos fue desvinculado al final del tercer proyecto, reclamó un contrato indefinido, y el contrato original —que solo decía «obra o labor»— no lo desmentía. Hoy la constructora firma un contrato nuevo por cada proyecto, con la obra descrita y su fecha estimada de entrega.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir un contrato por obra o labor',
+      items: [
+        'Descripción precisa y detallada de la obra o labor: qué, dónde y qué actividades comprende.',
+        'El hecho o resultado que marca la terminación de la labor.',
+        'Cargo, salario, forma de pago, jornada y lugar de trabajo.',
+        'Fecha de inicio y una fecha estimada de terminación, como referencia.',
+        'Firma de las partes antes de iniciar labores.',
+      ],
+    },
+    faq: [
+      { q: '¿El contrato por obra o labor sigue existiendo?', a: 'Sí. La reforma laboral lo mantiene como excepción al contrato indefinido, con la condición de que sea escrito y describa con precisión la labor contratada.' },
+      { q: '¿Qué pasa si sigo trabajando después de terminada la obra?', a: 'Según la Ley 2466 de 2025, si el trabajador continúa prestando servicios después de terminada la obra, la relación se entiende a término indefinido.' },
+      { q: '¿Puedo usar el mismo contrato para varias obras?', a: 'No es recomendable. Cada obra debe tener su descripción; lo más seguro es firmar un contrato por cada proyecto.' },
+      { q: '¿El trabajador puede firmar desde la obra?', a: 'Sí. Firma desde su celular con un enlace o escaneando un código QR que le muestras, y el contrato queda con su registro de firma.' },
+    ],
+    fotos: [F.hombre, F.firma, F.movil],
+    cta: 'Crear mi contrato por obra o labor',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-servicio-domestico',
+    titleTag: 'Contrato de servicio doméstico 2026',
+    metaDescription: 'Desde la reforma laboral, el trabajo doméstico requiere contrato escrito, también por días u horas (Ley 2466 de 2025). Qué incluir y cómo firmarlo.',
+    h1: 'Contrato de servicio doméstico',
+    grupo: 'laboral',
+    intro: 'Durante décadas, la mayoría de las relaciones de trabajo doméstico en Colombia se acordaron de palabra. La reforma laboral cambió eso: hoy toda persona trabajadora del hogar —interna, externa, por días o por horas— debe tener un contrato escrito. Para muchas familias es la primera vez que firman un contrato de trabajo como empleadores, y la buena noticia es que no hace falta ir a ninguna oficina.',
+    problema: {
+      titulo: 'El acuerdo de palabra ya no es suficiente',
+      texto: 'Una familia contrata a una persona dos días a la semana, acuerdan el pago por día y todo funciona por años. Hasta que hay que liquidar y nadie sabe si se acordaron prima, vacaciones o el pago de transporte, ni desde qué fecha empezó realmente la relación. La Ley 2466 de 2025 eliminó el acuerdo verbal como forma de vincular a una trabajadora doméstica: el contrato escrito es obligatorio, y además protege a las dos partes en el momento en que más se necesita.',
+    },
+    puntos: [
+      { titulo: 'Por días, por horas o tiempo completo', texto: 'El contrato debe reflejar la modalidad real: qué días, cuántas horas, el pago y cómo se calculan las prestaciones de forma proporcional.' },
+      { titulo: 'Funciones claras', texto: 'Aseo, cocina, cuidado de niños o de adultos mayores: describir las funciones evita que el trabajo se amplíe sin acuerdo.' },
+      { titulo: 'Firma sencilla desde el celular', texto: 'La trabajadora recibe el contrato por WhatsApp y lo firma desde su teléfono, o lo firma en la casa escaneando un código QR. Las dos partes reciben la misma copia.' },
+      { titulo: 'Afiliación y pagos en orden', texto: 'Con el contrato firmado, la afiliación a seguridad social y el registro en la PILA quedan respaldados por un documento con fecha de inicio cierta.' },
+    ],
+    ley: {
+      titulo: 'Contrato escrito obligatorio desde la Ley 2466 de 2025',
+      texto: 'El artículo 33 de la Ley 2466 de 2025, en desarrollo del Convenio 189 de la OIT, exige que todos los trabajadores domésticos, sin importar si laboran tiempo completo, por días o por horas, se vinculen mediante contrato de trabajo escrito. La ley prevé además el registro del contrato en la PILA como acto de publicidad, cuya omisión no invalida el contrato. Las prestaciones —prima, cesantías y vacaciones— se reconocen de forma proporcional al tiempo trabajado. El contrato escrito puede firmarse electrónicamente: el artículo 6 de la Ley 527 de 1999 equipara el mensaje de datos al escrito.',
+    },
+    caso: {
+      titulo: 'Una familia con una trabajadora por días',
+      texto: 'Una pareja en Bogotá tenía a una señora que trabajaba en su casa martes y viernes desde hacía cuatro años, sin contrato. Con la reforma decidieron formalizar: hicieron el contrato con los días, el pago, las funciones y la fecha real de inicio, y ella lo firmó desde su celular. Al registrar los aportes en la PILA, por primera vez todo quedó con fechas y valores que ninguno de los dos tuvo que recordar de memoria.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir el contrato de trabajo doméstico',
+      items: [
+        'Datos del empleador (la persona o familia) y de la trabajadora.',
+        'Modalidad: interna, externa, por días o por horas, con los días y horarios.',
+        'Funciones a realizar.',
+        'Salario o pago por día u hora, y la forma y fecha de pago.',
+        'Fecha de inicio de la relación laboral.',
+        'Firma de las dos partes.',
+      ],
+    },
+    faq: [
+      { q: '¿Es obligatorio el contrato escrito para una empleada por días?', a: 'Sí. Desde la Ley 2466 de 2025, el contrato escrito es obligatorio para todo trabajador doméstico, incluidas las modalidades por días y por horas.' },
+      { q: '¿Qué pasa si no registro el contrato en la PILA?', a: 'La ley trata ese registro como un acto de publicidad; su omisión no invalida el contrato, pero la afiliación y los aportes a seguridad social siguen siendo obligaciones del empleador.' },
+      { q: '¿Se pagan prestaciones si trabaja solo unos días?', a: 'Sí, de forma proporcional al tiempo trabajado: prima, cesantías y vacaciones se calculan según los días u horas laborados.' },
+      { q: '¿La trabajadora puede firmar desde su celular?', a: 'Sí. Firma con el dedo desde su teléfono y las dos partes reciben el mismo documento firmado.' },
+    ],
+    fotos: [F.mujer, F.movil, F.firma],
+    cta: 'Crear el contrato de servicio doméstico',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'contrato-de-aprendizaje',
+    titleTag: 'Contrato de aprendizaje tras la reforma laboral',
+    metaDescription: 'El contrato de aprendizaje ahora es un contrato laboral especial a término fijo (Ley 2466 de 2025). Qué cambió, qué incluir y cómo firmarlo en línea.',
+    h1: 'Contrato de aprendizaje',
+    grupo: 'laboral',
+    intro: 'El contrato de aprendizaje vincula a un estudiante —del SENA, de una institución técnica o tecnológica, o universitario— con una empresa para que aprenda un oficio mientras trabaja. La reforma laboral le devolvió su carácter laboral: hoy es un contrato de trabajo especial a término fijo, con los derechos que eso implica. Para las empresas obligadas a tener aprendices, la reforma cambió los números y también el papeleo.',
+    problema: {
+      titulo: 'Contratos de aprendizaje firmados con las reglas viejas',
+      texto: 'Antes de la reforma, el contrato de aprendizaje no era un contrato laboral: el aprendiz recibía un apoyo de sostenimiento y no prestaciones. Muchas empresas siguen usando el formato de antes, que no refleja que el aprendiz hoy es trabajador para efectos de prestaciones y seguridad social. Un formato desactualizado no cambia los derechos del aprendiz, pero sí deja a la empresa con un documento que dice algo distinto de lo que la ley exige.',
+    },
+    puntos: [
+      { titulo: 'Formato actualizado a la reforma', texto: 'Sube tu modelo de contrato de aprendizaje revisado y conviértelo en plantilla: cada aprendiz nuevo se vincula con el mismo texto vigente.' },
+      { titulo: 'Las dos fases claras', texto: 'El contrato debe distinguir la fase lectiva y la fase práctica, con sus fechas y el apoyo de sostenimiento de cada una.' },
+      { titulo: 'Firma del aprendiz y, si aplica, de su representante', texto: 'Si el aprendiz es menor de edad, firma también su representante. Cada uno recibe su propio enlace y firma desde su celular.' },
+      { titulo: 'Archivo listo para el SENA', texto: 'Todos los contratos de aprendizaje quedan en un solo lugar, con su certificado de firma, listos para cuando haya que reportarlos o demostrar la cuota.' },
+    ],
+    ley: {
+      titulo: 'El nuevo artículo 81 del Código Sustantivo del Trabajo',
+      texto: 'La Ley 2466 de 2025 modificó el artículo 81 del Código Sustantivo del Trabajo y define el contrato de aprendizaje como un contrato laboral especial y a término fijo, regido por las normas del Código, por un tiempo no superior a tres años. La subordinación se limita a las actividades propias del aprendizaje. El apoyo de sostenimiento depende de la fase y del tipo de formación, y la Circular 0083 de 2025 del Ministerio del Trabajo imparte lineamientos sobre su aplicación. Los contratos celebrados desde la entrada en vigencia de la ley se rigen completamente por ella. Al ser un contrato a término fijo, conviene celebrarlo por escrito; la Ley 527 de 1999 permite hacerlo electrónicamente.',
+    },
+    caso: {
+      titulo: 'Una empresa con veinte aprendices por semestre',
+      texto: 'Una empresa de manufactura en Itagüí vinculaba veinte aprendices del SENA cada semestre con un formato impreso que llevaba años sin actualizarse. Con la reforma, su área jurídica redactó un modelo nuevo, lo subieron como plantilla y ahora cada aprendiz firma desde su celular el día de la inducción. Los contratos quedan organizados por cohorte, con fechas de cada fase.',
+    },
+    checklist: {
+      titulo: "Qué debe incluir el contrato de aprendizaje",
+      items: [
+        "Datos de la empresa, del aprendiz y, si es menor de edad, de su representante.",
+        "Institución de formación y programa que cursa el aprendiz.",
+        "Duración total y fechas de la fase lectiva y de la fase práctica.",
+        "Apoyo de sostenimiento de cada fase y forma de pago.",
+        "Funciones de la fase práctica y firma de las partes.",
+      ],
+    },
+    faq: [
+      { q: '¿El contrato de aprendizaje es un contrato laboral?', a: 'Sí. Desde la Ley 2466 de 2025 es un contrato laboral especial y a término fijo, regido por las normas del Código Sustantivo del Trabajo.' },
+      { q: '¿Cuánto puede durar?', a: 'Hasta tres años, según el texto de la reforma recogido en la Circular 0083 de 2025. La duración concreta depende del programa de formación.' },
+      { q: '¿Cuánto es el apoyo de sostenimiento?', a: 'Depende de la fase (lectiva o práctica) y del tipo de formación. Consulta la Circular 0083 de 2025 y la reglamentación vigente para el valor exacto de cada caso.' },
+      { q: '¿Puede firmarlo un aprendiz menor de edad?', a: 'Firma junto con su representante legal. Cada uno puede firmar electrónicamente desde su propio celular.' },
+    ],
+    fotos: [F.tech, F.oficina, F.firma],
+    cta: 'Crear el contrato de aprendizaje',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'carta-de-renuncia-laboral',
+    titleTag: 'Carta de renuncia laboral: modelo y cómo enviarla',
+    metaDescription: 'Cómo escribir una carta de renuncia voluntaria en Colombia, qué incluir y cómo enviarla firmada con fecha cierta para que no haya dudas sobre tu retiro.',
+    h1: 'Carta de renuncia laboral',
+    grupo: 'laboral',
+    intro: 'Renunciar es un derecho del trabajador y no necesita la aceptación del empleador para producir efectos. Lo que sí necesita es claridad: que conste que la decisión fue voluntaria, desde qué fecha y que el empleador la recibió. Una carta corta, firmada y con fecha cierta evita las dos discusiones más comunes al salir de un trabajo: cuándo terminó realmente la relación y si la renuncia fue libre.',
+    problema: {
+      titulo: 'La renuncia que «nunca llegó»',
+      texto: 'El trabajador avisa de palabra o deja una carta en un escritorio, y semanas después la empresa dice que no la recibió, que la fecha era otra o que la persona abandonó el puesto. Al revés también pasa: una empresa presiona una renuncia que no fue voluntaria. En los dos casos, lo que decide es el documento: qué dice, quién lo firmó y cuándo lo recibió la otra parte.',
+    },
+    puntos: [
+      { titulo: 'Corta y voluntaria', texto: 'Una carta de renuncia no necesita explicar motivos. Basta decir que renuncias de manera voluntaria, al cargo que ocupas, y desde qué fecha.' },
+      { titulo: 'Fecha de retiro explícita', texto: 'Indica el último día de trabajo. Si acuerdas con la empresa un tiempo para entregar el cargo, deja ese acuerdo por escrito.' },
+      { titulo: 'Firmada y con constancia de recibo', texto: 'Al enviarla para firma electrónica, queda registrado cuándo la abrió y firmó de recibido el empleador. No hace falta perseguir un sello de radicado.' },
+      { titulo: 'Liquidación y certificado después', texto: 'Con la fecha de retiro clara, la liquidación, el paz y salvo y el certificado laboral se pueden pedir y firmar igual, en línea.' },
+    ],
+    ley: {
+      titulo: 'Qué dice la ley',
+      texto: 'El Código Sustantivo del Trabajo prevé la terminación del contrato por decisión unilateral de cualquiera de las partes (artículo 61) y la renuncia del trabajador no requiere aceptación del empleador para producir efectos. La jurisprudencia de la Corte Suprema de Justicia ha insistido en que la renuncia debe ser libre y espontánea: una renuncia obtenida bajo presión puede discutirse como un despido. Por eso conviene que la carta exprese que la decisión es voluntaria. Al terminar, el artículo 57 del Código obliga al empleador a expedir, si el trabajador lo solicita, un certificado con el tiempo de servicio, la labor y el salario.',
+    },
+    caso: {
+      titulo: 'Un retiro sin discusión sobre la fecha',
+      texto: 'Una analista en Barranquilla renunció para tomar otro empleo que empezaba en tres semanas. Envió su carta de renuncia para firma electrónica a su jefe y a recursos humanos, que la firmaron de recibido ese mismo día. Cuando la liquidación llegó con una fecha de retiro distinta, bastó mostrar el documento firmado para corregirla en una sola llamada.',
+    },
+    checklist: {
+      titulo: "Qué debe incluir una carta de renuncia",
+      items: [
+        "Ciudad y fecha de la carta.",
+        "Nombre de la empresa y de la persona a quien va dirigida.",
+        "Tu nombre completo, cédula y cargo.",
+        "La declaración de que renuncias de manera voluntaria.",
+        "La fecha de tu último día de trabajo y tu firma.",
+      ],
+    },
+    faq: [
+      { q: '¿La empresa tiene que aceptar mi renuncia?', a: 'No. La renuncia es una decisión unilateral del trabajador y produce efectos sin necesidad de aceptación. Lo importante es poder probar que se entregó y desde qué fecha.' },
+      { q: '¿Tengo que dar un preaviso?', a: 'Depende de lo pactado en tu contrato y de su modalidad. Si no estás seguro, revisa tu contrato y, si es posible, acuerda la fecha de retiro por escrito con la empresa.' },
+      { q: '¿Debo explicar por qué renuncio?', a: 'No. Basta expresar que la renuncia es voluntaria y la fecha. Explicar motivos es opcional.' },
+      { q: '¿Puedo enviar la renuncia firmada electrónicamente?', a: 'Sí. Una carta firmada electrónicamente es un documento escrito con firma válida según la Ley 527 de 1999, y además deja constancia de cuándo la recibió el empleador.' },
+      { q: "¿Puedo retractarme de una renuncia?", a: "Solo si el empleador lo acepta. Una vez presentada, la renuncia produce efectos, así que conviene decidirla con calma." },
+    ],
+    fotos: [F.revisar, F.escritorio, F.mujer],
+    cta: 'Escribir y enviar mi renuncia',
+    ctaTo: '/generator/resignation-letter',
+  },
+  {
+    slug: 'certificado-laboral',
+    titleTag: 'Certificado laboral: qué debe decir y cómo firmarlo',
+    metaDescription: 'Qué debe incluir un certificado laboral en Colombia, cuándo es obligatorio expedirlo y cómo emitirlo firmado en línea en minutos para cada empleado.',
+    h1: 'Certificado laboral',
+    grupo: 'laboral',
+    intro: 'El certificado laboral es de los documentos que más piden los trabajadores: para un crédito, para arrendar un apartamento, para una visa o para un nuevo empleo. Para el empleador, expedirlo es una obligación cuando el trabajador lo solicita al terminar el contrato, y una cortesía frecuente mientras sigue vinculado. Lo que más demora no es redactarlo, sino conseguir la firma de quien puede firmarlo.',
+    problema: {
+      titulo: 'El certificado que tarda una semana por una firma',
+      texto: 'El texto de un certificado laboral es casi siempre el mismo: nombre, cédula, cargo, fecha de ingreso, tipo de contrato y salario. Lo que lo demora es que tiene que firmarlo el gerente o el jefe de talento humano, que no siempre está, y luego escanearlo y enviarlo. Además, un certificado escaneado es fácil de alterar, y los bancos y arrendadores lo saben: por eso muchos llaman a confirmar.',
+    },
+    puntos: [
+      { titulo: 'Plantilla con tus datos de empresa', texto: 'Sube tu formato de certificado una vez. Para cada solicitud llenas los datos del trabajador y lo envías a firmar a quien corresponda.' },
+      { titulo: 'Firmado por quien está autorizado', texto: 'El gerente o el jefe de talento humano lo firma desde su celular en un minuto, aunque esté fuera de la oficina.' },
+      { titulo: 'Verificable por quien lo recibe', texto: 'El PDF firmado lleva un certificado de firma con su huella de integridad. Un banco o un arrendador puede confirmar que no fue modificado.' },
+      { titulo: 'Con salario o sin salario', texto: 'Algunos trabajadores necesitan el certificado sin el salario. Con una plantilla puedes tener las dos versiones y elegir en cada caso.' },
+    ],
+    ley: {
+      titulo: 'La obligación del empleador',
+      texto: 'El artículo 57 del Código Sustantivo del Trabajo, en su numeral 7, obliga al empleador a dar al trabajador que lo solicite, a la expiración del contrato, una certificación en la que conste el tiempo de servicio, la índole de la labor y el salario devengado. Mientras la relación sigue vigente, expedirlo no es una obligación legal expresa, pero es una práctica habitual. Un certificado firmado electrónicamente es un documento con firma válida según los artículos 6 y 7 de la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Diez certificados en diciembre',
+      texto: 'Una empresa de servicios en Cali recibía en diciembre decenas de solicitudes de certificados laborales para créditos y viajes, y su gerente firmaba en lotes cuando volvía de las visitas a clientes. Con una plantilla, la asistente llena los datos de cada solicitud y el gerente firma desde el celular entre reuniones. Los certificados salen el mismo día.',
+    },
+    checklist: {
+      titulo: 'Qué debe decir un certificado laboral',
+      items: [
+        'Nombre completo y número de cédula del trabajador.',
+        'Cargo o índole de la labor desempeñada.',
+        'Fecha de ingreso y, si el contrato terminó, fecha de retiro.',
+        'Tipo de contrato (término indefinido, fijo, obra o labor).',
+        'Salario devengado, si el trabajador lo solicita.',
+        'Nombre, cargo y firma de quien certifica, y datos de la empresa.',
+      ],
+    },
+    faq: [
+      { q: '¿Es obligatorio dar un certificado laboral?', a: 'Al terminar el contrato, sí, si el trabajador lo solicita: el artículo 57 del Código Sustantivo del Trabajo obliga a certificar el tiempo de servicio, la labor y el salario.' },
+      { q: '¿Una carta laboral y un certificado laboral son lo mismo?', a: 'En la práctica se usan como sinónimos. Ambos certifican la vinculación del trabajador; el nombre no cambia su contenido.' },
+      { q: '¿El certificado debe incluir el salario?', a: 'La norma lo incluye en la certificación al terminar el contrato. Mientras está vigente, se suele incluir solo si el trabajador lo pide.' },
+      { q: '¿Un banco acepta un certificado firmado electrónicamente?', a: 'La firma electrónica tiene validez legal en Colombia. Cada entidad define qué documentos acepta, pero un certificado con firma verificable suele generar menos dudas que uno escaneado.' },
+      { q: "¿Cuánto tiempo tiene la empresa para entregarlo?", a: "La ley no fija un plazo exacto, pero al terminar el contrato debe expedirlo cuando el trabajador lo solicite. Hacerlo en línea permite entregarlo el mismo día." },
+    ],
+    fotos: [F.escritorio, F.oficina, F.revisar],
+    cta: 'Emitir certificados laborales',
+    ctaTo: '/my-templates',
+  },
+  {
+    slug: 'otrosi-contrato',
+    titleTag: 'Otrosí: qué es y cómo modificar un contrato',
+    metaDescription: 'Qué es un otrosí, cuándo usarlo en un contrato laboral o de arriendo y qué debe incluir. Redáctalo y fírmalo en línea con todas las partes.',
+    h1: 'Otrosí a un contrato',
+    grupo: 'laboral',
+    intro: 'Un otrosí es un documento que modifica, aclara o adiciona un contrato que ya está firmado, sin tener que redactar uno nuevo. Se usa todo el tiempo: para subir un salario, cambiar un cargo, prorrogar un arriendo o ajustar el valor de un servicio. Su nombre viene de la vieja fórmula «otrosí digo», y su regla de oro es simple: lo firman las mismas partes que firmaron el contrato original.',
+    problema: {
+      titulo: 'Cambios acordados que nunca quedaron escritos',
+      texto: 'Un salario se aumenta por correo, un canon se ajusta por WhatsApp, un cargo cambia en la práctica pero no en el papel. Meses después, el contrato original dice una cosa y la realidad otra, y cada parte cita la versión que le conviene. El otrosí existe para que el contrato siga diciendo la verdad: cada cambio relevante, firmado por las partes, con fecha desde la cual aplica.',
+    },
+    puntos: [
+      { titulo: 'Identifica el contrato que modifica', texto: 'El otrosí debe decir qué contrato modifica —partes, fecha y objeto— para que no haya duda de a cuál se refiere.' },
+      { titulo: 'Qué cláusula cambia y cómo queda', texto: 'Lo más claro es transcribir la cláusula modificada con su nueva redacción, y aclarar que las demás siguen vigentes sin cambios.' },
+      { titulo: 'Desde cuándo aplica', texto: 'La fecha de vigencia del cambio es tan importante como el cambio mismo: un aumento de salario desde el primero del mes, una prórroga desde el vencimiento.' },
+      { titulo: 'Firmado por las mismas partes', texto: 'Cada parte del contrato original recibe su enlace y firma desde su celular. El otrosí queda archivado junto al contrato que modifica.' },
+    ],
+    ley: {
+      titulo: 'Por qué el otrosí necesita el acuerdo de todos',
+      texto: 'El artículo 1602 del Código Civil establece que todo contrato legalmente celebrado es una ley para los contratantes, y no puede ser invalidado sino por su consentimiento mutuo o por causas legales. Modificarlo, por tanto, requiere el mismo consentimiento: un otrosí firmado por una sola parte no cambia el contrato. En materia laboral, ciertas modificaciones no pueden desmejorar los derechos mínimos del trabajador. El otrosí puede firmarse electrónicamente con el mismo valor que en papel según la Ley 527 de 1999.',
+    },
+    caso: {
+      titulo: 'Un aumento de salario que no quedó escrito',
+      texto: 'Una empresa de software en Bogotá le aumentó el salario a una desarrolladora por un correo del gerente. Un año después, al calcular una indemnización, el área de nómina tomó el salario del contrato original. Hubo que reconstruir la historia con correos y desprendibles de pago. Desde entonces cada cambio de salario o cargo se formaliza con un otrosí firmado electrónicamente el mismo día.',
+    },
+    checklist: {
+      titulo: 'Qué debe incluir un otrosí',
+      items: [
+        'Identificación de las partes, iguales a las del contrato original.',
+        'Referencia al contrato que se modifica: fecha y objeto.',
+        'La cláusula que se modifica, adiciona o aclara, con su nueva redacción completa.',
+        'Fecha desde la cual aplica el cambio.',
+        'Declaración de que las demás cláusulas siguen vigentes.',
+        'Firma de todas las partes del contrato original.',
+      ],
+    },
+    faq: [
+      { q: '¿Qué es un otrosí?', a: 'Es un documento que modifica, aclara o adiciona un contrato ya firmado. Se integra al contrato original y lo firman las mismas partes.' },
+      { q: '¿Un otrosí necesita notaría?', a: 'Solo si el contrato original la requería. Para contratos laborales, de arriendo o de servicios, no es necesaria.' },
+      { q: '¿Puede un otrosí bajar el salario?', a: 'Las modificaciones laborales no pueden desmejorar los derechos mínimos del trabajador ni hacerse sin su consentimiento libre. Ante dudas, conviene asesoría laboral.' },
+      { q: '¿Se puede firmar un otrosí electrónicamente aunque el contrato original fue en papel?', a: 'Sí. Lo que importa es el consentimiento de las partes y la prueba de la firma, no que los dos documentos tengan el mismo soporte.' },
+      { q: "¿Cuántos otrosíes puede tener un contrato?", a: "Los que sean necesarios. Conviene numerarlos (otrosí No. 1, No. 2) para saber en qué orden se hicieron los cambios." },
+      { q: "¿El otrosí reemplaza al contrato?", a: "No. Lo complementa: el contrato sigue vigente con los cambios que introduce el otrosí." },
+    ],
+    fotos: [F.revisar, F.firma, F.escritorio],
+    cta: 'Crear un otrosí y firmarlo',
+    ctaTo: '/my-templates',
+  },
+];

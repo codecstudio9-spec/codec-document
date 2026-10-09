@@ -143,6 +143,14 @@ export function ModernHomePage() {
     setOnboardingContext(language === 'en' ? 'Register free to see all templates' : 'Regístrate gratis para ver todas las plantillas');
     setOnboardingOpen(true);
   };
+  // Llegó desde una pantalla privada (ProtectedRoute): se abre el registro
+  // directamente, sin obligar a buscar el botón.
+  useEffect(() => {
+    if (user || !new URLSearchParams(window.location.search).has('registro')) return;
+    setOnboardingContext(language === 'en' ? 'Create your free account to continue' : 'Crea tu cuenta gratis para continuar');
+    setOnboardingOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!user) return;
     const target = localStorage.getItem('codec_post_auth_redirect');

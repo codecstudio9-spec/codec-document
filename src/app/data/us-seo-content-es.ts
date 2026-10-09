@@ -69,44 +69,12 @@ const DOCUMENTOS_ES: Record<string, string> = {
 
 export const etiquetaDocumentoEs = (d: { to: string; label: string }) => DOCUMENTOS_ES[d.to] ?? d.label;
 
-/** Los textos fijos de la plantilla, en los dos idiomas. */
-export const TEXTOS_US = {
-  en: {
-    pais: 'United States',
-    comoFunciona: 'How signing works',
-    confianza: 'Free to start · Valid under the ESIGN Act · Audit trail on every signature',
-    altFirma: 'preparing and signing the document online',
-    altRevisar: 'reviewing the terms before signing',
-    altArchivado: 'the document signed and filed',
-    comoAyuda: (a?: string) => `How it helps ${a?.toLowerCase() ?? 'your business'}`,
-    queCubre: 'What the template covers',
-    avisoLegal: 'This is general information about United States law, not legal advice for your situation. Statutes differ by state and change over time.',
-    ejemplo: 'An illustrative example',
-    enLaPractica: 'What it looks like in practice',
-    preguntas: 'Questions people ask about this',
-    documentosDe: (a?: string) => `Documents ${a?.toLowerCase() ?? 'businesses'} send most`,
-    tambienPara: 'Also built for',
-    relacionados: 'Related documents',
-    verTodas: 'See every industry we support →',
-    cierre: 'Fill it in, see exactly how it will look, and sign it online. No account needed for the other party, and every signature carries a verifiable audit trail.',
-  },
-  es: {
-    pais: 'Estados Unidos',
-    comoFunciona: 'Cómo funciona la firma',
-    confianza: 'Gratis para empezar · Válido bajo la ESIGN Act · Registro de auditoría en cada firma',
-    altFirma: 'preparando y firmando el documento en línea',
-    altRevisar: 'revisando los términos antes de firmar',
-    altArchivado: 'el documento firmado y archivado',
-    comoAyuda: (a?: string) => `Cómo ayuda a ${a?.toLowerCase() ?? 'tu negocio'}`,
-    queCubre: 'Qué cubre la plantilla',
-    avisoLegal: 'Esta es información general sobre la ley de Estados Unidos, no asesoría legal para tu caso. Las leyes cambian según el estado y con el tiempo.',
-    ejemplo: 'Un ejemplo ilustrativo',
-    enLaPractica: 'Cómo se ve en la práctica',
-    preguntas: 'Preguntas frecuentes',
-    documentosDe: (a?: string) => `Documentos que más usan ${a?.toLowerCase() ?? 'los negocios'}`,
-    tambienPara: 'También pensado para',
-    relacionados: 'Documentos relacionados',
-    verTodas: 'Ver todos los sectores →',
-    cierre: 'Complétalo, mira exactamente cómo quedará y fírmalo en línea. La otra parte no necesita cuenta, y cada firma lleva un registro de auditoría verificable.',
-  },
-} as const;
+export { TEXTOS_US } from './us-seo-textos';
+
+/** Resumen en español de una página, para las tarjetas de páginas
+ *  relacionadas (que sólo tienen el índice, no la página completa). */
+export function resumenEs(slug: string): { h1?: string; metaDescription?: string; audiencia?: string } {
+  const t = TRADUCCIONES[slug];
+  return t ? { h1: t.h1, metaDescription: t.metaDescription, audiencia: t.audiencia } : {};
+}
+

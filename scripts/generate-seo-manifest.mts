@@ -32,7 +32,8 @@ import { FREE_FEATURE_PAGES } from '../src/app/data/free-feature-seo-content';
 import { QUOTE_SEO_PAGES } from '../src/app/data/quote-seo-content';
 import { CIUDADES_CONTADOR } from '../src/app/data/contador-dian-seo-content';
 import { NECESIDADES_CONTADOR } from '../src/app/data/contador-necesidad-seo-content';
-import { PAGINAS_US } from '../src/app/data/us-intent-seo-content';
+import { PAGINAS_US, MODULO_US } from '../src/app/data/us-intent-seo-content';
+import { PAGINAS_CO, MODULO_CO, hermanasCO, HUB_CO } from '../src/app/data/co-intent-seo-content';
 import { INDUSTRIES_HUB, PAGINAS_US_SECTORES } from '../src/app/data/us-industry-seo-content';
 import { hermanasDe } from '../src/app/data/us-intent-seo-content';
 import { CO_FREE_SIGNATURE_CITIES } from '../src/app/data/co-free-signature-city-content';
@@ -198,6 +199,12 @@ for (const p of PAGINAS_US) {
 // Índice de las treinta páginas por profesión.
 add(INDUSTRIES_HUB.path, INDUSTRIES_HUB.titleTag, INDUSTRIES_HUB.metaDescription, 'en');
 
+// ── Treinta páginas de intención para Colombia (COIntentLanding.tsx) ─────
+// En español, con idioma fijo. Temas y fuentes en co-intent-seo-content.ts.
+for (const p of PAGINAS_CO) {
+  add(`/${p.slug}`, p.titleTag, p.metaDescription, 'es', p.fotos[0]);
+}
+
 // ── Firma digital gratis por ciudad, Colombia (COFreeSignatureLanding.tsx)
 // -- Spanish only (FixedLanguageProvider defaultLanguage="es") ──────────
 for (const c of CO_FREE_SIGNATURE_CITIES) {
@@ -229,6 +236,45 @@ fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-slugs.generated.ts'),
   `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
   + `export const SLUGS_PAGINAS_US: readonly string[] = ${JSON.stringify(PAGINAS_US.map((p) => p.slug), null, 2)};\n`,
+  'utf-8',
+);
+
+// ── Índices livianos para las landings ──────────────────────────────────
+//
+// USIntentLanding y COIntentLanding cargan sólo el archivo de texto de la
+// página que se está viendo. Para las tarjetas de páginas relacionadas les
+// basta este índice (título, descripción, grupo), sin el texto completo.
+const indiceUS = PAGINAS_US.map((p) => ({
+  slug: p.slug, h1: p.h1, metaDescription: p.metaDescription, grupo: p.grupo,
+  ...(p.audiencia ? { audiencia: p.audiencia } : {}),
+  modulo: MODULO_US[p.slug],
+  hermanas: hermanasDe(p.slug, p.grupo === 'industry' ? 6 : 3).map((h) => h.slug),
+}));
+fs.writeFileSync(
+  path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-index.generated.ts'),
+  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  + `import type { ModuloUS } from './us-intent-seo-content';\n`
+  + `export interface IndiceUS { slug: string; h1: string; metaDescription: string; grupo: string; audiencia?: string; modulo: ModuloUS; hermanas: string[] }\n`
+  + `export const INDICE_US: readonly IndiceUS[] = ${JSON.stringify(indiceUS)};\n`,
+  'utf-8',
+);
+const indiceCO = PAGINAS_CO.map((p) => ({
+  slug: p.slug, h1: p.h1, metaDescription: p.metaDescription, grupo: p.grupo,
+  modulo: MODULO_CO[p.slug],
+  hermanas: hermanasCO(p.slug, 3).map((h) => h.slug),
+}));
+fs.writeFileSync(
+  path.join(process.cwd(), 'src', 'app', 'data', 'co-pages-index.generated.ts'),
+  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  + `import type { ModuloCO } from './co-intent-seo-content';\n`
+  + `export interface IndiceCO { slug: string; h1: string; metaDescription: string; grupo: string; modulo: ModuloCO; hermanas: string[] }\n`
+  + `export const INDICE_CO: readonly IndiceCO[] = ${JSON.stringify(indiceCO)};\n`,
+  'utf-8',
+);
+fs.writeFileSync(
+  path.join(process.cwd(), 'src', 'app', 'data', 'co-pages-slugs.generated.ts'),
+  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  + `export const SLUGS_PAGINAS_CO: readonly string[] = ${JSON.stringify(PAGINAS_CO.map((p) => p.slug), null, 2)};\n`,
   'utf-8',
 );
 
@@ -275,7 +321,25 @@ for (const p of PAGINAS_US) {
   const hermanas = hermanasDe(p.slug, esSector ? 6 : 3);
   partes.push(`<h2 style="color:#0f172a">${esSector ? 'Also built for' : 'Related documents'}</h2><ul>${hermanas.map((h) => `<li>${enlace(`/${h.slug}`, esSector && h.audiencia ? h.audiencia : h.h1)}</li>`).join('')}</ul>`);
   if (esSector) partes.push(`<p>${enlace('/industries', 'See every industry we support')}</p>`);
-  partes.push(`<p>${enlace('/', p.cta)}</p>`);
+  partes.push(`<p>${enlace(p.ctaTo ?? '/', p.cta)}</p>`);
+  bodies[`/${p.slug}`] = envolver(partes.join(''));
+}
+for (const p of PAGINAS_CO) {
+  const partes: string[] = [
+    `<h1 style="color:#0f172a;line-height:1.2">${esc(p.h1)}</h1>`,
+    `<p>${esc(p.intro)}</p>`,
+    `<h2 style="color:#0f172a">${esc(p.problema.titulo)}</h2><p>${esc(p.problema.texto)}</p>`,
+    `<h2 style="color:#0f172a">Cómo te ayuda Codec Document</h2>`,
+    ...p.puntos.map((x) => `<h3 style="color:#0f172a">${esc(x.titulo)}</h3><p>${esc(x.texto)}</p>`),
+    `<h2 style="color:#0f172a">${esc(p.ley.titulo)}</h2><p>${esc(p.ley.texto)}</p>`,
+    `<h2 style="color:#0f172a">${esc(p.caso.titulo)}</h2><p>${esc(p.caso.texto)}</p>`,
+    ...(p.checklist ? [`<h2 style="color:#0f172a">${esc(p.checklist.titulo)}</h2><ul>${p.checklist.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`] : []),
+    `<h2 style="color:#0f172a">Preguntas frecuentes</h2>`,
+    ...p.faq.map((f) => `<h3 style="color:#0f172a">${esc(f.q)}</h3><p>${esc(f.a)}</p>`),
+    `<h2 style="color:#0f172a">Documentos relacionados</h2><ul>${hermanasCO(p.slug, 3).map((h) => `<li>${enlace(`/${h.slug}`, h.h1)}</li>`).join('')}</ul>`,
+    `<p>${enlace(HUB_CO.path, HUB_CO.label)}</p>`,
+    `<p>${enlace(p.ctaTo, p.cta)}</p>`,
+  ];
   bodies[`/${p.slug}`] = envolver(partes.join(''));
 }
 bodies[INDUSTRIES_HUB.path] = envolver([
@@ -283,6 +347,20 @@ bodies[INDUSTRIES_HUB.path] = envolver([
   `<p>${esc(INDUSTRIES_HUB.intro)}</p>`,
   `<ul>${PAGINAS_US_SECTORES.map((p) => `<li>${enlace(`/${p.slug}`, p.audiencia ?? p.h1)}: ${esc(p.metaDescription)}</li>`).join('')}</ul>`,
 ].join(''));
+
+// La página eje de Colombia tiene su instantánea renderizada en Chrome
+// (seo-snapshots.json); se le añade la lista de las treinta guías para que
+// los rastreadores que no ejecutan JS vean también esos enlaces. Si no hay
+// instantánea, se deja como está.
+{
+  const snapsFile = path.join(process.cwd(), 'seo-snapshots.json');
+  const snaps = fs.existsSync(snapsFile) ? JSON.parse(fs.readFileSync(snapsFile, 'utf-8')) as Record<string, string> : {};
+  const base = snaps[HUB_CO.path];
+  if (base) {
+    const lista = `<h2 style="color:#0f172a">Guías y documentos para Colombia</h2><ul>${PAGINAS_CO.map((p) => `<li>${enlace(`/${p.slug}`, p.h1)}</li>`).join('')}</ul>`;
+    bodies[HUB_CO.path] = envolver(base + lista);
+  }
+}
 
 const bodiesFile = path.join(process.cwd(), '.seo-bodies.json');
 fs.writeFileSync(bodiesFile, JSON.stringify(bodies), 'utf-8');
