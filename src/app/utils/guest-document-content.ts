@@ -57,7 +57,7 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   };
 }
 
-async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }, idioma: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs: DocxParagraph[] }> {
+async function interpolateCustomTemplate(documentData: { templateId?: string; values?: Record<string, string> }, idioma: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs: DocxParagraph[]; userValues: string[] }> {
   if (!documentData.templateId) throw new Error('Missing templateId');
   const template = await getDocxTemplateByIdPublic(documentData.templateId);
   if (!template) throw new Error('Template not found');
@@ -78,10 +78,10 @@ async function interpolateCustomTemplate(documentData: { templateId?: string; va
     nombrePersonaDeValores(documentData.values ?? {}),
     idioma,
   );
-  return { content, title: titulo, formattedParagraphs };
+  return { content, title: titulo, formattedParagraphs, userValues: Object.values(documentData.values ?? {}) };
 }
 
-export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[]; signerNote?: string }> {
+export async function buildGuestDocumentContent(tx: SignTransaction, language: 'en' | 'es'): Promise<{ content: string; title: string; formattedParagraphs?: DocxParagraph[]; signerNote?: string; userValues?: string[] }> {
   if (tx.document_type === 'custom-template') {
     return interpolateCustomTemplate(tx.document_data as { templateId?: string; values?: Record<string, string> }, language);
   }

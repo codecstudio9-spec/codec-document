@@ -425,7 +425,7 @@ export default function SignTransactionPage() {
     if (!tx) return;
     setDownloadingCopy(true);
     try {
-      const { content, title, formattedParagraphs, signerNote } = await buildGuestDocumentContent(tx, language);
+      const { content, title, formattedParagraphs, signerNote, userValues } = await buildGuestDocumentContent(tx, language);
       const jurisdiction = resolveJurisdiction((await detectSignerCountryCode()) || null);
       const parsedId = parseIdEvidencePayload(tx.recipient_id_photo);
       // Conserva tildes y espacios: la limpieza anterior dejaba
@@ -436,6 +436,7 @@ export default function SignTransactionPage() {
       const blob = await PDFGenerator.generateBlob({
         content,
         formattedParagraphs,
+        userValues,
         title,
         fileName,
         language,

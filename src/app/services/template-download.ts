@@ -37,6 +37,7 @@ export async function downloadFilledTemplatePdf(
   const blob = await PDFGenerator.generateBlob({
     content,
     formattedParagraphs: paragraphs,
+    userValues: Object.values(values),
     title: titulo,
     fileName,
     language,

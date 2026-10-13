@@ -123,6 +123,7 @@ export function CustomTemplatePreviewPage() {
       const blob = await PDFGenerator.generateBlob({
         content,
         formattedParagraphs: paragraphs,
+        userValues: Object.values(savedData.values ?? {}),
         title: titulo,
         fileName,
         language,

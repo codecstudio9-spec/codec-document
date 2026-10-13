@@ -4,6 +4,7 @@ import { DEFAULT_JURISDICTION, type SignatureJurisdiction } from '../data/signat
 import { etiquetaFiscal, nombrePais } from '../data/paises-fiscales';
 import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
 import { resolveEvidenceImageDataUrl } from './document-evidence-service';
+import { pulirParrafos } from '../utils/pulir-redaccion';
 
 interface PDFGeneratorOptions {
   content: string;
@@ -117,6 +118,8 @@ export class PDFGenerator {
   private language: 'en' | 'es' = 'en';
   /** Valores del formulario, en mayúsculas, para reconocerlos al maquetar. */
   private datosDelUsuario = new Set<string>();
+  /** La primera página lleva membrete propio (logo o datos de la empresa). */
+  private primeraPaginaConMembrete = false;
   private jurisdiction: SignatureJurisdiction = DEFAULT_JURISDICTION;
 
   private static getAuditLocale(language: 'en' | 'es'): string {
@@ -913,8 +916,9 @@ export class PDFGenerator {
     // the same "ORDINAL-TITLE:" convention in English, and without this
     // the heading fell through to 'body', where its own colon made it get
     // misclassified as a short field-line instead of justified clause prose.
-    if (/^(PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|S[ÉE]PTIMA|OCTAVA|NOVENA|D[ÉE]CIMA(\s+\p{L}+)?|PAR[ÁA]GRAFO(\s+\p{L}+)?)\s*[\-:]/iu.test(t)) return 'clauseHeading';
-    if (/^(FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH|NINTH|TENTH)\s*[\-:]/i.test(t)) return 'clauseHeading';
+    // También «PRIMERA. CARGO:» (con punto), la forma más común en Colombia.
+    if (/^(PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|S[ÉE]PTIMA|OCTAVA|NOVENA|D[ÉE]CIMA(\s+\p{L}+)?|PAR[ÁA]GRAFO(\s+\p{L}+)?)\s*[\-:.]/iu.test(t)) return 'clauseHeading';
+    if (/^(FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH|NINTH|TENTH)\s*[\-:.]/i.test(t)) return 'clauseHeading';
     return 'body';
   }
 
@@ -949,13 +953,17 @@ export class PDFGenerator {
     let titleAssigned = false;
     let centerNextFieldLine = false;
 
-    for (const para of paragraphs) {
+    for (const para of pulirParrafos(paragraphs, this.language)) {
       if (para.runs.length === 0) {
         this.addSpacing(0.25); // a Word blank line ≠ a real paragraph gap
         continue;
       }
       const text = para.runs.map((r) => r.text).join('');
-      const role = this.classifyParagraphRole(text, titleAssigned);
+      // Un párrafo que es sólo un dato escrito por el usuario (el nombre de
+      // la empresa en mayúsculas, por ejemplo) nunca es título ni sección:
+      // el título lo pone quien escribió la plantilla, no el formulario.
+      const esDatoDelUsuario = this.datosDelUsuario.has(text.trim().toUpperCase());
+      const role = esDatoDelUsuario ? 'body' : this.classifyParagraphRole(text, titleAssigned);
 
       if (role === 'title') {
         titleAssigned = true;
@@ -1367,18 +1375,22 @@ export class PDFGenerator {
         } catch { /* broken logos must not block legal-document generation */ }
       }
 
+      // En la primera página el membrete ya presenta a la empresa (logo,
+      // nombre y datos): repetir su nombre y lema en la franja de arriba
+      // es ruido. Ahí sólo queda la línea de color.
+      const omitirTextoFranja = i === 1 && this.primeraPaginaConMembrete;
       const identityLabel = (branding?.companyLegalName || '').trim() || 'Codec Document';
       const lema = (branding?.headerText || '').trim();
       const textoIzqX = anchoLogo && !logoOnRight ? this.margin + anchoLogo + 2.5 : this.margin;
       this.doc.setFont('helvetica', 'bold');
       this.doc.setFontSize(6.5);
       this.doc.setTextColor(37, 99, 235);
-      this.safeText(identityLabel.toUpperCase().slice(0, 60), textoIzqX, 7.6);
+      if (!omitirTextoFranja) this.safeText(identityLabel.toUpperCase().slice(0, 60), textoIzqX, 7.6);
 
       const derecha = lema && lema.toLowerCase() !== identityLabel.toLowerCase()
         ? lema.slice(0, 70)
         : (language === 'en' && branding?.companyState ? `State of ${branding.companyState}` : '');
-      if (derecha) {
+      if (derecha && !omitirTextoFranja) {
         this.doc.setFont('helvetica', 'normal');
         this.doc.setFontSize(6);
         this.doc.setTextColor(100, 116, 139);
@@ -1506,12 +1518,15 @@ export class PDFGenerator {
 
     if (hasLogo && branding?.logoDataUrl) {
       try {
-        // Caja más ancha que alta (28×12) y anclada a la derecha: un logotipo
+        // Caja más ancha que alta y anclada a un lado: un logotipo
         // apaisado necesita ancho para no encogerse a nada, y uno cuadrado
         // sigue ocupando sus 12 mm de alto. Con la caja de 12×12 anterior, un
         // logo 4:1 se aplastaba hasta quedar ilegible en la cabecera.
-        const boxW = 28;
-        const boxH = 12;
+        // Más grande que antes (28×12): el membrete es la firma visual de la
+        // empresa y se veía diminuto. Sigue anclado al margen, así que no
+        // invade ni el borde de la página ni la columna de datos de la empresa.
+        const boxW = 48;
+        const boxH = 20;
         // Debajo de la franja superior (10 mm): con topY - 4 el logo la tocaba.
         const logoY = topY + 1;
         // Force fully opaque, vibrant logo in premium header.
@@ -1533,6 +1548,8 @@ export class PDFGenerator {
 
     // Remove duplicated top title in premium header.
     // Keep only the main document title rendered later in the content flow.
+
+    this.primeraPaginaConMembrete = hasLogo || companyLines.length > 0;
 
     if (companyLines.length) {
       this.doc.setTextColor(90, 90, 90);
@@ -1560,7 +1577,12 @@ export class PDFGenerator {
     );
     this.doc.line(this.margin, dividerY, this.pageWidth - this.margin, dividerY);
 
-    this.currentY = Math.max(this.currentY, dividerY + 6);
+    // El cuerpo empieza justo debajo de la línea del membrete. Antes se
+    // sumaba además el espacio reservado por applyBrandingTopSpacing (hasta
+    // 36 mm) y quedaba un hueco en blanco enorme entre el membrete y el
+    // título; ese espacio sólo hace falta cuando no hay membrete dibujado.
+    const yAntesDeReservar = this.currentY - this.topReservedSpace;
+    this.currentY = Math.max(yAntesDeReservar, dividerY + 8);
     // Ensure content starts below the 10mm top header band
     this.currentY = Math.max(this.currentY, 16);
   }
@@ -2651,6 +2673,67 @@ export class PDFGenerator {
     });
   }
 
+  /**
+   * Quita el borde vacío (transparente o blanco) alrededor de un logo.
+   *
+   * La mayoría de logos se exportan con mucho aire alrededor, y como la
+   * cabecera encaja la imagen ENTERA en su caja, el dibujo real terminaba
+   * ocupando una fracción mínima: en el membrete se veía un logo diminuto
+   * aunque la caja fuera grande. Recortado, el logo llena su caja sin
+   * deformarse. Si algo falla (imagen rota, sin canvas) se devuelve tal cual.
+   */
+  private static async recortarBordesVacios(dataUrl: string): Promise<string> {
+    if (typeof document === 'undefined' || !dataUrl.startsWith('data:image')) return dataUrl;
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = dataUrl;
+      });
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      if (!w || !h) return dataUrl;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return dataUrl;
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(0, 0, w, h);
+      const vacio = (idx: number) => data[idx + 3] < 16 || (data[idx] > 245 && data[idx + 1] > 245 && data[idx + 2] > 245);
+      let top = h, left = w, right = -1, bottom = -1;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (!vacio((y * w + x) * 4)) {
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+          }
+        }
+      }
+      if (right < 0) return dataUrl; // imagen completamente vacía
+      // Un pequeño margen para que el trazo no quede pegado al borde.
+      const pad = Math.round(Math.max(right - left, bottom - top) * 0.02);
+      left = Math.max(0, left - pad);
+      top = Math.max(0, top - pad);
+      right = Math.min(w - 1, right + pad);
+      bottom = Math.min(h - 1, bottom + pad);
+      const cw = right - left + 1;
+      const ch = bottom - top + 1;
+      // Si apenas hay borde, no vale la pena recodificar la imagen.
+      if (cw * ch > w * h * 0.9) return dataUrl;
+      const out = document.createElement('canvas');
+      out.width = cw;
+      out.height = ch;
+      out.getContext('2d')!.drawImage(canvas, left, top, cw, ch, 0, 0, cw, ch);
+      return out.toDataURL('image/png');
+    } catch {
+      return dataUrl;
+    }
+  }
+
   private static async resolveSignatureDataUrls(
     signatures: PDFGeneratorOptions['signatures'],
   ): Promise<PDFGeneratorOptions['signatures']> {
@@ -2676,7 +2759,10 @@ export class PDFGenerator {
       resolveEvidenceImageDataUrl(options.identityIdDocFront),
       resolveEvidenceImageDataUrl(options.identityIdDocBack),
     ]);
-    const opts = { ...options, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
+    const branding = options.branding?.logoDataUrl
+      ? { ...options.branding, logoDataUrl: await PDFGenerator.recortarBordesVacios(options.branding.logoDataUrl) }
+      : options.branding;
+    const opts = { ...options, branding, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
@@ -2809,7 +2895,10 @@ export class PDFGenerator {
       resolveEvidenceImageDataUrl(options.identityIdDocFront),
       resolveEvidenceImageDataUrl(options.identityIdDocBack),
     ]);
-    const opts = { ...options, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
+    const branding = options.branding?.logoDataUrl
+      ? { ...options.branding, logoDataUrl: await PDFGenerator.recortarBordesVacios(options.branding.logoDataUrl) }
+      : options.branding;
+    const opts = { ...options, branding, signatures: resolvedSigs, identitySelfie, identityIdDoc, identityIdDocFront, identityIdDocBack };
 
     const generator = new PDFGenerator(opts.title);
     generator.jurisdiction = opts.jurisdiction ?? DEFAULT_JURISDICTION;
