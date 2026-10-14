@@ -28,11 +28,10 @@
 
   .barra-sup { display: flex; align-items: center; justify-content: space-between; }
   .marca { display: flex; align-items: center; gap: 10px; }
-  .logo {
-    width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); box-shadow: 0 10px 22px rgba(37,99,235,0.35);
-  }
-  .logo img { width: 26px; height: 26px; }
+  /* El ícono ya es el logo completo (cuadro redondeado con el escudo): se
+     muestra tal cual, en alta resolución, sin otro fondo alrededor. */
+  .logo { width: 42px; height: 42px; flex: none; border-radius: 12px; box-shadow: 0 10px 22px rgba(37,99,235,0.30); }
+  .logo img { width: 42px; height: 42px; display: block; border-radius: 12px; }
   .marca-txt b { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: var(--tinta); }
   .marca-txt b span { color: var(--indigo-cl); }
   .marca-txt small { display: block; font-size: 11.5px; color: var(--gris); margin-top: -2px; }
@@ -161,7 +160,7 @@
   <div class="contenedor">
     <div class="barra-sup">
       <div class="marca">
-        <div class="logo"><img src="icons/icon-48.png" alt="" /></div>
+        <div class="logo"><img src="icons/icon-128.png" alt="Codec Document" /></div>
         <div class="marca-txt"><b>Codec <span>Document</span></b><small>Contadores · Descargador DIAN</small></div>
       </div>
       <button class="voz" id="btnVoz" type="button" title="Escuchar las instrucciones">
