@@ -350,6 +350,7 @@ export class DownloadManager {
     chrome.alarms.clear(ALARMA_LATIDO);
     await this._guardar();
     clearInterval(latido);
+    chrome.action.setBadgeText({ text: '' }).catch(() => {});
     log(this.cancelado ? 'Descarga detenida.' : 'Rango terminado.');
     this._emitir('terminado', this._resumen());
   }
@@ -360,6 +361,7 @@ export class DownloadManager {
   }
 
   async reanudarTrasValidacion() {
+    chrome.action.setBadgeText({ text: '' }).catch(() => {});
     this.pausadoPorValidacion = false;
     this.ultimoBloqueo = null;
     await this._guardar();
@@ -626,6 +628,8 @@ export class DownloadManager {
       } catch { /* no crítico */ }
     }
     this._emitir('bloqueo', this.ultimoBloqueo);
+    chrome.action.setBadgeBackgroundColor({ color: '#E11D48' }).catch(() => {});
+    chrome.action.setBadgeText({ text: '!' }).catch(() => {});
     await this._guardar();
   }
 

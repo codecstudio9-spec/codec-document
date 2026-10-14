@@ -572,7 +572,10 @@ export class DianDownloadWorker {
         const err = chrome.runtime.lastError;
         if (err && !/already attached/i.test(err.message || '')) { reject(new Error(err.message)); return; }
         this._debuggerListo = true;
-        resolve();
+        // La página cree que tiene el foco aunque el contador esté usando
+        // otra ventana u otro programa. Así no hace falta traer la ventana de
+        // la DIAN al frente en cada clic y el contador puede seguir trabajando.
+        chrome.debugger.sendCommand({ tabId: this.tabId }, 'Emulation.setFocusEmulationEnabled', { enabled: true }, () => { void chrome.runtime.lastError; resolve(); });
       });
     });
   }
@@ -962,8 +965,10 @@ export class DianDownloadWorker {
       // (ver auditoría 2026-08-25(b) al inicio del archivo).
       // Primero se adjunta el depurador (su barra amarilla empuja la página
       // hacia abajo) y DESPUÉS se mide dónde está el botón.
-      const alFrente = this.enPrimerPlano && this.windowId != null
-        ? chrome.windows.update(this.windowId, { focused: true }).then(() => chrome.tabs.update(tabId, { active: true })).catch(() => {})
+      // Sólo se asegura que la pestaña sea la activa de SU ventana (sin robar
+      // el foco del sistema): el contador puede seguir usando el PC.
+      const alFrente = this.windowId != null
+        ? chrome.tabs.update(tabId, { active: true }).then(() => {}).catch(() => {})
         : Promise.resolve();
       alFrente.then(() => this._adjuntarDebugger()).catch(() => {}).then(() => dormir(600)).then(() => this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS))
         .then(async (r) => {

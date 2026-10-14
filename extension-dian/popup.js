@@ -225,7 +225,8 @@ function ponerCorriendo(v) {
   btnIniciar.disabled = v;
   const br = document.getElementById('btnRango');
   if (br) br.disabled = v;
-  btnDetener.style.display = v ? 'inline-block' : 'none';
+  btnDetener.style.display = v ? 'flex' : 'none';
+  if (v) document.getElementById('listo').style.display = 'none';
 }
 
 function formatearDuracion(seg) {
@@ -419,6 +420,7 @@ chrome.runtime.onMessage.addListener((msg) => {
       resumenTextoEl.textContent = `No se pudo iniciar: ${msg.fatal}`;
       resumenBadgesEl.innerHTML = '';
     }
+    else mostrarListo(msg);
   }
 });
 
@@ -443,6 +445,8 @@ chrome.runtime.onMessage.addListener((msg) => {
   actualizarMetricas(m);
   if (m.corriendo) {
     ponerCorriendo(true);
+  } else if (m.total > 0 && m.completados === m.total) {
+    mostrarListo(m);
   } else if (m.reanudable) {
     reanudarEl.style.display = 'block';
     reanudarEl.textContent = `Quedó una descarga a medias: ${m.completados} de ${m.total} lograron bajarse. Si el enlace venció, pide uno nuevo, pégalo y vuelve a iniciar. Sigue donde se quedó y no repite lo ya bajado.`;
@@ -516,3 +520,21 @@ chrome.runtime.onMessage.addListener((msg) => {
     window.close();
   });
 }
+
+
+// ── Al terminar: la carpeta y el siguiente paso, a un clic ──────────────
+function mostrarListo(m) {
+  if (!m || !(m.completados > 0)) return;
+  const tarjeta = document.getElementById('listo');
+  document.getElementById('listoTitulo').textContent =
+    `${m.completados} ${m.completados === 1 ? 'factura descargada' : 'facturas descargadas'}`;
+  document.getElementById('listoRuta').textContent = `Descargas/${m.carpeta || 'DIAN'}`;
+  tarjeta.style.display = 'block';
+  tarjeta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.getElementById('btnListoCarpeta').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ tipo: 'abrirCarpeta' });
+});
+document.getElementById('btnListoCodec').addEventListener('click', () => {
+  chrome.tabs.create({ url: 'https://www.codecdocument.com/documentos-electronicos' });
+});

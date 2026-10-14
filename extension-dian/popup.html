@@ -159,6 +159,31 @@
   #bloqueo { display: none; margin-bottom: 14px; padding: 16px; background: var(--error-fondo); border: 1px solid #FECDD3; border-radius: 18px; font-size: 13px; color: var(--error); }
   #bloqueo button { margin-top: 10px; width: 100%; height: 46px; border: none; border-radius: 14px; background: #E11D48; color: #fff; font-weight: 800; }
 
+  .avisos { margin-top: 14px; display: grid; gap: 8px; }
+  .aviso-item { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 14px; font-size: 12.5px; line-height: 1.45; }
+  .aviso-item svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+  .aviso-item.info { background: #EFF6FF; color: #1E3A8A; }
+  .aviso-item.atencion { background: #FFFBEB; color: #92400E; }
+  .relieve.rojo {
+    background: linear-gradient(135deg, #BE123C 0%, #F43F5E 45%, #BE123C 72%, #BE123C 100%);
+    box-shadow: 0 14px 30px rgba(190,18,60,0.35), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.20);
+    margin-top: 14px;
+  }
+  #listo { display: none; margin-bottom: 14px; padding: 18px; border-radius: 24px; background: #fff; border: 1px solid #A7F3D0; box-shadow: 0 20px 40px rgba(5,150,105,0.12); }
+  #listo .cab { display: flex; align-items: center; gap: 12px; }
+  #listo .ok { width: 40px; height: 40px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #059669, #10B981); color: #fff; box-shadow: 0 8px 18px rgba(5,150,105,0.30); }
+  #listo .ok svg { width: 22px; height: 22px; }
+  #listo h2 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: -0.02em; }
+  #listo p { margin: 2px 0 0; font-size: 12.5px; color: var(--gris); }
+  #listo .ruta { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #F8FAFC; font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--texto); word-break: break-all; }
+  #listo .pasos { margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--texto); }
+  #listo .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  #listo .botones .relieve { height: 48px; font-size: 14px; }
+  .relieve.verde {
+    background: linear-gradient(135deg, #047857 0%, #10B981 45%, #047857 72%, #047857 100%);
+    box-shadow: 0 14px 30px rgba(5,150,105,0.35), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.20);
+  }
+
   #aviso { margin: 12px 0 0; font-size: 13px; color: var(--gris); line-height: 1.65; }
 </style>
 </head>
@@ -184,6 +209,23 @@
     <div class="encabezado">
       <h1>Descarga tus facturas de la DIAN</h1>
       <p>XML y PDF de cada documento, desde tu propio navegador y con tu sesión. Nada pasa por un servidor compartido.</p>
+    </div>
+
+    <div id="listo">
+      <div class="cab">
+        <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div><h2 id="listoTitulo">Descarga terminada</h2><p>Cada factura quedó en un .zip con su XML y su PDF.</p></div>
+      </div>
+      <div class="ruta" id="listoRuta">Descargas/DIAN</div>
+      <ol class="pasos">
+        <li>Abre la carpeta.</li>
+        <li>En Codec Document arrástrala a <b>Subir mis XML</b> (o usa <b>Importar a Codec</b>).</li>
+        <li>Listo: Excel, plantilla de tu programa, cruce con la contabilidad y causación.</li>
+      </ol>
+      <div class="botones">
+        <button class="relieve verde" id="btnListoCarpeta" type="button">Abrir carpeta</button>
+        <button class="relieve azul" id="btnListoCodec" type="button">Analizar en Codec</button>
+      </div>
     </div>
 
     <div id="reanudar"></div>
@@ -230,6 +272,16 @@
         </button>
       </div>
       <div id="estadoRango"></div>
+      <div class="avisos">
+        <div class="aviso-item info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+          <span><b>Puedes seguir usando tu computador</b> mientras descargo. Solo no cierres ni minimices la ventana de la DIAN que se abre.</span>
+        </div>
+        <div class="aviso-item atencion">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          <span><b>La DIAN puede pedirte que confirmes que eres humano</b> (casilla de "no soy un robot"). Si pasa, te muestro la ventana y el ícono de Codec se marca con <b>!</b>: haz el clic y dale Continuar aquí.</span>
+        </div>
+      </div>
     </section>
 
     <section class="tarjeta panel" id="panelCufes" hidden>
@@ -262,8 +314,11 @@
         <div class="fila-m"><span>Promedio</span><b id="mPromedio">0</b></div>
         <div class="fila-m"><span>Tiempo restante</span><b id="mEta">0</b></div>
       </div>
+      <button class="relieve rojo" id="btnDetener" type="button" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        Detener descarga
+      </button>
       <div class="acciones">
-        <button class="neutro" id="btnDetener" style="display:none;">Detener</button>
         <button class="neutro" id="btnExportar" type="button">Descargar registro</button>
         <button class="neutro peligro" id="btnBorrar">Borrar todo</button>
       </div>

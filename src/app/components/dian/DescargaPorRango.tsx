@@ -142,6 +142,15 @@ export function DescargaPorRango({ enviar, onImportar }: Props) {
           </select>
         </label>
       </div>
+      <div className="mt-3 space-y-2">
+        <p className="rounded-xl bg-blue-50 px-3 py-2 text-[11.5px] leading-relaxed text-blue-900">
+          <b>Puedes seguir usando tu computador</b> mientras descarga. Solo no cierres ni minimices la ventana de la DIAN que se abre.
+        </p>
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-[11.5px] leading-relaxed text-amber-900">
+          <b>La DIAN puede pedirte que confirmes que eres humano</b> (casilla de "no soy un robot"). Si pasa, la ventana de la DIAN
+          sale al frente y aquí aparece un aviso: haz el clic allá y luego dale continuar.
+        </p>
+      </div>
       <input
         value={enlace}
         onChange={(e) => setEnlace(e.target.value)}
