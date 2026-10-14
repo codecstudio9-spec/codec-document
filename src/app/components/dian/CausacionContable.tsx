@@ -230,7 +230,7 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
                   className="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 focus:bg-white"
                 >
                   {empresas.slice(0, 40).map((e) => (
-                    <option key={e.nit} value={e.nit}>{e.nombre || 'Sin nombre'} — NIT {e.nit} ({e.documentos} doc.)</option>
+                    <option key={e.nit} value={e.nit}>{e.nombre || 'Sin nombre'}, NIT {e.nit} ({e.documentos} doc.)</option>
                   ))}
                 </select>
               </label>
@@ -466,7 +466,7 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
                 </p>
                 {resultado.avisos.filter((a) => a.nivel === 'revisar').length > 0 && (
                   <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    {resultado.avisos.filter((a) => a.nivel === 'revisar').length} punto(s) para revisar — están en la hoja «Revisar» del Excel.
+                    {resultado.avisos.filter((a) => a.nivel === 'revisar').length} punto(s) para revisar. Están en la hoja «Revisar» del Excel.
                   </p>
                 )}
 

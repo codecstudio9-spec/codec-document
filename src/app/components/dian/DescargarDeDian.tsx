@@ -68,7 +68,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
     if (!cufesIniciales?.length) return;
     try {
       await navigator.clipboard.writeText(cufesIniciales.join('\n'));
-      toast.success(`${cufesIniciales.length} CUFEs copiados — pégalos en el popup de la extensión`);
+      toast.success(`${cufesIniciales.length} CUFEs copiados. Pégalos en el popup de la extensión`);
     } catch {
       toast.error('No se pudo copiar. Selecciona la lista de abajo a mano.');
     }
@@ -141,7 +141,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           <span>
             La DIAN empezó a atar el token al computador que lo pide. Un servidor compartido
-            —como el que usaba esta pantalla antes— ya no puede autenticarlo. Por eso la
+            (como el que usaba esta pantalla antes) ya no puede autenticarlo. Por eso la
             descarga se mudó a una extensión que corre en tu propio Chrome.
           </span>
         </p>
@@ -180,7 +180,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
             </p>
             <ol className="mt-3 space-y-2.5">
               {[
-                'Entra a la DIAN y solicita un token — te llega el enlace al correo.',
+                'Entra a la DIAN y solicita un token y te llega el enlace al correo.',
                 <>Haz clic en el ícono de <strong>Codec Document</strong> en tu barra de Chrome, junto a la barra de direcciones.</>,
                 'Pega el enlace ahí, dale a Probar, pega tus CUFEs y dale a Iniciar descarga.',
                 <>Cuando termine, los archivos quedan en <code className="rounded bg-white px-1 py-0.5 text-[11px]">Descargas/DIAN/</code>. Arrástralos a «Subir mis XML».</>,
@@ -221,9 +221,9 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
               </summary>
               <ol className="mt-3 space-y-2.5">
                 {[
-                  'Descomprime el .zip que acabas de bajar — te queda una carpeta llamada "codec-document-descargador-dian".',
+                  'Descomprime el .zip que acabas de bajar. Te queda una carpeta llamada "codec-document-descargador-dian".',
                   <>Abre <code className="rounded bg-white px-1 py-0.5 text-[11px]">chrome://extensions</code> en una pestaña nueva (pégalo directo en la barra de direcciones).</>,
-                  'Activa "Modo de desarrollador" — el interruptor está arriba, a la derecha.',
+                  'Activa "Modo de desarrollador". El interruptor está arriba, a la derecha.',
                   'Dale a "Cargar descomprimida" y selecciona la carpeta que descomprimiste.',
                 ].map((t, i) => (
                   <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-slate-600">
@@ -243,7 +243,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
               className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               <RefreshCw className={`size-3.5 ${comprobando ? 'animate-spin' : ''}`} />
-              Ya la instalé — comprobar
+              Ya la instalé, comprobar
             </button>
           </div>
         )}

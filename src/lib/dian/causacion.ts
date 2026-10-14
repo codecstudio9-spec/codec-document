@@ -125,10 +125,10 @@ export const ETIQUETA_CUENTA: Record<keyof CuentasEmpresa, string> = {
   gasto_defecto: 'Gasto o costo por defecto (compras)',
   proveedores: 'Proveedores nacionales',
   iva_descontable: 'IVA descontable',
-  retefuente_compras: 'Retención en la fuente por pagar — compras',
-  retefuente_servicios: 'Retención en la fuente por pagar — servicios',
-  retefuente_honorarios: 'Retención en la fuente por pagar — honorarios',
-  retefuente_arrendamientos: 'Retención en la fuente por pagar — arrendamientos',
+  retefuente_compras: 'Retención en la fuente por pagar de compras',
+  retefuente_servicios: 'Retención en la fuente por pagar de servicios',
+  retefuente_honorarios: 'Retención en la fuente por pagar de honorarios',
+  retefuente_arrendamientos: 'Retención en la fuente por pagar de arrendamientos',
   reteiva_por_pagar: 'Retención de IVA por pagar',
   reteica_por_pagar: 'Retención de ICA por pagar',
   anticipo_proveedores: 'Anticipos a proveedores',
@@ -136,9 +136,9 @@ export const ETIQUETA_CUENTA: Record<keyof CuentasEmpresa, string> = {
   ingresos: 'Ingresos operacionales',
   iva_generado: 'IVA generado',
   otros_impuestos_por_pagar: 'INC, bolsas y otros impuestos por pagar',
-  anticipo_retefuente: 'Anticipo de impuestos — retención en la fuente',
-  anticipo_reteiva: 'Anticipo de impuestos — retención de IVA',
-  anticipo_reteica: 'Anticipo de impuestos — retención de ICA',
+  anticipo_retefuente: 'Anticipo de impuestos por retención en la fuente',
+  anticipo_reteiva: 'Anticipo de impuestos por retención de IVA',
+  anticipo_reteica: 'Anticipo de impuestos por retención de ICA',
   anticipo_clientes: 'Anticipos y avances recibidos de clientes',
 };
 
@@ -258,22 +258,22 @@ export function empresasDetectadas(docs: DocCausable[]): Array<{ nit: string; no
 /** Cuentas de gasto sugeridas por palabras en la descripción de los
  *  productos o en el nombre del proveedor. Sólo para COMPRAS. */
 const SUGERENCIAS: Array<{ re: RegExp; cuenta: string; nombre: string; concepto: ConceptoRetencion }> = [
-  { re: /arriend|arrendamiento|canon/i, cuenta: '512010', nombre: 'Arrendamientos — construcciones y edificaciones', concepto: 'arrendamientos' },
-  { re: /honorari|asesor[ií]a|consultor[ií]a|revisor[ií]a fiscal|contabilidad|abogad/i, cuenta: '511095', nombre: 'Honorarios — otros', concepto: 'honorarios' },
-  { re: /energ[ií]a|\benel\b|codensa|electrific/i, cuenta: '513530', nombre: 'Servicios — energía eléctrica', concepto: 'ninguno' },
-  { re: /acueducto|alcantarillado|aseo urbano/i, cuenta: '513525', nombre: 'Servicios — acueducto y alcantarillado', concepto: 'ninguno' },
-  { re: /\bgas natural\b|vanti|gases de occidente/i, cuenta: '513555', nombre: 'Servicios — gas', concepto: 'ninguno' },
-  { re: /internet|telefon|telecomunicac|celular|plan de datos|\bclaro\b|movistar|\btigo\b|\betb\b|comcel/i, cuenta: '513535', nombre: 'Servicios — teléfono e internet', concepto: 'servicios' },
-  { re: /transporte|flete|env[ií]o|mensajer|servientrega|coordinadora|interrapidisimo|domicilio/i, cuenta: '513550', nombre: 'Servicios — transporte, fletes y acarreos', concepto: 'servicios' },
-  { re: /vigilancia|seguridad privada|\baseo\b|limpieza/i, cuenta: '513505', nombre: 'Servicios — aseo y vigilancia', concepto: 'servicios' },
+  { re: /arriend|arrendamiento|canon/i, cuenta: '512010', nombre: 'Arrendamientos, construcciones y edificaciones', concepto: 'arrendamientos' },
+  { re: /honorari|asesor[ií]a|consultor[ií]a|revisor[ií]a fiscal|contabilidad|abogad/i, cuenta: '511095', nombre: 'Honorarios, otros', concepto: 'honorarios' },
+  { re: /energ[ií]a|\benel\b|codensa|electrific/i, cuenta: '513530', nombre: 'Servicios, energía eléctrica', concepto: 'ninguno' },
+  { re: /acueducto|alcantarillado|aseo urbano/i, cuenta: '513525', nombre: 'Servicios, acueducto y alcantarillado', concepto: 'ninguno' },
+  { re: /\bgas natural\b|vanti|gases de occidente/i, cuenta: '513555', nombre: 'Servicios, gas', concepto: 'ninguno' },
+  { re: /internet|telefon|telecomunicac|celular|plan de datos|\bclaro\b|movistar|\btigo\b|\betb\b|comcel/i, cuenta: '513535', nombre: 'Servicios, teléfono e internet', concepto: 'servicios' },
+  { re: /transporte|flete|env[ií]o|mensajer|servientrega|coordinadora|interrapidisimo|domicilio/i, cuenta: '513550', nombre: 'Servicios, transporte, fletes y acarreos', concepto: 'servicios' },
+  { re: /vigilancia|seguridad privada|\baseo\b|limpieza/i, cuenta: '513505', nombre: 'Servicios, aseo y vigilancia', concepto: 'servicios' },
   { re: /papeler[ií]a|resma|t[óo]ner|cartucho|[úu]tiles/i, cuenta: '519530', nombre: 'Útiles, papelería y fotocopias', concepto: 'compras' },
   { re: /combustible|gasolina|acpm|di[ée]sel|terpel|primax|biomax/i, cuenta: '519535', nombre: 'Combustibles y lubricantes', concepto: 'compras' },
   { re: /cafeter[ií]a|caf[ée]\b|elementos de aseo/i, cuenta: '519525', nombre: 'Elementos de aseo y cafetería', concepto: 'compras' },
   { re: /restaurante|almuerzo|alimentaci[óo]n/i, cuenta: '519520', nombre: 'Gastos de representación y relaciones públicas', concepto: 'compras' },
-  { re: /p[óo]liza|seguro\b|seguros\b|aseguradora/i, cuenta: '513095', nombre: 'Seguros — otros', concepto: 'ninguno' },
+  { re: /p[óo]liza|seguro\b|seguros\b|aseguradora/i, cuenta: '513095', nombre: 'Seguros, otros', concepto: 'ninguno' },
   { re: /publicidad|pauta|marketing|propaganda/i, cuenta: '523560', nombre: 'Publicidad, propaganda y promoción', concepto: 'servicios' },
-  { re: /software|licencia|hosting|dominio|suscripci[óo]n|nube|\bsaas\b/i, cuenta: '513595', nombre: 'Servicios — otros', concepto: 'servicios' },
-  { re: /mantenimiento|reparaci[óo]n/i, cuenta: '514595', nombre: 'Mantenimiento y reparaciones — otros', concepto: 'servicios' },
+  { re: /software|licencia|hosting|dominio|suscripci[óo]n|nube|\bsaas\b/i, cuenta: '513595', nombre: 'Servicios, otros', concepto: 'servicios' },
+  { re: /mantenimiento|reparaci[óo]n/i, cuenta: '514595', nombre: 'Mantenimiento y reparaciones, otros', concepto: 'servicios' },
 ];
 
 export interface Sugerencia { cuenta: string; nombre: string; concepto: ConceptoRetencion; motivo: string }
@@ -401,7 +401,7 @@ export function causar(
     comprobante++;
     const fecha = d.issue_date ?? '';
     const tipoTxt = d.doc_type === 'nota_credito' ? 'NC' : d.doc_type === 'nota_debito' ? 'ND' : d.doc_type === 'documento_soporte' ? 'DS' : 'FV';
-    const detalle = `${rol.rol === 'compra' ? 'Compra' : 'Venta'} ${tipoTxt} ${numero} — ${rol.terceroNombre}`.slice(0, 120);
+    const detalle = `${rol.rol === 'compra' ? 'Compra' : 'Venta'} ${tipoTxt} ${numero} ${rol.terceroNombre}`.slice(0, 120);
     const filas: Movimiento[] = [];
     const mov = (cuenta: string, debito: number, credito: number, base = 0, cc = '') => {
       // La nota crédito reversa: lo que era débito pasa a crédito.

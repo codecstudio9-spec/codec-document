@@ -48,7 +48,7 @@ export function construirExcelCausacion(
       .map(([cuenta, c]) => [cuenta, c.nombre, round(c.db), round(c.cr), round(c.db - c.cr)] as ValorCelda[]),
     anchos: [12, 44, 18, 18, 18],
   };
-  resumen.filas.unshift([`Empresa: ${empresa.nombre} — NIT ${empresa.nit}`, '', '', '', '']);
+  resumen.filas.unshift([`Empresa: ${empresa.nombre}, NIT ${empresa.nit}`, '', '', '', '']);
   resumen.filas.push(['TOTAL', '', r.totalDebito, r.totalCredito, round(r.totalDebito - r.totalCredito)]);
 
   const porDoc = new Map<number, { doc: string; fecha: string; tercero: string; db: number; cr: number }>();
@@ -73,7 +73,7 @@ export function construirExcelCausacion(
     encabezados: ['Documento', 'Nivel', 'Qué pasó'],
     filas: r.avisos.length
       ? r.avisos.map((a) => [a.documento, a.nivel === 'revisar' ? 'Revisar' : 'Información', a.mensaje] as ValorCelda[])
-      : [['—', 'Información', 'Todos los documentos se causaron con cuentas confirmadas.']],
+      : [['Sin pendientes', 'Información', 'Todos los documentos se causaron con cuentas confirmadas.']],
     anchos: [18, 12, 100],
   };
 
