@@ -109,7 +109,7 @@ btnExtraerIa.addEventListener('click', async () => {
 
     extraerIaEstadoEl.textContent = datos.conIa
       ? `Encontré ${datos.cufes.length} CUFEs en total (${nuevos.length} nuevos con IA).`
-      : `La IA no está disponible ahora — usé sólo el reconocimiento simple (${datos.cufes.length} CUFEs).`;
+      : `La IA no está disponible ahora. Usé solo el reconocimiento simple (${datos.cufes.length} CUFEs).`;
   } catch {
     extraerIaEstadoEl.textContent = 'No se pudo conectar con el servicio de IA.';
   } finally {
@@ -253,7 +253,7 @@ function actualizarMetricas(m) {
   const pct = total > 0 ? Math.round((hechos / total) * 100) : 0;
   barraEl.style.width = `${pct}%`;
 
-  resumenTextoEl.textContent = total > 0 ? `${hechos} de ${total}` : '';
+  resumenTextoEl.textContent = total > 0 ? `${hechos} de ${total} documentos` : 'Aún no has iniciado ninguna descarga.';
   resumenBadgesEl.innerHTML = '';
   if (total > 0) {
     resumenBadgesEl.appendChild(insignia('ok', `${completados} ok`));
@@ -264,8 +264,8 @@ function actualizarMetricas(m) {
   if (total > 0) {
     metricasEl.style.display = 'block';
     mVelocidadEl.textContent = `${m.velocidadPorMin ?? 0} doc/min`;
-    mPromedioEl.textContent = m.promedioSeg != null ? `${m.promedioSeg.toFixed(1)} s/doc` : '—';
-    mEtaEl.textContent = m.etaSeg != null ? formatearDuracion(m.etaSeg) : '—';
+    mPromedioEl.textContent = m.promedioSeg != null ? `${m.promedioSeg.toFixed(1)} s/doc` : 'sin datos';
+    mEtaEl.textContent = m.etaSeg != null ? formatearDuracion(m.etaSeg) : 'sin datos';
   } else {
     metricasEl.style.display = 'none';
   }
@@ -276,7 +276,7 @@ function actualizarMetricas(m) {
   }
 
   if (m.numWorkersEfectivo != null && m.numWorkers != null && m.numWorkersEfectivo < m.numWorkers) {
-    resumenTextoEl.textContent += ` — bajé a ${m.numWorkersEfectivo} worker por una verificación humana previa`;
+    resumenTextoEl.textContent += `. Bajé a ${m.numWorkersEfectivo} pestaña por una verificación humana previa`;
   }
 }
 
@@ -307,7 +307,7 @@ function filaRegistro(r) {
   const worker = r.workerId != null ? ` [w${r.workerId}]` : '';
 
   const linea = document.createElement('span');
-  linea.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : '— '}`;
+  linea.textContent = `${r.cufe.slice(0, 20)}…${worker} ${ok ? 'ok' : 'falló'}`;
   fila.appendChild(linea);
 
   if (!ok && r.codigoError) {
@@ -359,7 +359,7 @@ function filaRegistro(r) {
 function botonExplicarConIa(r) {
   const boton = document.createElement('button');
   boton.type = 'button';
-  boton.textContent = '🤖 Explicar con IA';
+  boton.textContent = 'Explicar con IA';
   boton.style.marginTop = '5px';
   boton.style.fontSize = '10px';
   boton.style.padding = '3px 8px';
@@ -445,6 +445,26 @@ chrome.runtime.onMessage.addListener((msg) => {
     ponerCorriendo(true);
   } else if (m.reanudable) {
     reanudarEl.style.display = 'block';
-    reanudarEl.textContent = `Quedó una descarga a medias: ${m.completados} de ${m.total} lograron bajarse. Si el enlace venció, pide uno nuevo (los CUFEs ya están pegados arriba) y dale a Iniciar — sigue donde se quedó, no repite lo ya bajado.`;
+    reanudarEl.textContent = `Quedó una descarga a medias: ${m.completados} de ${m.total} lograron bajarse. Si el enlace venció, pide uno nuevo, pégalo y vuelve a iniciar. Sigue donde se quedó y no repite lo ya bajado.`;
   }
 })();
+
+
+// ── Pestañas: por fechas (recomendado) o por lista de CUFEs ─────────────
+{
+  const tabFechas = document.getElementById('tabFechas');
+  const tabCufes = document.getElementById('tabCufes');
+  const panelFechas = document.getElementById('panelFechas');
+  const panelCufes = document.getElementById('panelCufes');
+  const elegir = (cual) => {
+    const fechas = cual === 'fechas';
+    tabFechas.classList.toggle('activa', fechas);
+    tabCufes.classList.toggle('activa', !fechas);
+    panelFechas.hidden = !fechas;
+    panelCufes.hidden = fechas;
+    chrome.storage.local.set({ config_pestana: cual });
+  };
+  tabFechas.addEventListener('click', () => elegir('fechas'));
+  tabCufes.addEventListener('click', () => elegir('cufes'));
+  chrome.storage.local.get('config_pestana').then((g) => { if (g.config_pestana === 'cufes') elegir('cufes'); });
+}

@@ -4,238 +4,244 @@
 <meta charset="utf-8" />
 <title>Descargar XML de la DIAN</title>
 <style>
-  :root { color-scheme: light; }
+  :root {
+    color-scheme: light;
+    --azul: #2563eb; --violeta: #7c3aed; --tinta: #0f172a; --gris: #64748b;
+    --borde: #e5e7eb; --suave: #f8fafc; --verde: #059669; --rojo: #e11d48;
+  }
   * { box-sizing: border-box; }
   body {
-    width: 440px; margin: 0; padding: 16px;
-    font: 13px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: #0f172a; background: #ffffff;
-  }
-  h1 { font-size: 14px; margin: 0 0 2px; }
-  p.sub { margin: 0 0 14px; color: #64748b; font-size: 11px; }
-  .marca { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .marca img { width: 26px; height: 26px; border-radius: 7px; }
-  .marca span { font-size: 12px; font-weight: 800; color: #1e3a8a; letter-spacing: -.01em; }
-
-  /* ── Pasos: cada uno es una tarjeta con su número, para que el flujo se
-     lea de arriba hacia abajo sin tener que adivinar qué va primero. ── */
-  .paso {
-    border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;
-    margin-top: 10px; background: #fafcff;
-  }
-  .paso-titulo {
-    display: flex; align-items: center; gap: 8px; font-size: 12px;
-    font-weight: 700; color: #1e293b; margin-bottom: 8px;
-  }
-  .paso-num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px; border-radius: 999px; background: #0284c7;
-    color: #fff; font-size: 10.5px; font-weight: 800; flex: none;
+    width: 400px; margin: 0; background: #f4f6fb;
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--tinta);
   }
 
-  label { display: block; font-size: 11px; font-weight: 600; color: #475569; margin-top: 10px; }
-  label:first-child { margin-top: 0; }
-  .fila { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
-  input[type=text], input[type=number], textarea {
-    width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px;
-    padding: 7px 9px; font: 11px/1.4 ui-monospace, monospace; color: #0f172a;
+  /* Encabezado con el degradado de Codec */
+  .cabecera {
+    padding: 16px 18px 18px; color: #fff;
+    background: #0f1e3d; border-bottom: 3px solid #2563eb;
   }
-  input[type=text]:focus, input[type=number]:focus, textarea:focus {
-    outline: none; border-color: #0284c7; background: #fff;
+  .marca { display: flex; align-items: center; gap: 9px; }
+  .marca img { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.15); padding: 3px; }
+  .marca b { font-size: 13px; letter-spacing: -.01em; }
+  .marca small { display: block; font-size: 10.5px; opacity: .75; font-weight: 500; }
+  .cabecera h1 { margin: 12px 0 2px; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+  .cabecera p { margin: 0; font-size: 11.5px; opacity: .85; }
+
+  main { padding: 14px 14px 16px; }
+
+  .tarjeta {
+    background: #fff; border: 1px solid var(--borde); border-radius: 12px;
+    padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,.04); margin-bottom: 12px;
   }
-  input[type=number] { width: 64px; flex: none; }
-  textarea { resize: vertical; min-height: 70px; }
+  .titulo { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; margin-bottom: 10px; }
+  .num {
+    width: 20px; height: 20px; border-radius: 7px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 800;
+  }
+  .ayuda { font-size: 11px; color: var(--gris); margin: -4px 0 10px; }
+
+  label { display: block; font-size: 10.5px; font-weight: 700; color: #475569; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .fila { display: flex; gap: 8px; align-items: center; }
+  .rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  input[type=text], input[type=number], input[type=date], select, textarea {
+    width: 100%; height: 38px; border: 1px solid var(--borde); background: var(--suave);
+    border-radius: 11px; padding: 0 11px; font-family: inherit; font-size: 12.5px; line-height: 1.2; color: var(--tinta);
+    transition: border-color .15s, box-shadow .15s, background .15s; appearance: none; -webkit-appearance: none;
+  }
+  textarea { height: 86px; padding: 9px 11px; resize: vertical; font: 11px/1.45 ui-monospace, Menlo, monospace; }
+  input#urlDian { font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+  select {
+    padding-right: 30px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  input::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #60a5fa; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  input[type=number] { width: 70px; flex: none; }
+
   button {
-    border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 7px 12px;
-    font-size: 11px; font-weight: 700; cursor: pointer; color: #334155;
+    height: 38px; border: 1px solid var(--borde); background: #fff; border-radius: 11px; padding: 0 14px;
+    font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1; color: #334155; cursor: pointer; white-space: nowrap; transition: all .15s;
   }
-  button:hover:not(:disabled) { border-color: #94a3b8; }
-  button.primario {
-    background: #0284c7; border-color: #0284c7; color: #fff; font-size: 12.5px;
-    padding: 9px 14px;
-  }
-  button.primario:hover:not(:disabled) { background: #0369a1; border-color: #0369a1; }
+  button:hover:not(:disabled) { border-color: #93c5fd; color: #1e3a8a; }
   button:disabled { opacity: .5; cursor: default; }
-  #estadoEnlace { margin-top: 6px; font-size: 11px; font-weight: 600; }
-  #estadoEnlace.ok { color: #059669; }
-  #estadoEnlace.error { color: #e11d48; }
-  #detalle {
-    margin-top: 6px; padding: 8px; border-radius: 8px; background: #f1f5f9;
-    border: 1px solid #e2e8f0; font-size: 10.5px; white-space: pre-wrap; word-break: break-all;
-    display: none;
+  button.primario {
+    width: 100%; height: 44px; border: none; color: #fff; font-size: 13.5px; font-weight: 800;
+    background: #1d4ed8; box-shadow: 0 1px 2px rgba(15,23,42,.15);
   }
-  #conteoCufes { margin-top: 4px; color: #94a3b8; font-size: 10.5px; }
+  button.primario:hover:not(:disabled) { background: #1e40af; color: #fff; }
+  button.peligro { color: var(--rojo); }
+  button.peligro:hover:not(:disabled) { border-color: #fda4af; color: #be123c; }
 
-  /* ── Configuración avanzada / ayuda: colapsadas por defecto para que la
-     pantalla principal sea sólo "pega el enlace, pega los CUFEs, dale". ── */
-  details.plegable {
-    margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 10px;
-    padding: 8px 12px; background: #fff;
-  }
-  details.plegable[open] { padding-bottom: 12px; }
-  details.plegable summary {
-    cursor: pointer; font-size: 11.5px; font-weight: 700; color: #475569;
-    list-style: none; display: flex; align-items: center; gap: 6px;
-  }
+  /* Pestañas: por fechas (recomendado) o por lista de CUFEs */
+  .pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: #eef0f6; border-radius: 13px; margin-bottom: 12px; }
+  .pestana { height: 34px; border: none; background: transparent; color: var(--gris); border-radius: 10px; font-size: 12px; }
+  .pestana.activa { background: #fff; color: #1e3a8a; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+  .panel[hidden] { display: none; }
+  .etiqueta-reco { font-size: 9.5px; font-weight: 800; color: #1e40af; background: #dbeafe; padding: 2px 6px; border-radius: 999px; margin-left: 4px; }
+
+  #estadoEnlace, #estadoRango { margin-top: 7px; font-size: 11px; font-weight: 700; }
+  #estadoEnlace.ok, #estadoRango.ok { color: var(--verde); }
+  #estadoEnlace.error, #estadoRango.error { color: var(--rojo); }
+  #detalle { margin-top: 7px; padding: 9px; border-radius: 10px; background: var(--suave); border: 1px solid var(--borde); font-size: 10.5px; white-space: pre-wrap; word-break: break-all; display: none; }
+  #conteoCufes { margin-top: 6px; color: var(--gris); font-size: 11px; font-weight: 600; }
+
+  details.plegable { border: 1px solid var(--borde); border-radius: 14px; padding: 10px 14px; background: #fff; margin-bottom: 12px; }
+  details.plegable summary { cursor: pointer; font-size: 11.5px; font-weight: 700; color: #475569; list-style: none; display: flex; align-items: center; gap: 7px; }
   details.plegable summary::-webkit-details-marker { display: none; }
-  details.plegable summary::before { content: '▸'; color: #94a3b8; font-size: 10px; }
-  details.plegable[open] summary::before { content: '▾'; }
-  details.plegable > label:first-of-type { margin-top: 10px; }
+  details.plegable summary::before { content: ''; width: 6px; height: 6px; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; transform: rotate(-45deg); transition: transform .15s; }
+  details.plegable[open] summary::before { transform: rotate(45deg); }
+  details.plegable .cuerpo { margin-top: 12px; display: grid; gap: 12px; }
+  .nota { font-size: 10.5px; color: #94a3b8; }
 
-  .accion { margin-top: 14px; }
-  .accion .fila { gap: 8px; }
-
-  .barra { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 12px; overflow: hidden; }
-  .barra > div { height: 100%; background: #0284c7; width: 0%; transition: width .3s ease; }
-
-  /* ── Insignias de conteo (ok / reintentando / error) en vez de una sola
-     línea de texto — de un vistazo se ve si algo se está acumulando. ── */
+  /* Progreso */
+  .progreso-cab { display: flex; align-items: baseline; justify-content: space-between; }
+  .barra { height: 9px; border-radius: 999px; background: #eef0f6; margin-top: 8px; overflow: hidden; }
+  .barra > div { height: 100%; width: 0%; border-radius: 999px; background: #1d4ed8; transition: width .4s ease; }
   #resumen { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  #resumenTexto { font-size: 11px; color: #475569; }
+  #resumenTexto { font-size: 11.5px; color: #475569; font-weight: 600; }
   #resumenBadges { display: flex; gap: 5px; }
-  .insignia {
-    font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px;
-  }
+  .insignia { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; }
   .insignia.ok { background: #dcfce7; color: #166534; }
   .insignia.reintentando { background: #fef3c7; color: #92400e; }
-  .insignia.error { background: #fee2e2; color: #991b1b; }
+  .insignia.error { background: #ffe4e6; color: #9f1239; }
+  #enCurso { display: none; color: #1d4ed8; font-size: 11px; font-weight: 600; margin-top: 6px; }
+  #metricas { display: none; margin-top: 10px; padding: 10px 12px; background: var(--suave); border-radius: 12px; font-size: 11px; color: #334155; }
+  #metricas .fila-m { display: flex; justify-content: space-between; padding: 2px 0; }
+  .acciones { display: flex; gap: 8px; margin-top: 12px; }
+  .acciones button { flex: 1; }
 
-  #enCurso { display: none; color: #0284c7; font-size: 11px; margin-top: 4px; }
-  #metricas {
-    display: none; margin-top: 8px; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0;
-    border-radius: 8px; font-size: 10.5px; color: #334155;
-  }
-  #metricas .fila-m { display: flex; justify-content: space-between; padding: 1px 0; }
-  #metricas b { color: #0f172a; }
-
-  #registro { max-height: 150px; overflow-y: auto; margin-top: 8px; font-size: 10.5px; }
-  #registro div.entrada { padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
+  #registro { max-height: 160px; overflow-y: auto; margin-top: 10px; font-size: 10.5px; border-radius: 12px; }
+  #registro:not(:empty) { background: #0f172a; color: #c7d2fe; padding: 8px 10px; }
+  #registro div.entrada { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
   #registro div.entrada:last-child { border-bottom: none; }
-  #registro .err { color: #991b1b; }
-  .chip-codigo {
-    display: inline-block; font-size: 9px; font-weight: 800; padding: 1px 5px;
-    border-radius: 5px; margin-right: 4px; letter-spacing: .01em;
-  }
+  #registro .err { color: #fda4af; }
+  .chip-codigo { display: inline-block; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 5px; margin-right: 4px; }
 
-  #reanudar { display: none; margin-top: 10px; padding: 8px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 11px; }
-  #bloqueo {
-    display: none; margin-top: 10px; padding: 10px; background: #fef2f2; border: 1px solid #fecaca;
-    border-radius: 8px; font-size: 11px; color: #991b1b;
-  }
-  #bloqueo button { margin-top: 8px; background: #dc2626; border-color: #dc2626; color: #fff; }
+  #reanudar { display: none; margin-bottom: 12px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; font-size: 11.5px; }
+  #bloqueo { display: none; margin-bottom: 12px; padding: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; font-size: 11.5px; color: #9f1239; }
+  #bloqueo button { margin-top: 8px; width: 100%; background: #e11d48; border-color: #e11d48; color: #fff; }
 
-  #aviso { margin: 8px 0 0; font-size: 10.5px; color: #64748b; line-height: 1.6; }
+  #aviso { margin: 10px 0 0; font-size: 11px; color: var(--gris); line-height: 1.6; }
 </style>
 </head>
 <body>
-  <div class="marca">
-    <img src="icons/icon-48.png" alt="Codec Document" />
-    <span>Codec Document</span>
-  </div>
-  <h1>Descargar XML de la DIAN</h1>
-  <p class="sub">Corre en tu navegador, con tu propia sesión — no por un servidor compartido.</p>
-
-  <div id="reanudar"></div>
-
-  <div id="bloqueo">
-    <div id="bloqueoTexto">La DIAN pidió una comprobación humana.</div>
-    <button id="btnContinuarValidacion">Ya completé la validación — continuar</button>
-  </div>
-
-  <section class="paso">
-    <div class="paso-titulo"><span class="paso-num">1</span> Conecta con la DIAN</div>
-    <label>Enlace del correo del token</label>
-    <div class="fila">
-      <input type="text" id="urlDian" placeholder="https://catalogo-vpfe.dian.gov.co/…&token=…" />
-      <button id="btnProbar">Probar</button>
+  <header class="cabecera">
+    <div class="marca">
+      <img src="icons/icon-48.png" alt="" />
+      <div><b>Codec Document</b><small>Descargador DIAN</small></div>
     </div>
-    <div id="estadoEnlace"></div>
-    <div id="detalle"></div>
-  </section>
+    <h1>Descarga tus XML y PDF de la DIAN</h1>
+    <p>Corre en tu navegador, con tu propia sesión. Nada pasa por un servidor compartido.</p>
+  </header>
 
-  <section class="paso">
-    <div class="paso-titulo"><span class="paso-num">2</span> Descarga todo un rango de fechas (recomendado)</div>
-    <div class="fila">
-      <input type="date" id="rangoDesde" />
-      <input type="date" id="rangoHasta" />
-    </div>
-    <div class="fila" style="margin-top:4px;">
-      <select id="rangoListado">
-        <option value="recibidos">Documentos recibidos</option>
-        <option value="enviados">Documentos enviados</option>
-      </select>
-      <button id="btnRango" class="primario" type="button">▶ Descargar rango</button>
-    </div>
-    <div id="estadoRango"></div>
-  </section>
+  <main>
+    <div id="reanudar"></div>
 
-  <section class="paso">
-    <div class="paso-titulo"><span class="paso-num">3</span> O pega una lista de CUFEs</div>
-    <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
-    <div class="fila" style="margin-top:4px;">
-      <button id="btnExtraerIa" type="button">🤖 Extraer CUFEs con IA</button>
-      <span id="extraerIaEstado" style="font-size:10.5px;color:#94a3b8;"></span>
-    </div>
-    <div id="conteoCufes"></div>
-  </section>
-
-  <details class="plegable">
-    <summary>Configuración avanzada (carpeta y velocidad)</summary>
-    <label>Carpeta dentro de tus Descargas</label>
-    <div class="fila">
-      <input type="text" id="carpeta" placeholder="DIAN" />
-      <button id="btnAbrirCarpeta" type="button">Abrir carpeta</button>
+    <div id="bloqueo">
+      <div id="bloqueoTexto">La DIAN pidió una comprobación humana.</div>
+      <button id="btnContinuarValidacion">Ya completé la validación, continuar</button>
     </div>
 
-    <label>Workers (pestañas en paralelo)</label>
-    <div class="fila">
-      <input type="number" id="workers" min="1" max="5" value="1" />
-      <span style="font-size:10.5px;color:#94a3b8;">Empieza en 1. Sube sólo si confirmas que no aumenta los bloqueos.</span>
+    <section class="tarjeta">
+      <div class="titulo"><span class="num">1</span> Conecta con la DIAN</div>
+      <p class="ayuda">Pega el enlace que te llegó al correo al pedir el token. Si ya entraste a la DIAN en este Chrome, puedes saltarte este paso.</p>
+      <div class="fila">
+        <input type="text" id="urlDian" placeholder="https://catalogo-vpfe.dian.gov.co/…&token=…" />
+        <button id="btnProbar">Probar</button>
+      </div>
+      <div id="estadoEnlace"></div>
+      <div id="detalle"></div>
+    </section>
+
+    <div class="pestanas" role="tablist">
+      <button class="pestana activa" id="tabFechas" type="button">Por fechas <span class="etiqueta-reco">Recomendado</span></button>
+      <button class="pestana" id="tabCufes" type="button">Por lista de CUFEs</button>
     </div>
-  </details>
 
-  <div class="accion">
-    <div class="fila">
-      <button id="btnIniciar" class="primario">▶ Iniciar descarga</button>
-      <button id="btnDetener" style="display:none;">Detener</button>
-      <button id="btnBorrar" style="margin-left:auto;color:#e11d48;">Borrar todo</button>
-    </div>
-  </div>
+    <section class="tarjeta panel" id="panelFechas">
+      <div class="titulo"><span class="num">2</span> Elige el periodo</div>
+      <div class="rejilla">
+        <div><label for="rangoDesde">Desde</label><input type="date" id="rangoDesde" /></div>
+        <div><label for="rangoHasta">Hasta</label><input type="date" id="rangoHasta" /></div>
+      </div>
+      <div style="margin-top:10px;">
+        <label for="rangoListado">Documentos</label>
+        <select id="rangoListado">
+          <option value="recibidos">Recibidos (compras)</option>
+          <option value="enviados">Enviados (ventas)</option>
+        </select>
+      </div>
+      <div style="margin-top:12px;"><button id="btnRango" class="primario" type="button">Descargar todo el periodo</button></div>
+      <div id="estadoRango"></div>
+    </section>
 
-  <div class="barra"><div id="barraRelleno"></div></div>
-  <div id="resumen">
-    <span id="resumenTexto"></span>
-    <span id="resumenBadges"></span>
-  </div>
-  <div id="enCurso"></div>
+    <section class="tarjeta panel" id="panelCufes" hidden>
+      <div class="titulo"><span class="num">2</span> Pega tus CUFEs</div>
+      <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
+      <div class="fila" style="margin-top:8px;">
+        <button id="btnExtraerIa" type="button">Extraer CUFEs con IA</button>
+        <span id="extraerIaEstado" class="nota"></span>
+      </div>
+      <div id="conteoCufes"></div>
+      <div style="margin-top:12px;"><button id="btnIniciar" class="primario">Descargar lista</button></div>
+    </section>
 
-  <div id="metricas">
-    <div class="fila-m"><span>Velocidad actual</span><b id="mVelocidad">—</b></div>
-    <div class="fila-m"><span>Promedio</span><b id="mPromedio">—</b></div>
-    <div class="fila-m"><span>Tiempo estimado restante</span><b id="mEta">—</b></div>
-  </div>
+    <details class="plegable">
+      <summary>Configuración avanzada</summary>
+      <div class="cuerpo">
+        <div>
+          <label for="carpeta">Carpeta dentro de tus Descargas</label>
+          <div class="fila">
+            <input type="text" id="carpeta" placeholder="DIAN" />
+            <button id="btnAbrirCarpeta" type="button">Abrir</button>
+          </div>
+        </div>
+        <div>
+          <label for="workers">Pestañas en paralelo (solo lista de CUFEs)</label>
+          <div class="fila">
+            <input type="number" id="workers" min="1" max="5" value="1" />
+            <span class="nota">Empieza en 1. Sube solo si no aumentan los bloqueos.</span>
+          </div>
+        </div>
+      </div>
+    </details>
 
-  <div class="fila" style="margin-top:8px;">
-    <button id="btnExportar" type="button">Descargar log (CSV)</button>
-  </div>
+    <section class="tarjeta">
+      <div class="progreso-cab">
+        <div class="titulo" style="margin:0;"><span class="num">3</span> Progreso</div>
+      </div>
+      <div class="barra"><div id="barraRelleno"></div></div>
+      <div id="resumen">
+        <span id="resumenTexto">Aún no has iniciado ninguna descarga.</span>
+        <span id="resumenBadges"></span>
+      </div>
+      <div id="enCurso"></div>
+      <div id="metricas">
+        <div class="fila-m"><span>Velocidad actual</span><b id="mVelocidad">0</b></div>
+        <div class="fila-m"><span>Promedio</span><b id="mPromedio">0</b></div>
+        <div class="fila-m"><span>Tiempo restante</span><b id="mEta">0</b></div>
+      </div>
+      <div class="acciones">
+        <button id="btnDetener" style="display:none;">Detener</button>
+        <button id="btnExportar" type="button">Descargar registro</button>
+        <button id="btnBorrar" class="peligro">Borrar todo</button>
+      </div>
+      <div id="registro"></div>
+    </section>
 
-  <div id="registro"></div>
-
-  <details class="plegable">
-    <summary>¿Cómo funciona?</summary>
-    <p id="aviso">
-      Cada worker abre su propia ventana de la DIAN (no la cierres a mano) y
-      busca sus CUFEs por "Código único", igual que lo harías tú. Los
-      archivos quedan en tu carpeta de Descargas, dentro de la carpeta que
-      pongas arriba. El token dura 60 minutos: si se vence a mitad, pide
-      otro, pégalo aquí y dale a Iniciar de nuevo — no se repite lo ya
-      bajado. Si la DIAN pide una comprobación humana, la cola se pausa sola
-      y te avisa arriba — nunca se intenta resolver automáticamente. Verás
-      una barra amarilla de Chrome avisando que la extensión está
-      "depurando" la pestaña — es necesaria para que el clic en Descargar
-      cuente como real ante la DIAN, no se puede ocultar.
-    </p>
-  </details>
+    <details class="plegable">
+      <summary>¿Cómo funciona?</summary>
+      <p id="aviso">
+        La extensión abre una ventana de la DIAN (no la cierres) y descarga cada documento como lo harías tú,
+        con un clic en su botón. Los archivos quedan en tu carpeta de Descargas. El token dura unos 60 minutos:
+        si se vence, pide otro, pégalo y vuelve a iniciar; lo que ya bajó no se repite. Si la DIAN pide una
+        comprobación humana, todo se pausa y te avisa aquí; nunca se intenta resolver sola. Chrome muestra una
+        barra amarilla de "depuración" mientras trabaja: es necesaria para que el clic cuente como real.
+      </p>
+    </details>
+  </main>
 
   <script type="module" src="popup.js"></script>
 </body>
