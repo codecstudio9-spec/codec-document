@@ -4,139 +4,177 @@
 <meta charset="utf-8" />
 <title>Descargar XML de la DIAN</title>
 <style>
+  /* Mismo lenguaje visual que el módulo DIAN de Codec Document
+     (src/app/styles/contador-theme.ts y mobile-theme.ts): fondo
+     #F8FAFC a #EEF4FF con brillos, tarjetas blancas de 24 px de radio con
+     sombra profunda, botones con relieve y los colores de cada etapa. */
   :root {
     color-scheme: light;
-    --azul: #2563eb; --violeta: #7c3aed; --tinta: #0f172a; --gris: #64748b;
-    --borde: #e5e7eb; --suave: #f8fafc; --verde: #059669; --rojo: #e11d48;
+    --marca: #2563EB; --marca-osc: #1D4ED8; --indigo: #4338CA; --indigo-cl: #6366F1;
+    --tinta: #0F172A; --texto: #334155; --gris: #64748B; --borde: rgba(15,23,42,0.08);
+    --ok: #047857; --ok-fondo: #ECFDF5; --error: #BE123C; --error-fondo: #FFF1F2;
   }
   * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body {
-    width: 400px; margin: 0; background: #f4f6fb;
-    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: var(--tinta);
+    width: 560px; min-height: 600px; color: var(--tinta);
+    font: 14px/1.5 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(37,99,235,0.14), transparent 55%),
+      radial-gradient(circle at 0% 0%, rgba(79,70,229,0.10), transparent 50%),
+      linear-gradient(180deg, #F8FAFC 0%, #EEF4FF 100%);
   }
+  .contenedor { padding: 20px 22px 22px; }
 
-  /* Encabezado con el degradado de Codec */
-  .cabecera {
-    padding: 16px 18px 18px; color: #fff;
-    background: #0f1e3d; border-bottom: 3px solid #2563eb;
+  .barra-sup { display: flex; align-items: center; justify-content: space-between; }
+  .marca { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); box-shadow: 0 10px 22px rgba(37,99,235,0.35);
   }
-  .marca { display: flex; align-items: center; gap: 9px; }
-  .marca img { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.15); padding: 3px; }
-  .marca b { font-size: 13px; letter-spacing: -.01em; }
-  .marca small { display: block; font-size: 10.5px; opacity: .75; font-weight: 500; }
-  .cabecera h1 { margin: 12px 0 2px; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
-  .cabecera p { margin: 0; font-size: 11.5px; opacity: .85; }
+  .logo img { width: 26px; height: 26px; }
+  .marca-txt b { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: var(--tinta); }
+  .marca-txt b span { color: var(--indigo-cl); }
+  .marca-txt small { display: block; font-size: 11.5px; color: var(--gris); margin-top: -2px; }
+  .voz {
+    display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 12px;
+    background: #fff; border: 1px solid var(--borde); color: var(--marca-osc); font-family: inherit; font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 6px 14px rgba(15,23,42,0.06);
+  }
+  .voz:hover { background: #EFF6FF; }
+  .voz svg { width: 16px; height: 16px; }
+  .voz.hablando { background: #EFF6FF; border-color: #BFDBFE; }
 
-  main { padding: 14px 14px 16px; }
+  .encabezado { margin: 18px 0 16px; }
+  .encabezado h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.15; }
+  .encabezado p { margin: 6px 0 0; color: var(--gris); font-size: 13.5px; }
 
   .tarjeta {
-    background: #fff; border: 1px solid var(--borde); border-radius: 12px;
-    padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,.04); margin-bottom: 12px;
+    background: #fff; border-radius: 24px; padding: 20px; margin-bottom: 14px;
+    box-shadow: 0 20px 40px rgba(15,23,42,0.08); border: 1px solid rgba(15,23,42,0.04);
   }
-  .titulo { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; margin-bottom: 10px; }
+  .titulo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; margin-bottom: 4px; }
   .num {
-    width: 20px; height: 20px; border-radius: 7px; flex: none; display: inline-flex; align-items: center; justify-content: center;
-    background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 800;
+    width: 28px; height: 28px; border-radius: 10px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 900;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); box-shadow: 0 6px 14px rgba(37,99,235,0.30);
   }
-  .ayuda { font-size: 11px; color: var(--gris); margin: -4px 0 10px; }
+  .num.indigo { background: linear-gradient(135deg, #4338CA 0%, #6366F1 100%); box-shadow: 0 6px 14px rgba(67,56,202,0.30); }
+  .num.verde { background: linear-gradient(135deg, #059669 0%, #10B981 100%); box-shadow: 0 6px 14px rgba(5,150,105,0.30); }
+  .ayuda { font-size: 12.5px; color: var(--gris); margin: 0 0 14px 38px; }
 
-  label { display: block; font-size: 10.5px; font-weight: 700; color: #475569; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .04em; }
-  .fila { display: flex; gap: 8px; align-items: center; }
-  .rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--texto); margin: 0 0 6px; }
+  .fila { display: flex; gap: 10px; align-items: center; }
+  .rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   input[type=text], input[type=number], input[type=date], select, textarea {
-    width: 100%; height: 38px; border: 1px solid var(--borde); background: var(--suave);
-    border-radius: 11px; padding: 0 11px; font-family: inherit; font-size: 12.5px; line-height: 1.2; color: var(--tinta);
+    width: 100%; height: 46px; border: 1px solid #E2E8F0; background: #F8FAFC; border-radius: 14px;
+    padding: 0 14px; font-family: inherit; font-size: 14px; color: var(--tinta);
     transition: border-color .15s, box-shadow .15s, background .15s; appearance: none; -webkit-appearance: none;
   }
-  textarea { height: 86px; padding: 9px 11px; resize: vertical; font: 11px/1.45 ui-monospace, Menlo, monospace; }
-  input#urlDian { font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+  textarea { height: 110px; padding: 12px 14px; resize: vertical; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+  input#urlDian { font: 12px ui-monospace, Menlo, Consolas, monospace; }
   select {
-    padding-right: 30px; cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 38px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
   }
-  input::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: #60a5fa; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-  input[type=number] { width: 70px; flex: none; }
+  input::-webkit-calendar-picker-indicator { opacity: .6; cursor: pointer; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #93C5FD; background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.12); }
+  input[type=number] { width: 84px; flex: none; }
 
-  button {
-    height: 38px; border: 1px solid var(--borde); background: #fff; border-radius: 11px; padding: 0 14px;
-    font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1; color: #334155; cursor: pointer; white-space: nowrap; transition: all .15s;
+  button { font-family: inherit; cursor: pointer; transition: transform .08s, filter .15s; }
+  button:active:not(:disabled) { transform: translateY(1px) scale(.985); }
+  button:disabled { opacity: .55; cursor: default; }
+  .neutro {
+    height: 46px; padding: 0 18px; border-radius: 14px; font-size: 13.5px; font-weight: 800; color: var(--texto); white-space: nowrap;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%); border: 1px solid var(--borde);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(15,23,42,0.06), 0 6px 14px rgba(15,23,42,0.06);
   }
-  button:hover:not(:disabled) { border-color: #93c5fd; color: #1e3a8a; }
-  button:disabled { opacity: .5; cursor: default; }
-  button.primario {
-    width: 100%; height: 44px; border: none; color: #fff; font-size: 13.5px; font-weight: 800;
-    background: #1d4ed8; box-shadow: 0 1px 2px rgba(15,23,42,.15);
+  .neutro:hover:not(:disabled) { filter: brightness(0.98); }
+  .neutro.peligro { color: var(--error); }
+  .relieve {
+    width: 100%; height: 54px; border: none; border-radius: 16px; color: #fff; font-size: 15.5px; font-weight: 900; letter-spacing: -0.01em;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
-  button.primario:hover:not(:disabled) { background: #1e40af; color: #fff; }
-  button.peligro { color: var(--rojo); }
-  button.peligro:hover:not(:disabled) { border-color: #fda4af; color: #be123c; }
+  .relieve svg { width: 20px; height: 20px; }
+  .relieve.indigo {
+    background: linear-gradient(135deg, #4338CA 0%, #6366F1 45%, #4338CA 72%, #4338CA 100%);
+    box-shadow: 0 14px 30px rgba(67,56,202,0.40), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.20);
+  }
+  .relieve.azul {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 45%, #1D4ED8 72%, #1D4ED8 100%);
+    box-shadow: 0 14px 30px rgba(37,99,235,0.40), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.20);
+  }
+  .relieve:hover:not(:disabled) { filter: brightness(1.06); }
 
-  /* Pestañas: por fechas (recomendado) o por lista de CUFEs */
-  .pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: #eef0f6; border-radius: 13px; margin-bottom: 12px; }
-  .pestana { height: 34px; border: none; background: transparent; color: var(--gris); border-radius: 10px; font-size: 12px; }
-  .pestana.activa { background: #fff; color: #1e3a8a; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+  .pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: rgba(255,255,255,0.7); border: 1px solid var(--borde); border-radius: 18px; margin-bottom: 14px; }
+  .pestana { height: 44px; border: none; background: transparent; color: var(--gris); border-radius: 13px; font-size: 13.5px; font-weight: 800; }
+  .pestana.activa { background: #fff; color: var(--indigo); box-shadow: 0 6px 16px rgba(15,23,42,0.10); }
+  .reco { font-size: 10.5px; font-weight: 800; color: #4338CA; background: #EEF2FF; padding: 3px 8px; border-radius: 999px; margin-left: 6px; }
   .panel[hidden] { display: none; }
-  .etiqueta-reco { font-size: 9.5px; font-weight: 800; color: #1e40af; background: #dbeafe; padding: 2px 6px; border-radius: 999px; margin-left: 4px; }
 
-  #estadoEnlace, #estadoRango { margin-top: 7px; font-size: 11px; font-weight: 700; }
-  #estadoEnlace.ok, #estadoRango.ok { color: var(--verde); }
-  #estadoEnlace.error, #estadoRango.error { color: var(--rojo); }
-  #detalle { margin-top: 7px; padding: 9px; border-radius: 10px; background: var(--suave); border: 1px solid var(--borde); font-size: 10.5px; white-space: pre-wrap; word-break: break-all; display: none; }
-  #conteoCufes { margin-top: 6px; color: var(--gris); font-size: 11px; font-weight: 600; }
+  #estadoEnlace, #estadoRango { margin-top: 10px; font-size: 13px; font-weight: 700; }
+  #estadoEnlace.ok, #estadoRango.ok { color: var(--ok); }
+  #estadoEnlace.error, #estadoRango.error { color: var(--error); }
+  #detalle { margin-top: 10px; padding: 12px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 12px; white-space: pre-wrap; word-break: break-all; display: none; }
+  #conteoCufes { margin-top: 8px; color: var(--gris); font-size: 12.5px; font-weight: 700; }
+  .nota { font-size: 12px; color: #94A3B8; }
 
-  details.plegable { border: 1px solid var(--borde); border-radius: 14px; padding: 10px 14px; background: #fff; margin-bottom: 12px; }
-  details.plegable summary { cursor: pointer; font-size: 11.5px; font-weight: 700; color: #475569; list-style: none; display: flex; align-items: center; gap: 7px; }
+  details.plegable { background: rgba(255,255,255,0.8); border: 1px solid var(--borde); border-radius: 18px; padding: 14px 18px; margin-bottom: 14px; }
+  details.plegable summary { cursor: pointer; font-size: 13.5px; font-weight: 800; color: var(--texto); list-style: none; display: flex; align-items: center; gap: 10px; }
   details.plegable summary::-webkit-details-marker { display: none; }
-  details.plegable summary::before { content: ''; width: 6px; height: 6px; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; transform: rotate(-45deg); transition: transform .15s; }
+  details.plegable summary::before { content: ''; width: 7px; height: 7px; border-right: 2px solid #94A3B8; border-bottom: 2px solid #94A3B8; transform: rotate(-45deg); transition: transform .15s; }
   details.plegable[open] summary::before { transform: rotate(45deg); }
-  details.plegable .cuerpo { margin-top: 12px; display: grid; gap: 12px; }
-  .nota { font-size: 10.5px; color: #94a3b8; }
+  details.plegable .cuerpo { margin-top: 14px; display: grid; gap: 14px; }
 
-  /* Progreso */
-  .progreso-cab { display: flex; align-items: baseline; justify-content: space-between; }
-  .barra { height: 9px; border-radius: 999px; background: #eef0f6; margin-top: 8px; overflow: hidden; }
-  .barra > div { height: 100%; width: 0%; border-radius: 999px; background: #1d4ed8; transition: width .4s ease; }
-  #resumen { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  #resumenTexto { font-size: 11.5px; color: #475569; font-weight: 600; }
-  #resumenBadges { display: flex; gap: 5px; }
-  .insignia { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; }
-  .insignia.ok { background: #dcfce7; color: #166534; }
-  .insignia.reintentando { background: #fef3c7; color: #92400e; }
-  .insignia.error { background: #ffe4e6; color: #9f1239; }
-  #enCurso { display: none; color: #1d4ed8; font-size: 11px; font-weight: 600; margin-top: 6px; }
-  #metricas { display: none; margin-top: 10px; padding: 10px 12px; background: var(--suave); border-radius: 12px; font-size: 11px; color: #334155; }
+  .barra { height: 12px; border-radius: 999px; background: #EEF2F7; margin-top: 12px; overflow: hidden; }
+  .barra > div { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #10B981, #059669); transition: width .4s ease; }
+  #resumen { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  #resumenTexto { font-size: 13px; color: var(--texto); font-weight: 700; }
+  #resumenBadges { display: flex; gap: 6px; }
+  .insignia { font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; }
+  .insignia.ok { background: var(--ok-fondo); color: var(--ok); }
+  .insignia.reintentando { background: #FFFBEB; color: #B45309; }
+  .insignia.error { background: var(--error-fondo); color: var(--error); }
+  #enCurso { display: none; color: var(--indigo); font-size: 13px; font-weight: 700; margin-top: 8px; }
+  #metricas { display: none; margin-top: 12px; padding: 12px 14px; background: #F8FAFC; border-radius: 14px; font-size: 12.5px; color: var(--texto); }
   #metricas .fila-m { display: flex; justify-content: space-between; padding: 2px 0; }
-  .acciones { display: flex; gap: 8px; margin-top: 12px; }
+  .acciones { display: flex; gap: 10px; margin-top: 14px; }
   .acciones button { flex: 1; }
 
-  #registro { max-height: 160px; overflow-y: auto; margin-top: 10px; font-size: 10.5px; border-radius: 12px; }
-  #registro:not(:empty) { background: #0f172a; color: #c7d2fe; padding: 8px 10px; }
+  #registro { max-height: 190px; overflow-y: auto; margin-top: 12px; font: 11.5px/1.6 ui-monospace, Menlo, Consolas, monospace; border-radius: 14px; }
+  #registro:not(:empty) { background: #0F172A; color: #A7F3D0; padding: 10px 12px; }
   #registro div.entrada { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
   #registro div.entrada:last-child { border-bottom: none; }
-  #registro .err { color: #fda4af; }
-  .chip-codigo { display: inline-block; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 5px; margin-right: 4px; }
+  #registro .err { color: #FDA4AF; }
+  #registro button { height: auto; padding: 2px 8px; font-size: 10.5px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: transparent; color: #C7D2FE; }
+  .chip-codigo { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; margin-right: 5px; }
 
-  #reanudar { display: none; margin-bottom: 12px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; font-size: 11.5px; }
-  #bloqueo { display: none; margin-bottom: 12px; padding: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 14px; font-size: 11.5px; color: #9f1239; }
-  #bloqueo button { margin-top: 8px; width: 100%; background: #e11d48; border-color: #e11d48; color: #fff; }
+  #reanudar { display: none; margin-bottom: 14px; padding: 14px 16px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 18px; font-size: 13px; color: #92400E; }
+  #bloqueo { display: none; margin-bottom: 14px; padding: 16px; background: var(--error-fondo); border: 1px solid #FECDD3; border-radius: 18px; font-size: 13px; color: var(--error); }
+  #bloqueo button { margin-top: 10px; width: 100%; height: 46px; border: none; border-radius: 14px; background: #E11D48; color: #fff; font-weight: 800; }
 
-  #aviso { margin: 10px 0 0; font-size: 11px; color: var(--gris); line-height: 1.6; }
+  #aviso { margin: 12px 0 0; font-size: 13px; color: var(--gris); line-height: 1.65; }
 </style>
 </head>
 <body>
-  <header class="cabecera">
-    <div class="marca">
-      <img src="icons/icon-48.png" alt="" />
-      <div><b>Codec Document</b><small>Descargador DIAN</small></div>
+  <div class="contenedor">
+    <div class="barra-sup">
+      <div class="marca">
+        <div class="logo"><img src="icons/icon-48.png" alt="" /></div>
+        <div class="marca-txt"><b>Codec <span>Document</span></b><small>Contadores · Descargador DIAN</small></div>
+      </div>
+      <button class="voz" id="btnVoz" type="button" title="Escuchar las instrucciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <span id="btnVozTexto">Explícame</span>
+      </button>
     </div>
-    <h1>Descarga tus XML y PDF de la DIAN</h1>
-    <p>Corre en tu navegador, con tu propia sesión. Nada pasa por un servidor compartido.</p>
-  </header>
 
-  <main>
+    <div class="encabezado">
+      <h1>Descarga tus facturas de la DIAN</h1>
+      <p>XML y PDF de cada documento, desde tu propio navegador y con tu sesión. Nada pasa por un servidor compartido.</p>
+    </div>
+
     <div id="reanudar"></div>
 
     <div id="bloqueo">
@@ -149,69 +187,59 @@
       <p class="ayuda">Pega el enlace que te llegó al correo al pedir el token. Si ya entraste a la DIAN en este Chrome, puedes saltarte este paso.</p>
       <div class="fila">
         <input type="text" id="urlDian" placeholder="https://catalogo-vpfe.dian.gov.co/…&token=…" />
-        <button id="btnProbar">Probar</button>
+        <button class="neutro" id="btnProbar">Probar</button>
       </div>
       <div id="estadoEnlace"></div>
       <div id="detalle"></div>
     </section>
 
     <div class="pestanas" role="tablist">
-      <button class="pestana activa" id="tabFechas" type="button">Por fechas <span class="etiqueta-reco">Recomendado</span></button>
+      <button class="pestana activa" id="tabFechas" type="button">Por fechas <span class="reco">Recomendado</span></button>
       <button class="pestana" id="tabCufes" type="button">Por lista de CUFEs</button>
     </div>
 
     <section class="tarjeta panel" id="panelFechas">
-      <div class="titulo"><span class="num">2</span> Elige el periodo</div>
+      <div class="titulo"><span class="num indigo">2</span> Elige el periodo</div>
+      <p class="ayuda">Bajo todos los documentos de esas fechas, página por página, sin pegar CUFEs.</p>
       <div class="rejilla">
         <div><label for="rangoDesde">Desde</label><input type="date" id="rangoDesde" /></div>
         <div><label for="rangoHasta">Hasta</label><input type="date" id="rangoHasta" /></div>
       </div>
-      <div style="margin-top:10px;">
+      <div style="margin-top:14px;">
         <label for="rangoListado">Documentos</label>
         <select id="rangoListado">
           <option value="recibidos">Recibidos (compras)</option>
           <option value="enviados">Enviados (ventas)</option>
         </select>
       </div>
-      <div style="margin-top:12px;"><button id="btnRango" class="primario" type="button">Descargar todo el periodo</button></div>
+      <div style="margin-top:18px;">
+        <button id="btnRango" class="relieve indigo" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+          Descargar todo el periodo
+        </button>
+      </div>
       <div id="estadoRango"></div>
     </section>
 
     <section class="tarjeta panel" id="panelCufes" hidden>
-      <div class="titulo"><span class="num">2</span> Pega tus CUFEs</div>
+      <div class="titulo"><span class="num indigo">2</span> Pega tus CUFEs</div>
+      <p class="ayuda">La columna CUFE/CUDE del Excel que exportaste de la DIAN, uno por línea.</p>
       <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
-      <div class="fila" style="margin-top:8px;">
-        <button id="btnExtraerIa" type="button">Extraer CUFEs con IA</button>
+      <div class="fila" style="margin-top:10px;">
+        <button class="neutro" id="btnExtraerIa" type="button">Extraer CUFEs con IA</button>
         <span id="extraerIaEstado" class="nota"></span>
       </div>
       <div id="conteoCufes"></div>
-      <div style="margin-top:12px;"><button id="btnIniciar" class="primario">Descargar lista</button></div>
+      <div style="margin-top:16px;">
+        <button id="btnIniciar" class="relieve azul">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="m8 17 4 4 4-4"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+          Descargar lista
+        </button>
+      </div>
     </section>
 
-    <details class="plegable">
-      <summary>Configuración avanzada</summary>
-      <div class="cuerpo">
-        <div>
-          <label for="carpeta">Carpeta dentro de tus Descargas</label>
-          <div class="fila">
-            <input type="text" id="carpeta" placeholder="DIAN" />
-            <button id="btnAbrirCarpeta" type="button">Abrir</button>
-          </div>
-        </div>
-        <div>
-          <label for="workers">Pestañas en paralelo (solo lista de CUFEs)</label>
-          <div class="fila">
-            <input type="number" id="workers" min="1" max="5" value="1" />
-            <span class="nota">Empieza en 1. Sube solo si no aumentan los bloqueos.</span>
-          </div>
-        </div>
-      </div>
-    </details>
-
     <section class="tarjeta">
-      <div class="progreso-cab">
-        <div class="titulo" style="margin:0;"><span class="num">3</span> Progreso</div>
-      </div>
+      <div class="titulo"><span class="num verde">3</span> Progreso</div>
       <div class="barra"><div id="barraRelleno"></div></div>
       <div id="resumen">
         <span id="resumenTexto">Aún no has iniciado ninguna descarga.</span>
@@ -224,12 +252,32 @@
         <div class="fila-m"><span>Tiempo restante</span><b id="mEta">0</b></div>
       </div>
       <div class="acciones">
-        <button id="btnDetener" style="display:none;">Detener</button>
-        <button id="btnExportar" type="button">Descargar registro</button>
-        <button id="btnBorrar" class="peligro">Borrar todo</button>
+        <button class="neutro" id="btnDetener" style="display:none;">Detener</button>
+        <button class="neutro" id="btnExportar" type="button">Descargar registro</button>
+        <button class="neutro peligro" id="btnBorrar">Borrar todo</button>
       </div>
       <div id="registro"></div>
     </section>
+
+    <details class="plegable">
+      <summary>Configuración avanzada</summary>
+      <div class="cuerpo">
+        <div>
+          <label for="carpeta">Carpeta dentro de tus Descargas</label>
+          <div class="fila">
+            <input type="text" id="carpeta" placeholder="DIAN" />
+            <button class="neutro" id="btnAbrirCarpeta" type="button">Abrir</button>
+          </div>
+        </div>
+        <div>
+          <label for="workers">Pestañas en paralelo (solo lista de CUFEs)</label>
+          <div class="fila">
+            <input type="number" id="workers" min="1" max="5" value="1" />
+            <span class="nota">Empieza en 1. Sube solo si no aumentan los bloqueos.</span>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <details class="plegable">
       <summary>¿Cómo funciona?</summary>
@@ -241,7 +289,7 @@
         barra amarilla de "depuración" mientras trabaja: es necesaria para que el clic cuente como real.
       </p>
     </details>
-  </main>
+  </div>
 
   <script type="module" src="popup.js"></script>
 </body>

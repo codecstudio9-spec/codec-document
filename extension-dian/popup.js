@@ -468,3 +468,38 @@ chrome.runtime.onMessage.addListener((msg) => {
   tabCufes.addEventListener('click', () => elegir('cufes'));
   chrome.storage.local.get('config_pestana').then((g) => { if (g.config_pestana === 'cufes') elegir('cufes'); });
 }
+
+// ── Guía de voz («Explícame»), igual que en Codec ───────────────────────
+{
+  const GUION_FECHAS = 'Hola. Con esta herramienta descargas tus facturas de la DIAN, con el XML y el PDF de cada una. '
+    + 'Primero, pide un token en el portal de la DIAN y pega aquí el enlace que te llega al correo. Si ya entraste a la DIAN en este Chrome, puedes saltarte ese paso. '
+    + 'Después elige las fechas, si quieres los documentos recibidos o los enviados, y dale a Descargar todo el periodo. '
+    + 'Se abrirá una ventana de la DIAN: no la cierres. Yo busco el periodo y bajo cada documento uno por uno. '
+    + 'Cuando termine, los archivos quedan en tu carpeta de Descargas, dentro de la carpeta DIAN. Desde Codec Document los importas con un clic.';
+  const GUION_CUFES = 'En esta pestaña descargas documentos puntuales. Pega la columna de CUFEs del Excel que exportaste de la DIAN, uno por línea. '
+    + 'Si lo que pegaste viene desordenado, usa Extraer CUFEs con IA. Luego dale a Descargar lista. '
+    + 'Los archivos quedan en tu carpeta de Descargas, dentro de la carpeta DIAN.';
+  const boton = document.getElementById('btnVoz');
+  const texto = document.getElementById('btnVozTexto');
+  const parar = () => { speechSynthesis.cancel(); boton.classList.remove('hablando'); texto.textContent = 'Explícame'; };
+  const vozEspanol = () => {
+    const voces = speechSynthesis.getVoices();
+    return voces.find((v) => /es[-_](CO|MX|US|419)/i.test(v.lang))
+      || voces.find((v) => /^es/i.test(v.lang)) || null;
+  };
+  boton.addEventListener('click', () => {
+    if (speechSynthesis.speaking) { parar(); return; }
+    const enCufes = !document.getElementById('panelCufes').hidden;
+    const u = new SpeechSynthesisUtterance(enCufes ? GUION_CUFES : GUION_FECHAS);
+    u.lang = 'es-CO';
+    const v = vozEspanol();
+    if (v) u.voice = v;
+    u.rate = 1;
+    u.onend = parar;
+    u.onerror = parar;
+    boton.classList.add('hablando');
+    texto.textContent = 'Detener voz';
+    speechSynthesis.speak(u);
+  });
+  speechSynthesis.getVoices();
+}
