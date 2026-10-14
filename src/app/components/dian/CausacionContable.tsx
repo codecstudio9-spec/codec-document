@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  CUENTAS_POR_DEFECTO, ETIQUETA_CUENTA, TARIFA_SUGERIDA, causar, empresasDetectadas, tercerosDelPeriodo,
+  CUENTAS_POR_DEFECTO, ETIQUETA_CUENTA, TARIFA_SUGERIDA, causar, empresasDetectadas, rolDelDocumento, tercerosDelPeriodo,
   type ConceptoRetencion, type CuentasEmpresa, type DocCausable, type LineaCausable, type ReglaTercero,
   type ResultadoCausacion, type Sugerencia,
 } from '../../../lib/dian/causacion';
@@ -75,8 +75,13 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
         setLineas(d.lineas);
         const emp = empresasDetectadas(d.documentos);
         if (emp[0]) setEmpresaNit(emp[0].nit);
-        const meses = [...new Set(d.documentos.map((x) => (x.issue_date ?? '').slice(0, 7)).filter(Boolean))].sort().reverse();
-        if (meses[0]) setMes(meses[0]);
+        // El mes por defecto es el último en que ESTA empresa tiene
+        // documentos, no el último de todo lo subido: si el más reciente es
+        // de otro cliente, abrir en un mes vacío parece un fallo.
+        const mesesEmpresa = [...new Set(d.documentos
+          .filter((x) => emp[0] && rolDelDocumento(x, emp[0].nit))
+          .map((x) => (x.issue_date ?? '').slice(0, 7)).filter(Boolean))].sort().reverse();
+        if (mesesEmpresa[0]) setMes(mesesEmpresa[0]);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'No pude cargar los documentos');
       } finally {

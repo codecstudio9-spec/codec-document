@@ -64,7 +64,7 @@ function fondo(v: VarianteAccion) {
 
 export function AccionesRapidas({ acciones }: { acciones: Accion[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={`grid gap-4 sm:grid-cols-2 ${acciones.length >= 5 ? "lg:grid-cols-3 xl:grid-cols-5" : "xl:grid-cols-4"}`}>
       {acciones.map((a) => {
         const Icono = a.icono;
         const esNeutra = a.variante === 'neutra';

@@ -263,7 +263,7 @@ const SUGERENCIAS: Array<{ re: RegExp; cuenta: string; nombre: string; concepto:
   { re: /energ[ií]a|\benel\b|codensa|electrific/i, cuenta: '513530', nombre: 'Servicios — energía eléctrica', concepto: 'ninguno' },
   { re: /acueducto|alcantarillado|aseo urbano/i, cuenta: '513525', nombre: 'Servicios — acueducto y alcantarillado', concepto: 'ninguno' },
   { re: /\bgas natural\b|vanti|gases de occidente/i, cuenta: '513555', nombre: 'Servicios — gas', concepto: 'ninguno' },
-  { re: /internet|telefon|celular|plan de datos|\bclaro\b|movistar|\btigo\b|\betb\b|comcel/i, cuenta: '513535', nombre: 'Servicios — teléfono e internet', concepto: 'servicios' },
+  { re: /internet|telefon|telecomunicac|celular|plan de datos|\bclaro\b|movistar|\btigo\b|\betb\b|comcel/i, cuenta: '513535', nombre: 'Servicios — teléfono e internet', concepto: 'servicios' },
   { re: /transporte|flete|env[ií]o|mensajer|servientrega|coordinadora|interrapidisimo|domicilio/i, cuenta: '513550', nombre: 'Servicios — transporte, fletes y acarreos', concepto: 'servicios' },
   { re: /vigilancia|seguridad privada|\baseo\b|limpieza/i, cuenta: '513505', nombre: 'Servicios — aseo y vigilancia', concepto: 'servicios' },
   { re: /papeler[ií]a|resma|t[óo]ner|cartucho|[úu]tiles/i, cuenta: '519530', nombre: 'Útiles, papelería y fotocopias', concepto: 'compras' },
