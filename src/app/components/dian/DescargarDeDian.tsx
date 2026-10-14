@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDianExtension } from '../../hooks/use-dian-extension';
+import { DescargaPorRango } from './DescargaPorRango';
 
 const URL_EXTENSION_ZIP = '/descargas/codec-document-descargador-dian.zip';
 
@@ -41,14 +42,16 @@ interface Props {
    *  aviso de «en construcción» y la alternativa automática (correo). */
   habilitada?: boolean;
   onIrACorreo?: () => void;
+  /** Importa a Codec los .zip/.xml que bajó la extensión. */
+  onImportar?: (archivos: File[]) => void;
 }
 
 const GUION_ES = 'Esta herramienta se mudó a una extensión de Chrome. La razón es de fondo: la DIAN empezó a atar el token de acceso a la computadora desde la que se pide, así que un servidor compartido como el nuestro ya no puede autenticarlo, sin importar qué tan bien se disfrace. Una extensión sí puede, porque corre dentro de tu propio navegador, con tu propia conexión. Si todavía no la instalas, dale al botón de descargar aquí abajo y sigue los cuatro pasos. Si ya la instalaste, dale clic al ícono de Codec Document en tu barra de Chrome, junto a la barra de direcciones, y ahí pegas el enlace del token y tus CUFEs, igual que hacías aquí antes. Cuando termine de bajar los documentos, quedan en tu carpeta de Descargas, dentro de una carpeta que se llama DIAN. Desde ahí los arrastras a Subir mis XML, como cualquier XML que ya tuvieras guardado.';
 
 const GUION_EN = 'This tool moved to a Chrome extension. The DIAN portal started tying the access token to the computer that requested it, so a shared server like ours can no longer authenticate it. A browser extension can, because it runs inside your own browser, on your own connection. If you have not installed it yet, use the download button below and follow the four steps. Once installed, click the Codec Document icon in your Chrome toolbar to paste the token link and your CUFEs there. When it finishes, the files land in your Downloads folder, inside a DIAN subfolder — drag them into "Subir mis XML" from there.';
 
-export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada = true, onIrACorreo }: Props) {
-  const { estado, version, verificar } = useDianExtension();
+export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada = true, onIrACorreo, onImportar }: Props) {
+  const { estado, version, verificar, soportaRango, enviar } = useDianExtension();
   const [comprobando, setComprobando] = useState(false);
 
   useEffect(() => {
@@ -107,6 +110,11 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
             esa verificación, y eso no se hace. Mientras se termina la
             extensión, la vía automática y legal es el correo: el emisor está
             obligado a enviar el XML por email. */}
+        {habilitada && estado === 'instalada' && soportaRango && (
+          <DescargaPorRango enviar={enviar} onImportar={(a) => onImportar?.(a)} />
+        )}
+
+        {!habilitada && (
         <div className="mb-5 overflow-hidden rounded-2xl ring-1 ring-amber-200">
           <div className="flex items-center gap-2 bg-amber-400 px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-amber-950">
             <AlertTriangle className="size-3.5" />
@@ -135,6 +143,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada =
             )}
           </div>
         </div>
+        )}
 
         {habilitada && (<>
         <p className="mb-5 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">

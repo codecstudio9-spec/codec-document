@@ -154,7 +154,23 @@
   </section>
 
   <section class="paso">
-    <div class="paso-titulo"><span class="paso-num">2</span> Pega los CUFEs a descargar</div>
+    <div class="paso-titulo"><span class="paso-num">2</span> Descarga todo un rango de fechas (recomendado)</div>
+    <div class="fila">
+      <input type="date" id="rangoDesde" />
+      <input type="date" id="rangoHasta" />
+    </div>
+    <div class="fila" style="margin-top:4px;">
+      <select id="rangoListado">
+        <option value="recibidos">Documentos recibidos</option>
+        <option value="enviados">Documentos enviados</option>
+      </select>
+      <button id="btnRango" class="primario" type="button">▶ Descargar rango</button>
+    </div>
+    <div id="estadoRango"></div>
+  </section>
+
+  <section class="paso">
+    <div class="paso-titulo"><span class="paso-num">3</span> O pega una lista de CUFEs</div>
     <textarea id="cufes" placeholder="Pega aquí la columna CUFE/CUDE del Excel que descargaste de la DIAN"></textarea>
     <div class="fila" style="margin-top:4px;">
       <button id="btnExtraerIa" type="button">🤖 Extraer CUFEs con IA</button>

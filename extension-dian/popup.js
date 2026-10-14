@@ -143,6 +143,42 @@ btnIniciar.addEventListener('click', async () => {
   ponerCorriendo(true);
 });
 
+// ── Modo por rango de fechas (v3.0) ─────────────────────────────────────
+const rangoDesdeEl = $('rangoDesde');
+const rangoHastaEl = $('rangoHasta');
+const rangoListadoEl = $('rangoListado');
+const btnRango = $('btnRango');
+const estadoRangoEl = $('estadoRango');
+{
+  const hoy = new Date();
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  rangoHastaEl.value = iso(hoy);
+  rangoDesdeEl.value = iso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+}
+btnRango.addEventListener('click', async () => {
+  if (btnRango.disabled) return;
+  const desde = rangoDesdeEl.value;
+  const hasta = rangoHastaEl.value;
+  if (!desde || !hasta || desde > hasta) { estadoRangoEl.textContent = 'Revisa las fechas.'; estadoRangoEl.className = 'error'; return; }
+  btnRango.disabled = true;
+  registroEl.innerHTML = '';
+  reanudarEl.style.display = 'none';
+  bloqueoEl.style.display = 'none';
+  // El enlace del token es opcional: si ya entraste a la DIAN en este Chrome,
+  // la sesión sigue abierta y se usa esa.
+  const urlDian = urlDianEl.value.trim() || undefined;
+  const r = await chrome.runtime.sendMessage({ tipo: 'iniciarRango', urlDian, desde, hasta, listado: rangoListadoEl.value });
+  if (!r?.ok) {
+    estadoRangoEl.textContent = r?.error ?? 'No se pudo iniciar.';
+    estadoRangoEl.className = 'error';
+    btnRango.disabled = false;
+    return;
+  }
+  estadoRangoEl.textContent = 'Buscando en la DIAN…';
+  estadoRangoEl.className = '';
+  ponerCorriendo(true);
+});
+
 btnDetener.addEventListener('click', async () => {
   await chrome.runtime.sendMessage({ tipo: 'detener' });
 });
@@ -187,6 +223,8 @@ btnBorrar.addEventListener('click', async () => {
 function ponerCorriendo(v) {
   corriendo = v;
   btnIniciar.disabled = v;
+  const br = document.getElementById('btnRango');
+  if (br) br.disabled = v;
   btnDetener.style.display = v ? 'inline-block' : 'none';
 }
 

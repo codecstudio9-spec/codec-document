@@ -45,9 +45,50 @@ function errorDeEnlace(urlDian) {
 // filtra `externally_connectable` en el manifest antes de que esto se
 // ejecute siquiera.
 chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
-  if (msg?.tipo === 'ping') {
-    responder({ ok: true, version: chrome.runtime.getManifest().version });
-  }
+  (async () => {
+    switch (msg?.tipo) {
+      case 'ping':
+        responder({ ok: true, version: chrome.runtime.getManifest().version, rango: true });
+        return;
+      // Desde la v3.0 Codec maneja la descarga por rango desde su propio
+      // panel (barra de progreso y registro en la página). Sólo
+      // codecdocument.com llega aquí: lo filtra externally_connectable.
+      case 'iniciarRango': {
+        if (msg.urlDian) {
+          const error = errorDeEnlace(msg.urlDian);
+          if (error) { responder({ ok: false, error }); return; }
+        }
+        responder(await gestor.iniciarRango({ urlDian: msg.urlDian, desde: msg.desde, hasta: msg.hasta, listado: msg.listado }));
+        return;
+      }
+      case 'estado':
+        responder(gestor.estado());
+        return;
+      case 'iniciarRango': {
+        if (msg.urlDian) {
+          const error = errorDeEnlace(msg.urlDian);
+          if (error) { responder({ ok: false, error }); return; }
+        }
+        responder(await gestor.iniciarRango({ urlDian: msg.urlDian, desde: msg.desde, hasta: msg.hasta, listado: msg.listado }));
+        return;
+      }
+
+      case 'detener':
+        gestor.detener();
+        responder({ ok: true });
+        return;
+      case 'reanudarValidacion':
+        await gestor.reanudarTrasValidacion();
+        responder({ ok: true });
+        return;
+      case 'abrirCarpeta':
+        await gestor.abrirCarpeta();
+        responder({ ok: true });
+        return;
+      default:
+        responder({ ok: false, error: 'Mensaje no reconocido' });
+    }
+  })();
   return true;
 });
 

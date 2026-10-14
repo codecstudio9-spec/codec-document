@@ -84,6 +84,9 @@ export class DownloadManager {
     this.terminadoEn = null;
     this.ultimoDescargaId = null;
     this._velocidadMuestras = [];
+    this.modo = 'cufes'; // 'cufes' | 'rango'
+    this.rango = null; // { desde, hasta, listado }
+    this.ultimoLog = '';
   }
 
   _registrarListenerDescargas() {
@@ -131,6 +134,15 @@ export class DownloadManager {
     this.numWorkersEfectivo = this.numWorkers;
     this.documentos = previo.documentos || {};
     this.iniciadoEn = previo.iniciadoEn || Date.now();
+    if (previo.modo === 'rango' && previo.rango) {
+      this.modo = 'rango';
+      this.rango = previo.rango;
+      this.cancelado = false;
+      this.pausadoPorValidacion = false;
+      this._emitir('log', { texto: 'El service worker se reinició; retomando el rango donde iba.' });
+      this._correrRango();
+      return;
+    }
     this.cancelado = false;
     this.pausadoPorValidacion = false;
     this._reconstruirColaPreservandoIntentos();
@@ -157,6 +169,8 @@ export class DownloadManager {
         iniciadoEn: this.iniciadoEn,
         terminadoEn: this.terminadoEn,
         corriendo: this.corriendo,
+        modo: this.modo,
+        rango: this.rango,
       },
     });
   }
@@ -191,6 +205,137 @@ export class DownloadManager {
     await this._guardar();
     this._correr(); // fire-and-forget
     return { ok: true, total: this.cufes.length };
+  }
+
+  /**
+   * Modo por rango de fechas: no hace falta lista de CUFEs. Se busca el rango
+   * en "Documentos recibidos" (o "enviados") y se baja cada fila con un clic
+   * real. Ver procesarRango en download-worker.js.
+   * `urlDian` es opcional: si el contador ya entró al portal con su token en
+   * este Chrome, la sesión (cookie) ya existe y no hace falta otra vez.
+   */
+  async iniciarRango({ urlDian, desde, hasta, listado, carpeta }) {
+    if (this.corriendo) return { ok: false, error: 'Ya hay una descarga en curso. Dale a Detener primero.' };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(desde || '') || !/^\d{4}-\d{2}-\d{2}$/.test(hasta || '') || desde > hasta) {
+      return { ok: false, error: 'Rango de fechas inválido.' };
+    }
+    const previo = (await chrome.storage.local.get(CLAVE_ESTADO))[CLAVE_ESTADO];
+    const mismoRango = previo?.modo === 'rango' && previo.rango?.desde === desde && previo.rango?.hasta === hasta && previo.rango?.listado === listado;
+    this.borradoPendiente = false;
+    this.modo = 'rango';
+    this.urlDian = urlDian || null;
+    this.rango = { desde, hasta, listado: listado === 'enviados' ? 'enviados' : 'recibidos' };
+    this.carpeta = (carpeta || `${CARPETA_DEFECTO}/${desde}_a_${hasta}`).trim();
+    this.documentos = mismoRango ? (previo.documentos || {}) : {};
+    this.cufes = Object.keys(this.documentos);
+    this.cancelado = false;
+    this.pausadoPorValidacion = false;
+    this.ultimoBloqueo = null;
+    this.iniciadoEn = Date.now();
+    this.terminadoEn = null;
+    await this._guardar();
+    this._correrRango();
+    return { ok: true };
+  }
+
+  async _correrRango() {
+    this.corriendo = true;
+    await this._guardar();
+    chrome.alarms.create(ALARMA_LATIDO, { periodInMinutes: ALARMA_MINUTOS });
+    const log = (texto) => { this.ultimoLog = texto; this._emitir('log', { texto }); };
+
+    if (this.urlDian) {
+      log('Abriendo sesión con el enlace del token…');
+      const auth = await abrirSesion(this.urlDian);
+      if (!auth.ok) {
+        this.corriendo = false;
+        chrome.alarms.clear(ALARMA_LATIDO);
+        await this._guardar();
+        this._emitir('terminado', { fatal: auth.error, ...this._resumen() });
+        return;
+      }
+    }
+
+    const w = new DianDownloadWorker(1, { carpeta: this.carpeta });
+    w.urlListado = this.rango.listado === 'enviados'
+      ? 'https://catalogo-vpfe.dian.gov.co/Document/Sent'
+      : 'https://catalogo-vpfe.dian.gov.co/Document/Received';
+    try {
+      await w.iniciar();
+    } catch (err) {
+      this.corriendo = false;
+      chrome.alarms.clear(ALARMA_LATIDO);
+      await this._guardar();
+      this._emitir('terminado', { fatal: `No se pudo abrir la DIAN: ${err.message}`, ...this._resumen() });
+      return;
+    }
+    this.workers = [w];
+
+    const ganchos = {
+      yaHecho: (cufe) => this.documentos[cufe]?.estado === ESTADOS.COMPLETADO
+        || (this.documentos[cufe]?.intentos || 0) >= INTENTOS_MAX,
+      alListar: (docs) => {
+        let nuevos = 0;
+        for (const d of docs) {
+          if (!this.documentos[d.cufe]) { this.documentos[d.cufe] = { estado: ESTADOS.PENDIENTE, intentos: 0, info: d }; this.cufes.push(d.cufe); nuevos++; }
+        }
+        if (nuevos) this._emitir('progreso', this._resumen());
+      },
+      antes: (cufe) => {
+        this.cufesEnVuelo.set(cufe, this.carpeta);
+        const doc = this.documentos[cufe];
+        doc.estado = ESTADOS.ASIGNADO;
+        doc.intentos = (doc.intentos || 0) + 1;
+        doc.inicio = doc.inicio || Date.now();
+        doc.workerId = 1;
+        const i = doc.info || {};
+        log(`Descargando ${i.prefijo ? `${i.numero}` : cufe.slice(0, 12)} ${i.emisor ? `de ${i.emisor}` : ''}`.trim());
+      },
+      onDescargaIniciada: (cufe, id) => { this._downloadIdPorCufe.set(id, cufe); },
+      despues: async (cufe, r) => {
+        this.cufesEnVuelo.delete(cufe);
+        const doc = this.documentos[cufe];
+        doc.fin = Date.now();
+        doc.duracionMs = doc.fin - doc.inicio;
+        doc.detalle = r.detalle;
+        doc.codigoError = r.codigoError ?? null;
+        doc.mime = r.mime;
+        doc.tamano = r.tamano;
+        if (r.downloadId != null) doc.downloadId = r.downloadId;
+        if (r.estado === ESTADOS.COMPLETADO) {
+          doc.estado = ESTADOS.COMPLETADO;
+          this.ultimoDescargaId = r.downloadId ?? this.ultimoDescargaId;
+          this._velocidadMuestras.push(Date.now());
+        } else if (r.estado === ESTADOS.REQUIERE_VALIDACION) {
+          doc.estado = ESTADOS.PENDIENTE;
+          doc.intentos = Math.max(0, doc.intentos - 1);
+        } else {
+          doc.estado = doc.intentos >= INTENTOS_MAX ? ESTADOS.ERROR_DEFINITIVO : ESTADOS.PENDIENTE;
+        }
+        this._emitir('progreso', { cufe, ...doc, ...this._resumen() });
+        await this._guardar();
+      },
+      cancelado: () => this.cancelado,
+      log,
+    };
+
+    // Si la DIAN pide verificación humana: se pausa, se le muestra la
+    // pestaña al contador y, cuando la resuelve y le da Reanudar, se sigue.
+    while (!this.cancelado) {
+      const res = await w.procesarRango(this.rango.desde, this.rango.hasta, ganchos);
+      if (!res.validacion) break;
+      await this._pausarPorValidacion({ detalle: res.detalle }, w);
+      while (this.pausadoPorValidacion && !this.cancelado) await dormir(1000);
+    }
+
+    await w.detener().catch(() => {});
+    this.workers = [];
+    this.corriendo = false;
+    this.terminadoEn = Date.now();
+    chrome.alarms.clear(ALARMA_LATIDO);
+    await this._guardar();
+    log(this.cancelado ? 'Descarga detenida.' : 'Rango terminado.');
+    this._emitir('terminado', this._resumen());
   }
 
   detener() {
@@ -493,6 +638,10 @@ export class DownloadManager {
       numWorkers: this.numWorkers,
       numWorkersEfectivo: this.numWorkersEfectivo,
       reanudable: !this.corriendo && total > 0 && (completados + errores) < total,
+      modo: this.modo,
+      rango: this.rango,
+      ultimoLog: this.ultimoLog,
+      carpeta: this.carpeta,
     };
   }
 }

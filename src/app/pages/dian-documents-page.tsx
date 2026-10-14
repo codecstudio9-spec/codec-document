@@ -3395,6 +3395,7 @@ function ContenidoDian() {
           onCerrar={() => setPanelDescarga(false)}
           habilitada={puedeDescargar}
           onIrACorreo={() => { setPanelDescarga(false); setSeccion('correo'); }}
+          onImportar={(archivos) => { setPanelDescarga(false); setSeccion('inicio'); void procesar(archivos); }}
           narrar={narrar}
           // Los que la verificación ya identificó como faltantes: se pueden
           // copiar con un clic para pegarlos en el popup de la extensión.

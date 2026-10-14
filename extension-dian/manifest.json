@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Codec Document — Descargador DIAN",
-  "version": "2.4.0",
-  "description": "Descarga tus documentos electrónicos de la DIAN a tu computador, usando tu propia sesión de navegador.",
+  "version": "3.0.0",
+  "description": "Descarga tus documentos electrónicos de la DIAN por rango de fechas o por CUFE, usando tu propia sesión de navegador.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -20,7 +20,15 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["downloads", "storage", "unlimitedStorage", "cookies", "scripting", "alarms", "debugger"],
+  "permissions": [
+    "downloads",
+    "storage",
+    "unlimitedStorage",
+    "cookies",
+    "scripting",
+    "alarms",
+    "debugger"
+  ],
   "host_permissions": [
     "https://catalogo-vpfe.dian.gov.co/*",
     "https://catalogo-vpfe-hab.dian.gov.co/*",
@@ -34,5 +42,6 @@
       "https://codecdocument.com/*",
       "http://localhost:5174/*"
     ]
-  }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1Bkzt3PzG3VXuPb4AHY02IAVJzDBDg7lT/g6j3jVmjkqgQzXqIgQ2KQa+3pNmvH0OB2JegCR8e49dFGKRm3r6RekLgxxwqwwwmUqnHipB/ANcGKjeA3ZTCe8TIkkEnGDhKn2mCwUiwVY1TVwT2ip3wjmjfuG+3XLNwPaU+C6GjRsbEi48n9xAOKhljRqllMD4kYh1K7Lf+ULDKJ2WCyEEEF6Dy4yWnyDB2r0G11LTIiGyiOvm9af6o96zvApWSWQt1TZuuzRmMygDLjeIWCuiIgmayz7uTVBliK85Cc9+05ERxVvaBkMctcyVSvJ0MTSVOW1kt8CCpfRI1L000igEQIDAQAB"
 }

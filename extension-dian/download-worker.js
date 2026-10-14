@@ -238,8 +238,15 @@ function scriptComprobarBusqueda() {
  * produce `isTrusted: true` porque ocurre al nivel del propio Chrome, no
  * de la página.
  */
-function scriptPrepararBotonDescargar() {
-  const boton = document.querySelector('.download-document');
+function scriptPrepararBotonDescargar(cufe) {
+  // En el modo por rango hay varias filas en la tabla: se busca la del CUFE
+  // exacto por su data-id. En el modo por CUFE sólo hay una fila y vale la
+  // primera.
+  const botones = [...document.querySelectorAll('.download-document')];
+  const objetivo = cufe ? String(cufe).toLowerCase() : null;
+  const boton = objetivo
+    ? botones.find((b) => String(b.getAttribute('data-id') || b.id || '').toLowerCase() === objetivo) || (botones.length === 1 ? botones[0] : null)
+    : botones[0];
   if (!boton) return { ok: false, motivo: 'El botón de descargar de esa fila desapareció.' };
   // Portales ASP.NET suelen usar target="_blank" en el enlace de descarga
   // para no perder la página de resultados — eso abre una pestaña nueva por
@@ -292,6 +299,88 @@ function scriptDiagnosticoPagina() {
     botonDescargaVisible,
     contextoBoton,
   };
+}
+
+// ── Modo por rango de fechas (v3.0, 2026-10-14) ─────────────────────────
+// Confirmado en vivo con una sesión real: en "Documentos recibidos" la
+// verificación de Cloudflare se resuelve sola en un navegador normal, la
+// tabla lista todo el rango de fechas (10 filas por página, paginación
+// DataTables) y cada fila trae su botón `.download-document` con el CUFE en
+// data-id. Un clic real en ese botón baja `<CUFE>.zip` con el XML y el PDF.
+// Así ya no hace falta una lista de CUFEs ni una búsqueda por documento.
+
+function scriptFijarRango(desde, hasta) {
+  const ini = document.querySelector('#startDate');
+  const fin = document.querySelector('#endDate');
+  const vista = document.querySelector('#dashboard-report-range');
+  if (!ini || !fin) return { ok: false, motivo: 'No encontré el filtro de fechas: la DIAN pudo haber cambiado el portal.' };
+  ini.value = desde;
+  fin.value = hasta;
+  if (vista) vista.value = `${desde} - ${hasta}`;
+  const pagina = document.querySelector('#Page');
+  if (pagina) pagina.value = '0';
+  const clave = document.querySelector('#DocumentKey');
+  if (clave) clave.value = '';
+  return { ok: true };
+}
+
+function scriptEstadoTurnstile() {
+  const campo = document.querySelector('input[name="cf-turnstile-response"]');
+  const reto = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
+  // Un reto que pide clic humano se ve como un iframe grande y visible; el
+  // modo automático es el widget pequeño del rincón. Sólo se informa: la
+  // extensión nunca intenta resolverlo.
+  let retoGrande = false;
+  if (reto) { const r = reto.getBoundingClientRect(); retoGrande = r.width > 320 && r.height > 120; }
+  return { listo: !!(campo && campo.value && campo.value.length > 20), hayCampo: !!campo, retoGrande };
+}
+
+function scriptBuscarRango() {
+  const boton = document.querySelector('.btn-search');
+  if (!boton) return { ok: false, motivo: 'No encontré el botón Buscar.' };
+  boton.click();
+  return { ok: true };
+}
+
+function scriptLeerFilas() {
+  const filas = [...document.querySelectorAll('table tbody tr')];
+  const docs = [];
+  for (const tr of filas) {
+    const b = tr.querySelector('.download-document');
+    if (!b) continue;
+    const cufe = String(b.getAttribute('data-id') || b.id || '').toLowerCase();
+    if (!/^[0-9a-f]{40,}$/.test(cufe)) continue;
+    const celdas = [...tr.querySelectorAll('td')].map((td) => td.innerText.replace(/\s+/g, ' ').trim());
+    docs.push({ cufe, fecha: celdas[2] || '', prefijo: celdas[3] || '', numero: celdas[4] || '', tipo: celdas[5] || '', nitEmisor: celdas[6] || '', emisor: celdas[7] || '' });
+  }
+  const texto = (document.body?.innerText || '').toLowerCase();
+  const sinResultados = /no se encontraron|ning[uú]n (dato|registro)|no hay (datos|registros|resultados)/.test(texto) && docs.length === 0;
+  const info = (document.body?.innerText.match(/Mostrando registros del \d+ al \d+(?: de \d+)?/) || [''])[0];
+  const buscando = /buscando\.\.\./.test(texto);
+  return { docs, sinResultados, info, buscando };
+}
+
+function scriptSiguientePagina() {
+  const sig = document.querySelector('.dt-paging-button.next, .paginate_button.next');
+  if (!sig || /disabled/.test(sig.className) || sig.getAttribute('aria-disabled') === 'true') return { hay: false };
+  sig.click();
+  return { hay: true };
+}
+
+/** Parte [desde, hasta] (YYYY-MM-DD) en tramos de un mes calendario, en el
+ *  formato YYYY/MM/DD que usa el filtro de la DIAN. */
+export function tramosPorMes(desde, hasta) {
+  const out = [];
+  let a = new Date(`${desde}T00:00:00`);
+  const fin = new Date(`${hasta}T00:00:00`);
+  const fmt = (d) => `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  while (a <= fin) {
+    const finMes = new Date(a.getFullYear(), a.getMonth() + 1, 0);
+    const b = finMes < fin ? finMes : fin;
+    out.push([fmt(a), fmt(b)]);
+    a = new Date(b.getFullYear(), b.getMonth(), b.getDate() + 1);
+  }
+  return out;
 }
 
 export class DianDownloadWorker {
@@ -384,7 +473,7 @@ export class DianDownloadWorker {
       chrome.tabs.onUpdated.addListener(escuchar);
       const offset = (this.id - 1) * 40;
       chrome.windows.create(
-        { url: HOST_RECIBIDOS, type: 'normal', focused: false, state: 'normal', width: 480, height: 640, left: 20 + offset, top: 20 + offset },
+        { url: this.urlListado || HOST_RECIBIDOS, type: 'normal', focused: false, state: 'normal', width: 480, height: 640, left: 20 + offset, top: 20 + offset },
         (win) => {
           if (terminado) return;
           const tab = win?.tabs?.[0];
@@ -538,7 +627,7 @@ export class DianDownloadWorker {
         listo();
       };
       chrome.tabs.onUpdated.addListener(escuchar);
-      chrome.tabs.update(this.tabId, { url: HOST_RECIBIDOS }).catch(() => {
+      chrome.tabs.update(this.tabId, { url: this.urlListado || HOST_RECIBIDOS }).catch(() => {
         chrome.tabs.onUpdated.removeListener(escuchar);
         listo();
       });
@@ -839,7 +928,7 @@ export class DianDownloadWorker {
       // por chrome.debugger (ver _clicReal): un boton.click() sintético
       // aquí es exactamente lo que se confirmó en vivo que no alcanza
       // (ver auditoría 2026-08-25(b) al inicio del archivo).
-      this._ejecutar(scriptPrepararBotonDescargar, [], TIMEOUT_LLAMADA_MS).then(async (r) => {
+      this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS).then(async (r) => {
         if (terminado) return;
         if (!this._vigente(miGen)) { terminado = true; limpiar(); resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
         if (!r?.ok) {
@@ -966,5 +1055,110 @@ export class DianDownloadWorker {
     }
 
     return { estado: ESTADOS.COMPLETADO, downloadId, mime, tamano };
+  }
+
+  /** Espera a que la verificación automática de la página quede lista.
+   *  Nunca la resuelve: si aparece un reto que pide clic, devuelve
+   *  `retoGrande` para que el gestor pause y le muestre la pestaña al humano. */
+  async _esperarTurnstile(ms = 25_000) {
+    const vence = Date.now() + ms;
+    while (Date.now() < vence) {
+      let r;
+      try { r = await this._ejecutar(scriptEstadoTurnstile, [], 4000); } catch { r = null; }
+      if (r?.retoGrande) return { listo: false, reto: true };
+      if (r?.listo || (r && !r.hayCampo)) return { listo: true };
+      await dormir(700);
+    }
+    return { listo: false, reto: false };
+  }
+
+  /** Carga el listado, fija el rango, busca y espera la primera página. */
+  async _buscarRango(desde, hasta) {
+    await this._prepararPestanaLimpia();
+    const seg = await this._esperarSeguridadLista();
+    if (seg.bloqueado) return { ok: false, validacion: true, detalle: 'La DIAN pidió una comprobación humana antes de buscar.' };
+    const f = await this._ejecutar(scriptFijarRango, [desde, hasta]);
+    if (!f?.ok) return { ok: false, detalle: f?.motivo || 'No pude fijar el rango de fechas.' };
+    const ts = await this._esperarTurnstile();
+    if (ts.reto) return { ok: false, validacion: true, detalle: 'La DIAN mostró una verificación que pide clic humano.' };
+    const b = await this._ejecutar(scriptBuscarRango, []);
+    if (!b?.ok) return { ok: false, detalle: b?.motivo || 'No pude buscar.' };
+    const vence = Date.now() + 30_000;
+    await dormir(1500);
+    while (Date.now() < vence) {
+      let r;
+      try { r = await this._ejecutar(scriptLeerFilas, [], 5000); } catch { r = null; }
+      if (r && !r.buscando && (r.docs.length > 0 || r.sinResultados)) return { ok: true, primera: r };
+      await dormir(800);
+    }
+    return { ok: false, detalle: 'La DIAN no devolvió resultados a tiempo (o la sesión venció).' };
+  }
+
+  /**
+   * Recorre todo el rango y descarga cada documento con un clic real en su
+   * fila. `h` son los ganchos del gestor:
+   *   yaHecho(cufe) · alListar(docs) · antes(cufe) · despues(cufe, r) ·
+   *   onDescargaIniciada(cufe, id) · cancelado() · log(texto)
+   * Devuelve { ok, validacion?, detalle? }.
+   */
+  async procesarRango(desde, hasta, h) {
+    for (const [ini, fin] of tramosPorMes(desde, hasta)) {
+      // Hasta 3 pasadas por tramo: lo que falle en una se reintenta en una
+      // búsqueda nueva (página recién cargada), no sobre la misma tabla.
+      for (let pasada = 1; pasada <= 3; pasada++) {
+        if (h.cancelado()) return { ok: true };
+        h.log(`Buscando ${ini} a ${fin}${pasada > 1 ? ` (pasada ${pasada})` : ''}…`);
+        const busq = await this._buscarRango(ini, fin);
+        if (!busq.ok) {
+          if (busq.validacion) return { ok: false, validacion: true, detalle: busq.detalle };
+          h.log(busq.detalle);
+          continue;
+        }
+        let pagina = busq.primera;
+        let pendientesTramo = 0;
+        let numPagina = 1;
+        while (true) {
+          if (h.cancelado()) return { ok: true };
+          h.alListar(pagina.docs);
+          for (const d of pagina.docs) {
+            if (h.cancelado()) return { ok: true };
+            if (h.yaHecho(d.cufe)) continue;
+            const ts = await this._esperarTurnstile();
+            if (ts.reto) return { ok: false, validacion: true, detalle: 'La DIAN mostró una verificación que pide clic humano.' };
+            h.antes(d.cufe);
+            const miGen = ++this._gen;
+            let r;
+            try {
+              r = await conLimite(this._descargar(d.cufe, (id) => h.onDescargaIniciada(d.cufe, id), miGen), TIMEOUT_TOTAL_CUFE_MS, 'Tiempo agotado descargando.');
+            } catch (err) {
+              r = { estado: ESTADOS.ERROR_REINTENTABLE, codigoError: CODIGOS_ERROR.ERROR_TIMEOUT, detalle: err.message };
+            }
+            h.despues(d.cufe, r);
+            if (r.estado === ESTADOS.REQUIERE_VALIDACION) return { ok: false, validacion: true, detalle: r.detalle };
+            if (r.estado !== ESTADOS.COMPLETADO) pendientesTramo++;
+            // Ritmo humano: entre 1,5 y 3 segundos entre descargas.
+            await dormir(1500 + Math.floor(Math.random() * 1500));
+          }
+          let sig;
+          try { sig = await this._ejecutar(scriptSiguientePagina, []); } catch { sig = null; }
+          if (!sig?.hay) break;
+          numPagina++;
+          const primeraAntes = pagina.docs[0]?.cufe;
+          const vence = Date.now() + 25_000;
+          let nueva = null;
+          await dormir(1200);
+          while (Date.now() < vence) {
+            let r;
+            try { r = await this._ejecutar(scriptLeerFilas, [], 5000); } catch { r = null; }
+            if (r && !r.buscando && r.docs.length > 0 && r.docs[0].cufe !== primeraAntes) { nueva = r; break; }
+            await dormir(800);
+          }
+          if (!nueva) { h.log(`La página ${numPagina} no cargó; se retoma en otra pasada.`); pendientesTramo++; break; }
+          pagina = nueva;
+        }
+        if (pendientesTramo === 0) break;
+      }
+    }
+    return { ok: true };
   }
 }

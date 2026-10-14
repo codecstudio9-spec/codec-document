@@ -1,74 +1,84 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * ID de la extensión "Codec Document — Descargador DIAN" (extension-dian/),
- * el que le asignó la Chrome Web Store al crear el elemento (visible en el
- * panel de developer, arriba del todo, aunque el elemento esté en borrador
- * y no haya pasado la revisión todavía). Ya no depende de ninguna clave
- * local — ver el historial de este archivo si hace falta el porqué.
+ * IDs posibles de la extensión "Codec Document — Descargador DIAN"
+ * (extension-dian/):
+ *   - el fijo que le da la clave pública del manifest (v3.0+): es el mismo
+ *     en Mac y en Windows cuando se instala con "Cargar descomprimida";
+ *   - el que asignó la Chrome Web Store al elemento en borrador, para cuando
+ *     se publique allí.
+ * Se prueban en orden y se usa el primero que responde.
  */
-const EXTENSION_ID = 'hgikepfbdgaajbmkagdjebfeodiepcp';
+const EXTENSION_IDS = ['cljhonndmjmhffapnmleppolcabndaob', 'hgikepfbdgaajbmkagdjebfeodiepcp'];
 
 export type EstadoExtensionDian = 'revisando' | 'instalada' | 'no-instalada';
 
+type Runtime = {
+  sendMessage?: (id: string, msg: unknown, cb: (r: unknown) => void) => void;
+  lastError?: unknown;
+};
+
+const runtime = (): Runtime | undefined =>
+  (window as unknown as { chrome?: { runtime?: Runtime } }).chrome?.runtime;
+
+function enviarA(id: string, msg: unknown, ms = 1500): Promise<unknown> {
+  return new Promise((resolve) => {
+    const rt = runtime();
+    if (!rt?.sendMessage) { resolve(undefined); return; }
+    let hecho = false;
+    const t = setTimeout(() => { if (!hecho) { hecho = true; resolve(undefined); } }, ms);
+    try {
+      rt.sendMessage(id, msg, (r) => {
+        void rt.lastError;
+        if (hecho) return;
+        hecho = true;
+        clearTimeout(t);
+        resolve(r);
+      });
+    } catch {
+      clearTimeout(t);
+      resolve(undefined);
+    }
+  });
+}
+
 /**
- * Pregunta si la extensión está instalada, sin que el contador tenga que
- * saber explicarlo.
+ * Detecta la extensión y permite hablarle.
  *
- * Funciona porque la extensión declara `externally_connectable` con el
- * origen de codecdocument.com: eso la habilita a aceptar UN mensaje nuestro
- * ("¿estás ahí?") y nada más — no le da a esta página ningún permiso sobre
- * la extensión ni sobre la sesión de la DIAN.
+ * Funciona porque la extensión declara `externally_connectable` sólo para
+ * codecdocument.com. Desde la v3.0 acepta, además del ping, las órdenes del
+ * modo por rango (iniciarRango, estado, detener, reanudarValidacion,
+ * abrirCarpeta). La descarga sigue ocurriendo en el Chrome del contador,
+ * con su propia sesión de la DIAN.
  */
 export function useDianExtension() {
   const [estado, setEstado] = useState<EstadoExtensionDian>('revisando');
   const [version, setVersion] = useState<string | null>(null);
+  const [soportaRango, setSoportaRango] = useState(false);
+  const idRef = useRef<string | null>(null);
 
-  const verificar = useCallback(() => {
+  const verificar = useCallback(async () => {
     setEstado('revisando');
-
-    const runtime = (window as unknown as {
-      chrome?: { runtime?: { sendMessage?: (...args: unknown[]) => void; lastError?: unknown } };
-    }).chrome?.runtime;
-
-    if (!runtime?.sendMessage) {
-      // No es Chrome/Edge con soporte de extensiones, o el navegador no
-      // expone chrome.runtime a la página. Sin esto no hay forma de
-      // preguntar — se trata igual que "no instalada".
-      setEstado('no-instalada');
-      return;
+    if (!runtime()?.sendMessage) { setEstado('no-instalada'); return; }
+    for (const id of EXTENSION_IDS) {
+      const r = (await enviarA(id, { tipo: 'ping' }, 1200)) as { ok?: boolean; version?: string; rango?: boolean } | undefined;
+      if (r?.ok) {
+        idRef.current = id;
+        setVersion(r.version ?? null);
+        setSoportaRango(Boolean(r.rango));
+        setEstado('instalada');
+        return;
+      }
     }
-
-    let resuelto = false;
-    const seVencio = setTimeout(() => {
-      if (resuelto) return;
-      resuelto = true;
-      setEstado('no-instalada');
-    }, 1200);
-
-    try {
-      runtime.sendMessage(EXTENSION_ID, { tipo: 'ping' }, (respuesta: { ok?: boolean; version?: string } | undefined) => {
-        // Se consulta lastError para que Chrome no queje en consola por una
-        // respuesta que nadie recogió — pasa siempre que la extensión no
-        // está instalada, y es la forma normal de detectarlo, no un error.
-        void runtime.lastError;
-        if (resuelto) return;
-        resuelto = true;
-        clearTimeout(seVencio);
-        if (respuesta?.ok) {
-          setVersion(respuesta.version ?? null);
-          setEstado('instalada');
-        } else {
-          setEstado('no-instalada');
-        }
-      });
-    } catch {
-      clearTimeout(seVencio);
-      setEstado('no-instalada');
-    }
+    setEstado('no-instalada');
   }, []);
 
-  useEffect(() => { verificar(); }, [verificar]);
+  useEffect(() => { void verificar(); }, [verificar]);
 
-  return { estado, version, verificar };
+  const enviar = useCallback(async <T = unknown>(msg: Record<string, unknown>, ms = 8000): Promise<T | undefined> => {
+    if (!idRef.current) return undefined;
+    return (await enviarA(idRef.current, msg, ms)) as T | undefined;
+  }, []);
+
+  return { estado, version, soportaRango, verificar, enviar };
 }
