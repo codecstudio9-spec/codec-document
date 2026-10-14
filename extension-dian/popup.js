@@ -503,3 +503,16 @@ chrome.runtime.onMessage.addListener((msg) => {
   });
   speechSynthesis.getVoices();
 }
+
+// ── Ventana grande ──────────────────────────────────────────────────────
+// Los popups de extensión tienen un tope de 600 px de alto que Chrome no
+// deja cambiar. Esta misma página se abre en una ventana propia, del alto de
+// la pantalla, con ?ventana=1.
+{
+  if (new URLSearchParams(location.search).get('ventana') === '1') document.body.classList.add('ventana');
+  document.getElementById('btnVentana').addEventListener('click', async () => {
+    const alto = Math.min(1000, (window.screen?.availHeight || 900) - 40);
+    await chrome.windows.create({ url: chrome.runtime.getURL('popup.html?ventana=1'), type: 'popup', width: 660, height: alto, focused: true });
+    window.close();
+  });
+}
