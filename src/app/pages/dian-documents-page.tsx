@@ -3,7 +3,7 @@
  *
  * ── Acceso y cuota ──────────────────────────────────────────────────────
  * Abierta a cualquier usuario autenticado. Quien limita no es el correo
- * sino la cuota: 200 documentos por mes calendario en el plan gratuito.
+ * sino la cuota: 50 documentos por mes calendario en el plan gratuito.
  * El propietario (isAdminEmail) va sin límite.
  *
  * La cuota se cuenta sobre las filas realmente guardadas, así que un
@@ -26,7 +26,7 @@ import {
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
-  FolderOpen, ChevronLeft, ArrowRight, Clock3,
+  FolderOpen, ChevronLeft, ArrowRight, Clock3, BookOpenCheck,
 } from 'lucide-react';
 import {
   PanelLateral, ANCHO_LATERAL, ANCHO_LATERAL_PLEGADA, type GrupoLateral,
@@ -54,6 +54,8 @@ import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { PlantillaContable } from '../components/dian/PlantillaContable';
 import { AuditorFiscal } from '../components/dian/AuditorFiscal';
 import { DescargarDeDian } from '../components/dian/DescargarDeDian';
+import { CausacionContable } from '../components/dian/CausacionContable';
+import type { DocCausable, LineaCausable } from '../../lib/dian/causacion';
 import type { DocumentoDian } from '../../lib/dian/auditoria';
 import {
   CARD_RADIUS, CARD_SHADOW, BLUE_GRADIENT, DARK_GRADIENT,
@@ -307,6 +309,7 @@ function ContenidoDian() {
   };
   const [panelAuditor, setPanelAuditor] = useState(false);
   const [panelDescarga, setPanelDescarga] = useState(false);
+  const [panelCausacion, setPanelCausacion] = useState(false);
 
   // ── Panel del propietario: quién prueba la descarga, y qué respondieron ──
   const [nuevoTester, setNuevoTester] = useState('');
@@ -932,14 +935,16 @@ function ContenidoDian() {
             bloqueado: buzon ? !buzon.disponible : false,
           },
           { id: 'cufes', etiqueta: 'Verificar CUFEs', icono: ListChecks },
-          ...(puedeDescargar
-            ? [{ id: 'descargar', etiqueta: 'Descargar de la DIAN', icono: CloudDownload }]
-            : []),
+          // Visible para todos, con la marca «Pronto»: el panel explica que
+          // está en construcción por los controles de seguridad de la DIAN y
+          // ofrece la alternativa que sí es automática (el correo).
+          { id: 'descargar', etiqueta: 'Descargar de la DIAN', icono: CloudDownload, marca: puedeDescargar ? undefined : 'Pronto' },
         ],
       },
       {
         titulo: 'Llevarme los datos',
         items: [
+          { id: 'causar', etiqueta: 'Causar facturas', icono: BookOpenCheck, marca: 'Nuevo' },
           { id: 'reportes', etiqueta: 'Excel y plantillas', icono: FileSpreadsheet },
           { id: 'auditor', etiqueta: 'Cruzar contabilidad', icono: Scale },
         ],
@@ -1023,6 +1028,14 @@ function ContenidoDian() {
           onClick: () => setPanelDescarga(true),
         }]
       : []),
+    {
+      id: 'causar',
+      etiqueta: 'Causar facturas',
+      icono: BookOpenCheck,
+      variante: 'excel',
+      insignia: 'NUEVO',
+      onClick: () => setPanelCausacion(true),
+    },
     {
       id: 'auditor',
       etiqueta: 'Cruzar contabilidad',
@@ -1319,6 +1332,7 @@ function ContenidoDian() {
           // botón para abrir ese mismo cajón — un clic para llegar a un clic.
           if (id === 'descargar') { setPanelDescarga(true); return; }
           if (id === 'auditor') { setPanelAuditor(true); return; }
+          if (id === 'causar') { setPanelCausacion(true); return; }
 
           setSeccion(id);
           if (id === 'revision') setVista('revision');
@@ -2100,7 +2114,7 @@ function ContenidoDian() {
 
                     {[
                       'Subir ZIP o XML sueltos, sin descomprimir',
-                      'Descargar de la DIAN con tu token',
+                      'Causación automática con tus cuentas',
                       'Verificar por lista de CUFEs',
                       'Excel de cuatro hojas listo para declarar',
                       'Plantillas de tu programa contable',
@@ -3373,12 +3387,14 @@ function ContenidoDian() {
           el suyo copiado y pegado, y arreglar uno dejaba los otros tres igual
           —el detalle de documento, por ejemplo, no cerraba con Escape—. */}
       <CajonDerecho
-        abierto={panelDescarga && puedeDescargar}
+        abierto={panelDescarga}
         onCerrar={() => setPanelDescarga(false)}
         etiqueta="Descargar de la DIAN"
       >
         <DescargarDeDian
           onCerrar={() => setPanelDescarga(false)}
+          habilitada={puedeDescargar}
+          onIrACorreo={() => { setPanelDescarga(false); setSeccion('correo'); }}
           narrar={narrar}
           // Los que la verificación ya identificó como faltantes: se pueden
           // copiar con un clic para pegarlos en el popup de la extensión.
@@ -3398,6 +3414,25 @@ function ContenidoDian() {
           cargarDocumentos={async () => {
             const { documentos: docs } = await datosParaReporte({});
             return docs as unknown as DocumentoDian[];
+          }}
+        />
+      </CajonDerecho>
+
+      <CajonDerecho
+        abierto={panelCausacion}
+        onCerrar={() => setPanelCausacion(false)}
+        ancho="max-w-4xl"
+        etiqueta="Causar facturas"
+      >
+        <CausacionContable
+          onCerrar={() => setPanelCausacion(false)}
+          narrar={narrar}
+          cargarDatos={async () => {
+            const { documentos: docs, lineas } = await datosParaReporte({});
+            return {
+              documentos: docs as unknown as DocCausable[],
+              lineas: lineas as unknown as LineaCausable[],
+            };
           }}
         />
       </CajonDerecho>

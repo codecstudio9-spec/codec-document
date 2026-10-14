@@ -15,6 +15,7 @@ import { parseDianXml } from '../../lib/dian/parser';
 import { mapearDocumento, type PayloadDocumento } from '../../lib/dian/mapper';
 import { leerZipSeguro, sha256Hex, ZipError, type EntradaZip } from '../../lib/dian/zip';
 import { base64ABytes } from '../../lib/dian/xlsx-relleno';
+import type { CuentasEmpresa, ReglaTercero } from '../../lib/dian/causacion';
 
 export interface ResumenImportacion {
   importId: string;
@@ -1188,4 +1189,70 @@ export async function borrarDocumentos(ids?: string[]): Promise<number> {
   const { data, error } = await supabase.rpc('ed_borrar_documentos', { p_ids: ids ?? null });
   if (error) throw new Error(error.message);
   return Number(data ?? 0);
+}
+
+// ── Causación contable ───────────────────────────────────────────────────
+// Lo que el contador configura una vez por empresa (cuentas) y lo que la
+// herramienta aprende por tercero (a qué cuenta va, qué retenciones). Ver
+// src/lib/dian/causacion.ts para el cálculo y la migración 20261014120000.
+
+export async function obtenerConfigCausacion(empresaNit: string): Promise<{ cuentas: Partial<CuentasEmpresa>; empresaNombre: string | null } | null> {
+  const { data, error } = await supabase
+    .from('ed_causacion_config')
+    .select('cuentas, empresa_nombre')
+    .eq('empresa_nit', empresaNit)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return { cuentas: (data.cuentas ?? {}) as Partial<CuentasEmpresa>, empresaNombre: data.empresa_nombre ?? null };
+}
+
+export async function guardarConfigCausacion(empresaNit: string, empresaNombre: string, cuentas: CuentasEmpresa): Promise<void> {
+  const { data: u } = await supabase.auth.getUser();
+  const { error } = await supabase.from('ed_causacion_config').upsert({
+    owner_user_id: u.user?.id,
+    empresa_nit: empresaNit,
+    empresa_nombre: empresaNombre || null,
+    cuentas,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'owner_user_id,empresa_nit' });
+  if (error) throw new Error(error.message);
+}
+
+export async function listarReglasCausacion(empresaNit: string): Promise<ReglaTercero[]> {
+  const { data, error } = await supabase
+    .from('ed_causacion_reglas')
+    .select('tercero_nit, tercero_nombre, cuenta, centro_costo, concepto_retencion, retefuente_pct, reteiva_pct, reteica_xmil, iva_al_gasto')
+    .eq('empresa_nit', empresaNit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    ...r,
+    retefuente_pct: r.retefuente_pct === null ? null : Number(r.retefuente_pct),
+    reteiva_pct: r.reteiva_pct === null ? null : Number(r.reteiva_pct),
+    reteica_xmil: r.reteica_xmil === null ? null : Number(r.reteica_xmil),
+  })) as ReglaTercero[];
+}
+
+export async function guardarReglasCausacion(empresaNit: string, reglas: ReglaTercero[]): Promise<void> {
+  if (reglas.length === 0) return;
+  const { data: u } = await supabase.auth.getUser();
+  const filas = reglas.map((r) => ({
+    owner_user_id: u.user?.id,
+    empresa_nit: empresaNit,
+    tercero_nit: r.tercero_nit,
+    tercero_nombre: r.tercero_nombre ?? null,
+    cuenta: r.cuenta || null,
+    centro_costo: r.centro_costo || null,
+    concepto_retencion: r.concepto_retencion ?? null,
+    retefuente_pct: r.retefuente_pct ?? null,
+    reteiva_pct: r.reteiva_pct ?? null,
+    reteica_xmil: r.reteica_xmil ?? null,
+    iva_al_gasto: Boolean(r.iva_al_gasto),
+    updated_at: new Date().toISOString(),
+  }));
+  for (let i = 0; i < filas.length; i += 200) {
+    const { error } = await supabase.from('ed_causacion_reglas')
+      .upsert(filas.slice(i, i + 200), { onConflict: 'owner_user_id,empresa_nit,tercero_nit' });
+    if (error) throw new Error(error.message);
+  }
 }

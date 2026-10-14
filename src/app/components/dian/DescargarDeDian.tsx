@@ -37,17 +37,22 @@ interface Props {
    *  portapapeles de esta página por sí sola —, pero sí se pueden copiar
    *  con un clic para pegarlos en el popup de la extensión. */
   cufesIniciales?: string[];
+  /** false = todavía no está abierta para esta cuenta: sólo se muestra el
+   *  aviso de «en construcción» y la alternativa automática (correo). */
+  habilitada?: boolean;
+  onIrACorreo?: () => void;
 }
 
 const GUION_ES = 'Esta herramienta se mudó a una extensión de Chrome. La razón es de fondo: la DIAN empezó a atar el token de acceso a la computadora desde la que se pide, así que un servidor compartido como el nuestro ya no puede autenticarlo, sin importar qué tan bien se disfrace. Una extensión sí puede, porque corre dentro de tu propio navegador, con tu propia conexión. Si todavía no la instalas, dale al botón de descargar aquí abajo y sigue los cuatro pasos. Si ya la instalaste, dale clic al ícono de Codec Document en tu barra de Chrome, junto a la barra de direcciones, y ahí pegas el enlace del token y tus CUFEs, igual que hacías aquí antes. Cuando termine de bajar los documentos, quedan en tu carpeta de Descargas, dentro de una carpeta que se llama DIAN. Desde ahí los arrastras a Subir mis XML, como cualquier XML que ya tuvieras guardado.';
 
 const GUION_EN = 'This tool moved to a Chrome extension. The DIAN portal started tying the access token to the computer that requested it, so a shared server like ours can no longer authenticate it. A browser extension can, because it runs inside your own browser, on your own connection. If you have not installed it yet, use the download button below and follow the four steps. Once installed, click the Codec Document icon in your Chrome toolbar to paste the token link and your CUFEs there. When it finishes, the files land in your Downloads folder, inside a DIAN subfolder — drag them into "Subir mis XML" from there.';
 
-export function DescargarDeDian({ narrar, onCerrar, cufesIniciales }: Props) {
+export function DescargarDeDian({ narrar, onCerrar, cufesIniciales, habilitada = true, onIrACorreo }: Props) {
   const { estado, version, verificar } = useDianExtension();
   const [comprobando, setComprobando] = useState(false);
 
   useEffect(() => {
+    if (!habilitada) return;
     narrar?.(GUION_ES, GUION_EN);
     // Solo al abrir el panel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +101,42 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales }: Props) {
       </div>
 
       <div className="px-5 py-5">
+        {/* En construcción. La DIAN protege cada descarga con una
+            verificación humana (Cloudflare Turnstile) y ata el token al
+            computador que lo pidió; automatizarlo del todo exigiría saltarse
+            esa verificación, y eso no se hace. Mientras se termina la
+            extensión, la vía automática y legal es el correo: el emisor está
+            obligado a enviar el XML por email. */}
+        <div className="mb-5 overflow-hidden rounded-2xl ring-1 ring-amber-200">
+          <div className="flex items-center gap-2 bg-amber-400 px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-amber-950">
+            <AlertTriangle className="size-3.5" />
+            En construcción
+          </div>
+          <div className="bg-amber-50 px-4 py-3.5 text-xs leading-relaxed text-amber-950">
+            <p className="font-bold">La descarga automática desde la DIAN está en construcción.</p>
+            <p className="mt-1">
+              Por las políticas de seguridad de la DIAN (cada descarga pide una verificación humana y el
+              token queda atado a tu computador) estamos ajustando esta función para que funcione de forma
+              estable y segura.
+            </p>
+            <p className="mt-2 font-semibold">Mientras tanto, la forma automática es el correo:</p>
+            <p className="mt-0.5">
+              Tus proveedores ya están obligados a enviarte el XML por email. Redirige esos correos a tu
+              dirección de Codec y las facturas entran solas, sin token y sin descargar nada.
+            </p>
+            {onIrACorreo && (
+              <button
+                type="button"
+                onClick={onIrACorreo}
+                className="mt-3 rounded-xl bg-amber-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-amber-950"
+              >
+                Recibir facturas por correo
+              </button>
+            )}
+          </div>
+        </div>
+
+        {habilitada && (<>
         <p className="mb-5 flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           <span>
@@ -216,6 +257,7 @@ export function DescargarDeDian({ narrar, onCerrar, cufesIniciales }: Props) {
           <ExternalLink className="size-3" />
           Abrir el portal de la DIAN para pedir un token
         </a>
+        </>)}
       </div>
     </div>
   );
