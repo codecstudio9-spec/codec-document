@@ -102,7 +102,11 @@ export class DownloadManager {
         if (this.cufesEnVuelo.size === 1) cufe = [...this.cufesEnVuelo.keys()][0];
         else { suggest(); return; }
       }
-      const carpeta = (this.cufesEnVuelo.get(cufe) || CARPETA_DEFECTO).replace(/[\\/:*?"<>|]+/g, '').trim() || CARPETA_DEFECTO;
+      // Se limpia cada parte por separado para conservar las subcarpetas
+      // (DIAN/2026-10-02_a_2026-10-09); antes se borraba la "/" y quedaba
+      // todo pegado en un solo nombre.
+      const carpeta = (this.cufesEnVuelo.get(cufe) || CARPETA_DEFECTO)
+        .split('/').map((p) => p.replace(/[\\:*?"<>|]+/g, '').trim()).filter(Boolean).join('/') || CARPETA_DEFECTO;
       const esZip = /\.zip($|\?)/i.test(item.filename) || item.mime === 'application/zip';
       suggest({ filename: `${carpeta}/${cufe}.${esZip ? 'zip' : 'xml'}`, conflictAction: 'overwrite' });
     });
@@ -240,6 +244,10 @@ export class DownloadManager {
 
   async _correrRango() {
     this.corriendo = true;
+    // Latido: cualquier llamada a una API de Chrome reinicia el reloj de
+    // inactividad del service worker. Sin esto Chrome lo apagaba a mitad del
+    // rango (visto en la prueba real del 2026-10-14) y se perdía el avance.
+    const latido = setInterval(() => { chrome.runtime.getPlatformInfo(() => {}); }, 20_000);
     await this._guardar();
     chrome.alarms.create(ALARMA_LATIDO, { periodInMinutes: ALARMA_MINUTOS });
     const log = (texto) => { this.ultimoLog = texto; this._emitir('log', { texto }); };
@@ -249,6 +257,7 @@ export class DownloadManager {
       const auth = await abrirSesion(this.urlDian);
       if (!auth.ok) {
         this.corriendo = false;
+        clearInterval(latido);
         chrome.alarms.clear(ALARMA_LATIDO);
         await this._guardar();
         this._emitir('terminado', { fatal: auth.error, ...this._resumen() });
@@ -257,6 +266,9 @@ export class DownloadManager {
     }
 
     const w = new DianDownloadWorker(1, { carpeta: this.carpeta });
+    // Al frente y con foco: la DIAN sólo entrega el archivo si la página está
+    // visible (confirmado: en segundo plano el clic no producía descarga).
+    w.enPrimerPlano = true;
     w.urlListado = this.rango.listado === 'enviados'
       ? 'https://catalogo-vpfe.dian.gov.co/Document/Sent'
       : 'https://catalogo-vpfe.dian.gov.co/Document/Received';
@@ -264,6 +276,7 @@ export class DownloadManager {
       await w.iniciar();
     } catch (err) {
       this.corriendo = false;
+      clearInterval(latido);
       chrome.alarms.clear(ALARMA_LATIDO);
       await this._guardar();
       this._emitir('terminado', { fatal: `No se pudo abrir la DIAN: ${err.message}`, ...this._resumen() });
@@ -299,6 +312,8 @@ export class DownloadManager {
         doc.duracionMs = doc.fin - doc.inicio;
         doc.detalle = r.detalle;
         doc.codigoError = r.codigoError ?? null;
+        doc.muestra = r.muestra;
+        doc.url = r.url;
         doc.mime = r.mime;
         doc.tamano = r.tamano;
         if (r.downloadId != null) doc.downloadId = r.downloadId;
@@ -334,6 +349,7 @@ export class DownloadManager {
     this.terminadoEn = Date.now();
     chrome.alarms.clear(ALARMA_LATIDO);
     await this._guardar();
+    clearInterval(latido);
     log(this.cancelado ? 'Descarga detenida.' : 'Rango terminado.');
     this._emitir('terminado', this._resumen());
   }

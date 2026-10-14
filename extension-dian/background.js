@@ -85,6 +85,15 @@ chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
         await gestor.abrirCarpeta();
         responder({ ok: true });
         return;
+      // Detalle por documento (estado, motivo del fallo y una muestra corta
+      // de la página) para mostrarlo en el registro de Codec.
+      case 'registro':
+        responder({ filas: gestor.registroCompleto().map((d) => ({
+          cufe: d.cufe, estado: d.estado, intentos: d.intentos, detalle: d.detalle,
+          codigoError: d.codigoError, muestra: typeof d.muestra === 'string' ? d.muestra.slice(0, 600) : undefined,
+          numero: d.info?.numero, emisor: d.info?.emisor,
+        })) });
+        return;
       default:
         responder({ ok: false, error: 'Mensaje no reconocido' });
     }

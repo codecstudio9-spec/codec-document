@@ -257,12 +257,42 @@ function scriptPrepararBotonDescargar(cufe) {
   // la propia DIAN con `scroll-behavior: smooth` dejaría el scroll a medio
   // terminar cuando se lee `getBoundingClientRect()` dos líneas abajo, y el
   // clic real caería en las coordenadas viejas.
-  boton.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+  // En ventanas angostas el portal (plantilla Nifty) despliega el menú
+  // lateral ENCIMA de la tabla. Se deja en su modo compacto, el mismo que
+  // usa en pantallas anchas (#container.mainnav-md), sólo para que la
+  // primera columna quede libre.
+  const cont = document.querySelector('#container');
+  if (cont && !cont.classList.contains('mainnav-md')) {
+    cont.classList.remove('mainnav-lg', 'mainnav-in', 'mainnav-out', 'mainnav-sm');
+    cont.classList.add('mainnav-md');
+  }
+  // Sólo vertical. Centrar también en horizontal empujaba la primera
+  // columna (la del botón) debajo del menú lateral fijo de la DIAN
+  // (div.nano-content) y el clic caía sobre el menú: ésa era la causa de
+  // "clic sin descarga" (confirmado 2026-10-14). Se devuelve la tabla al
+  // borde izquierdo.
+  boton.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+  window.scrollTo({ left: 0, top: window.scrollY, behavior: 'instant' });
+  for (let p = boton.parentElement; p; p = p.parentElement) {
+    if (p.scrollWidth > p.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(p).overflowX)) p.scrollLeft = 0;
+  }
   const r = boton.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) {
     return { ok: false, motivo: 'El botón de descargar existe pero no es visible en la página.' };
   }
-  return { ok: true, x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  // Comprobación: ¿lo que hay en ese punto es de verdad el botón? Si algo lo
+  // tapa (el menú lateral, un aviso) se prueban otros puntos del mismo
+  // botón, de derecha a izquierda, y se usa el primero que esté libre.
+  const y = r.top + r.height / 2;
+  const candidatos = [0.5, 0.75, 0.9, 0.3].map((f) => r.left + r.width * f);
+  let x = candidatos[0];
+  let enPunto = null;
+  let acierta = false;
+  for (const cx of candidatos) {
+    enPunto = document.elementFromPoint(cx, y);
+    if (enPunto && (enPunto === boton || boton.contains(enPunto))) { x = cx; acierta = true; break; }
+  }
+  return { ok: true, x, y, acierta, tapa: acierta ? null : (enPunto ? `${enPunto.tagName}.${String(enPunto.className).slice(0, 40)}` : 'nada') };
 }
 
 /**
@@ -473,7 +503,7 @@ export class DianDownloadWorker {
       chrome.tabs.onUpdated.addListener(escuchar);
       const offset = (this.id - 1) * 40;
       chrome.windows.create(
-        { url: this.urlListado || HOST_RECIBIDOS, type: 'normal', focused: false, state: 'normal', width: 480, height: 640, left: 20 + offset, top: 20 + offset },
+        { url: this.urlListado || HOST_RECIBIDOS, type: 'normal', focused: !!this.enPrimerPlano, state: 'normal', width: 1480, height: 900, left: 20 + offset, top: 20 + offset },
         (win) => {
           if (terminado) return;
           const tab = win?.tabs?.[0];
@@ -928,13 +958,24 @@ export class DianDownloadWorker {
       // por chrome.debugger (ver _clicReal): un boton.click() sintético
       // aquí es exactamente lo que se confirmó en vivo que no alcanza
       // (ver auditoría 2026-08-25(b) al inicio del archivo).
-      this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS).then(async (r) => {
+      // Primero se adjunta el depurador (su barra amarilla empuja la página
+      // hacia abajo) y DESPUÉS se mide dónde está el botón.
+      const alFrente = this.enPrimerPlano && this.windowId != null
+        ? chrome.windows.update(this.windowId, { focused: true }).then(() => chrome.tabs.update(tabId, { active: true })).catch(() => {})
+        : Promise.resolve();
+      alFrente.then(() => this._adjuntarDebugger()).catch(() => {}).then(() => dormir(600)).then(() => this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS)).then(async (r) => {
         if (terminado) return;
         if (!this._vigente(miGen)) { terminado = true; limpiar(); resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
         if (!r?.ok) {
           terminado = true;
           limpiar();
           resolve({ ok: false, detalle: r?.motivo || 'No se pudo preparar el botón de descargar.' });
+          return;
+        }
+        if (r.acierta === false) {
+          terminado = true;
+          limpiar();
+          resolve({ ok: false, detalle: `El botón de descargar está tapado en la pantalla (encima hay ${r.tapa}).` });
           return;
         }
         try {
