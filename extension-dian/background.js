@@ -64,15 +64,6 @@ chrome.runtime.onMessageExternal.addListener((msg, _sender, responder) => {
       case 'estado':
         responder(gestor.estado());
         return;
-      case 'iniciarRango': {
-        if (msg.urlDian) {
-          const error = errorDeEnlace(msg.urlDian);
-          if (error) { responder({ ok: false, error }); return; }
-        }
-        responder(await gestor.iniciarRango({ urlDian: msg.urlDian, desde: msg.desde, hasta: msg.hasta, listado: msg.listado }));
-        return;
-      }
-
       case 'detener':
         gestor.detener();
         responder({ ok: true });
@@ -121,6 +112,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
           carpeta: msg.carpeta,
           numWorkers: msg.numWorkers,
         }));
+        return;
+      }
+
+      case 'iniciarRango': {
+        if (msg.urlDian) {
+          const error = errorDeEnlace(msg.urlDian);
+          if (error) { responder({ ok: false, error }); return; }
+        }
+        responder(await gestor.iniciarRango({ urlDian: msg.urlDian, desde: msg.desde, hasta: msg.hasta, listado: msg.listado }));
         return;
       }
 
