@@ -265,6 +265,8 @@ function scriptPrepararBotonDescargar(cufe) {
   if (cont && !cont.classList.contains('mainnav-md')) {
     cont.classList.remove('mainnav-lg', 'mainnav-in', 'mainnav-out', 'mainnav-sm');
     cont.classList.add('mainnav-md');
+    // El menú se encoge con una animación: hay que medir cuando termine.
+    return { ok: false, reintentar: true };
   }
   // Sólo vertical. Centrar también en horizontal empujaba la primera
   // columna (la del botón) debajo del menú lateral fijo de la DIAN
@@ -963,7 +965,13 @@ export class DianDownloadWorker {
       const alFrente = this.enPrimerPlano && this.windowId != null
         ? chrome.windows.update(this.windowId, { focused: true }).then(() => chrome.tabs.update(tabId, { active: true })).catch(() => {})
         : Promise.resolve();
-      alFrente.then(() => this._adjuntarDebugger()).catch(() => {}).then(() => dormir(600)).then(() => this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS)).then(async (r) => {
+      alFrente.then(() => this._adjuntarDebugger()).catch(() => {}).then(() => dormir(600)).then(() => this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS))
+        .then(async (r) => {
+          if (!r?.reintentar) return r;
+          await dormir(900);
+          return this._ejecutar(scriptPrepararBotonDescargar, [cufe], TIMEOUT_LLAMADA_MS);
+        })
+        .then(async (r) => {
         if (terminado) return;
         if (!this._vigente(miGen)) { terminado = true; limpiar(); resolve({ ok: false, detalle: 'CUFE abandonado por timeout total.' }); return; }
         if (!r?.ok) {
