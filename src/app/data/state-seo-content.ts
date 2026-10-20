@@ -45,13 +45,13 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
-        factEn: 'California LLCs pay an $800 annual franchise tax plus a gross receipts fee, and must file a biennial Statement of Information — factor this into your operating agreement.',
-        factEs: 'Las LLC de California pagan un impuesto de franquicia anual de $800 más una tarifa por ingresos brutos, y deben presentar un Statement of Information cada dos años — considera esto en tu acuerdo operativo.',
+        factEn: 'California LLCs pay an $800 annual franchise tax plus a gross receipts fee, and must file a biennial Statement of Information, factor this into your operating agreement.',
+        factEs: 'Las LLC de California pagan un impuesto de franquicia anual de $800 más una tarifa por ingresos brutos, y deben presentar un Statement of Information cada dos años, considera esto en tu acuerdo operativo.',
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
-        factEn: 'California requires two witnesses for a valid will and is a community property state — special rules apply for assets acquired during marriage.',
-        factEs: 'California requiere dos testigos para un testamento válido y es un estado de bienes gananciales — aplican reglas especiales para bienes adquiridos durante el matrimonio.',
+        factEn: 'California requires two witnesses for a valid will and is a community property state, special rules apply for assets acquired during marriage.',
+        factEs: 'California requiere dos testigos para un testamento válido y es un estado de bienes gananciales, aplican reglas especiales para bienes adquiridos durante el matrimonio.',
       },
     ],
     faqEn: 'Are electronic signatures legal in California?',
@@ -72,8 +72,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
-        factEn: 'Texas requires a 3-day notice to vacate before an eviction suit can be filed. Self-help eviction (changing locks, removing belongings) is illegal — evictions must go through Justice Court.',
-        factEs: 'Texas requiere un aviso de 3 días para desocupar antes de poder presentar una demanda de desalojo. El desalojo por mano propia (cambiar cerraduras, retirar pertenencias) es ilegal — los desalojos deben pasar por la Corte de Justicia.',
+        factEn: 'Texas requires a 3-day notice to vacate before an eviction suit can be filed. Self-help eviction (changing locks, removing belongings) is illegal, evictions must go through Justice Court.',
+        factEs: 'Texas requiere un aviso de 3 días para desocupar antes de poder presentar una demanda de desalojo. El desalojo por mano propia (cambiar cerraduras, retirar pertenencias) es ilegal, los desalojos deben pasar por la Corte de Justicia.',
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
@@ -82,8 +82,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
-        factEn: 'Texas is a community property state and allows both attested (witnessed) and holographic (handwritten) wills — a flexibility not offered in most other states.',
-        factEs: 'Texas es un estado de bienes gananciales y permite tanto testamentos atestiguados (con testigos) como ológrafos (escritos a mano) — una flexibilidad que no ofrecen la mayoría de los demás estados.',
+        factEn: 'Texas is a community property state and allows both attested (witnessed) and holographic (handwritten) wills, a flexibility not offered in most other states.',
+        factEs: 'Texas es un estado de bienes gananciales y permite tanto testamentos atestiguados (con testigos) como ológrafos (escritos a mano), una flexibilidad que no ofrecen la mayoría de los demás estados.',
       },
     ],
     faqEn: 'Are electronic signatures legal in Texas?',
@@ -195,8 +195,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Local Ordinances', titleEs: 'Ordenanzas Locales',
-        factEn: 'Philadelphia\'s Fair Practices Ordinance adds additional tenant protections beyond state law — leases used within city limits should account for these local rules.',
-        factEs: 'La Ordenanza de Prácticas Justas de Filadelfia agrega protecciones adicionales para inquilinos más allá de la ley estatal — los contratos usados dentro de los límites de la ciudad deben considerar estas reglas locales.',
+        factEn: 'Philadelphia\'s Fair Practices Ordinance adds additional tenant protections beyond state law, leases used within city limits should account for these local rules.',
+        factEs: 'La Ordenanza de Prácticas Justas de Filadelfia agrega protecciones adicionales para inquilinos más allá de la ley estatal, los contratos usados dentro de los límites de la ciudad deben considerar estas reglas locales.',
       },
       {
         titleEn: 'Signing & Records', titleEs: 'Firma y Registros',
@@ -254,8 +254,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
-        factEn: 'Georgia requires a formal dispossessory action filed in court — self-help eviction is illegal, and a demand for possession is required before filing.',
-        factEs: 'Georgia requiere una acción formal de desposeimiento presentada en un tribunal — el desalojo por mano propia es ilegal, y se requiere una exigencia de posesión antes de presentar la demanda.',
+        factEn: 'Georgia requires a formal dispossessory action filed in court, self-help eviction is illegal, and a demand for possession is required before filing.',
+        factEs: 'Georgia requiere una acción formal de desposeimiento presentada en un tribunal, el desalojo por mano propia es ilegal, y se requiere una exigencia de posesión antes de presentar la demanda.',
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
@@ -264,8 +264,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
-        factEn: 'Georgia requires two witnesses for a valid will, and the testator must be at least 14 years old — younger than most other states allow.',
-        factEs: 'Georgia requiere dos testigos para un testamento válido, y el testador debe tener al menos 14 años — menos edad de la que permiten la mayoría de los demás estados.',
+        factEn: 'Georgia requires two witnesses for a valid will, and the testator must be at least 14 years old, younger than most other states allow.',
+        factEs: 'Georgia requiere dos testigos para un testamento válido, y el testador debe tener al menos 14 años, menos edad de la que permiten la mayoría de los demás estados.',
       },
     ],
     faqEn: 'Are electronic signatures legal in Georgia?',
@@ -286,8 +286,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Contract Disputes', titleEs: 'Disputas Contractuales',
-        factEn: 'North Carolina has a notably short 3-year statute of limitations for written contract disputes (N.C. Gen. Stat. §1-52) — shorter than most other states.',
-        factEs: 'Carolina del Norte tiene un plazo de prescripción notablemente corto de 3 años para disputas de contratos escritos (Estatuto §1-52) — más corto que en la mayoría de los otros estados.',
+        factEn: 'North Carolina has a notably short 3-year statute of limitations for written contract disputes (N.C. Gen. Stat. §1-52), shorter than most other states.',
+        factEs: 'Carolina del Norte tiene un plazo de prescripción notablemente corto de 3 años para disputas de contratos escritos (Estatuto §1-52), más corto que en la mayoría de los otros estados.',
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
@@ -323,8 +323,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
-        factEn: 'Michigan requires a $25 annual statement filing to keep an LLC active — one of the lowest ongoing compliance costs in the country.',
-        factEs: 'Míchigan exige una declaración anual con tarifa de $25 para mantener activa una LLC — uno de los costos de cumplimiento continuo más bajos del país.',
+        factEn: 'Michigan requires a $25 annual statement filing to keep an LLC active, one of the lowest ongoing compliance costs in the country.',
+        factEs: 'Míchigan exige una declaración anual con tarifa de $25 para mantener activa una LLC, uno de los costos de cumplimiento continuo más bajos del país.',
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
@@ -350,13 +350,13 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
-        factEn: 'New Jersey\'s Anti-Eviction Act provides some of the strongest statewide "just cause" eviction protections in the country — a landlord generally needs a specific statutory reason to remove a tenant.',
-        factEs: 'La Ley Anti-Desalojo de Nueva Jersey ofrece algunas de las protecciones de desalojo por "causa justa" más fuertes del país a nivel estatal — un arrendador generalmente necesita una razón legal específica para desalojar a un inquilino.',
+        factEn: 'New Jersey\'s Anti-Eviction Act provides some of the strongest statewide "just cause" eviction protections in the country, a landlord generally needs a specific statutory reason to remove a tenant.',
+        factEs: 'La Ley Anti-Desalojo de Nueva Jersey ofrece algunas de las protecciones de desalojo por "causa justa" más fuertes del país a nivel estatal, un arrendador generalmente necesita una razón legal específica para desalojar a un inquilino.',
       },
       {
         titleEn: 'Worker Classification', titleEs: 'Clasificación de Trabajadores',
-        factEn: 'New Jersey uses the strict "ABC test" for unemployment insurance purposes (N.J.S.A. 43:21-19) — similar in strictness to California, and a common source of independent contractor misclassification disputes.',
-        factEs: 'Nueva Jersey usa la estricta "prueba ABC" para fines de seguro de desempleo (N.J.S.A. 43:21-19) — de una severidad similar a California, y una fuente común de disputas por mala clasificación de contratistas independientes.',
+        factEn: 'New Jersey uses the strict "ABC test" for unemployment insurance purposes (N.J.S.A. 43:21-19), similar in strictness to California, and a common source of independent contractor misclassification disputes.',
+        factEs: 'Nueva Jersey usa la estricta "prueba ABC" para fines de seguro de desempleo (N.J.S.A. 43:21-19), de una severidad similar a California, y una fuente común de disputas por mala clasificación de contratistas independientes.',
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
@@ -409,8 +409,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
     highlights: [
       {
         titleEn: 'Lease Agreements', titleEs: 'Contratos de Arrendamiento',
-        factEn: 'South Carolina sets no statutory cap on security deposits (S.C. Code §27-40-410), but requires an itemized statement and refund within 30 days of lease termination — bad-faith withholding can cost the landlord up to 3x the amount plus attorney fees.',
-        factEs: 'Carolina del Sur no fija un límite legal para depósitos de garantía (S.C. Code §27-40-410), pero exige un estado detallado y el reembolso dentro de 30 días de terminado el contrato — retener de mala fe puede costarle al arrendador hasta 3 veces el monto más honorarios de abogado.',
+        factEn: 'South Carolina sets no statutory cap on security deposits (S.C. Code §27-40-410), but requires an itemized statement and refund within 30 days of lease termination, bad-faith withholding can cost the landlord up to 3x the amount plus attorney fees.',
+        factEs: 'Carolina del Sur no fija un límite legal para depósitos de garantía (S.C. Code §27-40-410), pero exige un estado detallado y el reembolso dentro de 30 días de terminado el contrato, retener de mala fe puede costarle al arrendador hasta 3 veces el monto más honorarios de abogado.',
       },
       {
         titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
@@ -419,13 +419,13 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'LLC Formation', titleEs: 'Formación de LLC',
-        factEn: 'Unlike most states, South Carolina does not require most LLCs to file an annual report or pay a franchise tax — the main exception is LLCs that elect S-corp or C-corp tax treatment.',
-        factEs: 'A diferencia de la mayoría de los estados, Carolina del Sur no exige que la mayoría de las LLC presenten un informe anual o paguen impuesto de franquicia — la principal excepción son las LLC que eligen tributar como S-corp o C-corp.',
+        factEn: 'Unlike most states, South Carolina does not require most LLCs to file an annual report or pay a franchise tax, the main exception is LLCs that elect S-corp or C-corp tax treatment.',
+        factEs: 'A diferencia de la mayoría de los estados, Carolina del Sur no exige que la mayoría de las LLC presenten un informe anual o paguen impuesto de franquicia, la principal excepción son las LLC que eligen tributar como S-corp o C-corp.',
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
-        factEn: 'South Carolina requires two witnesses for a valid will and does not recognize purely holographic (handwritten, unwitnessed) wills. It is not a community property state — assets are divided under equitable distribution rules.',
-        factEs: 'Carolina del Sur requiere dos testigos para un testamento válido y no reconoce testamentos puramente ológrafos (escritos a mano, sin testigos). No es un estado de bienes gananciales — los bienes se dividen bajo reglas de distribución equitativa.',
+        factEn: 'South Carolina requires two witnesses for a valid will and does not recognize purely holographic (handwritten, unwitnessed) wills. It is not a community property state, assets are divided under equitable distribution rules.',
+        factEs: 'Carolina del Sur requiere dos testigos para un testamento válido y no reconoce testamentos puramente ológrafos (escritos a mano, sin testigos). No es un estado de bienes gananciales, los bienes se dividen bajo reglas de distribución equitativa.',
       },
     ],
     faqEn: 'Are electronic signatures legal in South Carolina?',
@@ -441,8 +441,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
     highlights: [
       {
         titleEn: 'Lease Agreements', titleEs: 'Contratos de Arrendamiento',
-        factEn: 'Alabama sets no statutory cap on security deposit amounts, but requires the deposit be returned within 60 days of move-out (Ala. Code §35-9A-201) — a landlord who misses the deadline owes double the original amount.',
-        factEs: 'Alabama no fija un límite legal para el monto del depósito de garantía, pero exige que se devuelva dentro de 60 días tras la mudanza (Ala. Code §35-9A-201) — un arrendador que no cumple el plazo debe el doble del monto original.',
+        factEn: 'Alabama sets no statutory cap on security deposit amounts, but requires the deposit be returned within 60 days of move-out (Ala. Code §35-9A-201), a landlord who misses the deadline owes double the original amount.',
+        factEs: 'Alabama no fija un límite legal para el monto del depósito de garantía, pero exige que se devuelva dentro de 60 días tras la mudanza (Ala. Code §35-9A-201), un arrendador que no cumple el plazo debe el doble del monto original.',
       },
       {
         titleEn: 'Eviction Notices', titleEs: 'Avisos de Desalojo',
@@ -456,8 +456,8 @@ export const STATE_SEO_CONFIGS: StateSeoConfig[] = [
       },
       {
         titleEn: 'Wills & Estates', titleEs: 'Testamentos y Sucesiones',
-        factEn: 'Alabama requires two witnesses for a valid will and does not recognize an unwitnessed handwritten (holographic) will executed in-state. It is not a community property state — each spouse\'s assets are separately titled.',
-        factEs: 'Alabama requiere dos testigos para un testamento válido y no reconoce un testamento manuscrito sin testigos (ológrafo) otorgado dentro del estado. No es un estado de bienes gananciales — los bienes de cada cónyuge se registran por separado.',
+        factEn: 'Alabama requires two witnesses for a valid will and does not recognize an unwitnessed handwritten (holographic) will executed in-state. It is not a community property state, each spouse\'s assets are separately titled.',
+        factEs: 'Alabama requiere dos testigos para un testamento válido y no reconoce un testamento manuscrito sin testigos (ológrafo) otorgado dentro del estado. No es un estado de bienes gananciales, los bienes de cada cónyuge se registran por separado.',
       },
     ],
     faqEn: 'Are electronic signatures legal in Alabama?',

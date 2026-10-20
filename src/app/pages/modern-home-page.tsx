@@ -1940,7 +1940,7 @@ export function ModernHomePage() {
             )}
             <p className="mx-auto mt-3 max-w-xl text-slate-500">
               {language === 'en'
-                ? 'Every review here is from a verified customer who created a real document, checked by us before it goes live — no exceptions.'
+                ? 'Every review here is from a verified customer who created a real document, checked by us before it goes live, no exceptions.'
                 : 'Cada reseña es de un cliente verificado que generó un documento real, revisada por nosotros antes de publicarse, sin excepciones.'}
             </p>
           </div>
@@ -1953,7 +1953,7 @@ export function ModernHomePage() {
             <div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
               <p className="text-sm text-slate-500">
                 {language === 'en'
-                  ? "No reviews published yet — we'd rather show none than fake ones. Already used Codec Document?"
+                  ? "No reviews published yet, we'd rather show none than fake ones. Already used Codec Document?"
                   : 'Aún no hay reseñas publicadas. Preferimos no mostrar ninguna a inventarlas. ¿Ya usaste Codec Document?'}
               </p>
               <button

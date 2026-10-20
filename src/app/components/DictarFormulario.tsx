@@ -202,8 +202,8 @@ export function DictarFormulario({ campos, language, nombreDocumento, onAplicar,
               </p>
               <p className="mb-3 text-xs text-slate-400">
                 {es
-                  ? 'También puedes PEGAR un texto más largo —un correo, unas notas, la cotización que ya tenías escrita— en vez de hablar: la IA reparte los datos igual.'
-                  : 'You can also PASTE a longer text instead — an email, some notes, a quote you already wrote — the AI spreads the data across the fields the same way.'}
+                  ? 'También puedes PEGAR un texto más largo (un correo, unas notas, la cotización que ya tenías escrita) en vez de hablar: la IA reparte los datos igual.'
+                  : 'You can also PASTE a longer text instead, an email, some notes, a quote you already wrote, the AI spreads the data across the fields the same way.'}
               </p>
 
               {/* Qué hay que decir, a la vista mientras se habla.

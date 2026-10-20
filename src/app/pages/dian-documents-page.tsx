@@ -183,9 +183,9 @@ const GUION_SECCION: Record<string, { es: string; en: string }> = {
       + 'And if you prefer your own accounting software format, upload your empty template and I return it filled in; the mapping is saved for next month.',
   },
   planes: {
-    es: 'Aquí ves tu consumo del mes y los planes. Todos los planes traen lo mismo —subir, descargar de la DIAN, verificar CUFEs, el Excel, las plantillas y el cruce con tu contabilidad—: lo que cambia es cuántos documentos al mes, y que recibir facturas por correo necesita un plan de pago. '
+    es: 'Aquí ves tu consumo del mes y los planes. Todos los planes traen lo mismo (subir, descargar de la DIAN, verificar CUFEs, el Excel, las plantillas y el cruce con tu contabilidad): lo que cambia es cuántos documentos al mes, y que recibir facturas por correo necesita un plan de pago. '
       + 'Sólo cuentan los documentos que se procesan bien; los duplicados y los que fallan no gastan cupo.',
-    en: 'Here you see your usage for the month and the plans. Every plan includes the same things — upload, download from DIAN, verify CUFEs, the spreadsheet, the templates and the cross-check against your books. What changes is how many documents per month, and that receiving invoices by email needs a paid plan. '
+    en: 'Here you see your usage for the month and the plans. Every plan includes the same things, upload, download from DIAN, verify CUFEs, the spreadsheet, the templates and the cross-check against your books. What changes is how many documents per month, and that receiving invoices by email needs a paid plan. '
       + 'Only documents that process correctly count; duplicates and failures do not use up your quota.',
   },
 };
@@ -1290,7 +1290,7 @@ function ContenidoDian() {
                     Enviarme el enlace de acceso
                   </button>
                   <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
-                    Te llega un enlace al correo. Lo abres y ya estás dentro — no hay que
+                    Te llega un enlace al correo. Lo abres y ya estás dentro, no hay que
                     crear contraseña ni recordar nada.
                   </p>
                 </>
@@ -1540,8 +1540,8 @@ function ContenidoDian() {
                 <Sparkles className="mb-3 size-6 text-violet-600" />
                 <h3 className="text-sm font-bold text-slate-900">Tu propia plantilla</h3>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
-                  Sube la plantilla vacía de tu programa —Siigo, Alegra, World Office, la que
-                  sea— y te la devuelvo llena. El mapeo queda guardado para el mes siguiente.
+                  Sube la plantilla vacía de tu programa (Siigo, Alegra, World Office, la que
+                  sea) y te la devuelvo llena. El mapeo queda guardado para el mes siguiente.
                 </p>
                 <Boton estilo={BOTON_PLANTILLA} icono={FileSpreadsheet} className="mt-4"
                        onClick={() => setPanelPlantilla(true)}>
@@ -2354,7 +2354,7 @@ function ContenidoDian() {
                       <span>
                         Al cambiarla, la anterior deja de funcionar: si ya se la pasaste a algún
                         proveedor, tendrás que darle la nueva. Y como es una dirección fácil de
-                        adivinar, puede llegarte correo de desconocidos —
+                        adivinar, puede llegarte correo de desconocidos,
                         <strong className="text-slate-700">nada se procesa solo</strong>: lo que
                         entra espera en la bandeja con su remitente a la vista, y lo que no
                         reconozcas lo borras sin procesarlo.
@@ -2438,7 +2438,7 @@ function ContenidoDian() {
                   {
                     icono: CheckCheck,
                     titulo: 'No se te pierde ninguno',
-                    texto: 'Lo que entra queda listado con remitente y fecha. Si un proveedor no mandó la factura, se ve — y sabes a quién reclamarle.',
+                    texto: 'Lo que entra queda listado con remitente y fecha. Si un proveedor no mandó la factura, se ve, y sabes a quién reclamarle.',
                   },
                   {
                     icono: Lock,
@@ -2796,7 +2796,7 @@ function ContenidoDian() {
                     {resumen.rechazados.length} archivo(s) no se pudieron abrir. El resto sí se procesó.
                   </p>
                   {resumen.rechazados.slice(0, 4).map((r) => (
-                    <p key={r.nombre} className="truncate">· {r.nombre} — {r.motivo}</p>
+                    <p key={r.nombre} className="truncate">· {r.nombre} - {r.motivo}</p>
                   ))}
                   {resumen.rechazados.length > 4 && <p>· y {resumen.rechazados.length - 4} más</p>}
                 </div>
@@ -3026,7 +3026,7 @@ function ContenidoDian() {
                       guardarse, así que el documento quedaba marcado sin nada que enseñar. Ya está
                       corregido. Para recuperar el motivo de{' '}
                       {marcados === 1 ? 'este documento' : 'estos documentos'}, vuelve a importar
-                      {marcados === 1 ? ' ese XML' : ' esos XML'} — los nuevos ya llegan con su
+                      {marcados === 1 ? ' ese XML' : ' esos XML'} los nuevos ya llegan con su
                       explicación.
                     </p>
                   </div>
@@ -3308,7 +3308,7 @@ function ContenidoDian() {
               </button>
               <h2 className="relative text-xl font-black tracking-tight">Ayúdanos a terminarla</h2>
               <p className="relative mt-1 text-sm leading-relaxed text-white/60">
-                Acabas de ver lo que hace. Cinco preguntas de treinta segundos —
+                Acabas de ver lo que hace. Cinco preguntas de treinta segundos,
                 las leemos todas y deciden qué construimos después.
               </p>
             </div>
@@ -3504,7 +3504,7 @@ function DetalleDocumento({ datos, onCerrar }: { datos: any; onCerrar: () => voi
   const Fila = ({ k, v }: { k: string; v: React.ReactNode }) => (
     <div className="flex justify-between gap-4 border-b border-slate-50 py-2 text-sm">
       <span className="shrink-0 text-slate-400">{k}</span>
-      <span className="min-w-0 break-words text-right font-medium text-slate-800">{v || '—'}</span>
+      <span className="min-w-0 break-words text-right font-medium text-slate-800">{v || '-'}</span>
     </div>
   );
 

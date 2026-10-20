@@ -40,7 +40,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Fair housing and screening rules',
-      texto: 'The Fair Housing Act, 42 U.S.C. § 3604, prohibits discrimination in rental housing based on race, color, religion, sex, familial status, national origin or disability, and many states add protected classes such as source of income. Under the Fair Credit Reporting Act, a landlord needs a permissible purpose to obtain a consumer report (15 U.S.C. § 1681b) and must give an adverse action notice if it denies an applicant based on one (§ 1681m). Some states cap application fees — California Civil Code § 1950.6, for example. ' + ESIGN,
+      texto: 'The Fair Housing Act, 42 U.S.C. § 3604, prohibits discrimination in rental housing based on race, color, religion, sex, familial status, national origin or disability, and many states add protected classes such as source of income. Under the Fair Credit Reporting Act, a landlord needs a permissible purpose to obtain a consumer report (15 U.S.C. § 1681b) and must give an adverse action notice if it denies an applicant based on one (§ 1681m). Some states cap application fees: California Civil Code § 1950.6, for example. ' + ESIGN,
     },
     caso: {
       titulo: 'A landlord who standardized screening',
@@ -58,7 +58,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       ],
     },
     faq: [
-      { q: 'What questions can\'t a landlord ask on a rental application?', a: 'Questions about protected characteristics under the Fair Housing Act — race, color, religion, sex, familial status, national origin, disability — and any additional classes protected by your state or city.' },
+      { q: 'What questions can\'t a landlord ask on a rental application?', a: 'Questions about protected characteristics under the Fair Housing Act, race, color, religion, sex, familial status, national origin, disability, and any additional classes protected by your state or city.' },
       { q: 'Do I need permission to run a credit check?', a: 'Yes. You need a permissible purpose under the FCRA, and best practice is written authorization signed by the applicant.' },
       { q: 'Can applicants sign the application online?', a: 'Yes. An e-signed application and screening authorization are valid under the ESIGN Act and UETA.' },
       { q: 'What if I deny an applicant based on their credit report?', a: 'The FCRA requires an adverse action notice identifying the reporting agency and the applicant\'s rights.' },
@@ -110,7 +110,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       { q: 'Can I raise the rent in a renewal?', a: 'Yes, subject to state and local rent laws and notice requirements.' },
       { q: 'Can the tenant accept the renewal electronically?', a: 'Yes. An e-signed renewal is valid under the ESIGN Act and UETA.' },
       { q: "Should all tenants sign the renewal?", a: "Yes. Every adult on the original lease should sign the renewal so all remain bound by the new term." },
-      { q: "Can a renewal change other terms besides rent?", a: "Yes — pet rules, parking or utilities, for example — as long as both sides agree and the change complies with state and local law. List each changed term explicitly." },
+      { q: "Can a renewal change other terms besides rent?", a: "Yes, pet rules, parking or utilities, for example, as long as both sides agree and the change complies with state and local law. List each changed term explicitly." },
     ],
     fotos: [F.firma, F.mujer, F.oficina],
     cta: 'Send a lease renewal for signature',
@@ -135,7 +135,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Notice periods and the ESIGN exception',
-      texto: 'Notice periods are set by state law: California Civil Code § 1946 requires a tenant to give at least the rental period\'s length (usually 30 days), while Texas Property Code § 91.001 requires one month for a month-to-month tenancy unless the lease says otherwise. Importantly, the ESIGN Act does not apply to notices of eviction for a primary residence (15 U.S.C. § 7003(b)(2)(B)), so a landlord\'s eviction or termination notice must be served under state rules — usually personal delivery, posting and mailing, or certified mail. A tenant\'s own notice of moving out is an ordinary communication that can be signed electronically, though the lease may specify how notices must be delivered.',
+      texto: 'Notice periods are set by state law: California Civil Code § 1946 requires a tenant to give at least the rental period\'s length (usually 30 days), while Texas Property Code § 91.001 requires one month for a month-to-month tenancy unless the lease says otherwise. Importantly, the ESIGN Act does not apply to notices of eviction for a primary residence (15 U.S.C. § 7003(b)(2)(B)), so a landlord\'s eviction or termination notice must be served under state rules, usually personal delivery, posting and mailing, or certified mail. A tenant\'s own notice of moving out is an ordinary communication that can be signed electronically, though the lease may specify how notices must be delivered.',
     },
     caso: {
       titulo: 'A tenant who kept her deposit',
@@ -255,7 +255,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       { q: "Can we add a new roommate later?", a: "Only with the landlord's approval if the lease requires it. Once approved, update the roommate agreement and have everyone sign again." },
       { q: "How should we split a security deposit?", a: "Usually in proportion to what each roommate paid in. The agreement should say how deductions are shared when someone moves out." },
       { q: "Should we set a cleaning schedule?", a: "A simple rotating schedule in the agreement prevents the most common roommate disputes and gives everyone a reference point." },
-      { q: "How do we handle shared purchases?", a: "List recurring shared costs — cleaning supplies, streaming, internet — and how they are split, so nobody keeps a running tab in their head." },
+      { q: "How do we handle shared purchases?", a: "List recurring shared costs, cleaning supplies, streaming, internet, and how they are split, so nobody keeps a running tab in their head." },
     ],
     fotos: [F.tech, F.movil, F.firma],
     cta: 'Create a roommate agreement',
@@ -267,7 +267,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     metaDescription: 'A lease guarantor agreement makes a cosigner responsible if the tenant doesn\'t pay. What it should say, why it must be in writing, and signing online.',
     h1: 'Lease Cosigner Agreement',
     grupo: 'lease',
-    intro: 'When a tenant has thin credit or income below the landlord\'s standard, a cosigner — usually called a guarantor in leases — promises to pay if the tenant does not. A guarantor agreement is what makes that promise enforceable. Without it, a parent\'s signature in the margin of a lease may be worth much less than the landlord thinks.',
+    intro: 'When a tenant has thin credit or income below the landlord\'s standard, a cosigner, usually called a guarantor in leases, promises to pay if the tenant does not. A guarantor agreement is what makes that promise enforceable. Without it, a parent\'s signature in the margin of a lease may be worth much less than the landlord thinks.',
     problema: {
       titulo: 'A guarantee that was never really signed',
       texto: 'Guarantors often live far away, so landlords accept a scanned page or a promise by email. When the tenant stops paying, the landlord discovers the guarantee is vague about what it covers, or that the guarantor never signed the final lease. Courts read guarantees narrowly, and the promise to pay someone else\'s debt must be in writing.',
@@ -280,7 +280,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Why the writing requirement matters',
-      texto: 'Every state has a statute of frauds requiring a promise to answer for the debt of another to be in writing and signed by the person bound — California Civil Code § 1624(a)(2) is one example. That is why a guarantor agreement needs a clear, signed writing that identifies the obligation. The federal FTC Credit Practices Rule\'s cosigner notice (16 C.F.R. § 444.3) applies to consumer credit, not typically to residential leases, but many landlords include a similar plain-language warning. ' + ESIGN,
+      texto: 'Every state has a statute of frauds requiring a promise to answer for the debt of another to be in writing and signed by the person bound: California Civil Code § 1624(a)(2) is one example. That is why a guarantor agreement needs a clear, signed writing that identifies the obligation. The federal FTC Credit Practices Rule\'s cosigner notice (16 C.F.R. § 444.3) applies to consumer credit, not typically to residential leases, but many landlords include a similar plain-language warning. ' + ESIGN,
     },
     caso: {
       titulo: 'A guarantor three states away',
@@ -364,7 +364,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     metaDescription: 'Free month-to-month rental agreement with notice periods, rent changes and deposits explained. Create it with live preview and sign it online.',
     h1: 'Month-to-Month Rental Agreement',
     grupo: 'lease',
-    intro: 'A month-to-month rental agreement renews automatically each month until the landlord or tenant gives notice. It gives both sides flexibility — useful between long leases, for a property that may be sold, or for a tenant in transition. The trade-off is that either side can end it with relatively short notice, which is why the notice terms deserve care.',
+    intro: 'A month-to-month rental agreement renews automatically each month until the landlord or tenant gives notice. It gives both sides flexibility, useful between long leases, for a property that may be sold, or for a tenant in transition. The trade-off is that either side can end it with relatively short notice, which is why the notice terms deserve care.',
     problema: {
       titulo: 'Flexible until someone needs certainty',
       texto: 'Month-to-month arrangements often start informally, when a fixed lease expires and the tenant simply stays. Nobody writes down the new terms, and when the landlord raises the rent or wants the unit back, both sides discover different assumptions about notice and deposits.',
@@ -417,7 +417,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     intro: 'A boat bill of sale records the transfer of a boat from seller to buyer: who, what, for how much and when. Depending on the boat and the state, the buyer may need it to register or title the vessel, and the seller needs it to prove the boat is no longer theirs. Boats add details a car sale does not: the hull identification number, outboard engines and often a trailer.',
     problema: {
       titulo: 'The engine and trailer nobody listed',
-      texto: 'A boat is often sold as a package — hull, engine and trailer — but the three may be titled or registered separately. A bill of sale that only says "boat" leaves the buyer unable to register the trailer and invites a dispute about whether the engine or electronics were included.',
+      texto: 'A boat is often sold as a package, hull, engine and trailer, but the three may be titled or registered separately. A bill of sale that only says "boat" leaves the buyer unable to register the trailer and invites a dispute about whether the engine or electronics were included.',
     },
     puntos: [
       { titulo: 'Identify the vessel', texto: 'Hull identification number, make, model, year, length and state registration or Coast Guard documentation number.' },
@@ -463,13 +463,13 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     metaDescription: 'A liability waiver can protect your business, but not against everything. What courts enforce, what they won\'t, and how to get waivers signed online.',
     h1: 'Release of Liability Form',
     grupo: 'release',
-    intro: 'A release of liability — a waiver — asks participants to accept the risks of an activity and give up certain claims against the business: a gym, a climbing wall, a trampoline park, a guided hike. It is one of the most useful documents a recreation business has, and also one of the most misunderstood. A waiver protects against some claims, in some states, if it is written clearly.',
+    intro: 'A release of liability, a waiver, asks participants to accept the risks of an activity and give up certain claims against the business: a gym, a climbing wall, a trampoline park, a guided hike. It is one of the most useful documents a recreation business has, and also one of the most misunderstood. A waiver protects against some claims, in some states, if it is written clearly.',
     problema: {
       titulo: 'Waivers that fail in court',
       texto: 'Courts strike waivers that are buried in fine print, written in vague language, or that try to excuse gross negligence or intentional harm. Some states refuse to enforce pre-injury waivers for personal injury at all. A waiver signed on a clipboard with no record of who signed or when adds evidence problems on top of legal ones.',
     },
     puntos: [
-      { titulo: 'Clear, conspicuous language', texto: 'Plain headings, readable font, and the release stated clearly — not hidden in a paragraph about something else.' },
+      { titulo: 'Clear, conspicuous language', texto: 'Plain headings, readable font, and the release stated clearly, not hidden in a paragraph about something else.' },
       { titulo: 'Specific risks', texto: 'Describe the inherent risks of the activity so the participant knowingly accepts them.' },
       { titulo: 'Minors handled separately', texto: 'A parent or guardian signs for minors; enforceability of parental waivers varies by state.' },
       { titulo: 'Signed before participation', texto: 'Participants sign on their own phone by text link or QR code at check-in, with a timestamp.' },
@@ -493,7 +493,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       ],
     },
     faq: [
-      { q: 'Are liability waivers legally enforceable?', a: 'Often, for ordinary negligence and inherent risks, if clearly written — but it depends on the state, and waivers generally cannot excuse gross negligence or intentional harm.' },
+      { q: 'Are liability waivers legally enforceable?', a: 'Often, for ordinary negligence and inherent risks, if clearly written, but it depends on the state, and waivers generally cannot excuse gross negligence or intentional harm.' },
       { q: 'Can a parent sign a waiver for a child?', a: 'Parents can sign, but whether a parental pre-injury waiver is enforceable varies widely by state.' },
       { q: 'Is an electronically signed waiver valid?', a: 'Yes. The ESIGN Act and UETA give e-signed waivers the same effect as paper, and the audit trail helps prove who signed.' },
       { q: 'Should every participant sign their own waiver?', a: 'Yes. Each adult participant should sign individually, and a guardian for each minor.' },
@@ -510,10 +510,10 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     metaDescription: 'A general release settles a dispute in exchange for payment. What it should cover, unknown claims (Cal. Civil Code § 1542), and signing it online.',
     h1: 'General Release Form',
     grupo: 'release',
-    intro: 'A general release ends a dispute: one party pays or does something, and the other gives up claims related to the matter. It is used to settle a minor car accident privately, close out a contractor dispute, or resolve a deposit argument. Its value depends entirely on what it says it releases — and on whether it covers claims nobody knew about yet.',
+    intro: 'A general release ends a dispute: one party pays or does something, and the other gives up claims related to the matter. It is used to settle a minor car accident privately, close out a contractor dispute, or resolve a deposit argument. Its value depends entirely on what it says it releases, and on whether it covers claims nobody knew about yet.',
     problema: {
       titulo: 'The claim that came back',
-      texto: 'Two parties settle for a payment and a handshake, or a release that only mentions "the incident." Months later, a new claim appears — an injury that showed up late, a second invoice — and the release does not clearly cover it. Vague releases get litigated; precise ones end disputes.',
+      texto: 'Two parties settle for a payment and a handshake, or a release that only mentions "the incident." Months later, a new claim appears, an injury that showed up late, a second invoice, and the release does not clearly cover it. Vague releases get litigated; precise ones end disputes.',
     },
     puntos: [
       { titulo: 'What is being released', texto: 'The parties, the incident or relationship, and the claims released, described precisely.' },
@@ -544,7 +544,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       { q: 'Does a release cover claims I don\'t know about?', a: 'Only if it says so and complies with state law. In California, unknown claims require an express waiver of Civil Code § 1542.' },
       { q: 'Should I sign a release for a personal injury?', a: 'Get legal advice first; injuries can develop after signing, and the release may bar later claims.' },
       { q: 'Can a release be signed electronically?', a: 'Yes, under the ESIGN Act and UETA.' },
-      { q: "Is a release valid without payment?", a: "A release generally needs consideration — something of value — to be enforceable as a contract. A mutual release of claims can serve as consideration for each side." },
+      { q: "Is a release valid without payment?", a: "A release generally needs consideration, something of value, to be enforceable as a contract. A mutual release of claims can serve as consideration for each side." },
       { q: "Should both sides release each other?", a: "In many disputes a mutual release is fairer and more durable, because neither side can later bring claims about the same matter." },
       { q: "Should a release be notarized?", a: "Generally no, although some parties choose to. A signed release with identity verification provides strong evidence of who signed." },
     ],
@@ -558,7 +558,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
     metaDescription: 'Get written consent to use someone\'s photo or likeness in marketing. What a photo release must say, rules for minors, and signing it on a phone.',
     h1: 'Photo Release Form',
     grupo: 'release',
-    intro: 'A photo release gives you permission to use a person\'s image — in marketing, on social media, in a portfolio or a publication. Photographers, schools, gyms, event organizers and businesses running testimonials all need them. The form is short; what matters is that it covers the uses you actually intend and that it was signed by the right person.',
+    intro: 'A photo release gives you permission to use a person\'s image, in marketing, on social media, in a portfolio or a publication. Photographers, schools, gyms, event organizers and businesses running testimonials all need them. The form is short; what matters is that it covers the uses you actually intend and that it was signed by the right person.',
     problema: {
       titulo: 'A testimonial photo used without consent',
       texto: 'A business posts a customer photo in an ad based on verbal permission, or uses event photos of children in a brochure with no parent signature. Several states give people a legal right to control commercial use of their name and likeness, and a complaint can mean takedowns, damages and reputational harm.',
@@ -593,7 +593,7 @@ export const PAGINAS_US_PROPIETARIOS: PaginaUS[] = [
       { q: 'Can a photo release be revoked?', a: 'It depends on its terms and state law; many releases allow withdrawal for future uses but not for materials already published.' },
       { q: 'Can people sign a photo release on their phone?', a: 'Yes. E-signed releases are valid under the ESIGN Act and UETA.' },
       { q: "Do I need a release for photos of a crowd at a public event?", a: "For editorial or news use, often not. For advertising that features an identifiable person, written consent is the safe practice." },
-      { q: "Does a photo release cover video?", a: "Only if it says so. Name every type of media — photos, video, audio — you plan to use." },
+      { q: "Does a photo release cover video?", a: "Only if it says so. Name every type of media, photos, video, audio, you plan to use." },
       { q: "Should employees sign photo releases?", a: "If you feature employees in marketing, yes; consent is cleaner than relying on their employment." },
       { q: "Can I use a photo release for a minor photographed at school?", a: "Schools usually manage their own media consent; for your own business use, get the parent's signed release directly." },
     ],

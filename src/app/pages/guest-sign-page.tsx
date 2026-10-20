@@ -217,7 +217,7 @@ function IdentityGate({
     if (requirements.requireIdPhoto && requirements.requireSelfie) {
       speak({
         es: 'Antes de firmar, quien envió este documento pidió verificar tu identidad: debes tomar dos fotos de tu documento de identidad, frente y reverso, y una selfie. Las tres son obligatorias para continuar. Si tu cámara no funciona, puedes subir un archivo desde tu dispositivo en su lugar.',
-        en: 'Before signing, whoever sent this document asked to verify your identity: you need to take two photos of your ID — front and back — plus a selfie. All three are required to continue. If your camera doesn’t work, you can upload a file from your device instead.',
+        en: 'Before signing, whoever sent this document asked to verify your identity: you need to take two photos of your ID, front and back, plus a selfie. All three are required to continue. If your camera doesn’t work, you can upload a file from your device instead.',
       });
     } else if (requirements.requireIdPhoto) {
       speak({
@@ -563,7 +563,7 @@ function IdentityGate({
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold disabled:opacity-50 ${biometricVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'}`}
             >
               {verifyingBiometric && <Loader className="size-4 animate-spin" />}
-              {biometricVerified ? 'Verificado — tocar para repetir' : 'Verificar con Face ID / Huella'}
+              {biometricVerified ? 'Verificado, tocar para repetir' : 'Verificar con Face ID / Huella'}
             </button>
           </div>
         )}
@@ -875,7 +875,7 @@ export function GuestSignPage() {
     // — exactly "blank with zero console errors," because nothing async
     // ever ran to log one. Now it's treated as a real failure instead.
     if (!url || !url.trim()) {
-      console.error('guest-sign-page: tokenData.originalPdfUrl is empty — the documents row has no PDF URL to load. tokenData:', tokenData);
+      console.error('guest-sign-page: tokenData.originalPdfUrl is empty, the documents row has no PDF URL to load. tokenData:', tokenData);
       setPdfError('Este documento no tiene un archivo PDF asociado.');
       setPdfLoading(false);
       setTimeout(() => setHasScrolledToEnd(true), 2000);
@@ -903,7 +903,7 @@ export function GuestSignPage() {
         console.error('guest-sign-page: direct PDF URL failed to load, trying signed-URL fallback. URL:', url, 'error:', directErr);
         try {
           const signedUrl = await getSignedUrlFallback(url);
-          if (!signedUrl) throw new Error('getSignedUrlFallback returned null — see its own console.error above for why');
+          if (!signedUrl) throw new Error('getSignedUrlFallback returned null, see its own console.error above for why');
           const doc = await load(signedUrl);
           if (cancelled) return;
           setPdfDoc(doc);
@@ -949,7 +949,7 @@ export function GuestSignPage() {
       if (ok) {
         setQuoteRejected(true);
       } else {
-        toast.error('Esta cotización ya fue firmada o rechazada — no se puede cambiar.');
+        toast.error('Esta cotización ya fue firmada o rechazada, no se puede cambiar.');
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo rechazar la cotización.');
@@ -1324,7 +1324,7 @@ export function GuestSignPage() {
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="size-4 text-amber-400" />
                 <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
-                  Crea tus propios documentos — gratis
+                  Crea tus propios documentos, gratis
                 </span>
               </div>
               <p className="text-base font-semibold leading-snug text-white">
@@ -1337,7 +1337,7 @@ export function GuestSignPage() {
 
             <div className="space-y-2.5 px-6 py-4">
               {[
-                { icon: FileText, text: 'Editor inteligente — NDAs, contratos, arrendamientos' },
+                { icon: FileText, text: 'Editor inteligente: NDAs, contratos, arrendamientos' },
                 { icon: PenLine, text: `1 firma electrónica gratis por día (${jurisdiction.badgeEs})` },
                 { icon: ShieldCheck, text: 'Auditoría SHA-256 con validez legal' },
               ].map(({ icon: Icon, text }) => (
@@ -1369,7 +1369,7 @@ export function GuestSignPage() {
             onClick={() => navigate('/')}
             className="mt-5 w-full text-center text-xs text-white/25 transition hover:text-white/40"
           >
-            Quizás después — volver al inicio
+            Quizás después, volver al inicio
           </button>
         </div>
       </div>

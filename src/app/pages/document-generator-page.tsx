@@ -1421,14 +1421,14 @@ function ContenidoGenerador() {
               <>
                 <Mic className="size-3.5 shrink-0" />
                 {language === 'en'
-                  ? 'From what you dictated — check it before signing.'
+                  ? 'From what you dictated, check it before signing.'
                   : 'Sale de lo que dictaste. Revísalo antes de firmar.'}
               </>
             ) : (
               <>
                 <User className="size-3.5 shrink-0" />
                 {language === 'en'
-                  ? 'Taken from your account — edit it if it should read differently.'
+                  ? 'Taken from your account, edit it if it should read differently.'
                   : 'Lo tomamos de tu cuenta. Puedes cambiarlo si debe aparecer distinto.'}
               </>
             )}
@@ -1576,7 +1576,7 @@ function ContenidoGenerador() {
                 <p className="mt-0.5 text-xs text-white/60">
                   {isSigned
                     ? (language === 'en' ? 'The recipient has completed all required steps.' : 'El destinatario completó todos los pasos requeridos.')
-                    : (language === 'en' ? 'Share this link — we will notify you when signed.' : 'Comparte este enlace. Te avisaremos cuando firme.')
+                    : (language === 'en' ? 'Share this link, we will notify you when signed.' : 'Comparte este enlace. Te avisaremos cuando firme.')
                   }
                 </p>
               </div>
@@ -1644,8 +1644,8 @@ function ContenidoGenerador() {
                     <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
                       <p className="text-[11px] font-semibold text-indigo-700">
                         {language === 'en'
-                          ? 'Bookmark this page (or copy the link below) to check back later — closing this tab loses this screen.'
-                          : 'Guarda esta página (o copia el link de abajo) para revisar más tarde — si cierras esta pestaña, se pierde esta pantalla.'}
+                          ? 'Bookmark this page (or copy the link below) to check back later, closing this tab loses this screen.'
+                          : 'Guarda esta página (o copia el link de abajo) para revisar más tarde, si cierras esta pestaña, se pierde esta pantalla.'}
                       </p>
                       <div className="mt-1.5 flex items-center gap-2">
                         <span className="flex-1 truncate text-[11px] font-mono text-indigo-600">
@@ -1725,7 +1725,7 @@ function ContenidoGenerador() {
             <ul className="my-5 space-y-2 text-sm">
               {[
                 { icon: <CreditCard className="size-4 text-blue-400" />, en: 'Pay with PayPal or any debit / credit card', es: 'Paga con PayPal o tarjeta de debito / credito' },
-                { icon: <ShieldCheck className="size-4 text-emerald-400" />, en: 'Clean PDF — no watermarks', es: 'PDF limpio — sin marcas de agua' },
+                { icon: <ShieldCheck className="size-4 text-emerald-400" />, en: 'Clean PDF, no watermarks', es: 'PDF limpio, sin marcas de agua' },
                 { icon: <PenLine className="size-4 text-indigo-400" />, en: 'Signed document ready to download', es: 'Documento firmado listo para descargar' },
               ].map((b) => (
                 <li key={b.en} className="flex items-center gap-2.5 text-white/80">{b.icon}{language === 'en' ? b.en : b.es}</li>
@@ -1987,7 +1987,7 @@ function ContenidoGenerador() {
 
               <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700 font-medium">
                 <ShieldCheck className="size-3.5 shrink-0 text-blue-500" />
-                {language === 'en' ? 'E-SIGN & UETA Compliant · Each signer gets a unique link — no account needed' : 'Cumple E-SIGN y UETA · Enlace único por firmante — sin cuenta requerida'}
+                {language === 'en' ? 'E-SIGN & UETA Compliant · Each signer gets a unique link, no account needed' : 'Cumple E-SIGN y UETA · Enlace único por firmante, sin cuenta requerida'}
               </div>
 
               {/* CTA principal */}
@@ -2004,7 +2004,7 @@ function ContenidoGenerador() {
                       onClick={handleSignToVerify}
                     >
                       <ShieldCheck className="size-4" />
-                      {language === 'en' ? 'Continue to Step 3 — Verify →' : 'Continuar al Paso 3 — Verificar →'}
+                      {language === 'en' ? 'Continue to Step 3: Verify →' : 'Continuar al Paso 3: Verificar →'}
                     </Button>
                   )}
                 </div>
@@ -2019,7 +2019,7 @@ function ContenidoGenerador() {
               <div className="pt-1 text-center">
                 <button type="button" onClick={handleSignToVerify} className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 transition hover:text-slate-600 underline-offset-2 hover:underline">
                   <Download className="size-3" />
-                  {language === 'en' ? 'Skip signature — go to next step' : 'Omitir firma — ir al siguiente paso'}
+                  {language === 'en' ? 'Skip signature, go to next step' : 'Omitir firma, ir al siguiente paso'}
                 </button>
               </div>
             </div>
@@ -2030,7 +2030,7 @@ function ContenidoGenerador() {
                 <div className="mb-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700 font-medium">
                   <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />
                   {coSigners.filter((cs) => cs.sigDataUrl).length === 1
-                    ? (language === 'en' ? 'Co-signer signed — signature added to document' : 'Co-firmante firmó — firma añadida al documento')
+                    ? (language === 'en' ? 'Co-signer signed, signature added to document' : 'Co-firmante firmó, firma añadida al documento')
                     : (language === 'en' ? `${coSigners.filter((cs) => cs.sigDataUrl).length} co-signers signed` : `${coSigners.filter((cs) => cs.sigDataUrl).length} co-firmantes firmaron`)}
                 </div>
               )}
@@ -2100,8 +2100,8 @@ function ContenidoGenerador() {
                   </h2>
                   <p className="text-[11px] text-slate-400">
                     {language === 'en'
-                      ? 'Optional — strengthens legal enforceability of your e-signature'
-                      : 'Opcional — refuerza la validez legal de tu firma electrónica'}
+                      ? 'Optional, strengthens legal enforceability of your e-signature'
+                      : 'Opcional, refuerza la validez legal de tu firma electrónica'}
                   </p>
                 </div>
               </div>
@@ -2110,8 +2110,8 @@ function ContenidoGenerador() {
               <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-3 py-2.5 text-[11px] text-blue-700 font-medium">
                 <ShieldCheck className="size-3.5 shrink-0 text-blue-500" />
                 {language === 'en'
-                  ? 'E-SIGN Act · UETA · Identity audit trail — industry standard compliance'
-                  : 'E-SIGN Act · UETA · Registro de auditoría de identidad — cumplimiento estándar'}
+                  ? 'E-SIGN Act · UETA · Identity audit trail, industry standard compliance'
+                  : 'E-SIGN Act · UETA · Registro de auditoría de identidad, cumplimiento estándar'}
               </div>
 
               {/* Toggle 1: Selfie */}
@@ -2440,7 +2440,7 @@ function ContenidoGenerador() {
                         : 'border-indigo-300 text-slate-500 focus:border-indigo-500 focus:ring-indigo-400/20'
                     }`}
                   >
-                    <option value="">{language === 'en' ? '— Choose a state —' : '— Elige un estado —'}</option>
+                    <option value="">{language === 'en' ? 'Choose a state' : 'Elige un estado'}</option>
                     {US_STATES.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
@@ -2463,8 +2463,8 @@ function ContenidoGenerador() {
                 {!selectedState && (
                   <p className="mt-2 text-xs font-medium text-indigo-600">
                     {language === 'en'
-                      ? 'âš  Required — without a state, generic clauses will be used'
-                      : 'âš  Requerido — sin estado se usarán cláusulas genéricas'}
+                      ? 'âš  Required, without a state, generic clauses will be used'
+                      : 'âš  Requerido, sin estado se usarán cláusulas genéricas'}
                   </p>
                 )}
               </div>
@@ -2507,8 +2507,8 @@ function ContenidoGenerador() {
                       <CardTitle className="text-base">{language === 'en' ? 'Customize Design' : 'Personalizar Diseño'}</CardTitle>
                       <CardDescription>
                         {language === 'en'
-                          ? 'Optional — logo, header, footer and business identity for a premium export'
-                          : 'Opcional — logo, encabezado, pie e identidad empresarial para una exportación premium'}
+                          ? 'Optional, logo, header, footer and business identity for a premium export'
+                          : 'Opcional, logo, encabezado, pie e identidad empresarial para una exportación premium'}
                       </CardDescription>
                     </div>
                   </div>
@@ -2528,8 +2528,8 @@ function ContenidoGenerador() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-0">
                   <p className="text-xs text-slate-400 md:col-span-2 -mt-2 mb-1">
                     {language === 'en'
-                      ? <>Loaded from your saved branding — edit freely for this document only. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Edit my saved branding →</Link></>
-                      : <>Se cargó desde tu marca guardada — edítala libremente solo para este documento. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Editar mi marca guardada →</Link></>}
+                      ? <>Loaded from your saved branding, edit freely for this document only. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Edit my saved branding →</Link></>
+                      : <>Se cargó desde tu marca guardada, edítala libremente solo para este documento. <Link to="/my-branding" className="font-semibold text-indigo-600 hover:underline">Editar mi marca guardada →</Link></>}
                   </p>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="flex items-center gap-2">
@@ -2701,7 +2701,7 @@ function ContenidoGenerador() {
               >
                 {intent === 'fill_send' || intent === 'fill_approve'
                   ? (language === 'en' ? 'Continue to Send' : 'Continuar al Envio')
-                  : (language === 'en' ? 'Next — Sign Document' : 'Siguiente — Firmar Documento')}
+                  : (language === 'en' ? 'Next: Sign Document' : 'Siguiente: Firmar Documento')}
                 <PenLine className="size-4" />
               </Button>
             </div>

@@ -41,7 +41,7 @@ function CityDocTypeLandingContent({ city, docState }: { city: CitySeoConfig; do
   const state = city.state;
   const docLabel = language === 'en' ? docState.docTypeLabelEn : docState.docTypeLabelEs;
 
-  const title = `${docState.docTypeLabelEn} in ${city.cityName}, ${state.name} — Free Template & E-Signature | CodecDocument`;
+  const title = `${docState.docTypeLabelEn} in ${city.cityName}, ${state.name}: Free Template & E-Signature | CodecDocument`;
   const desc = `Create a ${docState.docTypeLabelEn} in ${city.cityName}, ${state.name} with ${state.name}-specific legal language. Free template, instant preview, and ESIGN Act compliant electronic signature with identity verification.`;
   const canonicalUrl = `${SITE_URL}/${docState.docType}-${city.slug}`;
 
@@ -86,8 +86,8 @@ function CityDocTypeLandingContent({ city, docState }: { city: CitySeoConfig; do
 
       <PhotoProofSection
         image="/images/seo/app-man-blue.jpg"
-        captionEn="Fill it out, sign it, done — right from your phone."
-        captionEs="Complétalo, fírmalo, listo — desde tu teléfono."
+        captionEn="Fill it out, sign it, done, right from your phone."
+        captionEs="Complétalo, fírmalo, listo, desde tu teléfono."
         pointsEn={['No printing or scanning', 'Signed PDF ready in minutes', 'Works on any device']}
         pointsEs={['Sin imprimir ni escanear', 'PDF firmado en minutos', 'Funciona en cualquier dispositivo']}
       />
@@ -101,7 +101,7 @@ function CityDocTypeLandingContent({ city, docState }: { city: CitySeoConfig; do
         ]}
         heading={
           <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-            {language === 'en' ? `${docLabel} in ${state.name} — FAQ` : `${docLabel} en ${state.nameEs} — Preguntas Frecuentes`}
+            {language === 'en' ? `${docLabel} in ${state.name}: FAQ` : `${docLabel} en ${state.nameEs}: Preguntas Frecuentes`}
           </h2>
         }
       />

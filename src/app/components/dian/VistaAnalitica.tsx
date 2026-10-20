@@ -33,7 +33,7 @@ const pesos = (n: number) =>
   n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
 const fecha = (s: string | null) =>
-  s ? new Date(s).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+  s ? new Date(s).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: '2-digit' }) : '-';
 
 const diasDesde = (s: string | null): number | null =>
   s ? Math.floor((Date.now() - new Date(s).getTime()) / 86_400_000) : null;
@@ -163,7 +163,7 @@ export function VistaAnalitica() {
         <p className="mb-3.5 max-w-2xl text-[12px] leading-relaxed text-slate-500">
           Para cerrar un cliente por teléfono, compensar un fallo o abrirle la herramienta a
           alguien que la está probando en serio. Si ya tiene plan, el tiempo se suma al que le
-          quede — nunca se le recorta.
+          quede, nunca se le recorta.
         </p>
         <div className="flex flex-wrap items-end gap-2.5">
           <div className="min-w-[220px] flex-1">
@@ -290,7 +290,7 @@ export function VistaAnalitica() {
                           {u.docsMes.toLocaleString('es-CO')}
                         </td>
                         <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-slate-800">
-                          {u.pagadoTotal > 0 ? pesos(u.pagadoTotal) : '—'}
+                          {u.pagadoTotal > 0 ? pesos(u.pagadoTotal) : '-'}
                         </td>
                         <td className="px-4 py-2.5 text-slate-500">{fecha(u.ultimaActividad ?? u.ultimoAcceso)}</td>
                         <td className="px-4 py-2.5 text-right">
@@ -341,7 +341,7 @@ export function VistaAnalitica() {
                       <tr key={p.reference} className="border-b border-slate-50 transition hover:bg-slate-50/60">
                         <td className="px-4 py-2.5 text-slate-500">{fecha(p.creado)}</td>
                         <td className="px-4 py-2.5 font-semibold text-slate-800">{p.email}</td>
-                        <td className="px-4 py-2.5 text-slate-600">{p.planCode ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-slate-600">{p.planCode ?? '-'}</td>
                         <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-slate-800">
                           {pesos(p.cop)}
                         </td>

@@ -16,10 +16,10 @@ function humanizeDocType(slug: string): string {
 function labelForTx(tx: SignTransaction, language: 'en' | 'es'): string {
   const date = new Date(tx.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: 'short' });
   if (tx.document_type === 'custom-template') {
-    return `${language === 'en' ? 'Custom template' : 'Plantilla personalizada'} — ${date}`;
+    return `${language === 'en' ? 'Custom template' : 'Plantilla personalizada'}, ${date}`;
   }
   const name = getDocumentTranslation(tx.document_type, 'name', language) || humanizeDocType(tx.document_type);
-  return `${name} — ${date}`;
+  return `${name}, ${date}`;
 }
 
 /**

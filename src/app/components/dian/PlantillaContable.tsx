@@ -376,7 +376,7 @@ export function PlantillaContable({ cargarDatos, narrar, onCerrar }: Props) {
                           m.campo ? 'border-slate-200 bg-white text-slate-800' : 'border-amber-300 bg-amber-50 text-amber-800'
                         }`}
                       >
-                        <option value="">— dejar vacía —</option>
+                        <option value="">Dejar vacía</option>
                         {campos.map((c) => (
                           <option key={c.id} value={c.id}>{c.grupo}: {c.etiqueta}</option>
                         ))}

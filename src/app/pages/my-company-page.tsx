@@ -68,13 +68,13 @@ function ApiKeysSection({ language }: { language: 'en' | 'es' }) {
         {language === 'en' ? 'API Keys' : 'Claves de API'}
       </p>
       <p className="mb-4 text-xs text-slate-400">
-        {language === 'en' ? 'Integrate CodecDocument with your own systems — base URL /api/v1.' : 'Integra CodecDocument con tus propios sistemas — URL base /api/v1.'}
+        {language === 'en' ? 'Integrate CodecDocument with your own systems, base URL /api/v1.' : 'Integra CodecDocument con tus propios sistemas: URL base /api/v1.'}
       </p>
 
       {justGenerated && (
         <div className="mb-4 rounded-2xl border border-amber-300 bg-amber-50 p-4">
           <p className="mb-1.5 text-xs font-bold text-amber-800">
-            {language === 'en' ? 'Copy this key now — you won\'t be able to see it again.' : 'Copia esta clave ahora — no podrás volver a verla.'}
+            {language === 'en' ? 'Copy this key now, you won\'t be able to see it again.' : 'Copia esta clave ahora, no podrás volver a verla.'}
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate rounded-lg bg-white px-3 py-2 text-xs text-slate-700">{justGenerated.api_key}</code>
@@ -297,8 +297,8 @@ function TeamActivitySection({ language }: { language: 'en' | 'es' }) {
       </p>
       <p className="mb-4 text-xs text-slate-400">
         {language === 'en'
-          ? 'As owner/admin you see every document and signature your teammates create — each of them still only sees their own.'
-          : 'Como propietario/admin ves todos los documentos y firmas que crea tu equipo — cada uno de ellos sigue viendo solo lo suyo.'}
+          ? 'As owner/admin you see every document and signature your teammates create, each of them still only sees their own.'
+          : 'Como propietario/admin ves todos los documentos y firmas que crea tu equipo, cada uno de ellos sigue viendo solo lo suyo.'}
       </p>
 
       <div className="mb-3 flex gap-2">
@@ -701,8 +701,8 @@ export function MyCompanyPage() {
                       </button>
                       <p className="mt-2 text-xs text-slate-400">
                         {language === 'en'
-                          ? 'Creates a brand new Codec Document account with the email and password you set — share the password with your teammate yourself.'
-                          : 'Crea una cuenta nueva de Codec Document con el correo y la contraseña que definas — comparte la contraseña con tu colega por tu cuenta.'}
+                          ? 'Creates a brand new Codec Document account with the email and password you set, share the password with your teammate yourself.'
+                          : 'Crea una cuenta nueva de Codec Document con el correo y la contraseña que definas, comparte la contraseña con tu colega por tu cuenta.'}
                       </p>
                     </>
                   )}

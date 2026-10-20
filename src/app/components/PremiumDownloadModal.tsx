@@ -73,7 +73,7 @@ const PLAN_META: Record<PlanKey, {
     colorBorder: 'border-amber-400',
     colorBg:     'bg-amber-50',
     colorDot:    'bg-amber-500',
-    badge:       'BEST VALUE — SAVE 30%',
+    badge:       'BEST VALUE: SAVE 30%',
     badgeColor:  'bg-amber-500 text-white',
     labelEn:     'Annual',
     labelEs:     'Anual',
@@ -575,8 +575,8 @@ export function PremiumDownloadModal({
                             <TicketPercent className="size-3.5 text-indigo-600" />
                             <span className="text-xs font-semibold text-indigo-700">
                               {t(
-                                `${promoParcial.discountPct}% off applied — pay below to finish`,
-                                `${promoParcial.discountPct}% de descuento aplicado — paga abajo para terminar`,
+                                `${promoParcial.discountPct}% off applied, pay below to finish`,
+                                `${promoParcial.discountPct}% de descuento aplicado, paga abajo para terminar`,
                               )}
                             </span>
                             <span className="ml-auto text-xs font-black text-indigo-700">
@@ -701,8 +701,8 @@ export function PremiumDownloadModal({
                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
                           <p className="mb-3 text-xs font-semibold text-amber-700">
                             {t(
-                              'Recurring subscriptions are being finalized. Pay for this period now instead — same price, no auto-renewal.',
-                              'Las suscripciones recurrentes se están terminando de configurar. Paga este período ahora en su lugar — mismo precio, sin renovación automática.',
+                              'Recurring subscriptions are being finalized. Pay for this period now instead, same price, no auto-renewal.',
+                              'Las suscripciones recurrentes se están terminando de configurar. Paga este período ahora en su lugar, mismo precio, sin renovación automática.',
                             )}
                           </p>
                           <a

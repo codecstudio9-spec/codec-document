@@ -209,7 +209,7 @@ function DashboardHomeContent() {
           <div className="min-w-0 flex-1">
             <p className="text-base font-black text-slate-900">{language === 'en' ? 'How was your experience?' : '¿Cómo te fue?'}</p>
             <p className="mt-1 text-sm text-slate-400">
-              {language === 'en' ? 'Leave a review — every submission is checked before it goes public.' : 'Danos tu opinión — revisamos cada reseña antes de publicarla.'}
+              {language === 'en' ? 'Leave a review, every submission is checked before it goes public.' : 'Danos tu opinión, revisamos cada reseña antes de publicarla.'}
             </p>
           </div>
           <ArrowRight className="size-5 shrink-0 text-slate-300" />

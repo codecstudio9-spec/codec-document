@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     // honesto que puede responder — "la clave está guardada, pero el
     // llamado real a su API todavía no está implementado".
     return new Response(JSON.stringify({
-      error: 'La API key de Certicámara ya está guardada, pero la integración con su servicio real todavía no está implementada — falta su documentación de API (endpoints, formato de firma). Avisa cuando la tengas para completar esta función.',
+      error: 'La API key de Certicámara ya está guardada, pero la integración con su servicio real todavía no está implementada, falta su documentación de API (endpoints, formato de firma). Avisa cuando la tengas para completar esta función.',
       code: 'CERTICAMARA_INTEGRATION_PENDING',
     }), { status: 501, headers: corsHeaders(origin) });
   } catch (err) {

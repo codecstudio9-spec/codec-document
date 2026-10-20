@@ -134,8 +134,8 @@ export function MyQuotesPage() {
       // carpeta» (ON DELETE SET NULL). Se recarga para reflejarlo.
       load();
       toast.success(language === 'en'
-        ? `Folder deleted — its ${f.quoteCount} quote(s) are still there, now without a folder.`
-        : `Carpeta eliminada — sus ${f.quoteCount} cotizacion(es) siguen ahí, ahora sin carpeta.`);
+        ? `Folder deleted, its ${f.quoteCount} quote(s) are still there, now without a folder.`
+        : `Carpeta eliminada, sus ${f.quoteCount} cotizacion(es) siguen ahí, ahora sin carpeta.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error');
     }
@@ -185,7 +185,7 @@ export function MyQuotesPage() {
               {language === 'en' ? 'Smart Quotes' : 'Cotizaciones Inteligentes'}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              {language === 'en' ? 'Create, send, and get quotes signed — full agreements, not just PDFs.' : 'Crea, envía y logra que firmen tus cotizaciones — acuerdos completos, no solo PDFs.'}
+              {language === 'en' ? 'Create, send, and get quotes signed, full agreements, not just PDFs.' : 'Crea, envía y logra que firmen tus cotizaciones, acuerdos completos, no solo PDFs.'}
             </p>
           </div>
           <button
@@ -297,7 +297,7 @@ export function MyQuotesPage() {
                     distinguirlo, el panel parecía roto al abrir una carpeta
                     recién creada. */}
                 {quotes.length === 0
-                  ? (language === 'en' ? 'No quotes yet — create your first one.' : 'Aún no tienes cotizaciones — crea la primera.')
+                  ? (language === 'en' ? 'No quotes yet, create your first one.' : 'Aún no tienes cotizaciones, crea la primera.')
                   : (language === 'en' ? 'Nothing in this folder yet.' : 'Todavía no hay nada en esta carpeta.')}
               </p>
             </div>
@@ -394,7 +394,7 @@ export function MyQuotesPage() {
                       <a
                         title={language === 'en' ? 'Email' : 'Correo'}
                         href={`mailto:${q.client_email ?? ''}?subject=${encodeURIComponent(
-                          language === 'en' ? `${q.project_name || q.quote_number} — quote` : `${q.project_name || q.quote_number} — cotización`,
+                          language === 'en' ? `${q.project_name || q.quote_number}, quote` : `${q.project_name || q.quote_number}, cotización`,
                         )}&body=${encodeURIComponent(mensajeCorto(q))}`}
                         className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-indigo-600"
                       >

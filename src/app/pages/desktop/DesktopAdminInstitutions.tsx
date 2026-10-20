@@ -101,8 +101,8 @@ function InstitutionsContent() {
       </h1>
       <p className="mt-1 text-sm text-slate-500">
         {language === 'en'
-          ? 'Register an institution by name and email domain — anyone who signs in with that domain gets offered to join automatically. Only you see this page.'
-          : 'Registra una institución por nombre y dominio de correo — cualquiera que inicie sesión con ese dominio recibirá la opción de unirse automáticamente. Solo tú ves esta página.'}
+          ? 'Register an institution by name and email domain, anyone who signs in with that domain gets offered to join automatically. Only you see this page.'
+          : 'Registra una institución por nombre y dominio de correo, cualquiera que inicie sesión con ese dominio recibirá la opción de unirse automáticamente. Solo tú ves esta página.'}
       </p>
 
       <div className="mt-6 bg-white p-5" style={{ borderRadius: CARD_RADIUS, boxShadow: CARD_SHADOW }}>

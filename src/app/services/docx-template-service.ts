@@ -323,7 +323,7 @@ export async function cloneExampleTemplate(exampleId: string, userId: string, la
   const creada = await createDocxTemplate({
     userId,
     sourceExampleId: exampleId,
-    name: `${row.example_label || row.name} — ${language === 'en' ? 'Copy' : 'Copia'}`,
+    name: `${row.example_label || row.name}, ${language === 'en' ? 'Copy' : 'Copia'}`,
     docxFileUrl: row.docx_file_url,
     detectedFields: Array.isArray(row.detected_fields) ? (row.detected_fields as DetectedField[]) : [],
     signers: [{ role: 'variable', label: language === 'en' ? 'Signer 1' : 'Firmante 1' }],

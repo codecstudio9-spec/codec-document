@@ -76,8 +76,8 @@ export function AdminMarketingSettings() {
     if (!window.fbq) {
       setTestState('fail');
       setTestDetail(language === 'en'
-        ? 'The pixel script never loaded in this tab — no ID is active, or an ad blocker stopped it.'
-        : 'El script del pixel nunca cargó en esta pestaña — no hay un ID activo, o un bloqueador de anuncios lo detuvo.');
+        ? 'The pixel script never loaded in this tab, no ID is active, or an ad blocker stopped it.'
+        : 'El script del pixel nunca cargó en esta pestaña, no hay un ID activo, o un bloqueador de anuncios lo detuvo.');
       return;
     }
     setTestState('testing');
@@ -90,12 +90,12 @@ export function AdminMarketingSettings() {
         .some((entry) => entry.name.includes('facebook.com/tr') && entry.startTime >= startedAt - 50);
       if (reached) {
         setTestState('ok');
-        setTestDetail(language === 'en' ? 'Event sent — the request reached Facebook.' : 'Evento enviado — la petición llegó a Facebook.');
+        setTestDetail(language === 'en' ? 'Event sent, the request reached Facebook.' : 'Evento enviado, la petición llegó a Facebook.');
       } else {
         setTestState('fail');
         setTestDetail(language === 'en'
-          ? 'The script loaded but no request reached Facebook — check for an ad blocker or your connection.'
-          : 'El script cargó pero ninguna petición llegó a Facebook — revisa un bloqueador de anuncios o tu conexión.');
+          ? 'The script loaded but no request reached Facebook, check for an ad blocker or your connection.'
+          : 'El script cargó pero ninguna petición llegó a Facebook, revisa un bloqueador de anuncios o tu conexión.');
       }
     }, 1500);
   };

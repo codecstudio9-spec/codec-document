@@ -76,7 +76,7 @@ export function DictadoYMejora({ valor, onCambio, language, contexto, soloDictad
       setPrevio(valor);
       onCambio(limpio);
       toast.success(modoInstruccion
-        ? (es ? 'Cláusula redactada. Revísala antes de continuar — puedes deshacer.' : 'Clause drafted. Review it before continuing — you can undo.')
+        ? (es ? 'Cláusula redactada. Revísala antes de continuar, puedes deshacer.' : 'Clause drafted. Review it before continuing, you can undo.')
         : (es ? 'Texto mejorado. Puedes deshacer.' : 'Text improved. You can undo.'));
     } catch (e) {
       if (e instanceof AiReviewUpgradeRequiredError) toast.error(e.message);

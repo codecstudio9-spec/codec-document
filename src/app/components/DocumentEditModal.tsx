@@ -62,7 +62,7 @@ export function DocumentEditModal({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={120}
-          placeholder={language === 'en' ? 'e.g. "Lease — John Smith"' : 'ej. "Contrato — Juan Pérez"'}
+          placeholder={language === 'en' ? 'e.g. "Lease: John Smith"' : 'ej. "Contrato: Juan Pérez"'}
           className="mb-4 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400"
         />
 

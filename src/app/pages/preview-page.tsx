@@ -46,7 +46,7 @@ export function normalizeCorruptedText(input: string): string {
     .replace(/Ã¡/g, 'á').replace(/Ã©/g, 'é').replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú')
     .replace(/Ã/g, 'Á').replace(/Ã‰/g, 'É').replace(/Ã/g, 'Í').replace(/Ã“/g, 'Ó').replace(/Ãš/g, 'Ú')
     .replace(/Ã±/g, 'ñ').replace(/Ã‘/g, 'Ñ').replace(/Â¿/g, '¿').replace(/Â¡/g, '¡')
-    .replace(/â€”/g, '—').replace(/â€“/g, '–').replace(/â€œ|â€/g, '"').replace(/â€˜|â€™/g, "'")
+    .replace(/â€”/g, '-').replace(/â€“/g, '–').replace(/â€œ|â€/g, '"').replace(/â€˜|â€™/g, "'")
     .replace(/â•/g, '═').replace(/Ã/g, 'í');
 }
 
@@ -566,7 +566,7 @@ function renderCertificationPage(
   safePdfSetFont(pdf, 'helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(200, 200, 255);
-  safePdfText(pdf, 'Codec Document — E-SIGN Act / UETA Compliant', PW / 2, 22, { align: 'center' });
+  safePdfText(pdf, 'Codec Document: E-SIGN Act / UETA Compliant', PW / 2, 22, { align: 'center' });
   cy.v = 36;
 
   gap(2);
@@ -609,7 +609,7 @@ function renderCertificationPage(
 
   gap(10);
   line(`${lang === 'es' ? 'Generado' : 'Generated'}: ${new Date().toLocaleString()}`, 7.5, false, [120, 120, 140]);
-  line(`Codec Document Platform — ${SITE_HOSTNAME}`, 7.5, false, [120, 120, 140]);
+  line(`Codec Document Platform: ${SITE_HOSTNAME}`, 7.5, false, [120, 120, 140]);
 }
 
 export function PreviewPage() {
@@ -966,8 +966,8 @@ export function PreviewPage() {
     setPremiumModalOpen(false);
     toast.success(
       language === 'en'
-        ? '✓ Payment successful — downloading clean PDF…'
-        : '✓ Pago exitoso — descargando PDF limpio…',
+        ? '✓ Payment successful, downloading clean PDF…'
+        : '✓ Pago exitoso, descargando PDF limpio…',
     );
     // Execute the pending action after a brief delay so state can settle
     setTimeout(() => {
@@ -1302,10 +1302,10 @@ export function PreviewPage() {
     return language === 'es'
       ? `Te comparto el documento: ${nombre}.
 
-Generado con Codec Document — ${SITE_URL}`
+Generado con Codec Document: ${SITE_URL}`
       : `Sharing this document with you: ${nombre}.
 
-Generated with Codec Document — ${SITE_URL}`;
+Generated with Codec Document: ${SITE_URL}`;
   };
 
   /** Enlace público al PDF, una vez subido. Se guarda para no volver a subir
@@ -1742,8 +1742,8 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
                 <div>
                   <p className="font-bold text-slate-900 leading-tight">
                     {language === 'es'
-                      ? 'Documento Certificado — Listo para Descargar'
-                      : 'Certified Document — Ready to Download'}
+                      ? 'Documento Certificado: Listo para Descargar'
+                      : 'Certified Document: Ready to Download'}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     E-SIGN &amp; UETA Compliant · SHA-256 Audit Trail
@@ -1887,8 +1887,8 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
                   <div className="divide-y divide-slate-100">
                     <p className="border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500">
                       {language === 'es'
-                        ? 'Cada cláusula está en su propia caja — ábrela para leerla, editarla a mano o pedirle a la IA que la cambie.'
-                        : 'Each clause is in its own box — open it to read it, edit it by hand, or ask the AI to change it.'}
+                        ? 'Cada cláusula está en su propia caja, ábrela para leerla, editarla a mano o pedirle a la IA que la cambie.'
+                        : 'Each clause is in its own box, open it to read it, edit it by hand, or ask the AI to change it.'}
                     </p>
                     {clauseSegments.map((seg, i) => (
                       <ClauseCard

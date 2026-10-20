@@ -39,7 +39,7 @@ export function DianExtensionPrivacyPage() {
 
           <div className="rounded-2xl bg-white p-8 shadow-lg md:p-12">
             <h1 className="mb-2 text-3xl font-bold text-slate-900">
-              Privacidad — Codec Document, Descargador DIAN
+              Privacidad: Codec Document, Descargador DIAN
             </h1>
             <p className="mb-8 text-sm text-slate-500">
               Extensión de Chrome · Última actualización: 14 de agosto de 2026
@@ -64,19 +64,19 @@ export function DianExtensionPrivacyPage() {
                 <li>
                   <strong>El enlace del token y la lista de CUFEs que pegas:</strong> se usan
                   únicamente para pedirle los documentos a la DIAN. No se guardan en ningún
-                  servidor nuestro ni de terceros — quedan sólo en tu computador
+                  servidor nuestro ni de terceros, quedan sólo en tu computador
                   (<code>chrome.storage.local</code>, para poder reanudar una descarga larga
                   si el token vence a mitad).
                 </li>
                 <li>
                   <strong>Las cookies de sesión de la DIAN:</strong> las maneja el propio
                   Chrome, como con cualquier sitio que visitas. La extensión no las lee ni las
-                  extrae — sólo consulta si existe una cookie de sesión activa para mostrarte
+                  extrae, sólo consulta si existe una cookie de sesión activa para mostrarte
                   si el enlace funcionó.
                 </li>
                 <li>
                   <strong>Los documentos descargados:</strong> van directo a tu disco. La
-                  extensión no los sube a ningún servidor por su cuenta — eso lo decides tú,
+                  extensión no los sube a ningún servidor por su cuenta, eso lo decides tú,
                   después, arrastrándolos a Codec Document.
                 </li>
               </ul>
@@ -95,7 +95,7 @@ export function DianExtensionPrivacyPage() {
                 <li>
                   <strong>Comunicación con codecdocument.com</strong> (<code>externally_connectable</code>):
                   le permite a la app web preguntarle a la extensión "¿estás instalada?", nada
-                  más — no le da a la web acceso a tu sesión de la DIAN ni a lo descargado.
+                  más, no le da a la web acceso a tu sesión de la DIAN ni a lo descargado.
                 </li>
               </ul>
 

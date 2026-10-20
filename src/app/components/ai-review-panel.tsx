@@ -64,7 +64,7 @@ export function AiReviewPanel({ content, className }: AiReviewPanelProps) {
               {language === 'en' ? 'AI Document Review' : 'Revisión de Documento con IA'}
             </p>
             <p className="text-xs text-slate-500">
-              {language === 'en' ? 'Available on paid plans — flag risks and missing clauses.' : 'Disponible en planes pagos — detecta riesgos y cláusulas faltantes.'}
+              {language === 'en' ? 'Available on paid plans, flag risks and missing clauses.' : 'Disponible en planes pagos, detecta riesgos y cláusulas faltantes.'}
             </p>
           </div>
         </div>

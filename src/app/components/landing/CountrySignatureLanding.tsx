@@ -68,7 +68,7 @@ export function CountrySignatureLanding({ country }: { country: LatamCountryConf
 function CountrySignatureLandingContent({ country }: { country: LatamCountryConfig }) {
   const { language } = useLanguage();
 
-  const title = `Firma Electrónica en ${country.nameEs} | Válida y Legal — CodecDocument`;
+  const title = `Firma Electrónica en ${country.nameEs} | Válida y Legal | CodecDocument`;
   const desc = language === 'en'
     ? `Sign documents electronically in ${country.name}, fully compliant with local law (${country.lawBadgeEn}). Free plan, identity verification, and a SHA-256 audit trail on every signature.`
     : `Firma documentos electrónicamente en ${country.nameEs}, con total cumplimiento de la ley local (${country.lawBadgeEs}). Plan gratuito, verificación de identidad y pista de auditoría SHA-256 en cada firma.`;
@@ -110,12 +110,12 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
         badge={`${country.flag} ${country.code} · ${country.lawBadgeEs}`}
         color="#2563eb"
         icon={PenLine}
-        previewLabel={language === 'en' ? `${country.name} Signature Audit Preview` : `Vista Previa de Firma — ${country.nameEs}`}
+        previewLabel={language === 'en' ? `${country.name} Signature Audit Preview` : `Vista Previa de Firma: ${country.nameEs}`}
         backgroundImage="/imagen3.jpg"
         // El país va en el H1: con el mismo título en las seis páginas de
         // país, Google no tenía cómo distinguirlas (h1 duplicado en seis URL).
         titleAccentEn={`Electronic Signature in ${country.name}`} titleAccentEs={`Firma Electrónica en ${country.nameEs}`}
-        titleRestEn="— Sign, Personalize & Certify Your Documents Online" titleRestEs="— Firma, Personaliza y Certifica tus Documentos en Línea"
+        titleRestEn="Sign, Personalize & Certify Your Documents Online" titleRestEs="Firma, Personaliza y Certifica tus Documentos en Línea"
         subtitleEn={desc} subtitleEs={desc}
         ctaLabelEn="Start Free Now" ctaLabelEs="Empieza Gratis Ahora"
         ctaHref="/firma-electronica"
@@ -126,8 +126,8 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
 
       <IncludedCards
         headingEn="Sign PDF documents online for free" headingEs="Firma documentos PDF online gratis"
-        bodyEn={`Every signature is legally valid under ${country.lawBadgeEn}, backed by real identity verification and a cryptographic audit trail — not just a drawn signature on a screen.`}
-        bodyEs={`Cada firma tiene validez jurídica bajo la ${country.lawBadgeEs}, respaldada por verificación de identidad real y una pista de auditoría criptográfica — no solo un trazo en la pantalla.`}
+        bodyEn={`Every signature is legally valid under ${country.lawBadgeEn}, backed by real identity verification and a cryptographic audit trail, not just a drawn signature on a screen.`}
+        bodyEs={`Cada firma tiene validez jurídica bajo la ${country.lawBadgeEs}, respaldada por verificación de identidad real y una pista de auditoría criptográfica, no solo un trazo en la pantalla.`}
         color="#2563eb"
         items={[
           { en: `Signatures legally valid under ${country.lawBadgeEn}.`, es: `Firmas con validez jurídica bajo la ${country.lawBadgeEs}.` },
@@ -141,8 +141,8 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
 
       <PhotoProofSection
         image="/images/seo/tablet-sign-business.jpg"
-        captionEn="Sign from your computer, tablet, or phone — anytime."
-        captionEs="Firma desde tu computadora, tablet o celular — en cualquier momento."
+        captionEn="Sign from your computer, tablet, or phone, anytime."
+        captionEs="Firma desde tu computadora, tablet o celular, en cualquier momento."
         pointsEn={['Nothing to install', 'Legally valid signature', 'Identity verified on every signature']}
         pointsEs={['Sin instalar nada', 'Firma con validez legal', 'Identidad verificada en cada firma']}
       />
@@ -157,8 +157,8 @@ function CountrySignatureLandingContent({ country }: { country: LatamCountryConf
       />
       <HowItWorksTimeline
         headingEn="How to sign a document online" headingEs="Cómo firmar un documento online"
-        lastStepDescEn={`Receive a clean, watermark-free PDF with SHA-256 audit trail — admissible as evidence under ${country.lawBadgeEn}.`}
-        lastStepDescEs={`Recibe un PDF limpio con pista de auditoría SHA-256 — admisible como prueba bajo la ${country.lawBadgeEs}.`}
+        lastStepDescEn={`Receive a clean, watermark-free PDF with SHA-256 audit trail, admissible as evidence under ${country.lawBadgeEn}.`}
+        lastStepDescEs={`Recibe un PDF limpio con pista de auditoría SHA-256, admisible como prueba bajo la ${country.lawBadgeEs}.`}
       />
       <SocialProofBand
         complianceItems={complianceItems}

@@ -102,7 +102,7 @@ export const resignationLetterTemplateES: DocumentTemplate = {
       // El aviso legal vive aquí, junto a la decisión que condiciona, y ya no
       // impreso al final de la carta: una nota dirigida a quien firma no
       // pinta nada dentro del documento que va a entregar.
-      helpText: 'Cuenta el preaviso desde hoy; el plazo que te obliga es el de tu contrato o convenio. Ojo: una renuncia voluntaria normalmente no da derecho a indemnización por despido — si te vas por incumplimientos de la empresa, consulta con un abogado laboral antes de firmar, porque hay figuras distintas a la renuncia simple.',
+      helpText: 'Cuenta el preaviso desde hoy; el plazo que te obliga es el de tu contrato o convenio. Ojo: una renuncia voluntaria normalmente no da derecho a indemnización por despido, si te vas por incumplimientos de la empresa, consulta con un abogado laboral antes de firmar, porque hay figuras distintas a la renuncia simple.',
     },
 
     // ── Contenido ──────────────────────────────────────────────────────

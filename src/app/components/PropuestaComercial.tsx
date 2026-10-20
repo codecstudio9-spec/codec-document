@@ -122,9 +122,9 @@ export function PropuestaComercial({
       toast.success(
         (sinPrecio > 0
           ? (es
-            ? `Listo. Dejé ${sinPrecio === 1 ? 'un producto sin precio' : `${sinPrecio} productos sin precio`} porque no me lo dijiste — ponlo tú y yo sumo.`
-            : `Done. I left ${sinPrecio === 1 ? 'one item without a price' : `${sinPrecio} items without a price`} because you didn't mention it — add it and I'll do the maths.`)
-          : (es ? 'Listo, ya te lo escribí. Revísalo y cámbiale lo que quieras.' : "Done — I wrote it. Read it over and change anything you like.")
+            ? `Listo. Dejé ${sinPrecio === 1 ? 'un producto sin precio' : `${sinPrecio} productos sin precio`} porque no me lo dijiste, ponlo tú y yo sumo.`
+            : `Done. I left ${sinPrecio === 1 ? 'one item without a price' : `${sinPrecio} items without a price`} because you didn't mention it, add it and I'll do the maths.`)
+          : (es ? 'Listo, ya te lo escribí. Revísalo y cámbiale lo que quieras.' : "Done: I wrote it. Read it over and change anything you like.")
         ) + notaCliente,
       );
       setVia('pegar');
@@ -183,7 +183,7 @@ export function PropuestaComercial({
           <p className="mt-2 text-[11px] text-slate-400">
             {es
               ? 'No hace falta que repitas los precios: van justo debajo, en la tabla de productos.'
-              : 'No need to repeat the prices — they appear right below, in the products table.'}
+              : 'No need to repeat the prices, they appear right below, in the products table.'}
           </p>
         </>
       ) : (
@@ -229,8 +229,8 @@ export function PropuestaComercial({
 
           <p className="mt-2.5 text-[11px] leading-relaxed text-slate-400">
             {es
-              ? 'Escribo el texto y de paso te dejo los productos puestos en la tabla. Los precios sólo los pongo si me los dices — nunca me los invento.'
-              : "I write the text and leave the products filled in below. I only set a price if you tell me one — I never make prices up."}
+              ? 'Escribo el texto y de paso te dejo los productos puestos en la tabla. Los precios sólo los pongo si me los dices, nunca me los invento.'
+              : "I write the text and leave the products filled in below. I only set a price if you tell me one: I never make prices up."}
           </p>
         </>
       )}

@@ -25,7 +25,7 @@ export default function BlogIndex() {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl font-black text-slate-900 md:text-5xl">Guides &amp; Recursos</h1>
           <p className="mx-auto mt-3 max-w-xl text-slate-500">
-            Everything you need to know about electronic signatures, contracts, and going paperless —
+            Everything you need to know about electronic signatures, contracts, and going paperless,
             para empresas en Estados Unidos y Latinoamérica.
           </p>
         </div>

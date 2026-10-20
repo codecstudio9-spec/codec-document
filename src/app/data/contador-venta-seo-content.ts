@@ -79,7 +79,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Subes tu plantilla vacía una vez. El mes siguiente eliges el perfil y descargas el archivo lleno.',
     intro: 'Alegra resuelve bien la contabilidad del día a día, pero la entrada de las compras sigue siendo manual: alguien abre cada factura recibida y teclea NIT, fecha, base, IVA y retenciones. Con veinte clientes y trescientos documentos al mes, esa entrada de datos es la mitad del trabajo del cierre y es donde aparecen los errores que después hay que buscar. El problema no es Alegra: es que entre la DIAN y cualquier programa contable no existe un puente. Codec Document es ese puente, y funciona sin pedirle nada a Alegra.',
     sectorTitulo: 'Por qué no hace falta una integración oficial',
-    sectorTexto: 'Una integración por API obligaría a que Alegra la publicara, a mantenerla cuando cambie y a pedirte credenciales de tu cuenta. En vez de eso, el contador sube su propia plantilla de importación de Alegra —el archivo vacío que el programa ya acepta— y señala una sola vez qué columna es cuál. A partir de ahí, cada mes se descarga ese mismo archivo con los datos dentro, listo para importar. Funciona con Alegra, y funcionaría igual si mañana cambias de programa.',
+    sectorTexto: 'Una integración por API obligaría a que Alegra la publicara, a mantenerla cuando cambie y a pedirte credenciales de tu cuenta. En vez de eso, el contador sube su propia plantilla de importación de Alegra (el archivo vacío que el programa ya acepta) y señala una sola vez qué columna es cuál. A partir de ahí, cada mes se descarga ese mismo archivo con los datos dentro, listo para importar. Funciona con Alegra, y funcionaría igual si mañana cambias de programa.',
     dolores: [
       { titulo: 'Teclear lo que ya está en un archivo', texto: 'El XML de la DIAN trae el NIT, la base gravable, cada impuesto con su código y las retenciones. Digitarlo a mano es copiar a mano un dato que el computador ya tiene.' },
       { titulo: 'Un error de tecleo que aparece en la declaración', texto: 'Una base mal copiada no se nota al momento: se nota cuando el IVA descontable no cuadra y hay que revisar trescientos documentos para encontrar cuál fue.' },
@@ -110,7 +110,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'dentro de World Office',
     heroSector: 'Para quien trabaja con World Office',
     subtitulo: 'Tu plantilla de importación, llena y lista, sin abrir un solo XML.',
-    intro: 'World Office acepta importaciones por archivo, y ahí está la oportunidad: si el archivo llega lleno, la digitación desaparece. Lo que hoy toma una tarde —abrir cada factura recibida, leer las cifras y teclearlas— se convierte en descargar un archivo y subirlo. La parte difícil nunca fue World Office: fue conseguir que los datos de la DIAN llegaran en el formato exacto que World Office espera, sin que el contador tenga que armarlo a mano cada mes.',
+    intro: 'World Office acepta importaciones por archivo, y ahí está la oportunidad: si el archivo llega lleno, la digitación desaparece. Lo que hoy toma una tarde (abrir cada factura recibida, leer las cifras y teclearlas) se convierte en descargar un archivo y subirlo. La parte difícil nunca fue World Office: fue conseguir que los datos de la DIAN llegaran en el formato exacto que World Office espera, sin que el contador tenga que armarlo a mano cada mes.',
     sectorTitulo: 'El formato lo pones tú, no nosotros',
     sectorTexto: 'No se adivina cómo importa World Office ni se mantiene una plantilla escrita de memoria: el contador sube el archivo de importación vacío que su propia instalación acepta. Se leen sus encabezados, se asignan las columnas que se reconocen por el nombre y él corrige las que falten. Ese mapeo queda guardado con un nombre, así que el mes siguiente es elegirlo y descargar. Si su versión de World Office pide columnas distintas de las de otro despacho, funciona igual, porque la plantilla es la suya.',
     dolores: [
@@ -121,12 +121,12 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'Las notas crédito se restan y las notas débito se suman, por tipo de documento y no por una convención de signo. Es una regla aritmética fija, verificada contra documentos reales de varios emisores.',
     caso: {
       titulo: 'Un cierre de mes, de principio a fin',
-      texto: 'Entran los documentos —arrastrando el ZIP de la DIAN, bajándolos por CUFE con tu token, o dejando que lleguen solos a tu dirección de correo—. Codec lee cada uno, comprueba que sus propias cifras cuadren y aparta los que no. Tú miras sólo esos. Después eliges tu perfil de World Office y descargas. El archivo que baja es el tuyo, con tus columnas, listo para importar.',
+      texto: 'Entran los documentos (arrastrando el ZIP de la DIAN, bajándolos por CUFE con tu token, o dejando que lleguen solos a tu dirección de correo). Codec lee cada uno, comprueba que sus propias cifras cuadren y aparta los que no. Tú miras sólo esos. Después eliges tu perfil de World Office y descargas. El archivo que baja es el tuyo, con tus columnas, listo para importar.',
       antes: 'Armar el archivo de importación a mano, columna por columna',
       despues: 'Elegir el perfil guardado y descargar',
     },
     fotos: FOTOS_B,
-    cierre: 'Conviene saber que hay una parte que ninguna herramienta puede resolver sola: la cuenta contable. No está en el XML de la DIAN porque no es un dato del documento, es una decisión de tu plan de cuentas. Se dice en pantalla antes de descargar, y ahí es donde después encajan las reglas por proveedor —que ese proveedor siempre va a esta cuenta—, que es lo que termina de eliminar el trabajo repetitivo.',
+    cierre: 'Conviene saber que hay una parte que ninguna herramienta puede resolver sola: la cuenta contable. No está en el XML de la DIAN porque no es un dato del documento, es una decisión de tu plan de cuentas. Se dice en pantalla antes de descargar, y ahí es donde después encajan las reglas por proveedor (que ese proveedor siempre va a esta cuenta), que es lo que termina de eliminar el trabajo repetitivo.',
     faq: [
       { q: '¿Funciona con cualquier versión de World Office?', a: 'Funciona con la plantilla de importación que tu instalación acepte, sea cual sea. No se depende de una versión concreta porque el formato lo aporta tu propio archivo.' },
       { q: '¿Tengo que volver a configurar cada mes?', a: 'No. El mapeo de columnas se guarda con un nombre. Al mes siguiente eliges el perfil y descargas directamente.' },
@@ -145,7 +145,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'El archivo de importación de Helisa, lleno con los documentos del periodo.',
     intro: 'Helisa lleva décadas en los despachos contables colombianos y su importación por archivo funciona bien cuando el archivo está bien armado. El problema es armarlo: los datos vienen repartidos en cientos de XML que hay que abrir uno por uno. Cada factura recibida tiene su NIT, su base gravable, sus impuestos con código y sus retenciones, y todo eso hay que sacarlo y ordenarlo en columnas antes de que Helisa lo acepte. Eso es lo que Codec Document hace por ti.',
     sectorTitulo: 'Tu plantilla, no una que nosotros supongamos',
-    sectorTexto: 'No hay una plantilla de Helisa escrita dentro de la herramienta, y es a propósito: cada despacho tiene la suya, con sus columnas y a veces con sus macros. El contador sube su archivo vacío, se leen los encabezados y se asignan los que se reconocen; los demás los señala él. El archivo que descarga después es el mismo que subió, con las filas dentro — conserva sus formatos y sus hojas de configuración.',
+    sectorTexto: 'No hay una plantilla de Helisa escrita dentro de la herramienta, y es a propósito: cada despacho tiene la suya, con sus columnas y a veces con sus macros. El contador sube su archivo vacío, se leen los encabezados y se asignan los que se reconocen; los demás los señala él. El archivo que descarga después es el mismo que subió, con las filas dentro, conserva sus formatos y sus hojas de configuración.',
     dolores: [
       { titulo: 'Cada XML hay que abrirlo para leerlo', texto: 'Un XML no se lee de un vistazo: las cifras están entre etiquetas, y las de impuestos repetidas por cada tipo. Encontrar la base gravable exige saber dónde mirar.' },
       { titulo: 'La base gravable no es el total antes de impuestos', texto: 'Los renglones excluidos de IVA no aparecen en la base gravable pero sí suman en el total del documento. Confundirlos descuadra el cierre.' },
@@ -154,7 +154,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'La base gravable se lee del campo que la DIAN usa para eso, no del total menos los impuestos. Es una distinción que sólo se descubre revisando documentos reales, y está verificada contra facturas de varios emisores distintos.',
     caso: {
       titulo: 'Lo que cambia en la práctica',
-      texto: 'Sueltas el comprimido tal como te lo entregó la DIAN, sin descomprimir. Codec abre cada documento en tu propio navegador —los documentos fiscales no salen de tu equipo para procesarse—, comprueba que sus cifras cuadren y te marca lo que no. Revisas eso, eliges tu perfil de Helisa y descargas el archivo lleno.',
+      texto: 'Sueltas el comprimido tal como te lo entregó la DIAN, sin descomprimir. Codec abre cada documento en tu propio navegador (los documentos fiscales no salen de tu equipo para procesarse), comprueba que sus cifras cuadren y te marca lo que no. Revisas eso, eliges tu perfil de Helisa y descargas el archivo lleno.',
       antes: 'Una tarde armando el archivo de importación',
       despues: 'Un archivo descargado y unos pocos documentos revisados',
     },
@@ -176,7 +176,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'a los descargadores de escritorio',
     heroSector: 'Comparativa honesta',
     subtitulo: 'Sin instalar nada, sin licencia anual por adelantado, y con el cruce contra tu contabilidad incluido.',
-    intro: 'Los descargadores masivos de facturas que se usan hoy en Colombia son aplicaciones de escritorio para Windows: se instalan en un computador concreto, se pagan por licencia anual y hacen bien una cosa —bajar los XML—. Funcionan. La pregunta es si eso es todo lo que necesitas, porque bajar los archivos es el primer paso de un trabajo que sigue: leerlos, cuadrarlos, encontrar los que no cuadran y llevarlos a tu programa contable. Esta página compara las dos formas sin descalificar a nadie.',
+    intro: 'Los descargadores masivos de facturas que se usan hoy en Colombia son aplicaciones de escritorio para Windows: se instalan en un computador concreto, se pagan por licencia anual y hacen bien una cosa (bajar los XML). Funcionan. La pregunta es si eso es todo lo que necesitas, porque bajar los archivos es el primer paso de un trabajo que sigue: leerlos, cuadrarlos, encontrar los que no cuadran y llevarlos a tu programa contable. Esta página compara las dos formas sin descalificar a nadie.',
     sectorTitulo: 'Escritorio o navegador: qué cambia de verdad',
     sectorTexto: 'Una aplicación de escritorio vive en un computador. Si trabajas desde la oficina y desde la casa, o si tienes un asistente, la licencia se queda en la máquina donde se instaló. Una herramienta web se abre desde cualquier equipo con la misma cuenta, se actualiza sola cuando la DIAN cambia algo, y no depende de que alguien tenga permisos de administrador para instalarla. A cambio, una aplicación de escritorio descarga desde tu propia conexión, lo que le da más margen frente a los límites de la DIAN. Son ventajas distintas, y conviene saber cuál pesa más en tu caso.',
     dolores: [
@@ -192,7 +192,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
       despues: 'Cien documentos al mes gratis, y pagar sólo si convence',
     },
     fotos: FOTOS_D,
-    cierre: 'Una diferencia técnica que conviene entender: una herramienta web descarga desde direcciones compartidas, y la DIAN limita cuántas peticiones acepta por dirección. Por eso Codec baja a ritmo moderado, con un gobernador de concurrencia, en vez de a toda velocidad — es lo que evita que un bloqueo afecte a todos los clientes a la vez. En la práctica significa que una descarga grande tarda más que en una aplicación de escritorio, y es un intercambio deliberado: preferimos que tarde a que deje de funcionar.',
+    cierre: 'Una diferencia técnica que conviene entender: una herramienta web descarga desde direcciones compartidas, y la DIAN limita cuántas peticiones acepta por dirección. Por eso Codec baja a ritmo moderado, con un gobernador de concurrencia, en vez de a toda velocidad, es lo que evita que un bloqueo afecte a todos los clientes a la vez. En la práctica significa que una descarga grande tarda más que en una aplicación de escritorio, y es un intercambio deliberado: preferimos que tarde a que deje de funcionar.',
     faq: [
       { q: '¿Tengo que instalar algo?', a: 'No. Funciona en el navegador, desde cualquier computador, con la misma cuenta. Los documentos se procesan en tu propio equipo aunque la herramienta sea web.' },
       { q: '¿Es más lento que un descargador de escritorio?', a: 'En la descarga desde la DIAN, sí: se baja a ritmo moderado a propósito, porque el tráfico sale de direcciones compartidas y la DIAN bloquea a quien la satura. En el procesamiento no, porque ocurre en tu propio equipo.' },
@@ -211,7 +211,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Pegas la lista de CUFE una vez. Los documentos bajan, se leen y se cuadran sin que abras ninguno.',
     intro: 'El portal de la DIAN permite descargar los documentos que recibiste, pero de uno en uno: cada archivo en su propio comprimido, dentro de una sesión que caduca a los sesenta minutos. Para consultar una factura puntual está bien. Para un cierre mensual de trescientos documentos, no. Lo que hace falta es algo que tome la lista completa y baje todo, y que además deje los datos listos para usar en vez de dejar una carpeta con trescientos archivos ilegibles.',
     sectorTitulo: 'Del listado de la DIAN a los documentos, sin pasos intermedios',
-    sectorTexto: 'El punto de partida es el listado que la propia DIAN exporta del periodo, que trae la columna de CUFE. Se pega esa columna entera —sin limpiarla— y la herramienta hace el resto: pide cada documento, lo guarda y lo analiza. Y si algunos ya los tenías cargados, te lo dice antes de bajar nada, así que no se repite trabajo ni se gasta cupo en documentos que ya estaban.',
+    sectorTexto: 'El punto de partida es el listado que la propia DIAN exporta del periodo, que trae la columna de CUFE. Se pega esa columna entera (sin limpiarla) y la herramienta hace el resto: pide cada documento, lo guarda y lo analiza. Y si algunos ya los tenías cargados, te lo dice antes de bajar nada, así que no se repite trabajo ni se gasta cupo en documentos que ya estaban.',
     dolores: [
       { titulo: 'Un comprimido por documento', texto: 'No existe un botón de «descargar todo». Trescientos documentos son trescientas descargas y trescientas descompresiones.' },
       { titulo: 'El token vence a mitad', texto: 'Sesenta minutos y un solo uso. En una descarga larga se vence casi siempre, y hay que pedir otro y retomar donde iba.' },
@@ -220,7 +220,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'Si el token vence a mitad, pides otro, lo pegas y la descarga continúa donde iba: no se repite lo ya descargado. Y al terminar no queda una carpeta de archivos, queda una tabla con las cifras leídas y cuadradas.',
     caso: {
       titulo: 'Los cuatro pasos reales',
-      texto: 'Entras a la DIAN, pides un token y exportas el listado del periodo. Vuelves a pedir un segundo token —ése es el que se usa para descargar—, copias la dirección del enlace del correo sin abrirlo y la pegas. Pegas la columna de CUFE, eliges la carpeta y le das a descargar. A partir de ahí no hay que hacer nada: los documentos bajan a ritmo moderado y entran directo al analizador.',
+      texto: 'Entras a la DIAN, pides un token y exportas el listado del periodo. Vuelves a pedir un segundo token (ése es el que se usa para descargar), copias la dirección del enlace del correo sin abrirlo y la pegas. Pegas la columna de CUFE, eliges la carpeta y le das a descargar. A partir de ahí no hay que hacer nada: los documentos bajan a ritmo moderado y entran directo al analizador.',
       antes: 'Una tarde de descargas y descompresiones',
       despues: 'Una lista pegada y una tabla con todo leído',
     },
@@ -244,7 +244,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'No reemplaza tu programa contable. Elimina la digitación que hay antes de él.',
     intro: 'La mayoría del software que se le ofrece a un contador colombiano quiere ser su programa contable: llevar la contabilidad completa, emitir, declarar. Codec Document no compite con eso. Se ocupa del tramo que ningún programa cubre y que se hace a mano en todos los despachos del país: convertir los documentos electrónicos que la DIAN tiene en información contable lista para usar. Ese tramo es donde se van las horas del cierre y donde aparecen los errores que después cuesta encontrar.',
     sectorTitulo: 'Qué hace exactamente, sin adornos',
-    sectorTexto: 'Trae los documentos por cuatro caminos —arrastrando el comprimido de la DIAN, bajándolos por CUFE con tu token, verificando contra la lista del portal cuáles te faltan, o recibiéndolos por una dirección de correo tuya—. Lee facturas, notas crédito, notas débito y documentos equivalentes POS. Comprueba que cada uno cuadre consigo mismo y aparta los que no. Cruza lo de la DIAN contra tu contabilidad. Y entrega el Excel de cuatro hojas o la plantilla de tu propio programa.',
+    sectorTexto: 'Trae los documentos por cuatro caminos (arrastrando el comprimido de la DIAN, bajándolos por CUFE con tu token, verificando contra la lista del portal cuáles te faltan, o recibiéndolos por una dirección de correo tuya). Lee facturas, notas crédito, notas débito y documentos equivalentes POS. Comprueba que cada uno cuadre consigo mismo y aparta los que no. Cruza lo de la DIAN contra tu contabilidad. Y entrega el Excel de cuatro hojas o la plantilla de tu propio programa.',
     dolores: [
       { titulo: 'Ningún programa contable lee la DIAN por ti', texto: 'Siigo, Alegra, World Office y Helisa reciben datos; no van a buscarlos. El puente entre la DIAN y ellos lo pone una persona con un teclado.' },
       { titulo: 'El cierre depende de que nadie se equivoque', texto: 'Trescientos documentos digitados a mano a las nueve de la noche del día 17 es exactamente la situación en la que se cometen errores.' },
@@ -253,12 +253,12 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'De trescientos documentos, quizá cinco necesitan tu criterio. Los otros doscientos noventa y cinco no los abres. Ahí es donde están las horas.',
     caso: {
       titulo: 'El mes de un despacho con veinte clientes',
-      texto: 'Hoy: por cada factura recibida, abrir el correo, bajar el adjunto, buscarlo en el explorador, abrir el XML —que es ilegible— o el PDF, y teclear NIT, fecha, base, IVA y retenciones. Dos minutos por documento cuando todo va bien. Trescientos documentos son diez horas. Con la herramienta: los documentos entran solos o de un arrastre, se leen y se cuadran, y el contador revisa únicamente lo marcado. La digitación desaparece.',
+      texto: 'Hoy: por cada factura recibida, abrir el correo, bajar el adjunto, buscarlo en el explorador, abrir el XML (que es ilegible) o el PDF, y teclear NIT, fecha, base, IVA y retenciones. Dos minutos por documento cuando todo va bien. Trescientos documentos son diez horas. Con la herramienta: los documentos entran solos o de un arrastre, se leen y se cuadran, y el contador revisa únicamente lo marcado. La digitación desaparece.',
       antes: 'Diez horas tecleando cifras que ya estaban en un archivo',
       despues: 'Una hora revisando lo que de verdad necesita criterio',
     },
     fotos: FOTOS_B,
-    cierre: 'Está hecho para la norma colombiana, no traducido de otro país. Distingue una nota crédito de una nota débito para el signo, sabe que la base gravable no es el total menos los impuestos, y conoce reglas que no se ven en el archivo —como que un documento equivalente POS a «Consumidor final» no da derecho a IVA descontable aunque venga firmado y validado por la DIAN—. Esas reglas son la diferencia entre un conversor de archivos y una herramienta contable.',
+    cierre: 'Está hecho para la norma colombiana, no traducido de otro país. Distingue una nota crédito de una nota débito para el signo, sabe que la base gravable no es el total menos los impuestos, y conoce reglas que no se ven en el archivo (como que un documento equivalente POS a «Consumidor final» no da derecho a IVA descontable aunque venga firmado y validado por la DIAN). Esas reglas son la diferencia entre un conversor de archivos y una herramienta contable.',
     faq: [
       { q: '¿Reemplaza a mi programa contable?', a: 'No. Se ocupa del tramo anterior: convertir los documentos de la DIAN en datos listos y entregártelos en el formato que tu programa acepta.' },
       { q: '¿Los documentos de mis clientes salen de mi computador?', a: 'El procesamiento ocurre en tu propio navegador. Lo que se guarda son las cifras ya leídas, en tu cuenta y separadas de las de cualquier otro contador.' },
@@ -277,13 +277,13 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Resumen, detalle, un renglón por documento y retenciones. Con las notas crédito restadas donde tienen que estarlo.',
     intro: 'El reporte que un contador necesita del periodo no es una lista de archivos: es un resumen que cuadre, un detalle donde buscar cuando algo no cuadra, y las retenciones separadas para el certificado. Armar eso a mano desde los XML de la DIAN es el trabajo de una tarde larga, y basta un signo mal puesto en las notas crédito para que la cifra que va a la declaración salga inflada. Este Excel se descarga hecho.',
     sectorTitulo: 'Qué trae cada hoja, y por qué son cuatro',
-    sectorTexto: 'La hoja General resume el periodo: bases, impuestos y totales, con las notas crédito ya restadas — es la cifra que se lleva a la declaración. La hoja Detallado baja a nivel de línea, para cuando hay que entender de dónde salió un número. La tercera pone un renglón por documento, que es el formato que la mayoría de programas contables espera importar. Y la cuarta separa las retenciones, porque van a un trámite distinto y mezclarlas obliga a filtrar cada vez.',
+    sectorTexto: 'La hoja General resume el periodo: bases, impuestos y totales, con las notas crédito ya restadas, es la cifra que se lleva a la declaración. La hoja Detallado baja a nivel de línea, para cuando hay que entender de dónde salió un número. La tercera pone un renglón por documento, que es el formato que la mayoría de programas contables espera importar. Y la cuarta separa las retenciones, porque van a un trámite distinto y mezclarlas obliga a filtrar cada vez.',
     dolores: [
       { titulo: 'El signo de las notas crédito', texto: 'Si una nota crédito suma en vez de restar, la base y el IVA descontable quedan inflados. Y el IVA descontable es exactamente lo que se declara.' },
       { titulo: 'Un resumen sin detalle no sirve', texto: 'Cuando el total no cuadra hay que poder bajar hasta la línea que lo causó. Sin la hoja de detalle, toca volver a abrir los XML.' },
       { titulo: 'Las retenciones mezcladas', texto: 'Van a un trámite distinto y con otros plazos. Filtrarlas a mano cada mes es tiempo que no aporta nada.' },
     ],
-    respuesta: 'El signo va por TIPO de documento: la nota crédito resta y la nota débito suma. No es «las notas llevan signo negativo» — esa suposición es la que descuadra los cierres.',
+    respuesta: 'El signo va por TIPO de documento: la nota crédito resta y la nota débito suma. No es «las notas llevan signo negativo», esa suposición es la que descuadra los cierres.',
     caso: {
       titulo: 'Un error que costó encontrarlo',
       texto: 'Durante el desarrollo, la hoja de resumen sumaba las notas crédito en positivo. El total del periodo salía más alto de lo que era y el IVA descontable también, que es la cifra que va a la declaración. El fallo no se veía en una prueba pequeña: sólo aparecía con un periodo que tuviera notas crédito de verdad. Hoy hay diecisiete comprobaciones automáticas que fijan esa regla y las relacionadas, para que no vuelva a colarse.',
@@ -311,7 +311,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'La digitación no es trabajo contable. Es transcripción, y la hace mejor una máquina.',
     intro: 'Hay una parte del cierre que exige criterio profesional: decidir cuentas, interpretar un caso raro, revisar lo que no cuadra. Y hay otra que no exige nada más que paciencia: leer una cifra de una pantalla y teclearla en otra. Un contador con veinte clientes dedica la mayor parte del cierre a la segunda. Esta página trata de cómo eliminarla, sin cambiar de programa contable y sin pedirle nada a la DIAN que no se pueda pedir.',
     sectorTitulo: 'Por qué la digitación se resiste a desaparecer',
-    sectorTexto: 'Porque el dato está en un formato que las personas no leen. El XML de la DIAN tiene toda la información —NIT, base gravable, cada impuesto con su código, retenciones—, pero entre etiquetas. Así que el contador abre el PDF, que sí se lee, y teclea desde ahí. Es un rodeo absurdo: se convierte un dato estructurado en algo visual para volver a convertirlo en dato tecleándolo. La solución no es leer más rápido, es leer el XML directamente.',
+    sectorTexto: 'Porque el dato está en un formato que las personas no leen. El XML de la DIAN tiene toda la información (NIT, base gravable, cada impuesto con su código, retenciones), pero entre etiquetas. Así que el contador abre el PDF, que sí se lee, y teclea desde ahí. Es un rodeo absurdo: se convierte un dato estructurado en algo visual para volver a convertirlo en dato tecleándolo. La solución no es leer más rápido, es leer el XML directamente.',
     dolores: [
       { titulo: 'Dos minutos por documento', texto: 'Abrir el correo, bajar el adjunto, buscarlo, abrirlo, leer, teclear. Trescientos documentos son diez horas, y son diez horas todos los meses.' },
       { titulo: 'Los errores no aparecen al momento', texto: 'Una base mal tecleada no avisa. Se descubre cuando el IVA descontable no cuadra, y entonces hay que revisar los trescientos para encontrar cuál fue.' },
@@ -342,7 +342,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'que se pierde sin que nadie lo note',
     heroSector: 'Cruce DIAN contra libros',
     subtitulo: 'Lo que falta no se ve. Por eso hay que buscarlo a propósito.',
-    intro: 'Un error de digitación se descubre porque algo no cuadra. Una factura que nunca se registró no descuadra nada: simplemente no está, y nadie echa de menos lo que no ve. El resultado es IVA descontable que no se descontó — dinero real del cliente que se quedó sin usar, mes tras mes, sin que aparezca en ningún informe. Encontrarlo exige comparar dos listas: lo que la DIAN dice que recibiste y lo que está registrado en tus libros.',
+    intro: 'Un error de digitación se descubre porque algo no cuadra. Una factura que nunca se registró no descuadra nada: simplemente no está, y nadie echa de menos lo que no ve. El resultado es IVA descontable que no se descontó, dinero real del cliente que se quedó sin usar, mes tras mes, sin que aparezca en ningún informe. Encontrarlo exige comparar dos listas: lo que la DIAN dice que recibiste y lo que está registrado en tus libros.',
     sectorTitulo: 'Por qué se pierden facturas',
     sectorTexto: 'No suele ser descuido. Un proveedor manda la factura a un correo que nadie revisa. Otra llega en un ZIP que se descargó pero no se procesó. Otra se registró por un valor distinto y el error se compensó con otro. Y en los meses de mucho volumen, alguna simplemente se salta. Con veinte clientes y trescientos documentos, que se cuelen unos pocos no es negligencia: es aritmética.',
     dolores: [
@@ -377,13 +377,13 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Una dirección tuya, que puedes dictar por teléfono. Lo que llega, entra.',
     intro: 'Hay una vía de entrada que ya existe y casi nadie aprovecha: el correo. La norma obliga al emisor a entregar el XML de la factura electrónica al adquiriente, y la forma habitual de hacerlo es por email. Es decir, los documentos ya están llegando todos los días a un buzón. Lo que falta no es conseguirlos: es que dejen de requerir que una persona los baje, los busque en el explorador y los arrastre a algún sitio.',
     sectorTitulo: 'Una dirección propia, sin darnos tu contraseña',
-    sectorTexto: 'Se te asigna una dirección de recepción tuya, con el nombre que elijas —el tuyo o el de tu oficina—, para que puedas dictarla por teléfono a un proveedor sin deletrear veinte caracteres. Tú decides qué llega ahí: puedes crear una regla de reenvío en tu correo actual, o darle la dirección directamente a tus proveedores. En ningún momento se pide la contraseña de tu correo ni se accede a tu bandeja.',
+    sectorTexto: 'Se te asigna una dirección de recepción tuya, con el nombre que elijas (el tuyo o el de tu oficina), para que puedas dictarla por teléfono a un proveedor sin deletrear veinte caracteres. Tú decides qué llega ahí: puedes crear una regla de reenvío en tu correo actual, o darle la dirección directamente a tus proveedores. En ningún momento se pide la contraseña de tu correo ni se accede a tu bandeja.',
     dolores: [
       { titulo: 'Bajar y arrastrar, por cada proveedor y cada mes', texto: 'Abrir el correo, guardar el adjunto, buscarlo en la carpeta de descargas y llevarlo a la herramienta. Multiplicado por todos los proveedores de todos los clientes.' },
       { titulo: 'Los que no mandan la factura no se notan', texto: 'Si no llega, no hay nada que eches de menos hasta el cierre, cuando ya es tarde para reclamar cómodamente.' },
       { titulo: 'El token de la DIAN no sirve de noche', texto: 'Dura sesenta minutos y hay que pedirlo a mano, así que no existe forma de sincronizar automáticamente por ahí. El correo es el único camino desatendido.' },
     ],
-    respuesta: 'Lo que llega queda listado con remitente, asunto y fecha. Si un proveedor no mandó su factura, se ve — y sabes a quién reclamarle antes del cierre, no después.',
+    respuesta: 'Lo que llega queda listado con remitente, asunto y fecha. Si un proveedor no mandó su factura, se ve, y sabes a quién reclamarle antes del cierre, no después.',
     caso: {
       titulo: 'Una decisión que conviene entender',
       texto: 'Lo que llega por correo NO se procesa automáticamente: se queda esperando en la bandeja hasta que tú le das a procesar. Podría hacerse solo, pero eso significaría dos caminos distintos calculando lo mismo, y el día que uno se toque y el otro no, el mismo documento daría dos cifras según por dónde entró. En contabilidad eso no es una molestia, es una declaración mal presentada. Así que hay un solo motor, y todo pasa por él.',
@@ -391,7 +391,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
       despues: 'Una bandeja con lo que llegó, y un botón para procesarlo',
     },
     fotos: FOTOS_B,
-    cierre: 'Como la dirección es fácil de dictar, también es fácil de adivinar, y puede llegarte correo de desconocidos. Por eso nada se procesa solo: lo que entra espera con su remitente a la vista y lo que no reconoces lo borras sin procesarlo. Es el mismo modelo con el que funciona cualquier dirección de recepción de facturas en Colombia — la protección no es que nadie sepa la dirección, es que quien recibe mira lo que llega.',
+    cierre: 'Como la dirección es fácil de dictar, también es fácil de adivinar, y puede llegarte correo de desconocidos. Por eso nada se procesa solo: lo que entra espera con su remitente a la vista y lo que no reconoces lo borras sin procesarlo. Es el mismo modelo con el que funciona cualquier dirección de recepción de facturas en Colombia, la protección no es que nadie sepa la dirección, es que quien recibe mira lo que llega.',
     faq: [
       { q: '¿Tengo que darles mi contraseña de correo?', a: 'No. Es una dirección aparte, sólo tuya. Tú decides qué se reenvía ahí; no se accede a tu correo.' },
       { q: '¿Puedo elegir el nombre de la dirección?', a: 'Sí. Puede ser el tuyo o el de tu oficina, para que se pueda dictar por teléfono. La que se genera al activar es aleatoria hasta que le pongas nombre.' },
@@ -443,7 +443,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Lo que te limita no es lo que sabes. Es cuántas facturas puedes teclear.',
     intro: 'Un contador independiente sabe exactamente cuántos clientes puede llevar, y no es una cifra que dependa de su conocimiento: depende de cuántas facturas puede procesar antes del vencimiento. Aceptar un cliente más significa aceptar varias noches más de digitación, y llega un punto en que no compensa. Ese techo es artificial: lo pone la parte del trabajo que menos criterio requiere.',
     sectorTitulo: 'El techo está en la transcripción, no en la contabilidad',
-    sectorTexto: 'Interpretar un caso complejo, decidir una cuenta, sustentar un tratamiento tributario: eso escala mal porque exige tu criterio, pero tampoco es lo que consume el tiempo. Lo que lo consume es abrir trescientos documentos y copiar cifras. Si esa parte se automatiza, el mismo profesional puede llevar bastantes más clientes con las mismas horas — y las horas que quedan se dedican a lo que el cliente de verdad valora.',
+    sectorTexto: 'Interpretar un caso complejo, decidir una cuenta, sustentar un tratamiento tributario: eso escala mal porque exige tu criterio, pero tampoco es lo que consume el tiempo. Lo que lo consume es abrir trescientos documentos y copiar cifras. Si esa parte se automatiza, el mismo profesional puede llevar bastantes más clientes con las mismas horas, y las horas que quedan se dedican a lo que el cliente de verdad valora.',
     dolores: [
       { titulo: 'Cada cliente nuevo son más noches', texto: 'El trabajo crece de forma lineal con el número de facturas, y las horas del día no.' },
       { titulo: 'Contratar no siempre compensa', texto: 'Un asistente para digitar hay que buscarlo, formarlo y revisarle el trabajo. Para un despacho pequeño, el cálculo casi nunca sale.' },
@@ -452,7 +452,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'La herramienta no reemplaza criterio: elimina transcripción. Sigues revisando lo que no cuadra, que es donde tu firma tiene valor.',
     caso: {
       titulo: 'Cómo cambia la forma de trabajar',
-      texto: 'En vez de acumular todo para los días previos al vencimiento, los documentos se procesan según van llegando —o llegan solos, si activas la dirección de correo—. Cuando llega el cierre, el trabajo ya no es procesar trescientos documentos: es revisar los pocos que quedaron marcados y sacar los reportes. El pico deja de existir porque el trabajo se repartió solo.',
+      texto: 'En vez de acumular todo para los días previos al vencimiento, los documentos se procesan según van llegando (o llegan solos, si activas la dirección de correo). Cuando llega el cierre, el trabajo ya no es procesar trescientos documentos: es revisar los pocos que quedaron marcados y sacar los reportes. El pico deja de existir porque el trabajo se repartió solo.',
       antes: 'Tres noches por cliente antes de cada vencimiento',
       despues: 'Revisión continua, y un cierre que es sacar reportes',
     },
@@ -490,7 +490,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
       despues: 'Un perfil guardado que usa cualquiera del equipo',
     },
     fotos: FOTOS_A,
-    cierre: 'Un detalle práctico para despachos: conviene guardar un perfil de exportación por cada programa contable con el que se trabaja, con nombres claros. Es lo que convierte la herramienta en algo del despacho y no de la persona que la configuró — y lo que hace que el mes siguiente sea elegir y descargar en vez de volver a empezar.',
+    cierre: 'Un detalle práctico para despachos: conviene guardar un perfil de exportación por cada programa contable con el que se trabaja, con nombres claros. Es lo que convierte la herramienta en algo del despacho y no de la persona que la configuró, y lo que hace que el mes siguiente sea elegir y descargar en vez de volver a empezar.',
     faq: [
       { q: '¿Hay que instalar algo en cada computador?', a: 'No. Se abre en el navegador desde cualquier equipo con la misma cuenta.' },
       { q: '¿Se paga por puesto?', a: 'No. El plan se define por documentos procesados al mes, no por número de personas.' },
@@ -543,7 +543,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Está firmado, está validado por la DIAN, y aun así no sirve para descontar.',
     intro: 'El documento equivalente electrónico generado por sistemas POS es, con diferencia, el de mayor volumen en muchos negocios. Y trae una trampa que no se ve mirando el archivo: cuando se expide a nombre de «Consumidor final», con el NIT genérico 222222222222, no da derecho a IVA descontable ni a costos y deducciones. El documento está bien formado, tiene su firma y su validación de la DIAN, y aun así no sirve para lo que el contador va a usarlo.',
     sectorTitulo: 'Por qué es fácil que se cuele',
-    sectorTexto: 'Porque no hay nada en el documento que lo marque como inválido: es un documento perfectamente legítimo, sólo que expedido sin identificar al adquiriente. Una herramienta que se limite a leer cifras y sumarlas lo va a incluir en la base de IVA descontable sin decir nada, y el error sólo aparece si alguien revisa documento por documento — que es precisamente lo que se estaba tratando de evitar. La regla está en la Resolución DIAN 000165 de 2023 y se relaciona con lo dispuesto en la Resolución 000042 de 2020.',
+    sectorTexto: 'Porque no hay nada en el documento que lo marque como inválido: es un documento perfectamente legítimo, sólo que expedido sin identificar al adquiriente. Una herramienta que se limite a leer cifras y sumarlas lo va a incluir en la base de IVA descontable sin decir nada, y el error sólo aparece si alguien revisa documento por documento, que es precisamente lo que se estaba tratando de evitar. La regla está en la Resolución DIAN 000165 de 2023 y se relaciona con lo dispuesto en la Resolución 000042 de 2020.',
     dolores: [
       { titulo: 'El archivo se ve correcto', texto: 'Firmado, validado, con su CUDE. No hay ningún indicio técnico de que ese documento no sirva para descontar.' },
       { titulo: 'Es el tipo de documento más frecuente', texto: 'En negocios con punto de venta, los equivalentes POS pueden ser la mayoría del volumen del mes.' },
@@ -552,7 +552,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'Los documentos equivalentes POS expedidos a «Consumidor final» se detectan por el NIT genérico del adquiriente y salen a la bandeja de revisión con el motivo escrito, en vez de entrar callados en los totales.',
     caso: {
       titulo: 'Qué se ve en pantalla',
-      texto: 'El documento no se descarta ni se borra: se marca. Aparece en la bandeja de revisión indicando que se expidió sin identificar al adquiriente y que, por tanto, no da derecho a IVA descontable ni a costos. El contador decide qué hacer con él —a veces hay una gestión posible con el proveedor para que reexpida el documento identificado—, pero decide sabiendo, no descubriéndolo después.',
+      texto: 'El documento no se descarta ni se borra: se marca. Aparece en la bandeja de revisión indicando que se expidió sin identificar al adquiriente y que, por tanto, no da derecho a IVA descontable ni a costos. El contador decide qué hacer con él (a veces hay una gestión posible con el proveedor para que reexpida el documento identificado), pero decide sabiendo, no descubriéndolo después.',
       antes: 'Sumado en silencio a la base de IVA descontable',
       despues: 'Marcado, con el motivo y la norma detrás',
     },
@@ -574,7 +574,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'el PDF sólo es su foto',
     heroSector: 'Obligación de conservación',
     subtitulo: 'Guardar el PDF y borrar el XML es guardar la fotografía y tirar el original.',
-    intro: 'Hay una confusión extendida y con consecuencias: mucha gente conserva el PDF de sus facturas electrónicas y borra el XML, porque el PDF es el que se puede leer. Es exactamente al revés. En la facturación electrónica colombiana el documento es el archivo XML —con su firma digital, su CUFE y la validación de la DIAN—; el PDF es una representación gráfica generada a partir de él, y se puede volver a generar. Lo que no se puede regenerar es el XML.',
+    intro: 'Hay una confusión extendida y con consecuencias: mucha gente conserva el PDF de sus facturas electrónicas y borra el XML, porque el PDF es el que se puede leer. Es exactamente al revés. En la facturación electrónica colombiana el documento es el archivo XML (con su firma digital, su CUFE y la validación de la DIAN); el PDF es una representación gráfica generada a partir de él, y se puede volver a generar. Lo que no se puede regenerar es el XML.',
     sectorTitulo: 'Qué dice la norma, en corto',
     sectorTexto: 'El artículo 632 del Estatuto Tributario obliga a conservar las informaciones y pruebas relacionadas con las operaciones, por el término establecido, y a ponerlas a disposición de la administración cuando las requiera. Aplicado a facturación electrónica, eso significa el documento electrónico con sus atributos de integridad y autenticidad: la firma y la validación viven en el XML. Un PDF impreso o guardado no acredita esos atributos.',
     dolores: [
@@ -585,12 +585,12 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     respuesta: 'El XML se conserva de forma permanente, porque la obligación de conservación es del adquiriente. El PDF no se guarda: pesa mucho más y se puede regenerar cuando haga falta.',
     caso: {
       titulo: 'Una decisión de diseño que viene de la norma',
-      texto: 'Podría guardarse todo —XML y PDF— y no pensar más en ello, pero el PDF pesa alrededor de veinticinco veces más y no aporta nada que el XML no tenga. Así que se conserva el documento con validez legal y la representación gráfica se genera bajo demanda. Es la misma lógica que aplica un archivo bien llevado: se guarda el original y se imprime cuando se necesita, no al revés.',
+      texto: 'Podría guardarse todo (XML y PDF) y no pensar más en ello, pero el PDF pesa alrededor de veinticinco veces más y no aporta nada que el XML no tenga. Así que se conserva el documento con validez legal y la representación gráfica se genera bajo demanda. Es la misma lógica que aplica un archivo bien llevado: se guarda el original y se imprime cuando se necesita, no al revés.',
       antes: 'Carpetas de PDF y XML perdidos en correos antiguos',
       despues: 'El XML conservado y el PDF generado cuando haga falta',
     },
     fotos: FOTOS_D,
-    cierre: 'Esta página describe el marco general y no sustituye la asesoría sobre un caso concreto: los plazos y las obligaciones específicas dependen del tipo de contribuyente y de la operación. Lo que no cambia según el caso es cuál de los dos archivos es el documento — y esa parte conviene tenerla clara antes de decidir qué se borra.',
+    cierre: 'Esta página describe el marco general y no sustituye la asesoría sobre un caso concreto: los plazos y las obligaciones específicas dependen del tipo de contribuyente y de la operación. Lo que no cambia según el caso es cuál de los dos archivos es el documento, y esa parte conviene tenerla clara antes de decidir qué se borra.',
     faq: [
       { q: '¿Basta con guardar el PDF?', a: 'No. El documento con validez es el XML: es donde están la firma digital, el CUFE y la validación de la DIAN. El PDF es una representación gráfica.' },
       { q: '¿Por cuánto tiempo hay que conservarlos?', a: 'Por el término que establece el artículo 632 del Estatuto Tributario para las informaciones y pruebas de las operaciones. El plazo concreto depende del caso; conviene confirmarlo para tu situación.' },
@@ -606,10 +606,10 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Accent: 'Pega tus CUFE',
     h1Rest: 'y sabe qué te falta',
     heroSector: 'Verificación en lote',
-    subtitulo: 'La pregunta del cierre —¿los tengo todos?— contestada en un pegado.',
+    subtitulo: 'La pregunta del cierre (¿los tengo todos?) contestada en un pegado.',
     intro: 'Antes de declarar hay una pregunta que hay que poder contestar con certeza: ¿tengo todos los documentos del periodo? La DIAN permite exportar el listado de lo que recibiste, con su columna de CUFE. Comparar esa lista contra lo que ya está cargado es lo que convierte una suposición en un dato, pero hacerlo a mano sobre trescientas líneas de noventa y seis caracteres cada una no lo hace nadie dos veces.',
     sectorTitulo: 'Qué es el CUFE y por qué sirve para esto',
-    sectorTexto: 'El CUFE es el código único que identifica cada factura electrónica: funciona como su huella. Dos documentos no comparten CUFE, así que comparar por CUFE es exacto — no depende de que el número de factura o el nombre del proveedor estén escritos igual en los dos lados. Por eso la verificación en lote se hace con esa columna y no con el número del documento.',
+    sectorTexto: 'El CUFE es el código único que identifica cada factura electrónica: funciona como su huella. Dos documentos no comparten CUFE, así que comparar por CUFE es exacto, no depende de que el número de factura o el nombre del proveedor estén escritos igual en los dos lados. Por eso la verificación en lote se hace con esa columna y no con el número del documento.',
     dolores: [
       { titulo: 'Noventa y seis caracteres por línea', texto: 'Comparar CUFE a ojo es inviable, y comparar por número de factura falla en cuanto dos proveedores repiten numeración.' },
       { titulo: 'Suponer que están todos', texto: 'La mayoría de cierres asume que no falta nada porque nada descuadra. Un documento ausente no descuadra: falta.' },
@@ -623,7 +623,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
       despues: 'La lista exacta de lo que falta, y bajarlo desde ahí',
     },
     fotos: FOTOS_A,
-    cierre: 'La verificación no descarga nada de la DIAN por sí sola: cruza tu lista contra lo que ya está cargado en tu cuenta. Es rápida y no consume cupo, así que conviene hacerla varias veces durante el mes en vez de una sola al final — encontrar un documento que falta el día 5 deja tiempo para pedírselo al proveedor.',
+    cierre: 'La verificación no descarga nada de la DIAN por sí sola: cruza tu lista contra lo que ya está cargado en tu cuenta. Es rápida y no consume cupo, así que conviene hacerla varias veces durante el mes en vez de una sola al final, encontrar un documento que falta el día 5 deja tiempo para pedírselo al proveedor.',
     faq: [
       { q: '¿Tengo que limpiar la lista antes de pegarla?', a: 'No. Se puede pegar la columna directamente desde el Excel de la DIAN. Las líneas que no tengan forma de CUFE se reportan aparte.' },
       { q: '¿Qué pasa con los repetidos?', a: 'Se cuentan una sola vez y se te dice cuántos venían repetidos, que suele indicar que el listado se exportó dos veces.' },
@@ -640,9 +640,9 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'y un solo procedimiento',
     heroSector: 'Para despachos con cartera',
     subtitulo: 'El trabajo no crece por cliente: crece por documento, y los documentos se procesan solos.',
-    intro: 'Manejar la facturación electrónica de un cliente es un trámite. Manejar la de veinte es un trabajo de tiempo completo, porque el procedimiento se repite entero por cada uno: entrar al portal, pedir el token, exportar el listado, descargar, descomprimir, leer y digitar. Veinte veces al mes. Lo que hace inviable esa carga no es la complejidad, es la repetición — y la repetición es exactamente lo que se puede automatizar.',
+    intro: 'Manejar la facturación electrónica de un cliente es un trámite. Manejar la de veinte es un trabajo de tiempo completo, porque el procedimiento se repite entero por cada uno: entrar al portal, pedir el token, exportar el listado, descargar, descomprimir, leer y digitar. Veinte veces al mes. Lo que hace inviable esa carga no es la complejidad, es la repetición, y la repetición es exactamente lo que se puede automatizar.',
     sectorTitulo: 'La parte que sigue siendo manual, y por qué',
-    sectorTexto: 'Hay un paso que no se puede automatizar: pedir el token en el portal de la DIAN. Requiere las credenciales del contribuyente, dura sesenta minutos y exige una acción humana. No existe una API pública que permita a un tercero descargar los documentos de un contribuyente sin su intervención — los servicios oficiales de la DIAN son para emitir. Todo lo demás sí: pegado el token, la descarga, la lectura, el cuadre y la exportación ocurren solos.',
+    sectorTexto: 'Hay un paso que no se puede automatizar: pedir el token en el portal de la DIAN. Requiere las credenciales del contribuyente, dura sesenta minutos y exige una acción humana. No existe una API pública que permita a un tercero descargar los documentos de un contribuyente sin su intervención, los servicios oficiales de la DIAN son para emitir. Todo lo demás sí: pegado el token, la descarga, la lectura, el cuadre y la exportación ocurren solos.',
     dolores: [
       { titulo: 'El mismo procedimiento, veinte veces', texto: 'No es difícil: es largo. Y al ser largo y repetitivo, es donde se salta un paso sin darse cuenta.' },
       { titulo: 'Cada cliente con su programa contable', texto: 'Uno usa Siigo, otro Alegra, otro World Office. Armar el archivo de cada uno a mano multiplica el trabajo.' },
@@ -673,7 +673,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     h1Rest: 'y qué se puede probar antes',
     heroSector: 'Precios',
     subtitulo: 'Cien documentos al mes gratis. Sin tarjeta, sin llamada, sin licencia anual por adelantado.',
-    intro: 'Las herramientas de descarga masiva que se usan hoy en Colombia se venden por licencia anual, y eso obliga a decidir antes de saber si sirven para tu forma de trabajar. Esta página explica cómo está estructurado el precio de Codec Document y, sobre todo, qué se puede comprobar sin pagar nada — porque la única forma sensata de elegir una herramienta contable es ver si sus cifras coinciden con las tuyas.',
+    intro: 'Las herramientas de descarga masiva que se usan hoy en Colombia se venden por licencia anual, y eso obliga a decidir antes de saber si sirven para tu forma de trabajar. Esta página explica cómo está estructurado el precio de Codec Document y, sobre todo, qué se puede comprobar sin pagar nada, porque la única forma sensata de elegir una herramienta contable es ver si sus cifras coinciden con las tuyas.',
     sectorTitulo: 'Lo que cambia entre planes es el volumen, no las funciones',
     sectorTexto: 'Todos los planes incluyen lo mismo: subir el comprimido de la DIAN, descargar por CUFE con tu token, verificar qué te falta, el Excel de cuatro hojas, las plantillas de tu programa contable y el cruce contra tu contabilidad. Lo que cambia es cuántos documentos se procesan al mes. La única excepción es recibir facturas por correo, que requiere un plan de pago porque cada cuenta lleva su propio buzón. Se dice así de claro porque un catálogo donde no se sabe qué falta en cada nivel es un catálogo diseñado para confundir.',
     dolores: [
@@ -708,7 +708,7 @@ export const VENTAS_CONTADOR: VentaContadorSeo[] = [
     subtitulo: 'Dos listas comparadas documento a documento, con aritmética exacta y no con estimaciones.',
     intro: 'Declarar sin haber comparado lo que la DIAN tiene contra lo que está en libros es declarar sobre una suposición. La suposición suele ser correcta, pero cuando no lo es el error va en las dos direcciones: documentos que faltan y son IVA que se dejó de descontar, o registros que no corresponden a ningún documento electrónico. Comparar las dos listas antes de declarar convierte esa suposición en un dato, y toma minutos.',
     sectorTitulo: 'Qué se compara y cómo',
-    sectorTexto: 'Se sube el archivo que exporta el programa contable con los documentos del periodo. Se leen sus encabezados y se señala una vez qué columna es cuál — número, NIT, fecha, valor —. A partir de ahí la comparación es documento a documento con aritmética determinista: siempre da el mismo resultado con los mismos datos, que es lo que permite sustentar un hallazgo en vez de sólo mencionarlo.',
+    sectorTexto: 'Se sube el archivo que exporta el programa contable con los documentos del periodo. Se leen sus encabezados y se señala una vez qué columna es cuál, número, NIT, fecha, valor. A partir de ahí la comparación es documento a documento con aritmética determinista: siempre da el mismo resultado con los mismos datos, que es lo que permite sustentar un hallazgo en vez de sólo mencionarlo.',
     dolores: [
       { titulo: 'Lo que falta no descuadra nada', texto: 'Un documento ausente no dispara ninguna alerta contable. Se detecta comparando, o no se detecta.' },
       { titulo: 'Un valor mal registrado se compensa solo', texto: 'Dos errores en sentidos opuestos se anulan en el total y sobreviven al cierre sin que nadie los vea.' },

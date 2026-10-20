@@ -46,13 +46,13 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
     highlights: [
       {
         titleEn: 'Legal validity', titleEs: 'Validez jurídica',
-        factEn: 'Law 527 of 1999 (Arts. 5–13) grants data messages and electronic signatures the same legal validity and evidentiary force as paper documents and handwritten signatures — this is the functional-equivalence principle.',
-        factEs: 'La Ley 527 de 1999 (Arts. 5 a 13) otorga a los mensajes de datos y a la firma electrónica la misma validez jurídica y fuerza probatoria que los documentos en papel y la firma manuscrita — este es el principio de equivalencia funcional.',
+        factEn: 'Law 527 of 1999 (Arts. 5–13) grants data messages and electronic signatures the same legal validity and evidentiary force as paper documents and handwritten signatures, this is the functional-equivalence principle.',
+        factEs: 'La Ley 527 de 1999 (Arts. 5 a 13) otorga a los mensajes de datos y a la firma electrónica la misma validez jurídica y fuerza probatoria que los documentos en papel y la firma manuscrita, este es el principio de equivalencia funcional.',
       },
       {
         titleEn: 'Simple electronic signature', titleEs: 'Firma electrónica simple',
-        factEn: 'Decree 2364 of 2012 confirms that an electronic signature does NOT require a certified digital signature to be valid — it only needs to be reliable and appropriate for the purpose of the message, which selfie + ID identity verification satisfies.',
-        factEs: 'El Decreto 2364 de 2012 confirma que una firma electrónica NO requiere una firma digital certificada para ser válida — solo debe ser fiable y apropiada para el propósito del mensaje, lo cual la verificación de identidad con selfie + cédula cumple.',
+        factEn: 'Decree 2364 of 2012 confirms that an electronic signature does NOT require a certified digital signature to be valid, it only needs to be reliable and appropriate for the purpose of the message, which selfie + ID identity verification satisfies.',
+        factEs: 'El Decreto 2364 de 2012 confirma que una firma electrónica NO requiere una firma digital certificada para ser válida, solo debe ser fiable y apropiada para el propósito del mensaje, lo cual la verificación de identidad con selfie + cédula cumple.',
       },
       {
         titleEn: 'Constitutional Court', titleEs: 'Corte Constitucional',
@@ -91,19 +91,19 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
       },
       {
         titleEn: 'Simple vs. advanced signature', titleEs: 'Firma simple vs. avanzada',
-        factEn: 'The Advanced Electronic Signature (e.firma/FIEL) issued by the SAT is only mandatory for tax and government filings — private contracts between individuals or businesses only need a simple electronic signature to be enforceable.',
-        factEs: 'La Firma Electrónica Avanzada (e.firma/FIEL) emitida por el SAT es obligatoria solo para trámites fiscales y gubernamentales — los contratos privados entre particulares o empresas solo requieren una firma electrónica simple para ser exigibles.',
+        factEn: 'The Advanced Electronic Signature (e.firma/FIEL) issued by the SAT is only mandatory for tax and government filings, private contracts between individuals or businesses only need a simple electronic signature to be enforceable.',
+        factEs: 'La Firma Electrónica Avanzada (e.firma/FIEL) emitida por el SAT es obligatoria solo para trámites fiscales y gubernamentales, los contratos privados entre particulares o empresas solo requieren una firma electrónica simple para ser exigibles.',
       },
       {
         titleEn: 'Document retention', titleEs: 'Conservación de documentos',
-        factEn: 'NOM-151-SCFI-2016 establishes the technical requirements for retaining data messages, including digital time-stamping — the same evidentiary logic behind Codec Document\'s audit trail.',
-        factEs: 'La NOM-151-SCFI-2016 establece los requisitos técnicos para la conservación de mensajes de datos, incluyendo el sellado digital de tiempo — la misma lógica probatoria detrás de la pista de auditoría de Codec Document.',
+        factEn: 'NOM-151-SCFI-2016 establishes the technical requirements for retaining data messages, including digital time-stamping, the same evidentiary logic behind Codec Document\'s audit trail.',
+        factEs: 'La NOM-151-SCFI-2016 establece los requisitos técnicos para la conservación de mensajes de datos, incluyendo el sellado digital de tiempo, la misma lógica probatoria detrás de la pista de auditoría de Codec Document.',
       },
     ],
     faqEn: 'Are electronic signatures legal in Mexico?',
     faqEs: '¿Las firmas electrónicas son legales en México?',
-    faqAnswerEn: 'Yes. Mexico recognizes electronic signatures as legally binding under the Código de Comercio (Arts. 89–114) and the Federal Civil Code. For private contracts, a simple electronic signature is enough — Codec Document\'s signatures include SHA-256 hashing, IP logging, selfie + ID identity verification, and a timestamped audit trail.',
-    faqAnswerEs: 'Sí. México reconoce las firmas electrónicas como legalmente vinculantes bajo el Código de Comercio (Arts. 89 a 114) y el Código Civil Federal. Para contratos privados, basta una firma electrónica simple — las firmas de Codec Document incluyen hash SHA-256, registro de IP, verificación de identidad con selfie + identificación, y una pista de auditoría con marca de tiempo.',
+    faqAnswerEn: 'Yes. Mexico recognizes electronic signatures as legally binding under the Código de Comercio (Arts. 89–114) and the Federal Civil Code. For private contracts, a simple electronic signature is enough: Codec Document\'s signatures include SHA-256 hashing, IP logging, selfie + ID identity verification, and a timestamped audit trail.',
+    faqAnswerEs: 'Sí. México reconoce las firmas electrónicas como legalmente vinculantes bajo el Código de Comercio (Arts. 89 a 114) y el Código Civil Federal. Para contratos privados, basta una firma electrónica simple, las firmas de Codec Document incluyen hash SHA-256, registro de IP, verificación de identidad con selfie + identificación, y una pista de auditoría con marca de tiempo.',
   },
   {
     slug: 'chile',
@@ -121,8 +121,8 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
       },
       {
         titleEn: 'Two signature types', titleEs: 'Dos tipos de firma',
-        factEn: 'Chilean law distinguishes between a simple electronic signature (valid for most private contracts) and an advanced electronic signature (required for specific regulated acts) — Codec Document covers the simple signature use case that applies to most NDAs, leases and service agreements.',
-        factEs: 'La ley chilena distingue entre firma electrónica simple (válida para la mayoría de los contratos privados) y firma electrónica avanzada (requerida para actos regulados específicos) — Codec Document cubre el caso de la firma simple que aplica a la mayoría de los NDA, arrendamientos y acuerdos de servicio.',
+        factEn: 'Chilean law distinguishes between a simple electronic signature (valid for most private contracts) and an advanced electronic signature (required for specific regulated acts): Codec Document covers the simple signature use case that applies to most NDAs, leases and service agreements.',
+        factEs: 'La ley chilena distingue entre firma electrónica simple (válida para la mayoría de los contratos privados) y firma electrónica avanzada (requerida para actos regulados específicos): Codec Document cubre el caso de la firma simple que aplica a la mayoría de los NDA, arrendamientos y acuerdos de servicio.',
       },
       {
         titleEn: 'Technical requirements', titleEs: 'Requisitos técnicos',
@@ -151,8 +151,8 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
     highlights: [
       {
         titleEn: 'Legal validity', titleEs: 'Validez jurídica',
-        factEn: 'Law 27269 — Law of Digital Signatures and Certificates (2000) — recognizes electronic and digital signatures with the same legal validity and effect as a handwritten signature.',
-        factEs: 'La Ley 27269 — Ley de Firmas y Certificados Digitales (2000) — reconoce a la firma electrónica y digital la misma validez y eficacia jurídica que la firma manuscrita.',
+        factEn: 'Law 27269, Law of Digital Signatures and Certificates (2000), recognizes electronic and digital signatures with the same legal validity and effect as a handwritten signature.',
+        factEs: 'La Ley 27269, Ley de Firmas y Certificados Digitales (2000), reconoce a la firma electrónica y digital la misma validez y eficacia jurídica que la firma manuscrita.',
       },
       {
         titleEn: 'Civil Code', titleEs: 'Código Civil',
@@ -196,8 +196,8 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
       },
       {
         titleEn: 'Electronic vs. digital signature', titleEs: 'Firma electrónica vs. digital',
-        factEn: 'Argentine law distinguishes an electronic signature (authorship presumed by whoever relies on it) from a certified digital signature (authorship and integrity presumed by law) — Codec Document\'s identity verification and audit trail strengthen the evidentiary weight of the electronic signature.',
-        factEs: 'La ley argentina distingue la firma electrónica (presunción de autoría a cargo de quien la invoca) de la firma digital certificada (presunción de autoría e integridad por ley) — la verificación de identidad y la pista de auditoría de Codec Document refuerzan el peso probatorio de la firma electrónica.',
+        factEn: 'Argentine law distinguishes an electronic signature (authorship presumed by whoever relies on it) from a certified digital signature (authorship and integrity presumed by law): Codec Document\'s identity verification and audit trail strengthen the evidentiary weight of the electronic signature.',
+        factEs: 'La ley argentina distingue la firma electrónica (presunción de autoría a cargo de quien la invoca) de la firma digital certificada (presunción de autoría e integridad por ley), la verificación de identidad y la pista de auditoría de Codec Document refuerzan el peso probatorio de la firma electrónica.',
       },
       {
         titleEn: 'Admissible as evidence', titleEs: 'Admisible como prueba',
@@ -221,8 +221,8 @@ export const LATAM_COUNTRIES: LatamCountryConfig[] = [
     highlights: [
       {
         titleEn: 'Legal validity', titleEs: 'Validez jurídica',
-        factEn: 'Law 67 — Law on Electronic Commerce, Electronic Signatures and Data Messages (2002) — grants an electronic signature the same validity and legal effects as a handwritten signature.',
-        factEs: 'La Ley 67 — Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos (2002) — otorga a la firma electrónica igual validez y los mismos efectos jurídicos que una firma manuscrita.',
+        factEn: 'Law 67, Law on Electronic Commerce, Electronic Signatures and Data Messages (2002), grants an electronic signature the same validity and legal effects as a handwritten signature.',
+        factEs: 'La Ley 67, Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos (2002), otorga a la firma electrónica igual validez y los mismos efectos jurídicos que una firma manuscrita.',
       },
       {
         titleEn: 'Data messages', titleEs: 'Mensajes de datos',
@@ -256,25 +256,25 @@ export const LATAM_GENERAL_FAQ = [
   {
     qEn: 'Is Codec Document free to use in Latin America?',
     qEs: '¿Es gratis usar Codec Document en Latinoamérica?',
-    aEn: 'Yes — the same free plan and premium plans available in the United States apply everywhere Codec Document operates, including Latin America. The free plan includes a limited number of documents and signatures on a rolling basis, no credit card required; premium plans unlock unlimited documents and signatures.',
-    aEs: 'Sí — el mismo plan gratuito y los mismos planes premium disponibles en Estados Unidos aplican en toda la plataforma, incluyendo Latinoamérica. El plan gratuito incluye una cantidad limitada de documentos y firmas cada cierto tiempo, sin tarjeta de crédito; los planes premium desbloquean documentos y firmas ilimitadas.',
+    aEn: 'Yes, the same free plan and premium plans available in the United States apply everywhere Codec Document operates, including Latin America. The free plan includes a limited number of documents and signatures on a rolling basis, no credit card required; premium plans unlock unlimited documents and signatures.',
+    aEs: 'Sí, el mismo plan gratuito y los mismos planes premium disponibles en Estados Unidos aplican en toda la plataforma, incluyendo Latinoamérica. El plan gratuito incluye una cantidad limitada de documentos y firmas cada cierto tiempo, sin tarjeta de crédito; los planes premium desbloquean documentos y firmas ilimitadas.',
   },
   {
     qEn: 'Do I need a certified digital signature to use Codec Document?',
     qEs: '¿Necesito una firma digital certificada para usar Codec Document?',
-    aEn: 'No. In every country Codec Document covers, a simple electronic signature — backed by identity verification (selfie + ID) and a cryptographic audit trail — is legally sufficient for private contracts like NDAs, leases, service agreements and promissory notes. A certified/advanced digital signature is generally only required for specific regulated government filings.',
-    aEs: 'No. En todos los países que cubre Codec Document, una firma electrónica simple — respaldada por verificación de identidad (selfie + identificación) y una pista de auditoría criptográfica — es legalmente suficiente para contratos privados como NDA, arrendamientos, acuerdos de servicio y pagarés. Una firma digital certificada/avanzada generalmente solo se exige para trámites gubernamentales regulados específicos.',
+    aEn: 'No. In every country Codec Document covers, a simple electronic signature, backed by identity verification (selfie + ID) and a cryptographic audit trail, is legally sufficient for private contracts like NDAs, leases, service agreements and promissory notes. A certified/advanced digital signature is generally only required for specific regulated government filings.',
+    aEs: 'No. En todos los países que cubre Codec Document, una firma electrónica simple, respaldada por verificación de identidad (selfie + identificación) y una pista de auditoría criptográfica, es legalmente suficiente para contratos privados como NDA, arrendamientos, acuerdos de servicio y pagarés. Una firma digital certificada/avanzada generalmente solo se exige para trámites gubernamentales regulados específicos.',
   },
   {
     qEn: 'What is the SHA-256 audit trail and why does it matter?',
     qEs: '¿Qué es la pista de auditoría SHA-256 y por qué importa?',
-    aEn: 'Every document signed on Codec Document receives a SHA-256 cryptographic fingerprint — a unique hash that proves the document has not been altered since signing — plus IP address, timestamp, and identity verification evidence embedded in the final PDF. This creates the same functional-equivalence evidentiary trail recognized across every country\'s electronic-signature law.',
-    aEs: 'Cada documento firmado en Codec Document recibe una huella criptográfica SHA-256 — un hash único que prueba que el documento no ha sido alterado desde su firma — más evidencia de dirección IP, marca de tiempo y verificación de identidad incrustada en el PDF final. Esto crea la misma pista probatoria de equivalencia funcional reconocida por la ley de firma electrónica de cada país.',
+    aEn: 'Every document signed on Codec Document receives a SHA-256 cryptographic fingerprint, a unique hash that proves the document has not been altered since signing, plus IP address, timestamp, and identity verification evidence embedded in the final PDF. This creates the same functional-equivalence evidentiary trail recognized across every country\'s electronic-signature law.',
+    aEs: 'Cada documento firmado en Codec Document recibe una huella criptográfica SHA-256, un hash único que prueba que el documento no ha sido alterado desde su firma, más evidencia de dirección IP, marca de tiempo y verificación de identidad incrustada en el PDF final. Esto crea la misma pista probatoria de equivalencia funcional reconocida por la ley de firma electrónica de cada país.',
   },
   {
     qEn: 'Can I sign a document from my phone?',
     qEs: '¿Puedo firmar un documento desde mi celular?',
-    aEn: 'Yes. Codec Document works entirely from a mobile browser — draw your signature, capture a selfie and ID photo, and download the signed PDF, no app install required.',
-    aEs: 'Sí. Codec Document funciona completamente desde el navegador del celular — dibuja tu firma, captura una selfie y foto de tu identificación, y descarga el PDF firmado, sin necesidad de instalar ninguna app.',
+    aEn: 'Yes. Codec Document works entirely from a mobile browser, draw your signature, capture a selfie and ID photo, and download the signed PDF, no app install required.',
+    aEs: 'Sí. Codec Document funciona completamente desde el navegador del celular, dibuja tu firma, captura una selfie y foto de tu identificación, y descarga el PDF firmado, sin necesidad de instalar ninguna app.',
   },
 ];

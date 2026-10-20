@@ -137,8 +137,8 @@ export function CerticamaraSettings() {
 
         <p className="mt-3 text-[11px] text-slate-400">
           {language === 'en'
-            ? 'The real signing API call is still pending Certicámara\'s documentation — saving the key here enables the option in the UI, not the live integration yet.'
-            : 'La llamada real a la API de firma todavía está pendiente de la documentación de Certicámara — guardar la clave aquí activa la opción en la interfaz, no la integración en vivo todavía.'}
+            ? 'The real signing API call is still pending Certicámara\'s documentation, saving the key here enables the option in the UI, not the live integration yet.'
+            : 'La llamada real a la API de firma todavía está pendiente de la documentación de Certicámara, guardar la clave aquí activa la opción en la interfaz, no la integración en vivo todavía.'}
         </p>
       </div>
     </div>

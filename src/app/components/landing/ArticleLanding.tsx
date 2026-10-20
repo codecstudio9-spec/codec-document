@@ -9,7 +9,7 @@ import { ARTICLES, type Article } from '../../data/article-content';
 
 const T = {
   en: {
-    freeBadge: 'Free to use — no credit card required',
+    freeBadge: 'Free to use, no credit card required',
     freeQuota: 'Up to 18 free documents & signatures a month',
     freeQuotaSub: '2 documents + 2 signatures every 72 hours, no limit on how many cycles you use.',
     ctaButton: 'Try it free',
@@ -24,7 +24,7 @@ const T = {
     blog: 'Guides',
   },
   es: {
-    freeBadge: 'Gratis — no necesitas tarjeta de crédito',
+    freeBadge: 'Gratis, no necesitas tarjeta de crédito',
     freeQuota: 'Hasta 18 documentos y firmas gratis al mes',
     freeQuotaSub: '2 documentos + 2 firmas cada 72 horas, sin límite de veces que los uses.',
     ctaButton: 'Probar gratis',
@@ -434,7 +434,7 @@ export function ArticleLanding({ data }: { data: Article }) {
                           className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline"
                         >
                           <PlayCircle className="size-3.5" />
-                          {v.title} <span className="font-normal text-slate-400">— {v.source}</span>
+                          {v.title} <span className="font-normal text-slate-400">- {v.source}</span>
                         </a>
                       </li>
                     ))}

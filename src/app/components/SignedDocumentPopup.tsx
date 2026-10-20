@@ -119,8 +119,8 @@ export function SignedDocumentPopup() {
               <p className="text-sm font-black text-slate-900">{language === 'en' ? 'Document signed!' : '¡Documento firmado!'}</p>
               <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
                 {language === 'en'
-                  ? 'Your recipient just finished signing — it’s ready to download.'
-                  : 'Tu destinatario acaba de firmar — ya está listo para descargar.'}
+                  ? 'Your recipient just finished signing, it’s ready to download.'
+                  : 'Tu destinatario acaba de firmar, ya está listo para descargar.'}
               </p>
               <div className="mt-3 flex gap-2">
                 <button

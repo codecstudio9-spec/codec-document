@@ -91,7 +91,7 @@ export const resignationLetterTemplate: DocumentTemplate = {
       // The legal caution lives here, next to the decision it affects, and no
       // longer printed at the end of the letter: a note addressed to the
       // signer has no place inside the document they hand in.
-      helpText: 'Count the notice period from today; the term that binds you is the one in your contract or collective agreement. Note that resigning voluntarily usually does not entitle you to severance — if you are leaving because of the employer’s breaches, talk to an employment lawyer first, there are legal routes other than a plain resignation.',
+      helpText: 'Count the notice period from today; the term that binds you is the one in your contract or collective agreement. Note that resigning voluntarily usually does not entitle you to severance, if you are leaving because of the employer’s breaches, talk to an employment lawyer first, there are legal routes other than a plain resignation.',
     },
 
     {
@@ -106,7 +106,7 @@ export const resignationLetterTemplate: DocumentTemplate = {
       type: 'textarea',
       required: false,
       placeholder: 'Say in your own words why you are leaving and what you take away from the company. You can dictate it with the microphone.',
-      helpText: 'It goes inside the letter, in your own voice. Dictate whatever you want to say and press "Improve with AI": it fixes the writing and gives it the register of a formal letter without changing what you said. Optional — you are not required to explain why you are leaving.',
+      helpText: 'It goes inside the letter, in your own voice. Dictate whatever you want to say and press "Improve with AI": it fixes the writing and gives it the register of a formal letter without changing what you said. Optional, you are not required to explain why you are leaving.',
     },
     {
       id: 'include_handover',

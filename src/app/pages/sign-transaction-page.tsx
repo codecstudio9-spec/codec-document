@@ -122,7 +122,7 @@ async function uploadEvidenceImage(
     if (uploadError) {
       console.warn(
         `[tx-evidence] Storage upload failed for "${type}": ${uploadError.message}.`,
-        'Bucket may not exist or not be public — falling back to inline base64 storage.',
+        'Bucket may not exist or not be public, falling back to inline base64 storage.',
       );
       return dataUrl;
     }
@@ -133,7 +133,7 @@ async function uploadEvidenceImage(
 
     const publicUrl = urlData?.signedUrl;
     if (!publicUrl) {
-      console.warn(`[tx-evidence] Could not get public URL for ${type} — falling back to inline base64.`);
+      console.warn(`[tx-evidence] Could not get public URL for ${type}, falling back to inline base64.`);
       return dataUrl;
     }
 
@@ -143,7 +143,7 @@ async function uploadEvidenceImage(
     return filePath;
 
   } catch (err) {
-    console.warn(`[tx-evidence] Exception uploading ${type}:`, err, '— falling back to inline base64.');
+    console.warn(`[tx-evidence] Exception uploading ${type}:`, err, 'falling back to inline base64.');
     return dataUrl;
   }
 }
@@ -253,8 +253,8 @@ export default function SignTransactionPage() {
   useVoiceStepGuide({
     ...voiceBase, active: currentStep === 'biometric', step: 'biometric', stepIndex: 2,
     message: {
-      es: 'Quien te envió este documento pidió confirmar tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Toca el botón y sigue el mensaje que te muestre tu teléfono o computadora. Esto ocurre localmente en tu dispositivo — Codec Document nunca recibe tu huella ni tu rostro.',
-      en: 'Whoever sent you this document asked you to confirm your identity using your own device\'s fingerprint or face recognition. Tap the button and follow the prompt shown by your phone or computer. This happens locally on your device — Codec Document never receives your fingerprint or face data.',
+      es: 'Quien te envió este documento pidió confirmar tu identidad con la huella o el reconocimiento facial de tu propio dispositivo. Toca el botón y sigue el mensaje que te muestre tu teléfono o computadora. Esto ocurre localmente en tu dispositivo: Codec Document nunca recibe tu huella ni tu rostro.',
+      en: 'Whoever sent you this document asked you to confirm your identity using your own device\'s fingerprint or face recognition. Tap the button and follow the prompt shown by your phone or computer. This happens locally on your device: Codec Document never receives your fingerprint or face data.',
     },
   });
   useVoiceStepGuide({
@@ -497,7 +497,7 @@ export default function SignTransactionPage() {
         const j = await r.json() as { ip?: string };
         recipientIp = j.ip ?? '';
       } catch {
-        console.warn('IP lookup failed — audit trail will be partial.');
+        console.warn('IP lookup failed, audit trail will be partial.');
       }
     }
 
@@ -812,15 +812,15 @@ export default function SignTransactionPage() {
             </h2>
             <p className="text-sm text-slate-500">
               {tr(
-                'This step confirms your identity using your own device\'s fingerprint or Face ID sensor. It happens locally — the fingerprint or face scan itself is never sent to our servers, only a cryptographic confirmation that your device verified you.',
-                'Este paso confirma tu identidad usando el sensor de huella o Face ID de tu propio dispositivo. Ocurre localmente — la huella o el escaneo facial en si nunca se envian a nuestros servidores, solo una confirmacion criptografica de que tu dispositivo te verifico.',
+                'This step confirms your identity using your own device\'s fingerprint or Face ID sensor. It happens locally, the fingerprint or face scan itself is never sent to our servers, only a cryptographic confirmation that your device verified you.',
+                'Este paso confirma tu identidad usando el sensor de huella o Face ID de tu propio dispositivo. Ocurre localmente, la huella o el escaneo facial en si nunca se envian a nuestros servidores, solo una confirmacion criptografica de que tu dispositivo te verifico.',
               )}
             </p>
             {(tx?.security_config?.requireSelfie || tx?.security_config?.requireIdPhoto) && (
               <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
                 {tr(
-                  'Note: this document separately also asks for a selfie/ID photo in a later step — that photo IS captured and stored as evidence, unlike this fingerprint/Face ID check.',
-                  'Nota: este documento tambien pide por separado una selfie o foto de identificacion en un paso posterior — esa foto SI se captura y almacena como evidencia, a diferencia de esta verificacion por huella/Face ID.',
+                  'Note: this document separately also asks for a selfie/ID photo in a later step, that photo IS captured and stored as evidence, unlike this fingerprint/Face ID check.',
+                  'Nota: este documento tambien pide por separado una selfie o foto de identificacion en un paso posterior, esa foto SI se captura y almacena como evidencia, a diferencia de esta verificacion por huella/Face ID.',
                 )}
               </div>
             )}
@@ -905,7 +905,7 @@ export default function SignTransactionPage() {
               </p>
               <p className="font-semibold text-slate-700">
                 {tr(
-                  'Unlike a fingerprint/Face ID check, this photo IS captured and stored — attached to this document as part of its audit trail.',
+                  'Unlike a fingerprint/Face ID check, this photo IS captured and stored, attached to this document as part of its audit trail.',
                   'A diferencia de la verificacion por huella/Face ID, esta foto SI se captura y se almacena, adjunta a este documento como parte de su registro de auditoria.',
                 )}
               </p>

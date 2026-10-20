@@ -72,7 +72,7 @@ function invitationHtml(p: { signerName: string; senderName: string; documentNam
       </p>
       <a href="${p.url}" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#4338ca;color:#fff;text-decoration:none;border-radius:12px;font-weight:bold">Revisar y firmar</a>
       <p style="color:#94a3b8;font-size:12px;line-height:1.6;margin-top:20px">${p.expiresNote}Si el botón no funciona, copia este enlace en tu navegador:<br><span style="word-break:break-all">${p.url}</span></p>
-      <p style="margin-top:28px;font-size:12px;color:#94a3b8">Codec Document — codecdocument.com</p>
+      <p style="margin-top:28px;font-size:12px;color:#94a3b8">Codec Document · codecdocument.com</p>
     </div>
   `;
 }

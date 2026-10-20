@@ -40,7 +40,7 @@ const PRODUCTOS: Array<{ id: string; es: string; en: string }> = [
   { id: 'doc_single', es: 'Un documento', en: 'A single document' },
   { id: 'doc_bundle', es: 'Paquete de documentos', en: 'Document bundle' },
   { id: 'sig_single', es: 'Una firma', en: 'A single signature' },
-  { id: 'sig_monthly', es: 'Firmas — plan mensual', en: 'Signatures — monthly plan' },
+  { id: 'sig_monthly', es: 'Firmas, plan mensual', en: 'Signatures, monthly plan' },
   { id: 'quote_single', es: 'Una cotización', en: 'A single quote' },
   { id: 'sub_monthly', es: 'Suscripción mensual', en: 'Monthly subscription' },
   { id: 'sub_annual', es: 'Suscripción anual', en: 'Annual subscription' },

@@ -104,8 +104,8 @@ export function GlobalVoiceMuteButton() {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       title={enabled
-        ? (language === 'en' ? 'Voice guide is on — tap to turn off, drag to move' : 'Guía por voz activada — toca para apagar, arrastra para mover')
-        : (language === 'en' ? 'Voice guide is off — tap to turn on, drag to move' : 'Guía por voz desactivada — toca para activar, arrastra para mover')}
+        ? (language === 'en' ? 'Voice guide is on, tap to turn off, drag to move' : 'Guía por voz activada, toca para apagar, arrastra para mover')
+        : (language === 'en' ? 'Voice guide is off, tap to turn on, drag to move' : 'Guía por voz desactivada, toca para activar, arrastra para mover')}
       style={{ top, touchAction: 'none' }}
       className={`fixed right-0 z-30 flex h-11 w-9 -translate-y-1/2 items-center justify-center rounded-l-xl border border-r-0 shadow-md backdrop-blur-sm transition-[width,background-color] hover:w-11 ${
         enabled

@@ -49,8 +49,8 @@ export function QuoteSeoLanding({ page }: { page: QuoteSeoPageConfig }) {
 
       <PhotoProofSection
         image="/images/seo/office-tablet-woman.jpg"
-        captionEn="Build the quote, send it, get it signed — no separate tools."
-        captionEs="Arma la cotización, envíala y consigue la firma — sin herramientas sueltas."
+        captionEn="Build the quote, send it, get it signed, no separate tools."
+        captionEs="Arma la cotización, envíala y consigue la firma, sin herramientas sueltas."
         pointsEn={['Professional PDF in minutes', 'Client signs from their phone', 'Everything in one place']}
         pointsEs={['PDF profesional en minutos', 'El cliente firma desde su celular', 'Todo en un solo lugar']}
         color="#4338CA"

@@ -95,7 +95,7 @@ function NotificationsContent() {
                 <PenLine className="size-5" style={{ color: '#10B981' }} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-slate-900">{docTypeLabel[tx.document_type] || tx.document_type} — {language === 'en' ? 'signed' : 'firmado'}</p>
+                <p className="truncate text-sm font-bold text-slate-900">{docTypeLabel[tx.document_type] || tx.document_type} - {language === 'en' ? 'signed' : 'firmado'}</p>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {tx.signed_at ? new Date(tx.signed_at).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                 </p>

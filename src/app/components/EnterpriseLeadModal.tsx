@@ -121,7 +121,7 @@ export function EnterpriseLeadModal({ open, onOpenChange }: EnterpriseLeadModalP
                       {language === 'en' ? 'Talk to a specialist' : 'Hablar con un especialista'}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {language === 'en' ? 'Tell us about your company — we\'ll reach out.' : 'Cuéntanos de tu empresa — te contactamos.'}
+                      {language === 'en' ? 'Tell us about your company, we\'ll reach out.' : 'Cuéntanos de tu empresa, te contactamos.'}
                     </p>
                   </div>
                 </div>

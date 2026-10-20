@@ -121,8 +121,8 @@ export function ProfessionLanding({ profession }: { profession: ProfessionConfig
       <BenefitCards />
       <HowItWorksTimeline
         headingEn="Cómo firmar un documento online" headingEs="Cómo firmar un documento online"
-        lastStepDescEn="Recibe un PDF limpio con pista de auditoría SHA-256 — con validez legal según la ley de tu país."
-        lastStepDescEs="Recibe un PDF limpio con pista de auditoría SHA-256 — con validez legal según la ley de tu país."
+        lastStepDescEn="Recibe un PDF limpio con pista de auditoría SHA-256, con validez legal según la ley de tu país."
+        lastStepDescEs="Recibe un PDF limpio con pista de auditoría SHA-256, con validez legal según la ley de tu país."
       />
       <SocialProofBand
         complianceItems={['Identidad Verificada', 'SHA-256 Audit Trail', 'SSL / TLS Encrypted']}

@@ -262,10 +262,10 @@ export function BusinessIntelligenceTab({ language }: { language: 'en' | 'es' })
                   <tr key={l.id} className="border-t border-slate-50">
                     <td className="py-2 pr-2 text-slate-500">{new Date(l.created_at).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })}</td>
                     <td className="py-2 pr-2 font-semibold text-slate-700">{l.name}</td>
-                    <td className="py-2 pr-2 text-slate-600">{l.company ?? '—'}</td>
+                    <td className="py-2 pr-2 text-slate-600">{l.company ?? '-'}</td>
                     <td className="py-2 pr-2 text-slate-600">{l.email}</td>
-                    <td className="py-2 pr-2 text-slate-600">{l.country ?? '—'}{l.city ? `, ${l.city}` : ''}</td>
-                    <td className="py-2 pr-2">{l.language === 'es' ? '🇪🇸 ES' : l.language === 'en' ? '🇺🇸 EN' : '—'}</td>
+                    <td className="py-2 pr-2 text-slate-600">{l.country ?? '-'}{l.city ? `, ${l.city}` : ''}</td>
+                    <td className="py-2 pr-2">{l.language === 'es' ? '🇪🇸 ES' : l.language === 'en' ? '🇺🇸 EN' : '-'}</td>
                     <td className="py-2 pr-2">
                       <select
                         value={l.status}
@@ -379,7 +379,7 @@ function PromoCodeLookup({ language }: { language: 'en' | 'es' }) {
                   <tr key={i} className="border-t border-slate-50">
                     <td className="py-2 pr-2 text-slate-500">{new Date(u.redeemedAt).toLocaleString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</td>
                     <td className="py-2 pr-2 font-semibold text-slate-700">{u.userEmail}</td>
-                    <td className="py-2 pr-2 text-slate-500">{u.ipAddress ?? '—'}</td>
+                    <td className="py-2 pr-2 text-slate-500">{u.ipAddress ?? '-'}</td>
                     <td className="py-2 pr-2 text-slate-500">{u.product}</td>
                   </tr>
                 ))}

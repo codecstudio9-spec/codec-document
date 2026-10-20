@@ -154,7 +154,7 @@ function PayPalButtonsCore({
                 intent: 'CAPTURE',
                 purchase_units: [
                   {
-                    description: `${documentName} — Codec Document`,
+                    description: `${documentName} | Codec Document`,
                     custom_id: (customerEmail || '').trim(),
                     soft_descriptor: 'CODEC DOC',
                     amount: {
@@ -167,7 +167,7 @@ function PayPalButtonsCore({
                     items: [
                       {
                         name: documentName.slice(0, 127),
-                        description: 'Legal Document — Codec Document Platform',
+                        description: 'Legal Document: Codec Document Platform',
                         unit_amount: { currency_code: 'USD', value: amount.toFixed(2) },
                         quantity: '1',
                         category: 'DIGITAL_GOODS',
@@ -269,8 +269,8 @@ function PayPalButtonsCore({
 
       <p className="text-center text-[11px] text-slate-400">
         {language === 'en'
-          ? 'No PayPal account required — pay directly with any debit or credit card.'
-          : 'No necesitas cuenta PayPal — paga directamente con cualquier tarjeta de débito o crédito.'}
+          ? 'No PayPal account required, pay directly with any debit or credit card.'
+          : 'No necesitas cuenta PayPal, paga directamente con cualquier tarjeta de débito o crédito.'}
       </p>
     </div>
   );
@@ -308,8 +308,8 @@ export function PayPalCheckoutBackend({
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-3">
         <p className="text-sm font-semibold text-emerald-800">
           {language === 'en'
-            ? '🛡 Admin access verified — bypass payment gate'
-            : '🛡 Acceso de administrador verificado — saltar pasarela de pago'}
+            ? '🛡 Admin access verified, bypass payment gate'
+            : '🛡 Acceso de administrador verificado, saltar pasarela de pago'}
         </p>
         <button
           type="button"

@@ -621,8 +621,8 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-slate-800/80 text-white/80 text-center py-1.5 text-[10px] font-medium tracking-wide">
             {language === 'es'
-              ? 'VISTA PREVIA — Descarga el documento certificado para obtener la versión final sin marcas de agua'
-              : 'PREVIEW — Download the certified document to obtain the final watermark-free version'}
+              ? 'VISTA PREVIA: Descarga el documento certificado para obtener la versión final sin marcas de agua'
+              : 'PREVIEW: Download the certified document to obtain the final watermark-free version'}
           </div>
         </>
       )}

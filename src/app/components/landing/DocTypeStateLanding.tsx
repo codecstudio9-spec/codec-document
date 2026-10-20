@@ -69,7 +69,7 @@ function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
   const docLabel = language === 'en' ? data.docTypeLabelEn : data.docTypeLabelEs;
   const stateLabel = language === 'en' ? data.stateName : data.stateNameEs;
 
-  const title = `${data.docTypeLabelEn} for ${data.stateName} — Free Template & E-Signature | CodecDocument`;
+  const title = `${data.docTypeLabelEn} for ${data.stateName}: Free Template & E-Signature | CodecDocument`;
   const desc = `Create a ${data.docTypeLabelEn} for ${data.stateName} with state-specific legal language. Free template, instant preview, and ESIGN Act compliant electronic signature with identity verification.`;
   const canonicalUrl = `${SITE_URL}/${data.docType}-${data.stateSlug}`;
 
@@ -112,8 +112,8 @@ function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
 
       <PhotoProofSection
         image="/images/seo/app-woman-blue.jpg"
-        captionEn="Fill it out, sign it, done — right from your phone."
-        captionEs="Complétalo, fírmalo, listo — desde tu teléfono."
+        captionEn="Fill it out, sign it, done, right from your phone."
+        captionEs="Complétalo, fírmalo, listo, desde tu teléfono."
         pointsEn={['No printing or scanning', 'Signed PDF ready in minutes', 'Works on any device']}
         pointsEs={['Sin imprimir ni escanear', 'PDF firmado en minutos', 'Funciona en cualquier dispositivo']}
       />
@@ -127,7 +127,7 @@ function DocTypeStateLandingContent({ data }: { data: DocTypeState }) {
         ]}
         heading={
           <h2 className="text-3xl font-black text-slate-900 md:text-4xl">
-            {language === 'en' ? `${docLabel} in ${stateLabel} — FAQ` : `${docLabel} en ${stateLabel} — Preguntas Frecuentes`}
+            {language === 'en' ? `${docLabel} in ${stateLabel}: FAQ` : `${docLabel} en ${stateLabel}: Preguntas Frecuentes`}
           </h2>
         }
       />

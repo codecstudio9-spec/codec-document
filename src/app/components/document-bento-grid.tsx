@@ -68,8 +68,8 @@ export function DocumentBentoGrid({ documents }: DocumentBentoGridProps) {
               className="text-base text-slate-600 max-w-3xl mx-auto md:text-xl"
             >
               {language === 'en'
-                ? 'Generate, sign and verify for free — download your professional PDF when ready.'
-                : 'Genera, firma y verifica gratis — descarga tu PDF profesional cuando estes listo.'}
+                ? 'Generate, sign and verify for free, download your professional PDF when ready.'
+                : 'Genera, firma y verifica gratis, descarga tu PDF profesional cuando estes listo.'}
             </motion.p>
           </div>
 

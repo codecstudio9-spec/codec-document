@@ -97,7 +97,7 @@ export async function pagosAdmin(limite = 100): Promise<PagoAdmin[]> {
     planCode: (r.plan_code as string) ?? null,
     cop: Number(r.cop ?? 0),
     status: String(r.status),
-    metodo: String(r.metodo ?? '—'),
+    metodo: String(r.metodo ?? '-'),
     manual: Boolean(r.manual),
     creado: String(r.creado),
   }));

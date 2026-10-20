@@ -86,7 +86,7 @@ export function SelectionAiBar({ textareaRef, content, onChange, language, docum
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-blue-100 bg-blue-50/80 px-4 py-2.5">
       <span className="text-xs font-semibold text-blue-800 shrink-0">
-        {es ? 'Texto seleccionado —' : 'Text selected —'}
+        {es ? 'Texto seleccionado, ' : 'Text selected, '}
       </span>
       <input
         autoFocus

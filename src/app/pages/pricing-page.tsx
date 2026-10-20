@@ -29,10 +29,10 @@ export function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title={language === 'en' ? 'Pricing — Codec Document' : 'Precios — Codec Document'}
+        title={language === 'en' ? 'Pricing | Codec Document' : 'Precios | Codec Document'}
         description={language === 'en'
-          ? 'Simple, transparent pricing — up to 150 legal documents a month plus e-signatures. Try your first document or signature free.'
-          : 'Precios simples y transparentes — hasta 150 documentos legales al mes más firmas electrónicas. Tu primer documento o firma va por nuestra cuenta.'}
+          ? 'Simple, transparent pricing, up to 150 legal documents a month plus e-signatures. Try your first document or signature free.'
+          : 'Precios simples y transparentes, hasta 150 documentos legales al mes más firmas electrónicas. Tu primer documento o firma va por nuestra cuenta.'}
         canonicalUrl={`${SITE_URL}/pricing`}
       />
 

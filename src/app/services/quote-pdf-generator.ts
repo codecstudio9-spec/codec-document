@@ -564,7 +564,7 @@ function bloqueCliente(ctx: Ctx) {
   doc.setFont(ctx.font, 'bold');
   doc.setFontSize(11.5);
   doc.setTextColor(25, 25, 25);
-  doc.text(quote.client_name || '—', MARGIN, yIzq);
+  doc.text(quote.client_name || '-', MARGIN, yIzq);
   yIzq += 5;
   doc.setFont(ctx.font, 'normal');
   doc.setFontSize(8.5);
@@ -665,7 +665,7 @@ function filaDeItem(ctx: Ctx, item: QuoteLineItem, alterna: boolean): void {
   const { doc, template } = ctx;
   doc.setFont(ctx.font, 'normal');
   doc.setFontSize(8.5);
-  const lineasDesc = doc.splitTextToSize((item.description || '').trim() || '—', ANCHO_DESC);
+  const lineasDesc = doc.splitTextToSize((item.description || '').trim() || '-', ANCHO_DESC);
   const altoFila = Math.max(lineasDesc.length * 4.2, 6) + 2.6;
 
   // Si la fila no cabe entera, se lleva completa a la página siguiente y se
@@ -687,8 +687,8 @@ function filaDeItem(ctx: Ctx, item: QuoteLineItem, alterna: boolean): void {
   doc.text(String(item.quantity ?? 0), COL.cant, ctx.y, { align: 'right' });
   if (item.unit) doc.text(String(item.unit).slice(0, 12), COL.unidad, ctx.y);
   doc.text(fmtMoney(item.unit_price || 0), COL.precio, ctx.y, { align: 'right' });
-  doc.text(item.discount_pct ? `${item.discount_pct}%` : '—', COL.desc_pct, ctx.y, { align: 'right' });
-  doc.text(item.tax_pct ? `${item.tax_pct}%` : '—', COL.iva_pct, ctx.y, { align: 'right' });
+  doc.text(item.discount_pct ? `${item.discount_pct}%` : '-', COL.desc_pct, ctx.y, { align: 'right' });
+  doc.text(item.tax_pct ? `${item.tax_pct}%` : '-', COL.iva_pct, ctx.y, { align: 'right' });
   doc.setFont(ctx.font, 'bold');
   doc.setTextColor(30, 30, 30);
   doc.text(fmtMoney(computeLineItemTotal(item)), COL.total - 2, ctx.y, { align: 'right' });
@@ -741,8 +741,8 @@ function bloqueDeOpciones(ctx: Ctx, etiqueta: string, opciones: QuoteLineItem[])
   ctx.doc.setTextColor(140, 140, 140);
   ctx.doc.text(
     lang === 'en'
-      ? 'The client chooses one of the options above — these are not added together.'
-      : 'El cliente elige una de las opciones anteriores — estos precios no se suman entre sí.',
+      ? 'The client chooses one of the options above, these are not added together.'
+      : 'El cliente elige una de las opciones anteriores, estos precios no se suman entre sí.',
     COL.desc, ctx.y,
   );
   ctx.y += 8;

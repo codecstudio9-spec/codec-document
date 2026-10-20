@@ -504,7 +504,7 @@ export class BetaCerradaError extends Error {
   constructor(motivo: 'cerrada' | 'llena') {
     super(
       motivo === 'cerrada'
-        ? 'El periodo de prueba terminó. Gracias por participar — te escribiremos con las novedades.'
+        ? 'El periodo de prueba terminó. Gracias por participar, te escribiremos con las novedades.'
         : 'La plataforma alcanzó su capacidad por hoy. Escríbenos y te damos acceso ampliado.',
     );
     this.name = 'BetaCerradaError';

@@ -203,7 +203,7 @@ export function MyDocxTemplateEditorPage() {
       setDocxFileUrl(URL.createObjectURL(fileForUpload));
       if (!templateName) setTemplateName(file.name.replace(/\.docx$/i, ''));
     } catch {
-      setError(language === 'en' ? 'Could not read this .docx file — is it a valid Word document?' : 'No se pudo leer este archivo .docx — ¿es un documento de Word válido?');
+      setError(language === 'en' ? 'Could not read this .docx file, is it a valid Word document?' : 'No se pudo leer este archivo .docx: ¿es un documento de Word válido?');
     }
   };
 
@@ -409,7 +409,7 @@ export function MyDocxTemplateEditorPage() {
     if (!templateName.trim()) { setError(language === 'en' ? 'Give your template a name.' : 'Ponle un nombre a tu plantilla.'); return; }
     if (fields.filter((f) => f.type !== 'section').length === 0) {
       setError(language === 'en'
-        ? 'Mark at least one detail that changes each time — select it in the document below.'
+        ? 'Mark at least one detail that changes each time, select it in the document below.'
         : 'Marca al menos un dato que cambie cada vez: selecciónalo en el documento de abajo.');
       return;
     }
@@ -480,8 +480,8 @@ export function MyDocxTemplateEditorPage() {
         <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Your template is ready' : 'Tu plantilla está lista'}</h1>
         <p className="max-w-md text-sm text-slate-500">
           {language === 'en'
-            ? 'Share this link with anyone who needs to fill it in and sign — it always stays the same, and each person who opens it gets their own document.'
-            : 'Comparte este enlace con quien deba llenarlo y firmarlo — siempre es el mismo, y cada persona que lo abra obtiene su propio documento.'}
+            ? 'Share this link with anyone who needs to fill it in and sign, it always stays the same, and each person who opens it gets their own document.'
+            : 'Comparte este enlace con quien deba llenarlo y firmarlo, siempre es el mismo, y cada persona que lo abra obtiene su propio documento.'}
         </p>
         <div className="flex w-full max-w-md items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
           <input readOnly value={link} className="min-w-0 flex-1 truncate bg-transparent px-3 text-sm font-mono text-slate-600 outline-none" />
@@ -521,7 +521,7 @@ export function MyDocxTemplateEditorPage() {
               <h2 className="text-xl font-bold text-slate-900">{language === 'en' ? 'Upload your Word document' : 'Sube tu documento de Word'}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {language === 'en'
-                  ? "Upload it exactly as you use it today — you don't need to change anything."
+                  ? "Upload it exactly as you use it today, you don't need to change anything."
                   : 'Súbelo tal como lo usas hoy, no tienes que cambiarle nada.'}
               </p>
               <div className="mx-auto mt-4 grid max-w-lg grid-cols-1 gap-2 text-left text-xs text-slate-600 sm:grid-cols-2">
@@ -860,8 +860,8 @@ export function MyDocxTemplateEditorPage() {
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-400">
                         {language === 'en'
-                          ? 'The fixed legal paragraphs of your document — edit, delete, or add your own.'
-                          : 'Los párrafos legales fijos de tu documento — edita, elimina o agrega los tuyos.'}
+                          ? 'The fixed legal paragraphs of your document, edit, delete, or add your own.'
+                          : 'Los párrafos legales fijos de tu documento, edita, elimina o agrega los tuyos.'}
                       </p>
                     </div>
                   </div>
@@ -994,8 +994,8 @@ export function MyDocxTemplateEditorPage() {
 
                         <p className="text-[11px] text-slate-400">
                           {language === 'en'
-                            ? 'New blocks are added at the end of the document — reordering isn’t supported yet.'
-                            : 'Los bloques nuevos se agregan al final del documento — aún no se puede reordenar.'}
+                            ? 'New blocks are added at the end of the document, reordering isn’t supported yet.'
+                            : 'Los bloques nuevos se agregan al final del documento, aún no se puede reordenar.'}
                         </p>
                       </div>
                     </motion.div>
@@ -1027,7 +1027,7 @@ export function MyDocxTemplateEditorPage() {
                         </span>
                         {s.promotedToField ? (
                           <p className="text-xs text-slate-500">
-                            {language === 'en' ? 'Converted to a variable field — collected from whoever fills the link.' : 'Convertido en campo variable — se pide a quien llena el enlace.'}
+                            {language === 'en' ? 'Converted to a variable field, collected from whoever fills the link.' : 'Convertido en campo variable, se pide a quien llena el enlace.'}
                           </p>
                         ) : (
                           <>
@@ -1079,8 +1079,8 @@ export function MyDocxTemplateEditorPage() {
                 </h2>
                 <p className="mb-3 text-xs text-slate-400">
                   {language === 'en'
-                    ? "Give another account the exact same template by email — no company needed. It'll appear in their My Templates, identical to yours."
-                    : 'Dale a otra cuenta esta misma plantilla por correo — sin necesidad de empresa. Le aparecerá en Mis Plantillas, idéntica a la tuya.'}
+                    ? "Give another account the exact same template by email, no company needed. It'll appear in their My Templates, identical to yours."
+                    : 'Dale a otra cuenta esta misma plantilla por correo, sin necesidad de empresa. Le aparecerá en Mis Plantillas, idéntica a la tuya.'}
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -1142,8 +1142,8 @@ export function MyDocxTemplateEditorPage() {
                     </p>
                     <p className="mt-0.5 text-[11px] text-slate-400">
                       {language === 'en'
-                        ? "Applies as the default every time this template is used — whoever generates a document can still adjust it for that one send."
-                        : 'Se aplica por defecto cada vez que se use esta plantilla — quien genere un documento podrá ajustarlo para ese envío.'}
+                        ? "Applies as the default every time this template is used, whoever generates a document can still adjust it for that one send."
+                        : 'Se aplica por defecto cada vez que se use esta plantilla, quien genere un documento podrá ajustarlo para ese envío.'}
                     </p>
                   </div>
                 </div>

@@ -92,7 +92,7 @@ export function MyTemplatesPage() {
     try {
       const created = await cloneExampleTemplate(example.id, user.id, language);
       toast.success(created.yaExistia
-        ? (language === 'en' ? 'You already had this one — opening your copy' : 'Ya tenías esta plantilla — abriendo tu copia')
+        ? (language === 'en' ? 'You already had this one, opening your copy' : 'Ya tenías esta plantilla, abriendo tu copia')
         : (language === 'en' ? 'Your own editable copy is ready!' : '¡Tu copia editable está lista!'));
       navigate(`/my-templates/${created.id}/edit-docx`);
     } catch (err) {
@@ -107,7 +107,7 @@ export function MyTemplatesPage() {
       setCopiedSlug(slug);
       setTimeout(() => setCopiedSlug(null), 2000);
       if (announce) {
-        toast.success(language === 'en' ? 'Link copied — share it so the recipient fills it in and signs' : 'Enlace copiado — compártelo para que el destinatario lo llene y firme');
+        toast.success(language === 'en' ? 'Link copied, share it so the recipient fills it in and signs' : 'Enlace copiado, compártelo para que el destinatario lo llene y firme');
       }
     });
   };
@@ -194,7 +194,7 @@ export function MyTemplatesPage() {
           <h2 className="text-xl font-bold text-slate-900">{language === 'en' ? 'Upload your document' : 'Sube tu documento'}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {language === 'en'
-              ? "Just as you use it today — we find the blanks to fill in on our own."
+              ? "Just as you use it today, we find the blanks to fill in on our own."
               : 'Tal como lo usas hoy. Nosotros encontramos los espacios para llenar.'}
           </p>
         </div>
@@ -386,7 +386,7 @@ export function MyTemplatesPage() {
                         <button
                           type="button"
                           onClick={() => handleCopyLink(t.publicSlug, true)}
-                          title={language === 'en' ? 'Copy the public link — the recipient fills it in and signs' : 'Copia el enlace público — el destinatario lo llena y firma'}
+                          title={language === 'en' ? 'Copy the public link, the recipient fills it in and signs' : 'Copia el enlace público, el destinatario lo llena y firma'}
                           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
                         >
                           <Send className="size-3.5" />

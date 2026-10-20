@@ -142,8 +142,8 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
                 itemOffered: {
                   '@type': 'Service',
                   name: country
-                    ? (isEs ? `Plantilla de NDA Gratis — ${country.nameEs}` : `Free NDA Template — ${country.name}`)
-                    : 'Free NDA Template — All 50 US States',
+                    ? (isEs ? `Plantilla de NDA Gratis: ${country.nameEs}` : `Free NDA Template: ${country.name}`)
+                    : 'Free NDA Template: All 50 US States',
                 },
               },
               {
@@ -151,8 +151,8 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
                 itemOffered: {
                   '@type': 'Service',
                   name: country
-                    ? (isEs ? `Contrato de Arrendamiento Residencial Gratis — ${country.nameEs}` : `Free Residential Lease Agreement — ${country.name}`)
-                    : 'Free Residential Lease Agreement — California, Texas, Florida, New York',
+                    ? (isEs ? `Contrato de Arrendamiento Residencial Gratis: ${country.nameEs}` : `Free Residential Lease Agreement: ${country.name}`)
+                    : 'Free Residential Lease Agreement: California, Texas, Florida, New York',
                 },
               },
               {
@@ -218,7 +218,7 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
             name: 'Is Codec Document free to use?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes. Codec Document offers a free plan with 2 structured legal documents and 2 free digital e-signatures every day — no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
+              text: 'Yes. Codec Document offers a free plan with 2 structured legal documents and 2 free digital e-signatures every day, no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
             },
           },
           {
@@ -226,7 +226,7 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
             name: 'How does Codec Document compare to DocuSign or PandaDoc?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
+              text: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts), not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
             },
           },
           {
@@ -258,7 +258,7 @@ export function StructuredData({ language = 'en', country, aggregateRating, faq 
             name: 'What is SHA-256 audit trail and why does it matter?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Every document generated on Codec Document receives a SHA-256 cryptographic fingerprint — a unique hash that proves the document has not been altered since signing. This creates an immutable, court-admissible audit trail that satisfies ESIGN Act and UETA requirements.',
+              text: 'Every document generated on Codec Document receives a SHA-256 cryptographic fingerprint, a unique hash that proves the document has not been altered since signing. This creates an immutable, court-admissible audit trail that satisfies ESIGN Act and UETA requirements.',
             },
           },
           {

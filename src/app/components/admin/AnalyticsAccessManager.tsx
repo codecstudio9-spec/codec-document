@@ -64,8 +64,8 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
         day: 'numeric', month: 'long', year: 'numeric',
       });
       toast.success(language === 'en'
-        ? `${meses} ${tipoPlan === 'enterprise' ? 'Enterprise month(s)' : 'month(s)'} granted to ${r.email} — active until ${hasta}.`
-        : `${meses} ${meses === 1 ? 'mes regalado' : 'meses regalados'} del ${tipoPlan === 'enterprise' ? 'Plan Empresarial' : 'plan personal'} a ${r.email} — activo hasta el ${hasta}.`);
+        ? `${meses} ${tipoPlan === 'enterprise' ? 'Enterprise month(s)' : 'month(s)'} granted to ${r.email}, active until ${hasta}.`
+        : `${meses} ${meses === 1 ? 'mes regalado' : 'meses regalados'} del ${tipoPlan === 'enterprise' ? 'Plan Empresarial' : 'plan personal'} a ${r.email}, activo hasta el ${hasta}.`);
       setCorreoRegalo(''); setNombreEmpresa(''); setNotaRegalo('');
       load();
     } catch (err) {
@@ -119,8 +119,8 @@ export function AnalyticsAccessManager({ language }: { language: 'en' | 'es' }) 
       </div>
       <p className="mt-0.5 text-xs text-slate-400">
         {language === 'en'
-          ? 'These emails see this whole page (Business + Visitors, unlimited usage) but nothing else — they can’t grant access themselves.'
-          : 'Estos correos ven toda esta página (Comercial + Visitantes, uso ilimitado) pero nada más — no pueden dar acceso a otros.'}
+          ? 'These emails see this whole page (Business + Visitors, unlimited usage) but nothing else, they can’t grant access themselves.'
+          : 'Estos correos ven toda esta página (Comercial + Visitantes, uso ilimitado) pero nada más, no pueden dar acceso a otros.'}
       </p>
 
       <div className="mt-4 flex gap-2">

@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       <div style="font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <div style="background: linear-gradient(90deg,#2563eb,#7c3aed,#0891b2); height: 4px; border-radius: 4px; margin-bottom: 20px;"></div>
         ${bodyHtml}
-        <p style="margin-top: 32px; font-size: 12px; color: #94a3b8;">Codec Document — codecdocument.com</p>
+        <p style="margin-top: 32px; font-size: 12px; color: #94a3b8;">Codec Document · codecdocument.com</p>
       </div>
     `;
 
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     if (tx.recipient_email) {
       sends.push(sendEmail(
         tx.recipient_email,
-        `Firmaste "${documentName}" — aquí está tu copia`,
+        `Firmaste "${documentName}", aquí está tu copia`,
         emailShell(`
           <h2 style="color:#0f172a;">Documento firmado con éxito</h2>
           <p style="color:#475569; line-height:1.6;">Firmaste <strong>${safeDocumentName}</strong>. Puedes ver y descargar tu copia en cualquier momento con el siguiente enlace.</p>

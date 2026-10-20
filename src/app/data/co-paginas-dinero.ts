@@ -17,14 +17,14 @@ export const PAGINAS_CO_DINERO: PaginaCO[] = [
     metaDescription: 'Requisitos del pagaré y de la carta de instrucciones en Colombia (arts. 621, 622 y 709 del Código de Comercio) y qué saber antes de firmarlo en línea.',
     h1: 'Pagaré con carta de instrucciones',
     grupo: 'dinero',
-    intro: 'El pagaré es el título valor más usado en Colombia para respaldar una deuda: un préstamo entre personas, la venta de un bien a plazos, un crédito de un almacén. Cuando se firma con espacios en blanco —el valor final o la fecha de vencimiento—, debe ir con una carta de instrucciones que diga cómo se llenarán. Un pagaré bien hecho se puede cobrar; uno mal hecho es solo una hoja con una firma.',
+    intro: 'El pagaré es el título valor más usado en Colombia para respaldar una deuda: un préstamo entre personas, la venta de un bien a plazos, un crédito de un almacén. Cuando se firma con espacios en blanco (el valor final o la fecha de vencimiento), debe ir con una carta de instrucciones que diga cómo se llenarán. Un pagaré bien hecho se puede cobrar; uno mal hecho es solo una hoja con una firma.',
     problema: {
       titulo: 'El pagaré en blanco sin instrucciones',
       texto: 'Es común que el acreedor pida firmar un pagaré «en blanco» para llenarlo si hay incumplimiento. Sin carta de instrucciones, o con unas instrucciones vagas, el deudor puede alegar que el título se llenó de forma distinta a lo acordado, y esa defensa puede tumbar el cobro. Y al revés: un deudor que firma sin leer las instrucciones puede encontrarse con intereses o valores que no esperaba.',
     },
     puntos: [
       { titulo: 'Los requisitos de forma', texto: 'La promesa incondicional de pagar una suma determinada, el nombre de a quién se paga, la forma de vencimiento, si es a la orden o al portador, y la firma de quien lo crea.' },
-      { titulo: 'Instrucciones claras para los espacios en blanco', texto: 'Qué espacios se llenan, con qué valor —capital, intereses, gastos—, en qué fecha y en qué casos se puede llenar el título.' },
+      { titulo: 'Instrucciones claras para los espacios en blanco', texto: 'Qué espacios se llenan, con qué valor (capital, intereses, gastos), en qué fecha y en qué casos se puede llenar el título.' },
       { titulo: 'Identidad del deudor verificada', texto: 'Para un pagaré conviene la verificación más fuerte: selfie, cédula y confirmación biométrica desde el celular de quien firma.' },
       { titulo: 'Firmado y custodiado', texto: 'El pagaré y su carta de instrucciones quedan firmados con certificado de integridad y archivados juntos, con fecha cierta.' },
     ],
@@ -76,7 +76,7 @@ export const PAGINAS_CO_DINERO: PaginaCO[] = [
     ],
     ley: {
       titulo: 'El artículo 671 del Código de Comercio',
-      texto: 'Además de los requisitos comunes del artículo 621 —la mención del derecho que se incorpora y la firma de quien lo crea—, el artículo 671 del Código de Comercio exige que la letra de cambio contenga la orden incondicional de pagar una suma determinada de dinero, el nombre del girado, la forma del vencimiento y la indicación de ser pagadera a la orden o al portador. Como con el pagaré, la Ley 527 de 1999 admite títulos valores electrónicos, pero su mérito ejecutivo depende de que se prueben la identidad del firmante y la integridad del documento, y la jurisprudencia aún no es uniforme.',
+      texto: 'Además de los requisitos comunes del artículo 621 (la mención del derecho que se incorpora y la firma de quien lo crea), el artículo 671 del Código de Comercio exige que la letra de cambio contenga la orden incondicional de pagar una suma determinada de dinero, el nombre del girado, la forma del vencimiento y la indicación de ser pagadera a la orden o al portador. Como con el pagaré, la Ley 527 de 1999 admite títulos valores electrónicos, pero su mérito ejecutivo depende de que se prueben la identidad del firmante y la integridad del documento, y la jurisprudencia aún no es uniforme.',
     },
     caso: {
       titulo: 'Una letra sin fecha de vencimiento',
@@ -255,7 +255,7 @@ export const PAGINAS_CO_DINERO: PaginaCO[] = [
     puntos: [
       { titulo: 'Informada: qué, para qué y con qué derechos', texto: 'La autorización debe decir quién es el responsable, qué datos se recogen, para qué finalidades y cuáles son los derechos del titular y cómo ejercerlos.' },
       { titulo: 'Expresa y previa', texto: 'El titular debe aceptar de forma inequívoca y antes de que empiece el tratamiento. Una firma sobre el texto completo es la forma más clara.' },
-      { titulo: 'Datos sensibles y de menores', texto: 'Si se recogen datos sensibles —salud, biometría— o de menores, la autorización debe señalarlo y el titular no está obligado a autorizarlos.' },
+      { titulo: 'Datos sensibles y de menores', texto: 'Si se recogen datos sensibles (salud, biometría) o de menores, la autorización debe señalarlo y el titular no está obligado a autorizarlos.' },
       { titulo: 'Guardada con fecha y firma', texto: 'Cada autorización queda firmada electrónicamente, con fecha, hora y la versión exacta del texto que el titular aceptó.' },
     ],
     ley: {

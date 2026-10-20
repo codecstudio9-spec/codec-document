@@ -165,7 +165,7 @@ export const PAYPAL_SUBSCRIPTION_PLANS = {
     planId:  (import.meta.env.VITE_PAYPAL_PLAN_ANNUAL     as string) || '',
     price:   251.99,
     period:  '1 year'   as const,
-    savings: 'Best value — Save 30%' as string | null,
+    savings: 'Best value: Save 30%' as string | null,
   },
 } as const;
 

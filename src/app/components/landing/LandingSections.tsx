@@ -193,8 +193,8 @@ const STEPS = [
   {
     icon: Download, colorClass: 'from-emerald-500 to-teal-600', bgClass: 'bg-emerald-50', borderClass: 'border-emerald-100',
     titleEn: 'Download PDF', titleEs: 'Descarga el PDF',
-    descEn: 'Receive a clean, watermark-free PDF with SHA-256 audit trail — court-admissible in all 50 states.',
-    descEs: 'Recibe un PDF limpio con pista de auditoría SHA-256 — admisible en tribunales de los 50 estados.',
+    descEn: 'Receive a clean, watermark-free PDF with SHA-256 audit trail, court-admissible in all 50 states.',
+    descEs: 'Recibe un PDF limpio con pista de auditoría SHA-256, admisible en tribunales de los 50 estados.',
   },
 ];
 
@@ -384,8 +384,8 @@ export const DEFAULT_FAQ: FaqItem[] = [
   {
     qEn: 'Is Codec Document free to use?',
     qEs: '¿Es gratis usar Codec Document?',
-    aEn: 'Yes. Codec Document offers a free plan with 2 structured legal documents and 2 free digital e-signatures every day — no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
-    aEs: 'Sí. Codec Document ofrece un plan gratuito con 2 documentos legales estructurados y 2 firmas electrónicas gratis cada día — sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs planos que subes desde otro lado, nuestro editor inteligente te deja construir NDA, contratos de arrendamiento y de servicios desde cero, gratis.',
+    aEn: 'Yes. Codec Document offers a free plan with 2 structured legal documents and 2 free digital e-signatures every day, no credit card required. Unlike platforms that only let you sign flat PDFs you upload elsewhere, our intelligent editor lets you build NDA, lease agreements, and service contracts from scratch for free.',
+    aEs: 'Sí. Codec Document ofrece un plan gratuito con 2 documentos legales estructurados y 2 firmas electrónicas gratis cada día, sin tarjeta de crédito. A diferencia de plataformas que solo permiten firmar PDFs planos que subes desde otro lado, nuestro editor inteligente te deja construir NDA, contratos de arrendamiento y de servicios desde cero, gratis.',
   },
   {
     qEn: 'Are e-signatures on Codec Document legally valid in the USA?',
@@ -408,13 +408,13 @@ export const DEFAULT_FAQ: FaqItem[] = [
   {
     qEn: 'What is SHA-256 audit trail and why does it matter?',
     qEs: '¿Qué es la pista de auditoría SHA-256 y por qué importa?',
-    aEn: 'Every document generated on Codec Document receives a SHA-256 cryptographic fingerprint — a unique hash that proves the document has not been altered since signing. This creates an immutable, court-admissible audit trail that satisfies ESIGN Act and UETA requirements.',
-    aEs: 'Cada documento generado en Codec Document recibe una huella criptográfica SHA-256 — un hash único que prueba que el documento no ha sido alterado desde su firma. Esto crea una pista de auditoría inmutable y admisible en tribunales que cumple con los requisitos de ESIGN Act y UETA.',
+    aEn: 'Every document generated on Codec Document receives a SHA-256 cryptographic fingerprint, a unique hash that proves the document has not been altered since signing. This creates an immutable, court-admissible audit trail that satisfies ESIGN Act and UETA requirements.',
+    aEs: 'Cada documento generado en Codec Document recibe una huella criptográfica SHA-256, un hash único que prueba que el documento no ha sido alterado desde su firma. Esto crea una pista de auditoría inmutable y admisible en tribunales que cumple con los requisitos de ESIGN Act y UETA.',
   },
   {
     qEn: 'How does Codec Document compare to DocuSign or PandaDoc?',
     qEs: '¿Cómo se compara Codec Document con DocuSign o PandaDoc?',
-    aEn: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts) — not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
-    aEs: 'Codec Document ofrece un editor inteligente de plantillas gratuito que construye dinámicamente documentos legales profesionales (NDA, arrendamientos, contratos) — no solo un cargador de PDFs planos. Obtienes generación de documentos gratis más firmas electrónicas conformes a ESIGN, todo sin tarjeta de crédito. Los planes premium comienzan en $29.99/mes para documentos ilimitados, espacio en la nube y firmas remotas ilimitadas.',
+    aEn: 'Codec Document provides a free intelligent template editor that dynamically builds professional legal documents (NDA, leases, contracts), not just a flat PDF uploader. You get free document generation plus ESIGN Act compliant e-signatures, all without a credit card. Premium plans start at $29.99/month for unlimited documents, cloud workspace, and unlimited remote signatures.',
+    aEs: 'Codec Document ofrece un editor inteligente de plantillas gratuito que construye dinámicamente documentos legales profesionales (NDA, arrendamientos, contratos), no solo un cargador de PDFs planos. Obtienes generación de documentos gratis más firmas electrónicas conformes a ESIGN, todo sin tarjeta de crédito. Los planes premium comienzan en $29.99/mes para documentos ilimitados, espacio en la nube y firmas remotas ilimitadas.',
   },
 ];

@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     // plan_seats (the legacy flat plan) is unlimited, same as today.
     const { data: hasSeat } = await admin.rpc('company_has_seat_available', { p_company_id: membership.company_id });
     if (hasSeat === false) {
-      return new Response(JSON.stringify({ error: 'Your Enterprise plan is out of seats — remove a member or add more seats first.' }), {
+      return new Response(JSON.stringify({ error: 'Your Enterprise plan is out of seats, remove a member or add more seats first.' }), {
         status: 409, headers: corsHeaders(origin),
       });
     }
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     });
     if (createErr || !created?.user) {
       const message = createErr?.message?.includes('already been registered')
-        ? 'An account with that email already exists — use "Invite by email" instead.'
+        ? 'An account with that email already exists, use "Invite by email" instead.'
         : (createErr?.message || 'Could not create the account');
       return new Response(JSON.stringify({ error: message }), {
         status: 409, headers: corsHeaders(origin),

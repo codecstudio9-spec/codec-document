@@ -761,7 +761,7 @@ export function ElectronicSignaturePage() {
     ...voiceBase, active: step === 'compiling', step: 'compiling', stepIndex: 6,
     message: {
       es: 'Estamos generando tu documento certificado con validez legal. Esto toma solo unos segundos, no cierres ni recargues esta pantalla.',
-      en: 'We’re generating your legally certified document. This only takes a few seconds — please don’t close or reload this screen.',
+      en: 'We’re generating your legally certified document. This only takes a few seconds, please don’t close or reload this screen.',
     },
   });
   useVoiceStepGuide({
@@ -1196,7 +1196,7 @@ export function ElectronicSignaturePage() {
       const token    = await createSigningLink({ documentId, signerId, guestName: newExtraName, guestEmail: newExtraEmail });
       setExtraSigners((prev) => [...prev, { id: signerId, name: newExtraName, email: newExtraEmail, token, status: 'pending' }]);
       setNewExtraName(''); setNewExtraEmail(''); setAddingExtraSigner(false);
-      toast.success('Firmante agregado — comparte su enlace.');
+      toast.success('Firmante agregado, comparte su enlace.');
     } catch (err) {
       toast.error(`No se pudo agregar el firmante: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
@@ -1558,7 +1558,7 @@ export function ElectronicSignaturePage() {
                   <div className={`mt-3 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[11px] ${certicamaraConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-500'}`}>
                     <ShieldCheck className="size-3.5 shrink-0" />
                     {certicamaraConfigured
-                      ? 'Certicámara: API key configurada — la integración de firma certificada aún está en desarrollo.'
+                      ? 'Certicámara: API key configurada, la integración de firma certificada aún está en desarrollo.'
                       : 'Firma digital certificada (Certicámara): aún no configurada. Actívala en Configuración → Certicámara.'}
                   </div>
                 </div>
@@ -1658,7 +1658,7 @@ export function ElectronicSignaturePage() {
                       disabled={isLoading}
                       className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Solo yo firmo — sin invitar a nadie
+                      Solo yo firmo, sin invitar a nadie
                     </button>
                     <p className="mt-2 text-center text-xs text-slate-400">
                       El documento quedará certificado únicamente con tu firma.
@@ -1790,7 +1790,7 @@ export function ElectronicSignaturePage() {
                 <h2 className="mt-1 text-xl font-bold text-slate-900">Refuerza tu identidad en el certificado</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Ya que firmas solo, puedes agregar una selfie y una foto de tu cédula. Quedan únicamente en la
-                  página de evidencia del certificado — nunca sobre el documento original — y son opcionales.
+                  página de evidencia del certificado, nunca sobre el documento original, y son opcionales.
                 </p>
 
                 {identityCameraActive ? (
@@ -1909,7 +1909,7 @@ export function ElectronicSignaturePage() {
                     <div>
                       <p className="text-sm font-semibold text-slate-800">Face ID / Touch ID / Huella</p>
                       <p className="text-xs text-slate-400">
-                        {creatorBiometric ? `Confirmada — ${creatorBiometric.label}` : 'Verificación biométrica de tu propio dispositivo (opcional)'}
+                        {creatorBiometric ? `Confirmada: ${creatorBiometric.label}` : 'Verificación biométrica de tu propio dispositivo (opcional)'}
                       </p>
                     </div>
                   </div>
@@ -1976,7 +1976,7 @@ export function ElectronicSignaturePage() {
                       <Loader className="size-5 shrink-0 animate-spin text-amber-600" />
                       <div>
                         <p className="text-sm font-bold text-amber-800">Esperando a que {guestName || 'el invitado'} firme</p>
-                        <p className="text-xs text-amber-700">Te avisaremos aquí mismo apenas firme — no necesitas hacer nada más.</p>
+                        <p className="text-xs text-amber-700">Te avisaremos aquí mismo apenas firme, no necesitas hacer nada más.</p>
                       </div>
                     </div>
 

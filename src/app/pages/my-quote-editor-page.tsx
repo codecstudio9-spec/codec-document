@@ -194,7 +194,7 @@ export function MyQuoteEditorPage() {
     },
     propuesta: {
       es: 'Aquí va el cuerpo de tu cotización, y tienes dos opciones. Pegas el texto en el recuadro y eso es exactamente lo que va a quedar. O te vas a la pestaña de al lado, me hablas por el micrófono, me dices algo como «hazme una cotización de treinta agendas a treinta mil cada una», y yo te escribo el texto completo y de paso te dejo los productos puestos aquí abajo. Tú decides, y lo que yo escriba lo puedes cambiar entero.',
-      en: 'This is the body of your quote, and you have two options. Paste your text in the box and that is exactly what comes out. Or switch to the other tab, talk to me through the microphone — something like "write me a quote for thirty planners at thirty thousand each" — and I will write the whole text and fill in the products below. Your call, and you can change anything I write.',
+      en: 'This is the body of your quote, and you have two options. Paste your text in the box and that is exactly what comes out. Or switch to the other tab, talk to me through the microphone, something like "write me a quote for thirty planners at thirty thousand each", and I will write the whole text and fill in the products below. Your call, and you can change anything I write.',
     },
   }), []);
 
@@ -416,7 +416,7 @@ export function MyQuoteEditorPage() {
     try {
       await verifyPaypalOrder({ orderId, product: 'quote_single', promoCode: bonoParcial?.code });
       await finalizeNewQuote();
-      toast.success(language === 'en' ? 'Payment confirmed — quote created!' : '¡Pago confirmado — cotización creada!');
+      toast.success(language === 'en' ? 'Payment confirmed, quote created!' : '¡Pago confirmado, cotización creada!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : (language === 'en' ? 'Payment could not be verified.' : 'No se pudo verificar el pago.'));
     } finally {
@@ -613,7 +613,7 @@ export function MyQuoteEditorPage() {
    *  vez de mandar un enlace suelto. */
   const asuntoDeEnvio = () => {
     const quien = projectName || documentTitle;
-    return language === 'en' ? `${quien} — quote for you` : `${quien} — cotización para ti`;
+    return language === 'en' ? `${quien}, quote for you` : `${quien}, cotización para ti`;
   };
 
   const mensajeDeEnvio = () => {
@@ -640,7 +640,7 @@ export function MyQuoteEditorPage() {
       }
       await redeemPromoCode(code, contexto);
       await finalizeNewQuote();
-      toast.success(language === 'en' ? 'Coupon applied — quote created!' : '¡Bono aplicado — cotización creada!');
+      toast.success(language === 'en' ? 'Coupon applied, quote created!' : '¡Bono aplicado, cotización creada!');
     } catch (err) {
       setBonoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
     } finally {
@@ -673,8 +673,8 @@ export function MyQuoteEditorPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {language === 'en'
-            ? 'Create, send, and get this quote signed — a full agreement, not just a PDF.'
-            : 'Crea, envía y logra que firmen esta cotización — un acuerdo completo, no solo un PDF.'}
+            ? 'Create, send, and get this quote signed, a full agreement, not just a PDF.'
+            : 'Crea, envía y logra que firmen esta cotización, un acuerdo completo, no solo un PDF.'}
         </p>
 
         {borradorRecuperado && (
@@ -920,14 +920,14 @@ export function MyQuoteEditorPage() {
               onClick={() => { if (!sonOpciones) alternarModoOpciones(); }}
               className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition ${sonOpciones ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-400'}`}
             >
-              {language === 'en' ? 'These are alternative options' : 'Son opciones — el cliente elige una'}
+              {language === 'en' ? 'These are alternative options' : 'Son opciones, el cliente elige una'}
             </button>
           </div>
           <p className="mb-4 text-[11px] text-slate-400">
             {sonOpciones
               ? (language === 'en'
-                ? 'Each product below is shown on its own, and the client picks one — prices are not added together.'
-                : 'Cada producto de abajo se muestra por separado y el cliente elige uno — los precios no se suman.')
+                ? 'Each product below is shown on its own, and the client picks one, prices are not added together.'
+                : 'Cada producto de abajo se muestra por separado y el cliente elige uno, los precios no se suman.')
               : (language === 'en'
                 ? 'Every product below adds to the total, like a store quoting several different items at once.'
                 : 'Cada producto de abajo se suma al total, como una tienda cotizando varios artículos distintos a la vez.')}
@@ -1014,14 +1014,14 @@ export function MyQuoteEditorPage() {
                   <input
                     value={item.option_group || ''}
                     onChange={(e) => updateItem(i, { option_group: e.target.value })}
-                    placeholder={language === 'en' ? 'e.g. "Plans" — same text on every option' : 'ej. "Planes" — el mismo texto en cada opción'}
+                    placeholder={language === 'en' ? 'e.g. "Plans", same text on every option' : 'ej. "Planes", el mismo texto en cada opción'}
                     className={`${inputClass} bg-white text-xs`}
                   />
                   {item.option_group?.trim() && (
                     <span className="mt-1 block text-[10px] text-amber-600">
                       {language === 'en'
-                        ? "Grouped with every other item using this exact text — shown as a choice, not added to the total."
-                        : 'Se agrupa con cualquier otro ítem que use este mismo texto — se muestra como una opción a elegir, no se suma al total.'}
+                        ? "Grouped with every other item using this exact text, shown as a choice, not added to the total."
+                        : 'Se agrupa con cualquier otro ítem que use este mismo texto, se muestra como una opción a elegir, no se suma al total.'}
                     </span>
                   )}
                 </label>
@@ -1320,8 +1320,8 @@ export function MyQuoteEditorPage() {
               {bonoParcial && (
                 <p className="mt-1.5 text-xs font-semibold text-amber-900">
                   {language === 'en'
-                    ? `${bonoParcial.discountPct}% off — pay below to finish.`
-                    : `${bonoParcial.discountPct}% de descuento — paga abajo para terminar.`}
+                    ? `${bonoParcial.discountPct}% off, pay below to finish.`
+                    : `${bonoParcial.discountPct}% de descuento, paga abajo para terminar.`}
                 </p>
               )}
             </div>

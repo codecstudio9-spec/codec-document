@@ -191,12 +191,12 @@ function AnalyticsContent() {
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-3">
               <UserPlus className="size-4 text-blue-600" />
-              <p className="mt-2 text-xl font-black text-slate-900">{summary ? `${summary.newVisitorsPct.toFixed(0)}%` : '—'}</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{summary ? `${summary.newVisitorsPct.toFixed(0)}%` : '-'}</p>
               <p className="text-[11px] font-medium text-slate-400">{language === 'en' ? 'New' : 'Nuevos'}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-3">
               <Repeat className="size-4 text-emerald-600" />
-              <p className="mt-2 text-xl font-black text-slate-900">{summary ? `${summary.returningVisitorsPct.toFixed(0)}%` : '—'}</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{summary ? `${summary.returningVisitorsPct.toFixed(0)}%` : '-'}</p>
               <p className="text-[11px] font-medium text-slate-400">{language === 'en' ? 'Returning' : 'Recurrentes'}</p>
             </div>
           </div>

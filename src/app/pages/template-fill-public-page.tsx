@@ -12,13 +12,13 @@ const DEFAULT_INSTRUCTIONS = {
     'Fill in your information in the form below.',
     "If asked, verify your identity (selfie, ID photo, or fingerprint/Face ID).",
     'Draw or type your signature.',
-    "Confirm — you'll get your signed document ready to download.",
+    "Confirm, you'll get your signed document ready to download.",
   ],
   es: [
     'Completa tus datos en el formulario de abajo.',
     'Si se te pide, verifica tu identidad (selfie, foto de tu identificación, o huella/Face ID).',
     'Dibuja o escribe tu firma.',
-    'Confirma — recibirás tu documento firmado listo para descargar.',
+    'Confirma, recibirás tu documento firmado listo para descargar.',
   ],
 };
 

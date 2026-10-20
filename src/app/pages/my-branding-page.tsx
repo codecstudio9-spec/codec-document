@@ -85,8 +85,8 @@ export function MyBrandingPage() {
         <h1 className="text-2xl font-black text-slate-900">{language === 'en' ? 'Company Branding' : 'Marca de tu Empresa'}</h1>
         <p className="mt-1 text-sm text-slate-500">
           {language === 'en'
-            ? 'Personalize the documents you send for signature — this never changes anything already signed or in progress.'
-            : 'Personaliza los documentos que envías a firmar — esto nunca cambia nada ya firmado o en curso.'}
+            ? 'Personalize the documents you send for signature, this never changes anything already signed or in progress.'
+            : 'Personaliza los documentos que envías a firmar, esto nunca cambia nada ya firmado o en curso.'}
         </p>
 
         {loading ? (
@@ -142,7 +142,7 @@ export function MyBrandingPage() {
               <input
                 value={branding.headerText ?? ''}
                 onChange={(e) => setBranding((b) => ({ ...b, headerText: e.target.value }))}
-                placeholder={language === 'en' ? 'Your Company — Trusted Since 2020' : 'Tu Empresa — Confianza desde 2020'}
+                placeholder={language === 'en' ? 'Your Company: Trusted Since 2020' : 'Tu Empresa: Confianza desde 2020'}
                 maxLength={120}
                 className="mb-3 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400"
               />

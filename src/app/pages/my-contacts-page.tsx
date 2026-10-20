@@ -122,8 +122,8 @@ export function MyContactsPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {language === 'en'
-            ? 'Everyone who has signed or received a document from you — saved automatically.'
-            : 'Todos los que han firmado o recibido un documento tuyo — se guardan automáticamente.'}
+            ? 'Everyone who has signed or received a document from you, saved automatically.'
+            : 'Todos los que han firmado o recibido un documento tuyo, se guardan automáticamente.'}
         </p>
 
         <div className="relative mt-5">
@@ -144,7 +144,7 @@ export function MyContactsPage() {
               <Mail className="mx-auto mb-2 size-7 text-slate-300" />
               <p className="text-sm font-semibold text-slate-500">
                 {contacts.length === 0
-                  ? (language === 'en' ? 'No contacts yet — they\'ll appear here once someone signs a document you sent.' : 'Aún no tienes contactos — aparecerán aquí cuando alguien firme un documento que enviaste.')
+                  ? (language === 'en' ? 'No contacts yet, they\'ll appear here once someone signs a document you sent.' : 'Aún no tienes contactos, aparecerán aquí cuando alguien firme un documento que enviaste.')
                   : (language === 'en' ? 'No matches.' : 'Sin resultados.')}
               </p>
             </div>

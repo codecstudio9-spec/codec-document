@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Crear el plan ─────────────────────────────────────────────────
-    const nombre = `${original.name} — ${discountPct}% dto`.slice(0, 127);
+    const nombre = `${original.name} - ${discountPct}% dto`.slice(0, 127);
     const resNuevo = await fetch(`${PAYPAL_API_BASE}/v1/billing/plans`, {
       method: 'POST',
       headers: {

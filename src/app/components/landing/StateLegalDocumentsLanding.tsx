@@ -129,7 +129,7 @@ function StateLegalDocumentsLandingContent({ state }: { state: StateSeoConfig })
         previewLabel={`${state.name} Document Preview`}
         backgroundImage="/imagen2.jpg"
         titleAccentEn={state.name} titleAccentEs={state.nameEs}
-        titleRestEn="— Legal Documents & E-Signatures" titleRestEs="— Documentos Legales y Firma Electrónica"
+        titleRestEn="Legal Documents & E-Signatures" titleRestEs="Documentos Legales y Firma Electrónica"
         subtitleEn={desc} subtitleEs={desc}
         ctaLabelEn="Create a Document" ctaLabelEs="Crear un Documento"
         ctaHref="/"

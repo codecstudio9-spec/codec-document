@@ -22,7 +22,7 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
     puntos: [
       { titulo: 'Plantilla con tus datos fijos', texto: 'Tu nombre, cédula, dirección, cuenta bancaria y los datos del contratante quedan fijos en la plantilla. Cada mes llenas solo el periodo, el concepto y el valor.' },
       { titulo: 'Firmada, no escaneada', texto: 'La firmas desde el celular y la envías en PDF con certificado de firma. No hay que imprimir, firmar y escanear cada mes.' },
-      { titulo: 'El concepto bien descrito', texto: 'Describir el servicio y el periodo con claridad —«honorarios por diseño de piezas gráficas, periodo del 1 al 30 de abril, contrato 045»— evita la mayoría de devoluciones.' },
+      { titulo: 'El concepto bien descrito', texto: 'Describir el servicio y el periodo con claridad («honorarios por diseño de piezas gráficas, periodo del 1 al 30 de abril, contrato 045») evita la mayoría de devoluciones.' },
       { titulo: 'Historial de todo lo cobrado', texto: 'Cada cuenta de cobro queda archivada con su fecha. Al final del año tienes todo lo que facturaste para tu declaración de renta.' },
     ],
     ley: {
@@ -61,7 +61,7 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
     metaDescription: 'Qué debe tener un contrato de prestación de servicios y cómo evitar que se convierta en un contrato laboral. Créalo desde tu modelo y fírmalo en línea.',
     h1: 'Contrato de prestación de servicios',
     grupo: 'independientes',
-    intro: 'El contrato de prestación de servicios es el acuerdo con el que una persona o empresa contrata a un independiente para un trabajo concreto, con autonomía y sin relación laboral: un diseño, una asesoría, un desarrollo de software, una consultoría. Bien hecho, protege a las dos partes. Mal hecho —o mal ejecutado—, termina en una demanda por contrato realidad.',
+    intro: 'El contrato de prestación de servicios es el acuerdo con el que una persona o empresa contrata a un independiente para un trabajo concreto, con autonomía y sin relación laboral: un diseño, una asesoría, un desarrollo de software, una consultoría. Bien hecho, protege a las dos partes. Mal hecho (o mal ejecutado), termina en una demanda por contrato realidad.',
     problema: {
       titulo: 'Cuando la prestación de servicios esconde un empleo',
       texto: 'El riesgo más grande no está en el texto sino en la práctica: un contratista con horario fijo, un jefe que le da órdenes, puesto de trabajo y exclusividad, renovado mes tras mes durante años. En ese caso, aunque el contrato diga «prestación de servicios», un juez puede declarar que existió un contrato de trabajo, con todas sus prestaciones. Un buen contrato describe un servicio con resultados, no un cargo con horario.',
@@ -74,7 +74,7 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
     ],
     ley: {
       titulo: 'Contrato civil o comercial, no laboral',
-      texto: 'La prestación de servicios entre particulares se rige por el Código Civil o el de Comercio, según el caso. El riesgo está en el artículo 23 del Código Sustantivo del Trabajo, que define los tres elementos del contrato de trabajo —actividad personal, continuada subordinación y salario—, y en el artículo 24, que presume que toda relación de trabajo personal está regida por un contrato de trabajo. El artículo 53 de la Constitución consagra la primacía de la realidad sobre las formas: lo que cuenta es cómo se ejecuta el contrato, no cómo se llama. La firma electrónica le da al contrato el mismo valor que en papel según la Ley 527 de 1999.',
+      texto: 'La prestación de servicios entre particulares se rige por el Código Civil o el de Comercio, según el caso. El riesgo está en el artículo 23 del Código Sustantivo del Trabajo, que define los tres elementos del contrato de trabajo (actividad personal, continuada subordinación y salario), y en el artículo 24, que presume que toda relación de trabajo personal está regida por un contrato de trabajo. El artículo 53 de la Constitución consagra la primacía de la realidad sobre las formas: lo que cuenta es cómo se ejecuta el contrato, no cómo se llama. La firma electrónica le da al contrato el mismo valor que en papel según la Ley 527 de 1999.',
     },
     caso: {
       titulo: 'Un diseñador con horario de oficina',
@@ -112,10 +112,10 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
     intro: 'Antes de mostrarle a alguien tu base de clientes, tus precios, tu código o tu plan de negocio, conviene que firme un acuerdo de confidencialidad. Es un documento corto que dice qué información es confidencial, para qué se puede usar, por cuánto tiempo y qué pasa si se divulga. Firmarlo antes de la primera reunión cuesta minutos; no firmarlo puede costar el negocio.',
     problema: {
       titulo: 'La información que salió en la primera reunión',
-      texto: 'Lo habitual es firmar el acuerdo de confidencialidad «después», cuando ya se compartió todo en una llamada o en un correo. En ese momento ya no hay forma de demostrar qué se reveló bajo confidencialidad y qué no. Otro error común es un acuerdo tan genérico —«toda la información es confidencial»— que no permite saber qué estaba protegido. Un buen acuerdo es específico y se firma antes de compartir.',
+      texto: 'Lo habitual es firmar el acuerdo de confidencialidad «después», cuando ya se compartió todo en una llamada o en un correo. En ese momento ya no hay forma de demostrar qué se reveló bajo confidencialidad y qué no. Otro error común es un acuerdo tan genérico («toda la información es confidencial») que no permite saber qué estaba protegido. Un buen acuerdo es específico y se firma antes de compartir.',
     },
     puntos: [
-      { titulo: 'Qué es confidencial y qué no', texto: 'Define la información protegida —financiera, técnica, comercial, de clientes— y excluye lo que ya es público o lo que la otra parte ya conocía.' },
+      { titulo: 'Qué es confidencial y qué no', texto: 'Define la información protegida (financiera, técnica, comercial, de clientes) y excluye lo que ya es público o lo que la otra parte ya conocía.' },
       { titulo: 'Para qué se puede usar', texto: 'La información solo puede usarse para el propósito acordado: evaluar un negocio, ejecutar un proyecto. Cualquier otro uso es un incumplimiento.' },
       { titulo: 'Cuánto dura la obligación', texto: 'La confidencialidad suele extenderse más allá de la relación: dos, tres o cinco años, o indefinidamente para secretos industriales.' },
       { titulo: 'Firmado antes de la reunión', texto: 'Envía el acuerdo por WhatsApp o correo antes de la primera conversación; la otra parte lo firma desde el celular en un minuto.' },
@@ -262,7 +262,7 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
     ],
     ley: {
       titulo: 'El artículo 89 de la Ley 153 de 1887',
-      texto: 'Para que la promesa de celebrar un contrato produzca obligación, el artículo 89 de la Ley 153 de 1887 —que subrogó el artículo 1611 del Código Civil— exige que conste por escrito, que el contrato prometido no sea de los que la ley declara ineficaces, que contenga un plazo o condición que fije la época en que ha de celebrarse, y que se determine de tal suerte el contrato que solo falte la tradición de la cosa o las formalidades legales. La compraventa del inmueble en sí requiere escritura pública (artículo 1857 del Código Civil), pero la promesa no: basta el escrito, que puede ser electrónico según la Ley 527 de 1999.',
+      texto: 'Para que la promesa de celebrar un contrato produzca obligación, el artículo 89 de la Ley 153 de 1887 (que subrogó el artículo 1611 del Código Civil) exige que conste por escrito, que el contrato prometido no sea de los que la ley declara ineficaces, que contenga un plazo o condición que fije la época en que ha de celebrarse, y que se determine de tal suerte el contrato que solo falte la tradición de la cosa o las formalidades legales. La compraventa del inmueble en sí requiere escritura pública (artículo 1857 del Código Civil), pero la promesa no: basta el escrito, que puede ser electrónico según la Ley 527 de 1999.',
     },
     caso: {
       titulo: 'Arras recuperadas gracias a una fecha',
@@ -301,7 +301,7 @@ export const PAGINAS_CO_NEGOCIOS: PaginaCO[] = [
       texto: 'Un padre presta su apartamento a un hijo «mientras se organiza». Años después hay una separación, un cambio de planes o una venta, y quien ocupa el inmueble no quiere salir, o alega que era un regalo. Sin un documento que diga que fue un préstamo, por cuánto tiempo y para qué, la discusión se vuelve un proceso largo. Un comodato escrito dice todo eso en una página.',
     },
     puntos: [
-      { titulo: 'Qué se presta y en qué estado', texto: 'Descripción del bien —inmueble, vehículo, equipo— y su estado al momento de entregarlo, idealmente con un inventario.' },
+      { titulo: 'Qué se presta y en qué estado', texto: 'Descripción del bien (inmueble, vehículo, equipo) y su estado al momento de entregarlo, idealmente con un inventario.' },
       { titulo: 'Para qué se puede usar', texto: 'El comodatario solo puede usar el bien para el uso convenido o el ordinario según su naturaleza.' },
       { titulo: 'Cuándo se devuelve', texto: 'Un plazo o un hecho que marque la restitución. Sin plazo, la ley permite pedir el bien en cualquier momento (comodato precario).' },
       { titulo: 'Gastos y cuidados', texto: 'Quién paga servicios, administración y reparaciones ordinarias mientras dura el préstamo.' },

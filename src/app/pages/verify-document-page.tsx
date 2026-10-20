@@ -53,7 +53,7 @@ export function VerifyDocumentPage() {
   };
 
   const fmtDate = (d: string | null) => {
-    if (!d) return '—';
+    if (!d) return '-';
     try {
       return new Date(d).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
         year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -68,7 +68,7 @@ export function VerifyDocumentPage() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title={language === 'en' ? 'Document Verifier — Codec Document' : 'Verificador de Autenticidad — Codec Document'}
+        title={language === 'en' ? 'Document Verifier | Codec Document' : 'Verificador de Autenticidad | Codec Document'}
         description={language === 'en'
           ? 'Verify that a document signed with Codec Document is authentic. Paste the transaction ID printed on the audit page to confirm.'
           : 'Verifica que un documento firmado con Codec Document sea auténtico. Pega el ID de transacción impreso en la página de auditoría para confirmarlo.'}
@@ -156,7 +156,7 @@ export function VerifyDocumentPage() {
                     </div>
                     <div>
                       <dt className="font-semibold text-emerald-700/70">{language === 'en' ? 'Document type' : 'Tipo de documento'}</dt>
-                      <dd className="text-emerald-900">{result.document_type ?? '—'}</dd>
+                      <dd className="text-emerald-900">{result.document_type ?? '-'}</dd>
                     </div>
                     <div>
                       <dt className="font-semibold text-emerald-700/70">{language === 'en' ? 'Created' : 'Creado'}</dt>
@@ -183,8 +183,8 @@ export function VerifyDocumentPage() {
 
           <p className="mt-8 text-xs text-slate-400">
             {language === 'en'
-              ? 'This tool only confirms existence, status and dates — never personal data, selfies, ID photos or signatures.'
-              : 'Esta herramienta solo confirma existencia, estado y fechas — nunca datos personales, selfies, fotos de identificación o firmas.'}
+              ? 'This tool only confirms existence, status and dates, never personal data, selfies, ID photos or signatures.'
+              : 'Esta herramienta solo confirma existencia, estado y fechas, nunca datos personales, selfies, fotos de identificación o firmas.'}
           </p>
         </div>
       </section>

@@ -265,8 +265,8 @@ export function InlineSigningPanel({
               : 'bg-indigo-100 text-indigo-700',
           ].join(' ')}>
             {allSigned
-              ? tr('Step 3 — Download', 'Paso 3 — Descargar')
-              : tr('Step 2 — Sign', 'Paso 2 — Firmar')}
+              ? tr('Step 3: Download', 'Paso 3: Descargar')
+              : tr('Step 2: Sign', 'Paso 2: Firmar')}
           </span>
         </div>
 
@@ -600,7 +600,7 @@ export function InlineSigningPanel({
                 <div className="mb-2 flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-emerald-600" />
                   <p className="text-xs font-bold text-emerald-800">
-                    {tr('All signers completed — document ready!', '¡Todos firmaron — documento listo!')}
+                    {tr('All signers completed, document ready!', '¡Todos firmaron, documento listo!')}
                   </p>
                 </div>
                 {/* Progress bar — full */}

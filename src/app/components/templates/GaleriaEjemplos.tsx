@@ -143,8 +143,8 @@ export function GaleriaEjemplos({ ejemplos, language, cloningId, onUsar, sinTitu
         {visibles.map(({ ex, nombre, sector }) => {
           const color = colorDeSector(sector);
           const instrucciones = (es ? ex.instructionsEs : ex.instructionsEn) || (es
-            ? 'Obtén tu propia copia independiente — reescribe las cláusulas, campos y formulario como lo necesites.'
-            : 'Get your own independent copy — rewrite the clauses, fields, and form however you need.');
+            ? 'Obtén tu propia copia independiente, reescribe las cláusulas, campos y formulario como lo necesites.'
+            : 'Get your own independent copy, rewrite the clauses, fields, and form however you need.');
           return (
             <div
               key={ex.id}

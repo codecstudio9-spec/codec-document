@@ -128,35 +128,35 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/why-digital-signatures-matter-2026.jpg', alt: 'Silhouettes of business people shaking hands in a modern office at sunset', credit: 'Photo: AdobeStock' },
     readMinutes: 7,
     intro: [
-      'Five years ago, asking a client to sign electronically was a courtesy. In 2026, it is closer to a baseline expectation — the same way a broken link or a slow-loading page quietly tells a customer that a business is behind. The shift did not happen because e-signatures became more legal (they have been fully enforceable in the US since the ESIGN Act passed in 2000). It happened because the volume, speed, and geography of business documents changed faster than most companies\' internal processes did.',
-      'This piece is not about convincing you that electronic signatures are legitimate — that argument was settled decades ago. It is about why the businesses that treat signing as a solved, background process are quietly outcompeting the ones that still print, scan, and chase down a wet signature.',
+      'Five years ago, asking a client to sign electronically was a courtesy. In 2026, it is closer to a baseline expectation, the same way a broken link or a slow-loading page quietly tells a customer that a business is behind. The shift did not happen because e-signatures became more legal (they have been fully enforceable in the US since the ESIGN Act passed in 2000). It happened because the volume, speed, and geography of business documents changed faster than most companies\' internal processes did.',
+      'This piece is not about convincing you that electronic signatures are legitimate, that argument was settled decades ago. It is about why the businesses that treat signing as a solved, background process are quietly outcompeting the ones that still print, scan, and chase down a wet signature.',
     ],
     sections: [
       {
         heading: 'The volume problem nobody budgeted for',
         paragraphs: [
           'A typical services company in 2020 might have generated a handful of contracts a week. The same company today, using AI-assisted drafting, templated proposals, and faster sales cycles, often produces the same volume in a day. More documents moving faster means more places for a manual, paper-based signing step to become the bottleneck in an otherwise fast process.',
-          'The cost of that bottleneck is not abstract. A sales team that closes in two days instead of two weeks converts more deals, full stop — prospects lose momentum and second-guess themselves the longer a contract sits unsigned in an inbox.',
+          'The cost of that bottleneck is not abstract. A sales team that closes in two days instead of two weeks converts more deals, full stop, prospects lose momentum and second-guess themselves the longer a contract sits unsigned in an inbox.',
         ],
       },
       {
         heading: 'Remote and hybrid work made "just come sign it" impossible',
         paragraphs: [
-          'When a landlord, employer, or vendor and their counterpart are rarely in the same building — let alone the same city — physical signing stops being an inconvenience and becomes a genuine logistical problem. Overnight couriers, notarized mail, and "can you scan and email that back" have real costs in both time and dollars, and they scale badly once a business is signing dozens of documents a month.',
+          'When a landlord, employer, or vendor and their counterpart are rarely in the same building, let alone the same city, physical signing stops being an inconvenience and becomes a genuine logistical problem. Overnight couriers, notarized mail, and "can you scan and email that back" have real costs in both time and dollars, and they scale badly once a business is signing dozens of documents a month.',
           'This is the single biggest driver behind e-signature adoption in the last five years: not a preference for digital, but the simple fact that a distributed workforce and a distributed client base cannot rely on someone being physically present with a pen.',
         ],
       },
       {
         heading: 'Compliance and audit trails are now expected, not optional',
         paragraphs: [
-          'A wet-ink signature on paper proves almost nothing on its own — no timestamp, no verified identity, no record of what was actually agreed to at the moment of signing if the document was altered afterward. A proper e-signature platform captures a full audit trail: who signed, from what IP address, at what timestamp, and a cryptographic hash of the exact document content at the moment of signing.',
-          'For regulated industries — lending, healthcare, real estate — that audit trail has gone from a nice extra to something auditors and legal counsel actively expect to see. Businesses that can produce it instantly look more credible in a dispute; businesses that cannot are stuck reconstructing a paper trail from memory.',
+          'A wet-ink signature on paper proves almost nothing on its own, no timestamp, no verified identity, no record of what was actually agreed to at the moment of signing if the document was altered afterward. A proper e-signature platform captures a full audit trail: who signed, from what IP address, at what timestamp, and a cryptographic hash of the exact document content at the moment of signing.',
+          'For regulated industries, lending, healthcare, real estate, that audit trail has gone from a nice extra to something auditors and legal counsel actively expect to see. Businesses that can produce it instantly look more credible in a dispute; businesses that cannot are stuck reconstructing a paper trail from memory.',
         ],
       },
       {
         heading: 'What is genuinely different about 2026',
         paragraphs: [
-          'Three things converged this year specifically. First, AI-assisted document generation means far more contracts, quotes, and agreements are being produced per business than ever before, which raises the stakes of a slow signing step. Second, buyers now default to expecting a signing link the same day a proposal is sent — a delay reads as disorganization, not diligence. Third, free and low-cost e-signature platforms (Codec Document among them) have removed the old excuse that "proper" e-signature software is only for large enterprises with big budgets. A small business or solo freelancer can now send a fully compliant, auditable signature request for the same cost as a stamp — often for free, using a platform like Codec Document, which includes a free tier for both document creation and e-signatures rather than gating the feature behind a paid plan.',
+          'Three things converged this year specifically. First, AI-assisted document generation means far more contracts, quotes, and agreements are being produced per business than ever before, which raises the stakes of a slow signing step. Second, buyers now default to expecting a signing link the same day a proposal is sent, a delay reads as disorganization, not diligence. Third, free and low-cost e-signature platforms (Codec Document among them) have removed the old excuse that "proper" e-signature software is only for large enterprises with big budgets. A small business or solo freelancer can now send a fully compliant, auditable signature request for the same cost as a stamp, often for free, using a platform like Codec Document, which includes a free tier for both document creation and e-signatures rather than gating the feature behind a paid plan.',
         ],
         bullets: [
           'AI-assisted drafting has multiplied document volume across most industries',
@@ -168,17 +168,17 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The practical takeaway',
         paragraphs: [
-          'None of this requires an enterprise rollout or a procurement process. Most businesses that make the switch do it document by document — the next lease, the next NDA, the next vendor agreement — and simply never go back to printing once they see how much faster the signed copy comes back. The businesses falling behind are not the ones actively rejecting e-signatures; they are the ones who never got around to trying it and are still defaulting to "print, sign, scan" out of habit rather than necessity.',
+          'None of this requires an enterprise rollout or a procurement process. Most businesses that make the switch do it document by document, the next lease, the next NDA, the next vendor agreement, and simply never go back to printing once they see how much faster the signed copy comes back. The businesses falling behind are not the ones actively rejecting e-signatures; they are the ones who never got around to trying it and are still defaulting to "print, sign, scan" out of habit rather than necessity.',
         ],
       },
     ],
     faq: [
       { q: 'Are electronic signatures legally binding in the United States?', a: 'Yes. The ESIGN Act (15 U.S.C. § 7001), passed in 2000, and the Uniform Electronic Transactions Act (UETA), adopted by nearly every state, give electronic signatures the same legal weight as handwritten ones for the vast majority of contracts.' },
-      { q: 'Do I need special software to send a document for signature?', a: 'No. Platforms like Codec Document let you upload a PDF, mark where each signer should sign, and send a link — no installation, and a free tier covers most small businesses\' regular signing needs.' },
-      { q: 'What documents cannot be signed electronically?', a: 'A small list of exceptions exists under federal and state law — wills, certain court orders, and some family law documents typically still require a wet-ink signature or notarization in person.' },
+      { q: 'Do I need special software to send a document for signature?', a: 'No. Platforms like Codec Document let you upload a PDF, mark where each signer should sign, and send a link, no installation, and a free tier covers most small businesses\' regular signing needs.' },
+      { q: 'What documents cannot be signed electronically?', a: 'A small list of exceptions exists under federal and state law, wills, certain court orders, and some family law documents typically still require a wet-ink signature or notarization in person.' },
     ],
     ctaHeading: 'Start signing documents online today',
-    ctaBody: 'Codec Document is free to use for creating and signing legal documents — no credit card required.',
+    ctaBody: 'Codec Document is free to use for creating and signing legal documents, no credit card required.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -200,21 +200,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Electronic signature: a legal category, not a technology',
         paragraphs: [
-          'An electronic signature is any electronic sound, symbol, or process attached to a record that a person uses with the intent to sign it. That is a deliberately broad legal definition — it covers typing your name into a form, drawing your signature with a mouse or finger, clicking an "I agree" button, or even replying "yes, I accept" to a contract by email, as long as intent to sign is clear.',
-          'The point of an electronic signature is not the mark itself — it is proving that a specific person intended to be bound by a specific document. A good e-signature platform proves that through metadata: verified identity, IP address, timestamp, and a record of exactly what document was shown to the signer at that moment.',
+          'An electronic signature is any electronic sound, symbol, or process attached to a record that a person uses with the intent to sign it. That is a deliberately broad legal definition, it covers typing your name into a form, drawing your signature with a mouse or finger, clicking an "I agree" button, or even replying "yes, I accept" to a contract by email, as long as intent to sign is clear.',
+          'The point of an electronic signature is not the mark itself, it is proving that a specific person intended to be bound by a specific document. A good e-signature platform proves that through metadata: verified identity, IP address, timestamp, and a record of exactly what document was shown to the signer at that moment.',
         ],
       },
       {
         heading: 'Digital signature: a specific cryptographic technology',
         paragraphs: [
-          'A digital signature is something narrower and more technical: it uses public-key infrastructure (PKI) — a mathematically linked pair of a private and public key, usually issued by a certificate authority — to cryptographically bind a signature to a document in a way that is tamper-evident. If even one character of the document changes after signing, the digital signature becomes invalid.',
+          'A digital signature is something narrower and more technical: it uses public-key infrastructure (PKI), a mathematically linked pair of a private and public key, usually issued by a certificate authority, to cryptographically bind a signature to a document in a way that is tamper-evident. If even one character of the document changes after signing, the digital signature becomes invalid.',
           'In other words, a digital signature is one specific (and quite strong) way to implement an electronic signature. Every digital signature is a type of electronic signature; not every electronic signature uses digital-signature cryptography.',
         ],
       },
       {
         heading: 'Where the confusion actually comes from',
         paragraphs: [
-          'Marketing is the biggest culprit — many platforms use "digital signature" as a catch-all buzzword for anything you do on a screen, regardless of the underlying tech. That is not incorrect in casual conversation, but it blurs a distinction that matters in regulated industries, where "digital signature" often specifically implies certificate-based cryptographic signing, sometimes required by name in procurement or compliance documents.',
+          'Marketing is the biggest culprit, many platforms use "digital signature" as a catch-all buzzword for anything you do on a screen, regardless of the underlying tech. That is not incorrect in casual conversation, but it blurs a distinction that matters in regulated industries, where "digital signature" often specifically implies certificate-based cryptographic signing, sometimes required by name in procurement or compliance documents.',
         ],
         bullets: [
           'Electronic signature = broad legal category (intent + record)',
@@ -226,15 +226,15 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Which one do you actually need?',
         paragraphs: [
-          'For the overwhelming majority of business use — client contracts, NDAs, lease agreements, service agreements, HR paperwork — a well-built electronic signature platform is exactly what the ESIGN Act and UETA anticipate, and courts have upheld it repeatedly. Codec Document, for example, generates a full audit trail (timestamp, IP address, SHA-256 hash of the signed document) with every signature, which is the practical evidence that actually matters if a signature is ever challenged — free of charge, without needing a separate PKI certificate setup.',
+          'For the overwhelming majority of business use, client contracts, NDAs, lease agreements, service agreements, HR paperwork, a well-built electronic signature platform is exactly what the ESIGN Act and UETA anticipate, and courts have upheld it repeatedly. Codec Document, for example, generates a full audit trail (timestamp, IP address, SHA-256 hash of the signed document) with every signature, which is the practical evidence that actually matters if a signature is ever challenged, free of charge, without needing a separate PKI certificate setup.',
           'Certificate-based digital signatures become relevant mainly when a specific regulator, government agency, or industry standard explicitly requires that exact cryptographic method by name. If nobody has told you that you need one, you almost certainly do not.',
         ],
       },
     ],
     faq: [
-      { q: 'Is a typed name an electronic signature?', a: 'Yes, as long as it is attached with clear intent to sign the document — most e-signature platforms also log supporting evidence like IP address and timestamp to strengthen that record.' },
-      { q: 'Is a digital signature more legally valid than an electronic signature?', a: 'Not inherently — both are equally enforceable under the ESIGN Act and UETA. A digital signature adds cryptographic tamper-evidence, which is useful in specific high-security contexts, but it does not make an agreement "more binding" than a properly executed electronic signature.' },
-      { q: 'Does Codec Document use digital signatures or electronic signatures?', a: 'Codec Document uses electronic signatures with a full audit trail (identity data, IP, timestamp, and a document hash) — the same legal category that covers the vast majority of everyday business contracts.' },
+      { q: 'Is a typed name an electronic signature?', a: 'Yes, as long as it is attached with clear intent to sign the document, most e-signature platforms also log supporting evidence like IP address and timestamp to strengthen that record.' },
+      { q: 'Is a digital signature more legally valid than an electronic signature?', a: 'Not inherently, both are equally enforceable under the ESIGN Act and UETA. A digital signature adds cryptographic tamper-evidence, which is useful in specific high-security contexts, but it does not make an agreement "more binding" than a properly executed electronic signature.' },
+      { q: 'Does Codec Document use digital signatures or electronic signatures?', a: 'Codec Document uses electronic signatures with a full audit trail (identity data, IP, timestamp, and a document hash), the same legal category that covers the vast majority of everyday business contracts.' },
     ],
     ctaHeading: 'Sign your next document the right way',
     ctaBody: 'Codec Document is a free electronic signature platform with a full audit trail on every signature.',
@@ -253,27 +253,27 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/what-is-an-nda.jpg', alt: 'Close-up of a hand signing a document with a fountain pen', credit: 'Photo: Pixabay / Pexels' },
     readMinutes: 6,
     intro: [
-      'An NDA — non-disclosure agreement, sometimes called a confidentiality agreement — is one of the most commonly signed business documents, and also one of the most commonly misunderstood. Most people know they exist without ever having read one closely, which becomes a problem the first time they actually need to enforce or rely on one.',
+      'An NDA, non-disclosure agreement, sometimes called a confidentiality agreement, is one of the most commonly signed business documents, and also one of the most commonly misunderstood. Most people know they exist without ever having read one closely, which becomes a problem the first time they actually need to enforce or rely on one.',
     ],
     sections: [
       {
         heading: 'What an NDA actually does',
         paragraphs: [
-          'At its core, an NDA is a contract in which one or both parties agree not to disclose specific information shared during a business relationship — trade secrets, client lists, financials, product plans, source code, or anything else the disclosing party considers confidential. It does not stop someone from using public information, and it does not prevent independent development of similar ideas; it only restricts sharing the specific confidential information covered by the agreement.',
-          'The value of an NDA is less about winning a lawsuit later and more about setting clear expectations upfront. Most disputes never reach a courtroom — the existence of a signed NDA alone is often enough to keep sensitive conversations honest.',
+          'At its core, an NDA is a contract in which one or both parties agree not to disclose specific information shared during a business relationship, trade secrets, client lists, financials, product plans, source code, or anything else the disclosing party considers confidential. It does not stop someone from using public information, and it does not prevent independent development of similar ideas; it only restricts sharing the specific confidential information covered by the agreement.',
+          'The value of an NDA is less about winning a lawsuit later and more about setting clear expectations upfront. Most disputes never reach a courtroom, the existence of a signed NDA alone is often enough to keep sensitive conversations honest.',
         ],
       },
       {
         heading: 'Mutual vs. one-way NDAs',
         paragraphs: [
-          'A one-way (or unilateral) NDA protects only one party\'s information — common when a company shares proprietary details with a contractor, vendor, or job candidate who has nothing comparable to share back. A mutual NDA protects both sides, which is standard when two businesses are exploring a partnership, merger, or joint project and both will be exposing sensitive information to each other.',
-          'Using a one-way NDA when the relationship is genuinely mutual is a common mistake — it leaves one party\'s confidential information unprotected and can create friction during negotiation once the other side notices the imbalance.',
+          'A one-way (or unilateral) NDA protects only one party\'s information, common when a company shares proprietary details with a contractor, vendor, or job candidate who has nothing comparable to share back. A mutual NDA protects both sides, which is standard when two businesses are exploring a partnership, merger, or joint project and both will be exposing sensitive information to each other.',
+          'Using a one-way NDA when the relationship is genuinely mutual is a common mistake, it leaves one party\'s confidential information unprotected and can create friction during negotiation once the other side notices the imbalance.',
         ],
       },
       {
         heading: 'When you actually need one',
         paragraphs: [
-          'Not every conversation needs a signed NDA — that instinct slows down relationships that do not need protecting. It becomes worth the friction of asking for a signature when you are sharing something that would genuinely hurt you if a competitor saw it: unreleased product details, financial statements, source code, supplier pricing, or a client list.',
+          'Not every conversation needs a signed NDA, that instinct slows down relationships that do not need protecting. It becomes worth the friction of asking for a signature when you are sharing something that would genuinely hurt you if a competitor saw it: unreleased product details, financial statements, source code, supplier pricing, or a client list.',
         ],
         bullets: [
           'Hiring a contractor or freelancer with access to internal systems or code',
@@ -285,21 +285,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Common mistakes that make an NDA weaker than people think',
         paragraphs: [
-          'The most common failure is vagueness — defining "confidential information" so broadly ("anything discussed") that a court finds it unenforceable, or so narrowly that it misses the actual sensitive material. A close second is skipping a clear time limit; most NDAs specify confidentiality lasting two to five years, and an NDA with no end date at all is sometimes viewed skeptically by courts.',
-          'The other quiet failure is never actually getting it signed before the sensitive conversation happens — an NDA sent after information was already shared protects nothing retroactively.',
+          'The most common failure is vagueness, defining "confidential information" so broadly ("anything discussed") that a court finds it unenforceable, or so narrowly that it misses the actual sensitive material. A close second is skipping a clear time limit; most NDAs specify confidentiality lasting two to five years, and an NDA with no end date at all is sometimes viewed skeptically by courts.',
+          'The other quiet failure is never actually getting it signed before the sensitive conversation happens, an NDA sent after information was already shared protects nothing retroactively.',
         ],
       },
       {
         heading: 'Getting one signed without slowing things down',
         paragraphs: [
-          'Because NDAs are usually needed quickly — right before a sensitive conversation, not days in advance — they are one of the clearest cases where e-signature tools earn their keep. Codec Document includes a free NDA template you can customize and send for signature in minutes, with the same legally binding audit trail as any other signed document, so the confidentiality protection is actually in place before the sensitive conversation starts, not after.',
+          'Because NDAs are usually needed quickly, right before a sensitive conversation, not days in advance, they are one of the clearest cases where e-signature tools earn their keep. Codec Document includes a free NDA template you can customize and send for signature in minutes, with the same legally binding audit trail as any other signed document, so the confidentiality protection is actually in place before the sensitive conversation starts, not after.',
         ],
       },
     ],
     faq: [
-      { q: 'Is a verbal agreement to keep something confidential enforceable?', a: 'It can be, in theory, but it is extremely difficult to prove and rarely relied upon in business — a signed NDA gives both sides clear, provable terms.' },
+      { q: 'Is a verbal agreement to keep something confidential enforceable?', a: 'It can be, in theory, but it is extremely difficult to prove and rarely relied upon in business, a signed NDA gives both sides clear, provable terms.' },
       { q: 'How long should an NDA last?', a: 'Most business NDAs specify two to five years of confidentiality after signing, though trade secrets can sometimes be protected indefinitely if they remain genuinely secret.' },
-      { q: 'Can I use the same NDA template for every situation?', a: 'A solid mutual NDA template covers most common cases, but high-stakes situations — M&A discussions, sensitive IP — are worth having reviewed by an attorney before signing.' },
+      { q: 'Can I use the same NDA template for every situation?', a: 'A solid mutual NDA template covers most common cases, but high-stakes situations, M&A discussions, sensitive IP, are worth having reviewed by an attorney before signing.' },
     ],
     ctaHeading: 'Get your NDA signed in minutes',
     ctaBody: 'Codec Document offers a free NDA template with instant e-signature and a full audit trail.',
@@ -318,13 +318,13 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/e-signatures-for-real-estate.jpg', alt: 'Real estate agent and client shaking hands outdoors after closing a deal', credit: 'Photo: Pexels' },
     readMinutes: 6,
     intro: [
-      'Real estate runs on paperwork more than almost any other industry — leases, offers, counteroffers, disclosures, addenda — and every one of those documents used to mean a fax machine, a scanner, or a client driving across town to sign in person. Agents who adopted e-signatures early did not do it to look modern; they did it because a slow signature is a lost deal in a market that moves fast.',
+      'Real estate runs on paperwork more than almost any other industry, leases, offers, counteroffers, disclosures, addenda, and every one of those documents used to mean a fax machine, a scanner, or a client driving across town to sign in person. Agents who adopted e-signatures early did not do it to look modern; they did it because a slow signature is a lost deal in a market that moves fast.',
     ],
     sections: [
       {
         heading: 'Why speed is the whole game in real estate',
         paragraphs: [
-          'A competitive rental or hot housing market often comes down to who can get an offer in front of a seller or landlord first, fully signed. An agent waiting on a client to print, sign, scan, and email a lease back can lose a unit to a competing tenant who signed electronically within minutes of receiving the link. The same dynamic applies to purchase offers in a multiple-offer situation — the buyer whose paperwork is complete and signed moves to the front of the line.',
+          'A competitive rental or hot housing market often comes down to who can get an offer in front of a seller or landlord first, fully signed. An agent waiting on a client to print, sign, scan, and email a lease back can lose a unit to a competing tenant who signed electronically within minutes of receiving the link. The same dynamic applies to purchase offers in a multiple-offer situation, the buyer whose paperwork is complete and signed moves to the front of the line.',
         ],
       },
       {
@@ -349,21 +349,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'What a good audit trail protects agents from',
         paragraphs: [
-          'Real estate disputes over "did they actually agree to that clause" are common enough that a verifiable audit trail is not just convenient — it is protective. A proper e-signature platform timestamps exactly when a lease was signed, from what device and IP address, and preserves a hash of the exact document version presented, which matters if a tenant later disputes a lease term or an addendum.',
-          'Agents using a free tool like Codec Document get that same audit trail without paying for enterprise real estate software — a small independent brokerage has access to the same signing infrastructure as a national franchise, at no cost for standard usage.',
+          'Real estate disputes over "did they actually agree to that clause" are common enough that a verifiable audit trail is not just convenient, it is protective. A proper e-signature platform timestamps exactly when a lease was signed, from what device and IP address, and preserves a hash of the exact document version presented, which matters if a tenant later disputes a lease term or an addendum.',
+          'Agents using a free tool like Codec Document get that same audit trail without paying for enterprise real estate software, a small independent brokerage has access to the same signing infrastructure as a national franchise, at no cost for standard usage.',
         ],
       },
       {
         heading: 'Making the switch without disrupting your workflow',
         paragraphs: [
-          'Most agents do not overhaul their whole process at once — they start with the highest-friction document (usually the lease itself), see how much faster it comes back signed, and expand from there. Within a month or two, printing a lease starts to feel like the unusual step rather than the default.',
+          'Most agents do not overhaul their whole process at once, they start with the highest-friction document (usually the lease itself), see how much faster it comes back signed, and expand from there. Within a month or two, printing a lease starts to feel like the unusual step rather than the default.',
         ],
       },
     ],
     faq: [
-      { q: 'Are electronically signed leases legally enforceable?', a: 'Yes, in all 50 states, under the ESIGN Act and each state\'s adoption of UETA — a lease signed electronically carries the same legal weight as one signed on paper.' },
-      { q: 'Can multiple parties sign the same lease electronically?', a: 'Yes — a good platform lets you add each signer (tenant, co-signer, landlord) and tracks each signature individually, so you can see exactly who has and has not signed yet.' },
-      { q: 'Does electronic signing work for out-of-state or international clients?', a: 'Yes, that is one of its biggest advantages — a signing link works from anywhere with an internet connection, with no need to be in the same city, state, or country.' },
+      { q: 'Are electronically signed leases legally enforceable?', a: 'Yes, in all 50 states, under the ESIGN Act and each state\'s adoption of UETA, a lease signed electronically carries the same legal weight as one signed on paper.' },
+      { q: 'Can multiple parties sign the same lease electronically?', a: 'Yes, a good platform lets you add each signer (tenant, co-signer, landlord) and tracks each signature individually, so you can see exactly who has and has not signed yet.' },
+      { q: 'Does electronic signing work for out-of-state or international clients?', a: 'Yes, that is one of its biggest advantages, a signing link works from anywhere with an internet connection, with no need to be in the same city, state, or country.' },
     ],
     ctaHeading: 'Get your next lease signed today',
     ctaBody: 'Codec Document offers free lease agreement templates with instant e-signature for any state.',
@@ -382,7 +382,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/e-signatures-for-banks-financial-institutions.jpg', alt: 'A hand pointing at financial charts on paper next to an open laptop', credit: 'Photo: AdobeStock' },
     readMinutes: 7,
     intro: [
-      'Financial institutions were, for a long time, some of the most cautious adopters of electronic signatures — understandably, given the regulatory scrutiny and fraud risk involved in every loan, account opening, and disclosure they process. That caution has not disappeared, but it has shifted: the question is no longer whether e-signatures are secure enough for banking, but which platform provides the audit trail regulators and auditors expect.',
+      'Financial institutions were, for a long time, some of the most cautious adopters of electronic signatures, understandably, given the regulatory scrutiny and fraud risk involved in every loan, account opening, and disclosure they process. That caution has not disappeared, but it has shifted: the question is no longer whether e-signatures are secure enough for banking, but which platform provides the audit trail regulators and auditors expect.',
     ],
     sections: [
       {
@@ -414,7 +414,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Speed matters in lending specifically',
         paragraphs: [
-          'Loan approval speed is a genuine competitive factor — a borrower who can complete every disclosure and closing document within a day of approval is far less likely to shop around or back out than one waiting a week for paperwork to move through the mail. Community banks and credit unions competing against larger institutions with more automated pipelines have used e-signature adoption specifically to close that speed gap.',
+          'Loan approval speed is a genuine competitive factor, a borrower who can complete every disclosure and closing document within a day of approval is far less likely to shop around or back out than one waiting a week for paperwork to move through the mail. Community banks and credit unions competing against larger institutions with more automated pipelines have used e-signature adoption specifically to close that speed gap.',
         ],
       },
       {
@@ -425,9 +425,9 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'Are e-signatures accepted for loan documents?', a: 'Yes — loan agreements, disclosures, and most account opening documents can be signed electronically under the ESIGN Act and UETA, and this is now standard practice across the lending industry.' },
+      { q: 'Are e-signatures accepted for loan documents?', a: 'Yes, loan agreements, disclosures, and most account opening documents can be signed electronically under the ESIGN Act and UETA, and this is now standard practice across the lending industry.' },
       { q: 'What makes an e-signature audit trail useful for compliance?', a: 'A strong audit trail records the signer\'s identity, timestamp, IP address, and a hash of the exact signed document, giving auditors and regulators concrete evidence rather than a signature image alone.' },
-      { q: 'Do e-signatures increase fraud risk in banking?', a: 'Generally the opposite — the identity verification and device/timestamp logging built into e-signature platforms make fraud both harder to commit and easier to trace than an unverified wet-ink signature.' },
+      { q: 'Do e-signatures increase fraud risk in banking?', a: 'Generally the opposite, the identity verification and device/timestamp logging built into e-signature platforms make fraud both harder to commit and easier to trace than an unverified wet-ink signature.' },
     ],
     ctaHeading: 'Bring compliant e-signatures to your institution',
     ctaBody: 'Codec Document is free to use and generates a full audit trail with every signed document.',
@@ -465,10 +465,10 @@ export const ARTICLES: Article[] = [
           'Both laws focus less on the technology used and more on a few core requirements.',
         ],
         bullets: [
-          'Intent to sign — the signer must clearly intend to be bound by the document',
-          'Consent to do business electronically — usually satisfied by the signer proceeding through the signing process',
+          'Intent to sign, the signer must clearly intend to be bound by the document',
+          'Consent to do business electronically, usually satisfied by the signer proceeding through the signing process',
           'A clear association between the signature and the specific document being signed',
-          'Retention — the signed record must be capable of being accurately reproduced later',
+          'Retention, the signed record must be capable of being accurately reproduced later',
         ],
       },
       {
@@ -487,14 +487,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The practical bottom line',
         paragraphs: [
-          'If you are signing a standard business contract — a lease, an NDA, a service agreement, a vendor contract — using a legitimate e-signature platform, the resulting signature is just as enforceable as if you had signed it with a pen in front of a witness. The legal question was settled in 2000; what has changed since is how good the supporting evidence (audit trails, identity verification) has gotten, which is what actually determines how a signature holds up if it is ever challenged.',
+          'If you are signing a standard business contract, a lease, an NDA, a service agreement, a vendor contract, using a legitimate e-signature platform, the resulting signature is just as enforceable as if you had signed it with a pen in front of a witness. The legal question was settled in 2000; what has changed since is how good the supporting evidence (audit trails, identity verification) has gotten, which is what actually determines how a signature holds up if it is ever challenged.',
         ],
       },
     ],
     faq: [
       { q: 'Does an e-signature need to be notarized to be valid?', a: 'No, for the vast majority of contracts. Notarization is a separate, additional requirement reserved for specific document types (like certain real estate deeds), not a general requirement for electronic signature validity.' },
-      { q: 'Is a clicked "I agree" checkbox a legally valid signature?', a: 'Yes, as long as intent to be bound is reasonably clear from the context — this is a well-established form of electronic signature, often called "click-wrap" agreement.' },
-      { q: 'Can someone dispute an e-signature after the fact?', a: 'Yes, the same way a wet-ink signature can be disputed — but a platform with a strong audit trail (identity data, timestamp, document hash) makes that dispute much harder to win.' },
+      { q: 'Is a clicked "I agree" checkbox a legally valid signature?', a: 'Yes, as long as intent to be bound is reasonably clear from the context, this is a well-established form of electronic signature, often called "click-wrap" agreement.' },
+      { q: 'Can someone dispute an e-signature after the fact?', a: 'Yes, the same way a wet-ink signature can be disputed, but a platform with a strong audit trail (identity data, timestamp, document hash) makes that dispute much harder to win.' },
     ],
     ctaHeading: 'Sign with a full legal audit trail',
     ctaBody: 'Codec Document is free and captures the identity, timestamp, and document hash evidence courts look for.',
@@ -519,7 +519,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The old assumption that no longer holds',
         paragraphs: [
-          'Early e-signature platforms targeted large enterprises with heavy compliance needs and priced accordingly — often $20 to $50 per user per month, with contracts and minimum seat counts. A five-person consulting firm signing thirty documents a month, or a freelance contractor signing five, does not need the same infrastructure as a 500-person sales org, and increasingly does not need to pay for it either.',
+          'Early e-signature platforms targeted large enterprises with heavy compliance needs and priced accordingly, often $20 to $50 per user per month, with contracts and minimum seat counts. A five-person consulting firm signing thirty documents a month, or a freelance contractor signing five, does not need the same infrastructure as a 500-person sales org, and increasingly does not need to pay for it either.',
         ],
       },
       {
@@ -528,7 +528,7 @@ export const ARTICLES: Article[] = [
           'Not every free plan is created equal. Before relying on one, it is worth checking for a few specific things.',
         ],
         bullets: [
-          'A genuine audit trail (timestamp, IP address, document hash) — not just a signature image',
+          'A genuine audit trail (timestamp, IP address, document hash), not just a signature image',
           'Support for multiple signers on the same document',
           'A reasonable number of free documents and signatures per period, not a one-time trial',
           'No forced watermarking or branding that makes your business look unprofessional to clients',
@@ -537,8 +537,8 @@ export const ARTICLES: Article[] = [
       {
         heading: 'What this actually looks like in practice',
         paragraphs: [
-          'Codec Document, for example, offers a free tier that includes a set number of free documents and free e-signatures every 72 hours, with the full identity/timestamp/hash audit trail included — not a stripped-down version. For a small business or solo operator sending contracts occasionally rather than by the hundreds, that free allotment often covers the entire month\'s signing volume without ever needing to upgrade.',
-          'The businesses that do eventually pay for a higher tier are usually the ones whose volume genuinely grew — which is a good problem to have, and a natural point to reassess, rather than paying for capacity from day one that a five-person team was never going to use.',
+          'Codec Document, for example, offers a free tier that includes a set number of free documents and free e-signatures every 72 hours, with the full identity/timestamp/hash audit trail included, not a stripped-down version. For a small business or solo operator sending contracts occasionally rather than by the hundreds, that free allotment often covers the entire month\'s signing volume without ever needing to upgrade.',
+          'The businesses that do eventually pay for a higher tier are usually the ones whose volume genuinely grew, which is a good problem to have, and a natural point to reassess, rather than paying for capacity from day one that a five-person team was never going to use.',
         ],
       },
       {
@@ -549,8 +549,8 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'Is free e-signature software actually secure?', a: 'It can be — security and audit-trail quality depend on the platform\'s design, not the price. Check specifically for identity logging, timestamps, and document hashing before assuming a paid tool is automatically more secure.' },
-      { q: 'Will my clients think less of my business for using a free tool?', a: 'No — clients see the signed document and signing experience, not your billing plan. A clean, professional signing flow looks the same to them whether you are on a free or paid tier.' },
+      { q: 'Is free e-signature software actually secure?', a: 'It can be, security and audit-trail quality depend on the platform\'s design, not the price. Check specifically for identity logging, timestamps, and document hashing before assuming a paid tool is automatically more secure.' },
+      { q: 'Will my clients think less of my business for using a free tool?', a: 'No, clients see the signed document and signing experience, not your billing plan. A clean, professional signing flow looks the same to them whether you are on a free or paid tier.' },
       { q: 'When does it make sense to upgrade from a free plan?', a: 'Generally once your document or signature volume consistently exceeds the free tier\'s allotment, or you need advanced features like bulk sending or team management.' },
     ],
     ctaHeading: 'Start signing for free today',
@@ -570,7 +570,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/hidden-cost-of-paper-contracts.jpg', alt: 'Two colleagues reviewing paper documents together in a meeting', credit: 'Photo: Kampus Production / Pexels' },
     readMinutes: 6,
     intro: [
-      'Nobody puts "printing and mailing contracts" on a budget line by itself, which is exactly why the cost stays invisible for so long. Once you actually add up paper, ink, courier fees, physical storage, and the staff time spent chasing signatures, the number is almost always higher than people expect — and it is a cost most businesses could eliminate entirely.',
+      'Nobody puts "printing and mailing contracts" on a budget line by itself, which is exactly why the cost stays invisible for so long. Once you actually add up paper, ink, courier fees, physical storage, and the staff time spent chasing signatures, the number is almost always higher than people expect, and it is a cost most businesses could eliminate entirely.',
     ],
     sections: [
       {
@@ -588,32 +588,32 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The bigger cost that never shows up on a receipt: time',
         paragraphs: [
-          'The real cost of paper contracts is rarely the paper — it is the hours spent printing, mailing, waiting, following up, re-sending a document that got lost or misplaced, and manually filing the signed copy somewhere it can be found again later. A staff member spending even thirty minutes a day on this across a year is a meaningful chunk of a full-time salary, spent entirely on a step that a signing link replaces in seconds.',
+          'The real cost of paper contracts is rarely the paper, it is the hours spent printing, mailing, waiting, following up, re-sending a document that got lost or misplaced, and manually filing the signed copy somewhere it can be found again later. A staff member spending even thirty minutes a day on this across a year is a meaningful chunk of a full-time salary, spent entirely on a step that a signing link replaces in seconds.',
         ],
       },
       {
         heading: 'Lost and misplaced documents are more common than people admit',
         paragraphs: [
-          'Every business with a filing cabinet has a story about a signed contract that could not be found when it actually mattered — during an audit, a dispute, or simply when a client asked for a copy. A digital signature platform stores every signed document with its full audit trail in one searchable place, which quietly eliminates an entire category of "where did we put that" problems.',
+          'Every business with a filing cabinet has a story about a signed contract that could not be found when it actually mattered, during an audit, a dispute, or simply when a client asked for a copy. A digital signature platform stores every signed document with its full audit trail in one searchable place, which quietly eliminates an entire category of "where did we put that" problems.',
         ],
       },
       {
         heading: 'The slower deal cycle is the cost that hurts revenue directly',
         paragraphs: [
-          'Every day a contract sits in transit or on someone\'s desk waiting for a signature is a day the deal is not closed, the tenant is not moved in, or the vendor relationship has not officially started. Businesses that switch to e-signatures consistently report that contracts come back signed in hours or a single day, compared to a week or more with mail-based signing — and a faster close reduces the number of prospects who cool off or reconsider before signing.',
+          'Every day a contract sits in transit or on someone\'s desk waiting for a signature is a day the deal is not closed, the tenant is not moved in, or the vendor relationship has not officially started. Businesses that switch to e-signatures consistently report that contracts come back signed in hours or a single day, compared to a week or more with mail-based signing, and a faster close reduces the number of prospects who cool off or reconsider before signing.',
         ],
       },
       {
         heading: 'What switching actually costs',
         paragraphs: [
-          'This is the part that makes the calculation easy: switching does not require an expensive platform. Codec Document offers free document creation and free e-signatures, meaning most small and mid-sized businesses can eliminate the majority of their paper-contract costs without adding a new software expense at all — the savings are close to pure, not a trade of one cost for another.',
+          'This is the part that makes the calculation easy: switching does not require an expensive platform. Codec Document offers free document creation and free e-signatures, meaning most small and mid-sized businesses can eliminate the majority of their paper-contract costs without adding a new software expense at all, the savings are close to pure, not a trade of one cost for another.',
         ],
       },
     ],
     faq: [
       { q: 'How much does a typical business actually spend on paper contracts per year?', a: 'It varies widely, but between printing, courier costs, storage, and staff time, businesses signing even a modest volume of contracts often spend hundreds to a few thousand dollars a year without realizing it, most of it in time rather than materials.' },
-      { q: 'Are digitally signed and stored documents accepted for audits and compliance?', a: 'Yes — a proper e-signature platform\'s audit trail and document retention typically meet or exceed what physical paper filing provides for most compliance purposes.' },
-      { q: 'Is switching to e-signatures difficult for a small team?', a: 'No — most small businesses switch document by document, starting with whichever contract is signed most often, and are fully comfortable with the new process within a week or two.' },
+      { q: 'Are digitally signed and stored documents accepted for audits and compliance?', a: 'Yes, a proper e-signature platform\'s audit trail and document retention typically meet or exceed what physical paper filing provides for most compliance purposes.' },
+      { q: 'Is switching to e-signatures difficult for a small team?', a: 'No, most small businesses switch document by document, starting with whichever contract is signed most often, and are fully comfortable with the new process within a week or two.' },
     ],
     ctaHeading: 'Stop paying the hidden cost of paper',
     ctaBody: 'Codec Document lets you create and sign documents online for free, no printing required.',
@@ -632,13 +632,13 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/how-to-send-document-for-signature-online.jpg', alt: 'Businessman signing a document on a tablet with a stylus', credit: 'Photo: Pexels' },
     readMinutes: 5,
     intro: [
-      'Sending a document for electronic signature is genuinely simple once you have done it once, but the first time is where most people hesitate — not because it is complicated, but because they are not sure what actually happens after they click send. Here is the full process from upload to signed copy.',
+      'Sending a document for electronic signature is genuinely simple once you have done it once, but the first time is where most people hesitate, not because it is complicated, but because they are not sure what actually happens after they click send. Here is the full process from upload to signed copy.',
     ],
     sections: [
       {
         heading: 'Step 1: Upload the document',
         paragraphs: [
-          'Start with the PDF (or Word document, which most platforms convert automatically) you need signed — a lease, a proposal, an NDA, anything. On Codec Document, this is a single upload step, and the platform reads the document so you can place signature fields on the correct pages in the next step.',
+          'Start with the PDF (or Word document, which most platforms convert automatically) you need signed, a lease, a proposal, an NDA, anything. On Codec Document, this is a single upload step, and the platform reads the document so you can place signature fields on the correct pages in the next step.',
         ],
       },
       {
@@ -650,13 +650,13 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Step 3: Place the signature field',
         paragraphs: [
-          'Drag the signature block onto the exact spot on the document where it should appear — most tools let you resize it and add a date field alongside it. This step takes seconds and only needs to be done once; the platform remembers the layout if you reuse the same template later.',
+          'Drag the signature block onto the exact spot on the document where it should appear, most tools let you resize it and add a date field alongside it. This step takes seconds and only needs to be done once; the platform remembers the layout if you reuse the same template later.',
         ],
       },
       {
         heading: 'Step 4: Send the signing link',
         paragraphs: [
-          'The signer receives an email (or a direct link you can send yourself via text or messaging app) that opens the document in their browser — no account or software installation required on their end. They review the document, draw or type their signature, and confirm.',
+          'The signer receives an email (or a direct link you can send yourself via text or messaging app) that opens the document in their browser, no account or software installation required on their end. They review the document, draw or type their signature, and confirm.',
         ],
         bullets: [
           'No app download or account creation required for the signer',
@@ -667,17 +667,17 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Step 5: Track status and download the signed copy',
         paragraphs: [
-          'Once signed, you get notified immediately, and the fully executed document — complete with the audit trail data (timestamp, IP address, document hash) — becomes available to download as a certified PDF. On Codec Document, every document you create or sign stays saved in your account under "My Documents," so you always have a copy ready to download later, even if you close the tab right after signing.',
+          'Once signed, you get notified immediately, and the fully executed document, complete with the audit trail data (timestamp, IP address, document hash), becomes available to download as a certified PDF. On Codec Document, every document you create or sign stays saved in your account under "My Documents," so you always have a copy ready to download later, even if you close the tab right after signing.',
         ],
       },
     ],
     faq: [
-      { q: 'Does the person I send it to need to create an account?', a: 'No — most e-signature platforms, including Codec Document, let the recipient sign directly from the link with no account required.' },
+      { q: 'Does the person I send it to need to create an account?', a: 'No, most e-signature platforms, including Codec Document, let the recipient sign directly from the link with no account required.' },
       { q: 'What happens if I need multiple people to sign the same document?', a: 'You add each signer separately when setting up the document, and the platform tracks each person\'s signature status individually, notifying you as each one completes it.' },
       { q: 'Where does the signed document go after everyone has signed?', a: 'It is saved automatically to your account (under "My Documents" on Codec Document) as a certified, downloadable PDF with the full audit trail attached.' },
     ],
     ctaHeading: 'Send your first document for signature',
-    ctaBody: 'Codec Document is free to use — upload, add a signer, and send in under a minute.',
+    ctaBody: 'Codec Document is free to use, upload, add a signer, and send in under a minute.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -693,7 +693,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/digital-signatures-for-hr-onboarding.jpg', alt: 'Diverse group of coworkers shaking hands and greeting each other in an office', credit: 'Photo: Pexels' },
     readMinutes: 6,
     intro: [
-      'A new hire\'s first real interaction with a company is almost always paperwork — an offer letter, an employment contract, a stack of policy acknowledgments. How smoothly that paperwork goes sets the tone before the person has even started their first day, which is exactly why HR teams have become some of the heaviest users of e-signature tools.',
+      'A new hire\'s first real interaction with a company is almost always paperwork, an offer letter, an employment contract, a stack of policy acknowledgments. How smoothly that paperwork goes sets the tone before the person has even started their first day, which is exactly why HR teams have become some of the heaviest users of e-signature tools.',
     ],
     sections: [
       {
@@ -713,33 +713,33 @@ export const ARTICLES: Article[] = [
         heading: 'Why speed matters more in hiring than almost anywhere else',
         paragraphs: [
           'A strong candidate with multiple offers often chooses based partly on which company makes the process feel most organized and respectful of their time. An offer letter that arrives as a signing link the candidate can review and sign from their phone within minutes reads very differently than one requiring a printer and scanner, especially for candidates who may not have easy access to either.',
-          'The gap in candidate experience compounds during a competitive hiring market — a slow, paper-heavy offer process can genuinely cost a company its top choice candidate to a competitor who made accepting the offer effortless.',
+          'The gap in candidate experience compounds during a competitive hiring market, a slow, paper-heavy offer process can genuinely cost a company its top choice candidate to a competitor who made accepting the offer effortless.',
         ],
       },
       {
         heading: 'Remote and distributed teams made this a necessity, not a preference',
         paragraphs: [
-          'For a company hiring across multiple states or countries, requiring a new hire to print, sign, and mail employment documents is not just slow — it is often impractical, especially with fast start dates. E-signature tools solved a real operational problem for remote-first and distributed companies, not just a convenience for local hires.',
+          'For a company hiring across multiple states or countries, requiring a new hire to print, sign, and mail employment documents is not just slow, it is often impractical, especially with fast start dates. E-signature tools solved a real operational problem for remote-first and distributed companies, not just a convenience for local hires.',
         ],
       },
       {
         heading: 'Record-keeping benefits HR does not always expect',
         paragraphs: [
-          'Beyond speed, a signed document\'s audit trail becomes useful during disputes over employment terms, policy violations, or compliance audits — HR can point to an exact timestamp and confirmation that a specific employee acknowledged a specific policy, rather than relying on a filed paper copy that may or may not be easy to locate months or years later.',
+          'Beyond speed, a signed document\'s audit trail becomes useful during disputes over employment terms, policy violations, or compliance audits: HR can point to an exact timestamp and confirmation that a specific employee acknowledged a specific policy, rather than relying on a filed paper copy that may or may not be easy to locate months or years later.',
           'Every document signed through Codec Document, for instance, stays saved and searchable in the account that created it, which matters when HR needs to quickly produce a signed policy acknowledgment from two years ago rather than searching through old filing boxes.',
         ],
       },
       {
         heading: 'Getting started without a big HR software migration',
         paragraphs: [
-          'HR teams do not need to wait for a full HRIS overhaul to start using e-signatures — most begin simply by sending the next offer letter or policy update through a free e-signature tool instead of email attachments and physical signatures, and expand from there once the team sees how much smoother onboarding feels.',
+          'HR teams do not need to wait for a full HRIS overhaul to start using e-signatures, most begin simply by sending the next offer letter or policy update through a free e-signature tool instead of email attachments and physical signatures, and expand from there once the team sees how much smoother onboarding feels.',
         ],
       },
     ],
     faq: [
-      { q: 'Are electronically signed employment contracts legally valid?', a: 'Yes — employment contracts, offer letters, and policy acknowledgments are all covered under the ESIGN Act and UETA, the same as any other business contract.' },
-      { q: 'Can HR track which policies each employee has acknowledged?', a: 'Yes — a good e-signature platform keeps a record of every document each employee has signed, including the specific version and timestamp, which is useful for compliance and dispute resolution.' },
-      { q: 'Does this work for hiring across multiple states?', a: 'Yes — since e-signatures are valid across all US states under UETA (and New York\'s equivalent statute), a distributed hiring process works the same way regardless of where the new hire is located.' },
+      { q: 'Are electronically signed employment contracts legally valid?', a: 'Yes, employment contracts, offer letters, and policy acknowledgments are all covered under the ESIGN Act and UETA, the same as any other business contract.' },
+      { q: 'Can HR track which policies each employee has acknowledged?', a: 'Yes, a good e-signature platform keeps a record of every document each employee has signed, including the specific version and timestamp, which is useful for compliance and dispute resolution.' },
+      { q: 'Does this work for hiring across multiple states?', a: 'Yes, since e-signatures are valid across all US states under UETA (and New York\'s equivalent statute), a distributed hiring process works the same way regardless of where the new hire is located.' },
     ],
     ctaHeading: 'Simplify your next hire\'s paperwork',
     ctaBody: 'Codec Document is free for creating and signing offer letters, contracts, and policy documents.',
@@ -758,7 +758,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/firma-digital-empresas-2026.jpg', alt: 'Siluetas de empresarios dándose la mano en una oficina moderna al atardecer', credit: 'Foto: AdobeStock' },
     readMinutes: 7,
     intro: [
-      'Hace cinco años, pedirle a un cliente que firmara electrónicamente era una cortesía, casi una novedad. En 2026 es prácticamente lo contrario: una empresa que todavía exige firma en papel para cerrar un contrato transmite, sin querer, que va un paso atrás. Este cambio no ocurrió porque la firma electrónica se volviera "más legal" — en países como Colombia es válida desde 1999 — sino porque el volumen, la velocidad y la geografía de los negocios cambiaron más rápido que los procesos internos de muchas empresas.',
+      'Hace cinco años, pedirle a un cliente que firmara electrónicamente era una cortesía, casi una novedad. En 2026 es prácticamente lo contrario: una empresa que todavía exige firma en papel para cerrar un contrato transmite, sin querer, que va un paso atrás. Este cambio no ocurrió porque la firma electrónica se volviera "más legal", en países como Colombia es válida desde 1999, sino porque el volumen, la velocidad y la geografía de los negocios cambiaron más rápido que los procesos internos de muchas empresas.',
       'Este artículo no busca convencerte de que la firma electrónica es legítima; eso ya está resuelto hace más de dos décadas en la mayoría de los países de la región. Busca explicar por qué las empresas que tratan la firma como un paso automático y resuelto le están sacando ventaja silenciosa a las que todavía imprimen, escanean y persiguen una firma húmeda.',
     ],
     sections: [
@@ -780,13 +780,13 @@ export const ARTICLES: Article[] = [
         heading: 'El cumplimiento normativo ya no es opcional',
         paragraphs: [
           'Una firma en papel prueba, por sí sola, casi nada: no hay marca de tiempo, no hay verificación de identidad, no hay registro de si el documento fue alterado después de firmarse. Una plataforma de firma electrónica seria captura un rastro de auditoría completo: quién firmó, desde qué dirección IP, en qué momento exacto, y un hash criptográfico del contenido exacto del documento en el momento de la firma.',
-          'Para sectores regulados — préstamos, inmobiliario, servicios financieros — ese rastro de auditoría pasó de ser un extra agradable a algo que auditores y asesores legales esperan ver de inmediato.',
+          'Para sectores regulados, préstamos, inmobiliario, servicios financieros, ese rastro de auditoría pasó de ser un extra agradable a algo que auditores y asesores legales esperan ver de inmediato.',
         ],
       },
       {
         heading: 'Qué es genuinamente distinto en 2026',
         paragraphs: [
-          'Tres cosas convergieron este año en particular. Primero, la redacción de documentos asistida por IA multiplicó el volumen de contratos, cotizaciones y acuerdos que produce cada empresa. Segundo, los clientes ahora esperan un enlace de firma el mismo día en que reciben una propuesta — una demora se lee como desorganización, no como diligencia. Tercero, las plataformas de firma electrónica gratuitas (Codec Document entre ellas) eliminaron la vieja excusa de que una herramienta "seria" solo está al alcance de grandes empresas. Una pyme o un freelancer puede hoy enviar una solicitud de firma completamente válida y auditable al mismo costo que un timbre postal — muchas veces gratis, usando una plataforma como Codec Document, que incluye un plan gratuito tanto para crear documentos como para firmarlos electrónicamente.',
+          'Tres cosas convergieron este año en particular. Primero, la redacción de documentos asistida por IA multiplicó el volumen de contratos, cotizaciones y acuerdos que produce cada empresa. Segundo, los clientes ahora esperan un enlace de firma el mismo día en que reciben una propuesta, una demora se lee como desorganización, no como diligencia. Tercero, las plataformas de firma electrónica gratuitas (Codec Document entre ellas) eliminaron la vieja excusa de que una herramienta "seria" solo está al alcance de grandes empresas. Una pyme o un freelancer puede hoy enviar una solicitud de firma completamente válida y auditable al mismo costo que un timbre postal, muchas veces gratis, usando una plataforma como Codec Document, que incluye un plan gratuito tanto para crear documentos como para firmarlos electrónicamente.',
         ],
         bullets: [
           'La redacción asistida por IA multiplicó el volumen de documentos en casi todas las industrias',
@@ -798,17 +798,17 @@ export const ARTICLES: Article[] = [
       {
         heading: 'La conclusión práctica',
         paragraphs: [
-          'Nada de esto requiere una implementación corporativa ni un proceso de compras largo. La mayoría de las empresas que hacen el cambio lo hacen documento por documento — el próximo contrato de arrendamiento, el próximo NDA, el próximo acuerdo con un proveedor — y simplemente no vuelven a imprimir una vez que ven la velocidad con la que regresa firmado.',
+          'Nada de esto requiere una implementación corporativa ni un proceso de compras largo. La mayoría de las empresas que hacen el cambio lo hacen documento por documento, el próximo contrato de arrendamiento, el próximo NDA, el próximo acuerdo con un proveedor, y simplemente no vuelven a imprimir una vez que ven la velocidad con la que regresa firmado.',
         ],
       },
     ],
     faq: [
       { q: '¿La firma electrónica es legalmente válida en Latinoamérica?', a: 'Sí, en la gran mayoría de países. Colombia la reconoce desde la Ley 527 de 1999, y países como México, Chile, Perú y Argentina tienen marcos similares basados en la Ley Modelo de la CNUDMI sobre Firmas Electrónicas.' },
-      { q: '¿Necesito un software especial para enviar un documento a firmar?', a: 'No. Plataformas como Codec Document permiten subir un PDF, marcar dónde debe firmar cada persona y enviar un enlace — sin instalar nada, y con un plan gratuito que cubre las necesidades habituales de la mayoría de las pymes.' },
-      { q: '¿Qué documentos no se pueden firmar electrónicamente?', a: 'Existe una lista corta de excepciones según cada país — testamentos, ciertos actos notariales y algunos documentos de familia suelen requerir todavía firma en papel o ante notario.' },
+      { q: '¿Necesito un software especial para enviar un documento a firmar?', a: 'No. Plataformas como Codec Document permiten subir un PDF, marcar dónde debe firmar cada persona y enviar un enlace, sin instalar nada, y con un plan gratuito que cubre las necesidades habituales de la mayoría de las pymes.' },
+      { q: '¿Qué documentos no se pueden firmar electrónicamente?', a: 'Existe una lista corta de excepciones según cada país, testamentos, ciertos actos notariales y algunos documentos de familia suelen requerir todavía firma en papel o ante notario.' },
     ],
     ctaHeading: 'Empieza a firmar documentos en línea hoy',
-    ctaBody: 'Codec Document es gratis para crear y firmar documentos legales — sin necesidad de tarjeta de crédito.',
+    ctaBody: 'Codec Document es gratis para crear y firmar documentos legales, sin necesidad de tarjeta de crédito.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },
@@ -837,14 +837,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Firma digital: una tecnología criptográfica específica',
         paragraphs: [
-          'Una firma digital es algo más estrecho y técnico: utiliza infraestructura de clave pública (PKI) — un par de claves matemáticamente vinculadas, generalmente emitidas por una entidad certificadora — para vincular criptográficamente una firma a un documento de manera que cualquier alteración posterior sea detectable. Si se cambia un solo carácter del documento después de firmarlo, la firma digital se invalida.',
+          'Una firma digital es algo más estrecho y técnico: utiliza infraestructura de clave pública (PKI), un par de claves matemáticamente vinculadas, generalmente emitidas por una entidad certificadora, para vincular criptográficamente una firma a un documento de manera que cualquier alteración posterior sea detectable. Si se cambia un solo carácter del documento después de firmarlo, la firma digital se invalida.',
           'En otras palabras, la firma digital es una forma específica (y bastante robusta) de implementar una firma electrónica. Toda firma digital es un tipo de firma electrónica; no toda firma electrónica usa criptografía de firma digital.',
         ],
       },
       {
         heading: 'De dónde viene realmente la confusión',
         paragraphs: [
-          'El marketing es el principal culpable — muchas plataformas usan "firma digital" como término genérico para cualquier cosa que hagas en una pantalla, sin importar la tecnología subyacente. Esto no es incorrecto en una conversación casual, pero difumina una distinción que importa en sectores regulados, donde "firma digital" a veces implica específicamente firma criptográfica basada en certificados, requerida por su nombre exacto en trámites de cumplimiento.',
+          'El marketing es el principal culpable, muchas plataformas usan "firma digital" como término genérico para cualquier cosa que hagas en una pantalla, sin importar la tecnología subyacente. Esto no es incorrecto en una conversación casual, pero difumina una distinción que importa en sectores regulados, donde "firma digital" a veces implica específicamente firma criptográfica basada en certificados, requerida por su nombre exacto en trámites de cumplimiento.',
         ],
         bullets: [
           'Firma electrónica = categoría legal amplia (intención + registro)',
@@ -856,15 +856,15 @@ export const ARTICLES: Article[] = [
       {
         heading: '¿Cuál necesitas realmente?',
         paragraphs: [
-          'Para la gran mayoría del uso empresarial — contratos con clientes, NDA, contratos de arrendamiento, acuerdos de servicio, papeleo de recursos humanos — una plataforma de firma electrónica bien construida es exactamente lo que las leyes de la región (como la Ley 527 de 1999 en Colombia) contemplan, y los tribunales lo han respaldado repetidamente. Codec Document, por ejemplo, genera un rastro de auditoría completo (marca de tiempo, dirección IP, hash SHA-256 del documento firmado) con cada firma, que es la evidencia práctica que realmente importa si una firma llega a ser cuestionada — de forma gratuita, sin necesidad de configurar un certificado PKI aparte.',
+          'Para la gran mayoría del uso empresarial, contratos con clientes, NDA, contratos de arrendamiento, acuerdos de servicio, papeleo de recursos humanos, una plataforma de firma electrónica bien construida es exactamente lo que las leyes de la región (como la Ley 527 de 1999 en Colombia) contemplan, y los tribunales lo han respaldado repetidamente. Codec Document, por ejemplo, genera un rastro de auditoría completo (marca de tiempo, dirección IP, hash SHA-256 del documento firmado) con cada firma, que es la evidencia práctica que realmente importa si una firma llega a ser cuestionada, de forma gratuita, sin necesidad de configurar un certificado PKI aparte.',
           'La firma digital basada en certificados se vuelve relevante principalmente cuando un regulador, entidad gubernamental o estándar de la industria exige explícitamente ese método criptográfico exacto por su nombre. Si nadie te lo ha pedido específicamente, casi seguro no lo necesitas.',
         ],
       },
     ],
     faq: [
-      { q: '¿Un nombre escrito a mano alzada cuenta como firma electrónica?', a: 'Sí, siempre que se adjunte con una intención clara de firmar el documento — la mayoría de las plataformas también registran evidencia de respaldo como la dirección IP y la marca de tiempo para reforzar ese registro.' },
-      { q: '¿Una firma digital es legalmente más válida que una electrónica?', a: 'No inherentemente — ambas son igualmente exigibles bajo las leyes de firma electrónica de la región. La firma digital agrega detección criptográfica de alteraciones, útil en contextos específicos de alta seguridad, pero no hace que un acuerdo sea "más vinculante".' },
-      { q: '¿Codec Document usa firma digital o firma electrónica?', a: 'Codec Document usa firma electrónica con un rastro de auditoría completo (datos de identidad, IP y marca de tiempo) — la misma categoría legal que cubre la gran mayoría de los contratos empresariales cotidianos.' },
+      { q: '¿Un nombre escrito a mano alzada cuenta como firma electrónica?', a: 'Sí, siempre que se adjunte con una intención clara de firmar el documento, la mayoría de las plataformas también registran evidencia de respaldo como la dirección IP y la marca de tiempo para reforzar ese registro.' },
+      { q: '¿Una firma digital es legalmente más válida que una electrónica?', a: 'No inherentemente, ambas son igualmente exigibles bajo las leyes de firma electrónica de la región. La firma digital agrega detección criptográfica de alteraciones, útil en contextos específicos de alta seguridad, pero no hace que un acuerdo sea "más vinculante".' },
+      { q: '¿Codec Document usa firma digital o firma electrónica?', a: 'Codec Document usa firma electrónica con un rastro de auditoría completo (datos de identidad, IP y marca de tiempo), la misma categoría legal que cubre la gran mayoría de los contratos empresariales cotidianos.' },
     ],
     ctaHeading: 'Firma tu próximo documento correctamente',
     ctaBody: 'Codec Document es una plataforma gratuita de firma electrónica con rastro de auditoría completo en cada firma.',
@@ -883,27 +883,27 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/que-es-un-nda-acuerdo-confidencialidad.jpg', alt: 'Primer plano de una mano firmando un documento con una pluma fuente', credit: 'Foto: Pixabay / Pexels' },
     readMinutes: 6,
     intro: [
-      'Un NDA — acuerdo de confidencialidad, o "acuerdo de no divulgación" — es uno de los documentos empresariales que más se firma, y también uno de los más malentendidos. Casi todo el mundo sabe que existen sin haber leído nunca uno con atención, lo cual se convierte en un problema la primera vez que realmente necesitan hacerlo valer.',
+      'Un NDA, acuerdo de confidencialidad, o "acuerdo de no divulgación", es uno de los documentos empresariales que más se firma, y también uno de los más malentendidos. Casi todo el mundo sabe que existen sin haber leído nunca uno con atención, lo cual se convierte en un problema la primera vez que realmente necesitan hacerlo valer.',
     ],
     sections: [
       {
         heading: 'Qué hace realmente un NDA',
         paragraphs: [
-          'En esencia, un NDA es un contrato en el que una o ambas partes se comprometen a no divulgar información específica compartida durante una relación comercial — secretos industriales, listas de clientes, información financiera, planes de producto, código fuente, o cualquier otra cosa que la parte que revela considere confidencial. No impide usar información pública, ni impide el desarrollo independiente de ideas similares; solo restringe compartir la información confidencial específica cubierta por el acuerdo.',
-          'El valor de un NDA está menos en ganar una demanda después y más en establecer expectativas claras desde el inicio. La mayoría de las disputas nunca llegan a un tribunal — la sola existencia de un NDA firmado suele bastar para mantener honestas las conversaciones sensibles.',
+          'En esencia, un NDA es un contrato en el que una o ambas partes se comprometen a no divulgar información específica compartida durante una relación comercial, secretos industriales, listas de clientes, información financiera, planes de producto, código fuente, o cualquier otra cosa que la parte que revela considere confidencial. No impide usar información pública, ni impide el desarrollo independiente de ideas similares; solo restringe compartir la información confidencial específica cubierta por el acuerdo.',
+          'El valor de un NDA está menos en ganar una demanda después y más en establecer expectativas claras desde el inicio. La mayoría de las disputas nunca llegan a un tribunal, la sola existencia de un NDA firmado suele bastar para mantener honestas las conversaciones sensibles.',
         ],
       },
       {
         heading: 'NDA mutuo vs unilateral',
         paragraphs: [
-          'Un NDA unilateral protege la información de una sola parte — común cuando una empresa comparte detalles confidenciales con un contratista, proveedor o candidato que no tiene nada comparable que compartir a cambio. Un NDA mutuo protege a ambas partes, algo estándar cuando dos empresas exploran una alianza, fusión o proyecto conjunto y ambas expondrán información sensible a la otra.',
-          'Usar un NDA unilateral cuando la relación es genuinamente mutua es un error común — deja desprotegida la información confidencial de una de las partes y puede generar fricción durante la negociación cuando la otra parte lo nota.',
+          'Un NDA unilateral protege la información de una sola parte, común cuando una empresa comparte detalles confidenciales con un contratista, proveedor o candidato que no tiene nada comparable que compartir a cambio. Un NDA mutuo protege a ambas partes, algo estándar cuando dos empresas exploran una alianza, fusión o proyecto conjunto y ambas expondrán información sensible a la otra.',
+          'Usar un NDA unilateral cuando la relación es genuinamente mutua es un error común, deja desprotegida la información confidencial de una de las partes y puede generar fricción durante la negociación cuando la otra parte lo nota.',
         ],
       },
       {
         heading: 'Cuándo realmente necesitas uno',
         paragraphs: [
-          'No toda conversación necesita un NDA firmado — ese instinto ralentiza relaciones que no lo requieren. Vale la pena pedir la firma cuando estás compartiendo algo que genuinamente te perjudicaría si un competidor lo viera: detalles de un producto no lanzado, estados financieros, código fuente, precios de proveedores o una lista de clientes.',
+          'No toda conversación necesita un NDA firmado, ese instinto ralentiza relaciones que no lo requieren. Vale la pena pedir la firma cuando estás compartiendo algo que genuinamente te perjudicaría si un competidor lo viera: detalles de un producto no lanzado, estados financieros, código fuente, precios de proveedores o una lista de clientes.',
         ],
         bullets: [
           'Contratar a un freelancer o contratista con acceso a sistemas internos o código',
@@ -915,21 +915,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Errores comunes que debilitan un NDA',
         paragraphs: [
-          'El error más común es la vaguedad — definir "información confidencial" de forma tan amplia ("todo lo que se hable") que un tribunal lo considere inexigible, o tan estrecha que deje fuera el material realmente sensible. Un segundo error frecuente es omitir un plazo claro; la mayoría de los NDA especifican confidencialidad de dos a cinco años, y uno sin fecha de finalización a veces es visto con escepticismo por los tribunales.',
-          'El otro fallo silencioso es no conseguir la firma antes de que ocurra la conversación sensible — un NDA enviado después de que la información ya se compartió no protege nada de forma retroactiva.',
+          'El error más común es la vaguedad, definir "información confidencial" de forma tan amplia ("todo lo que se hable") que un tribunal lo considere inexigible, o tan estrecha que deje fuera el material realmente sensible. Un segundo error frecuente es omitir un plazo claro; la mayoría de los NDA especifican confidencialidad de dos a cinco años, y uno sin fecha de finalización a veces es visto con escepticismo por los tribunales.',
+          'El otro fallo silencioso es no conseguir la firma antes de que ocurra la conversación sensible, un NDA enviado después de que la información ya se compartió no protege nada de forma retroactiva.',
         ],
       },
       {
         heading: 'Conseguir la firma sin frenar el proceso',
         paragraphs: [
-          'Como los NDA suelen necesitarse rápido — justo antes de una conversación sensible, no con días de anticipación — son uno de los casos donde las herramientas de firma electrónica demuestran su valor. Codec Document incluye una plantilla gratuita de NDA que puedes personalizar y enviar a firmar en minutos, con el mismo rastro de auditoría legalmente válido que cualquier otro documento firmado.',
+          'Como los NDA suelen necesitarse rápido, justo antes de una conversación sensible, no con días de anticipación, son uno de los casos donde las herramientas de firma electrónica demuestran su valor. Codec Document incluye una plantilla gratuita de NDA que puedes personalizar y enviar a firmar en minutos, con el mismo rastro de auditoría legalmente válido que cualquier otro documento firmado.',
         ],
       },
     ],
     faq: [
-      { q: '¿Un acuerdo verbal de confidencialidad es exigible?', a: 'Puede serlo en teoría, pero es extremadamente difícil de probar y rara vez se usa en el mundo empresarial — un NDA firmado da a ambas partes términos claros y demostrables.' },
+      { q: '¿Un acuerdo verbal de confidencialidad es exigible?', a: 'Puede serlo en teoría, pero es extremadamente difícil de probar y rara vez se usa en el mundo empresarial, un NDA firmado da a ambas partes términos claros y demostrables.' },
       { q: '¿Cuánto tiempo debería durar un NDA?', a: 'La mayoría de los NDA empresariales especifican de dos a cinco años de confidencialidad después de la firma, aunque los secretos industriales a veces pueden protegerse indefinidamente si siguen siendo genuinamente secretos.' },
-      { q: '¿Puedo usar la misma plantilla de NDA para cualquier situación?', a: 'Una buena plantilla de NDA mutuo cubre la mayoría de los casos comunes, pero situaciones de alto riesgo — fusiones, propiedad intelectual sensible — conviene que un abogado las revise antes de firmar.' },
+      { q: '¿Puedo usar la misma plantilla de NDA para cualquier situación?', a: 'Una buena plantilla de NDA mutuo cubre la mayoría de los casos comunes, pero situaciones de alto riesgo, fusiones, propiedad intelectual sensible, conviene que un abogado las revise antes de firmar.' },
     ],
     ctaHeading: 'Firma tu NDA en minutos',
     ctaBody: 'Codec Document ofrece una plantilla gratuita de NDA con firma electrónica instantánea y rastro de auditoría completo.',
@@ -948,7 +948,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/firma-electronica-para-inmobiliarias.jpg', alt: 'Agente inmobiliario y cliente dándose la mano al aire libre tras cerrar un trato', credit: 'Foto: Pexels' },
     readMinutes: 6,
     intro: [
-      'El sector inmobiliario depende del papeleo más que casi cualquier otra industria — contratos de arrendamiento, promesas de compraventa, contraofertas, anexos — y cada uno de esos documentos antes significaba un fax, un escáner o un cliente atravesando la ciudad para firmar en persona. Las inmobiliarias que adoptaron la firma electrónica temprano no lo hicieron por moda; lo hicieron porque una firma lenta es un negocio perdido en un mercado que se mueve rápido.',
+      'El sector inmobiliario depende del papeleo más que casi cualquier otra industria, contratos de arrendamiento, promesas de compraventa, contraofertas, anexos, y cada uno de esos documentos antes significaba un fax, un escáner o un cliente atravesando la ciudad para firmar en persona. Las inmobiliarias que adoptaron la firma electrónica temprano no lo hicieron por moda; lo hicieron porque una firma lenta es un negocio perdido en un mercado que se mueve rápido.',
     ],
     sections: [
       {
@@ -979,21 +979,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Lo que protege un buen rastro de auditoría',
         paragraphs: [
-          'Las disputas inmobiliarias sobre "si realmente aceptaron esa cláusula" son lo bastante comunes como para que un rastro de auditoría verificable no sea solo conveniente, sino protector. Una plataforma de firma electrónica seria marca exactamente cuándo se firmó un contrato, desde qué dispositivo y dirección IP, y conserva un hash de la versión exacta del documento presentada — algo que importa mucho si un inquilino después disputa una cláusula.',
-          'Los agentes que usan una herramienta gratuita como Codec Document obtienen ese mismo rastro de auditoría sin pagar por software inmobiliario empresarial — una inmobiliaria independiente pequeña tiene acceso a la misma infraestructura de firma que una franquicia nacional, sin costo por el uso habitual.',
+          'Las disputas inmobiliarias sobre "si realmente aceptaron esa cláusula" son lo bastante comunes como para que un rastro de auditoría verificable no sea solo conveniente, sino protector. Una plataforma de firma electrónica seria marca exactamente cuándo se firmó un contrato, desde qué dispositivo y dirección IP, y conserva un hash de la versión exacta del documento presentada, algo que importa mucho si un inquilino después disputa una cláusula.',
+          'Los agentes que usan una herramienta gratuita como Codec Document obtienen ese mismo rastro de auditoría sin pagar por software inmobiliario empresarial, una inmobiliaria independiente pequeña tiene acceso a la misma infraestructura de firma que una franquicia nacional, sin costo por el uso habitual.',
         ],
       },
       {
         heading: 'Hacer el cambio sin interrumpir el flujo de trabajo',
         paragraphs: [
-          'La mayoría de los agentes no reinventan todo su proceso de golpe — empiezan con el documento de mayor fricción (usualmente el contrato de arrendamiento mismo), ven qué tan rápido regresa firmado y expanden desde ahí. En un mes o dos, imprimir un contrato empieza a sentirse como el paso inusual, no el predeterminado.',
+          'La mayoría de los agentes no reinventan todo su proceso de golpe, empiezan con el documento de mayor fricción (usualmente el contrato de arrendamiento mismo), ven qué tan rápido regresa firmado y expanden desde ahí. En un mes o dos, imprimir un contrato empieza a sentirse como el paso inusual, no el predeterminado.',
         ],
       },
     ],
     faq: [
-      { q: '¿Los contratos de arrendamiento firmados electrónicamente son legalmente exigibles?', a: 'Sí, en la gran mayoría de países de la región, bajo marcos como la Ley 527 de 1999 en Colombia — un contrato firmado electrónicamente tiene el mismo peso legal que uno firmado en papel.' },
-      { q: '¿Pueden firmar varias partes el mismo contrato electrónicamente?', a: 'Sí — una buena plataforma permite agregar a cada firmante (inquilino, codeudor, arrendador) y rastrea cada firma individualmente, para que puedas ver exactamente quién ha firmado y quién no.' },
-      { q: '¿Funciona la firma electrónica con clientes de otra ciudad o país?', a: 'Sí, esa es una de sus mayores ventajas — un enlace de firma funciona desde cualquier lugar con conexión a internet, sin necesidad de estar en la misma ciudad, estado o país.' },
+      { q: '¿Los contratos de arrendamiento firmados electrónicamente son legalmente exigibles?', a: 'Sí, en la gran mayoría de países de la región, bajo marcos como la Ley 527 de 1999 en Colombia, un contrato firmado electrónicamente tiene el mismo peso legal que uno firmado en papel.' },
+      { q: '¿Pueden firmar varias partes el mismo contrato electrónicamente?', a: 'Sí, una buena plataforma permite agregar a cada firmante (inquilino, codeudor, arrendador) y rastrea cada firma individualmente, para que puedas ver exactamente quién ha firmado y quién no.' },
+      { q: '¿Funciona la firma electrónica con clientes de otra ciudad o país?', a: 'Sí, esa es una de sus mayores ventajas, un enlace de firma funciona desde cualquier lugar con conexión a internet, sin necesidad de estar en la misma ciudad, estado o país.' },
     ],
     ctaHeading: 'Firma tu próximo contrato hoy mismo',
     ctaBody: 'Codec Document ofrece plantillas gratuitas de arrendamiento con firma electrónica instantánea.',
@@ -1012,7 +1012,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/firma-electronica-para-bancos.jpg', alt: 'Una mano señalando gráficos financieros en papel junto a una laptop abierta', credit: 'Foto: AdobeStock' },
     readMinutes: 7,
     intro: [
-      'Las entidades financieras fueron, durante mucho tiempo, de las más cautelosas al adoptar la firma electrónica — con razón, dado el escrutinio regulatorio y el riesgo de fraude que rodea cada crédito, apertura de cuenta y divulgación que procesan. Esa cautela no ha desaparecido, pero ha cambiado de forma: la pregunta ya no es si la firma electrónica es suficientemente segura para el sector financiero, sino qué plataforma ofrece el rastro de auditoría que reguladores y auditores esperan ver.',
+      'Las entidades financieras fueron, durante mucho tiempo, de las más cautelosas al adoptar la firma electrónica, con razón, dado el escrutinio regulatorio y el riesgo de fraude que rodea cada crédito, apertura de cuenta y divulgación que procesan. Esa cautela no ha desaparecido, pero ha cambiado de forma: la pregunta ya no es si la firma electrónica es suficientemente segura para el sector financiero, sino qué plataforma ofrece el rastro de auditoría que reguladores y auditores esperan ver.',
     ],
     sections: [
       {
@@ -1044,7 +1044,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'La velocidad importa especialmente en créditos',
         paragraphs: [
-          'La rapidez de aprobación de un crédito es un factor competitivo real — un solicitante que puede completar toda la documentación de cierre en un día tras la aprobación tiene mucha menos probabilidad de buscar otra opción que uno que espera una semana a que el papeleo se mueva por correo. Bancos y cooperativas más pequeñas compitiendo contra entidades más grandes con procesos más automatizados han usado la firma electrónica específicamente para cerrar esa brecha de velocidad.',
+          'La rapidez de aprobación de un crédito es un factor competitivo real, un solicitante que puede completar toda la documentación de cierre en un día tras la aprobación tiene mucha menos probabilidad de buscar otra opción que uno que espera una semana a que el papeleo se mueva por correo. Bancos y cooperativas más pequeñas compitiendo contra entidades más grandes con procesos más automatizados han usado la firma electrónica específicamente para cerrar esa brecha de velocidad.',
         ],
       },
       {
@@ -1055,9 +1055,9 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: '¿Se aceptan firmas electrónicas para documentos de crédito?', a: 'Sí — los contratos de crédito, divulgaciones y la mayoría de los documentos de apertura de cuenta pueden firmarse electrónicamente bajo los marcos legales de la región, y esto ya es práctica estándar en el sector financiero.' },
+      { q: '¿Se aceptan firmas electrónicas para documentos de crédito?', a: 'Sí, los contratos de crédito, divulgaciones y la mayoría de los documentos de apertura de cuenta pueden firmarse electrónicamente bajo los marcos legales de la región, y esto ya es práctica estándar en el sector financiero.' },
       { q: '¿Qué hace útil un rastro de auditoría de firma electrónica para el cumplimiento?', a: 'Un buen rastro de auditoría registra la identidad del firmante, la marca de tiempo, la dirección IP y un hash del documento exacto firmado, dando a auditores y reguladores evidencia concreta en lugar de solo una imagen de firma.' },
-      { q: '¿La firma electrónica aumenta el riesgo de fraude en el sector bancario?', a: 'Generalmente ocurre lo contrario — la verificación de identidad y el registro de dispositivo y marca de tiempo integrados en las plataformas de firma electrónica hacen que el fraude sea más difícil de cometer y más fácil de rastrear que una firma húmeda no verificada.' },
+      { q: '¿La firma electrónica aumenta el riesgo de fraude en el sector bancario?', a: 'Generalmente ocurre lo contrario, la verificación de identidad y el registro de dispositivo y marca de tiempo integrados en las plataformas de firma electrónica hacen que el fraude sea más difícil de cometer y más fácil de rastrear que una firma húmeda no verificada.' },
     ],
     ctaHeading: 'Lleva la firma electrónica a tu entidad',
     ctaBody: 'Codec Document es gratis y genera un rastro de auditoría completo con cada documento firmado.',
@@ -1088,7 +1088,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'México, Chile, Perú y Argentina',
         paragraphs: [
-          'México reconoce la firma electrónica en el Código de Comercio (con disposiciones específicas sobre mensajes de datos y firma electrónica avanzada) y en normativa fiscal y comercial adicional. Chile tiene la Ley 19.799 sobre documentos electrónicos y firma electrónica, que distingue entre firma electrónica simple y firma electrónica avanzada (esta última con mayor peso probatorio, similar a un certificado digital). Perú y Argentina cuentan con marcos equivalentes — la Ley de Firmas y Certificados Digitales en Perú, y la Ley 25.506 de Firma Digital en Argentina — todos inspirados en principios similares de reconocimiento legal.',
+          'México reconoce la firma electrónica en el Código de Comercio (con disposiciones específicas sobre mensajes de datos y firma electrónica avanzada) y en normativa fiscal y comercial adicional. Chile tiene la Ley 19.799 sobre documentos electrónicos y firma electrónica, que distingue entre firma electrónica simple y firma electrónica avanzada (esta última con mayor peso probatorio, similar a un certificado digital). Perú y Argentina cuentan con marcos equivalentes, la Ley de Firmas y Certificados Digitales en Perú, y la Ley 25.506 de Firma Digital en Argentina, todos inspirados en principios similares de reconocimiento legal.',
           'En prácticamente todos los casos, el patrón se repite: la ley no exige una tecnología específica, sino que la firma demuestre intención de firmar, un vínculo verificable con el firmante y la integridad del documento firmado.',
         ],
       },
@@ -1114,14 +1114,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'La conclusión práctica',
         paragraphs: [
-          'Si estás firmando un contrato empresarial estándar — un arrendamiento, un NDA, un acuerdo de servicios, un contrato con un proveedor — usando una plataforma de firma electrónica legítima, la firma resultante es exigible en prácticamente cualquier país de la región. La pregunta legal quedó resuelta hace años; lo que ha cambiado es qué tan buena se ha vuelto la evidencia de respaldo (rastros de auditoría, verificación de identidad), que es lo que realmente determina qué tan bien resiste una firma si alguna vez es cuestionada.',
+          'Si estás firmando un contrato empresarial estándar, un arrendamiento, un NDA, un acuerdo de servicios, un contrato con un proveedor, usando una plataforma de firma electrónica legítima, la firma resultante es exigible en prácticamente cualquier país de la región. La pregunta legal quedó resuelta hace años; lo que ha cambiado es qué tan buena se ha vuelto la evidencia de respaldo (rastros de auditoría, verificación de identidad), que es lo que realmente determina qué tan bien resiste una firma si alguna vez es cuestionada.',
         ],
       },
     ],
     faq: [
       { q: '¿Una firma electrónica necesita ser notariada para ser válida?', a: 'No, para la gran mayoría de los contratos. La notarización es un requisito adicional reservado para tipos específicos de documentos (como ciertas escrituras inmobiliarias), no un requisito general de validez de la firma electrónica.' },
-      { q: '¿Es válido aceptar un contrato haciendo clic en "acepto"?', a: 'Sí, siempre que la intención de quedar obligado sea razonablemente clara según el contexto — es una forma bien establecida de firma electrónica en la mayoría de los marcos legales de la región.' },
-      { q: '¿Puede alguien disputar una firma electrónica después de firmar?', a: 'Sí, de la misma forma en que se puede disputar una firma en papel — pero una plataforma con un rastro de auditoría sólido (datos de identidad, marca de tiempo, hash del documento) hace esa disputa mucho más difícil de ganar.' },
+      { q: '¿Es válido aceptar un contrato haciendo clic en "acepto"?', a: 'Sí, siempre que la intención de quedar obligado sea razonablemente clara según el contexto, es una forma bien establecida de firma electrónica en la mayoría de los marcos legales de la región.' },
+      { q: '¿Puede alguien disputar una firma electrónica después de firmar?', a: 'Sí, de la misma forma en que se puede disputar una firma en papel, pero una plataforma con un rastro de auditoría sólido (datos de identidad, marca de tiempo, hash del documento) hace esa disputa mucho más difícil de ganar.' },
     ],
     ctaHeading: 'Firma con un rastro de auditoría legal completo',
     ctaBody: 'Codec Document es gratis y captura la identidad, marca de tiempo y hash del documento que los tribunales revisan.',
@@ -1146,7 +1146,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'La vieja suposición que ya no aplica',
         paragraphs: [
-          'Las primeras plataformas de firma electrónica apuntaban a grandes empresas con necesidades pesadas de cumplimiento, y sus precios reflejaban eso — a menudo con contratos y mínimos de usuarios. Una consultora de cinco personas firmando treinta documentos al mes, o un contratista independiente firmando cinco, no necesitan la misma infraestructura que una organización comercial de 500 personas, y cada vez menos necesitan pagar por ella.',
+          'Las primeras plataformas de firma electrónica apuntaban a grandes empresas con necesidades pesadas de cumplimiento, y sus precios reflejaban eso, a menudo con contratos y mínimos de usuarios. Una consultora de cinco personas firmando treinta documentos al mes, o un contratista independiente firmando cinco, no necesitan la misma infraestructura que una organización comercial de 500 personas, y cada vez menos necesitan pagar por ella.',
         ],
       },
       {
@@ -1155,7 +1155,7 @@ export const ARTICLES: Article[] = [
           'No todos los planes gratuitos son iguales. Antes de confiar en uno, vale la pena revisar algunas cosas específicas.',
         ],
         bullets: [
-          'Un rastro de auditoría genuino (marca de tiempo, dirección IP, hash del documento) — no solo una imagen de firma',
+          'Un rastro de auditoría genuino (marca de tiempo, dirección IP, hash del documento), no solo una imagen de firma',
           'Soporte para múltiples firmantes en el mismo documento',
           'Una cantidad razonable de documentos y firmas gratuitas por período, no solo una prueba única',
           'Sin marcas de agua forzadas que hagan ver poco profesional a tu empresa frente a los clientes',
@@ -1164,20 +1164,20 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Cómo se ve esto en la práctica',
         paragraphs: [
-          'Codec Document, por ejemplo, ofrece un plan gratuito que incluye una cantidad determinada de documentos y firmas electrónicas gratuitas cada 72 horas, con el rastro de auditoría completo de identidad, marca de tiempo y hash incluido — no una versión recortada. Para una pyme o un profesional independiente que envía contratos ocasionalmente en lugar de por cientos, ese cupo gratuito suele cubrir todo el volumen de firma del mes sin necesitar nunca actualizar el plan.',
-          'Las empresas que eventualmente pagan por un plan superior suelen ser las que su volumen realmente creció — lo cual es un buen problema para tener, y un momento natural para reevaluar, en lugar de pagar desde el primer día por una capacidad que un equipo de cinco personas nunca iba a usar.',
+          'Codec Document, por ejemplo, ofrece un plan gratuito que incluye una cantidad determinada de documentos y firmas electrónicas gratuitas cada 72 horas, con el rastro de auditoría completo de identidad, marca de tiempo y hash incluido, no una versión recortada. Para una pyme o un profesional independiente que envía contratos ocasionalmente en lugar de por cientos, ese cupo gratuito suele cubrir todo el volumen de firma del mes sin necesitar nunca actualizar el plan.',
+          'Las empresas que eventualmente pagan por un plan superior suelen ser las que su volumen realmente creció, lo cual es un buen problema para tener, y un momento natural para reevaluar, en lugar de pagar desde el primer día por una capacidad que un equipo de cinco personas nunca iba a usar.',
         ],
       },
       {
         heading: 'El efecto acumulado en el flujo de caja',
         paragraphs: [
-          'Para una empresa en etapa temprana, cada suscripción de software recurrente es un pequeño desgaste continuo del capital disponible. Eliminar incluso 30 a 50 dólares al mes en dos o tres herramientas que tienen equivalentes genuinamente gratuitos suma a lo largo de un año — dinero que de otro modo se gastaría en una función que la mayoría de los equipos pequeños usa con poca frecuencia.',
+          'Para una empresa en etapa temprana, cada suscripción de software recurrente es un pequeño desgaste continuo del capital disponible. Eliminar incluso 30 a 50 dólares al mes en dos o tres herramientas que tienen equivalentes genuinamente gratuitos suma a lo largo de un año, dinero que de otro modo se gastaría en una función que la mayoría de los equipos pequeños usa con poca frecuencia.',
         ],
       },
     ],
     faq: [
-      { q: '¿La firma electrónica gratuita es realmente segura?', a: 'Puede serlo — la seguridad y la calidad del rastro de auditoría dependen del diseño de la plataforma, no del precio. Revisa específicamente que registre identidad, marcas de tiempo y hash del documento antes de asumir que una herramienta paga es automáticamente más segura.' },
-      { q: '¿Mis clientes pensarán peor de mi empresa por usar una herramienta gratuita?', a: 'No — los clientes ven el documento firmado y la experiencia de firma, no tu plan de facturación. Un flujo de firma limpio y profesional se ve igual para ellos, sea plan gratuito o pago.' },
+      { q: '¿La firma electrónica gratuita es realmente segura?', a: 'Puede serlo, la seguridad y la calidad del rastro de auditoría dependen del diseño de la plataforma, no del precio. Revisa específicamente que registre identidad, marcas de tiempo y hash del documento antes de asumir que una herramienta paga es automáticamente más segura.' },
+      { q: '¿Mis clientes pensarán peor de mi empresa por usar una herramienta gratuita?', a: 'No, los clientes ven el documento firmado y la experiencia de firma, no tu plan de facturación. Un flujo de firma limpio y profesional se ve igual para ellos, sea plan gratuito o pago.' },
       { q: '¿Cuándo tiene sentido actualizar desde un plan gratuito?', a: 'Generalmente cuando el volumen de documentos o firmas supera consistentemente el cupo del plan gratuito, o cuando necesitas funciones avanzadas como envío masivo o gestión de equipos.' },
     ],
     ctaHeading: 'Empieza a firmar gratis hoy',
@@ -1197,7 +1197,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/costo-oculto-del-papel-en-empresas.jpg', alt: 'Dos colegas revisando documentos en papel juntos en una reunión', credit: 'Foto: Kampus Production / Pexels' },
     readMinutes: 6,
     intro: [
-      'Nadie pone "imprimir y enviar contratos por correo" como una línea propia en el presupuesto, y precisamente por eso el costo permanece invisible tanto tiempo. Cuando realmente se suma el papel, la tinta, la mensajería, el almacenamiento físico y el tiempo del personal persiguiendo firmas, el número casi siempre es más alto de lo esperado — y es un costo que las empresas podrían eliminar por completo.',
+      'Nadie pone "imprimir y enviar contratos por correo" como una línea propia en el presupuesto, y precisamente por eso el costo permanece invisible tanto tiempo. Cuando realmente se suma el papel, la tinta, la mensajería, el almacenamiento físico y el tiempo del personal persiguiendo firmas, el número casi siempre es más alto de lo esperado, y es un costo que las empresas podrían eliminar por completo.',
     ],
     sections: [
       {
@@ -1215,13 +1215,13 @@ export const ARTICLES: Article[] = [
       {
         heading: 'El costo más grande que nunca aparece en un recibo: el tiempo',
         paragraphs: [
-          'El verdadero costo de los contratos en papel rara vez es el papel en sí — es el tiempo gastado imprimiendo, enviando, esperando, haciendo seguimiento, reenviando un documento que se perdió o traspapeló, y archivando manualmente la copia firmada en un lugar donde después se pueda encontrar. Un empleado que dedica incluso treinta minutos al día a esto durante un año representa una porción considerable de un salario de tiempo completo, gastado enteramente en un paso que un enlace de firma reemplaza en segundos.',
+          'El verdadero costo de los contratos en papel rara vez es el papel en sí, es el tiempo gastado imprimiendo, enviando, esperando, haciendo seguimiento, reenviando un documento que se perdió o traspapeló, y archivando manualmente la copia firmada en un lugar donde después se pueda encontrar. Un empleado que dedica incluso treinta minutos al día a esto durante un año representa una porción considerable de un salario de tiempo completo, gastado enteramente en un paso que un enlace de firma reemplaza en segundos.',
         ],
       },
       {
         heading: 'Los documentos perdidos son más comunes de lo que se admite',
         paragraphs: [
-          'Toda empresa con un archivador tiene una historia sobre un contrato firmado que no se pudo encontrar cuando realmente importaba — durante una auditoría, una disputa o simplemente cuando un cliente pidió una copia. Una plataforma de firma digital guarda cada documento firmado con su rastro de auditoría completo en un solo lugar buscable, lo que elimina silenciosamente toda una categoría de problemas de "dónde pusimos eso".',
+          'Toda empresa con un archivador tiene una historia sobre un contrato firmado que no se pudo encontrar cuando realmente importaba, durante una auditoría, una disputa o simplemente cuando un cliente pidió una copia. Una plataforma de firma digital guarda cada documento firmado con su rastro de auditoría completo en un solo lugar buscable, lo que elimina silenciosamente toda una categoría de problemas de "dónde pusimos eso".',
         ],
       },
       {
@@ -1233,14 +1233,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Lo que realmente cuesta hacer el cambio',
         paragraphs: [
-          'Esta es la parte que facilita el cálculo: hacer el cambio no requiere una plataforma costosa. Codec Document ofrece creación de documentos y firmas electrónicas gratuitas, lo que significa que la mayoría de las pymes pueden eliminar la mayor parte de sus costos de contratos en papel sin agregar un nuevo gasto de software — el ahorro es casi puro, no un intercambio de un costo por otro.',
+          'Esta es la parte que facilita el cálculo: hacer el cambio no requiere una plataforma costosa. Codec Document ofrece creación de documentos y firmas electrónicas gratuitas, lo que significa que la mayoría de las pymes pueden eliminar la mayor parte de sus costos de contratos en papel sin agregar un nuevo gasto de software, el ahorro es casi puro, no un intercambio de un costo por otro.',
         ],
       },
     ],
     faq: [
       { q: '¿Cuánto gasta realmente una empresa típica en contratos de papel al año?', a: 'Varía mucho, pero entre impresión, mensajería, almacenamiento y tiempo del personal, las empresas que firman incluso un volumen modesto de contratos suelen gastar cientos o algunos miles de dólares al año sin darse cuenta, la mayor parte en tiempo más que en materiales.' },
-      { q: '¿Se aceptan los documentos firmados y almacenados digitalmente para auditorías y cumplimiento?', a: 'Sí — el rastro de auditoría y la retención de documentos de una buena plataforma de firma electrónica suelen cumplir o superar lo que ofrece el archivo físico en papel para la mayoría de los fines de cumplimiento.' },
-      { q: '¿Es difícil cambiar a firma electrónica para un equipo pequeño?', a: 'No — la mayoría de las pequeñas empresas cambian documento por documento, empezando por el contrato que más se firma, y se sienten completamente cómodas con el nuevo proceso en una o dos semanas.' },
+      { q: '¿Se aceptan los documentos firmados y almacenados digitalmente para auditorías y cumplimiento?', a: 'Sí, el rastro de auditoría y la retención de documentos de una buena plataforma de firma electrónica suelen cumplir o superar lo que ofrece el archivo físico en papel para la mayoría de los fines de cumplimiento.' },
+      { q: '¿Es difícil cambiar a firma electrónica para un equipo pequeño?', a: 'No, la mayoría de las pequeñas empresas cambian documento por documento, empezando por el contrato que más se firma, y se sienten completamente cómodas con el nuevo proceso en una o dos semanas.' },
     ],
     ctaHeading: 'Deja de pagar el costo oculto del papel',
     ctaBody: 'Codec Document te permite crear y firmar documentos en línea gratis, sin imprimir nada.',
@@ -1259,13 +1259,13 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/como-enviar-documento-para-firma-online.jpg', alt: 'Empresario firmando un documento en una tablet con lápiz óptico', credit: 'Foto: Pexels' },
     readMinutes: 5,
     intro: [
-      'Enviar un documento para firma electrónica es genuinamente simple una vez que lo haces la primera vez, pero esa primera vez es donde la mayoría duda — no porque sea complicado, sino porque no están seguros de qué ocurre realmente después de hacer clic en enviar. Aquí está el proceso completo, desde subir el documento hasta obtener la copia firmada.',
+      'Enviar un documento para firma electrónica es genuinamente simple una vez que lo haces la primera vez, pero esa primera vez es donde la mayoría duda, no porque sea complicado, sino porque no están seguros de qué ocurre realmente después de hacer clic en enviar. Aquí está el proceso completo, desde subir el documento hasta obtener la copia firmada.',
     ],
     sections: [
       {
         heading: 'Paso 1: Sube el documento',
         paragraphs: [
-          'Empieza con el PDF (o documento de Word, que la mayoría de las plataformas convierten automáticamente) que necesitas firmar — un contrato de arrendamiento, una propuesta, un NDA, cualquier cosa. En Codec Document, este es un único paso de carga, y la plataforma lee el documento para que puedas colocar los campos de firma en las páginas correctas en el siguiente paso.',
+          'Empieza con el PDF (o documento de Word, que la mayoría de las plataformas convierten automáticamente) que necesitas firmar, un contrato de arrendamiento, una propuesta, un NDA, cualquier cosa. En Codec Document, este es un único paso de carga, y la plataforma lee el documento para que puedas colocar los campos de firma en las páginas correctas en el siguiente paso.',
         ],
       },
       {
@@ -1277,13 +1277,13 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Paso 3: Coloca el campo de firma',
         paragraphs: [
-          'Arrastra el bloque de firma exactamente al lugar del documento donde debe aparecer — la mayoría de las herramientas permiten redimensionarlo y agregar un campo de fecha al lado. Este paso toma segundos y solo hay que hacerlo una vez; la plataforma recuerda la posición si reutilizas la misma plantilla después.',
+          'Arrastra el bloque de firma exactamente al lugar del documento donde debe aparecer, la mayoría de las herramientas permiten redimensionarlo y agregar un campo de fecha al lado. Este paso toma segundos y solo hay que hacerlo una vez; la plataforma recuerda la posición si reutilizas la misma plantilla después.',
         ],
       },
       {
         heading: 'Paso 4: Envía el enlace de firma',
         paragraphs: [
-          'El firmante recibe un correo (o un enlace directo que puedes enviar tú mismo por WhatsApp o cualquier app de mensajería) que abre el documento en su navegador — sin necesidad de cuenta ni instalar software de su lado. Revisa el documento completo, dibuja o escribe su firma y confirma.',
+          'El firmante recibe un correo (o un enlace directo que puedes enviar tú mismo por WhatsApp o cualquier app de mensajería) que abre el documento en su navegador, sin necesidad de cuenta ni instalar software de su lado. Revisa el documento completo, dibuja o escribe su firma y confirma.',
         ],
         bullets: [
           'No se requiere descargar una app ni crear cuenta para el firmante',
@@ -1294,17 +1294,17 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Paso 5: Monitorea el estado y descarga la copia firmada',
         paragraphs: [
-          'Una vez firmado, recibes una notificación inmediata, y el documento completamente ejecutado — junto con los datos del rastro de auditoría (marca de tiempo, dirección IP, hash del documento) — queda disponible para descargar como PDF certificado. En Codec Document, cada documento que creas o firmas queda guardado en tu cuenta bajo "Mis Documentos", así que siempre tienes una copia lista para descargar después, incluso si cierras la pestaña justo después de firmar.',
+          'Una vez firmado, recibes una notificación inmediata, y el documento completamente ejecutado, junto con los datos del rastro de auditoría (marca de tiempo, dirección IP, hash del documento), queda disponible para descargar como PDF certificado. En Codec Document, cada documento que creas o firmas queda guardado en tu cuenta bajo "Mis Documentos", así que siempre tienes una copia lista para descargar después, incluso si cierras la pestaña justo después de firmar.',
         ],
       },
     ],
     faq: [
-      { q: '¿La persona a la que le envío el documento necesita crear una cuenta?', a: 'No — la mayoría de las plataformas de firma electrónica, incluyendo Codec Document, permiten que el destinatario firme directamente desde el enlace sin necesidad de cuenta.' },
+      { q: '¿La persona a la que le envío el documento necesita crear una cuenta?', a: 'No, la mayoría de las plataformas de firma electrónica, incluyendo Codec Document, permiten que el destinatario firme directamente desde el enlace sin necesidad de cuenta.' },
       { q: '¿Qué pasa si necesito que varias personas firmen el mismo documento?', a: 'Agregas a cada firmante por separado al configurar el documento, y la plataforma rastrea el estado de la firma de cada persona individualmente, notificándote a medida que cada una la completa.' },
       { q: '¿A dónde va el documento firmado después de que todos firmaron?', a: 'Se guarda automáticamente en tu cuenta (en "Mis Documentos" en Codec Document) como un PDF certificado y descargable, con el rastro de auditoría completo adjunto.' },
     ],
     ctaHeading: 'Envía tu primer documento a firmar',
-    ctaBody: 'Codec Document es gratis — sube el documento, agrega un firmante y envíalo en menos de un minuto.',
+    ctaBody: 'Codec Document es gratis, sube el documento, agrega un firmante y envíalo en menos de un minuto.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },
@@ -1320,7 +1320,7 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/firma-electronica-para-recursos-humanos.jpg', alt: 'Grupo diverso de compañeros de trabajo dándose la mano y saludándose en la oficina', credit: 'Foto: Pexels' },
     readMinutes: 6,
     intro: [
-      'La primera interacción real de un nuevo empleado con una empresa casi siempre es papeleo — una carta de oferta, un contrato laboral, una pila de acuses de recibo de políticas. Qué tan fluido resulte ese papeleo marca el tono antes incluso de que la persona haya empezado su primer día, y por eso los equipos de RRHH se han convertido en algunos de los usuarios más frecuentes de las herramientas de firma electrónica.',
+      'La primera interacción real de un nuevo empleado con una empresa casi siempre es papeleo, una carta de oferta, un contrato laboral, una pila de acuses de recibo de políticas. Qué tan fluido resulte ese papeleo marca el tono antes incluso de que la persona haya empezado su primer día, y por eso los equipos de RRHH se han convertido en algunos de los usuarios más frecuentes de las herramientas de firma electrónica.',
     ],
     sections: [
       {
@@ -1340,33 +1340,33 @@ export const ARTICLES: Article[] = [
         heading: 'Por qué la velocidad importa más en contratación que en casi cualquier otro proceso',
         paragraphs: [
           'Un candidato fuerte con varias ofertas sobre la mesa a menudo elige en parte según qué empresa hace que el proceso se sienta más organizado y respetuoso con su tiempo. Una carta de oferta que llega como un enlace de firma que el candidato puede revisar y firmar desde su celular en minutos se percibe muy distinto a una que requiere impresora y escáner, especialmente para candidatos que quizás no tengan acceso fácil a ninguno de los dos.',
-          'Esa diferencia en la experiencia del candidato se acumula durante un mercado de contratación competitivo — un proceso de oferta lento y lleno de papel puede costarle a una empresa su candidato preferido frente a un competidor que hizo que aceptar la oferta fuera sin esfuerzo.',
+          'Esa diferencia en la experiencia del candidato se acumula durante un mercado de contratación competitivo, un proceso de oferta lento y lleno de papel puede costarle a una empresa su candidato preferido frente a un competidor que hizo que aceptar la oferta fuera sin esfuerzo.',
         ],
       },
       {
         heading: 'Los equipos remotos y distribuidos lo convirtieron en una necesidad',
         paragraphs: [
-          'Para una empresa que contrata en varias ciudades o países, exigir que un nuevo empleado imprima, firme y envíe por correo los documentos laborales no solo es lento — a menudo es poco práctico, especialmente con fechas de inicio ajustadas. Las herramientas de firma electrónica resolvieron un problema operativo real para empresas remotas o distribuidas, no solo una conveniencia para contrataciones locales.',
+          'Para una empresa que contrata en varias ciudades o países, exigir que un nuevo empleado imprima, firme y envíe por correo los documentos laborales no solo es lento, a menudo es poco práctico, especialmente con fechas de inicio ajustadas. Las herramientas de firma electrónica resolvieron un problema operativo real para empresas remotas o distribuidas, no solo una conveniencia para contrataciones locales.',
         ],
       },
       {
         heading: 'Beneficios de registro que RRHH no siempre espera',
         paragraphs: [
-          'Más allá de la velocidad, el rastro de auditoría de un documento firmado se vuelve útil durante disputas sobre condiciones laborales, incumplimientos de políticas o auditorías de cumplimiento — RRHH puede señalar una marca de tiempo exacta y la confirmación de que un empleado específico reconoció una política específica, en lugar de depender de una copia archivada en papel que puede o no ser fácil de encontrar meses o años después.',
+          'Más allá de la velocidad, el rastro de auditoría de un documento firmado se vuelve útil durante disputas sobre condiciones laborales, incumplimientos de políticas o auditorías de cumplimiento: RRHH puede señalar una marca de tiempo exacta y la confirmación de que un empleado específico reconoció una política específica, en lugar de depender de una copia archivada en papel que puede o no ser fácil de encontrar meses o años después.',
           'Cada documento firmado a través de Codec Document, por ejemplo, queda guardado y es buscable en la cuenta que lo creó, lo cual importa cuando RRHH necesita producir rápidamente un acuse de recibo firmado de hace dos años en lugar de buscar entre cajas de archivo viejas.',
         ],
       },
       {
         heading: 'Empezar sin una gran migración de software de RRHH',
         paragraphs: [
-          'Los equipos de RRHH no necesitan esperar una renovación completa de su sistema de gestión de personal para empezar a usar firma electrónica — la mayoría empieza simplemente enviando la próxima carta de oferta o actualización de política a través de una herramienta gratuita de firma electrónica en lugar de correos con adjuntos y firmas físicas, y expanden desde ahí una vez que el equipo ve cuánto más fluido se siente el onboarding.',
+          'Los equipos de RRHH no necesitan esperar una renovación completa de su sistema de gestión de personal para empezar a usar firma electrónica, la mayoría empieza simplemente enviando la próxima carta de oferta o actualización de política a través de una herramienta gratuita de firma electrónica en lugar de correos con adjuntos y firmas físicas, y expanden desde ahí una vez que el equipo ve cuánto más fluido se siente el onboarding.',
         ],
       },
     ],
     faq: [
-      { q: '¿Los contratos laborales firmados electrónicamente son legalmente válidos?', a: 'Sí — los contratos laborales, cartas de oferta y acuses de recibo de políticas están cubiertos por los marcos legales de firma electrónica de la región, igual que cualquier otro contrato comercial.' },
-      { q: '¿Puede RRHH rastrear qué políticas ha reconocido cada empleado?', a: 'Sí — una buena plataforma de firma electrónica mantiene un registro de cada documento que ha firmado cada empleado, incluyendo la versión específica y la marca de tiempo, lo cual es útil para cumplimiento y resolución de disputas.' },
-      { q: '¿Funciona esto para contratar en varias ciudades o países?', a: 'Sí — dado que la firma electrónica es válida en toda la región bajo los distintos marcos legales nacionales, un proceso de contratación distribuido funciona igual sin importar dónde esté ubicado el nuevo empleado.' },
+      { q: '¿Los contratos laborales firmados electrónicamente son legalmente válidos?', a: 'Sí, los contratos laborales, cartas de oferta y acuses de recibo de políticas están cubiertos por los marcos legales de firma electrónica de la región, igual que cualquier otro contrato comercial.' },
+      { q: '¿Puede RRHH rastrear qué políticas ha reconocido cada empleado?', a: 'Sí, una buena plataforma de firma electrónica mantiene un registro de cada documento que ha firmado cada empleado, incluyendo la versión específica y la marca de tiempo, lo cual es útil para cumplimiento y resolución de disputas.' },
+      { q: '¿Funciona esto para contratar en varias ciudades o países?', a: 'Sí, dado que la firma electrónica es válida en toda la región bajo los distintos marcos legales nacionales, un proceso de contratación distribuido funciona igual sin importar dónde esté ubicado el nuevo empleado.' },
     ],
     ctaHeading: 'Simplifica el papeleo de tu próxima contratación',
     ctaBody: 'Codec Document es gratis para crear y firmar cartas de oferta, contratos y documentos de políticas.',
@@ -1388,14 +1388,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'velocidad-contratos',
     intro: [
       'Un contrato que tarda una semana en firmarse no es solo una molestia administrativa: en ese tiempo un cliente puede recibir otra propuesta, un proveedor puede subir sus precios, o un empleado con una oferta de trabajo puede aceptar otro puesto. No perder un contrato por esperar una firma puede representar miles de dólares para una empresa, y sin embargo la mayoría de los negocios nunca se sienta a medir cuánto les cuesta realmente ese tiempo muerto.',
-      'La buena noticia es que ese retraso casi nunca viene de la ley, ni de que el cliente esté "pensándolo". Viene de un proceso manual con demasiados pasos innecesarios: imprimir, escanear, reenviar, esperar a que alguien esté en la oficina para firmar, y volver a empezar si algo sale mal en el camino. Cuando se eliminan esos pasos, el mismo contrato que hoy tarda 7 días puede estar firmado y certificado en menos de 24 horas — no porque el cliente decida más rápido, sino porque el proceso deja de estorbarle.',
+      'La buena noticia es que ese retraso casi nunca viene de la ley, ni de que el cliente esté "pensándolo". Viene de un proceso manual con demasiados pasos innecesarios: imprimir, escanear, reenviar, esperar a que alguien esté en la oficina para firmar, y volver a empezar si algo sale mal en el camino. Cuando se eliminan esos pasos, el mismo contrato que hoy tarda 7 días puede estar firmado y certificado en menos de 24 horas, no porque el cliente decida más rápido, sino porque el proceso deja de estorbarle.',
     ],
     sections: [
       {
         heading: 'Por qué un contrato tarda 7 días en firmarse (y no es por el cliente)',
         paragraphs: [
           'Cuando se analiza a detalle un proceso típico de firma en papel, el tiempo real "pensando el contrato" suele ser una fracción pequeña del total. El resto se va en pasos puramente logísticos: el documento se imprime, se firma por una parte, se escanea o se envía por mensajería a la otra parte, esa parte tiene que estar físicamente disponible para firmar, y si falta una página o una firma está en el lugar equivocado, todo el ciclo empieza de nuevo.',
-          'Cada uno de esos pasos depende de que una persona específica esté disponible en un momento específico — el mensajero, el firmante, la persona que escanea. Basta con que uno de ellos esté fuera de la oficina, de viaje, o simplemente ocupado, para que un contrato "casi listo" se quede parado dos o tres días sin que nadie lo esté bloqueando a propósito.',
+          'Cada uno de esos pasos depende de que una persona específica esté disponible en un momento específico, el mensajero, el firmante, la persona que escanea. Basta con que uno de ellos esté fuera de la oficina, de viaje, o simplemente ocupado, para que un contrato "casi listo" se quede parado dos o tres días sin que nadie lo esté bloqueando a propósito.',
         ],
         bullets: [
           'El tiempo de "decisión" del cliente suele ser mucho menor que el tiempo de "logística" del proceso.',
@@ -1406,9 +1406,9 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Qué cambia realmente al pasar a firma electrónica',
         paragraphs: [
-          'La firma electrónica no acelera el contrato porque sea "más moderna" — lo acelera porque elimina la dependencia de que alguien esté físicamente presente para completar cada paso. El firmante recibe un enlace, lo abre desde su teléfono o computador en el momento que le quede cómodo (en una reunión, en un taxi, en su casa por la noche), y firma ahí mismo, sin imprimir nada.',
-          'En Estados Unidos, este tipo de firma es legalmente válida desde el año 2000 gracias a la Ley ESIGN (15 U.S.C. § 7001) y a la Ley Uniforme de Transacciones Electrónicas (UETA), adoptada por prácticamente todos los estados. Esto significa que la validez legal nunca fue el obstáculo real — el obstáculo era simplemente que las empresas seguían usando un proceso pensado para papel.',
-          'El otro cambio importante es la trazabilidad: cada firma electrónica seria queda acompañada de un registro de auditoría (quién firmó, desde qué dispositivo, a qué hora, con qué documento exacto), algo que un contrato en papel firmado con bolígrafo nunca tuvo. Eso no solo acelera el proceso — también deja a la empresa en una posición más fuerte si alguna vez hay una disputa.',
+          'La firma electrónica no acelera el contrato porque sea "más moderna", lo acelera porque elimina la dependencia de que alguien esté físicamente presente para completar cada paso. El firmante recibe un enlace, lo abre desde su teléfono o computador en el momento que le quede cómodo (en una reunión, en un taxi, en su casa por la noche), y firma ahí mismo, sin imprimir nada.',
+          'En Estados Unidos, este tipo de firma es legalmente válida desde el año 2000 gracias a la Ley ESIGN (15 U.S.C. § 7001) y a la Ley Uniforme de Transacciones Electrónicas (UETA), adoptada por prácticamente todos los estados. Esto significa que la validez legal nunca fue el obstáculo real, el obstáculo era simplemente que las empresas seguían usando un proceso pensado para papel.',
+          'El otro cambio importante es la trazabilidad: cada firma electrónica seria queda acompañada de un registro de auditoría (quién firmó, desde qué dispositivo, a qué hora, con qué documento exacto), algo que un contrato en papel firmado con bolígrafo nunca tuvo. Eso no solo acelera el proceso, también deja a la empresa en una posición más fuerte si alguna vez hay una disputa.',
         ],
       },
       {
@@ -1418,9 +1418,9 @@ export const ARTICLES: Article[] = [
         ],
         bullets: [
           'Preparar el documento una sola vez (plantilla reutilizable) en vez de redactarlo desde cero cada vez.',
-          'Enviarlo por un enlace de firma en el momento en que está listo — no esperar a "tener todo perfecto" para mandarlo por correo.',
+          'Enviarlo por un enlace de firma en el momento en que está listo, no esperar a "tener todo perfecto" para mandarlo por correo.',
           'Definir de una vez quién firma primero y quién después, para que el documento no quede esperando una decisión de último momento.',
-          'Activar un recordatorio automático si el firmante no ha abierto el enlace en un día — en papel, ese seguimiento casi nunca se hace a tiempo.',
+          'Activar un recordatorio automático si el firmante no ha abierto el enlace en un día, en papel, ese seguimiento casi nunca se hace a tiempo.',
           'Recibir el documento firmado y certificado automáticamente, listo para archivar, sin tener que escanear ni pedirle a nadie que lo reenvíe.',
         ],
       },
@@ -1435,15 +1435,15 @@ export const ARTICLES: Article[] = [
       { vertical: 'Pequeña empresa', scenario: 'Una empresa de 8 personas que vende servicios de mantenimiento suele perder contratos porque el dueño viaja seguido y no siempre puede firmar en papel el mismo día. Al mover la firma de sus contratos de servicio a un enlace electrónico, empieza a firmar desde el celular entre reuniones, sin que el cliente tenga que esperar a que vuelva a la oficina.' },
       { vertical: 'Inmobiliaria', scenario: 'Una inmobiliaria maneja arrendamientos donde el propietario, el arrendatario y a veces un codeudor deben firmar el mismo contrato desde tres ciudades distintas. En papel, eso significaba correo certificado y hasta dos semanas de espera; con firma electrónica, los tres reciben su enlace el mismo día y el contrato queda cerrado antes de que termine la semana.' },
       { vertical: 'Freelancer / consultor independiente', scenario: 'Un consultor que cobra por proyecto pierde tiempo de facturación cada día que un contrato queda sin firmar. Empezar el proyecto solo después de tener el contrato firmado (en vez de "confiar" y empezar antes) se vuelve mucho más fácil de exigir cuando firmar toma dos minutos en vez de tener que imprimir y escanear.' },
-      { vertical: 'Recursos Humanos', scenario: 'Un equipo de RRHH que contrata en varias ciudades solía imprimir la carta de oferta, enviarla por mensajería y esperar a que el candidato la firmara y la devolviera — un proceso de varios días en el que, más de una vez, el candidato aceptaba otra oferta mientras tanto. Con un enlace de firma enviado por correo, la aceptación puede llegar el mismo día.' },
-      { vertical: 'Constructora', scenario: 'Una constructora que subcontrata cuadrillas para distintas obras necesita firmar acuerdos de trabajo antes de que cada cuadrilla empiece — y en obra, nadie tiene una impresora a la mano. Firmar desde el celular directamente en el sitio evita que el inicio de la obra se retrase esperando papeleo.' },
+      { vertical: 'Recursos Humanos', scenario: 'Un equipo de RRHH que contrata en varias ciudades solía imprimir la carta de oferta, enviarla por mensajería y esperar a que el candidato la firmara y la devolviera, un proceso de varios días en el que, más de una vez, el candidato aceptaba otra oferta mientras tanto. Con un enlace de firma enviado por correo, la aceptación puede llegar el mismo día.' },
+      { vertical: 'Constructora', scenario: 'Una constructora que subcontrata cuadrillas para distintas obras necesita firmar acuerdos de trabajo antes de que cada cuadrilla empiece, y en obra, nadie tiene una impresora a la mano. Firmar desde el celular directamente en el sitio evita que el inicio de la obra se retrase esperando papeleo.' },
       { vertical: 'Startup', scenario: 'Una startup que cierra su primera ronda de inversionistas ángel necesita que varios documentos (acuerdo de confidencialidad, carta de intención, términos preliminares) se firmen rápido antes de que el inversionista pierda interés o cambie de opinión. Cada día de retraso en papeleo es un día de incertidumbre para ambas partes.' },
       { vertical: 'Abogado / firma legal', scenario: 'Un abogado que representa a varios clientes pequeños necesita que los acuerdos de representación y los poderes se firmen antes de poder actuar formalmente en un caso. Depender de que el cliente pase por la oficina a firmar retrasa el inicio del trabajo; un enlace de firma con verificación de identidad resuelve esto sin sacrificar el respaldo legal del documento.' },
       { vertical: 'Contratista independiente', scenario: 'Un contratista que hace remodelaciones necesita el contrato firmado (con el alcance del trabajo y el precio claramente definidos) antes de comprar materiales o agendar la obra. Cuando el cliente puede firmar desde su teléfono el mismo día de la cotización, el contratista puede confirmar la fecha de inicio sin quedar a la espera de que alguien pase a firmar en persona.' },
     ],
     mistakes: [
-      { title: 'Esperar a tener el documento "perfecto" antes de enviarlo', description: 'Muchas empresas retrasan el envío días enteros puliendo detalles menores del contrato, cuando esos mismos ajustes se pueden hacer sobre la marcha si el cliente pide un cambio. El contrato no necesita estar perfecto para enviarse — necesita estar correcto.' },
-      { title: 'Confundir un PDF escaneado con una firma electrónica real', description: 'Firmar en papel, tomarle foto o escanearlo, y enviarlo por correo sigue siendo un proceso lento y sin ningún registro de auditoría real. No es lo mismo que una firma electrónica con verificación de identidad y trazabilidad — solo parece más rápido porque no se imprime en el momento.' },
+      { title: 'Esperar a tener el documento "perfecto" antes de enviarlo', description: 'Muchas empresas retrasan el envío días enteros puliendo detalles menores del contrato, cuando esos mismos ajustes se pueden hacer sobre la marcha si el cliente pide un cambio. El contrato no necesita estar perfecto para enviarse, necesita estar correcto.' },
+      { title: 'Confundir un PDF escaneado con una firma electrónica real', description: 'Firmar en papel, tomarle foto o escanearlo, y enviarlo por correo sigue siendo un proceso lento y sin ningún registro de auditoría real. No es lo mismo que una firma electrónica con verificación de identidad y trazabilidad, solo parece más rápido porque no se imprime en el momento.' },
       { title: 'No definir de antemano el orden de firma', description: 'Cuando un contrato necesita dos o más firmas y nadie definió quién firma primero, el documento suele quedar "en el limbo" mientras cada parte espera a la otra. Definir el orden desde el principio evita ese estancamiento.' },
       { title: 'No dar seguimiento a quién no ha firmado', description: 'Un contrato enviado por correo y olvidado puede quedar sin firmar por semanas simplemente porque nadie lo recordó. Un recordatorio automático a las 24-48 horas resuelve la mayoría de estos casos sin que nadie tenga que estar revisando manualmente.' },
       { title: 'Exigir firma física "por política interna" sin revisar si sigue siendo necesario', description: 'Muchas empresas mantienen el requisito de firma en papel por costumbre, no porque la ley lo exija. Vale la pena revisar si esa política sigue teniendo un motivo real o si solo está ahí porque nadie la ha actualizado.' },
@@ -1470,21 +1470,21 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: '¿Reducir el tiempo de firma afecta la validez legal del contrato?', a: 'No. La velocidad del proceso no tiene relación con su validez legal — un contrato firmado electrónicamente en minutos tiene el mismo peso legal que uno firmado en papel durante semanas, siempre que cumpla los requisitos de la Ley ESIGN y UETA en Estados Unidos.' },
+      { q: '¿Reducir el tiempo de firma afecta la validez legal del contrato?', a: 'No. La velocidad del proceso no tiene relación con su validez legal, un contrato firmado electrónicamente en minutos tiene el mismo peso legal que uno firmado en papel durante semanas, siempre que cumpla los requisitos de la Ley ESIGN y UETA en Estados Unidos.' },
       { q: '¿Qué tan rápido se puede firmar realmente un contrato con firma electrónica?', a: 'Depende de cuándo el firmante abra el enlace, pero técnicamente el proceso de firma en sí toma minutos. La mayor parte de la reducción de tiempo viene de eliminar la espera de logística (imprimir, escanear, mensajería), no de acelerar la decisión del firmante.' },
       { q: '¿Necesito que el cliente instale una aplicación para firmar electrónicamente?', a: 'No debería. Un buen enlace de firma electrónica se abre directamente desde el navegador del celular o computador del firmante, sin necesidad de instalar nada.' },
-      { q: '¿Qué pasa si el firmante no tiene buena conexión a internet?', a: 'La mayoría de plataformas de firma electrónica están optimizadas para funcionar bien incluso con conexiones lentas, ya que solo se necesita cargar el documento y confirmar la firma — es un proceso mucho más liviano que una videollamada.' },
-      { q: '¿Puedo saber si el firmante ya abrió el documento?', a: 'Sí — una buena plataforma de firma electrónica muestra cuándo el firmante abrió el enlace y en qué estado quedó el documento (pendiente, visto, firmado), lo que permite dar seguimiento sin tener que llamar a preguntar.' },
-      { q: '¿La firma electrónica sirve para contratos con varias partes firmando desde ciudades distintas?', a: 'Sí, de hecho es uno de los casos donde más tiempo se ahorra — cada firmante recibe su propio enlace y firma desde donde esté, sin depender de correo físico entre ciudades.' },
-      { q: '¿Qué documentos NO se pueden firmar electrónicamente?', a: 'Existen algunas excepciones bajo la ley — típicamente testamentos, ciertas órdenes judiciales y algunos documentos de derecho de familia todavía requieren firma en papel o notariado presencial.' },
+      { q: '¿Qué pasa si el firmante no tiene buena conexión a internet?', a: 'La mayoría de plataformas de firma electrónica están optimizadas para funcionar bien incluso con conexiones lentas, ya que solo se necesita cargar el documento y confirmar la firma, es un proceso mucho más liviano que una videollamada.' },
+      { q: '¿Puedo saber si el firmante ya abrió el documento?', a: 'Sí, una buena plataforma de firma electrónica muestra cuándo el firmante abrió el enlace y en qué estado quedó el documento (pendiente, visto, firmado), lo que permite dar seguimiento sin tener que llamar a preguntar.' },
+      { q: '¿La firma electrónica sirve para contratos con varias partes firmando desde ciudades distintas?', a: 'Sí, de hecho es uno de los casos donde más tiempo se ahorra, cada firmante recibe su propio enlace y firma desde donde esté, sin depender de correo físico entre ciudades.' },
+      { q: '¿Qué documentos NO se pueden firmar electrónicamente?', a: 'Existen algunas excepciones bajo la ley, típicamente testamentos, ciertas órdenes judiciales y algunos documentos de derecho de familia todavía requieren firma en papel o notariado presencial.' },
       { q: '¿Es necesario pagar por una plataforma de firma electrónica desde el primer contrato?', a: 'No necesariamente. Plataformas como Codec Document ofrecen un plan gratuito para crear documentos y firmar electrónicamente, suficiente para el volumen de la mayoría de negocios pequeños.' },
       { q: '¿Qué pasa si me equivoco y necesito corregir el contrato después de enviarlo a firmar?', a: 'Si aún no ha sido firmado, generalmente se puede cancelar el enlace y enviar una versión corregida. Una vez firmado, cualquier cambio requiere un nuevo documento (un otrosí o adenda), igual que con un contrato en papel.' },
-      { q: '¿Cómo sé que el documento firmado no fue alterado después?', a: 'Una plataforma seria genera un hash criptográfico del documento en el momento exacto de la firma — cualquier cambio posterior al archivo produce un hash distinto, lo que permite comprobar que el documento firmado es exactamente el mismo que se certificó ese día.' },
+      { q: '¿Cómo sé que el documento firmado no fue alterado después?', a: 'Una plataforma seria genera un hash criptográfico del documento en el momento exacto de la firma, cualquier cambio posterior al archivo produce un hash distinto, lo que permite comprobar que el documento firmado es exactamente el mismo que se certificó ese día.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
-      { label: '15 U.S. Code § 7001 — Legal Information Institute, Cornell Law School', url: 'https://www.law.cornell.edu/uscode/text/15/7001' },
-      { label: 'Uniform Electronic Transactions Act — Uniform Law Commission', url: 'https://www.uniformlaws.org/viewdocument/final-act-21?CommunityKey=2c04b76c-2b7d-4399-977e-d5876ba7e034&tab=librarydocuments' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Legal Information Institute, Cornell Law School', url: 'https://www.law.cornell.edu/uscode/text/15/7001' },
+      { label: 'Uniform Electronic Transactions Act: Uniform Law Commission', url: 'https://www.uniformlaws.org/viewdocument/final-act-21?CommunityKey=2c04b76c-2b7d-4399-977e-d5876ba7e034&tab=librarydocuments' },
     ],
     relatedSlugs: [
       'firma-digital-empresas-2026',
@@ -1492,7 +1492,7 @@ export const ARTICLES: Article[] = [
       'costo-oculto-del-papel-en-empresas',
     ],
     ctaHeading: 'Firma tu próximo contrato en minutos, no en días',
-    ctaBody: 'Codec Document es gratis para crear, enviar y firmar contratos electrónicamente — sin tarjeta de crédito.',
+    ctaBody: 'Codec Document es gratis para crear, enviar y firmar contratos electrónicamente, sin tarjeta de crédito.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },
@@ -1510,21 +1510,21 @@ export const ARTICLES: Article[] = [
     topicCluster: 'velocidad-contratos',
     heroImage: { src: '/blog/como-evitar-perder-ventas-por-demoras-en-firma.jpg', alt: 'Dos personas cerrando un acuerdo comercial con un apretón de manos', credit: 'Foto: Pavel Danilyuk / Pexels' },
     intro: [
-      'Un cliente dice "sí, avancemos" y luego, misteriosamente, deja de responder. Uno de los errores más comunes que vemos es asumir que ese silencio significa que el cliente se arrepintió — cuando en realidad, muchas veces el contrato quedó atascado en el correo, esperando que alguien lo imprima, lo firme y lo devuelva, y en ese lapso el entusiasmo del cliente simplemente se enfría.',
-      'La decisión de compra ya ocurrió en la cabeza del cliente en el momento en que dijo que sí. Todo lo que pasa después — el papeleo — es pura fricción, y cada día que ese contrato tarda en cerrarse es un día en que el cliente puede recibir una llamada de otro proveedor, cambiar de prioridades, o simplemente perder el impulso.',
+      'Un cliente dice "sí, avancemos" y luego, misteriosamente, deja de responder. Uno de los errores más comunes que vemos es asumir que ese silencio significa que el cliente se arrepintió, cuando en realidad, muchas veces el contrato quedó atascado en el correo, esperando que alguien lo imprima, lo firme y lo devuelva, y en ese lapso el entusiasmo del cliente simplemente se enfría.',
+      'La decisión de compra ya ocurrió en la cabeza del cliente en el momento en que dijo que sí. Todo lo que pasa después, el papeleo, es pura fricción, y cada día que ese contrato tarda en cerrarse es un día en que el cliente puede recibir una llamada de otro proveedor, cambiar de prioridades, o simplemente perder el impulso.',
     ],
     sections: [
       {
         heading: 'El momento exacto en que se pierde una venta ya cerrada',
         paragraphs: [
-          'Rara vez un cliente cancela explícitamente. Lo que suele pasar es más silencioso: el contrato se envía por correo, el cliente lo abre, tiene la intención de imprimirlo y firmarlo "en cuanto tenga un momento" — y ese momento nunca llega porque la vida y el trabajo siguen pasando. Una semana después, el vendedor hace seguimiento y el cliente responde con evasivas, no porque haya cambiado de opinión, sino porque el compromiso de imprimir-firmar-escanear-devolver quedó pendiente y ahora se siente incómodo admitirlo.',
+          'Rara vez un cliente cancela explícitamente. Lo que suele pasar es más silencioso: el contrato se envía por correo, el cliente lo abre, tiene la intención de imprimirlo y firmarlo "en cuanto tenga un momento", y ese momento nunca llega porque la vida y el trabajo siguen pasando. Una semana después, el vendedor hace seguimiento y el cliente responde con evasivas, no porque haya cambiado de opinión, sino porque el compromiso de imprimir-firmar-escanear-devolver quedó pendiente y ahora se siente incómodo admitirlo.',
           'Cuanto más pasos manuales tenga el proceso de firma, más oportunidades hay de que ese "en cuanto tenga un momento" nunca llegue.',
         ],
       },
       {
         heading: 'Reducir la fricción entre el "sí" y la firma',
         paragraphs: [
-          'La solución no es presionar más al cliente — es reducir lo que tiene que hacer para completar la compra. Un enlace de firma que se abre desde el celular, se firma con el dedo y se envía automáticamente elimina por completo el paso de "imprimir y escanear", que es justo donde la mayoría de los contratos se quedan atascados.',
+          'La solución no es presionar más al cliente, es reducir lo que tiene que hacer para completar la compra. Un enlace de firma que se abre desde el celular, se firma con el dedo y se envía automáticamente elimina por completo el paso de "imprimir y escanear", que es justo donde la mayoría de los contratos se quedan atascados.',
           'Esto es legalmente igual de válido que una firma en papel: en Estados Unidos, la Ley ESIGN (15 U.S.C. § 7001) le da a una firma electrónica el mismo peso legal que una firma escrita a mano, siempre que exista evidencia de que la persona realmente firmó con intención de hacerlo.',
         ],
       },
@@ -1535,18 +1535,18 @@ export const ARTICLES: Article[] = [
       { title: 'Pedir que el cliente imprima, firme y escanee', description: 'Cada paso adicional es una oportunidad para que el proceso se quede a medias. Entre más simple sea firmar, más rápido se cierra la venta.' },
     ],
     faq: [
-      { q: '¿La firma electrónica hace que el contrato parezca menos serio?', a: 'No — de hecho suele transmitir lo contrario: un proceso ágil y profesional. La seriedad de un contrato está en su contenido, no en si se firmó con bolígrafo o con el dedo.' },
-      { q: '¿Qué hago si el cliente insiste en firmar en papel?', a: 'Puedes ofrecerlo como alternativa, pero vale la pena explicarle que la firma electrónica tiene la misma validez legal y es mucho más rápida — la mayoría acepta una vez que entiende que no pierde nada.' },
-      { q: '¿Cuánto tiempo real se ahorra con firma electrónica?', a: 'El ahorro más grande no es la firma en sí (que toma segundos), sino eliminar la espera de que alguien imprima, firme, escanee y reenvíe — pasos que en papel pueden tomar días.' },
-      { q: '¿Sirve esto para ventas recurrentes con el mismo cliente?', a: 'Sí, y ahí el ahorro se multiplica — si ya tienes una plantilla lista, cada nueva venta solo requiere ajustar los datos y enviar el enlace, sin redactar desde cero.' },
+      { q: '¿La firma electrónica hace que el contrato parezca menos serio?', a: 'No, de hecho suele transmitir lo contrario: un proceso ágil y profesional. La seriedad de un contrato está en su contenido, no en si se firmó con bolígrafo o con el dedo.' },
+      { q: '¿Qué hago si el cliente insiste en firmar en papel?', a: 'Puedes ofrecerlo como alternativa, pero vale la pena explicarle que la firma electrónica tiene la misma validez legal y es mucho más rápida, la mayoría acepta una vez que entiende que no pierde nada.' },
+      { q: '¿Cuánto tiempo real se ahorra con firma electrónica?', a: 'El ahorro más grande no es la firma en sí (que toma segundos), sino eliminar la espera de que alguien imprima, firme, escanee y reenvíe, pasos que en papel pueden tomar días.' },
+      { q: '¿Sirve esto para ventas recurrentes con el mismo cliente?', a: 'Sí, y ahí el ahorro se multiplica, si ya tienes una plantilla lista, cada nueva venta solo requiere ajustar los datos y enviar el enlace, sin redactar desde cero.' },
       { q: '¿Necesito una plataforma paga para esto?', a: 'No para empezar. Codec Document ofrece un plan gratuito para crear y enviar contratos a firmar, suficiente para la mayoría de negocios pequeños.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['reducir-tiempo-firma-contratos', 'firma-digital-empresas-2026'],
     ctaHeading: 'No dejes que el papeleo te cueste una venta',
-    ctaBody: 'Envía tu próximo contrato con un enlace de firma electrónica — Codec Document es gratis para empezar.',
+    ctaBody: 'Envía tu próximo contrato con un enlace de firma electrónica: Codec Document es gratis para empezar.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },
@@ -1564,21 +1564,21 @@ export const ARTICLES: Article[] = [
     topicCluster: 'nda',
     heroImage: { src: '/blog/nda-unilateral-vs-bilateral.jpg', alt: 'Dos personas revisando y firmando un contrato en una oficina', credit: 'Foto: Pexels' },
     intro: [
-      'Enviar el NDA equivocado puede dejarte desprotegido justo en la parte que más te importaba cuidar. Un error común es usar la misma plantilla de NDA para cualquier situación, sin notar que algunos acuerdos solo protegen a una de las partes — y si esa parte no eres tú, tu información queda expuesta sin ninguna obligación real del otro lado.',
+      'Enviar el NDA equivocado puede dejarte desprotegido justo en la parte que más te importaba cuidar. Un error común es usar la misma plantilla de NDA para cualquier situación, sin notar que algunos acuerdos solo protegen a una de las partes, y si esa parte no eres tú, tu información queda expuesta sin ninguna obligación real del otro lado.',
       'La diferencia entre un NDA unilateral y uno bilateral no es un detalle técnico menor: determina exactamente quién está obligado a guardar silencio, y quién puede compartir libremente lo que aprenda de la conversación.',
     ],
     sections: [
       {
         heading: 'Qué es un NDA unilateral',
         paragraphs: [
-          'Un NDA unilateral (o de una sola vía) protege la información de una sola de las partes. Es el tipo correcto cuando solo una persona va a compartir información sensible — por ejemplo, cuando una empresa comparte su estrategia con un posible proveedor, pero el proveedor no va a compartir nada igual de sensible a cambio.',
-          'El riesgo de usar un NDA unilateral quedando tú del lado que SÍ comparte información es que solo tú tienes la obligación de confidencialidad — si en algún momento la otra parte también te comparte algo sensible, ese NDA no la protege a ella, y tampoco te obliga a ti a guardar silencio sobre eso.',
+          'Un NDA unilateral (o de una sola vía) protege la información de una sola de las partes. Es el tipo correcto cuando solo una persona va a compartir información sensible, por ejemplo, cuando una empresa comparte su estrategia con un posible proveedor, pero el proveedor no va a compartir nada igual de sensible a cambio.',
+          'El riesgo de usar un NDA unilateral quedando tú del lado que SÍ comparte información es que solo tú tienes la obligación de confidencialidad, si en algún momento la otra parte también te comparte algo sensible, ese NDA no la protege a ella, y tampoco te obliga a ti a guardar silencio sobre eso.',
         ],
       },
       {
         heading: 'Qué es un NDA bilateral (o mutuo)',
         paragraphs: [
-          'Un NDA bilateral protege a ambas partes por igual — cada una se compromete a no divulgar lo que la otra comparta. Es el tipo correcto cuando ambas partes van a intercambiar información sensible, como en una negociación de sociedad, una posible fusión, o cuando dos empresas van a evaluar trabajar juntas y ambas necesitan mostrar información interna para tomar la decisión.',
+          'Un NDA bilateral protege a ambas partes por igual, cada una se compromete a no divulgar lo que la otra comparta. Es el tipo correcto cuando ambas partes van a intercambiar información sensible, como en una negociación de sociedad, una posible fusión, o cuando dos empresas van a evaluar trabajar juntas y ambas necesitan mostrar información interna para tomar la decisión.',
         ],
       },
     ],
@@ -1593,14 +1593,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: '¿Puedo convertir un NDA unilateral en bilateral después de firmado?', a: 'No directamente — necesitarías firmar un nuevo NDA bilateral o un otrosí que amplíe las obligaciones. Es más simple elegir el tipo correcto desde el principio.' },
-      { q: '¿Un NDA bilateral es más "seguro" en general?', a: 'No necesariamente mejor, solo diferente — un NDA bilateral impone obligaciones a ambas partes, lo cual solo tiene sentido si ambas realmente van a compartir información sensible.' },
+      { q: '¿Puedo convertir un NDA unilateral en bilateral después de firmado?', a: 'No directamente, necesitarías firmar un nuevo NDA bilateral o un otrosí que amplíe las obligaciones. Es más simple elegir el tipo correcto desde el principio.' },
+      { q: '¿Un NDA bilateral es más "seguro" en general?', a: 'No necesariamente mejor, solo diferente, un NDA bilateral impone obligaciones a ambas partes, lo cual solo tiene sentido si ambas realmente van a compartir información sensible.' },
       { q: '¿Es válido un NDA firmado electrónicamente?', a: 'Sí, un NDA es un contrato como cualquier otro y está cubierto por los mismos marcos legales de firma electrónica (Ley ESIGN y UETA en Estados Unidos).' },
-      { q: '¿Cuánto tiempo debería durar la obligación de confidencialidad?', a: 'Varía según el caso, pero es común ver periodos de 2 a 5 años después de terminada la relación — lo importante es que el plazo quede explícito en el documento, no implícito.' },
+      { q: '¿Cuánto tiempo debería durar la obligación de confidencialidad?', a: 'Varía según el caso, pero es común ver periodos de 2 a 5 años después de terminada la relación, lo importante es que el plazo quede explícito en el documento, no implícito.' },
       { q: '¿Necesito un abogado para redactar un NDA básico?', a: 'Para casos simples, una plantilla bien estructurada suele ser suficiente. Para situaciones con mucho en juego (fusiones, propiedad intelectual valiosa), vale la pena una revisión legal adicional.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['errores-comunes-al-redactar-un-nda', 'que-pasa-si-rompen-un-nda', 'que-es-un-nda-acuerdo-confidencialidad'],
     ctaHeading: 'Crea el NDA correcto para tu situación',
@@ -1622,14 +1622,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'nda',
     heroImage: { src: '/blog/errores-comunes-al-redactar-un-nda.jpg', alt: 'Empresario revisando cuidadosamente un contrato en su escritorio', credit: 'Foto: RDNE Stock project / Pexels' },
     intro: [
-      'Un NDA firmado no siempre significa que tu información esté realmente protegida. Uno de los errores más comunes que vemos es que alguien firma (o hace firmar) un NDA descargado de internet sin adaptarlo a su caso, y solo descubre las lagunas cuando ya es demasiado tarde — cuando alguien comparte información que "técnicamente" no estaba cubierta por el texto exacto del documento.',
-      'Un NDA es tan fuerte como su redacción específica. Los errores más comunes no son de forma — son de qué tan claro y completo queda lo que se está protegiendo.',
+      'Un NDA firmado no siempre significa que tu información esté realmente protegida. Uno de los errores más comunes que vemos es que alguien firma (o hace firmar) un NDA descargado de internet sin adaptarlo a su caso, y solo descubre las lagunas cuando ya es demasiado tarde, cuando alguien comparte información que "técnicamente" no estaba cubierta por el texto exacto del documento.',
+      'Un NDA es tan fuerte como su redacción específica. Los errores más comunes no son de forma, son de qué tan claro y completo queda lo que se está protegiendo.',
     ],
     sections: [
       {
         heading: 'Por qué "descargar una plantilla" no siempre alcanza',
         paragraphs: [
-          'Una plantilla genérica de NDA suele cubrir lo básico, pero no necesariamente lo específico de tu situación — qué información exacta se considera confidencial, por cuánto tiempo, y qué excepciones existen. Cuando el documento es demasiado genérico, cualquier disputa termina discutiendo si algo realmente "calificaba" como información confidencial bajo ese texto tan amplio.',
+          'Una plantilla genérica de NDA suele cubrir lo básico, pero no necesariamente lo específico de tu situación, qué información exacta se considera confidencial, por cuánto tiempo, y qué excepciones existen. Cuando el documento es demasiado genérico, cualquier disputa termina discutiendo si algo realmente "calificaba" como información confidencial bajo ese texto tan amplio.',
         ],
       },
     ],
@@ -1637,18 +1637,18 @@ export const ARTICLES: Article[] = [
       { title: 'No definir claramente qué es "información confidencial"', description: 'Si el NDA solo dice "toda la información compartida", es más fácil de discutir en una disputa. Es mejor ser específico: datos financieros, listas de clientes, código fuente, estrategias comerciales, lo que aplique a tu caso.' },
       { title: 'Olvidar un plazo de duración', description: 'Un NDA sin fecha de vencimiento puede generar disputas sobre si la obligación sigue vigente años después. Definir un plazo claro (por ejemplo, 3 años después de terminada la relación) evita esa ambigüedad.' },
       { title: 'No incluir excepciones razonables', description: 'Información que ya era pública, que la otra parte ya conocía antes, o que debe divulgarse por orden judicial normalmente se excluye de la obligación de confidencialidad. Un NDA sin estas excepciones puede ser más difícil de hacer cumplir en la práctica.' },
-      { title: 'Usar el mismo NDA para todo tipo de relación', description: 'Un NDA para un posible inversionista no debería verse igual que uno para un proveedor o un empleado — cada uno tiene un nivel distinto de acceso a información y de riesgo real.' },
+      { title: 'Usar el mismo NDA para todo tipo de relación', description: 'Un NDA para un posible inversionista no debería verse igual que uno para un proveedor o un empleado, cada uno tiene un nivel distinto de acceso a información y de riesgo real.' },
       { title: 'No especificar qué pasa si se incumple', description: 'Un NDA que no menciona las consecuencias de un incumplimiento (o al menos deja claro que se pueden buscar remedios legales) tiene menos peso disuasivo que uno que sí lo hace explícito.' },
     ],
     faq: [
-      { q: '¿Un NDA genérico de internet es mejor que no tener ninguno?', a: 'Sí, siempre es mejor que nada — pero adaptarlo a tu situación específica reduce mucho el riesgo de que quede una laguna importante.' },
+      { q: '¿Un NDA genérico de internet es mejor que no tener ninguno?', a: 'Sí, siempre es mejor que nada, pero adaptarlo a tu situación específica reduce mucho el riesgo de que quede una laguna importante.' },
       { q: '¿Qué tan detallado debe ser un NDA?', a: 'Lo suficiente para que quede claro exactamente qué se está protegiendo, sin volverlo tan extenso que la otra parte dude en firmarlo. El equilibrio importa.' },
-      { q: '¿Puedo modificar un NDA después de firmado si encuentro un error?', a: 'No unilateralmente — cualquier cambio necesita el acuerdo de ambas partes, generalmente mediante un otrosí o un nuevo documento.' },
-      { q: '¿Necesito testigos para que un NDA sea válido?', a: 'Generalmente no — lo que importa es que ambas partes firmen con intención real de obligarse, algo que una firma electrónica con registro de auditoría documenta bien.' },
-      { q: '¿Un NDA firmado electrónicamente es tan fuerte como uno en papel?', a: 'Sí — la validez legal no depende de si se firmó con bolígrafo o electrónicamente, sino de que exista evidencia clara de que la persona firmó con intención de hacerlo.' },
+      { q: '¿Puedo modificar un NDA después de firmado si encuentro un error?', a: 'No unilateralmente, cualquier cambio necesita el acuerdo de ambas partes, generalmente mediante un otrosí o un nuevo documento.' },
+      { q: '¿Necesito testigos para que un NDA sea válido?', a: 'Generalmente no, lo que importa es que ambas partes firmen con intención real de obligarse, algo que una firma electrónica con registro de auditoría documenta bien.' },
+      { q: '¿Un NDA firmado electrónicamente es tan fuerte como uno en papel?', a: 'Sí, la validez legal no depende de si se firmó con bolígrafo o electrónicamente, sino de que exista evidencia clara de que la persona firmó con intención de hacerlo.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['nda-unilateral-vs-bilateral', 'que-pasa-si-rompen-un-nda', 'que-es-un-nda-acuerdo-confidencialidad'],
     ctaHeading: 'Redacta y firma tu NDA sin complicaciones',
@@ -1670,13 +1670,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'nda',
     heroImage: { src: '/blog/que-pasa-si-rompen-un-nda.jpg', alt: 'Balanza de la justicia y martillo de juez sobre un escritorio de madera', credit: 'Foto: Sora Shimazaki / Pexels' },
     intro: [
-      'Descubrir que alguien compartió información que prometió mantener confidencial genera una mezcla de enojo e incertidumbre sobre qué hacer ahora. La buena noticia es que si el NDA estaba bien redactado y firmado, no te quedas sin opciones — la mala noticia es que actuar rápido y con evidencia clara marca una diferencia enorme en qué tan bien se resuelve la situación.',
+      'Descubrir que alguien compartió información que prometió mantener confidencial genera una mezcla de enojo e incertidumbre sobre qué hacer ahora. La buena noticia es que si el NDA estaba bien redactado y firmado, no te quedas sin opciones, la mala noticia es que actuar rápido y con evidencia clara marca una diferencia enorme en qué tan bien se resuelve la situación.',
     ],
     sections: [
       {
         heading: 'Los primeros pasos, antes de cualquier cosa',
         paragraphs: [
-          'Antes de reaccionar, reúne evidencia concreta: qué información específica se divulgó, cuándo, y cómo puedes demostrar que efectivamente estaba cubierta por el NDA. Esto incluye guardar comunicaciones, capturas de pantalla, o cualquier rastro de la divulgación — entre más clara la evidencia, más fuerte tu posición si el caso avanza.',
+          'Antes de reaccionar, reúne evidencia concreta: qué información específica se divulgó, cuándo, y cómo puedes demostrar que efectivamente estaba cubierta por el NDA. Esto incluye guardar comunicaciones, capturas de pantalla, o cualquier rastro de la divulgación, entre más clara la evidencia, más fuerte tu posición si el caso avanza.',
           'Uno de los errores más comunes que vemos es que la parte afectada confronta emocionalmente antes de documentar nada, lo que le da tiempo a la otra parte de "acomodar" su versión de los hechos.',
         ],
       },
@@ -1684,7 +1684,7 @@ export const ARTICLES: Article[] = [
         heading: 'Qué opciones existen realmente',
         paragraphs: [
           'Dependiendo de la gravedad, las opciones van desde una carta formal exigiendo que se detenga la divulgación (muchas veces esto basta si la otra parte no quiere un conflicto legal), hasta una demanda por daños si el incumplimiento causó una pérdida económica real y medible. Un buen NDA debería especificar qué remedios están disponibles, lo cual facilita mucho esta conversación.',
-          'La fuerza real de tu posición depende de qué tan bien redactado estaba el NDA original — si definía claramente qué era confidencial, por cuánto tiempo, y qué pasaba en caso de incumplimiento, tienes una base mucho más sólida que si el documento era vago.',
+          'La fuerza real de tu posición depende de qué tan bien redactado estaba el NDA original, si definía claramente qué era confidencial, por cuánto tiempo, y qué pasaba en caso de incumplimiento, tienes una base mucho más sólida que si el documento era vago.',
         ],
       },
     ],
@@ -1692,15 +1692,15 @@ export const ARTICLES: Article[] = [
       { q: '¿Vale la pena demandar por romper un NDA?', a: 'Depende del daño real causado. Si la divulgación causó una pérdida económica significativa y medible, puede justificar el costo de un proceso legal; si el daño fue mínimo, una carta formal exigiendo que se detenga suele ser más práctico.' },
       { q: '¿Qué evidencia necesito para demostrar que se rompió el NDA?', a: 'Idealmente, una copia del NDA firmado, evidencia clara de qué información se divulgó, y algo que conecte esa divulgación con la persona que firmó el acuerdo.' },
       { q: '¿Puedo actuar si no tengo el NDA firmado electrónicamente con registro de auditoría?', a: 'Sí es posible, pero un registro de auditoría (quién firmó, cuándo, desde dónde) hace mucho más simple demostrar que la persona correcta efectivamente se comprometió a esas condiciones.' },
-      { q: '¿Cuánto tiempo tengo para actuar después de descubrir el incumplimiento?', a: 'Varía según la jurisdicción y el tipo de daño, pero en general conviene actuar lo antes posible — entre más tiempo pase, más difícil es reconstruir la evidencia y más débil se ve tu reclamo.' },
-      { q: '¿Qué puedo hacer para que esto no vuelva a pasar?', a: 'Revisar que tus NDAs futuros definan claramente qué es confidencial, incluyan un plazo específico, y dejen explícitas las consecuencias de un incumplimiento — la mayoría de los problemas nacen de un NDA demasiado vago desde el principio.' },
+      { q: '¿Cuánto tiempo tengo para actuar después de descubrir el incumplimiento?', a: 'Varía según la jurisdicción y el tipo de daño, pero en general conviene actuar lo antes posible, entre más tiempo pase, más difícil es reconstruir la evidencia y más débil se ve tu reclamo.' },
+      { q: '¿Qué puedo hacer para que esto no vuelva a pasar?', a: 'Revisar que tus NDAs futuros definan claramente qué es confidencial, incluyan un plazo específico, y dejen explícitas las consecuencias de un incumplimiento, la mayoría de los problemas nacen de un NDA demasiado vago desde el principio.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['errores-comunes-al-redactar-un-nda', 'nda-unilateral-vs-bilateral', 'que-es-un-nda-acuerdo-confidencialidad'],
     ctaHeading: 'Empieza con un NDA bien redactado desde el principio',
-    ctaBody: 'Codec Document es gratis para crear y firmar tu acuerdo de confidencialidad — con registro de auditoría incluido.',
+    ctaBody: 'Codec Document es gratis para crear y firmar tu acuerdo de confidencialidad, con registro de auditoría incluido.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/nda-generator',
   },
@@ -1718,13 +1718,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'inmobiliarias',
     heroImage: { src: '/blog/como-automatizar-contratos-en-una-inmobiliaria-pequena.jpg', alt: 'Agente inmobiliario entregando las llaves de una vivienda a un cliente', credit: 'Foto: Pexels' },
     intro: [
-      'Con un equipo de tres o cuatro personas, cada hora que se va en imprimir, escanear y perseguir firmas es una hora que no se dedica a mostrar propiedades o cerrar nuevos contratos. Automatizar no significa comprar un sistema caro de gestión inmobiliaria — para la mayoría de inmobiliarias pequeñas, significa simplemente dejar de depender del papel para tres tareas puntuales: el contrato de arrendamiento, el recibo de garantía, y las actualizaciones anuales de renta.',
+      'Con un equipo de tres o cuatro personas, cada hora que se va en imprimir, escanear y perseguir firmas es una hora que no se dedica a mostrar propiedades o cerrar nuevos contratos. Automatizar no significa comprar un sistema caro de gestión inmobiliaria, para la mayoría de inmobiliarias pequeñas, significa simplemente dejar de depender del papel para tres tareas puntuales: el contrato de arrendamiento, el recibo de garantía, y las actualizaciones anuales de renta.',
     ],
     sections: [
       {
         heading: 'Dónde se pierde más tiempo en una inmobiliaria pequeña',
         paragraphs: [
-          'El cuello de botella casi nunca es redactar el contrato — es coordinar que el propietario, el arrendatario y, a veces, un codeudor, firmen el mismo documento estando en lugares distintos. En papel, eso implica correo certificado, visitas a la oficina, o escanear y reenviar varias veces hasta que todas las firmas estén completas.',
+          'El cuello de botella casi nunca es redactar el contrato, es coordinar que el propietario, el arrendatario y, a veces, un codeudor, firmen el mismo documento estando en lugares distintos. En papel, eso implica correo certificado, visitas a la oficina, o escanear y reenviar varias veces hasta que todas las firmas estén completas.',
           'Una plantilla reutilizable de contrato de arrendamiento, combinada con un enlace de firma que cada parte completa desde su celular, elimina casi toda esa coordinación manual.',
         ],
       },
@@ -1739,14 +1739,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: '¿Necesito un sistema completo de gestión inmobiliaria para esto?', a: 'No para empezar. Automatizar la firma de contratos no requiere un CRM inmobiliario completo — basta con una plantilla reutilizable y una herramienta de firma electrónica.' },
-      { q: '¿Qué pasa si el propietario no está familiarizado con la tecnología?', a: 'Un enlace de firma electrónica bien diseñado se abre directamente desde el navegador del celular, sin instalar nada — la mayoría de las personas lo entienden con una sola explicación breve.' },
+      { q: '¿Necesito un sistema completo de gestión inmobiliaria para esto?', a: 'No para empezar. Automatizar la firma de contratos no requiere un CRM inmobiliario completo, basta con una plantilla reutilizable y una herramienta de firma electrónica.' },
+      { q: '¿Qué pasa si el propietario no está familiarizado con la tecnología?', a: 'Un enlace de firma electrónica bien diseñado se abre directamente desde el navegador del celular, sin instalar nada, la mayoría de las personas lo entienden con una sola explicación breve.' },
       { q: '¿Es válido un contrato de arrendamiento firmado electrónicamente?', a: 'Sí, un contrato de arrendamiento es un contrato como cualquier otro y está cubierto por los marcos legales de firma electrónica vigentes.' },
-      { q: '¿Puedo tener varias plantillas para distintos tipos de propiedad?', a: 'Sí, y de hecho es recomendable — un apartamento, una casa y un local comercial suelen necesitar cláusulas distintas.' },
-      { q: '¿Cuánto cuesta empezar a automatizar esto?', a: 'Puede ser gratis — Codec Document ofrece un plan gratuito suficiente para el volumen de contratos de la mayoría de inmobiliarias pequeñas.' },
+      { q: '¿Puedo tener varias plantillas para distintos tipos de propiedad?', a: 'Sí, y de hecho es recomendable, un apartamento, una casa y un local comercial suelen necesitar cláusulas distintas.' },
+      { q: '¿Cuánto cuesta empezar a automatizar esto?', a: 'Puede ser gratis: Codec Document ofrece un plan gratuito suficiente para el volumen de contratos de la mayoría de inmobiliarias pequeñas.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['firma-electronica-para-inmobiliarias', 'errores-comunes-en-contrato-de-arrendamiento'],
     ctaHeading: 'Automatiza el papeleo de tu próxima renta',
@@ -1768,14 +1768,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'freelancers',
     heroImage: { src: '/blog/como-protegerse-como-contratista-independiente.jpg', alt: 'Contratista independiente de pie en un sitio de construcción', credit: 'Foto: Pexels' },
     intro: [
-      'Empezar a trabajar "de buena fe", confiando en que el contrato se firmará después, es de los errores más costosos que comete un contratista independiente. Uno de los patrones más comunes que vemos es un cliente que pide empezar "ya", promete formalizar el contrato luego, y esa formalización nunca llega — hasta que hay una disputa sobre el alcance, el pago, o los cambios de último momento, y no hay nada por escrito que respalde ninguna de las dos versiones.',
+      'Empezar a trabajar "de buena fe", confiando en que el contrato se firmará después, es de los errores más costosos que comete un contratista independiente. Uno de los patrones más comunes que vemos es un cliente que pide empezar "ya", promete formalizar el contrato luego, y esa formalización nunca llega, hasta que hay una disputa sobre el alcance, el pago, o los cambios de último momento, y no hay nada por escrito que respalde ninguna de las dos versiones.',
     ],
     sections: [
       {
         heading: 'Por qué "empezar mientras se firma" es un riesgo real',
         paragraphs: [
           'Sin contrato firmado, no hay una definición clara de qué incluye el trabajo, cuánto se cobra, ni qué pasa si el cliente pide cambios a mitad del proyecto. Cualquiera de esos puntos puede convertirse en una disputa costosa, y sin un documento firmado, la palabra de una parte vale tanto como la de la otra.',
-          'La solución no es desconfiar del cliente — es simplemente hacer que firmar sea tan rápido que no haya excusa para no hacerlo antes de empezar. Un enlace de firma que toma dos minutos elimina la razón más común para posponerlo.',
+          'La solución no es desconfiar del cliente, es simplemente hacer que firmar sea tan rápido que no haya excusa para no hacerlo antes de empezar. Un enlace de firma que toma dos minutos elimina la razón más común para posponerlo.',
         ],
       },
     ],
@@ -1790,14 +1790,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: '¿Puedo simplemente enviar una cotización en vez de un contrato?', a: 'Una cotización aceptada por escrito ya es mejor que nada, pero un contrato formal protege mejor porque puede incluir condiciones de pago, alcance y qué pasa ante cambios — cosas que una cotización simple normalmente no cubre.' },
-      { q: '¿Qué hago si el cliente se niega a firmar antes de empezar?', a: 'Es una señal de alerta legítima — un cliente que confía en el trabajo no debería tener problema en firmar un contrato claro antes de empezar.' },
-      { q: '¿Un contrato firmado electrónicamente es suficiente para un proyecto pequeño?', a: 'Sí, no necesitas un documento extenso — incluso un contrato corto con alcance, precio y plazo bien definidos, firmado electrónicamente, te da una base sólida.' },
-      { q: '¿Qué pasa si ya empecé a trabajar sin contrato firmado?', a: 'Lo mejor es formalizarlo lo antes posible, incluso a mitad del proyecto — un contrato firmado tarde sigue siendo mucho mejor que ninguno.' },
-      { q: '¿Necesito un abogado para redactar mi primer contrato de servicios?', a: 'No necesariamente para empezar — una plantilla bien estructurada cubre la mayoría de los casos comunes; para proyectos de mucho valor, una revisión legal adicional es una buena inversión.' },
+      { q: '¿Puedo simplemente enviar una cotización en vez de un contrato?', a: 'Una cotización aceptada por escrito ya es mejor que nada, pero un contrato formal protege mejor porque puede incluir condiciones de pago, alcance y qué pasa ante cambios, cosas que una cotización simple normalmente no cubre.' },
+      { q: '¿Qué hago si el cliente se niega a firmar antes de empezar?', a: 'Es una señal de alerta legítima, un cliente que confía en el trabajo no debería tener problema en firmar un contrato claro antes de empezar.' },
+      { q: '¿Un contrato firmado electrónicamente es suficiente para un proyecto pequeño?', a: 'Sí, no necesitas un documento extenso, incluso un contrato corto con alcance, precio y plazo bien definidos, firmado electrónicamente, te da una base sólida.' },
+      { q: '¿Qué pasa si ya empecé a trabajar sin contrato firmado?', a: 'Lo mejor es formalizarlo lo antes posible, incluso a mitad del proyecto, un contrato firmado tarde sigue siendo mucho mejor que ninguno.' },
+      { q: '¿Necesito un abogado para redactar mi primer contrato de servicios?', a: 'No necesariamente para empezar, una plantilla bien estructurada cubre la mayoría de los casos comunes; para proyectos de mucho valor, una revisión legal adicional es una buena inversión.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['reducir-tiempo-firma-contratos'],
     ctaHeading: 'No empieces tu próximo proyecto sin contrato firmado',
@@ -1811,7 +1811,7 @@ export const ARTICLES: Article[] = [
     region: 'latam',
     category: 'PRODUCTIVIDAD',
     title: 'Cómo una Empresa Puede Ahorrar Cientos de Horas al Año Eliminando el Papel',
-    metaDescription: 'El costo del papel no es solo el papel — es el tiempo que tu equipo pierde imprimiendo, buscando y archivando. Cómo calcular y recuperar ese tiempo.',
+    metaDescription: 'El costo del papel no es solo el papel, es el tiempo que tu equipo pierde imprimiendo, buscando y archivando. Cómo calcular y recuperar ese tiempo.',
     keywords: 'ahorrar tiempo eliminando papel, empresa sin papel, digitalizar documentos empresa, productividad documentos',
     dateLabel: 'Julio 2026',
     isoDate: '2026-07-20',
@@ -1819,28 +1819,28 @@ export const ARTICLES: Article[] = [
     topicCluster: 'papel-vs-digital',
     heroImage: { src: '/blog/ahorrar-horas-eliminando-papel-en-tu-empresa.jpg', alt: 'Pilas de documentos de papel acumulados en una oficina', credit: 'Foto: Chengxin Zhao / Pexels' },
     intro: [
-      'El papel no cuesta caro por la hoja — cuesta caro por el tiempo que tu equipo pasa imprimiendo, buscando, archivando y volviendo a buscar el mismo documento meses después. Ese tiempo casi nunca se mide, y por eso pocas empresas se dan cuenta de cuánto realmente les está costando.',
+      'El papel no cuesta caro por la hoja, cuesta caro por el tiempo que tu equipo pasa imprimiendo, buscando, archivando y volviendo a buscar el mismo documento meses después. Ese tiempo casi nunca se mide, y por eso pocas empresas se dan cuenta de cuánto realmente les está costando.',
     ],
     sections: [
       {
         heading: 'Cómo calcular lo que el papel te está costando de verdad',
         paragraphs: [
-          'Haz este ejercicio simple: piensa en cuántos minutos le toma a alguien de tu equipo encontrar un contrato firmado hace seis meses — buscar en el archivero, en carpetas, o preguntarle a alguien más si lo tiene. Multiplica ese tiempo por cuántas veces al mes pasa algo similar (buscar un contrato, una factura firmada, un acuerdo con un proveedor), y por cuántas personas en tu equipo hacen ese mismo tipo de búsqueda. La cifra suele sorprender — no porque cada búsqueda individual sea larga, sino porque se repite constantemente sin que nadie la note como un costo real.',
-          'A eso hay que sumarle el tiempo de imprimir, firmar físicamente, escanear y archivar cada documento nuevo — pasos que, sumados a lo largo de un año, en la mayoría de empresas pequeñas y medianas superan fácilmente el equivalente a varias semanas de trabajo de una persona.',
+          'Haz este ejercicio simple: piensa en cuántos minutos le toma a alguien de tu equipo encontrar un contrato firmado hace seis meses, buscar en el archivero, en carpetas, o preguntarle a alguien más si lo tiene. Multiplica ese tiempo por cuántas veces al mes pasa algo similar (buscar un contrato, una factura firmada, un acuerdo con un proveedor), y por cuántas personas en tu equipo hacen ese mismo tipo de búsqueda. La cifra suele sorprender, no porque cada búsqueda individual sea larga, sino porque se repite constantemente sin que nadie la note como un costo real.',
+          'A eso hay que sumarle el tiempo de imprimir, firmar físicamente, escanear y archivar cada documento nuevo, pasos que, sumados a lo largo de un año, en la mayoría de empresas pequeñas y medianas superan fácilmente el equivalente a varias semanas de trabajo de una persona.',
         ],
       },
       {
         heading: 'Qué cambia al pasar a documentos digitales',
         paragraphs: [
-          'Con documentos firmados y almacenados digitalmente, buscar un contrato de hace seis meses toma segundos, no minutos — y no depende de que alguien recuerde en qué carpeta física quedó archivado. El tiempo de imprimir, escanear y archivar desaparece por completo, porque el documento queda firmado y guardado en el mismo paso.',
+          'Con documentos firmados y almacenados digitalmente, buscar un contrato de hace seis meses toma segundos, no minutos, y no depende de que alguien recuerde en qué carpeta física quedó archivado. El tiempo de imprimir, escanear y archivar desaparece por completo, porque el documento queda firmado y guardado en el mismo paso.',
         ],
       },
     ],
     faq: [
       { q: '¿Realmente se ahorra tanto tiempo eliminando el papel?', a: 'El ahorro varía según cuántos documentos maneje tu empresa, pero el patrón es consistente: el tiempo de búsqueda y archivo manual se reduce a casi nada cuando todo queda en un solo lugar digital y buscable.' },
       { q: '¿Necesito escanear todos mis documentos antiguos en papel?', a: 'No es obligatorio, pero para los documentos que consultas con frecuencia sí vale la pena digitalizarlos una vez; los nuevos, simplemente empiézalos a manejar digitalmente desde ahora.' },
-      { q: '¿Es seguro guardar documentos legales solo de forma digital?', a: 'Sí, siempre que la plataforma que uses tenga registro de auditoría y respaldo — de hecho, un documento digital bien resguardado es más difícil de perder que uno en papel guardado en una sola oficina.' },
-      { q: '¿Por dónde empiezo si mi empresa todavía usa mucho papel?', a: 'Empieza por los documentos que más se repiten — contratos de servicio, acuerdos de confidencialidad, cartas de oferta — y muévelos a firma electrónica primero; el resto se puede ir migrando con el tiempo.' },
+      { q: '¿Es seguro guardar documentos legales solo de forma digital?', a: 'Sí, siempre que la plataforma que uses tenga registro de auditoría y respaldo, de hecho, un documento digital bien resguardado es más difícil de perder que uno en papel guardado en una sola oficina.' },
+      { q: '¿Por dónde empiezo si mi empresa todavía usa mucho papel?', a: 'Empieza por los documentos que más se repiten, contratos de servicio, acuerdos de confidencialidad, cartas de oferta, y muévelos a firma electrónica primero; el resto se puede ir migrando con el tiempo.' },
       { q: '¿Esto tiene algún costo para empezar?', a: 'No necesariamente. Codec Document ofrece un plan gratuito para crear y firmar documentos digitalmente, suficiente para empezar a eliminar el papel del día a día.' },
     ],
     relatedSlugs: ['costo-oculto-del-papel-en-empresas', 'como-organizar-documentos-legales-de-tu-empresa'],
@@ -1863,13 +1863,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'organizacion-documental',
     heroImage: { src: '/blog/como-organizar-documentos-legales-de-tu-empresa.jpg', alt: 'Carpetas de documentos organizadas cuidadosamente en una oficina', credit: 'Foto: Pexels' },
     intro: [
-      'Si alguien te pidiera ahora mismo el contrato firmado con tu proveedor principal hace un año, ¿sabrías exactamente dónde está? Para muchas pequeñas empresas, la respuesta honesta es "tendría que buscar" — y esa incertidumbre no se nota hasta el peor momento posible: una auditoría, una disputa, o una renovación que dependía de una cláusula que nadie recuerda con exactitud.',
+      'Si alguien te pidiera ahora mismo el contrato firmado con tu proveedor principal hace un año, ¿sabrías exactamente dónde está? Para muchas pequeñas empresas, la respuesta honesta es "tendría que buscar", y esa incertidumbre no se nota hasta el peor momento posible: una auditoría, una disputa, o una renovación que dependía de una cláusula que nadie recuerda con exactitud.',
     ],
     sections: [
       {
         heading: 'Por qué la mayoría de empresas pequeñas no tienen esto resuelto',
         paragraphs: [
-          'No es por descuido — es que los documentos legales suelen llegar de formas distintas (correo, WhatsApp, papel firmado en una reunión) y nadie definió nunca un solo lugar donde deberían terminar todos. Con el tiempo, cada persona del equipo desarrolla su propio sistema informal, y la empresa termina con contratos dispersos en varias bandejas de entrada distintas.',
+          'No es por descuido, es que los documentos legales suelen llegar de formas distintas (correo, WhatsApp, papel firmado en una reunión) y nadie definió nunca un solo lugar donde deberían terminar todos. Con el tiempo, cada persona del equipo desarrolla su propio sistema informal, y la empresa termina con contratos dispersos en varias bandejas de entrada distintas.',
         ],
       },
     ],
@@ -1884,15 +1884,15 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: '¿Necesito un software especializado para esto?', a: 'No es obligatorio para empezar — lo importante es la disciplina de un solo lugar central; una plataforma de firma electrónica que además almacene los documentos firmados automáticamente hace esto mucho más fácil.' },
+      { q: '¿Necesito un software especializado para esto?', a: 'No es obligatorio para empezar, lo importante es la disciplina de un solo lugar central; una plataforma de firma electrónica que además almacene los documentos firmados automáticamente hace esto mucho más fácil.' },
       { q: '¿Cómo organizo los documentos que ya tengo dispersos?', a: 'Empieza por los más importantes o más consultados, y ve migrándolos poco a poco a la estructura central en vez de intentar organizarlo todo de una sola vez.' },
       { q: '¿Cuánto tiempo hay que guardar un contrato después de terminado?', a: 'Varía según el tipo de documento y la jurisdicción, pero muchos negocios optan por conservar contratos comerciales varios años después de finalizados, por si surge una disputa tardía.' },
-      { q: '¿Qué pasa si un documento se firmó en papel hace tiempo?', a: 'Puedes escanearlo e incorporarlo a tu sistema digital central, aunque la firma original haya sido física — lo importante es que quede en el mismo lugar que los demás.' },
-      { q: '¿Esto ayuda si alguna vez tengo una auditoría?', a: 'Sí, considerablemente — poder mostrar rápidamente cualquier contrato solicitado, con fecha y firma clara, transmite organización y reduce el tiempo de respuesta ante cualquier revisión.' },
+      { q: '¿Qué pasa si un documento se firmó en papel hace tiempo?', a: 'Puedes escanearlo e incorporarlo a tu sistema digital central, aunque la firma original haya sido física, lo importante es que quede en el mismo lugar que los demás.' },
+      { q: '¿Esto ayuda si alguna vez tengo una auditoría?', a: 'Sí, considerablemente, poder mostrar rápidamente cualquier contrato solicitado, con fecha y firma clara, transmite organización y reduce el tiempo de respuesta ante cualquier revisión.' },
     ],
     relatedSlugs: ['ahorrar-horas-eliminando-papel-en-tu-empresa', 'como-verificar-identidad-de-un-firmante'],
     ctaHeading: 'Empieza a centralizar tus documentos hoy',
-    ctaBody: 'Codec Document guarda automáticamente cada documento que firmas, en un solo lugar accesible cuando lo necesites — es gratis para empezar.',
+    ctaBody: 'Codec Document guarda automáticamente cada documento que firmas, en un solo lugar accesible cuando lo necesites, es gratis para empezar.',
     ctaLabel: 'Probar gratis',
     ctaHref: '/firma-electronica',
   },
@@ -1910,31 +1910,31 @@ export const ARTICLES: Article[] = [
     topicCluster: 'arrendamiento',
     heroImage: { src: '/blog/errores-comunes-en-contrato-de-arrendamiento.jpg', alt: 'Agente inmobiliario entregando las llaves de un apartamento en arriendo', credit: 'Foto: Pexels' },
     intro: [
-      'La mayoría de los problemas entre arrendador e inquilino no nacen del comportamiento de la persona — nacen de un contrato que dejó algo importante sin definir claramente. Uno de los errores más comunes que vemos es un arrendador que usa el mismo contrato genérico durante años, sin actualizarlo, hasta que aparece una situación que el documento simplemente no contempló.',
+      'La mayoría de los problemas entre arrendador e inquilino no nacen del comportamiento de la persona, nacen de un contrato que dejó algo importante sin definir claramente. Uno de los errores más comunes que vemos es un arrendador que usa el mismo contrato genérico durante años, sin actualizarlo, hasta que aparece una situación que el documento simplemente no contempló.',
     ],
     sections: [
       {
         heading: 'Por qué los vacíos en el contrato salen caros después',
         paragraphs: [
-          'Cuando un contrato de arrendamiento no especifica algo — quién paga una reparación, qué pasa si el inquilino se atrasa, en qué condiciones se devuelve el depósito — esa ambigüedad se convierte en una discusión justo cuando ya hay tensión entre las partes. Definir estos puntos por adelantado, cuando ambas partes todavía están de buen ánimo, evita la mayoría de esos conflictos.',
+          'Cuando un contrato de arrendamiento no especifica algo, quién paga una reparación, qué pasa si el inquilino se atrasa, en qué condiciones se devuelve el depósito, esa ambigüedad se convierte en una discusión justo cuando ya hay tensión entre las partes. Definir estos puntos por adelantado, cuando ambas partes todavía están de buen ánimo, evita la mayoría de esos conflictos.',
         ],
       },
     ],
     mistakes: [
       { title: 'No especificar quién paga cada tipo de reparación', description: 'Sin esto claro, cualquier reparación se convierte en una negociación caso por caso. Definir de antemano qué cubre el arrendador y qué cubre el inquilino ahorra fricciones futuras.' },
-      { title: 'Dejar ambiguo el proceso de devolución del depósito', description: 'Cuándo se devuelve, bajo qué condiciones, y qué se descuenta por daños debe quedar explícito — es la fuente más común de disputas al terminar un contrato.' },
+      { title: 'Dejar ambiguo el proceso de devolución del depósito', description: 'Cuándo se devuelve, bajo qué condiciones, y qué se descuenta por daños debe quedar explícito, es la fuente más común de disputas al terminar un contrato.' },
       { title: 'No definir qué pasa ante un atraso en el pago', description: 'Un contrato que no menciona plazos de gracia ni consecuencias por atraso deja al arrendador improvisando cada vez que ocurre, en vez de aplicar una regla ya acordada.' },
-      { title: 'Usar el mismo contrato para propiedades muy distintas', description: 'Un apartamento, una casa con jardín y un local comercial tienen necesidades distintas — usar la misma plantilla sin ajustes deja vacíos específicos de cada tipo de propiedad.' },
+      { title: 'Usar el mismo contrato para propiedades muy distintas', description: 'Un apartamento, una casa con jardín y un local comercial tienen necesidades distintas, usar la misma plantilla sin ajustes deja vacíos específicos de cada tipo de propiedad.' },
     ],
     faq: [
       { q: '¿Qué debe incluir como mínimo un contrato de arrendamiento?', a: 'Monto y fecha de pago, duración, condiciones de renovación, responsabilidad de reparaciones, condiciones del depósito, y qué pasa en caso de incumplimiento de cualquiera de las partes.' },
-      { q: '¿Puedo actualizar un contrato de arrendamiento ya firmado?', a: 'Cualquier cambio requiere el acuerdo de ambas partes, normalmente mediante un otrosí — no se puede modificar unilateralmente un contrato ya firmado.' },
+      { q: '¿Puedo actualizar un contrato de arrendamiento ya firmado?', a: 'Cualquier cambio requiere el acuerdo de ambas partes, normalmente mediante un otrosí, no se puede modificar unilateralmente un contrato ya firmado.' },
       { q: '¿Es válido un contrato de arrendamiento firmado electrónicamente?', a: 'Sí, un contrato de arrendamiento está cubierto por los mismos marcos legales de firma electrónica que cualquier otro contrato comercial.' },
-      { q: '¿Necesito un contrato distinto para cada tipo de propiedad?', a: 'No necesariamente uno completamente distinto, pero sí ajustar las cláusulas relevantes — un local comercial, por ejemplo, suele necesitar cláusulas sobre uso del espacio que un apartamento residencial no requiere.' },
+      { q: '¿Necesito un contrato distinto para cada tipo de propiedad?', a: 'No necesariamente uno completamente distinto, pero sí ajustar las cláusulas relevantes, un local comercial, por ejemplo, suele necesitar cláusulas sobre uso del espacio que un apartamento residencial no requiere.' },
       { q: '¿Qué pasa si el inquilino se niega a firmar electrónicamente?', a: 'Puedes ofrecer la alternativa en papel, pero explicar que tiene la misma validez legal suele resolver la mayoría de las dudas.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['como-automatizar-contratos-en-una-inmobiliaria-pequena', 'firma-electronica-para-inmobiliarias'],
     ctaHeading: 'Redacta un contrato de arrendamiento completo, sin vacíos',
@@ -1962,22 +1962,22 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Qué tan real es este riesgo',
         paragraphs: [
-          'En la mayoría de transacciones cotidianas, el riesgo de suplantación es bajo — ya conoces a la otra parte, o la relación viene de una referencia de confianza. Pero en contratos de mayor valor, con contrapartes nuevas, o en procesos completamente remotos, verificar la identidad deja de ser opcional y se vuelve una parte esencial de proteger el acuerdo.',
+          'En la mayoría de transacciones cotidianas, el riesgo de suplantación es bajo, ya conoces a la otra parte, o la relación viene de una referencia de confianza. Pero en contratos de mayor valor, con contrapartes nuevas, o en procesos completamente remotos, verificar la identidad deja de ser opcional y se vuelve una parte esencial de proteger el acuerdo.',
         ],
       },
       {
         heading: 'Qué hace una buena verificación de identidad',
         paragraphs: [
-          'Una verificación sólida no depende solo de la firma — combina evidencia adicional como una foto del documento de identidad, una selfie biométrica que se compara con esa identificación, y un registro de auditoría con la IP y el momento exacto de la firma. Ninguno de estos elementos por sí solo es infalible, pero juntos crean un rastro mucho más difícil de falsificar que una simple firma en papel.',
+          'Una verificación sólida no depende solo de la firma, combina evidencia adicional como una foto del documento de identidad, una selfie biométrica que se compara con esa identificación, y un registro de auditoría con la IP y el momento exacto de la firma. Ninguno de estos elementos por sí solo es infalible, pero juntos crean un rastro mucho más difícil de falsificar que una simple firma en papel.',
         ],
       },
     ],
     faq: [
-      { q: '¿Es necesario verificar identidad en todos los contratos?', a: 'No siempre — para relaciones de confianza ya establecidas puede ser innecesario, pero para contratos de alto valor o contrapartes nuevas es una capa de protección que vale la pena.' },
-      { q: '¿Qué tan confiable es una selfie biométrica para verificar identidad?', a: 'Es una capa adicional útil, especialmente combinada con la foto del documento de identidad — ninguna verificación es 100% infalible, pero juntas hacen mucho más difícil una suplantación.' },
-      { q: '¿Esto retrasa el proceso de firma?', a: 'Agrega un paso adicional, pero suele tomar solo un par de minutos más — un costo pequeño comparado con el riesgo de un contrato firmado por la persona equivocada.' },
+      { q: '¿Es necesario verificar identidad en todos los contratos?', a: 'No siempre, para relaciones de confianza ya establecidas puede ser innecesario, pero para contratos de alto valor o contrapartes nuevas es una capa de protección que vale la pena.' },
+      { q: '¿Qué tan confiable es una selfie biométrica para verificar identidad?', a: 'Es una capa adicional útil, especialmente combinada con la foto del documento de identidad, ninguna verificación es 100% infalible, pero juntas hacen mucho más difícil una suplantación.' },
+      { q: '¿Esto retrasa el proceso de firma?', a: 'Agrega un paso adicional, pero suele tomar solo un par de minutos más, un costo pequeño comparado con el riesgo de un contrato firmado por la persona equivocada.' },
       { q: '¿Qué pasa si la otra parte no tiene documento de identidad a la mano?', a: 'Es preferible posponer la firma hasta que pueda verificarse correctamente, sobre todo en contratos de valor significativo.' },
-      { q: '¿Esto es distinto de un certificado digital criptográfico?', a: 'Sí — un certificado digital es una tecnología criptográfica específica, mientras que la verificación biométrica combina evidencia de identidad (documento + selfie) con el proceso de firma electrónica estándar.' },
+      { q: '¿Esto es distinto de un certificado digital criptográfico?', a: 'Sí, un certificado digital es una tecnología criptográfica específica, mientras que la verificación biométrica combina evidencia de identidad (documento + selfie) con el proceso de firma electrónica estándar.' },
     ],
     relatedSlugs: ['como-organizar-documentos-legales-de-tu-empresa'],
     ctaHeading: 'Verifica la identidad de tus firmantes con confianza',
@@ -1999,22 +1999,22 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contract-speed',
     heroImage: { src: '/blog/stop-losing-sales-because-of-slow-contracts.jpg', alt: 'Two business people shaking hands after closing a deal', credit: 'Photo: Yan Krukau / Pexels' },
     intro: [
-      'A client says "let\'s move forward" and then, mysteriously, goes quiet. One of the most common mistakes we see is assuming that silence means the client changed their mind — when what actually happened is that the contract got stuck in someone\'s inbox, waiting to be printed, signed, and sent back, and by the time that happens the client\'s enthusiasm has already cooled off.',
-      'The buying decision already happened the moment the client said yes. Everything after that — the paperwork — is pure friction, and every day the contract sits unsigned is a day the client could get a call from another vendor, shift priorities, or simply lose momentum.',
+      'A client says "let\'s move forward" and then, mysteriously, goes quiet. One of the most common mistakes we see is assuming that silence means the client changed their mind, when what actually happened is that the contract got stuck in someone\'s inbox, waiting to be printed, signed, and sent back, and by the time that happens the client\'s enthusiasm has already cooled off.',
+      'The buying decision already happened the moment the client said yes. Everything after that, the paperwork, is pure friction, and every day the contract sits unsigned is a day the client could get a call from another vendor, shift priorities, or simply lose momentum.',
     ],
     sections: [
       {
         heading: 'The exact moment an already-closed deal gets lost',
         paragraphs: [
-          'A client rarely cancels outright. What usually happens is quieter: the contract goes out by email, the client opens it, intends to print and sign it "when they get a minute" — and that minute never arrives because work and life keep happening. A week later, a follow-up gets a vague response, not because the client changed their mind, but because the print-sign-scan-send commitment stalled and now it feels awkward to admit it.',
+          'A client rarely cancels outright. What usually happens is quieter: the contract goes out by email, the client opens it, intends to print and sign it "when they get a minute", and that minute never arrives because work and life keep happening. A week later, a follow-up gets a vague response, not because the client changed their mind, but because the print-sign-scan-send commitment stalled and now it feels awkward to admit it.',
           'The more manual steps the signing process has, the more chances there are for that "in a minute" to never actually come.',
         ],
       },
       {
         heading: 'Cutting the friction between "yes" and the signature',
         paragraphs: [
-          'The fix isn\'t pushing the client harder — it\'s reducing what they have to do to complete the purchase. A signing link that opens on a phone, gets signed with a finger, and sends itself back removes the exact step where most contracts stall: print-and-scan.',
-          'This is just as legally valid as a wet-ink signature — the ESIGN Act (15 U.S.C. § 7001) gives an electronic signature the same legal weight as a handwritten one, as long as there\'s evidence the person actually signed with intent to be bound.',
+          'The fix isn\'t pushing the client harder, it\'s reducing what they have to do to complete the purchase. A signing link that opens on a phone, gets signed with a finger, and sends itself back removes the exact step where most contracts stall: print-and-scan.',
+          'This is just as legally valid as a wet-ink signature, the ESIGN Act (15 U.S.C. § 7001) gives an electronic signature the same legal weight as a handwritten one, as long as there\'s evidence the person actually signed with intent to be bound.',
         ],
       },
     ],
@@ -2024,18 +2024,18 @@ export const ARTICLES: Article[] = [
       { title: 'Requiring the client to print, sign, and scan', description: 'Every extra step is a chance for the process to stall halfway. The simpler signing is, the faster the deal closes.' },
     ],
     faq: [
-      { q: 'Does an electronic signature make a contract feel less serious?', a: 'No — if anything it tends to signal the opposite: a smooth, professional process. How serious a contract is comes from its content, not whether it was signed with a pen or a finger.' },
-      { q: 'What if the client insists on signing on paper?', a: 'You can offer it as an alternative, but it\'s worth explaining that an electronic signature carries the same legal weight and is much faster — most people accept once they understand they\'re not losing anything.' },
-      { q: 'How much time does e-signature actually save?', a: 'The biggest savings aren\'t from the signing itself (which takes seconds), but from eliminating the wait for someone to print, sign, scan, and send back — steps that can take days on paper.' },
-      { q: 'Does this help with repeat deals with the same client?', a: 'Yes, and the savings compound — once you have a template ready, each new deal just needs the details updated and the link sent, with no drafting from scratch.' },
+      { q: 'Does an electronic signature make a contract feel less serious?', a: 'No, if anything it tends to signal the opposite: a smooth, professional process. How serious a contract is comes from its content, not whether it was signed with a pen or a finger.' },
+      { q: 'What if the client insists on signing on paper?', a: 'You can offer it as an alternative, but it\'s worth explaining that an electronic signature carries the same legal weight and is much faster, most people accept once they understand they\'re not losing anything.' },
+      { q: 'How much time does e-signature actually save?', a: 'The biggest savings aren\'t from the signing itself (which takes seconds), but from eliminating the wait for someone to print, sign, scan, and send back, steps that can take days on paper.' },
+      { q: 'Does this help with repeat deals with the same client?', a: 'Yes, and the savings compound, once you have a template ready, each new deal just needs the details updated and the link sent, with no drafting from scratch.' },
       { q: 'Do I need a paid platform for this?', a: 'Not to start. Codec Document offers a free plan to create and send contracts for signature, which covers most small businesses\' regular needs.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['why-digital-signatures-matter-2026', 'real-cost-of-no-written-contract'],
     ctaHeading: "Don't let paperwork cost you a sale",
-    ctaBody: 'Send your next contract with an e-signature link — Codec Document is free to start.',
+    ctaBody: 'Send your next contract with an e-signature link: Codec Document is free to start.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -2053,13 +2053,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'nda-en',
     heroImage: { src: '/blog/what-happens-if-someone-breaks-an-nda.jpg', alt: 'Scales of justice and a gavel on a wooden surface', credit: 'Photo: Pexels' },
     intro: [
-      'Finding out someone shared information they promised to keep confidential brings a mix of anger and uncertainty about what to do next. The good news is that if the NDA was well drafted and properly signed, you\'re not out of options — the bad news is that acting quickly, with clear evidence, makes a huge difference in how well this gets resolved.',
+      'Finding out someone shared information they promised to keep confidential brings a mix of anger and uncertainty about what to do next. The good news is that if the NDA was well drafted and properly signed, you\'re not out of options, the bad news is that acting quickly, with clear evidence, makes a huge difference in how well this gets resolved.',
     ],
     sections: [
       {
         heading: 'The first steps, before reacting',
         paragraphs: [
-          'Before confronting anyone, gather concrete evidence: exactly what information was disclosed, when, and how you can show it was actually covered by the NDA. This means saving communications, screenshots, or any trace of the disclosure — the clearer the evidence, the stronger your position if this escalates.',
+          'Before confronting anyone, gather concrete evidence: exactly what information was disclosed, when, and how you can show it was actually covered by the NDA. This means saving communications, screenshots, or any trace of the disclosure, the clearer the evidence, the stronger your position if this escalates.',
           'One of the most common mistakes we see is the affected party confronting emotionally before documenting anything, which gives the other side time to shape their version of events.',
         ],
       },
@@ -2067,7 +2067,7 @@ export const ARTICLES: Article[] = [
         heading: 'What your real options are',
         paragraphs: [
           'Depending on severity, options range from a formal letter demanding the disclosure stop (often enough if the other party doesn\'t want a legal fight) to a damages claim if the breach caused a real, measurable financial loss. A well-drafted NDA should spell out what remedies are available, which makes this conversation much easier.',
-          'The real strength of your position depends heavily on how well the original NDA was written — if it clearly defined what counted as confidential, for how long, and what happens on breach, you\'re on much firmer ground than if the document was vague.',
+          'The real strength of your position depends heavily on how well the original NDA was written, if it clearly defined what counted as confidential, for how long, and what happens on breach, you\'re on much firmer ground than if the document was vague.',
         ],
       },
     ],
@@ -2075,15 +2075,15 @@ export const ARTICLES: Article[] = [
       { q: 'Is it worth suing over a broken NDA?', a: 'It depends on the real damage caused. If the disclosure led to a significant, measurable financial loss, it may justify the cost of a legal process; if the harm was minimal, a formal cease-and-desist letter is usually more practical.' },
       { q: 'What evidence do I need to prove an NDA was broken?', a: 'Ideally, a copy of the signed NDA, clear evidence of what information was disclosed, and something connecting that disclosure to the person who signed the agreement.' },
       { q: 'Can I still act if the NDA wasn\'t signed electronically with an audit trail?', a: 'Yes, but an audit trail (who signed, when, from where) makes it much easier to prove the right person actually agreed to those terms.' },
-      { q: 'How much time do I have to act after discovering the breach?', a: 'It varies by jurisdiction and the type of harm, but generally the sooner you act, the better — the longer you wait, the harder it is to reconstruct evidence and the weaker your claim looks.' },
-      { q: 'What can I do to prevent this from happening again?', a: 'Review your future NDAs to make sure they clearly define what\'s confidential, include a specific time period, and spell out the consequences of a breach — most problems trace back to an NDA that was too vague to begin with.' },
+      { q: 'How much time do I have to act after discovering the breach?', a: 'It varies by jurisdiction and the type of harm, but generally the sooner you act, the better, the longer you wait, the harder it is to reconstruct evidence and the weaker your claim looks.' },
+      { q: 'What can I do to prevent this from happening again?', a: 'Review your future NDAs to make sure they clearly define what\'s confidential, include a specific time period, and spell out the consequences of a breach, most problems trace back to an NDA that was too vague to begin with.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['what-is-an-nda'],
     ctaHeading: 'Start with a well-drafted NDA from day one',
-    ctaBody: 'Codec Document is free to create and sign your confidentiality agreement — with a built-in audit trail.',
+    ctaBody: 'Codec Document is free to create and sign your confidentiality agreement, with a built-in audit trail.',
     ctaLabel: 'Try it free',
     ctaHref: '/nda-generator',
   },
@@ -2101,13 +2101,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contractors',
     heroImage: { src: '/blog/independent-contractor-vs-employee-paperwork.jpg', alt: 'A man working at a construction site', credit: 'Photo: Pexels' },
     intro: [
-      'Calling someone a "contractor" doesn\'t make them one — and getting this wrong is one of the more expensive paperwork mistakes a growing small business can make. One of the most common patterns we see is a business that treats a worker like an employee in practice (set hours, close supervision, exclusive work) while calling them a contractor on paper, without realizing the label alone doesn\'t settle the classification.',
+      'Calling someone a "contractor" doesn\'t make them one, and getting this wrong is one of the more expensive paperwork mistakes a growing small business can make. One of the most common patterns we see is a business that treats a worker like an employee in practice (set hours, close supervision, exclusive work) while calling them a contractor on paper, without realizing the label alone doesn\'t settle the classification.',
     ],
     sections: [
       {
         heading: 'Why this distinction actually matters',
         paragraphs: [
-          'The classification affects taxes, benefits, and legal protections — and it\'s generally based on the real nature of the working relationship (how much control you exercise, whether the work is central to your business, whether the person works for other clients too), not just the title on a document.',
+          'The classification affects taxes, benefits, and legal protections, and it\'s generally based on the real nature of the working relationship (how much control you exercise, whether the work is central to your business, whether the person works for other clients too), not just the title on a document.',
           'Good paperwork doesn\'t change the underlying classification, but it does two important things: it makes both parties\' expectations explicit, and it gives you a clear record of the actual terms of the relationship if that classification is ever questioned.',
         ],
       },
@@ -2123,14 +2123,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Does a signed contractor agreement guarantee correct classification?', a: 'No — classification depends on the real working relationship, not just the paperwork. But a clear agreement is strong supporting evidence if the classification is ever reviewed.' },
-      { q: 'What\'s the biggest red flag for misclassification?', a: 'Treating the person like an employee in practice — fixed hours, close day-to-day supervision, exclusivity — while calling them a contractor on paper.' },
+      { q: 'Does a signed contractor agreement guarantee correct classification?', a: 'No, classification depends on the real working relationship, not just the paperwork. But a clear agreement is strong supporting evidence if the classification is ever reviewed.' },
+      { q: 'What\'s the biggest red flag for misclassification?', a: 'Treating the person like an employee in practice, fixed hours, close day-to-day supervision, exclusivity, while calling them a contractor on paper.' },
       { q: 'Do I need a lawyer to draft a contractor agreement?', a: 'For straightforward arrangements, a well-structured template usually covers what you need; for higher-stakes or ambiguous situations, a legal review is a reasonable investment.' },
-      { q: 'Is an electronically signed contractor agreement valid?', a: 'Yes — it\'s a contract like any other, covered by the ESIGN Act and UETA, as long as there\'s clear evidence of intent to sign.' },
-      { q: 'Should every contractor sign an agreement, even for small one-off jobs?', a: 'Yes — even a short agreement defining scope and payment protects both sides and only takes a couple of minutes to send and sign electronically.' },
+      { q: 'Is an electronically signed contractor agreement valid?', a: 'Yes, it\'s a contract like any other, covered by the ESIGN Act and UETA, as long as there\'s clear evidence of intent to sign.' },
+      { q: 'Should every contractor sign an agreement, even for small one-off jobs?', a: 'Yes, even a short agreement defining scope and payment protects both sides and only takes a couple of minutes to send and sign electronically.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['how-freelancers-can-protect-themselves-with-a-contract'],
     ctaHeading: 'Get your contractor paperwork right from day one',
@@ -2152,14 +2152,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contractors',
     heroImage: { src: '/blog/how-freelancers-can-protect-themselves-with-a-contract.jpg', alt: 'Freelancer working on a laptop at a home office table', credit: 'Photo: George Milton / Pexels' },
     intro: [
-      'Starting work in good faith, trusting the contract will get signed "later," is one of the most expensive mistakes a solo freelancer can make. One of the most common patterns we see is a client who asks to start right away, promises to formalize things afterward, and that formalizing never quite happens — until there\'s a dispute over scope, payment, or last-minute changes, with nothing in writing to back up either side.',
+      'Starting work in good faith, trusting the contract will get signed "later," is one of the most expensive mistakes a solo freelancer can make. One of the most common patterns we see is a client who asks to start right away, promises to formalize things afterward, and that formalizing never quite happens, until there\'s a dispute over scope, payment, or last-minute changes, with nothing in writing to back up either side.',
     ],
     sections: [
       {
         heading: 'Why "starting while we sort out the paperwork" is a real risk',
         paragraphs: [
           'Without a signed contract, there\'s no clear definition of what\'s included in the work, how much it costs, or what happens if the client asks for changes mid-project. Any of those can turn into a costly dispute, and without a signed document, one party\'s word carries as much weight as the other\'s.',
-          'The fix isn\'t distrusting the client — it\'s making signing fast enough that there\'s no excuse to skip it before starting. A signing link that takes two minutes removes the most common reason it gets postponed.',
+          'The fix isn\'t distrusting the client, it\'s making signing fast enough that there\'s no excuse to skip it before starting. A signing link that takes two minutes removes the most common reason it gets postponed.',
         ],
       },
     ],
@@ -2174,14 +2174,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Can I just send a quote instead of a full contract?', a: 'A quote accepted in writing is better than nothing, but a proper contract protects you better because it can cover payment terms, scope, and change requests — things a simple quote usually doesn\'t.' },
-      { q: 'What if the client refuses to sign before I start?', a: 'That\'s a legitimate warning sign — a client who trusts the work shouldn\'t have a problem signing a clear contract before it begins.' },
-      { q: 'Is an electronically signed contract enough for a small project?', a: 'Yes, you don\'t need a lengthy document — even a short contract with clear scope, price, and timeline, signed electronically, gives you solid footing.' },
-      { q: 'What if I already started working without a signed contract?', a: 'It\'s best to formalize it as soon as possible, even mid-project — a contract signed late is still far better than none at all.' },
-      { q: 'Do I need a lawyer to write my first service contract?', a: 'Not necessarily to start — a well-structured template covers most common cases; for high-value projects, an extra legal review is a good investment.' },
+      { q: 'Can I just send a quote instead of a full contract?', a: 'A quote accepted in writing is better than nothing, but a proper contract protects you better because it can cover payment terms, scope, and change requests, things a simple quote usually doesn\'t.' },
+      { q: 'What if the client refuses to sign before I start?', a: 'That\'s a legitimate warning sign, a client who trusts the work shouldn\'t have a problem signing a clear contract before it begins.' },
+      { q: 'Is an electronically signed contract enough for a small project?', a: 'Yes, you don\'t need a lengthy document, even a short contract with clear scope, price, and timeline, signed electronically, gives you solid footing.' },
+      { q: 'What if I already started working without a signed contract?', a: 'It\'s best to formalize it as soon as possible, even mid-project, a contract signed late is still far better than none at all.' },
+      { q: 'Do I need a lawyer to write my first service contract?', a: 'Not necessarily to start, a well-structured template covers most common cases; for high-value projects, an extra legal review is a good investment.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['independent-contractor-vs-employee-paperwork', 'how-to-write-a-service-agreement-that-protects-you'],
     ctaHeading: "Don't start your next project without a signed contract",
@@ -2203,36 +2203,36 @@ export const ARTICLES: Article[] = [
     topicCluster: 'papel-vs-digital-en',
     heroImage: { src: '/blog/real-cost-of-no-written-contract.jpg', alt: 'Two businessmen shaking hands to seal a deal', credit: 'Photo: Kampus Production / Pexels' },
     intro: [
-      'A handshake deal feels efficient right up until something goes wrong — a payment dispute, a scope disagreement, a client who remembers the terms differently than you do. Without anything in writing, resolving that disagreement comes down to whose version sounds more convincing, which is a genuinely bad position to be in no matter how right you actually are.',
+      'A handshake deal feels efficient right up until something goes wrong, a payment dispute, a scope disagreement, a client who remembers the terms differently than you do. Without anything in writing, resolving that disagreement comes down to whose version sounds more convincing, which is a genuinely bad position to be in no matter how right you actually are.',
     ],
     sections: [
       {
         heading: 'What a written contract actually protects against',
         paragraphs: [
-          'A written, signed contract doesn\'t prevent disagreements — it prevents disagreements from becoming unresolvable. When both parties can point to the same document defining scope, price, and timeline, most disputes get settled by simply re-reading what was agreed, instead of turning into a drawn-out argument over memory.',
-          'This matters even between people who trust each other — most disputes don\'t come from bad faith, they come from two people genuinely remembering a verbal conversation differently months later.',
+          'A written, signed contract doesn\'t prevent disagreements, it prevents disagreements from becoming unresolvable. When both parties can point to the same document defining scope, price, and timeline, most disputes get settled by simply re-reading what was agreed, instead of turning into a drawn-out argument over memory.',
+          'This matters even between people who trust each other, most disputes don\'t come from bad faith, they come from two people genuinely remembering a verbal conversation differently months later.',
         ],
       },
       {
         heading: 'Why "we\'ll formalize it later" rarely happens',
         paragraphs: [
-          'Once work is underway, there\'s little incentive to stop and formalize a contract — everyone is focused on the work itself. The best time to sign is before anything starts, when it takes both parties two minutes instead of becoming an awkward mid-project conversation.',
+          'Once work is underway, there\'s little incentive to stop and formalize a contract, everyone is focused on the work itself. The best time to sign is before anything starts, when it takes both parties two minutes instead of becoming an awkward mid-project conversation.',
         ],
       },
     ],
     faq: [
-      { q: 'Is a verbal agreement legally binding at all?', a: 'In many cases yes, but proving its exact terms is much harder without anything written down — a signed document removes that ambiguity entirely.' },
-      { q: 'Does a written contract need to be long to be effective?', a: 'No — a short, clear document covering scope, price, and timeline is often more effective than a long one nobody actually reads carefully.' },
-      { q: 'What if the other party refuses to sign anything?', a: 'That reluctance is worth paying attention to — it often signals more risk in the relationship than the inconvenience of asking for a signature.' },
-      { q: 'Is an electronically signed contract as strong as one on paper?', a: 'Yes — under the ESIGN Act and UETA, an electronic signature carries the same legal weight as a handwritten one.' },
-      { q: 'How quickly can I get a contract signed once it\'s ready?', a: 'With an e-signature link, often within minutes if the other party is available — the delay is almost never the signing itself, it\'s everything manual around it.' },
+      { q: 'Is a verbal agreement legally binding at all?', a: 'In many cases yes, but proving its exact terms is much harder without anything written down, a signed document removes that ambiguity entirely.' },
+      { q: 'Does a written contract need to be long to be effective?', a: 'No, a short, clear document covering scope, price, and timeline is often more effective than a long one nobody actually reads carefully.' },
+      { q: 'What if the other party refuses to sign anything?', a: 'That reluctance is worth paying attention to, it often signals more risk in the relationship than the inconvenience of asking for a signature.' },
+      { q: 'Is an electronically signed contract as strong as one on paper?', a: 'Yes, under the ESIGN Act and UETA, an electronic signature carries the same legal weight as a handwritten one.' },
+      { q: 'How quickly can I get a contract signed once it\'s ready?', a: 'With an e-signature link, often within minutes if the other party is available, the delay is almost never the signing itself, it\'s everything manual around it.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['hidden-cost-of-paper-contracts', 'stop-losing-sales-because-of-slow-contracts'],
     ctaHeading: 'Put your next deal in writing, the easy way',
-    ctaBody: 'Codec Document is free to create and sign a contract in minutes — no printing required.',
+    ctaBody: 'Codec Document is free to create and sign a contract in minutes, no printing required.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -2250,20 +2250,20 @@ export const ARTICLES: Article[] = [
     topicCluster: 'document-organization',
     heroImage: { src: '/blog/simple-document-workflow-small-company.jpg', alt: 'Two colleagues discussing documents at a desk in a small office', credit: 'Photo: Pexels' },
     intro: [
-      'At five people, nobody has been formally assigned to "own" document organization — it just kind of happens, informally, until it doesn\'t. One of the most common patterns we see is a small team where every person has their own way of handling contracts (some in email, some in a shared drive, some printed and filed), and nobody can say for certain where the most recent version of anything actually lives.',
+      'At five people, nobody has been formally assigned to "own" document organization, it just kind of happens, informally, until it doesn\'t. One of the most common patterns we see is a small team where every person has their own way of handling contracts (some in email, some in a shared drive, some printed and filed), and nobody can say for certain where the most recent version of anything actually lives.',
     ],
     sections: [
       {
         heading: 'Why this breaks down at exactly this size',
         paragraphs: [
-          'A team of one or two people can keep everything in their head. At five, that stops working — someone is out sick the day a contract needs to be found, or two people both think the other one filed something. The fix isn\'t more software, it\'s a very small number of agreed rules everyone actually follows.',
+          'A team of one or two people can keep everything in their head. At five, that stops working, someone is out sick the day a contract needs to be found, or two people both think the other one filed something. The fix isn\'t more software, it\'s a very small number of agreed rules everyone actually follows.',
         ],
       },
     ],
     checklist: {
       title: 'The minimum workflow a small team actually needs',
       items: [
-        'One single place every signed document ends up — not several parallel folders',
+        'One single place every signed document ends up, not several parallel folders',
         'A simple naming convention (date + counterparty + document type)',
         'One person responsible for confirming new signed documents land in that place',
         'A signing process that doesn\'t depend on printing (a link anyone can open and sign)',
@@ -2271,15 +2271,15 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Do we need a document management system at this size?', a: 'Not necessarily a dedicated system — the discipline of one central place matters more than the tool. A signing platform that auto-saves signed documents does most of this for you already.' },
+      { q: 'Do we need a document management system at this size?', a: 'Not necessarily a dedicated system, the discipline of one central place matters more than the tool. A signing platform that auto-saves signed documents does most of this for you already.' },
       { q: 'What if our documents are already scattered across email and drives?', a: 'Start migrating the ones you reference most often first, rather than trying to reorganize everything at once.' },
-      { q: 'Who should own this process on a 5-person team?', a: 'Whoever is most likely to be asked for a document — often an office manager or the founder — just needs to be the one accountable for the rule being followed, not necessarily doing all the filing themselves.' },
-      { q: 'Does this help if we ever need to raise funding or get audited?', a: 'Significantly — being able to produce any requested contract quickly, with a clear signature and date, reflects well and speeds up any review.' },
-      { q: 'Is this worth setting up even if we\'re not growing fast?', a: 'Yes — the cost of NOT having it is invisible until the exact moment you need a document and can\'t find it, which tends to be the worst possible time.' },
+      { q: 'Who should own this process on a 5-person team?', a: 'Whoever is most likely to be asked for a document, often an office manager or the founder, just needs to be the one accountable for the rule being followed, not necessarily doing all the filing themselves.' },
+      { q: 'Does this help if we ever need to raise funding or get audited?', a: 'Significantly, being able to produce any requested contract quickly, with a clear signature and date, reflects well and speeds up any review.' },
+      { q: 'Is this worth setting up even if we\'re not growing fast?', a: 'Yes, the cost of NOT having it is invisible until the exact moment you need a document and can\'t find it, which tends to be the worst possible time.' },
     ],
     relatedSlugs: ['real-cost-of-no-written-contract'],
     ctaHeading: 'Build a document workflow that actually holds up',
-    ctaBody: 'Codec Document automatically saves every document you sign in one place — free to get started.',
+    ctaBody: 'Codec Document automatically saves every document you sign in one place, free to get started.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -2297,7 +2297,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'leases',
     heroImage: { src: '/blog/how-to-screen-tenants-and-draft-leases.jpg', alt: 'Real estate agent handing over house keys to a new tenant', credit: 'Photo: Pexels' },
     intro: [
-      'A vacant unit costs you a few weeks of rent. A bad tenant can cost you months of missed payments, property damage, and a drawn-out eviction process — which is exactly why rushing to fill a vacancy without proper screening is one of the most expensive mistakes a small landlord can make.',
+      'A vacant unit costs you a few weeks of rent. A bad tenant can cost you months of missed payments, property damage, and a drawn-out eviction process, which is exactly why rushing to fill a vacancy without proper screening is one of the most expensive mistakes a small landlord can make.',
     ],
     sections: [
       {
@@ -2314,14 +2314,14 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'What\'s the minimum screening a small landlord should do?', a: 'Income verification, rental history from a previous landlord, and a background check where legally allowed — skipping all three to fill a vacancy quickly usually costs more later.' },
-      { q: 'Can I sign a lease electronically?', a: 'Yes — a lease is a contract like any other and is covered by the same electronic signature laws (ESIGN Act, UETA) as any commercial agreement.' },
-      { q: 'What should the lease say about the security deposit?', a: 'Exactly when it\'s returned, what conditions justify a deduction, and how any deductions will be documented — this is the single most common source of landlord-tenant disputes.' },
+      { q: 'What\'s the minimum screening a small landlord should do?', a: 'Income verification, rental history from a previous landlord, and a background check where legally allowed, skipping all three to fill a vacancy quickly usually costs more later.' },
+      { q: 'Can I sign a lease electronically?', a: 'Yes, a lease is a contract like any other and is covered by the same electronic signature laws (ESIGN Act, UETA) as any commercial agreement.' },
+      { q: 'What should the lease say about the security deposit?', a: 'Exactly when it\'s returned, what conditions justify a deduction, and how any deductions will be documented, this is the single most common source of landlord-tenant disputes.' },
       { q: 'How do I handle a tenant who\'s consistently late on rent?', a: 'The lease should already define what happens (grace period, late fee, next steps) so you\'re applying an agreed rule instead of improvising each time.' },
-      { q: 'Do I need a different lease for every property?', a: 'Not entirely different, but adjust clauses relevant to each unit — a house with a yard and an apartment in a building often need different maintenance clauses.' },
+      { q: 'Do I need a different lease for every property?', a: 'Not entirely different, but adjust clauses relevant to each unit, a house with a yard and an apartment in a building often need different maintenance clauses.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['what-to-know-before-signing-commercial-lease'],
     ctaHeading: 'Draft and sign your next lease the right way',
@@ -2343,13 +2343,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'leases',
     heroImage: { src: '/blog/what-to-know-before-signing-commercial-lease.jpg', alt: 'Modern commercial office building exterior', credit: 'Photo: Pexels' },
     intro: [
-      'Signing your first commercial lease for a growing business is exciting — and one of the easiest places to get caught off guard, because commercial leases work very differently from the residential leases most people are already familiar with.',
+      'Signing your first commercial lease for a growing business is exciting, and one of the easiest places to get caught off guard, because commercial leases work very differently from the residential leases most people are already familiar with.',
     ],
     sections: [
       {
         heading: 'How commercial leases differ from what you might expect',
         paragraphs: [
-          'Commercial leases typically offer far fewer built-in tenant protections than residential ones, and nearly everything is negotiable — rent escalation, who pays for maintenance and property taxes (common in "triple net" leases), and the length of the commitment. Assuming it works like an apartment lease is exactly where new business owners get surprised.',
+          'Commercial leases typically offer far fewer built-in tenant protections than residential ones, and nearly everything is negotiable, rent escalation, who pays for maintenance and property taxes (common in "triple net" leases), and the length of the commitment. Assuming it works like an apartment lease is exactly where new business owners get surprised.',
         ],
       },
     ],
@@ -2359,19 +2359,19 @@ export const ARTICLES: Article[] = [
         'Whether it\'s gross, modified gross, or triple net (who pays taxes, insurance, and maintenance)',
         'The rent escalation clause (how much and how often rent can increase)',
         'The exact permitted use of the space, and whether it matches your actual business',
-        'Exit terms — what happens if you need to leave before the lease ends',
+        'Exit terms, what happens if you need to leave before the lease ends',
         'Who is responsible for buildout or renovation costs',
       ],
     },
     faq: [
-      { q: 'What does "triple net lease" mean?', a: 'It means the tenant pays rent plus a share of property taxes, insurance, and maintenance — common in commercial leases, less so in residential ones.' },
-      { q: 'Can commercial lease terms be negotiated?', a: 'Yes, almost everything in a commercial lease is negotiable, unlike many residential leases — rent escalation, renewal options, and buildout costs are common negotiation points.' },
-      { q: 'Do I need a lawyer to review my first commercial lease?', a: 'For a significant, long-term commitment, a legal review is a reasonable investment — commercial leases carry more financial exposure than most residential ones.' },
-      { q: 'Can a commercial lease be signed electronically?', a: 'Yes — it\'s covered by the same ESIGN Act and UETA framework as any other business contract.' },
-      { q: 'What happens if my business needs to close before the lease ends?', a: 'This depends entirely on the exit terms negotiated into the lease — which is exactly why checking them before signing matters so much.' },
+      { q: 'What does "triple net lease" mean?', a: 'It means the tenant pays rent plus a share of property taxes, insurance, and maintenance, common in commercial leases, less so in residential ones.' },
+      { q: 'Can commercial lease terms be negotiated?', a: 'Yes, almost everything in a commercial lease is negotiable, unlike many residential leases, rent escalation, renewal options, and buildout costs are common negotiation points.' },
+      { q: 'Do I need a lawyer to review my first commercial lease?', a: 'For a significant, long-term commitment, a legal review is a reasonable investment, commercial leases carry more financial exposure than most residential ones.' },
+      { q: 'Can a commercial lease be signed electronically?', a: 'Yes, it\'s covered by the same ESIGN Act and UETA framework as any other business contract.' },
+      { q: 'What happens if my business needs to close before the lease ends?', a: 'This depends entirely on the exit terms negotiated into the lease, which is exactly why checking them before signing matters so much.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['how-to-screen-tenants-and-draft-leases'],
     ctaHeading: 'Sign your next lease with confidence',
@@ -2393,14 +2393,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'service-agreements',
     heroImage: { src: '/blog/how-to-write-a-service-agreement-that-protects-you.jpg', alt: 'People reviewing and signing paperwork at a desk', credit: 'Photo: Pexels' },
     intro: [
-      'Most service agreement disputes don\'t come from bad faith — they come from a scope of work that was too vague to begin with, leaving both sides genuinely unsure what was actually promised. A service agreement that protects you isn\'t about covering every possible scenario; it\'s about being specific on the handful of points that actually cause disputes.',
+      'Most service agreement disputes don\'t come from bad faith, they come from a scope of work that was too vague to begin with, leaving both sides genuinely unsure what was actually promised. A service agreement that protects you isn\'t about covering every possible scenario; it\'s about being specific on the handful of points that actually cause disputes.',
     ],
     sections: [
       {
         heading: 'The one thing most weak service agreements get wrong',
         paragraphs: [
-          'A scope of work that says "marketing services" or "consulting support" leaves too much room for interpretation. A strong scope defines exactly what is delivered, in what form, and by when — specific enough that both sides would describe the deliverable the same way if asked separately.',
-          'Everything else in the agreement — payment terms, revision limits, what happens with delays — matters less if the scope itself is ambiguous, because most disputes start with disagreement over what was actually promised.',
+          'A scope of work that says "marketing services" or "consulting support" leaves too much room for interpretation. A strong scope defines exactly what is delivered, in what form, and by when, specific enough that both sides would describe the deliverable the same way if asked separately.',
+          'Everything else in the agreement, payment terms, revision limits, what happens with delays, matters less if the scope itself is ambiguous, because most disputes start with disagreement over what was actually promised.',
         ],
       },
     ],
@@ -2415,14 +2415,14 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'How specific does the scope of work really need to be?', a: 'Specific enough that both parties would describe the deliverable the same way — vague language like "marketing support" almost always leads to disagreement later.' },
-      { q: 'Should I limit the number of revisions in a service agreement?', a: 'Yes — an unlimited revision clause, even unintentional, can turn a fixed-price project into unbounded work. Defining a specific number protects both time and profitability.' },
-      { q: 'What if the client wants to end the agreement early?', a: 'The agreement should define this upfront — typically a notice period and how partially completed work gets paid — instead of negotiating it under pressure mid-dispute.' },
-      { q: 'Is an electronically signed service agreement enforceable?', a: 'Yes — it carries the same legal weight as one signed on paper, under the ESIGN Act and UETA.' },
-      { q: 'Do I need a different agreement for every client?', a: 'A solid template covers most cases with minor adjustments — the goal is consistency, not writing from scratch every time.' },
+      { q: 'How specific does the scope of work really need to be?', a: 'Specific enough that both parties would describe the deliverable the same way, vague language like "marketing support" almost always leads to disagreement later.' },
+      { q: 'Should I limit the number of revisions in a service agreement?', a: 'Yes, an unlimited revision clause, even unintentional, can turn a fixed-price project into unbounded work. Defining a specific number protects both time and profitability.' },
+      { q: 'What if the client wants to end the agreement early?', a: 'The agreement should define this upfront, typically a notice period and how partially completed work gets paid, instead of negotiating it under pressure mid-dispute.' },
+      { q: 'Is an electronically signed service agreement enforceable?', a: 'Yes, it carries the same legal weight as one signed on paper, under the ESIGN Act and UETA.' },
+      { q: 'Do I need a different agreement for every client?', a: 'A solid template covers most cases with minor adjustments, the goal is consistency, not writing from scratch every time.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: '15 U.S. Code § 7001: ESIGN Act, official text (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
     ],
     relatedSlugs: ['how-freelancers-can-protect-themselves-with-a-contract'],
     ctaHeading: 'Write and sign a service agreement that holds up',
@@ -2444,27 +2444,27 @@ export const ARTICLES: Article[] = [
     topicCluster: 'client-vetting',
     heroImage: { src: '/blog/how-to-vet-a-client-before-signing-a-contract.jpg', alt: 'Business handshake signifying a new partnership', credit: 'Photo: Bia Limova / Pexels' },
     intro: [
-      'Not every client who wants to hire you is worth taking on — and one of the more expensive mistakes a small business or freelancer makes is signing with anyone willing to pay, without checking whether the relationship is actually going to work out. A bad client doesn\'t just fail to pay on time; they consume disproportionate time, dispute reasonable terms, and drain energy that a good client wouldn\'t.',
+      'Not every client who wants to hire you is worth taking on, and one of the more expensive mistakes a small business or freelancer makes is signing with anyone willing to pay, without checking whether the relationship is actually going to work out. A bad client doesn\'t just fail to pay on time; they consume disproportionate time, dispute reasonable terms, and drain energy that a good client wouldn\'t.',
     ],
     sections: [
       {
         heading: 'What to actually look for before you sign',
         paragraphs: [
-          'Some of it is practical: does the client have a real, verifiable business, and do they have a track record of paying vendors or contractors on time? Some of it is behavioral: how they communicate during the sales process is often exactly how they\'ll communicate during the project — pressure to skip a contract, unclear answers about budget, or an unwillingness to define scope are all worth noticing before you sign anything.',
+          'Some of it is practical: does the client have a real, verifiable business, and do they have a track record of paying vendors or contractors on time? Some of it is behavioral: how they communicate during the sales process is often exactly how they\'ll communicate during the project, pressure to skip a contract, unclear answers about budget, or an unwillingness to define scope are all worth noticing before you sign anything.',
         ],
       },
     ],
     mistakes: [
-      { title: 'Skipping the contract because "it\'s a small job"', description: 'Smaller jobs are just as prone to disputes as larger ones, and a contract takes only a couple of minutes to sign electronically — there\'s rarely a good reason to skip it.' },
+      { title: 'Skipping the contract because "it\'s a small job"', description: 'Smaller jobs are just as prone to disputes as larger ones, and a contract takes only a couple of minutes to sign electronically, there\'s rarely a good reason to skip it.' },
       { title: 'Ignoring reluctance to sign anything', description: 'A prospective client who resists signing a clear contract before starting is showing you exactly how the rest of the relationship might go.' },
       { title: 'Not asking about payment history with previous vendors', description: 'A quick, direct question about how they\'ve handled past vendor relationships often reveals more than any amount of pleasant small talk.' },
     ],
     faq: [
-      { q: 'Is it reasonable to ask a new client for references?', a: 'Yes — asking how they\'ve worked with previous vendors or contractors is a normal, reasonable question, and how they respond tells you a lot on its own.' },
-      { q: 'What\'s the biggest red flag when vetting a new client?', a: 'Resistance to putting basic terms in writing — scope, price, and timeline — before starting work.' },
+      { q: 'Is it reasonable to ask a new client for references?', a: 'Yes, asking how they\'ve worked with previous vendors or contractors is a normal, reasonable question, and how they respond tells you a lot on its own.' },
+      { q: 'What\'s the biggest red flag when vetting a new client?', a: 'Resistance to putting basic terms in writing, scope, price, and timeline, before starting work.' },
       { q: 'Should I ask for a deposit from a new client?', a: 'For new relationships, especially larger projects, an upfront deposit is a reasonable, common practice that also signals the client\'s seriousness.' },
       { q: 'Does a signed contract protect me even from a difficult client?', a: 'It doesn\'t prevent difficulty, but it gives you clear, agreed-upon terms to point back to instead of relying on memory or good faith alone.' },
-      { q: 'Is it okay to turn down a client after vetting them?', a: 'Yes — declining a client who shows clear warning signs before signing is almost always cheaper than dealing with the same warning signs mid-project.' },
+      { q: 'Is it okay to turn down a client after vetting them?', a: 'Yes, declining a client who shows clear warning signs before signing is almost always cheaper than dealing with the same warning signs mid-project.' },
     ],
     relatedSlugs: ['how-to-write-a-service-agreement-that-protects-you', 'real-cost-of-no-written-contract'],
     ctaHeading: 'Vet your clients, then sign with confidence',
@@ -2486,15 +2486,15 @@ export const ARTICLES: Article[] = [
     topicCluster: 'poder-notarial',
     heroImage: { src: '/blog/poder-notarial-firma-electronica.jpg', alt: 'Persona mayor firmando un documento legal junto a un familiar', credit: 'Foto: Pexels' },
     intro: [
-      'Un padre que necesita que su hijo administre su cuenta bancaria mientras está hospitalizado. Una hija que vive en otro país y no puede firmar la venta de la casa de su madre porque el poder que la autoriza a hacerlo nunca se firmó. Un socio que se va de viaje justo cuando el negocio necesita firmar un contrato urgente. En todos estos casos, el problema no fue la falta de confianza entre las partes — fue no tener, a tiempo, un documento que autorizara legalmente a alguien más a actuar en su nombre.',
-      'Un poder notarial (también llamado poder legal o carta poder según el país) es exactamente ese documento: le da a otra persona la autoridad para actuar en tu nombre en asuntos específicos, financieros, médicos o legales. No es un trámite exclusivo de personas mayores ni de situaciones extremas — cualquier persona que viaja seguido, que administra un negocio, o que simplemente quiere estar preparada ante un imprevisto, se beneficia de tener uno listo antes de necesitarlo.',
+      'Un padre que necesita que su hijo administre su cuenta bancaria mientras está hospitalizado. Una hija que vive en otro país y no puede firmar la venta de la casa de su madre porque el poder que la autoriza a hacerlo nunca se firmó. Un socio que se va de viaje justo cuando el negocio necesita firmar un contrato urgente. En todos estos casos, el problema no fue la falta de confianza entre las partes, fue no tener, a tiempo, un documento que autorizara legalmente a alguien más a actuar en su nombre.',
+      'Un poder notarial (también llamado poder legal o carta poder según el país) es exactamente ese documento: le da a otra persona la autoridad para actuar en tu nombre en asuntos específicos, financieros, médicos o legales. No es un trámite exclusivo de personas mayores ni de situaciones extremas, cualquier persona que viaja seguido, que administra un negocio, o que simplemente quiere estar preparada ante un imprevisto, se beneficia de tener uno listo antes de necesitarlo.',
     ],
     sections: [
       {
         heading: 'Qué es exactamente un poder notarial',
         paragraphs: [
           'Un poder notarial es un documento legal en el que una persona (el "otorgante" o "principal") autoriza a otra persona (el "apoderado" o "agente") a tomar decisiones o realizar acciones en su nombre. El alcance de esa autoridad depende completamente de lo que el documento especifique: puede ser tan amplio como administrar todos los bienes y finanzas de alguien, o tan limitado como firmar un solo contrato de compraventa en una fecha específica.',
-          'Lo que hace válido un poder notarial no es solo la firma del otorgante — es la combinación de una firma clara, la identificación verificable de quién lo firma, y (según el tipo de poder y la jurisdicción) el reconocimiento de un notario o autoridad equivalente. Esto último existe precisamente porque el poder notarial le da a otra persona autoridad real sobre asuntos importantes, así que el sistema exige una capa adicional de verificación antes de que sea válido.',
+          'Lo que hace válido un poder notarial no es solo la firma del otorgante, es la combinación de una firma clara, la identificación verificable de quién lo firma, y (según el tipo de poder y la jurisdicción) el reconocimiento de un notario o autoridad equivalente. Esto último existe precisamente porque el poder notarial le da a otra persona autoridad real sobre asuntos importantes, así que el sistema exige una capa adicional de verificación antes de que sea válido.',
         ],
       },
       {
@@ -2504,8 +2504,8 @@ export const ARTICLES: Article[] = [
         ],
         bullets: [
           'Poder general: autoriza al apoderado a actuar en un amplio rango de asuntos financieros y legales, similar a como actuaría el propio otorgante.',
-          'Poder limitado (o especial): autoriza solo una acción específica — por ejemplo, firmar la venta de un vehículo o representar al otorgante en un trámite puntual.',
-          'Poder duradero: sigue vigente incluso si el otorgante queda incapacitado (por ejemplo, por una condición médica grave) — la mayoría de los poderes ordinarios, en cambio, se anulan automáticamente en ese momento.',
+          'Poder limitado (o especial): autoriza solo una acción específica, por ejemplo, firmar la venta de un vehículo o representar al otorgante en un trámite puntual.',
+          'Poder duradero: sigue vigente incluso si el otorgante queda incapacitado (por ejemplo, por una condición médica grave), la mayoría de los poderes ordinarios, en cambio, se anulan automáticamente en ese momento.',
           'Poder médico: autoriza específicamente a tomar decisiones de salud en nombre del otorgante cuando este no pueda comunicarlas.',
         ],
       },
@@ -2513,14 +2513,14 @@ export const ARTICLES: Article[] = [
         heading: 'Cuándo la firma electrónica es válida para un poder notarial',
         paragraphs: [
           'En Estados Unidos, la Ley ESIGN (15 U.S.C. § 7001) y la Ley Uniforme de Transacciones Electrónicas (UETA) establecen que una firma electrónica tiene la misma validez legal que una firma manuscrita para la gran mayoría de documentos, incluyendo muchos poderes notariales. Sin embargo, esto no significa que cualquier poder pueda firmarse electrónicamente sin más: muchas jurisdicciones todavía exigen que un poder sea reconocido ante notario (presencial o mediante notarización remota autorizada) para que terceros como bancos o registros públicos lo acepten sin objeciones.',
-          'La forma más segura de pensarlo es así: la firma electrónica resuelve el problema de "cómo firmar" de manera rápida y con evidencia sólida (identidad verificada, huella digital, registro de auditoría), pero el requisito de notarización — si tu jurisdicción o la institución que recibirá el poder lo exige — sigue siendo un paso aparte que hay que confirmar antes de asumir que el documento ya está listo para usarse.',
+          'La forma más segura de pensarlo es así: la firma electrónica resuelve el problema de "cómo firmar" de manera rápida y con evidencia sólida (identidad verificada, huella digital, registro de auditoría), pero el requisito de notarización, si tu jurisdicción o la institución que recibirá el poder lo exige, sigue siendo un paso aparte que hay que confirmar antes de asumir que el documento ya está listo para usarse.',
           'Por eso, antes de firmar un poder notarial electrónicamente, vale la pena confirmar con la institución que lo recibirá (banco, notaría, registro de propiedad) si aceptan un poder firmado electrónicamente, o si exigen además una notarización presencial o remota certificada.',
         ],
       },
       {
         heading: 'Cómo se revoca un poder notarial',
         paragraphs: [
-          'Un poder notarial no es permanente por defecto — el otorgante puede revocarlo en cualquier momento mientras tenga la capacidad mental para hacerlo, normalmente firmando un documento de revocación y notificándolo al apoderado y a cualquier institución que haya recibido el poder original. La mayoría de los poderes también incluyen una fecha de vencimiento o una condición que los termina automáticamente (por ejemplo, al completarse la acción específica para la que fueron creados, o al fallecer el otorgante).',
+          'Un poder notarial no es permanente por defecto, el otorgante puede revocarlo en cualquier momento mientras tenga la capacidad mental para hacerlo, normalmente firmando un documento de revocación y notificándolo al apoderado y a cualquier institución que haya recibido el poder original. La mayoría de los poderes también incluyen una fecha de vencimiento o una condición que los termina automáticamente (por ejemplo, al completarse la acción específica para la que fueron creados, o al fallecer el otorgante).',
         ],
       },
     ],
@@ -2534,9 +2534,9 @@ export const ARTICLES: Article[] = [
     mistakes: [
       { title: 'Firmar un poder "general" cuando en realidad solo se necesitaba uno limitado', description: 'Dar autoridad amplia sobre todos los asuntos financieros cuando el objetivo real era una sola transacción expone al otorgante a un riesgo mucho mayor del necesario. El poder debe ser tan específico como el problema que resuelve.' },
       { title: 'No verificar si la institución que recibirá el poder exige notarización', description: 'Firmar electrónicamente un poder y descubrir después que el banco o el registro de propiedad exige una notarización adicional retrasa exactamente el trámite urgente que el poder buscaba resolver.' },
-      { title: 'Esperar a que la persona ya no pueda firmar para intentar hacerlo', description: 'Un poder solo puede firmarse mientras el otorgante tiene plena capacidad mental — muchas familias intentan resolver esto demasiado tarde, cuando la persona ya no puede otorgar el poder válidamente.' },
+      { title: 'Esperar a que la persona ya no pueda firmar para intentar hacerlo', description: 'Un poder solo puede firmarse mientras el otorgante tiene plena capacidad mental, muchas familias intentan resolver esto demasiado tarde, cuando la persona ya no puede otorgar el poder válidamente.' },
       { title: 'No definir una fecha de vencimiento o condición de término clara', description: 'Un poder sin límite de tiempo claro puede generar confusión años después sobre si sigue vigente o no, especialmente si la relación entre otorgante y apoderado cambió.' },
-      { title: 'No informar a las instituciones relevantes que el poder existe', description: 'Un poder notarial firmado pero guardado en un cajón no sirve de nada en el momento urgente si el banco o la clínica no saben que existe — es importante entregar copias a quienes lo necesitarán reconocer.' },
+      { title: 'No informar a las instituciones relevantes que el poder existe', description: 'Un poder notarial firmado pero guardado en un cajón no sirve de nada en el momento urgente si el banco o la clínica no saben que existe, es importante entregar copias a quienes lo necesitarán reconocer.' },
     ],
     checklist: {
       title: 'Antes de firmar un poder notarial, verifica',
@@ -2560,20 +2560,20 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Un poder notarial firmado electrónicamente, es legalmente válido?', a: 'En Estados Unidos, la Ley ESIGN y UETA reconocen la validez de la firma electrónica para la mayoría de documentos, pero muchas jurisdicciones e instituciones todavía exigen notarización adicional para un poder — conviene confirmarlo antes de firmar.' },
-      { q: 'Puedo revocar un poder notarial después de firmarlo?', a: 'Sí, mientras tengas la capacidad mental para hacerlo — normalmente basta con firmar un documento de revocación y notificarlo al apoderado y a cualquier institución que haya recibido el poder original.' },
-      { q: 'Qué pasa si la persona que otorgó el poder fallece?', a: 'El poder notarial termina automáticamente al fallecer el otorgante — a partir de ese momento, cualquier gestión sobre sus bienes pasa a regirse por el proceso sucesorio (testamento o ley de herencia), no por el poder.' },
-      { q: 'Un poder general y un poder duradero son lo mismo?', a: 'No — "general" describe qué tan amplia es la autoridad otorgada, mientras que "duradero" describe si el poder sigue vigente si el otorgante queda incapacitado. Un poder puede ser general y no duradero, o limitado y duradero.' },
+      { q: 'Un poder notarial firmado electrónicamente, es legalmente válido?', a: 'En Estados Unidos, la Ley ESIGN y UETA reconocen la validez de la firma electrónica para la mayoría de documentos, pero muchas jurisdicciones e instituciones todavía exigen notarización adicional para un poder, conviene confirmarlo antes de firmar.' },
+      { q: 'Puedo revocar un poder notarial después de firmarlo?', a: 'Sí, mientras tengas la capacidad mental para hacerlo, normalmente basta con firmar un documento de revocación y notificarlo al apoderado y a cualquier institución que haya recibido el poder original.' },
+      { q: 'Qué pasa si la persona que otorgó el poder fallece?', a: 'El poder notarial termina automáticamente al fallecer el otorgante, a partir de ese momento, cualquier gestión sobre sus bienes pasa a regirse por el proceso sucesorio (testamento o ley de herencia), no por el poder.' },
+      { q: 'Un poder general y un poder duradero son lo mismo?', a: 'No: "general" describe qué tan amplia es la autoridad otorgada, mientras que "duradero" describe si el poder sigue vigente si el otorgante queda incapacitado. Un poder puede ser general y no duradero, o limitado y duradero.' },
       { q: 'Necesito un abogado para crear un poder notarial?', a: 'No es obligatorio para la mayoría de poderes sencillos, pero es recomendable para poderes amplios, duraderos, o cuando hay bienes de alto valor involucrados, dado lo importante de la autoridad que se otorga.' },
       { q: 'Puedo otorgarle un poder a más de una persona a la vez?', a: 'Sí, muchos poderes permiten nombrar un apoderado principal y uno o más alternos, que entran en acción si el principal no puede actuar.' },
-      { q: 'El apoderado puede usar el poder para beneficio propio?', a: 'No — el apoderado tiene un deber legal de actuar en el mejor interés del otorgante, no en el suyo propio; usar el poder para beneficio personal es un abuso que puede tener consecuencias legales serias.' },
+      { q: 'El apoderado puede usar el poder para beneficio propio?', a: 'No, el apoderado tiene un deber legal de actuar en el mejor interés del otorgante, no en el suyo propio; usar el poder para beneficio personal es un abuso que puede tener consecuencias legales serias.' },
       { q: 'Qué diferencia hay entre un poder notarial y un testamento?', a: 'Un poder notarial autoriza a alguien a actuar en tu nombre mientras estás vivo; un testamento define qué pasa con tus bienes después de tu muerte. Son documentos completamente distintos con propósitos distintos.' },
-      { q: 'Un poder firmado en un país es válido en otro?', a: 'No necesariamente — muchos países y estados tienen requisitos específicos de forma, y algunos exigen apostilla o legalización adicional para reconocer un poder otorgado en el extranjero.' },
+      { q: 'Un poder firmado en un país es válido en otro?', a: 'No necesariamente, muchos países y estados tienen requisitos específicos de forma, y algunos exigen apostilla o legalización adicional para reconocer un poder otorgado en el extranjero.' },
       { q: 'Cuánto tiempo toma preparar y firmar un poder notarial?', a: 'La redacción del documento puede tomar minutos usando una plantilla clara; el tiempo real depende de si tu jurisdicción exige notarización adicional, lo cual puede tomar desde el mismo día hasta varios días según la disponibilidad del notario.' },
     ],
     sources: [
-      { label: '15 U.S. Code § 7001 — Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
-      { label: 'Uniform Electronic Transactions Act — Uniform Law Commission', url: 'https://www.uniformlaws.org/viewdocument/final-act-21?CommunityKey=2c04b76c-2b7d-4399-977e-d5876ba7e034&tab=librarydocuments' },
+      { label: '15 U.S. Code § 7001: Ley ESIGN, texto oficial (govinfo.gov)', url: 'https://www.govinfo.gov/link/uscode/15/7001' },
+      { label: 'Uniform Electronic Transactions Act: Uniform Law Commission', url: 'https://www.uniformlaws.org/viewdocument/final-act-21?CommunityKey=2c04b76c-2b7d-4399-977e-d5876ba7e034&tab=librarydocuments' },
     ],
     relatedSlugs: ['como-verificar-identidad-de-un-firmante', 'como-organizar-documentos-legales-de-tu-empresa'],
     ctaHeading: 'Crea tu poder notarial en minutos',
@@ -2595,7 +2595,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'recursos-humanos',
     heroImage: { src: '/blog/cartas-oferta-empleo-firma-el-mismo-dia.jpg', alt: 'Dos profesionales dándose la mano tras cerrar un acuerdo laboral', credit: 'Foto: Pexels' },
     intro: [
-      'Un candidato que aceptaba tu oferta con entusiasmo en la entrevista, y que dos días después ya no responde el teléfono, casi siempre significa lo mismo: recibió otra oferta mientras esperaba que le llegara la tuya en papel o por correo certificado. En un mercado donde los buenos candidatos reciben varias propuestas a la vez, el equipo de RRHH que responde primero — y de forma más fácil de firmar — suele ganar la contratación, incluso si su oferta no era la más alta económicamente.',
+      'Un candidato que aceptaba tu oferta con entusiasmo en la entrevista, y que dos días después ya no responde el teléfono, casi siempre significa lo mismo: recibió otra oferta mientras esperaba que le llegara la tuya en papel o por correo certificado. En un mercado donde los buenos candidatos reciben varias propuestas a la vez, el equipo de RRHH que responde primero, y de forma más fácil de firmar, suele ganar la contratación, incluso si su oferta no era la más alta económicamente.',
     ],
     sections: [
       {
@@ -2607,20 +2607,20 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Cómo se ve el proceso cuando se envía por enlace de firma',
         paragraphs: [
-          'En vez de imprimir la oferta y enviarla por mensajería o esperar a una reunión presencial, el reclutador genera el documento con los datos del puesto, el salario y la fecha de inicio, y lo envía por un enlace que el candidato puede abrir y firmar desde su teléfono en cualquier momento — durante su hora de almuerzo, en la noche después de hablarlo con su familia, o inmediatamente después de colgar la llamada de la oferta. La aceptación puede llegar en minutos u horas, no en días.',
+          'En vez de imprimir la oferta y enviarla por mensajería o esperar a una reunión presencial, el reclutador genera el documento con los datos del puesto, el salario y la fecha de inicio, y lo envía por un enlace que el candidato puede abrir y firmar desde su teléfono en cualquier momento, durante su hora de almuerzo, en la noche después de hablarlo con su familia, o inmediatamente después de colgar la llamada de la oferta. La aceptación puede llegar en minutos u horas, no en días.',
         ],
       },
     ],
     mistakes: [
       { title: 'Esperar a tener la oferta "perfecta" en papel antes de enviarla', description: 'Cada día de retraso preparando el documento final es un día en el que el candidato puede recibir y aceptar otra oferta.' },
-      { title: 'No dar seguimiento si el candidato no ha abierto el enlace', description: 'Un candidato distraído puede simplemente no haber visto el correo — un recordatorio a las 24 horas resuelve la mayoría de estos casos sin parecer insistente.' },
+      { title: 'No dar seguimiento si el candidato no ha abierto el enlace', description: 'Un candidato distraído puede simplemente no haber visto el correo, un recordatorio a las 24 horas resuelve la mayoría de estos casos sin parecer insistente.' },
     ],
     faq: [
       { q: 'Una oferta de empleo firmada electrónicamente es legalmente vinculante?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica en una carta de oferta tiene la misma validez que una firma en papel.' },
-      { q: 'El candidato necesita crear una cuenta para firmar?', a: 'No debería — un buen enlace de firma se abre y firma directamente desde el navegador, sin necesidad de registrarse.' },
+      { q: 'El candidato necesita crear una cuenta para firmar?', a: 'No debería, un buen enlace de firma se abre y firma directamente desde el navegador, sin necesidad de registrarse.' },
       { q: 'Puedo saber si el candidato ya abrió la oferta?', a: 'Sí, una plataforma de firma electrónica seria muestra el estado del documento (enviado, visto, firmado), lo que permite a RRHH dar seguimiento sin tener que llamar a preguntar.' },
-      { q: 'Qué pasa si el candidato quiere negociar antes de firmar?', a: 'Puedes simplemente no enviar el enlace hasta cerrar los términos, o cancelar y reenviar una versión actualizada — el proceso sigue siendo mucho más rápido que reimprimir un documento en papel.' },
-      { q: 'Esto reemplaza el contrato laboral completo?', a: 'No necesariamente — muchas empresas usan la carta de oferta para el acuerdo inicial de términos, y luego formalizan un contrato laboral más completo una vez el candidato empieza.' },
+      { q: 'Qué pasa si el candidato quiere negociar antes de firmar?', a: 'Puedes simplemente no enviar el enlace hasta cerrar los términos, o cancelar y reenviar una versión actualizada, el proceso sigue siendo mucho más rápido que reimprimir un documento en papel.' },
+      { q: 'Esto reemplaza el contrato laboral completo?', a: 'No necesariamente, muchas empresas usan la carta de oferta para el acuerdo inicial de términos, y luego formalizan un contrato laboral más completo una vez el candidato empieza.' },
     ],
     relatedSlugs: ['firma-electronica-para-recursos-humanos', 'reducir-tiempo-firma-contratos'],
     ctaHeading: 'Envía tu próxima oferta de empleo en minutos',
@@ -2642,7 +2642,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'compraventa-vehiculos',
     heroImage: { src: '/blog/errores-vender-auto-usado-sin-contrato.jpg', alt: 'Entrega de llaves de un auto tras cerrar la venta con un apretón de manos', credit: 'Foto: Pexels' },
     intro: [
-      'Vender un auto usado "de palabra" — recibir el efectivo, entregar las llaves y quedarse tranquilo — parece simple hasta que el comprador no traspasa el vehículo a su nombre y una multa de tránsito, o algo peor, sigue llegando a tu dirección meses después. Sin un contrato de compraventa firmado, no tienes ninguna evidencia de que la venta ocurrió, ni en qué fecha, ni en qué condiciones.',
+      'Vender un auto usado "de palabra", recibir el efectivo, entregar las llaves y quedarse tranquilo, parece simple hasta que el comprador no traspasa el vehículo a su nombre y una multa de tránsito, o algo peor, sigue llegando a tu dirección meses después. Sin un contrato de compraventa firmado, no tienes ninguna evidencia de que la venta ocurrió, ni en qué fecha, ni en qué condiciones.',
     ],
     sections: [
       {
@@ -2670,10 +2670,10 @@ export const ARTICLES: Article[] = [
     },
     faq: [
       { q: 'Un contrato de compraventa firmado electrónicamente es válido para un auto?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica en este tipo de contrato tiene la misma validez que una firma en papel.' },
-      { q: 'El contrato reemplaza el trámite de traspaso ante el gobierno?', a: 'No — el contrato de compraventa es la prueba del acuerdo entre las partes, pero el traspaso legal del vehículo ante la entidad de tránsito correspondiente sigue siendo un trámite aparte que el comprador debe completar.' },
-      { q: 'Qué pasa si el comprador nunca traspasa el auto a su nombre?', a: 'Sin un contrato firmado con fecha clara, el vendedor puede tener dificultades para demostrar que ya no es responsable del vehículo — con el contrato, esa fecha queda documentada.' },
+      { q: 'El contrato reemplaza el trámite de traspaso ante el gobierno?', a: 'No, el contrato de compraventa es la prueba del acuerdo entre las partes, pero el traspaso legal del vehículo ante la entidad de tránsito correspondiente sigue siendo un trámite aparte que el comprador debe completar.' },
+      { q: 'Qué pasa si el comprador nunca traspasa el auto a su nombre?', a: 'Sin un contrato firmado con fecha clara, el vendedor puede tener dificultades para demostrar que ya no es responsable del vehículo, con el contrato, esa fecha queda documentada.' },
       { q: 'Puedo vender un auto sin garantía mecánica?', a: 'Sí, siempre que quede explícitamente indicado en el contrato que se vende "como está", para evitar reclamos posteriores sobre el estado del vehículo.' },
-      { q: 'Necesito un abogado para redactar este contrato?', a: 'Para una venta particular sencilla generalmente no es necesario — una plantilla clara con los datos esenciales es suficiente en la mayoría de los casos.' },
+      { q: 'Necesito un abogado para redactar este contrato?', a: 'Para una venta particular sencilla generalmente no es necesario, una plantilla clara con los datos esenciales es suficiente en la mayoría de los casos.' },
     ],
     relatedSlugs: ['real-cost-of-no-written-contract'],
     ctaHeading: 'Vende tu auto con un contrato firmado, no de palabra',
@@ -2695,14 +2695,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'sociedades',
     heroImage: { src: '/blog/contrato-de-sociedad-antes-de-emprender.jpg', alt: 'Dos socios de negocio dándose la mano en la oficina', credit: 'Foto: Pexels' },
     intro: [
-      'La mayoría de las sociedades que terminan mal no empiezan mal — empiezan con mucha confianza, buenas intenciones y ningún documento firmado, porque "somos amigos" o "somos familia" y parece innecesario ponerlo todo por escrito. El problema aparece meses o años después, cuando el negocio empieza a crecer (o a tener problemas) y ninguno de los socios se puso de acuerdo por escrito en cómo se reparten las ganancias, qué pasa si uno quiere salir, o quién decide en un desacuerdo.',
-      'Un contrato de sociedad no existe porque se desconfíe del otro socio — existe precisamente porque, cuando todo va bien, es fácil ponerse de acuerdo de palabra, pero cuando surge la primera diferencia real de opinión, tener las reglas ya escritas evita que la disputa se convierta en algo personal.',
+      'La mayoría de las sociedades que terminan mal no empiezan mal, empiezan con mucha confianza, buenas intenciones y ningún documento firmado, porque "somos amigos" o "somos familia" y parece innecesario ponerlo todo por escrito. El problema aparece meses o años después, cuando el negocio empieza a crecer (o a tener problemas) y ninguno de los socios se puso de acuerdo por escrito en cómo se reparten las ganancias, qué pasa si uno quiere salir, o quién decide en un desacuerdo.',
+      'Un contrato de sociedad no existe porque se desconfíe del otro socio, existe precisamente porque, cuando todo va bien, es fácil ponerse de acuerdo de palabra, pero cuando surge la primera diferencia real de opinión, tener las reglas ya escritas evita que la disputa se convierta en algo personal.',
     ],
     sections: [
       {
         heading: 'Qué problemas previene realmente un contrato de sociedad',
         paragraphs: [
-          'La mayoría de los conflictos entre socios no son sobre si el negocio funciona o no — son sobre expectativas que nunca se alinearon desde el principio: cuánto tiempo debe dedicar cada socio, cómo se reparten las ganancias si uno trabaja más horas que el otro, qué pasa si uno quiere vender su parte, y quién tiene la última palabra cuando hay un desacuerdo sobre una decisión importante.',
+          'La mayoría de los conflictos entre socios no son sobre si el negocio funciona o no, son sobre expectativas que nunca se alinearon desde el principio: cuánto tiempo debe dedicar cada socio, cómo se reparten las ganancias si uno trabaja más horas que el otro, qué pasa si uno quiere vender su parte, y quién tiene la última palabra cuando hay un desacuerdo sobre una decisión importante.',
           'Un contrato de sociedad bien redactado no elimina la posibilidad de desacuerdos, pero convierte cada uno de esos puntos en una regla ya acordada de antemano, en vez de una negociación tensa en medio de un conflicto real.',
         ],
       },
@@ -2713,7 +2713,7 @@ export const ARTICLES: Article[] = [
         ],
         bullets: [
           'Qué aporta cada socio: dinero, tiempo, activos, contactos, propiedad intelectual.',
-          'Cómo se reparten las ganancias y las pérdidas — no siempre tiene que ser 50/50, pero debe estar claro.',
+          'Cómo se reparten las ganancias y las pérdidas, no siempre tiene que ser 50/50, pero debe estar claro.',
           'Qué pasa si un socio quiere salir del negocio, o si fallece.',
           'Cómo se toman las decisiones importantes: por mayoría, por consenso, o con un socio con voto decisivo.',
           'Qué pasa si un socio deja de cumplir con lo acordado (tiempo, dinero, responsabilidades).',
@@ -2723,22 +2723,22 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué la confianza no reemplaza al contrato',
         paragraphs: [
-          'Es común escuchar "con mi socio no necesito papeles, confío en él" — y es precisamente ese tipo de confianza la que un contrato protege. Ningún contrato de sociedad existe porque se espere que el socio actúe de mala fe; existe porque las circunstancias personales de las personas cambian (un divorcio, una enfermedad, una mudanza, una nueva prioridad de vida), y cuando eso pasa, las reglas ya escritas evitan que el cambio de circunstancias de una persona se convierta en una crisis para el negocio completo.',
+          'Es común escuchar "con mi socio no necesito papeles, confío en él", y es precisamente ese tipo de confianza la que un contrato protege. Ningún contrato de sociedad existe porque se espere que el socio actúe de mala fe; existe porque las circunstancias personales de las personas cambian (un divorcio, una enfermedad, una mudanza, una nueva prioridad de vida), y cuando eso pasa, las reglas ya escritas evitan que el cambio de circunstancias de una persona se convierta en una crisis para el negocio completo.',
         ],
       },
     ],
     scenarios: [
-      { vertical: 'Startup tecnológica', scenario: 'Dos cofundadores empiezan una startup con un acuerdo verbal de repartir todo 50/50. Dieciocho meses después, uno de los dos dedica el negocio de tiempo completo mientras el otro mantiene su empleo y solo aporta ocasionalmente — sin un contrato que ajustara la repartición según el aporte real, la relación se vuelve tensa justo cuando el negocio empieza a crecer.' },
+      { vertical: 'Startup tecnológica', scenario: 'Dos cofundadores empiezan una startup con un acuerdo verbal de repartir todo 50/50. Dieciocho meses después, uno de los dos dedica el negocio de tiempo completo mientras el otro mantiene su empleo y solo aporta ocasionalmente, sin un contrato que ajustara la repartición según el aporte real, la relación se vuelve tensa justo cuando el negocio empieza a crecer.' },
       { vertical: 'Negocio familiar', scenario: 'Dos hermanos abren un restaurante juntos, cada uno invirtiendo sus ahorros. Sin un acuerdo escrito sobre qué pasa si uno de los dos quiere salir del negocio, una diferencia de opinión sobre el futuro del restaurante se convierte en un conflicto familiar que dura años.' },
       { vertical: 'Consultoría profesional', scenario: 'Dos consultores independientes deciden asociarse para tomar proyectos más grandes juntos. Un contrato de sociedad claro sobre cómo se dividen los clientes si la sociedad termina evita una pelea posterior sobre "de quién era" cada cliente.' },
       { vertical: 'Comercio local', scenario: 'Tres amigos abren una tienda aportando montos distintos de capital inicial. Sin un contrato que reflejara esa diferencia en la repartición de utilidades, dos de los tres sienten que están subsidiando al tercero, generando resentimiento evitable.' },
     ],
     mistakes: [
-      { title: 'Asumir que "somos amigos" hace innecesario el contrato', description: 'La relación personal entre los socios es exactamente la razón por la que vale la pena proteger el negocio con reglas claras — para que un desacuerdo de negocio no dañe la amistad.' },
+      { title: 'Asumir que "somos amigos" hace innecesario el contrato', description: 'La relación personal entre los socios es exactamente la razón por la que vale la pena proteger el negocio con reglas claras, para que un desacuerdo de negocio no dañe la amistad.' },
       { title: 'No definir qué pasa si un socio quiere salir', description: 'Sin una cláusula de salida clara, un socio que quiere irse puede quedar atrapado en el negocio, o el negocio puede quedar atrapado teniendo que negociar sin reglas previas.' },
       { title: 'Repartir el capital 50/50 sin reflejar el aporte real', description: 'Una repartición pareja suena justa al principio, pero si los aportes de tiempo, dinero o experiencia no son iguales, esa disparidad genera resentimiento con el tiempo si nunca se ajustó por escrito.' },
       { title: 'No poner por escrito quién decide en un empate', description: 'En una sociedad de dos personas, un desacuerdo 50/50 sin ningún mecanismo de resolución puede paralizar decisiones importantes del negocio en el peor momento.' },
-      { title: 'Dejar la sociedad "informal" mientras el negocio es pequeño', description: 'Muchos emprendedores posponen el contrato pensando en formalizarlo "cuando el negocio crezca" — pero es precisamente durante el crecimiento cuando más dinero y decisiones están en juego, y ya es más difícil ponerse de acuerdo.' },
+      { title: 'Dejar la sociedad "informal" mientras el negocio es pequeño', description: 'Muchos emprendedores posponen el contrato pensando en formalizarlo "cuando el negocio crezca", pero es precisamente durante el crecimiento cuando más dinero y decisiones están en juego, y ya es más difícil ponerse de acuerdo.' },
     ],
     checklist: {
       title: 'Antes de emprender con un socio, verifica que el contrato incluya',
@@ -2762,15 +2762,15 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Es necesario un contrato de sociedad si el negocio es pequeño?', a: 'Sí — el tamaño del negocio no reduce el riesgo de un desacuerdo entre socios; de hecho, los negocios pequeños suelen tener menos margen para absorber una disputa prolongada.' },
-      { q: 'Un contrato de sociedad reemplaza la constitución legal de la empresa?', a: 'No necesariamente — dependiendo del país y el tipo de entidad, puede que también necesites registrar formalmente la sociedad ante las autoridades correspondientes; el contrato entre socios regula la relación interna entre ellos.' },
+      { q: 'Es necesario un contrato de sociedad si el negocio es pequeño?', a: 'Sí, el tamaño del negocio no reduce el riesgo de un desacuerdo entre socios; de hecho, los negocios pequeños suelen tener menos margen para absorber una disputa prolongada.' },
+      { q: 'Un contrato de sociedad reemplaza la constitución legal de la empresa?', a: 'No necesariamente, dependiendo del país y el tipo de entidad, puede que también necesites registrar formalmente la sociedad ante las autoridades correspondientes; el contrato entre socios regula la relación interna entre ellos.' },
       { q: 'Puedo modificar el contrato de sociedad después de firmado?', a: 'Sí, siempre que todos los socios estén de acuerdo con los cambios y estos queden documentados por escrito, igual que el contrato original.' },
       { q: 'Qué pasa si un socio fallece sin que esto esté contemplado en el contrato?', a: 'Sin una cláusula que lo contemple, la parte del socio fallecido normalmente pasa a sus herederos según la ley de sucesión, lo que puede complicar la operación del negocio si los herederos no tienen interés o experiencia en el rubro.' },
       { q: 'Necesito un abogado para redactar este contrato?', a: 'Para sociedades simples, una plantilla clara y completa puede ser suficiente; para sociedades con inversión significativa o estructuras complejas, vale la pena una revisión legal adicional.' },
       { q: 'Cómo se firma un contrato de sociedad entre socios en ciudades distintas?', a: 'Con firma electrónica, cada socio puede firmar desde su propia ubicación sin necesidad de reunirse presencialmente ni enviar el documento por correo físico.' },
-      { q: 'El contrato debe incluir cuánto tiempo debe dedicar cada socio?', a: 'Es muy recomendable, especialmente si un socio trabaja tiempo completo en el negocio y otro lo hace de forma parcial — de lo contrario, esa diferencia suele generar tensión sin que nadie la haya puesto por escrito.' },
+      { q: 'El contrato debe incluir cuánto tiempo debe dedicar cada socio?', a: 'Es muy recomendable, especialmente si un socio trabaja tiempo completo en el negocio y otro lo hace de forma parcial, de lo contrario, esa diferencia suele generar tensión sin que nadie la haya puesto por escrito.' },
       { q: 'Qué pasa si uno de los socios quiere vender su parte a un tercero?', a: 'La mayoría de los contratos de sociedad incluyen una cláusula de "primera opción de compra" para que los otros socios puedan comprar esa parte antes de que se ofrezca a alguien externo al negocio.' },
-      { q: 'Un contrato de sociedad es lo mismo que un acuerdo de confidencialidad (NDA)?', a: 'No — son documentos distintos con propósitos distintos. Un NDA protege información confidencial; un contrato de sociedad regula la relación completa entre los socios del negocio.' },
+      { q: 'Un contrato de sociedad es lo mismo que un acuerdo de confidencialidad (NDA)?', a: 'No, son documentos distintos con propósitos distintos. Un NDA protege información confidencial; un contrato de sociedad regula la relación completa entre los socios del negocio.' },
       { q: 'Cuánto debería costar redactar un contrato de sociedad?', a: 'Usando una plantilla clara y firma electrónica, el costo puede ser mínimo o gratuito; el costo de NO tenerlo, en cambio, suele aparecer después, en forma de disputas legales o pérdida del negocio.' },
     ],
     relatedSlugs: ['como-automatizar-contratos-en-una-inmobiliaria-pequena', 'errores-comunes-al-redactar-un-nda'],
@@ -2793,19 +2793,19 @@ export const ARTICLES: Article[] = [
     topicCluster: 'pagares',
     heroImage: { src: '/blog/pagare-prestamo-entre-particulares.jpg', alt: 'Una persona entregando dinero en efectivo a otra', credit: 'Foto: Pexels' },
     intro: [
-      'Prestarle dinero a un amigo o familiar "sin necesidad de papeles, porque confío" es una de las decisiones más comunes que terminan dañando tanto el dinero como la relación. No porque la otra persona necesariamente actúe de mala fe, sino porque sin un acuerdo claro sobre cuándo y cómo se devuelve el dinero, cada parte recuerda un trato ligeramente distinto — y esa diferencia de recuerdos es, casi siempre, donde empieza el conflicto.',
+      'Prestarle dinero a un amigo o familiar "sin necesidad de papeles, porque confío" es una de las decisiones más comunes que terminan dañando tanto el dinero como la relación. No porque la otra persona necesariamente actúe de mala fe, sino porque sin un acuerdo claro sobre cuándo y cómo se devuelve el dinero, cada parte recuerda un trato ligeramente distinto, y esa diferencia de recuerdos es, casi siempre, donde empieza el conflicto.',
     ],
     sections: [
       {
         heading: 'Qué es un pagaré y por qué protege a ambas partes',
         paragraphs: [
-          'Un pagaré es un documento simple en el que una persona (el deudor) se compromete por escrito a pagarle a otra (el acreedor) una cantidad específica de dinero, en una fecha o bajo condiciones determinadas. No es un documento hostil ni desconfiado — protege igual de bien a quien presta (dejando claro que el dinero debe devolverse) que a quien recibe el préstamo (dejando claro exactamente cuánto debe y bajo qué condiciones, sin espacio para malentendidos futuros).',
+          'Un pagaré es un documento simple en el que una persona (el deudor) se compromete por escrito a pagarle a otra (el acreedor) una cantidad específica de dinero, en una fecha o bajo condiciones determinadas. No es un documento hostil ni desconfiado, protege igual de bien a quien presta (dejando claro que el dinero debe devolverse) que a quien recibe el préstamo (dejando claro exactamente cuánto debe y bajo qué condiciones, sin espacio para malentendidos futuros).',
         ],
       },
       {
         heading: 'Qué debe incluir un pagaré entre particulares',
         paragraphs: [
-          'Un pagaré no necesita ser un documento complicado — necesita ser claro y completo en los puntos esenciales.',
+          'Un pagaré no necesita ser un documento complicado, necesita ser claro y completo en los puntos esenciales.',
         ],
         bullets: [
           'Monto exacto prestado y moneda.',
@@ -2818,10 +2818,10 @@ export const ARTICLES: Article[] = [
     ],
     faq: [
       { q: 'Un pagaré firmado electrónicamente es legalmente válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica en un pagaré tiene la misma validez legal que una firma manuscrita.' },
-      { q: 'Necesito cobrar interés en un préstamo entre familiares?', a: 'No es obligatorio — muchos pagarés entre familiares o amigos se hacen sin interés; lo importante es que quede claro por escrito para evitar confusiones futuras.' },
+      { q: 'Necesito cobrar interés en un préstamo entre familiares?', a: 'No es obligatorio, muchos pagarés entre familiares o amigos se hacen sin interés; lo importante es que quede claro por escrito para evitar confusiones futuras.' },
       { q: 'Qué pasa si la persona no paga en la fecha acordada?', a: 'Un pagaré firmado te da una base documental clara para reclamar el pago, incluyendo por la vía legal si fuera necesario, algo que un acuerdo verbal no ofrece.' },
       { q: 'Es incómodo pedirle a un familiar que firme un pagaré?', a: 'Puede sentirse así al principio, pero enmarcarlo como "protegernos a los dos" en vez de "no confío en ti" suele cambiar por completo cómo se recibe la propuesta.' },
-      { q: 'Un pagaré sirve para montos pequeños también?', a: 'Sí — no hay un monto mínimo; de hecho, los préstamos pequeños entre conocidos son justamente los que con más frecuencia terminan sin documentar y generando disputas después.' },
+      { q: 'Un pagaré sirve para montos pequeños también?', a: 'Sí, no hay un monto mínimo; de hecho, los préstamos pequeños entre conocidos son justamente los que con más frecuencia terminan sin documentar y generando disputas después.' },
     ],
     relatedSlugs: ['real-cost-of-no-written-contract'],
     ctaHeading: 'Presta dinero con la tranquilidad de un pagaré firmado',
@@ -2843,13 +2843,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'exenciones-responsabilidad',
     heroImage: { src: '/blog/exencion-responsabilidad-gimnasios-eventos.jpg', alt: 'Persona firmando un documento antes de participar en una actividad física', credit: 'Foto: Pexels' },
     intro: [
-      'Un cliente que se lesiona durante una clase de spinning, un corredor que se tuerce el tobillo en una carrera 5K, un participante que se cae en una clase de escalada — sin una exención de responsabilidad firmada antes de participar, el negocio que organizó la actividad queda completamente expuesto a que esa lesión se convierta en una demanda costosa, incluso cuando el negocio no hizo nada indebido.',
+      'Un cliente que se lesiona durante una clase de spinning, un corredor que se tuerce el tobillo en una carrera 5K, un participante que se cae en una clase de escalada, sin una exención de responsabilidad firmada antes de participar, el negocio que organizó la actividad queda completamente expuesto a que esa lesión se convierta en una demanda costosa, incluso cuando el negocio no hizo nada indebido.',
     ],
     sections: [
       {
         heading: 'Qué es y qué NO es una exención de responsabilidad',
         paragraphs: [
-          'Una exención de responsabilidad (o "liability waiver") es un documento en el que el participante reconoce los riesgos inherentes de una actividad física y acepta no responsabilizar al negocio por lesiones que ocurran durante el curso normal de esa actividad. Es importante entender sus límites: una exención bien redactada reduce significativamente el riesgo legal del negocio, pero generalmente no protege contra negligencia grave o comportamiento imprudente por parte del negocio — por ejemplo, equipo claramente dañado que nunca se reparó.',
+          'Una exención de responsabilidad (o "liability waiver") es un documento en el que el participante reconoce los riesgos inherentes de una actividad física y acepta no responsabilizar al negocio por lesiones que ocurran durante el curso normal de esa actividad. Es importante entender sus límites: una exención bien redactada reduce significativamente el riesgo legal del negocio, pero generalmente no protege contra negligencia grave o comportamiento imprudente por parte del negocio, por ejemplo, equipo claramente dañado que nunca se reparó.',
         ],
       },
       {
@@ -2868,8 +2868,8 @@ export const ARTICLES: Article[] = [
     ],
     mistakes: [
       { title: 'Usar una exención genérica sin adaptarla a la actividad real', description: 'Una exención escrita para "cualquier actividad física" en general suele ser mucho más débil legalmente que una que describe específicamente los riesgos de la actividad concreta que se realiza.' },
-      { title: 'No pedir que la firme cada participante, incluyendo invitados ocasionales', description: 'Es común que un negocio pida la exención a sus miembros regulares pero la olvide con invitados de un día o participantes de un evento único — precisamente el grupo con menos experiencia y más riesgo de lesión.' },
-      { title: 'Asumir que la exención protege ante cualquier tipo de negligencia', description: 'La mayoría de las jurisdicciones no permiten que una exención proteja contra negligencia grave del negocio (por ejemplo, equipo en mal estado que nunca se revisó) — la exención reduce el riesgo, no lo elimina por completo.' },
+      { title: 'No pedir que la firme cada participante, incluyendo invitados ocasionales', description: 'Es común que un negocio pida la exención a sus miembros regulares pero la olvide con invitados de un día o participantes de un evento único, precisamente el grupo con menos experiencia y más riesgo de lesión.' },
+      { title: 'Asumir que la exención protege ante cualquier tipo de negligencia', description: 'La mayoría de las jurisdicciones no permiten que una exención proteja contra negligencia grave del negocio (por ejemplo, equipo en mal estado que nunca se revisó), la exención reduce el riesgo, no lo elimina por completo.' },
     ],
     checklist: {
       title: 'Antes de una actividad, verifica que tu exención incluya',
@@ -2886,7 +2886,7 @@ export const ARTICLES: Article[] = [
       { q: 'La exención protege al gimnasio de cualquier demanda?', a: 'Reduce significativamente el riesgo legal, pero generalmente no protege contra negligencia grave del negocio, como equipo en mal estado o falta de supervisión básica de seguridad.' },
       { q: 'Es necesario que un menor de edad firme la exención?', a: 'Generalmente se requiere que un padre o tutor legal firme en nombre de un menor, ya que un menor no puede aceptar legalmente este tipo de acuerdo por sí mismo.' },
       { q: 'Cada cuánto debería renovarse la exención firmada de un cliente regular?', a: 'Muchos negocios la renuevan anualmente o cuando cambian significativamente las actividades ofrecidas, para asegurarse de que siga reflejando los riesgos reales.' },
-      { q: 'Puedo usar la misma exención para distintas actividades?', a: 'Es preferible adaptarla a cada actividad específica — una exención para levantamiento de pesas y una para una carrera al aire libre implican riesgos distintos que deberían describirse por separado.' },
+      { q: 'Puedo usar la misma exención para distintas actividades?', a: 'Es preferible adaptarla a cada actividad específica, una exención para levantamiento de pesas y una para una carrera al aire libre implican riesgos distintos que deberían describirse por separado.' },
     ],
     relatedSlugs: ['real-cost-of-no-written-contract'],
     ctaHeading: 'Protege tu gimnasio o evento con una exención firmada',
@@ -2908,13 +2908,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'pymes',
     heroImage: { src: '/blog/contratos-proveedores-restaurantes-sin-papeleo.jpg', alt: 'Cocina de restaurante con productos recién entregados por un proveedor', credit: 'Foto: Pexels' },
     intro: [
-      'El dueño de un restaurante rara vez tiene tiempo de sobra entre supervisar la cocina, atender a los clientes y manejar al personal — y sin embargo, cada nuevo proveedor de alimentos, cada renovación de contrato de mantenimiento de equipo, y cada acuerdo con un distribuidor termina exigiendo imprimir, firmar, escanear y archivar papeles que fácilmente se pierden entre el ajetreo del día a día.',
+      'El dueño de un restaurante rara vez tiene tiempo de sobra entre supervisar la cocina, atender a los clientes y manejar al personal, y sin embargo, cada nuevo proveedor de alimentos, cada renovación de contrato de mantenimiento de equipo, y cada acuerdo con un distribuidor termina exigiendo imprimir, firmar, escanear y archivar papeles que fácilmente se pierden entre el ajetreo del día a día.',
     ],
     sections: [
       {
         heading: 'Dónde se pierde más tiempo con el papeleo de proveedores',
         paragraphs: [
-          'El problema no suele ser negociar el contrato en sí — es todo lo que rodea a firmarlo: encontrar la impresora, esperar a que el proveedor pase físicamente por el restaurante, o mandar el documento por correo y esperar días a que regrese firmado. Mientras tanto, el pedido urgente de ingredientes o el contrato de mantenimiento de la cocina queda pendiente por pura logística, no porque haya un desacuerdo real entre las partes.',
+          'El problema no suele ser negociar el contrato en sí, es todo lo que rodea a firmarlo: encontrar la impresora, esperar a que el proveedor pase físicamente por el restaurante, o mandar el documento por correo y esperar días a que regrese firmado. Mientras tanto, el pedido urgente de ingredientes o el contrato de mantenimiento de la cocina queda pendiente por pura logística, no porque haya un desacuerdo real entre las partes.',
         ],
       },
       {
@@ -2936,7 +2936,7 @@ export const ARTICLES: Article[] = [
     },
     faq: [
       { q: 'Un contrato con un proveedor firmado electrónicamente es válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de acuerdos comerciales.' },
-      { q: 'El proveedor necesita instalar algo para firmar?', a: 'No — un buen enlace de firma se abre directamente desde el navegador del teléfono o computador del proveedor, sin necesidad de instalar ninguna aplicación.' },
+      { q: 'El proveedor necesita instalar algo para firmar?', a: 'No, un buen enlace de firma se abre directamente desde el navegador del teléfono o computador del proveedor, sin necesidad de instalar ninguna aplicación.' },
       { q: 'Puedo tener varios proveedores firmando documentos distintos al mismo tiempo?', a: 'Sí, cada proveedor recibe su propio enlace independiente, así que no hay que esperar a que uno termine para enviar el siguiente.' },
       { q: 'Cómo organizo los contratos ya firmados de distintos proveedores?', a: 'Una buena plataforma de firma electrónica guarda automáticamente cada documento firmado en un panel centralizado, evitando que los contratos queden dispersos en carpetas físicas o correos distintos.' },
       { q: 'Esto sirve también para acuerdos con el personal del restaurante?', a: 'Sí, el mismo enfoque aplica para contratos laborales, acuerdos de turno, o políticas internas que el personal deba firmar.' },
@@ -2961,20 +2961,20 @@ export const ARTICLES: Article[] = [
     topicCluster: 'salud',
     heroImage: { src: '/blog/consentimiento-informado-digital-clinicas.jpg', alt: 'Paciente firmando un formulario de consentimiento en la consulta médica', credit: 'Foto: Pexels' },
     intro: [
-      'Una clínica pequeña con dos o tres consultorios no tiene el mismo departamento administrativo que un hospital grande, y sin embargo enfrenta la misma obligación: obtener y conservar el consentimiento informado de cada paciente antes de un procedimiento, un tratamiento, o incluso el simple uso de sus datos clínicos. Cuando ese proceso vive en formularios de papel guardados en carpetas físicas, cada consentimiento perdido, mal archivado o firmado a medias se convierte en un riesgo real — tanto para el paciente como para la clínica.',
-      'El consentimiento informado no es un trámite burocrático de relleno — es la forma en que un paciente confirma que entendió un procedimiento, sus riesgos, y sus alternativas, antes de aceptarlo. Digitalizar ese proceso no le quita seriedad al consentimiento; al contrario, cuando se hace bien, deja una evidencia mucho más clara y ordenada de que el paciente realmente lo entendió y lo firmó, que una hoja de papel archivada entre cientos de expedientes.',
+      'Una clínica pequeña con dos o tres consultorios no tiene el mismo departamento administrativo que un hospital grande, y sin embargo enfrenta la misma obligación: obtener y conservar el consentimiento informado de cada paciente antes de un procedimiento, un tratamiento, o incluso el simple uso de sus datos clínicos. Cuando ese proceso vive en formularios de papel guardados en carpetas físicas, cada consentimiento perdido, mal archivado o firmado a medias se convierte en un riesgo real, tanto para el paciente como para la clínica.',
+      'El consentimiento informado no es un trámite burocrático de relleno, es la forma en que un paciente confirma que entendió un procedimiento, sus riesgos, y sus alternativas, antes de aceptarlo. Digitalizar ese proceso no le quita seriedad al consentimiento; al contrario, cuando se hace bien, deja una evidencia mucho más clara y ordenada de que el paciente realmente lo entendió y lo firmó, que una hoja de papel archivada entre cientos de expedientes.',
     ],
     sections: [
       {
         heading: 'Qué es exactamente el consentimiento informado',
         paragraphs: [
-          'El consentimiento informado es el proceso por el cual un paciente recibe información clara sobre un procedimiento o tratamiento — en qué consiste, qué riesgos tiene, qué alternativas existen, y qué pasa si decide no hacerlo — y, con esa información, decide voluntariamente aceptarlo. El documento firmado es la evidencia de que ese proceso ocurrió, no el proceso en sí mismo; una clínica que solo hace firmar un papel sin haber explicado realmente el procedimiento no está cumpliendo con el espíritu del consentimiento informado, aunque tenga la firma.',
+          'El consentimiento informado es el proceso por el cual un paciente recibe información clara sobre un procedimiento o tratamiento, en qué consiste, qué riesgos tiene, qué alternativas existen, y qué pasa si decide no hacerlo, y, con esa información, decide voluntariamente aceptarlo. El documento firmado es la evidencia de que ese proceso ocurrió, no el proceso en sí mismo; una clínica que solo hace firmar un papel sin haber explicado realmente el procedimiento no está cumpliendo con el espíritu del consentimiento informado, aunque tenga la firma.',
         ],
       },
       {
         heading: 'Por qué el papel es un riesgo, no solo una molestia',
         paragraphs: [
-          'Un formulario de consentimiento en papel puede perderse, mancharse, quedar incompleto, o simplemente extraviarse entre el volumen de expedientes de una clínica ocupada. Si años después surge una pregunta sobre si un paciente realmente firmó su consentimiento antes de un procedimiento específico, no tener ese documento accesible y legible es un problema serio — no solo administrativo, sino de protección tanto del paciente como de la clínica.',
+          'Un formulario de consentimiento en papel puede perderse, mancharse, quedar incompleto, o simplemente extraviarse entre el volumen de expedientes de una clínica ocupada. Si años después surge una pregunta sobre si un paciente realmente firmó su consentimiento antes de un procedimiento específico, no tener ese documento accesible y legible es un problema serio, no solo administrativo, sino de protección tanto del paciente como de la clínica.',
           'Un sistema digital de consentimiento informado, cuando se implementa correctamente, cumple con los estándares de trazabilidad exigidos por la mayoría de regulaciones sanitarias: queda registrada la fecha exacta, la identidad verificada del paciente, y una copia del documento exacto que se firmó, sin que dependa de que alguien lo encuentre físicamente en un archivo años después.',
         ],
       },
@@ -2994,7 +2994,7 @@ export const ARTICLES: Article[] = [
       { title: 'Tratar el consentimiento como un simple trámite de firma', description: 'Hacer firmar un documento sin haber explicado realmente el procedimiento no cumple con el propósito real del consentimiento informado, incluso si técnicamente existe una firma.' },
       { title: 'No conservar una copia accesible del documento firmado', description: 'Un consentimiento firmado pero difícil de localizar después no sirve de mucho si surge una pregunta meses o años después sobre qué exactamente aceptó el paciente.' },
       { title: 'Usar el mismo formulario genérico para procedimientos distintos', description: 'Un consentimiento que no describe el procedimiento específico ni sus riesgos particulares es mucho más débil que uno adaptado a cada tipo de tratamiento.' },
-      { title: 'No verificar la identidad de quien firma', description: 'Especialmente quien firma en nombre de un menor o un paciente que no puede firmar por sí mismo — sin verificación, queda una duda razonable sobre quién realmente aceptó el procedimiento.' },
+      { title: 'No verificar la identidad de quien firma', description: 'Especialmente quien firma en nombre de un menor o un paciente que no puede firmar por sí mismo, sin verificación, queda una duda razonable sobre quién realmente aceptó el procedimiento.' },
     ],
     checklist: {
       title: 'Antes de un procedimiento, verifica que el consentimiento incluya',
@@ -3009,14 +3009,14 @@ export const ARTICLES: Article[] = [
     },
     faq: [
       { q: 'Un consentimiento informado firmado electrónicamente es legalmente válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de documentos, siempre que el proceso de firma sea trazable y verificable.' },
-      { q: 'El consentimiento digital reemplaza la explicación verbal del médico?', a: 'No — el documento es evidencia de que el paciente aceptó el procedimiento, pero la explicación clara por parte del personal médico sigue siendo la parte más importante del proceso de consentimiento informado.' },
+      { q: 'El consentimiento digital reemplaza la explicación verbal del médico?', a: 'No, el documento es evidencia de que el paciente aceptó el procedimiento, pero la explicación clara por parte del personal médico sigue siendo la parte más importante del proceso de consentimiento informado.' },
       { q: 'Qué pasa si el paciente no sabe leer bien o tiene alguna discapacidad?', a: 'La clínica debe adaptar cómo se explica el procedimiento (verbalmente, con apoyo visual, con un familiar presente) antes de pedir la firma, sin importar si el consentimiento es en papel o digital.' },
-      { q: 'Un menor de edad puede firmar su propio consentimiento?', a: 'Generalmente no — se requiere el consentimiento de un padre o tutor legal, salvo excepciones específicas que varían según la jurisdicción y el tipo de tratamiento.' },
+      { q: 'Un menor de edad puede firmar su propio consentimiento?', a: 'Generalmente no, se requiere el consentimiento de un padre o tutor legal, salvo excepciones específicas que varían según la jurisdicción y el tipo de tratamiento.' },
       { q: 'Cuánto tiempo debe conservar una clínica los consentimientos firmados?', a: 'Varía según la jurisdicción y el tipo de procedimiento, pero un sistema digital facilita conservarlos de forma organizada y accesible durante el tiempo que la clínica determine necesario.' },
-      { q: 'El consentimiento digital funciona igual para procedimientos médicos y dentales?', a: 'Sí, el mismo principio aplica — lo que cambia es el contenido específico del documento según el procedimiento, no el proceso de firma en sí.' },
+      { q: 'El consentimiento digital funciona igual para procedimientos médicos y dentales?', a: 'Sí, el mismo principio aplica, lo que cambia es el contenido específico del documento según el procedimiento, no el proceso de firma en sí.' },
       { q: 'Qué pasa si el paciente cambia de opinión después de firmar?', a: 'El consentimiento informado generalmente puede retirarse antes de que el procedimiento comience; una vez iniciado, depende del tipo de tratamiento y debe manejarse según el criterio médico correspondiente.' },
-      { q: 'Es necesario un consentimiento separado para el uso de datos del paciente?', a: 'En muchos casos sí — el consentimiento para un procedimiento y el consentimiento para el uso o almacenamiento de datos personales suelen ser documentos distintos con propósitos distintos.' },
-      { q: 'Puede una clínica pequeña implementar esto sin un departamento de sistemas propio?', a: 'Sí — plataformas de firma electrónica diseñadas para ser simples permiten a una clínica pequeña digitalizar este proceso sin necesitar personal técnico dedicado.' },
+      { q: 'Es necesario un consentimiento separado para el uso de datos del paciente?', a: 'En muchos casos sí, el consentimiento para un procedimiento y el consentimiento para el uso o almacenamiento de datos personales suelen ser documentos distintos con propósitos distintos.' },
+      { q: 'Puede una clínica pequeña implementar esto sin un departamento de sistemas propio?', a: 'Sí, plataformas de firma electrónica diseñadas para ser simples permiten a una clínica pequeña digitalizar este proceso sin necesitar personal técnico dedicado.' },
       { q: 'El paciente puede pedir una copia de su consentimiento firmado?', a: 'Sí, y un sistema digital facilita entregarle esa copia de inmediato, en vez de tener que fotocopiar un documento físico archivado.' },
     ],
     relatedSlugs: ['como-verificar-identidad-de-un-firmante'],
@@ -3045,7 +3045,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué los acuerdos verbales o por correo no son suficientes',
         paragraphs: [
-          'Es común que las condiciones con un proveedor se acuerden por WhatsApp o correo electrónico, sin llegar nunca a un contrato firmado formalmente. Mientras todo va bien, esto no genera problemas — pero en cuanto hay un retraso serio en un envío, un producto que no cumple la calidad acordada, o un cambio de precio unilateral, la falta de un contrato claro deja al negocio de e-commerce sin una base sólida para reclamar.',
+          'Es común que las condiciones con un proveedor se acuerden por WhatsApp o correo electrónico, sin llegar nunca a un contrato firmado formalmente. Mientras todo va bien, esto no genera problemas, pero en cuanto hay un retraso serio en un envío, un producto que no cumple la calidad acordada, o un cambio de precio unilateral, la falta de un contrato claro deja al negocio de e-commerce sin una base sólida para reclamar.',
         ],
       },
       {
@@ -3065,7 +3065,7 @@ export const ARTICLES: Article[] = [
       { q: 'Un contrato con un proveedor internacional firmado electrónicamente es válido?', a: 'Generalmente sí, aunque conviene verificar si el país del proveedor exige algún requisito adicional para reconocer firmas electrónicas en contratos internacionales.' },
       { q: 'Puedo firmar contratos con varios proveedores en distintos países al mismo tiempo?', a: 'Sí, cada proveedor recibe su propio enlace de firma independiente, sin necesidad de coordinar horarios ni reunir a todos en el mismo lugar.' },
       { q: 'Qué pasa si un proveedor no cumple con lo acordado en el contrato?', a: 'Un contrato firmado te da una base documental clara para exigir el cumplimiento o buscar una solución, algo mucho más difícil de hacer con un acuerdo informal por mensaje.' },
-      { q: 'Necesito un contrato distinto para cada producto que vendo?', a: 'No necesariamente — puedes tener un acuerdo marco con un proveedor que cubra múltiples productos, siempre que las condiciones comerciales sean las mismas.' },
+      { q: 'Necesito un contrato distinto para cada producto que vendo?', a: 'No necesariamente, puedes tener un acuerdo marco con un proveedor que cubra múltiples productos, siempre que las condiciones comerciales sean las mismas.' },
       { q: 'Cómo organizo los contratos de múltiples proveedores?', a: 'Una plataforma de firma electrónica centraliza todos los documentos firmados en un solo panel, facilitando encontrarlos cuando se necesiten sin buscar en distintos correos.' },
     ],
     relatedSlugs: ['firma-electronica-gratis-para-pymes'],
@@ -3094,7 +3094,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Qué cambia al digitalizar el proceso de matrícula',
         paragraphs: [
-          'En vez de que los padres tengan que asistir presencialmente solo para firmar papeles, la escuela puede enviarles el contrato de matrícula, la autorización de uso de imagen, y cualquier otro documento requerido por un enlace que pueden revisar y firmar desde su casa, en el momento que les resulte conveniente. Esto no elimina la interacción humana del proceso de inscripción — elimina la parte puramente administrativa que no necesita ser presencial.',
+          'En vez de que los padres tengan que asistir presencialmente solo para firmar papeles, la escuela puede enviarles el contrato de matrícula, la autorización de uso de imagen, y cualquier otro documento requerido por un enlace que pueden revisar y firmar desde su casa, en el momento que les resulte conveniente. Esto no elimina la interacción humana del proceso de inscripción, elimina la parte puramente administrativa que no necesita ser presencial.',
         ],
       },
     ],
@@ -3110,7 +3110,7 @@ export const ARTICLES: Article[] = [
     },
     faq: [
       { q: 'Un contrato de matrícula firmado electrónicamente es válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de documentos.' },
-      { q: 'Qué pasa si el padre o tutor no tiene mucha experiencia con tecnología?', a: 'Un buen sistema de firma electrónica es tan simple como abrir un enlace y tocar un botón — no requiere crear cuentas ni instalar aplicaciones.' },
+      { q: 'Qué pasa si el padre o tutor no tiene mucha experiencia con tecnología?', a: 'Un buen sistema de firma electrónica es tan simple como abrir un enlace y tocar un botón, no requiere crear cuentas ni instalar aplicaciones.' },
       { q: 'Puedo enviar el mismo contrato a decenas de familias a la vez?', a: 'Sí, cada familia recibe su propio enlace individual, permitiendo procesar muchas matrículas en paralelo sin necesitar que todas coincidan en un mismo horario presencial.' },
       { q: 'Los documentos firmados quedan organizados por estudiante?', a: 'Sí, una buena plataforma permite asociar cada documento firmado al expediente del estudiante correspondiente para encontrarlo fácilmente después.' },
       { q: 'Esto sirve también para renovaciones de matrícula año tras año?', a: 'Sí, de hecho es uno de los casos donde más tiempo se ahorra, ya que se puede reutilizar la plantilla del contrato cada año sin rediseñar el proceso desde cero.' },
@@ -3135,13 +3135,13 @@ export const ARTICLES: Article[] = [
     topicCluster: 'logistica',
     heroImage: { src: '/blog/contratos-transporte-logistica-disputas.jpg', alt: 'Trabajador de bodega junto a cajas de mercancía organizadas', credit: 'Foto: Pexels' },
     intro: [
-      'Una carga que llega dañada, un envío que se pierde en tránsito, un retraso que le cuesta dinero al cliente que esperaba el producto a tiempo — sin un contrato de transporte claro que defina de antemano quién asume la responsabilidad en cada uno de estos casos, lo que debería ser un simple trámite logístico se convierte en una disputa costosa entre el transportista y quien contrató el envío.',
+      'Una carga que llega dañada, un envío que se pierde en tránsito, un retraso que le cuesta dinero al cliente que esperaba el producto a tiempo, sin un contrato de transporte claro que defina de antemano quién asume la responsabilidad en cada uno de estos casos, lo que debería ser un simple trámite logístico se convierte en una disputa costosa entre el transportista y quien contrató el envío.',
     ],
     sections: [
       {
         heading: 'Qué debe dejar claro un contrato de transporte',
         paragraphs: [
-          'Un buen contrato de transporte no solo describe qué se va a transportar y a dónde — define exactamente qué pasa cuando algo sale mal, que es precisamente el escenario donde más se necesita un acuerdo claro.',
+          'Un buen contrato de transporte no solo describe qué se va a transportar y a dónde, define exactamente qué pasa cuando algo sale mal, que es precisamente el escenario donde más se necesita un acuerdo claro.',
         ],
         bullets: [
           'Descripción exacta de la carga, su valor declarado, y su estado antes del transporte.',
@@ -3154,7 +3154,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué documentar el estado de la carga antes del envío es clave',
         paragraphs: [
-          'Una de las disputas más comunes en logística es determinar si un daño ocurrió durante el transporte o si la carga ya tenía ese problema antes de salir. Documentar claramente el estado de la mercancía al momento de la entrega al transportista — con fotos, descripción escrita, y firma de ambas partes — elimina gran parte de esa ambigüedad si después surge un reclamo.',
+          'Una de las disputas más comunes en logística es determinar si un daño ocurrió durante el transporte o si la carga ya tenía ese problema antes de salir. Documentar claramente el estado de la mercancía al momento de la entrega al transportista, con fotos, descripción escrita, y firma de ambas partes, elimina gran parte de esa ambigüedad si después surge un reclamo.',
         ],
       },
     ],
@@ -3164,8 +3164,8 @@ export const ARTICLES: Article[] = [
     ],
     faq: [
       { q: 'Un contrato de transporte firmado electrónicamente es válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de acuerdos comerciales.' },
-      { q: 'Quién es responsable si la carga se daña por un accidente durante el transporte?', a: 'Depende de lo que el contrato específicamente acuerde — por eso es importante dejarlo claro por escrito antes del envío, en vez de asumir una respuesta general.' },
-      { q: 'Es necesario un contrato distinto para cada envío?', a: 'No necesariamente — muchas empresas usan un contrato marco con un transportista habitual, y solo generan una orden de envío específica para cada carga individual.' },
+      { q: 'Quién es responsable si la carga se daña por un accidente durante el transporte?', a: 'Depende de lo que el contrato específicamente acuerde, por eso es importante dejarlo claro por escrito antes del envío, en vez de asumir una respuesta general.' },
+      { q: 'Es necesario un contrato distinto para cada envío?', a: 'No necesariamente, muchas empresas usan un contrato marco con un transportista habitual, y solo generan una orden de envío específica para cada carga individual.' },
       { q: 'Qué evidencia sirve para documentar el estado de una carga?', a: 'Fotos claras, una descripción escrita del estado, y la firma de quien entrega y quien recibe la mercancía en ese momento son la evidencia más sólida ante una disputa posterior.' },
       { q: 'El contrato debe incluir un seguro sobre la carga?', a: 'Es muy recomendable especificar si existe un seguro, qué cubre exactamente, y hasta qué monto, para evitar sorpresas si ocurre una pérdida significativa.' },
     ],
@@ -3189,7 +3189,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'carta-de-intencion',
     heroImage: { src: '/blog/carta-de-intencion-antes-de-contrato.jpg', alt: 'Dos profesionales dándose la mano tras cerrar un acuerdo de negocios', credit: 'Foto: Pexels' },
     intro: [
-      'Dos empresas llevan semanas negociando una posible compra, una alianza comercial o un acuerdo de distribución. Ambas partes han invertido tiempo, han compartido información sensible, y creen tener un entendimiento claro de los términos — hasta que una de ellas se retracta o cambia radicalmente su postura, y la otra descubre que no tenía absolutamente nada firmado que respaldara lo negociado hasta ese momento.',
+      'Dos empresas llevan semanas negociando una posible compra, una alianza comercial o un acuerdo de distribución. Ambas partes han invertido tiempo, han compartido información sensible, y creen tener un entendimiento claro de los términos, hasta que una de ellas se retracta o cambia radicalmente su postura, y la otra descubre que no tenía absolutamente nada firmado que respaldara lo negociado hasta ese momento.',
       'Una carta de intención (conocida también por sus siglas en inglés, LOI, "Letter of Intent") existe precisamente para ese punto intermedio de una negociación: cuando las partes ya están de acuerdo en los términos principales, pero el contrato definitivo todavía no está listo (o depende de condiciones que aún deben cumplirse, como una auditoría financiera o una aprobación interna). No reemplaza al contrato final, pero deja constancia seria de hacia dónde va la negociación.',
     ],
     sections: [
@@ -3197,14 +3197,14 @@ export const ARTICLES: Article[] = [
         heading: 'Qué es exactamente una carta de intención',
         paragraphs: [
           'Una carta de intención es un documento que resume los términos principales que las partes han acordado hasta el momento en una negociación, y su intención de avanzar hacia un contrato definitivo bajo esos términos. Puede cubrir una compra de negocio, una alianza comercial, una inversión, o cualquier acuerdo complejo que requiera tiempo y condiciones adicionales antes de firmarse formalmente.',
-          'Lo más importante de entender sobre una carta de intención es que, generalmente, la mayor parte de su contenido NO es legalmente vinculante — es una declaración de intención, no un contrato en firme. Sin embargo, ciertas cláusulas específicas dentro de la misma carta (como confidencialidad, exclusividad, o quién paga los costos de la negociación) sí suelen redactarse como vinculantes, incluso cuando el resto del documento no lo es.',
+          'Lo más importante de entender sobre una carta de intención es que, generalmente, la mayor parte de su contenido NO es legalmente vinculante, es una declaración de intención, no un contrato en firme. Sin embargo, ciertas cláusulas específicas dentro de la misma carta (como confidencialidad, exclusividad, o quién paga los costos de la negociación) sí suelen redactarse como vinculantes, incluso cuando el resto del documento no lo es.',
         ],
       },
       {
         heading: 'Por qué una carta de intención no es "solo un papel sin valor"',
         paragraphs: [
-          'Es común escuchar que, si no es vinculante, "no sirve para nada" — pero esa forma de verlo ignora su verdadero propósito. Una carta de intención da a ambas partes la confianza de seguir invirtiendo tiempo, dinero y recursos en una negociación (contratando abogados, haciendo auditorías, compartiendo información sensible) sabiendo que existe un entendimiento serio, documentado y con fecha, de hacia dónde se dirige el acuerdo.',
-          'Además, al dejar por escrito los términos ya acordados, una carta de intención reduce el riesgo de que, meses después, una de las partes "recuerde" la negociación de forma distinta a como realmente ocurrió — algo que sucede con más frecuencia de la que parece en negociaciones largas y complejas.',
+          'Es común escuchar que, si no es vinculante, "no sirve para nada", pero esa forma de verlo ignora su verdadero propósito. Una carta de intención da a ambas partes la confianza de seguir invirtiendo tiempo, dinero y recursos en una negociación (contratando abogados, haciendo auditorías, compartiendo información sensible) sabiendo que existe un entendimiento serio, documentado y con fecha, de hacia dónde se dirige el acuerdo.',
+          'Además, al dejar por escrito los términos ya acordados, una carta de intención reduce el riesgo de que, meses después, una de las partes "recuerde" la negociación de forma distinta a como realmente ocurrió, algo que sucede con más frecuencia de la que parece en negociaciones largas y complejas.',
         ],
       },
       {
@@ -3224,7 +3224,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Qué pasa si una de las partes se retracta después de firmar la carta',
         paragraphs: [
-          'Dado que la mayor parte de la carta de intención no es vinculante, retractarse de los términos generales de la negociación (por ejemplo, decidir no seguir adelante con la compra) generalmente no genera responsabilidad legal directa. Sin embargo, si la parte que se retracta viola una cláusula específicamente vinculante — como divulgar información confidencial compartida durante la negociación, o negociar con un tercero pese a un compromiso de exclusividad — sí puede enfrentar consecuencias legales por ese incumplimiento puntual.',
+          'Dado que la mayor parte de la carta de intención no es vinculante, retractarse de los términos generales de la negociación (por ejemplo, decidir no seguir adelante con la compra) generalmente no genera responsabilidad legal directa. Sin embargo, si la parte que se retracta viola una cláusula específicamente vinculante, como divulgar información confidencial compartida durante la negociación, o negociar con un tercero pese a un compromiso de exclusividad, sí puede enfrentar consecuencias legales por ese incumplimiento puntual.',
         ],
       },
     ],
@@ -3235,11 +3235,11 @@ export const ARTICLES: Article[] = [
       { vertical: 'Arrendamiento comercial de largo plazo', scenario: 'Un negocio que negocia arrendar un local comercial grande por varios años firma una carta de intención con el propietario mientras ambas partes finalizan detalles como mejoras al local y condiciones de renovación, antes de comprometerse al contrato de arrendamiento definitivo.' },
     ],
     mistakes: [
-      { title: 'Asumir que toda la carta de intención es vinculante', description: 'Esta confusión genera expectativas legales equivocadas — es importante dejar explícitamente claro qué partes obligan legalmente y cuáles son solo una declaración de intención.' },
-      { title: 'Asumir que, por no ser vinculante, no vale la pena redactarla con cuidado', description: 'Incluso las partes no vinculantes de una carta de intención guían la redacción del contrato definitivo — una carta descuidada genera más idas y vueltas después, no menos.' },
+      { title: 'Asumir que toda la carta de intención es vinculante', description: 'Esta confusión genera expectativas legales equivocadas, es importante dejar explícitamente claro qué partes obligan legalmente y cuáles son solo una declaración de intención.' },
+      { title: 'Asumir que, por no ser vinculante, no vale la pena redactarla con cuidado', description: 'Incluso las partes no vinculantes de una carta de intención guían la redacción del contrato definitivo, una carta descuidada genera más idas y vueltas después, no menos.' },
       { title: 'No incluir un plazo para llegar al contrato definitivo', description: 'Sin un plazo, una negociación puede extenderse indefinidamente sin que ninguna de las partes sienta la urgencia de cerrarla formalmente.' },
       { title: 'No proteger la información compartida durante la negociación', description: 'Compartir información sensible sin una cláusula de confidencialidad vinculante dentro de la carta de intención deja esa información sin protección legal clara si la negociación no prospera.' },
-      { title: 'Usar la carta de intención como excusa para no avanzar el contrato real', description: 'Algunas negociaciones se quedan "atascadas" en la carta de intención por mucho tiempo — es una herramienta para avanzar hacia el contrato definitivo, no un sustituto permanente de este.' },
+      { title: 'Usar la carta de intención como excusa para no avanzar el contrato real', description: 'Algunas negociaciones se quedan "atascadas" en la carta de intención por mucho tiempo, es una herramienta para avanzar hacia el contrato definitivo, no un sustituto permanente de este.' },
     ],
     checklist: {
       title: 'Antes de firmar una carta de intención, verifica',
@@ -3264,14 +3264,14 @@ export const ARTICLES: Article[] = [
     },
     faq: [
       { q: 'Una carta de intención firmada electrónicamente es válida?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de documentos.' },
-      { q: 'Una carta de intención obliga a cerrar el trato?', a: 'Generalmente no en su totalidad — la mayoría de sus términos son una declaración de intención, no una obligación, salvo cláusulas específicamente redactadas como vinculantes (como confidencialidad o exclusividad).' },
-      { q: 'Cuál es la diferencia entre una carta de intención y un memorando de entendimiento?', a: 'En la práctica, ambos términos se usan de forma similar — un memorando de entendimiento (MOU) suele describir un acuerdo de cooperación más general, mientras que una LOI suele enfocarse en una transacción específica, pero no hay una distinción legal universal entre ambos.' },
+      { q: 'Una carta de intención obliga a cerrar el trato?', a: 'Generalmente no en su totalidad, la mayoría de sus términos son una declaración de intención, no una obligación, salvo cláusulas específicamente redactadas como vinculantes (como confidencialidad o exclusividad).' },
+      { q: 'Cuál es la diferencia entre una carta de intención y un memorando de entendimiento?', a: 'En la práctica, ambos términos se usan de forma similar, un memorando de entendimiento (MOU) suele describir un acuerdo de cooperación más general, mientras que una LOI suele enfocarse en una transacción específica, pero no hay una distinción legal universal entre ambos.' },
       { q: 'Necesito un abogado para redactar una carta de intención?', a: 'Es muy recomendable para negociaciones de alto valor o complejidad, dado que definir con precisión qué es vinculante y qué no requiere cuidado legal específico.' },
       { q: 'Qué pasa si las partes nunca llegan a firmar el contrato definitivo?', a: 'La negociación simplemente no prospera; salvo que se haya incumplido una cláusula vinculante específica (como confidencialidad), generalmente ninguna parte tiene obligación de continuar.' },
-      { q: 'Se puede incluir un depósito o pago inicial en una carta de intención?', a: 'Es posible, aunque es menos común — si se incluye, esa cláusula específica normalmente sí se redacta como vinculante, dado que involucra dinero real.' },
+      { q: 'Se puede incluir un depósito o pago inicial en una carta de intención?', a: 'Es posible, aunque es menos común, si se incluye, esa cláusula específica normalmente sí se redacta como vinculante, dado que involucra dinero real.' },
       { q: 'Una carta de intención tiene fecha de vencimiento?', a: 'Generalmente sí, especifica un plazo dentro del cual se espera llegar al contrato definitivo; después de ese plazo, la carta pierde vigencia si no se renueva o extiende.' },
-      { q: 'Puede una de las partes negociar con alguien más mientras existe una carta de intención?', a: 'Depende de si la carta incluye una cláusula de exclusividad vinculante — si la incluye, negociar con un tercero durante ese período sería un incumplimiento de esa cláusula específica.' },
-      { q: 'Una carta de intención sirve para acuerdos entre individuos, no solo empresas?', a: 'Sí, cualquier negociación compleja que requiera tiempo antes de un acuerdo final — por ejemplo, la venta de una propiedad con condiciones pendientes — puede beneficiarse de una carta de intención.' },
+      { q: 'Puede una de las partes negociar con alguien más mientras existe una carta de intención?', a: 'Depende de si la carta incluye una cláusula de exclusividad vinculante, si la incluye, negociar con un tercero durante ese período sería un incumplimiento de esa cláusula específica.' },
+      { q: 'Una carta de intención sirve para acuerdos entre individuos, no solo empresas?', a: 'Sí, cualquier negociación compleja que requiera tiempo antes de un acuerdo final, por ejemplo, la venta de una propiedad con condiciones pendientes, puede beneficiarse de una carta de intención.' },
       { q: 'Cómo se firma una carta de intención entre partes en países distintos?', a: 'Con firma electrónica, cada parte puede firmar desde su propia ubicación, sin necesidad de coordinar una firma presencial ni enviar documentos físicos entre países.' },
     ],
     relatedSlugs: ['contrato-de-sociedad-antes-de-emprender', 'errores-comunes-al-redactar-un-nda'],
@@ -3294,14 +3294,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'no-competencia',
     heroImage: { src: '/blog/clausulas-no-competencia-que-puede-pedir-tu-empleador.jpg', alt: 'Persona leyendo detenidamente un contrato antes de firmarlo', credit: 'Foto: Pexels' },
     intro: [
-      'Firmar un contrato laboral el primer día de trabajo, sin leer con calma cada cláusula, es algo que casi todos hemos hecho alguna vez — y una de las cláusulas que más se firma sin entender del todo es la de no competencia: esa sección que dice que, al dejar la empresa, no podrás trabajar para un competidor o iniciar un negocio similar durante cierto tiempo. El problema aparece meses o años después, cuando esa firma casi olvidada termina limitando una oportunidad de trabajo real.',
-      'Este es un tema donde la respuesta correcta depende muchísimo de dónde vives y de los detalles específicos del contrato — la validez y los límites de una cláusula de no competencia varían enormemente entre países, y dentro de un mismo país, entre distintos estados o regiones. Este artículo explica qué suelen intentar cubrir estas cláusulas y qué preguntas hacer antes de firmar, pero no reemplaza el consejo de un abogado laboral que conozca las reglas específicas de tu ubicación — es precisamente el tipo de decisión donde vale la pena esa consulta antes de comprometerte.',
+      'Firmar un contrato laboral el primer día de trabajo, sin leer con calma cada cláusula, es algo que casi todos hemos hecho alguna vez, y una de las cláusulas que más se firma sin entender del todo es la de no competencia: esa sección que dice que, al dejar la empresa, no podrás trabajar para un competidor o iniciar un negocio similar durante cierto tiempo. El problema aparece meses o años después, cuando esa firma casi olvidada termina limitando una oportunidad de trabajo real.',
+      'Este es un tema donde la respuesta correcta depende muchísimo de dónde vives y de los detalles específicos del contrato, la validez y los límites de una cláusula de no competencia varían enormemente entre países, y dentro de un mismo país, entre distintos estados o regiones. Este artículo explica qué suelen intentar cubrir estas cláusulas y qué preguntas hacer antes de firmar, pero no reemplaza el consejo de un abogado laboral que conozca las reglas específicas de tu ubicación, es precisamente el tipo de decisión donde vale la pena esa consulta antes de comprometerte.',
     ],
     sections: [
       {
         heading: 'Qué es una cláusula de no competencia',
         paragraphs: [
-          'Una cláusula de no competencia es un acuerdo, generalmente dentro de un contrato laboral, en el que un empleado se compromete a no trabajar para un competidor directo, ni iniciar un negocio similar, durante un período determinado después de dejar la empresa — y a veces también dentro de una zona geográfica específica. La idea detrás de estas cláusulas es proteger a la empresa de que un empleado se lleve conocimiento estratégico, relaciones con clientes, o información sensible directamente a un competidor.',
+          'Una cláusula de no competencia es un acuerdo, generalmente dentro de un contrato laboral, en el que un empleado se compromete a no trabajar para un competidor directo, ni iniciar un negocio similar, durante un período determinado después de dejar la empresa, y a veces también dentro de una zona geográfica específica. La idea detrás de estas cláusulas es proteger a la empresa de que un empleado se lleve conocimiento estratégico, relaciones con clientes, o información sensible directamente a un competidor.',
         ],
       },
       {
@@ -3320,7 +3320,7 @@ export const ARTICLES: Article[] = [
         heading: 'Por qué la validez de estas cláusulas varía tanto según el lugar',
         paragraphs: [
           'A diferencia de otros tipos de contratos donde la regla es relativamente uniforme, las cláusulas de no competencia son un área donde las leyes han cambiado significativamente en los últimos años y siguen siendo objeto de debate legal activo en varios países. Algunos lugares las restringen fuertemente o las prohíben en la mayoría de los casos, especialmente para trabajadores con salarios más bajos, mientras que otros las permiten con más flexibilidad si se consideran "razonables" en tiempo, zona geográfica y alcance.',
-          'Precisamente por esta variación tan marcada, y porque las reglas han estado cambiando activamente, este artículo evita afirmar si una cláusula específica sería válida o no en tu situación particular — esa es una pregunta que depende de tu país, tu estado o región, tu industria, y los detalles exactos del contrato, y es justamente el tipo de duda que vale la pena resolver con un abogado laboral antes de firmar o de intentar hacer valer una cláusula así.',
+          'Precisamente por esta variación tan marcada, y porque las reglas han estado cambiando activamente, este artículo evita afirmar si una cláusula específica sería válida o no en tu situación particular, esa es una pregunta que depende de tu país, tu estado o región, tu industria, y los detalles exactos del contrato, y es justamente el tipo de duda que vale la pena resolver con un abogado laboral antes de firmar o de intentar hacer valer una cláusula así.',
         ],
       },
       {
@@ -3338,13 +3338,13 @@ export const ARTICLES: Article[] = [
       },
     ],
     scenarios: [
-      { vertical: 'Profesional de ventas', scenario: 'Un vendedor que firma una cláusula de no competencia sin revisarla a fondo descubre, al recibir una oferta de un competidor directo un año después, que su contrato podría restringirle aceptarla — y solo en ese momento decide consultar con un abogado laboral para entender sus opciones reales.' },
+      { vertical: 'Profesional de ventas', scenario: 'Un vendedor que firma una cláusula de no competencia sin revisarla a fondo descubre, al recibir una oferta de un competidor directo un año después, que su contrato podría restringirle aceptarla, y solo en ese momento decide consultar con un abogado laboral para entender sus opciones reales.' },
       { vertical: 'Ingeniero de software', scenario: 'Una empresa de tecnología pide a sus ingenieros firmar una cláusula amplia de no competencia como condición estándar de contratación. Antes de firmar, uno de los candidatos pregunta específicamente qué se considera "competencia" y logra que se aclare el alcance real de la cláusula en su contrato.' },
       { vertical: 'Estilista o profesional de belleza', scenario: 'Una estilista que trabaja en un salón firma un contrato con una cláusula de no competencia que le impediría trabajar en cualquier salón dentro de la misma ciudad por un año. Al cambiar de trabajo, esta cláusula se vuelve un obstáculo real para seguir ejerciendo su profesión cerca de donde vive.' },
     ],
     mistakes: [
-      { title: 'Firmar sin leer completamente la sección de no competencia', description: 'Muchas personas firman el contrato laboral completo el primer día sin detenerse en esta cláusula específica, y solo la recuerdan cuando ya es relevante — al momento de dejar la empresa.' },
-      { title: 'Asumir que la cláusula es automáticamente válida tal como está escrita', description: 'La validez real de una cláusula de no competencia depende de las leyes específicas del lugar, no solo de lo que el documento diga — un contrato puede incluir una restricción que, en la práctica, no sea aplicable donde vives.' },
+      { title: 'Firmar sin leer completamente la sección de no competencia', description: 'Muchas personas firman el contrato laboral completo el primer día sin detenerse en esta cláusula específica, y solo la recuerdan cuando ya es relevante, al momento de dejar la empresa.' },
+      { title: 'Asumir que la cláusula es automáticamente válida tal como está escrita', description: 'La validez real de una cláusula de no competencia depende de las leyes específicas del lugar, no solo de lo que el documento diga, un contrato puede incluir una restricción que, en la práctica, no sea aplicable donde vives.' },
       { title: 'No preguntar si la cláusula es negociable', description: 'Muchos empleados asumen que este tipo de cláusula viene "fija" con el contrato, cuando en algunos casos hay espacio para negociar su alcance o duración antes de firmar.' },
       { title: 'No consultar a un abogado laboral antes de una situación concreta', description: 'Esperar a estar en medio de una nueva oferta de trabajo para entender los límites reales de la cláusula deja mucho menos margen de maniobra que revisarla con calma antes de que surja la situación.' },
     ],
@@ -3360,16 +3360,16 @@ export const ARTICLES: Article[] = [
       ],
     },
     faq: [
-      { q: 'Todas las cláusulas de no competencia son legales?', a: 'No de forma universal — la validez varía enormemente según el país y, dentro de un mismo país, según el estado o región; algunas jurisdicciones las restringen fuertemente o las prohíben en ciertos casos. Consulta a un abogado laboral local para tu situación específica.' },
-      { q: 'Puedo negarme a firmar una cláusula de no competencia?', a: 'Depende de si la empresa la considera una condición no negociable del contrato — en algunos casos es posible negociar su alcance o eliminarla, especialmente si tienes experiencia o habilidades muy solicitadas.' },
-      { q: 'Qué pasa si firmo y luego la empresa intenta hacerla valer?', a: 'Esto depende completamente de las leyes de tu jurisdicción y de los detalles exactos de la cláusula — es una situación donde consultar a un abogado laboral es especialmente importante antes de tomar cualquier decisión.' },
-      { q: 'Una cláusula de no competencia firmada electrónicamente tiene el mismo peso que una firmada en papel?', a: 'Sí, en términos de validez de la firma en sí — pero eso no cambia si el contenido de la cláusula es o no aplicable según las leyes de tu ubicación.' },
-      { q: 'Existe alguna diferencia entre no competencia y no divulgación de información confidencial?', a: 'Sí, son cláusulas distintas — la no competencia restringe dónde puedes trabajar después, mientras que la confidencialidad restringe qué información puedes compartir, sin importar dónde trabajes después.' },
-      { q: 'Una empresa puede pedir una cláusula de no competencia a cualquier tipo de empleado?', a: 'Varía según la jurisdicción — algunos lugares limitan su uso según el nivel salarial o el tipo de puesto, precisamente para evitar que se apliquen de forma desproporcionada a trabajadores con poco poder de negociación.' },
-      { q: 'Qué debo hacer si ya firmé una cláusula que ahora me preocupa?', a: 'Buscar asesoría de un abogado laboral que conozca las leyes de tu país o estado es el paso más útil — puede explicarte si la cláusula es aplicable en tu situación real y qué opciones tienes.' },
-      { q: 'Una cláusula de no competencia puede durar para siempre?', a: 'No es lo común — la mayoría de las jurisdicciones que reconocen estas cláusulas exigen que tengan un límite de tiempo razonable, aunque qué se considera "razonable" varía según el lugar.' },
-      { q: 'Si cambio de país, sigue aplicando una cláusula firmada en mi país anterior?', a: 'Depende de cómo esté redactado el contrato y de las leyes de ambos países — es otra situación donde vale la pena una consulta legal específica antes de asumir una respuesta.' },
-      { q: 'Puedo pedir que me expliquen la cláusula antes de firmar el contrato laboral?', a: 'Sí, es completamente razonable pedir esa explicación antes de firmar — un empleador serio no debería tener problema en aclarar el alcance real de la cláusula.' },
+      { q: 'Todas las cláusulas de no competencia son legales?', a: 'No de forma universal, la validez varía enormemente según el país y, dentro de un mismo país, según el estado o región; algunas jurisdicciones las restringen fuertemente o las prohíben en ciertos casos. Consulta a un abogado laboral local para tu situación específica.' },
+      { q: 'Puedo negarme a firmar una cláusula de no competencia?', a: 'Depende de si la empresa la considera una condición no negociable del contrato, en algunos casos es posible negociar su alcance o eliminarla, especialmente si tienes experiencia o habilidades muy solicitadas.' },
+      { q: 'Qué pasa si firmo y luego la empresa intenta hacerla valer?', a: 'Esto depende completamente de las leyes de tu jurisdicción y de los detalles exactos de la cláusula, es una situación donde consultar a un abogado laboral es especialmente importante antes de tomar cualquier decisión.' },
+      { q: 'Una cláusula de no competencia firmada electrónicamente tiene el mismo peso que una firmada en papel?', a: 'Sí, en términos de validez de la firma en sí, pero eso no cambia si el contenido de la cláusula es o no aplicable según las leyes de tu ubicación.' },
+      { q: 'Existe alguna diferencia entre no competencia y no divulgación de información confidencial?', a: 'Sí, son cláusulas distintas, la no competencia restringe dónde puedes trabajar después, mientras que la confidencialidad restringe qué información puedes compartir, sin importar dónde trabajes después.' },
+      { q: 'Una empresa puede pedir una cláusula de no competencia a cualquier tipo de empleado?', a: 'Varía según la jurisdicción, algunos lugares limitan su uso según el nivel salarial o el tipo de puesto, precisamente para evitar que se apliquen de forma desproporcionada a trabajadores con poco poder de negociación.' },
+      { q: 'Qué debo hacer si ya firmé una cláusula que ahora me preocupa?', a: 'Buscar asesoría de un abogado laboral que conozca las leyes de tu país o estado es el paso más útil, puede explicarte si la cláusula es aplicable en tu situación real y qué opciones tienes.' },
+      { q: 'Una cláusula de no competencia puede durar para siempre?', a: 'No es lo común, la mayoría de las jurisdicciones que reconocen estas cláusulas exigen que tengan un límite de tiempo razonable, aunque qué se considera "razonable" varía según el lugar.' },
+      { q: 'Si cambio de país, sigue aplicando una cláusula firmada en mi país anterior?', a: 'Depende de cómo esté redactado el contrato y de las leyes de ambos países, es otra situación donde vale la pena una consulta legal específica antes de asumir una respuesta.' },
+      { q: 'Puedo pedir que me expliquen la cláusula antes de firmar el contrato laboral?', a: 'Sí, es completamente razonable pedir esa explicación antes de firmar, un empleador serio no debería tener problema en aclarar el alcance real de la cláusula.' },
     ],
     relatedSlugs: ['errores-comunes-al-redactar-un-nda', 'firma-electronica-para-recursos-humanos'],
     ctaHeading: 'Firma tus contratos laborales con claridad',
@@ -3391,7 +3391,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'freelance',
     heroImage: { src: '/blog/consultor-independiente-blindar-honorarios-contrato.jpg', alt: 'Consultor independiente trabajando en su laptop', credit: 'Foto: Pexels' },
     intro: [
-      'Terminar un proyecto de consultoría a tiempo y con buenos resultados no garantiza que el pago llegue igual de puntual. Un consultor independiente que trabaja solo, sin un departamento de cobranza detrás, depende casi por completo de que el contrato original haya dejado claro cuándo, cómo y bajo qué condiciones se paga — porque una vez que el trabajo está entregado, la posición de negociación del consultor se vuelve mucho más débil si no hay nada firmado.',
+      'Terminar un proyecto de consultoría a tiempo y con buenos resultados no garantiza que el pago llegue igual de puntual. Un consultor independiente que trabaja solo, sin un departamento de cobranza detrás, depende casi por completo de que el contrato original haya dejado claro cuándo, cómo y bajo qué condiciones se paga, porque una vez que el trabajo está entregado, la posición de negociación del consultor se vuelve mucho más débil si no hay nada firmado.',
     ],
     sections: [
       {
@@ -3410,13 +3410,13 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué pedir un anticipo no es señal de desconfianza',
         paragraphs: [
-          'Muchos consultores independientes evitan pedir un pago inicial por miedo a parecer desconfiados con un cliente nuevo — pero en la práctica, un anticipo razonable es una práctica estándar en consultoría profesional, y un cliente serio no debería tener problema en aceptarlo. Resistencia fuerte a esta condición básica suele ser, en sí misma, una señal de alerta sobre cómo será la relación de pago durante el resto del proyecto.',
+          'Muchos consultores independientes evitan pedir un pago inicial por miedo a parecer desconfiados con un cliente nuevo, pero en la práctica, un anticipo razonable es una práctica estándar en consultoría profesional, y un cliente serio no debería tener problema en aceptarlo. Resistencia fuerte a esta condición básica suele ser, en sí misma, una señal de alerta sobre cómo será la relación de pago durante el resto del proyecto.',
         ],
       },
     ],
     faq: [
       { q: 'Un contrato de consultoría firmado electrónicamente es válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de acuerdos.' },
-      { q: 'Es razonable pedir un anticipo a un cliente nuevo?', a: 'Sí, es una práctica común y razonable en consultoría profesional — protege al consultor y también filtra clientes que no están realmente comprometidos con el proyecto.' },
+      { q: 'Es razonable pedir un anticipo a un cliente nuevo?', a: 'Sí, es una práctica común y razonable en consultoría profesional, protege al consultor y también filtra clientes que no están realmente comprometidos con el proyecto.' },
       { q: 'Qué hago si el cliente se retrasa en el pago?', a: 'Un contrato que especifique qué pasa en ese caso (interés moratorio, pausa del trabajo hasta ponerse al día) te da una base clara para actuar, en vez de tener que improvisar una respuesta.' },
       { q: 'Cómo evito que el cliente pida trabajo adicional sin pagar más?', a: 'Definir con precisión el alcance del proyecto en el contrato, y dejar explícito que trabajo fuera de ese alcance requiere una cotización o acuerdo adicional.' },
       { q: 'Necesito un contrato distinto para cada cliente?', a: 'Puedes usar una plantilla base y adaptar los detalles específicos (alcance, monto, cronograma) para cada proyecto, sin tener que redactar el contrato completo desde cero cada vez.' },
@@ -3460,7 +3460,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué esto importa incluso para actividades que parecen simples',
         paragraphs: [
-          'Actividades que parecen de bajo riesgo — una jornada de limpieza, una feria comunitaria, una actividad con menores de edad — igual pueden derivar en una lesión, un accidente, o una situación imprevista. Un acuerdo de voluntariado firmado con anticipación deja constancia de que el voluntario entendió y aceptó participar, en vez de que la organización enfrente esa situación sin ningún documento de respaldo.',
+          'Actividades que parecen de bajo riesgo, una jornada de limpieza, una feria comunitaria, una actividad con menores de edad, igual pueden derivar en una lesión, un accidente, o una situación imprevista. Un acuerdo de voluntariado firmado con anticipación deja constancia de que el voluntario entendió y aceptó participar, en vez de que la organización enfrente esa situación sin ningún documento de respaldo.',
         ],
       },
     ],
@@ -3468,7 +3468,7 @@ export const ARTICLES: Article[] = [
       { q: 'Un acuerdo de voluntariado firmado electrónicamente es válido?', a: 'Sí, en Estados Unidos y la mayoría de países de Latinoamérica una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de documentos.' },
       { q: 'Es necesario un acuerdo firmado para actividades de un solo día?', a: 'Es recomendable, especialmente si la actividad tiene algún riesgo físico o involucra el contacto con población vulnerable, como menores de edad o adultos mayores.' },
       { q: 'Un menor de edad puede firmar como voluntario?', a: 'Generalmente se requiere el consentimiento de un padre o tutor legal para que un menor participe como voluntario, especialmente en actividades con algún nivel de riesgo.' },
-      { q: 'El acuerdo de voluntariado reemplaza un seguro para el voluntario?', a: 'No — son cosas distintas; el acuerdo documenta el entendimiento y aceptación de riesgos, pero no sustituye una cobertura de seguro si la organización decide ofrecerla.' },
+      { q: 'El acuerdo de voluntariado reemplaza un seguro para el voluntario?', a: 'No, son cosas distintas; el acuerdo documenta el entendimiento y aceptación de riesgos, pero no sustituye una cobertura de seguro si la organización decide ofrecerla.' },
       { q: 'Cómo firman decenas de voluntarios antes de un evento grande?', a: 'Con firma electrónica, cada voluntario puede recibir y firmar su propio enlace desde su teléfono antes del evento, sin necesitar imprimir formularios para cada persona.' },
     ],
     relatedSlugs: ['firma-electronica-gratis-para-pymes'],
@@ -3491,18 +3491,18 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/equipment-rental-agreement.jpg', alt: 'Two people shaking hands next to a vehicle, exchanging keys', credit: 'Photo: Pexels' },
     intro: [
-      'Anyone who has ever lent out a camera, a power tool, a trailer, or a piece of A/V equipment and gotten it back scratched, broken, or three weeks late already knows the problem: a verbal "sure, just bring it back Monday" has no teeth. An equipment rental agreement is not paperwork for paperwork\'s sake — it is the only thing that turns "I\'m pretty sure we agreed on $50" into something you can actually enforce.',
-      'This applies whether you run a small equipment rental business or you just occasionally rent out gear you own — a photographer\'s backup lenses, a contractor\'s spare tools, a DJ\'s speakers. The agreement does not need to be complicated to do its job.',
+      'Anyone who has ever lent out a camera, a power tool, a trailer, or a piece of A/V equipment and gotten it back scratched, broken, or three weeks late already knows the problem: a verbal "sure, just bring it back Monday" has no teeth. An equipment rental agreement is not paperwork for paperwork\'s sake, it is the only thing that turns "I\'m pretty sure we agreed on $50" into something you can actually enforce.',
+      'This applies whether you run a small equipment rental business or you just occasionally rent out gear you own, a photographer\'s backup lenses, a contractor\'s spare tools, a DJ\'s speakers. The agreement does not need to be complicated to do its job.',
     ],
     sections: [
       {
         heading: 'What the agreement actually needs to cover',
         paragraphs: [
-          'A rental agreement that holds up is specific about the thing being rented, not just its category. List the make, model, and serial number if it has one, and note its condition at pickup — ideally with photos attached or referenced. Vague descriptions like "camera equipment" give a renter room to argue later about what exactly they were responsible for.',
+          'A rental agreement that holds up is specific about the thing being rented, not just its category. List the make, model, and serial number if it has one, and note its condition at pickup, ideally with photos attached or referenced. Vague descriptions like "camera equipment" give a renter room to argue later about what exactly they were responsible for.',
         ],
         bullets: [
           'Exact item description, serial number, and condition at handoff (photos recommended)',
-          'Rental period — start date/time and required return date/time',
+          'Rental period, start date/time and required return date/time',
           'Rental fee, deposit amount, and what the deposit does and does not cover',
           'Who pays for damage, loss, or late return, and how that amount is calculated',
           'Whether the renter can use the item outside agreed conditions (e.g., outdoor use, subletting it to someone else)',
@@ -3511,25 +3511,25 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The deposit clause is where most disputes actually happen',
         paragraphs: [
-          'A deposit only protects you if the agreement says, in writing, what circumstances let you keep part or all of it. "Normal wear and tear" should be excluded from damage claims — you cannot charge someone for a scuff that would happen to anyone using the item correctly. What you can and should specify is a clear timeline for returning the deposit after the item comes back undamaged, since an open-ended "we\'ll return it eventually" is itself a common source of complaints.',
-          'If the item is expensive enough that replacement cost matters, name that figure in the agreement rather than leaving it to be negotiated after something breaks — that conversation goes much worse when there is already a broken item on the table.',
+          'A deposit only protects you if the agreement says, in writing, what circumstances let you keep part or all of it. "Normal wear and tear" should be excluded from damage claims, you cannot charge someone for a scuff that would happen to anyone using the item correctly. What you can and should specify is a clear timeline for returning the deposit after the item comes back undamaged, since an open-ended "we\'ll return it eventually" is itself a common source of complaints.',
+          'If the item is expensive enough that replacement cost matters, name that figure in the agreement rather than leaving it to be negotiated after something breaks, that conversation goes much worse when there is already a broken item on the table.',
         ],
       },
       {
         heading: 'Liability for injury or third-party damage',
         paragraphs: [
-          'If the equipment could plausibly cause injury or property damage while in someone else\'s hands — power tools, vehicles, scaffolding, event equipment — the agreement should state that the renter assumes responsibility for how they use it, and that you are not liable for damage or injury caused by their use of the equipment once it leaves your possession. This will not shield you from genuine negligence on your end (like renting out something you knew was unsafe), but it does establish that operating the equipment safely is the renter\'s responsibility.',
+          'If the equipment could plausibly cause injury or property damage while in someone else\'s hands, power tools, vehicles, scaffolding, event equipment, the agreement should state that the renter assumes responsibility for how they use it, and that you are not liable for damage or injury caused by their use of the equipment once it leaves your possession. This will not shield you from genuine negligence on your end (like renting out something you knew was unsafe), but it does establish that operating the equipment safely is the renter\'s responsibility.',
         ],
       },
     ],
     faq: [
-      { q: 'Do I need a written agreement if I am just lending equipment to a friend?', a: 'Legally, no — but "just a friend" is exactly the situation where a verbal agreement is hardest to enforce if something does go wrong, because there is more social pressure to just let it go. A short signed agreement protects the relationship as much as the equipment.' },
-      { q: 'Can I charge for the days an item is late without stating it in the agreement?', a: 'You can try, but without an agreed-upon late fee written down beforehand, you are relying on the other person to voluntarily agree to a number after the fact — which rarely goes smoothly.' },
-      { q: 'Should the deposit be refundable by default?', a: 'Yes — the agreement should say the deposit is returned in full if the item comes back on time and in the condition it left in, and specify exactly what would reduce that refund.' },
+      { q: 'Do I need a written agreement if I am just lending equipment to a friend?', a: 'Legally, no, but "just a friend" is exactly the situation where a verbal agreement is hardest to enforce if something does go wrong, because there is more social pressure to just let it go. A short signed agreement protects the relationship as much as the equipment.' },
+      { q: 'Can I charge for the days an item is late without stating it in the agreement?', a: 'You can try, but without an agreed-upon late fee written down beforehand, you are relying on the other person to voluntarily agree to a number after the fact, which rarely goes smoothly.' },
+      { q: 'Should the deposit be refundable by default?', a: 'Yes, the agreement should say the deposit is returned in full if the item comes back on time and in the condition it left in, and specify exactly what would reduce that refund.' },
       { q: 'Is an electronically signed rental agreement enforceable?', a: 'Yes. In the US, the ESIGN Act and UETA make an electronically signed agreement just as enforceable as one signed on paper, as long as both parties consented to sign electronically.' },
     ],
     ctaHeading: 'Send a rental agreement in minutes',
-    ctaBody: 'Codec Document lets you create and send an equipment rental agreement for a free electronic signature — no printing, no chasing people down.',
+    ctaBody: 'Codec Document lets you create and send an equipment rental agreement for a free electronic signature, no printing, no chasing people down.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -3547,7 +3547,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/referral-partner-agreement.jpg', alt: 'Smiling businessman outside an office building holding his phone', credit: 'Photo: Pexels' },
     intro: [
-      'Referral relationships almost always start with a handshake and good intentions: "if you send me clients, I\'ll pay you a cut." It works fine right up until there is real money on the line and both sides remember the deal slightly differently — was it 10% of the first invoice or every invoice, does it count if the lead came from a group chat, does it expire after 90 days? A referral partner agreement answers all of that before it becomes a disagreement.',
+      'Referral relationships almost always start with a handshake and good intentions: "if you send me clients, I\'ll pay you a cut." It works fine right up until there is real money on the line and both sides remember the deal slightly differently, was it 10% of the first invoice or every invoice, does it count if the lead came from a group chat, does it expire after 90 days? A referral partner agreement answers all of that before it becomes a disagreement.',
       'This matters most once referrals start generating meaningful revenue, because that is exactly when memory of a casual verbal agreement gets the least reliable.',
     ],
     sections: [
@@ -3559,7 +3559,7 @@ export const ARTICLES: Article[] = [
         bullets: [
           'What counts as a valid, attributable referral (and how attribution is tracked if that matters)',
           'Commission percentage or flat fee, and whether it applies once or recurs',
-          'When the commission is actually paid — on invoice, on payment received, or on contract signing',
+          'When the commission is actually paid, on invoice, on payment received, or on contract signing',
           'How long the agreement lasts and how either party can end it',
           'Whether the referral partner can also refer to competitors',
         ],
@@ -3567,22 +3567,22 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Recurring commissions need an explicit end date, or none at all',
         paragraphs: [
-          'If the referred client becomes a long-term customer, does the referral partner get paid once or for the life of that customer relationship? Both models are common and both are fine — the problem is only ever leaving it unstated, because "forever" and "for the first invoice" are wildly different outcomes for a partner who assumed the more generous one.',
-          'If the arrangement is meant to be exclusive — you will not simultaneously run the same referral deal with a competitor — say so explicitly, since an informal referral partner will otherwise reasonably assume they are free to refer to whoever pays the most.',
+          'If the referred client becomes a long-term customer, does the referral partner get paid once or for the life of that customer relationship? Both models are common and both are fine, the problem is only ever leaving it unstated, because "forever" and "for the first invoice" are wildly different outcomes for a partner who assumed the more generous one.',
+          'If the arrangement is meant to be exclusive, you will not simultaneously run the same referral deal with a competitor, say so explicitly, since an informal referral partner will otherwise reasonably assume they are free to refer to whoever pays the most.',
         ],
       },
       {
         heading: 'What happens when the relationship ends',
         paragraphs: [
-          'Referrals made before the agreement ends should still generate commission, even if the sale closes after the relationship is over — otherwise there is an incentive to quietly stall a referral partner\'s final payout right as they are being cut loose. State that referrals made in good faith during the active term are still honored after termination, within a defined window.',
+          'Referrals made before the agreement ends should still generate commission, even if the sale closes after the relationship is over, otherwise there is an incentive to quietly stall a referral partner\'s final payout right as they are being cut loose. State that referrals made in good faith during the active term are still honored after termination, within a defined window.',
         ],
       },
     ],
     faq: [
       { q: 'Do I need a lawyer to write a referral agreement?', a: 'For most straightforward referral fee arrangements, a clear written agreement covering the points above is enough. A lawyer becomes worth involving if the commissions are substantial or the relationship is exclusive and long-term.' },
-      { q: 'Should the agreement name a specific dollar figure or a percentage?', a: 'Either works — what matters is that it is unambiguous and tied to something both sides can independently verify, like the invoice total or the signed contract value.' },
-      { q: 'Can a referral agreement be signed electronically?', a: 'Yes, and it usually should be — most referral relationships happen entirely over email or messaging already, so an e-signature link fits how the relationship is actually managed.' },
-      { q: 'What if the referred client never actually pays?', a: 'The agreement should tie the commission to an actual payment event (invoice paid, not invoice sent), which automatically resolves this — no payment from the client means no commission is owed yet.' },
+      { q: 'Should the agreement name a specific dollar figure or a percentage?', a: 'Either works, what matters is that it is unambiguous and tied to something both sides can independently verify, like the invoice total or the signed contract value.' },
+      { q: 'Can a referral agreement be signed electronically?', a: 'Yes, and it usually should be, most referral relationships happen entirely over email or messaging already, so an e-signature link fits how the relationship is actually managed.' },
+      { q: 'What if the referred client never actually pays?', a: 'The agreement should tie the commission to an actual payment event (invoice paid, not invoice sent), which automatically resolves this, no payment from the client means no commission is owed yet.' },
     ],
     ctaHeading: 'Put your referral deals in writing',
     ctaBody: 'Create a free referral partner agreement and send it for e-signature in minutes with Codec Document.',
@@ -3603,19 +3603,19 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/subcontractor-agreement-guide.jpg', alt: 'A team reviewing documents together during a business meeting', credit: 'Photo: Kampus Production / Pexels' },
     intro: [
-      'A general contractor is on the hook to the client no matter which subcontractor actually did the work that went wrong. That single fact is the reason a subcontractor agreement is not optional paperwork — it is the document that lets a GC actually pass responsibility, cost, and timeline expectations down to the sub who is doing the work, instead of absorbing every problem themselves.',
-      'A lot of smaller GCs skip this because subs are often people they have worked with before and trust. Trust is exactly why it rarely gets formalized — and exactly why the one time it goes wrong, there is nothing in writing to point to.',
+      'A general contractor is on the hook to the client no matter which subcontractor actually did the work that went wrong. That single fact is the reason a subcontractor agreement is not optional paperwork, it is the document that lets a GC actually pass responsibility, cost, and timeline expectations down to the sub who is doing the work, instead of absorbing every problem themselves.',
+      'A lot of smaller GCs skip this because subs are often people they have worked with before and trust. Trust is exactly why it rarely gets formalized, and exactly why the one time it goes wrong, there is nothing in writing to point to.',
     ],
     sections: [
       {
         heading: 'The scope of work has to be specific enough to enforce',
         paragraphs: [
-          'A subcontractor agreement that just says "electrical work" leaves too much room for disagreement about what was actually included. Break the scope down by task, reference the relevant plans or specs by name, and state what is explicitly excluded — because unclear boundaries are where "I thought that was someone else\'s job" disputes come from.',
+          'A subcontractor agreement that just says "electrical work" leaves too much room for disagreement about what was actually included. Break the scope down by task, reference the relevant plans or specs by name, and state what is explicitly excluded, because unclear boundaries are where "I thought that was someone else\'s job" disputes come from.',
         ],
         bullets: [
           'Detailed scope of work, referencing plans/specs where relevant',
           'Start date, completion deadline, and any milestone dates',
-          'Payment schedule — lump sum, per milestone, or draw schedule',
+          'Payment schedule, lump sum, per milestone, or draw schedule',
           'Insurance and licensing requirements the subcontractor must maintain',
           'Change-order process for anything outside the original scope',
         ],
@@ -3623,25 +3623,25 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Indemnification and insurance protect the GC specifically',
         paragraphs: [
-          'The agreement should require the subcontractor to carry their own liability insurance and provide proof of it before starting work — a GC who skips this is effectively self-insuring for the sub\'s mistakes. An indemnification clause, where the subcontractor agrees to cover costs arising from their own negligent work, is what actually lets that insurance requirement mean something in practice.',
-          'Retainage — holding back a percentage of payment until the work passes final inspection — is standard in construction subcontracts for a reason: it gives the GC leverage to get punch-list items actually finished instead of chasing a sub who has already been paid in full.',
+          'The agreement should require the subcontractor to carry their own liability insurance and provide proof of it before starting work, a GC who skips this is effectively self-insuring for the sub\'s mistakes. An indemnification clause, where the subcontractor agrees to cover costs arising from their own negligent work, is what actually lets that insurance requirement mean something in practice.',
+          'Retainage, holding back a percentage of payment until the work passes final inspection, is standard in construction subcontracts for a reason: it gives the GC leverage to get punch-list items actually finished instead of chasing a sub who has already been paid in full.',
         ],
       },
       {
         heading: 'Payment terms need to survive a dispute with the client',
         paragraphs: [
-          'If the GC has not been paid by the client yet, does that delay payment to the subcontractor? "Pay-when-paid" and "pay-if-paid" clauses exist for this exact situation, but they need to be stated explicitly — a subcontractor who assumed they would be paid on a fixed schedule regardless of the GC\'s own payment status will reasonably push back if that was never disclosed.',
+          'If the GC has not been paid by the client yet, does that delay payment to the subcontractor? "Pay-when-paid" and "pay-if-paid" clauses exist for this exact situation, but they need to be stated explicitly, a subcontractor who assumed they would be paid on a fixed schedule regardless of the GC\'s own payment status will reasonably push back if that was never disclosed.',
         ],
       },
     ],
     faq: [
       { q: 'Is a subcontractor agreement different from an independent contractor agreement?', a: 'They cover similar ground, but a subcontractor agreement is specific to construction and typically includes retainage, lien waivers, and insurance/licensing requirements that a general independent contractor agreement usually does not.' },
       { q: 'What is retainage and why does it matter?', a: 'Retainage is a percentage of the contract value (commonly 5–10%) held back until the work passes final inspection, giving the GC leverage to ensure punch-list items get completed.' },
-      { q: 'Do subcontractor agreements need to be signed before work starts?', a: 'Yes — signing after work has already started removes most of the agreement\'s leverage, since disputes about scope and payment are much harder to resolve once work is already underway.' },
-      { q: 'Can a subcontractor agreement be signed electronically on a job site?', a: 'Yes — an e-signature sent by text or email can be signed from a phone on-site, which is often faster than getting a physical signature from someone moving between job sites.' },
+      { q: 'Do subcontractor agreements need to be signed before work starts?', a: 'Yes, signing after work has already started removes most of the agreement\'s leverage, since disputes about scope and payment are much harder to resolve once work is already underway.' },
+      { q: 'Can a subcontractor agreement be signed electronically on a job site?', a: 'Yes, an e-signature sent by text or email can be signed from a phone on-site, which is often faster than getting a physical signature from someone moving between job sites.' },
     ],
     ctaHeading: 'Get subcontractor agreements signed faster',
-    ctaBody: 'Send a subcontractor agreement for a free electronic signature — signable from any phone, on any job site.',
+    ctaBody: 'Send a subcontractor agreement for a free electronic signature, signable from any phone, on any job site.',
     ctaLabel: 'Try it free',
     ctaHref: '/independent-contractor-agreement',
   },
@@ -3659,7 +3659,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contract-clauses-en',
     heroImage: { src: '/blog/non-solicitation-clause-explained.jpg', alt: 'Close-up of a hand signing a document with a fountain pen', credit: 'Photo: Pixabay / Pexels' },
     intro: [
-      'A non-solicitation clause gets confused with a non-compete constantly, but they restrict genuinely different things. A non-compete tries to stop someone from working for a competitor at all; a non-solicitation clause is narrower — it stops a former employee or contractor from actively going after the company\'s clients or staff, without necessarily stopping them from working in the same industry.',
+      'A non-solicitation clause gets confused with a non-compete constantly, but they restrict genuinely different things. A non-compete tries to stop someone from working for a competitor at all; a non-solicitation clause is narrower, it stops a former employee or contractor from actively going after the company\'s clients or staff, without necessarily stopping them from working in the same industry.',
       'That narrower scope is exactly why non-solicitation clauses tend to hold up in court more reliably than broad non-competes, which several states have restricted or banned outright.',
     ],
     sections: [
@@ -3669,8 +3669,8 @@ export const ARTICLES: Article[] = [
           'Most non-solicitation clauses fall into two categories, and a well-written one specifies which apply.',
         ],
         bullets: [
-          'Client non-solicitation — not actively pursuing the company\'s existing clients to move their business elsewhere',
-          'Employee non-solicitation — not recruiting former coworkers to leave and join a new venture',
+          'Client non-solicitation, not actively pursuing the company\'s existing clients to move their business elsewhere',
+          'Employee non-solicitation, not recruiting former coworkers to leave and join a new venture',
           'A defined time period the restriction applies for after departure (commonly 6 months to 2 years)',
           'Whether it applies to all clients, or only ones the person personally worked with',
         ],
@@ -3678,22 +3678,22 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Being solicited by a client is different from soliciting them',
         paragraphs: [
-          'A non-solicitation clause typically does not stop a former client from independently choosing to follow someone to their new company — it only stops the person from actively reaching out and pursuing that client themselves. This distinction matters in practice and in court, and a poorly worded clause that tries to ban all contact with former clients, including contact the client initiates, is more likely to be found overly broad and unenforceable.',
+          'A non-solicitation clause typically does not stop a former client from independently choosing to follow someone to their new company, it only stops the person from actively reaching out and pursuing that client themselves. This distinction matters in practice and in court, and a poorly worded clause that tries to ban all contact with former clients, including contact the client initiates, is more likely to be found overly broad and unenforceable.',
           'Reasonableness is the standard courts apply: the scope, duration, and geographic reach need to be proportionate to a legitimate business interest, not written broadly just to intimidate a departing employee into compliance.',
         ],
       },
       {
         heading: 'Where this typically shows up',
         paragraphs: [
-          'Non-solicitation clauses are most common in sales roles, agencies, consulting, recruiting, and any business where personal relationships drive revenue — precisely the roles where a departing employee taking clients or colleagues with them causes the most damage.',
+          'Non-solicitation clauses are most common in sales roles, agencies, consulting, recruiting, and any business where personal relationships drive revenue, precisely the roles where a departing employee taking clients or colleagues with them causes the most damage.',
         ],
       },
     ],
     faq: [
-      { q: 'Is a non-solicitation clause the same as a non-compete?', a: 'No — a non-compete restricts where someone can work at all, while a non-solicitation clause only restricts actively pursuing specific clients or employees. Courts generally view non-solicitation clauses more favorably.' },
+      { q: 'Is a non-solicitation clause the same as a non-compete?', a: 'No, a non-compete restricts where someone can work at all, while a non-solicitation clause only restricts actively pursuing specific clients or employees. Courts generally view non-solicitation clauses more favorably.' },
       { q: 'How long can a non-solicitation clause last?', a: 'There is no universal number, but 6 months to 2 years is common, and enforceability depends on the restriction being reasonable for the specific role and industry.' },
-      { q: 'Can a former client contact me even if I signed a non-solicitation clause?', a: 'Typically yes — most clauses restrict you from soliciting the client, not the client from independently reaching out to you.' },
-      { q: 'Are non-solicitation clauses enforceable in every state?', a: 'Enforceability varies by state and depends heavily on how the clause is written — overly broad clauses are more likely to be struck down or narrowed by a court.' },
+      { q: 'Can a former client contact me even if I signed a non-solicitation clause?', a: 'Typically yes, most clauses restrict you from soliciting the client, not the client from independently reaching out to you.' },
+      { q: 'Are non-solicitation clauses enforceable in every state?', a: 'Enforceability varies by state and depends heavily on how the clause is written, overly broad clauses are more likely to be struck down or narrowed by a court.' },
     ],
     ctaHeading: 'Add clear clauses to your contracts',
     ctaBody: 'Codec Document\'s templates make it easy to build contracts with the exact clauses your business needs, then send them for a free e-signature.',
@@ -3714,14 +3714,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/severance-agreement-basics.jpg', alt: 'A hand pointing at financial charts on paper next to an open laptop', credit: 'Photo: AdobeStock' },
     intro: [
-      'A severance agreement is not just "here is some money on your way out" — it is a contract, and like any contract, the company is asking for something specific in return for the payout. Understanding what that something is matters more than the headline severance amount, because the terms attached to it can restrict what a former employee can say, do, or pursue afterward.',
+      'A severance agreement is not just "here is some money on your way out", it is a contract, and like any contract, the company is asking for something specific in return for the payout. Understanding what that something is matters more than the headline severance amount, because the terms attached to it can restrict what a former employee can say, do, or pursue afterward.',
       'This applies on both sides: an employer offering severance needs the agreement to actually accomplish what it is meant to (usually a release of claims), and an employee receiving one needs to understand exactly what they are giving up.',
     ],
     sections: [
       {
         heading: 'What a severance agreement typically asks for',
         paragraphs: [
-          'In exchange for severance pay, the employee is usually asked to sign a release of claims — agreeing not to sue the company over the termination or anything related to their employment. This is the core purpose of most severance agreements from the employer\'s side.',
+          'In exchange for severance pay, the employee is usually asked to sign a release of claims, agreeing not to sue the company over the termination or anything related to their employment. This is the core purpose of most severance agreements from the employer\'s side.',
         ],
         bullets: [
           'A release of legal claims related to employment and termination',
@@ -3746,10 +3746,10 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'Do I have to sign a severance agreement to get severance pay?', a: 'Generally yes — severance pay in the US is not legally required in most cases (unless promised in a contract or policy), so it is typically offered specifically in exchange for signing the agreement.' },
-      { q: 'Can I still collect unemployment if I sign a severance agreement?', a: 'Usually yes, but this depends on your state and the specific terms — it is worth checking your state unemployment agency\'s rules before assuming either way.' },
+      { q: 'Do I have to sign a severance agreement to get severance pay?', a: 'Generally yes, severance pay in the US is not legally required in most cases (unless promised in a contract or policy), so it is typically offered specifically in exchange for signing the agreement.' },
+      { q: 'Can I still collect unemployment if I sign a severance agreement?', a: 'Usually yes, but this depends on your state and the specific terms, it is worth checking your state unemployment agency\'s rules before assuming either way.' },
       { q: 'Should I have a lawyer review a severance agreement?', a: 'For a small severance amount with standard terms, many people review it themselves. For a larger payout, a senior role, or a non-compete extension, a brief attorney review is a reasonable investment.' },
-      { q: 'Can a severance agreement be signed electronically?', a: 'Yes — severance agreements are commonly sent and signed electronically, though the required review and revocation periods still apply regardless of signing method.' },
+      { q: 'Can a severance agreement be signed electronically?', a: 'Yes, severance agreements are commonly sent and signed electronically, though the required review and revocation periods still apply regardless of signing method.' },
     ],
     ctaHeading: 'Send severance agreements for e-signature',
     ctaBody: 'Codec Document lets HR teams create and send severance agreements with a clear, trackable audit trail for every signature.',
@@ -3770,7 +3770,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contract-clauses-en',
     heroImage: { src: '/blog/authorized-signer-company-contracts.jpg', alt: 'Businessman signing a document on a tablet with a stylus', credit: 'Photo: Pexels' },
     intro: [
-      'A contract is only as binding on a company as the authority of the person who signed it. This becomes a real problem when a deal later falls apart and the company argues that whoever signed never actually had the authority to commit them — a defense that, while not always successful, can genuinely delay or derail enforcement of an otherwise valid agreement.',
+      'A contract is only as binding on a company as the authority of the person who signed it. This becomes a real problem when a deal later falls apart and the company argues that whoever signed never actually had the authority to commit them, a defense that, while not always successful, can genuinely delay or derail enforcement of an otherwise valid agreement.',
       'Knowing who actually has signing authority before a deal closes avoids this entirely, and it takes a lot less effort than untangling it after the fact.',
     ],
     sections: [
@@ -3789,8 +3789,8 @@ export const ARTICLES: Article[] = [
       {
         heading: 'How to actually confirm it before signing',
         paragraphs: [
-          'For a routine contract, a title like "Owner," "President," or "Managing Member" on the signature block is usually sufficient reassurance for standard business dealings. For a higher-stakes contract, it is reasonable to ask for a corporate resolution or a signed confirmation from a company officer authorizing the specific signer — this is a normal, professional request, not an accusation of bad faith.',
-          'The apparent authority doctrine also matters here: if a company lets someone act as though they have signing authority (title, business cards, prior deals signed without objection), courts will often hold the company to contracts that person signs even without formal authorization — because the other party reasonably relied on how the company presented that person.',
+          'For a routine contract, a title like "Owner," "President," or "Managing Member" on the signature block is usually sufficient reassurance for standard business dealings. For a higher-stakes contract, it is reasonable to ask for a corporate resolution or a signed confirmation from a company officer authorizing the specific signer, this is a normal, professional request, not an accusation of bad faith.',
+          'The apparent authority doctrine also matters here: if a company lets someone act as though they have signing authority (title, business cards, prior deals signed without objection), courts will often hold the company to contracts that person signs even without formal authorization, because the other party reasonably relied on how the company presented that person.',
         ],
       },
       {
@@ -3801,13 +3801,13 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'Can any employee sign a contract for a company?', a: 'Not by default — most employees do not have inherent signing authority for company contracts unless it is specifically part of their role or they have been delegated that authority.' },
+      { q: 'Can any employee sign a contract for a company?', a: 'Not by default, most employees do not have inherent signing authority for company contracts unless it is specifically part of their role or they have been delegated that authority.' },
       { q: 'What happens if someone signs without actual authority?', a: 'The contract can potentially be voided by the company, though "apparent authority" and later ratification (the company acting as if the contract is valid) can still bind the company in many cases.' },
-      { q: 'Does an electronic signature change who has authority to sign?', a: 'No — an e-signature has the same legal weight as a wet signature under the ESIGN Act, but it does not change who is authorized to sign; that is determined by the company\'s own governance, not the signing method.' },
+      { q: 'Does an electronic signature change who has authority to sign?', a: 'No, an e-signature has the same legal weight as a wet signature under the ESIGN Act, but it does not change who is authorized to sign; that is determined by the company\'s own governance, not the signing method.' },
       { q: 'Should small business owners worry about this for routine contracts?', a: 'For most day-to-day contracts, having the signer\'s title clearly stated is enough. It becomes worth verifying formally for large, unusual, or high-risk deals.' },
     ],
     ctaHeading: 'Keep a clear signature record on every contract',
-    ctaBody: 'Codec Document captures the signer\'s name, title, and a full audit trail on every document — automatically.',
+    ctaBody: 'Codec Document captures the signer\'s name, title, and a full audit trail on every document, automatically.',
     ctaLabel: 'Try it free',
     ctaHref: '/firma-electronica',
   },
@@ -3825,7 +3825,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'contract-clauses-en',
     heroImage: { src: '/blog/contract-renewal-auto-renewal-clauses.jpg', alt: 'Close-up of a hand signing with a stylus on a digital tablet', credit: 'Photo: Karola G / Pexels' },
     intro: [
-      'An auto-renewal clause means a contract keeps going — often for another full term, at the same or an updated price — unless someone actively cancels it before a specific deadline. These clauses are common in leases, service contracts, software subscriptions, and vendor agreements, and they are entirely legal, but the fine print around the cancellation window is where businesses regularly get caught off guard.',
+      'An auto-renewal clause means a contract keeps going, often for another full term, at the same or an updated price, unless someone actively cancels it before a specific deadline. These clauses are common in leases, service contracts, software subscriptions, and vendor agreements, and they are entirely legal, but the fine print around the cancellation window is where businesses regularly get caught off guard.',
       'The clause itself is not the problem. Not knowing it is there, or missing the narrow window to opt out, is what actually costs people money.',
     ],
     sections: [
@@ -3835,10 +3835,10 @@ export const ARTICLES: Article[] = [
           'Four details matter more than the rest of the clause combined.',
         ],
         bullets: [
-          'The length of the renewal term — does it renew for another full year, or month-to-month?',
-          'The cancellation notice window — 30, 60, or 90 days before the renewal date is common',
+          'The length of the renewal term, does it renew for another full year, or month-to-month?',
+          'The cancellation notice window: 30, 60, or 90 days before the renewal date is common',
           'Whether pricing can change automatically on renewal, and by how much',
-          'How cancellation must be submitted — email is not always sufficient if the contract requires written notice by mail',
+          'How cancellation must be submitted, email is not always sufficient if the contract requires written notice by mail',
         ],
       },
       {
@@ -3851,15 +3851,15 @@ export const ARTICLES: Article[] = [
       {
         heading: 'How to actually avoid being caught off guard',
         paragraphs: [
-          'Calendar the cancellation deadline the moment a contract with an auto-renewal clause is signed, not close to the renewal date — by the time most people think to check, the notice window has already passed. If a vendor relationship is genuinely valuable, this same deadline is also a natural point to renegotiate pricing before it renews automatically at the existing rate.',
+          'Calendar the cancellation deadline the moment a contract with an auto-renewal clause is signed, not close to the renewal date, by the time most people think to check, the notice window has already passed. If a vendor relationship is genuinely valuable, this same deadline is also a natural point to renegotiate pricing before it renews automatically at the existing rate.',
         ],
       },
     ],
     faq: [
       { q: 'Are auto-renewal clauses legal?', a: 'Yes, they are standard and legal in most contracts, though an increasing number of states require clear notice before renewal, especially in consumer contracts.' },
-      { q: 'Can I cancel an auto-renewing contract after the deadline passes?', a: 'Sometimes, if the vendor is willing to make an exception, but the contract is not legally required to allow it — this is exactly why tracking the deadline matters.' },
-      { q: 'Does an auto-renewal clause let a vendor raise prices without notice?', a: 'It depends entirely on the specific wording — some clauses cap the increase, some require notice of a price change, and some allow it without either. Read this section specifically before signing.' },
-      { q: 'Is email sufficient to cancel an auto-renewing contract?', a: 'Only if the contract says so. Some contracts require written notice by mail or through a specific portal — email that technically does not meet the contract\'s requirement can fail to stop the renewal.' },
+      { q: 'Can I cancel an auto-renewing contract after the deadline passes?', a: 'Sometimes, if the vendor is willing to make an exception, but the contract is not legally required to allow it, this is exactly why tracking the deadline matters.' },
+      { q: 'Does an auto-renewal clause let a vendor raise prices without notice?', a: 'It depends entirely on the specific wording, some clauses cap the increase, some require notice of a price change, and some allow it without either. Read this section specifically before signing.' },
+      { q: 'Is email sufficient to cancel an auto-renewing contract?', a: 'Only if the contract says so. Some contracts require written notice by mail or through a specific portal, email that technically does not meet the contract\'s requirement can fail to stop the renewal.' },
     ],
     ctaHeading: 'Track every contract in one place',
     ctaBody: 'Create, sign, and store your contracts with Codec Document so renewal terms are never buried in an old email thread.',
@@ -3881,18 +3881,18 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/indemnification-clause-plain-english.jpg', alt: 'A person reading a document closely on a tablet', credit: 'Photo: Pexels' },
     intro: [
       'Indemnification is one of the most common contract terms that gets skimmed past because it sounds like standard legal boilerplate. In plain terms, an indemnification clause is a promise: if a specific kind of problem happens, one party agrees to cover the other party\'s losses, legal costs, or damages related to it, instead of leaving them to absorb that cost alone.',
-      'Almost every service agreement, vendor contract, and lease contains one, and the specific wording determines how much financial exposure it actually creates — which is why it deserves an actual read, not a skim.',
+      'Almost every service agreement, vendor contract, and lease contains one, and the specific wording determines how much financial exposure it actually creates, which is why it deserves an actual read, not a skim.',
     ],
     sections: [
       {
         heading: 'What indemnification actually means in practice',
         paragraphs: [
-          'If a contractor\'s work causes property damage and the contract has an indemnification clause covering that scenario, the contractor agrees to cover the resulting costs — repairs, legal fees if a claim is made, and any related damages — rather than the client bearing that cost themselves. The clause is essentially shifting a specific category of financial risk from one party to the other.',
+          'If a contractor\'s work causes property damage and the contract has an indemnification clause covering that scenario, the contractor agrees to cover the resulting costs, repairs, legal fees if a claim is made, and any related damages, rather than the client bearing that cost themselves. The clause is essentially shifting a specific category of financial risk from one party to the other.',
         ],
         bullets: [
-          'One-way indemnification — only one party indemnifies the other',
-          'Mutual indemnification — both parties indemnify each other for their own actions',
-          'Scope — what specific events or claims trigger the obligation (negligence, IP infringement, breach of contract)',
+          'One-way indemnification, only one party indemnifies the other',
+          'Mutual indemnification, both parties indemnify each other for their own actions',
+          'Scope, what specific events or claims trigger the obligation (negligence, IP infringement, breach of contract)',
           'Whether it covers legal defense costs, not just the final damages',
           'Any dollar cap on the total indemnification obligation',
         ],
@@ -3900,16 +3900,16 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Why the scope of the clause matters more than the fact that it exists',
         paragraphs: [
-          'A narrow indemnification clause only covers specific, named situations — like claims arising from the indemnifying party\'s own negligence. A broad clause can extend to cover essentially any claim related to the contract, regardless of who was actually at fault, which is a meaningfully bigger commitment. Reading exactly what triggers the obligation is more important than confirming the clause exists.',
+          'A narrow indemnification clause only covers specific, named situations, like claims arising from the indemnifying party\'s own negligence. A broad clause can extend to cover essentially any claim related to the contract, regardless of who was actually at fault, which is a meaningfully bigger commitment. Reading exactly what triggers the obligation is more important than confirming the clause exists.',
           'A dollar cap on total indemnification exposure is common in commercial contracts and worth negotiating for, especially in a one-way clause where the exposure could otherwise be open-ended.',
         ],
       },
     ],
     faq: [
-      { q: 'What is the difference between indemnification and insurance?', a: 'Indemnification is a contractual promise between two parties to cover certain losses; insurance is a separate policy that may pay out to satisfy that promise. Contracts often require both — an indemnification clause plus proof of insurance to back it.' },
-      { q: 'Can an indemnification clause be one-sided?', a: 'Yes, and this is common — the party with more leverage in a negotiation (often the client in a service agreement) frequently gets a one-way clause in their favor. It is reasonable to push for mutual indemnification.' },
-      { q: 'Should indemnification clauses have a dollar cap?', a: 'In most commercial contracts, yes — an uncapped indemnification obligation can create open-ended financial exposure that is disproportionate to the value of the contract itself.' },
-      { q: 'Do small business contracts really need an indemnification clause?', a: 'For contracts involving physical work, data handling, or any real risk of a third-party claim, yes — it is one of the more consequential clauses in the agreement despite often being skimmed.' },
+      { q: 'What is the difference between indemnification and insurance?', a: 'Indemnification is a contractual promise between two parties to cover certain losses; insurance is a separate policy that may pay out to satisfy that promise. Contracts often require both, an indemnification clause plus proof of insurance to back it.' },
+      { q: 'Can an indemnification clause be one-sided?', a: 'Yes, and this is common, the party with more leverage in a negotiation (often the client in a service agreement) frequently gets a one-way clause in their favor. It is reasonable to push for mutual indemnification.' },
+      { q: 'Should indemnification clauses have a dollar cap?', a: 'In most commercial contracts, yes, an uncapped indemnification obligation can create open-ended financial exposure that is disproportionate to the value of the contract itself.' },
+      { q: 'Do small business contracts really need an indemnification clause?', a: 'For contracts involving physical work, data handling, or any real risk of a third-party claim, yes, it is one of the more consequential clauses in the agreement despite often being skimmed.' },
     ],
     ctaHeading: 'Build contracts with the clauses you actually need',
     ctaBody: 'Codec Document\'s templates help you create clear, complete contracts and get them signed for free.',
@@ -3930,21 +3930,21 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/how-long-to-keep-signed-contracts.jpg', alt: 'A laptop open on a wooden desk in a quiet office', credit: 'Photo: Pexels' },
     intro: [
-      'Most businesses either keep every signed document forever or delete things far too soon, and neither is a real policy — it is just what happened by default. There is no single federal law that says exactly how long to keep every contract, but there are real, practical anchors: the statute of limitations for contract disputes in your state, tax record requirements, and industry-specific regulations.',
+      'Most businesses either keep every signed document forever or delete things far too soon, and neither is a real policy, it is just what happened by default. There is no single federal law that says exactly how long to keep every contract, but there are real, practical anchors: the statute of limitations for contract disputes in your state, tax record requirements, and industry-specific regulations.',
       'A simple retention rule beats no rule at all, and it takes surprisingly little effort to set one up correctly.',
     ],
     sections: [
       {
         heading: 'A practical baseline by contract type',
         paragraphs: [
-          'These are common, defensible starting points — not universal legal requirements, since specifics vary by state and industry.',
+          'These are common, defensible starting points, not universal legal requirements, since specifics vary by state and industry.',
         ],
         bullets: [
-          'General business contracts — at least as long as your state\'s statute of limitations for written contracts (often 4–6 years, up to 10 in some states)',
-          'Tax-related documents and contracts affecting tax filings — at least 7 years, per common IRS guidance',
-          'Employment contracts and records — at least 3–4 years after employment ends, longer if the role involved benefits or retirement plans',
-          'Real estate and lease agreements — for the life of the lease plus several years after termination',
-          'Contracts with ongoing obligations (warranties, indemnification) — until those obligations fully expire, plus the statute of limitations period after that',
+          'General business contracts, at least as long as your state\'s statute of limitations for written contracts (often 4–6 years, up to 10 in some states)',
+          'Tax-related documents and contracts affecting tax filings, at least 7 years, per common IRS guidance',
+          'Employment contracts and records, at least 3–4 years after employment ends, longer if the role involved benefits or retirement plans',
+          'Real estate and lease agreements, for the life of the lease plus several years after termination',
+          'Contracts with ongoing obligations (warranties, indemnification), until those obligations fully expire, plus the statute of limitations period after that',
         ],
       },
       {
@@ -3956,15 +3956,15 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Digital storage removes the excuse for losing documents',
         paragraphs: [
-          'A lot of retention gaps happen simply because a signed paper contract got lost, not because of a deliberate decision to discard it. Storing signed documents digitally, with the signature and audit trail attached to the file itself, removes this failure mode entirely — nothing to physically misplace, and no dependence on one specific filing cabinet or former employee\'s inbox.',
+          'A lot of retention gaps happen simply because a signed paper contract got lost, not because of a deliberate decision to discard it. Storing signed documents digitally, with the signature and audit trail attached to the file itself, removes this failure mode entirely, nothing to physically misplace, and no dependence on one specific filing cabinet or former employee\'s inbox.',
         ],
       },
     ],
     faq: [
-      { q: 'Is there a single federal law on how long to keep contracts?', a: 'No — retention requirements come from a mix of state statutes of limitations, IRS recordkeeping rules, and industry-specific regulations, rather than one universal federal law.' },
+      { q: 'Is there a single federal law on how long to keep contracts?', a: 'No, retention requirements come from a mix of state statutes of limitations, IRS recordkeeping rules, and industry-specific regulations, rather than one universal federal law.' },
       { q: 'What is a statute of limitations and why does it matter here?', a: 'It is the legal deadline for filing a lawsuit over a contract dispute. Once that period passes, keeping the contract is mostly for internal reference rather than legal necessity.' },
-      { q: 'Should I keep digital copies if I already have signed paper originals?', a: 'Yes — a digital copy protects against the paper original being lost, damaged, or misplaced, and is generally accepted as valid evidence alongside or instead of the original.' },
-      { q: 'Do electronically signed contracts need to be retained differently than paper ones?', a: 'No — the same retention logic applies. An e-signed contract with its audit trail is generally easier to retain reliably than a paper original, since it cannot be physically lost.' },
+      { q: 'Should I keep digital copies if I already have signed paper originals?', a: 'Yes, a digital copy protects against the paper original being lost, damaged, or misplaced, and is generally accepted as valid evidence alongside or instead of the original.' },
+      { q: 'Do electronically signed contracts need to be retained differently than paper ones?', a: 'No, the same retention logic applies. An e-signed contract with its audit trail is generally easier to retain reliably than a paper original, since it cannot be physically lost.' },
     ],
     ctaHeading: 'Keep every signed contract organized automatically',
     ctaBody: 'Codec Document stores every signed document with its full audit trail, so nothing gets lost in a filing cabinet or an old inbox.',
@@ -3985,7 +3985,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'business-agreements-en',
     heroImage: { src: '/blog/e-signature-for-international-clients.jpg', alt: 'Silhouettes of business people shaking hands in a modern office at sunset', credit: 'Photo: AdobeStock' },
     intro: [
-      'Signing a contract with a client based in another country raises questions that a domestic deal never does: is an electronic signature even valid where they are, which country\'s law governs a dispute, and does the contract need to be in another language to be enforceable? Most of the time, the actual answer is simpler than it feels — but a few specific details do need attention.',
+      'Signing a contract with a client based in another country raises questions that a domestic deal never does: is an electronic signature even valid where they are, which country\'s law governs a dispute, and does the contract need to be in another language to be enforceable? Most of the time, the actual answer is simpler than it feels, but a few specific details do need attention.',
       'The good news is that electronic signatures are now recognized in the large majority of countries a US business is likely to work with. The details that actually matter are elsewhere in the contract.',
     ],
     sections: [
@@ -3998,26 +3998,26 @@ export const ARTICLES: Article[] = [
       {
         heading: 'The governing law clause matters more with an international client',
         paragraphs: [
-          'Every cross-border contract should explicitly state which country\'s (or state\'s) law governs the agreement, and where any dispute would be resolved. Without this clause, a dispute can end up litigated over which law even applies before the actual disagreement is addressed — an expensive, slow problem that a single clause avoids entirely.',
+          'Every cross-border contract should explicitly state which country\'s (or state\'s) law governs the agreement, and where any dispute would be resolved. Without this clause, a dispute can end up litigated over which law even applies before the actual disagreement is addressed, an expensive, slow problem that a single clause avoids entirely.',
         ],
         bullets: [
-          'Governing law — which jurisdiction\'s law interprets the contract',
-          'Dispute resolution — courts, or arbitration, and where',
+          'Governing law, which jurisdiction\'s law interprets the contract',
+          'Dispute resolution, courts, or arbitration, and where',
           'Currency and payment terms, including how exchange rate fluctuations are handled',
-          'Language — which version of the contract controls if it exists in more than one language',
+          'Language, which version of the contract controls if it exists in more than one language',
         ],
       },
       {
         heading: 'A few practical details worth double-checking',
         paragraphs: [
-          'Confirm your e-signature platform provides an audit trail with the signer\'s IP address, timestamp, and verification method — this becomes more valuable, not less, when a signer is in another country and their identity is harder to verify informally. If the contract exists in two languages, decide upfront which version legally controls in case of a translation discrepancy, and say so directly in the contract.',
+          'Confirm your e-signature platform provides an audit trail with the signer\'s IP address, timestamp, and verification method, this becomes more valuable, not less, when a signer is in another country and their identity is harder to verify informally. If the contract exists in two languages, decide upfront which version legally controls in case of a translation discrepancy, and say so directly in the contract.',
         ],
       },
     ],
     faq: [
       { q: 'Are electronic signatures valid for contracts with clients outside the US?', a: 'In most countries, yes. The US, EU, UK, Canada, and the large majority of Latin American countries all legally recognize electronic signatures for standard commercial contracts.' },
-      { q: 'Which country\'s law should govern an international contract?', a: 'There is no universal answer — it is negotiated, and often defaults to whichever party has more leverage. What matters most is that the contract states it explicitly rather than leaving it undefined.' },
-      { q: 'Does a contract need to be translated to be enforceable abroad?', a: 'Not always, but if there is any chance of a dispute, having a version in the other party\'s language — with a clause stating which version controls — reduces the risk of a translation-based disagreement later.' },
+      { q: 'Which country\'s law should govern an international contract?', a: 'There is no universal answer, it is negotiated, and often defaults to whichever party has more leverage. What matters most is that the contract states it explicitly rather than leaving it undefined.' },
+      { q: 'Does a contract need to be translated to be enforceable abroad?', a: 'Not always, but if there is any chance of a dispute, having a version in the other party\'s language, with a clause stating which version controls, reduces the risk of a translation-based disagreement later.' },
       { q: 'Do international clients need extra identity verification when signing?', a: 'It is good practice, since it is harder to informally verify someone\'s identity across borders. A platform that captures ID verification alongside the signature adds a meaningful layer of protection.' },
     ],
     ctaHeading: 'Sign contracts with clients anywhere',
@@ -4039,7 +4039,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'acuerdos-comerciales-2026',
     heroImage: { src: '/blog/contrato-de-subarriendo.jpg', alt: 'Agente inmobiliario y cliente dándose la mano al aire libre tras cerrar un trato', credit: 'Foto: Pexels' },
     intro: [
-      'Cuando un inquilino subarrienda su apartamento, sigue siendo el responsable legal frente al propietario del contrato de arrendamiento original — el subarrendatario no tiene ninguna relación contractual directa con el dueño de la propiedad. Eso significa que si el subarrendatario no paga, daña la propiedad, o simplemente no se va cuando debería, el problema legal recae primero sobre el inquilino original, no sobre el propietario.',
+      'Cuando un inquilino subarrienda su apartamento, sigue siendo el responsable legal frente al propietario del contrato de arrendamiento original, el subarrendatario no tiene ninguna relación contractual directa con el dueño de la propiedad. Eso significa que si el subarrendatario no paga, daña la propiedad, o simplemente no se va cuando debería, el problema legal recae primero sobre el inquilino original, no sobre el propietario.',
       'Un contrato de subarriendo bien redactado es lo que le permite al inquilino original trasladar esas mismas responsabilidades hacia el subarrendatario, en vez de quedar expuesto sin ningún respaldo por escrito.',
     ],
     sections: [
@@ -4071,7 +4071,7 @@ export const ARTICLES: Article[] = [
     ],
     faq: [
       { q: 'El subarrendatario tiene contrato directo con el propietario?', a: 'No, generalmente no. La relación contractual del subarrendatario es con el inquilino original, no con el dueño de la propiedad, a menos que el propietario participe directamente en el contrato.' },
-      { q: 'Se puede subarrendar sin permiso del propietario?', a: 'En la mayoría de los casos no debería hacerse — muchos contratos de arrendamiento lo prohíben expresamente, y hacerlo sin autorización puede poner en riesgo el contrato original.' },
+      { q: 'Se puede subarrendar sin permiso del propietario?', a: 'En la mayoría de los casos no debería hacerse, muchos contratos de arrendamiento lo prohíben expresamente, y hacerlo sin autorización puede poner en riesgo el contrato original.' },
       { q: 'Quién responde si el subarrendatario daña la propiedad?', a: 'Frente al propietario, responde el inquilino original. Por eso el contrato de subarriendo debe establecer claramente que el subarrendatario responde ante el inquilino original por cualquier daño.' },
       { q: 'Un contrato de subarriendo firmado electrónicamente es válido?', a: 'Sí, una firma electrónica tiene la misma validez legal que una firma en papel para este tipo de acuerdos en la mayoría de los países de Latinoamérica.' },
     ],
@@ -4094,7 +4094,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'clausulas-contractuales-2026',
     heroImage: { src: '/blog/clausula-de-no-solicitacion-empleados.jpg', alt: 'Mujer trabajando en una laptop en la oficina de un pequeño negocio', credit: 'Foto: Pexels' },
     intro: [
-      'La cláusula de no solicitación se confunde constantemente con la de no competencia, pero restringen cosas distintas. La no competencia intenta impedir que alguien trabaje para la competencia; la no solicitación es más específica — impide que un exempleado busque activamente llevarse clientes o excompañeros de trabajo, sin necesariamente prohibirle trabajar en la misma industria.',
+      'La cláusula de no solicitación se confunde constantemente con la de no competencia, pero restringen cosas distintas. La no competencia intenta impedir que alguien trabaje para la competencia; la no solicitación es más específica, impide que un exempleado busque activamente llevarse clientes o excompañeros de trabajo, sin necesariamente prohibirle trabajar en la misma industria.',
       'Esa diferencia es justamente lo que hace que la no solicitación sea más fácil de defender legalmente que una no competencia amplia, que en varios países y estados enfrenta restricciones cada vez mayores.',
     ],
     sections: [
@@ -4113,20 +4113,20 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Ser buscado por un cliente es distinto a buscarlo activamente',
         paragraphs: [
-          'Una cláusula de no solicitación normalmente no impide que un cliente decida por su cuenta seguir trabajando con la persona en su nueva empresa — solo impide que la persona lo busque activamente. Esta diferencia importa mucho en la práctica: una cláusula mal redactada que intenta prohibir todo contacto, incluso el que inicia el cliente, es más difícil de hacer valer.',
+          'Una cláusula de no solicitación normalmente no impide que un cliente decida por su cuenta seguir trabajando con la persona en su nueva empresa, solo impide que la persona lo busque activamente. Esta diferencia importa mucho en la práctica: una cláusula mal redactada que intenta prohibir todo contacto, incluso el que inicia el cliente, es más difícil de hacer valer.',
         ],
       },
       {
         heading: 'Dónde aparece más comúnmente',
         paragraphs: [
-          'Este tipo de cláusula es común en ventas, agencias, consultoría, reclutamiento y cualquier negocio donde las relaciones personales generan ingresos — precisamente los roles donde un exempleado que se lleva clientes o colegas causa más daño.',
+          'Este tipo de cláusula es común en ventas, agencias, consultoría, reclutamiento y cualquier negocio donde las relaciones personales generan ingresos, precisamente los roles donde un exempleado que se lleva clientes o colegas causa más daño.',
         ],
       },
     ],
     faq: [
       { q: 'Es lo mismo que una cláusula de no competencia?', a: 'No. La no competencia restringe dónde puede trabajar alguien; la no solicitación solo restringe que busque activamente a ciertos clientes o empleados. Generalmente es más fácil de hacer valer legalmente.' },
       { q: 'Cuánto puede durar una cláusula de no solicitación?', a: 'No hay un número universal, pero entre 6 meses y 2 años es común. Que sea razonable para el rol específico influye directamente en si un tribunal la respalda.' },
-      { q: 'Un excliente puede contactarme aunque firmé una cláusula así?', a: 'Generalmente sí — la mayoría de las cláusulas restringen que tú lo busques a él, no que él te busque a ti por su propia decisión.' },
+      { q: 'Un excliente puede contactarme aunque firmé una cláusula así?', a: 'Generalmente sí, la mayoría de las cláusulas restringen que tú lo busques a él, no que él te busque a ti por su propia decisión.' },
       { q: 'Esta cláusula se puede firmar electrónicamente?', a: 'Sí, tiene la misma validez que firmarla en papel, siempre que ambas partes acepten firmar de forma electrónica.' },
     ],
     ctaHeading: 'Redacta contratos con cláusulas claras',
@@ -4148,7 +4148,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'clausulas-contractuales-2026',
     heroImage: { src: '/blog/carta-de-autorizacion-representacion.jpg', alt: 'Primer plano de una mano firmando un documento con una pluma fuente', credit: 'Foto: Pixabay / Pexels' },
     intro: [
-      'Una carta de autorización es un documento breve pero con peso legal: le da a otra persona el permiso explícito para actuar en tu nombre en un trámite específico — recoger un paquete, representarte en una gestión bancaria, retirar un vehículo, o firmar documentos puntuales en tu lugar. No es lo mismo que un poder notarial, que suele cubrir un rango de facultades mucho más amplio y formal.',
+      'Una carta de autorización es un documento breve pero con peso legal: le da a otra persona el permiso explícito para actuar en tu nombre en un trámite específico, recoger un paquete, representarte en una gestión bancaria, retirar un vehículo, o firmar documentos puntuales en tu lugar. No es lo mismo que un poder notarial, que suele cubrir un rango de facultades mucho más amplio y formal.',
       'La mayoría de las instituciones (bancos, aduanas, oficinas de gobierno, empresas de transporte) exigen este documento por escrito antes de permitir que alguien actúe en representación de otra persona, precisamente para protegerse de fraudes.',
     ],
     sections: [
@@ -4174,7 +4174,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Cuándo conviene un poder notarial en vez de una carta simple',
         paragraphs: [
-          'Para trámites de alto valor o largo plazo — vender una propiedad, gestionar cuentas bancarias de forma continua, representar a alguien en un proceso legal — una carta de autorización simple no es suficiente y se necesita un poder notarial formalizado ante notario. La carta de autorización es para gestiones puntuales y de menor alcance.',
+          'Para trámites de alto valor o largo plazo, vender una propiedad, gestionar cuentas bancarias de forma continua, representar a alguien en un proceso legal, una carta de autorización simple no es suficiente y se necesita un poder notarial formalizado ante notario. La carta de autorización es para gestiones puntuales y de menor alcance.',
         ],
       },
     ],
@@ -4203,8 +4203,8 @@ export const ARTICLES: Article[] = [
     topicCluster: 'acuerdos-comerciales-2026',
     heroImage: { src: '/blog/contrato-de-subcontratista.jpg', alt: 'Una mano señalando gráficos financieros en papel junto a una laptop abierta', credit: 'Foto: AdobeStock' },
     intro: [
-      'El contratista general responde ante el cliente sin importar qué subcontratista específico causó el problema. Ese único hecho es la razón por la que un contrato con subcontratistas no es papeleo opcional — es el documento que le permite al contratista general trasladar responsabilidad, costos y expectativas de tiempo hacia el subcontratista que realmente hace el trabajo.',
-      'Muchos contratistas pequeños se saltan esto porque suelen trabajar con subcontratistas de confianza. Precisamente esa confianza es la razón por la que rara vez se formaliza — y la razón por la que, el día que algo sale mal, no hay nada por escrito a qué recurrir.',
+      'El contratista general responde ante el cliente sin importar qué subcontratista específico causó el problema. Ese único hecho es la razón por la que un contrato con subcontratistas no es papeleo opcional, es el documento que le permite al contratista general trasladar responsabilidad, costos y expectativas de tiempo hacia el subcontratista que realmente hace el trabajo.',
+      'Muchos contratistas pequeños se saltan esto porque suelen trabajar con subcontratistas de confianza. Precisamente esa confianza es la razón por la que rara vez se formaliza, y la razón por la que, el día que algo sale mal, no hay nada por escrito a qué recurrir.',
     ],
     sections: [
       {
@@ -4215,7 +4215,7 @@ export const ARTICLES: Article[] = [
         bullets: [
           'Alcance detallado del trabajo, con referencia a planos o especificaciones',
           'Fecha de inicio, fecha límite de finalización y fechas de hitos intermedios',
-          'Cronograma de pago — monto único, por hitos, o por avance',
+          'Cronograma de pago, monto único, por hitos, o por avance',
           'Requisitos de seguro y licencias que el subcontratista debe mantener',
           'Proceso para cualquier trabajo adicional fuera del alcance original',
         ],
@@ -4223,21 +4223,21 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Indemnización y seguro protegen específicamente al contratista general',
         paragraphs: [
-          'El contrato debe exigir que el subcontratista tenga su propio seguro de responsabilidad civil y presente comprobante antes de empezar — un contratista general que se salta esto está, en la práctica, autoasegurando los errores del subcontratista. Una cláusula de indemnización, donde el subcontratista acepta cubrir los costos derivados de su propio trabajo negligente, es lo que le da peso real a esa exigencia de seguro.',
+          'El contrato debe exigir que el subcontratista tenga su propio seguro de responsabilidad civil y presente comprobante antes de empezar, un contratista general que se salta esto está, en la práctica, autoasegurando los errores del subcontratista. Una cláusula de indemnización, donde el subcontratista acepta cubrir los costos derivados de su propio trabajo negligente, es lo que le da peso real a esa exigencia de seguro.',
         ],
       },
       {
         heading: 'Los términos de pago deben sobrevivir un conflicto con el cliente',
         paragraphs: [
-          'Si el contratista general aún no ha recibido el pago del cliente, eso retrasa el pago al subcontratista? Esto debe quedar explícito en el contrato — un subcontratista que asumió que le pagarían en un cronograma fijo, sin importar el estado de pago del cliente final, tiene motivos válidos para reclamar si eso nunca se le informó.',
+          'Si el contratista general aún no ha recibido el pago del cliente, eso retrasa el pago al subcontratista? Esto debe quedar explícito en el contrato, un subcontratista que asumió que le pagarían en un cronograma fijo, sin importar el estado de pago del cliente final, tiene motivos válidos para reclamar si eso nunca se le informó.',
         ],
       },
     ],
     faq: [
       { q: 'Un contrato con subcontratistas es distinto a uno de contratista independiente?', a: 'Cubren aspectos similares, pero el de subcontratista suele incluir retención de pago, seguros y requisitos de licencia específicos de construcción que un contrato general de contratista independiente no siempre tiene.' },
       { q: 'Qué es la retención de pago y por qué importa?', a: 'Es un porcentaje del valor del contrato (comúnmente 5-10%) que se retiene hasta que el trabajo pasa la inspección final, dándole al contratista general influencia para asegurar que se terminen los detalles pendientes.' },
-      { q: 'El contrato debe firmarse antes de que empiece el trabajo?', a: 'Sí — firmarlo después de que el trabajo ya inició elimina la mayor parte de su utilidad, porque los desacuerdos sobre alcance y pago son mucho más difíciles de resolver una vez que el trabajo ya está en marcha.' },
-      { q: 'Se puede firmar electrónicamente en la misma obra?', a: 'Sí — una firma electrónica enviada por mensaje de texto o correo se puede firmar desde el celular directamente en el sitio de trabajo.' },
+      { q: 'El contrato debe firmarse antes de que empiece el trabajo?', a: 'Sí, firmarlo después de que el trabajo ya inició elimina la mayor parte de su utilidad, porque los desacuerdos sobre alcance y pago son mucho más difíciles de resolver una vez que el trabajo ya está en marcha.' },
+      { q: 'Se puede firmar electrónicamente en la misma obra?', a: 'Sí, una firma electrónica enviada por mensaje de texto o correo se puede firmar desde el celular directamente en el sitio de trabajo.' },
     ],
     ctaHeading: 'Firma contratos con subcontratistas más rápido',
     ctaBody: 'Envía un contrato de subcontratación para firma electrónica gratis, firmable desde cualquier celular.',
@@ -4258,7 +4258,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'clausulas-contractuales-2026',
     heroImage: { src: '/blog/quien-puede-firmar-contratos-a-nombre-de-una-empresa.jpg', alt: 'Empresario firmando un documento en una tablet con lápiz óptico', credit: 'Foto: Pexels' },
     intro: [
-      'Un contrato solo es tan vinculante para una empresa como la autoridad real de la persona que lo firmó. Esto se vuelve un problema serio cuando un negocio se cae después y la empresa argumenta que quien firmó nunca tuvo autoridad real para comprometerla — una defensa que, aunque no siempre funciona, puede retrasar o complicar seriamente la ejecución de un contrato por lo demás válido.',
+      'Un contrato solo es tan vinculante para una empresa como la autoridad real de la persona que lo firmó. Esto se vuelve un problema serio cuando un negocio se cae después y la empresa argumenta que quien firmó nunca tuvo autoridad real para comprometerla, una defensa que, aunque no siempre funciona, puede retrasar o complicar seriamente la ejecución de un contrato por lo demás válido.',
       'Saber quién tiene realmente autoridad para firmar antes de cerrar un trato evita todo esto por completo, y toma mucho menos esfuerzo que resolverlo después.',
     ],
     sections: [
@@ -4277,7 +4277,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Cómo confirmarlo antes de firmar',
         paragraphs: [
-          'Para un contrato rutinario, un cargo como "Representante Legal" o "Gerente General" junto a la firma suele ser suficiente para operaciones comerciales estándar. Para un contrato de mayor riesgo, es razonable pedir un acta o una confirmación firmada por alguien más de la empresa que autorice al firmante específico — esto es una solicitud normal y profesional, no una acusación de mala fe.',
+          'Para un contrato rutinario, un cargo como "Representante Legal" o "Gerente General" junto a la firma suele ser suficiente para operaciones comerciales estándar. Para un contrato de mayor riesgo, es razonable pedir un acta o una confirmación firmada por alguien más de la empresa que autorice al firmante específico, esto es una solicitud normal y profesional, no una acusación de mala fe.',
           'La doctrina de autoridad aparente también aplica aquí: si una empresa permite que alguien actúe como si tuviera autoridad para firmar (cargo, tarjetas de presentación, tratos anteriores firmados sin objeción), los tribunales frecuentemente sostienen que la empresa queda obligada por esos contratos aunque no hubiera autorización formal explícita.',
         ],
       },
@@ -4289,9 +4289,9 @@ export const ARTICLES: Article[] = [
       },
     ],
     faq: [
-      { q: 'Cualquier empleado puede firmar contratos por la empresa?', a: 'No por defecto — la mayoría de los empleados no tiene autoridad inherente para firmar contratos de la empresa, a menos que sea parte específica de su rol o se le haya delegado esa autoridad.' },
+      { q: 'Cualquier empleado puede firmar contratos por la empresa?', a: 'No por defecto, la mayoría de los empleados no tiene autoridad inherente para firmar contratos de la empresa, a menos que sea parte específica de su rol o se le haya delegado esa autoridad.' },
       { q: 'Qué pasa si alguien firma sin autoridad real?', a: 'El contrato puede potencialmente anularse por parte de la empresa, aunque la "autoridad aparente" y la ratificación posterior (la empresa actuando como si el contrato fuera válido) pueden igualmente vincular a la empresa en muchos casos.' },
-      { q: 'La firma electrónica cambia quién tiene autoridad para firmar?', a: 'No — la firma electrónica tiene el mismo peso legal que una firma en papel, pero no cambia quién está autorizado a firmar; eso lo determina el gobierno corporativo de la empresa, no el método de firma.' },
+      { q: 'La firma electrónica cambia quién tiene autoridad para firmar?', a: 'No, la firma electrónica tiene el mismo peso legal que una firma en papel, pero no cambia quién está autorizado a firmar; eso lo determina el gobierno corporativo de la empresa, no el método de firma.' },
       { q: 'Los pequeños negocios deben preocuparse por esto en contratos rutinarios?', a: 'Para la mayoría de los contratos del día a día, con que el cargo del firmante quede claro es suficiente. Vale la pena verificarlo formalmente para tratos grandes o inusuales.' },
     ],
     ctaHeading: 'Mantén un registro claro de cada firma',
@@ -4313,7 +4313,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'clausulas-contractuales-2026',
     heroImage: { src: '/blog/clausula-renovacion-automatica-contratos.jpg', alt: 'Primer plano de una mano firmando con lápiz óptico en una tablet digital', credit: 'Foto: Karola G / Pexels' },
     intro: [
-      'Una cláusula de renovación automática significa que el contrato sigue vigente — muchas veces por otro período completo, al mismo precio o con uno actualizado — a menos que alguien lo cancele activamente antes de una fecha límite específica. Estas cláusulas son comunes en arrendamientos, contratos de servicio, suscripciones de software y acuerdos con proveedores, y son totalmente legales, pero la letra pequeña sobre la ventana de cancelación es donde los negocios suelen llevarse sorpresas.',
+      'Una cláusula de renovación automática significa que el contrato sigue vigente, muchas veces por otro período completo, al mismo precio o con uno actualizado, a menos que alguien lo cancele activamente antes de una fecha límite específica. Estas cláusulas son comunes en arrendamientos, contratos de servicio, suscripciones de software y acuerdos con proveedores, y son totalmente legales, pero la letra pequeña sobre la ventana de cancelación es donde los negocios suelen llevarse sorpresas.',
       'La cláusula en sí no es el problema. No saber que existe, o dejar pasar la ventana estrecha para cancelarla, es lo que realmente termina costando dinero.',
     ],
     sections: [
@@ -4332,14 +4332,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Cómo evitar realmente la sorpresa',
         paragraphs: [
-          'Anota la fecha límite de cancelación en el calendario en el momento mismo de firmar un contrato con renovación automática, no cerca de la fecha de renovación — para cuando la mayoría de las personas piensa en revisarlo, la ventana de aviso ya pasó. Si la relación con el proveedor es realmente valiosa, esa misma fecha límite es también un buen momento para renegociar el precio antes de que se renueve automáticamente al valor actual.',
+          'Anota la fecha límite de cancelación en el calendario en el momento mismo de firmar un contrato con renovación automática, no cerca de la fecha de renovación, para cuando la mayoría de las personas piensa en revisarlo, la ventana de aviso ya pasó. Si la relación con el proveedor es realmente valiosa, esa misma fecha límite es también un buen momento para renegociar el precio antes de que se renueve automáticamente al valor actual.',
         ],
       },
     ],
     faq: [
       { q: 'Las cláusulas de renovación automática son legales?', a: 'Sí, son estándar y legales en la mayoría de los contratos, aunque cada vez más países exigen un aviso claro antes de la renovación, especialmente en contratos con consumidores.' },
-      { q: 'Se puede cancelar un contrato con renovación automática después de la fecha límite?', a: 'A veces, si el proveedor accede a hacer una excepción, pero el contrato no está obligado a permitirlo — por eso importa tanto llevar el control de la fecha.' },
-      { q: 'Una cláusula de renovación automática permite subir el precio sin avisar?', a: 'Depende completamente de cómo esté redactada — algunas cláusulas limitan el aumento, otras exigen aviso, y otras lo permiten sin ninguna de las dos cosas. Vale la pena leer esta sección con atención antes de firmar.' },
+      { q: 'Se puede cancelar un contrato con renovación automática después de la fecha límite?', a: 'A veces, si el proveedor accede a hacer una excepción, pero el contrato no está obligado a permitirlo, por eso importa tanto llevar el control de la fecha.' },
+      { q: 'Una cláusula de renovación automática permite subir el precio sin avisar?', a: 'Depende completamente de cómo esté redactada, algunas cláusulas limitan el aumento, otras exigen aviso, y otras lo permiten sin ninguna de las dos cosas. Vale la pena leer esta sección con atención antes de firmar.' },
       { q: 'Un correo es suficiente para cancelar un contrato que se renueva solo?', a: 'Solo si el contrato lo permite. Algunos exigen aviso por escrito formal o a través de un portal específico, y un correo que técnicamente no cumple ese requisito puede no detener la renovación.' },
     ],
     ctaHeading: 'Lleva el control de todos tus contratos',
@@ -4362,13 +4362,13 @@ export const ARTICLES: Article[] = [
     heroImage: { src: '/blog/clausula-de-indemnizacion-explicada.jpg', alt: 'Una persona revisando un documento con atención en una tablet', credit: 'Foto: Pexels' },
     intro: [
       'La indemnización es uno de los términos contractuales más comunes que se pasan por alto porque suena a lenguaje legal genérico. En términos simples, una cláusula de indemnización es una promesa: si ocurre un tipo específico de problema, una parte acepta cubrir las pérdidas, costos legales o daños de la otra parte relacionados con ese problema, en vez de dejar que lo asuma solo.',
-      'Casi todo contrato de servicios, acuerdo con proveedores y arrendamiento incluye una, y la redacción específica determina cuánta exposición financiera crea realmente — por eso merece una lectura de verdad, no un vistazo rápido.',
+      'Casi todo contrato de servicios, acuerdo con proveedores y arrendamiento incluye una, y la redacción específica determina cuánta exposición financiera crea realmente, por eso merece una lectura de verdad, no un vistazo rápido.',
     ],
     sections: [
       {
         heading: 'Qué significa indemnizar en la práctica',
         paragraphs: [
-          'Si el trabajo de un contratista causa daños a una propiedad y el contrato tiene una cláusula de indemnización que cubre ese escenario, el contratista acepta cubrir los costos resultantes — reparaciones, honorarios legales si hay un reclamo, y daños relacionados — en vez de que el cliente asuma ese costo por su cuenta. La cláusula básicamente traslada una categoría específica de riesgo financiero de una parte a la otra.',
+          'Si el trabajo de un contratista causa daños a una propiedad y el contrato tiene una cláusula de indemnización que cubre ese escenario, el contratista acepta cubrir los costos resultantes, reparaciones, honorarios legales si hay un reclamo, y daños relacionados, en vez de que el cliente asuma ese costo por su cuenta. La cláusula básicamente traslada una categoría específica de riesgo financiero de una parte a la otra.',
         ],
         bullets: [
           'Indemnización unilateral: solo una parte indemniza a la otra',
@@ -4381,16 +4381,16 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Por qué el alcance importa más que el hecho de que exista',
         paragraphs: [
-          'Una cláusula de indemnización estrecha solo cubre situaciones específicas y nombradas — como reclamos derivados de la propia negligencia de quien indemniza. Una cláusula amplia puede extenderse a cubrir prácticamente cualquier reclamo relacionado con el contrato, sin importar quién tuvo realmente la culpa, lo cual es un compromiso mucho mayor. Leer exactamente qué activa la obligación importa más que confirmar que la cláusula existe.',
+          'Una cláusula de indemnización estrecha solo cubre situaciones específicas y nombradas, como reclamos derivados de la propia negligencia de quien indemniza. Una cláusula amplia puede extenderse a cubrir prácticamente cualquier reclamo relacionado con el contrato, sin importar quién tuvo realmente la culpa, lo cual es un compromiso mucho mayor. Leer exactamente qué activa la obligación importa más que confirmar que la cláusula existe.',
           'Un límite económico sobre la exposición total de indemnización es común en contratos comerciales y vale la pena negociarlo, especialmente en una cláusula unilateral donde la exposición podría quedar abierta indefinidamente.',
         ],
       },
     ],
     faq: [
       { q: 'Cuál es la diferencia entre indemnización y seguro?', a: 'La indemnización es una promesa contractual entre dos partes para cubrir ciertas pérdidas; el seguro es una póliza separada que puede pagar para cumplir esa promesa. Muchos contratos exigen ambas cosas: una cláusula de indemnización más comprobante de seguro que la respalde.' },
-      { q: 'Una cláusula de indemnización puede ser solo para una parte?', a: 'Sí, y es común — la parte con más poder de negociación (a menudo el cliente en un contrato de servicios) frecuentemente logra una cláusula unilateral a su favor. Es razonable pedir que sea mutua.' },
-      { q: 'Las cláusulas de indemnización deben tener un límite económico?', a: 'En la mayoría de los contratos comerciales, sí — una obligación de indemnización sin límite puede crear una exposición financiera desproporcionada respecto al valor del contrato mismo.' },
-      { q: 'Los contratos de pequeños negocios realmente necesitan esta cláusula?', a: 'Para contratos que involucran trabajo físico, manejo de datos, o cualquier riesgo real de un reclamo de terceros, sí — es una de las cláusulas más importantes del acuerdo aunque suele pasarse por alto.' },
+      { q: 'Una cláusula de indemnización puede ser solo para una parte?', a: 'Sí, y es común, la parte con más poder de negociación (a menudo el cliente en un contrato de servicios) frecuentemente logra una cláusula unilateral a su favor. Es razonable pedir que sea mutua.' },
+      { q: 'Las cláusulas de indemnización deben tener un límite económico?', a: 'En la mayoría de los contratos comerciales, sí, una obligación de indemnización sin límite puede crear una exposición financiera desproporcionada respecto al valor del contrato mismo.' },
+      { q: 'Los contratos de pequeños negocios realmente necesitan esta cláusula?', a: 'Para contratos que involucran trabajo físico, manejo de datos, o cualquier riesgo real de un reclamo de terceros, sí, es una de las cláusulas más importantes del acuerdo aunque suele pasarse por alto.' },
     ],
     ctaHeading: 'Redacta contratos con las cláusulas que necesitas',
     ctaBody: 'Las plantillas de Codec Document te ayudan a crear contratos claros y completos, y firmarlos gratis.',
@@ -4411,14 +4411,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'acuerdos-comerciales-2026',
     heroImage: { src: '/blog/cuanto-tiempo-guardar-contratos-firmados.jpg', alt: 'Una laptop abierta sobre un escritorio de madera en una oficina tranquila', credit: 'Foto: Pexels' },
     intro: [
-      'La mayoría de los negocios o bien guardan cada documento firmado para siempre, o los eliminan demasiado pronto, y ninguna de las dos cosas es realmente una política — es simplemente lo que ocurrió por defecto. No existe una única ley que diga exactamente cuánto tiempo guardar cada contrato, pero sí hay referencias reales y prácticas: los plazos de prescripción para disputas contractuales, los requisitos fiscales, y las regulaciones específicas de cada industria.',
+      'La mayoría de los negocios o bien guardan cada documento firmado para siempre, o los eliminan demasiado pronto, y ninguna de las dos cosas es realmente una política, es simplemente lo que ocurrió por defecto. No existe una única ley que diga exactamente cuánto tiempo guardar cada contrato, pero sí hay referencias reales y prácticas: los plazos de prescripción para disputas contractuales, los requisitos fiscales, y las regulaciones específicas de cada industria.',
       'Una regla de retención simple es mejor que ninguna regla, y toma sorprendentemente poco esfuerzo establecerla correctamente.',
     ],
     sections: [
       {
         heading: 'Una referencia práctica por tipo de contrato',
         paragraphs: [
-          'Estos son puntos de partida razonables — no requisitos legales universales, ya que varían según el país y la industria.',
+          'Estos son puntos de partida razonables, no requisitos legales universales, ya que varían según el país y la industria.',
         ],
         bullets: [
           'Contratos comerciales generales: al menos el tiempo del plazo de prescripción para contratos escritos en tu país (frecuentemente entre 4 y 10 años)',
@@ -4437,15 +4437,15 @@ export const ARTICLES: Article[] = [
       {
         heading: 'El almacenamiento digital elimina la excusa de perder documentos',
         paragraphs: [
-          'Muchos vacíos en la retención ocurren simplemente porque un contrato firmado en papel se perdió, no por una decisión deliberada de descartarlo. Guardar los documentos firmados digitalmente, con la firma y la pista de auditoría adjuntas al mismo archivo, elimina por completo este problema — nada que se pueda extraviar físicamente, y ninguna dependencia de un archivero específico o del correo de un exempleado.',
+          'Muchos vacíos en la retención ocurren simplemente porque un contrato firmado en papel se perdió, no por una decisión deliberada de descartarlo. Guardar los documentos firmados digitalmente, con la firma y la pista de auditoría adjuntas al mismo archivo, elimina por completo este problema, nada que se pueda extraviar físicamente, y ninguna dependencia de un archivero específico o del correo de un exempleado.',
         ],
       },
     ],
     faq: [
-      { q: 'Existe una ley única sobre cuánto tiempo guardar contratos?', a: 'No — los requisitos de retención vienen de una combinación de plazos de prescripción, normas fiscales y regulaciones específicas por industria, no de una sola ley universal.' },
+      { q: 'Existe una ley única sobre cuánto tiempo guardar contratos?', a: 'No, los requisitos de retención vienen de una combinación de plazos de prescripción, normas fiscales y regulaciones específicas por industria, no de una sola ley universal.' },
       { q: 'Qué es el plazo de prescripción y por qué importa aquí?', a: 'Es el plazo legal para presentar una demanda por una disputa contractual. Una vez que ese período pasa, conservar el contrato es más para referencia interna que por necesidad legal.' },
-      { q: 'Debo guardar copias digitales si ya tengo los originales firmados en papel?', a: 'Sí — una copia digital protege contra la pérdida, el daño o el extravío del original en papel, y generalmente se acepta como evidencia válida junto con el original o en su lugar.' },
-      { q: 'Los contratos firmados electrónicamente necesitan una retención diferente?', a: 'No — aplica la misma lógica de retención. Un contrato firmado electrónicamente con su pista de auditoría es generalmente más fácil de conservar de forma confiable, ya que no se puede perder físicamente.' },
+      { q: 'Debo guardar copias digitales si ya tengo los originales firmados en papel?', a: 'Sí, una copia digital protege contra la pérdida, el daño o el extravío del original en papel, y generalmente se acepta como evidencia válida junto con el original o en su lugar.' },
+      { q: 'Los contratos firmados electrónicamente necesitan una retención diferente?', a: 'No, aplica la misma lógica de retención. Un contrato firmado electrónicamente con su pista de auditoría es generalmente más fácil de conservar de forma confiable, ya que no se puede perder físicamente.' },
     ],
     ctaHeading: 'Mantén cada contrato firmado organizado automáticamente',
     ctaBody: 'Codec Document guarda cada documento firmado con su pista de auditoría completa, para que nada se pierda en un archivero o un correo antiguo.',
@@ -4466,7 +4466,7 @@ export const ARTICLES: Article[] = [
     topicCluster: 'acuerdos-comerciales-2026',
     heroImage: { src: '/blog/firmar-contratos-con-clientes-internacionales.jpg', alt: 'Siluetas de empresarios dándose la mano en una oficina moderna al atardecer', credit: 'Foto: AdobeStock' },
     intro: [
-      'Firmar un contrato con un cliente ubicado en otro país plantea preguntas que un trato local nunca genera: la firma electrónica es válida donde está el cliente, qué ley rige en caso de disputa, y el contrato necesita estar en otro idioma para ser exigible? La mayoría de las veces, la respuesta real es más simple de lo que parece — pero sí hay algunos detalles específicos que merecen atención.',
+      'Firmar un contrato con un cliente ubicado en otro país plantea preguntas que un trato local nunca genera: la firma electrónica es válida donde está el cliente, qué ley rige en caso de disputa, y el contrato necesita estar en otro idioma para ser exigible? La mayoría de las veces, la respuesta real es más simple de lo que parece, pero sí hay algunos detalles específicos que merecen atención.',
       'La buena noticia es que la firma electrónica ya se reconoce legalmente en la gran mayoría de los países con los que un negocio latinoamericano probablemente trabaja. Los detalles que realmente importan están en otra parte del contrato.',
     ],
     sections: [
@@ -4479,7 +4479,7 @@ export const ARTICLES: Article[] = [
       {
         heading: 'La cláusula de ley aplicable importa más con un cliente internacional',
         paragraphs: [
-          'Todo contrato transfronterizo debería indicar explícitamente qué ley (de qué país) rige el acuerdo, y dónde se resolvería cualquier disputa. Sin esta cláusula, una disputa puede terminar litigándose primero sobre qué ley aplica antes siquiera de abordar el desacuerdo real — un problema costoso y lento que una sola cláusula evita por completo.',
+          'Todo contrato transfronterizo debería indicar explícitamente qué ley (de qué país) rige el acuerdo, y dónde se resolvería cualquier disputa. Sin esta cláusula, una disputa puede terminar litigándose primero sobre qué ley aplica antes siquiera de abordar el desacuerdo real, un problema costoso y lento que una sola cláusula evita por completo.',
         ],
         bullets: [
           'Ley aplicable: la jurisdicción cuya ley interpreta el contrato',
@@ -4491,14 +4491,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Algunos detalles prácticos que vale la pena verificar',
         paragraphs: [
-          'Confirma que tu plataforma de firma electrónica proporcione una pista de auditoría con la dirección IP del firmante, marca de tiempo y método de verificación — esto se vuelve más valioso, no menos, cuando el firmante está en otro país y su identidad es más difícil de verificar de forma informal. Si el contrato existe en dos idiomas, decide de antemano cuál versión prevalece legalmente en caso de una discrepancia de traducción, y déjalo indicado directamente en el contrato.',
+          'Confirma que tu plataforma de firma electrónica proporcione una pista de auditoría con la dirección IP del firmante, marca de tiempo y método de verificación, esto se vuelve más valioso, no menos, cuando el firmante está en otro país y su identidad es más difícil de verificar de forma informal. Si el contrato existe en dos idiomas, decide de antemano cuál versión prevalece legalmente en caso de una discrepancia de traducción, y déjalo indicado directamente en el contrato.',
         ],
       },
     ],
     faq: [
       { q: 'La firma electrónica es válida para contratos con clientes fuera de mi país?', a: 'En la mayoría de los casos, sí. Estados Unidos, la Unión Europea, y prácticamente todos los países de Latinoamérica reconocen legalmente la firma electrónica para contratos comerciales estándar.' },
-      { q: 'Qué ley debería regir un contrato internacional?', a: 'No hay una respuesta universal — se negocia, y a menudo depende de qué parte tiene más poder de negociación. Lo más importante es que el contrato lo indique explícitamente en vez de dejarlo sin definir.' },
-      { q: 'El contrato necesita estar traducido para ser exigible en otro país?', a: 'No siempre, pero si existe alguna posibilidad de disputa, tener una versión en el idioma de la otra parte — con una cláusula que indique cuál versión prevalece — reduce el riesgo de un desacuerdo por traducción.' },
+      { q: 'Qué ley debería regir un contrato internacional?', a: 'No hay una respuesta universal, se negocia, y a menudo depende de qué parte tiene más poder de negociación. Lo más importante es que el contrato lo indique explícitamente en vez de dejarlo sin definir.' },
+      { q: 'El contrato necesita estar traducido para ser exigible en otro país?', a: 'No siempre, pero si existe alguna posibilidad de disputa, tener una versión en el idioma de la otra parte, con una cláusula que indique cuál versión prevalece, reduce el riesgo de un desacuerdo por traducción.' },
       { q: 'Los clientes internacionales necesitan verificación de identidad adicional al firmar?', a: 'Es una buena práctica, ya que es más difícil verificar informalmente la identidad de alguien a través de fronteras. Una plataforma que capture verificación de identidad junto con la firma agrega una capa real de protección.' },
     ],
     ctaHeading: 'Firma contratos con clientes en cualquier país',
@@ -4520,14 +4520,14 @@ export const ARTICLES: Article[] = [
     topicCluster: 'acuerdos-comerciales-2026',
     heroImage: { src: '/blog/contrato-de-alquiler-de-equipos.jpg', alt: 'Dos personas dándose la mano junto a un vehículo, entregando las llaves', credit: 'Foto: Pexels' },
     intro: [
-      'Cualquiera que haya prestado una cámara, una herramienta eléctrica, un remolque o un equipo de audio y lo haya recibido de vuelta rayado, dañado o semanas tarde ya conoce el problema: un simple "claro, tráelo el lunes" no tiene ningún respaldo. Un contrato de alquiler de equipos no es papeleo por papeleo — es lo único que convierte un "creo que acordamos $50" en algo que realmente puedes exigir.',
-      'Esto aplica tanto si tienes un pequeño negocio de renta de equipos como si simplemente prestas equipo ocasionalmente — las lentes de respaldo de un fotógrafo, las herramientas extra de un contratista, los parlantes de un DJ. El contrato no necesita ser complicado para cumplir su función.',
+      'Cualquiera que haya prestado una cámara, una herramienta eléctrica, un remolque o un equipo de audio y lo haya recibido de vuelta rayado, dañado o semanas tarde ya conoce el problema: un simple "claro, tráelo el lunes" no tiene ningún respaldo. Un contrato de alquiler de equipos no es papeleo por papeleo, es lo único que convierte un "creo que acordamos $50" en algo que realmente puedes exigir.',
+      'Esto aplica tanto si tienes un pequeño negocio de renta de equipos como si simplemente prestas equipo ocasionalmente, las lentes de respaldo de un fotógrafo, las herramientas extra de un contratista, los parlantes de un DJ. El contrato no necesita ser complicado para cumplir su función.',
     ],
     sections: [
       {
         heading: 'Qué debe cubrir realmente el contrato',
         paragraphs: [
-          'Un contrato de alquiler que realmente funciona es específico sobre el equipo rentado, no solo su categoría. Anota la marca, el modelo y el número de serie si lo tiene, y registra su condición al momento de la entrega — idealmente con fotos adjuntas.',
+          'Un contrato de alquiler que realmente funciona es específico sobre el equipo rentado, no solo su categoría. Anota la marca, el modelo y el número de serie si lo tiene, y registra su condición al momento de la entrega, idealmente con fotos adjuntas.',
         ],
         bullets: [
           'Descripción exacta del equipo, número de serie y condición al momento de la entrega (fotos recomendadas)',
@@ -4547,14 +4547,14 @@ export const ARTICLES: Article[] = [
       {
         heading: 'Responsabilidad por lesiones o daños a terceros',
         paragraphs: [
-          'Si el equipo podría causar una lesión o daño a propiedad mientras está en manos de otra persona — herramientas eléctricas, vehículos, andamios, equipo de eventos — el contrato debe establecer que el arrendatario asume la responsabilidad por cómo lo usa, y que tú no eres responsable por daños o lesiones causadas por su uso una vez que el equipo sale de tu posesión.',
+          'Si el equipo podría causar una lesión o daño a propiedad mientras está en manos de otra persona, herramientas eléctricas, vehículos, andamios, equipo de eventos, el contrato debe establecer que el arrendatario asume la responsabilidad por cómo lo usa, y que tú no eres responsable por daños o lesiones causadas por su uso una vez que el equipo sale de tu posesión.',
         ],
       },
     ],
     faq: [
       { q: 'Necesito un contrato escrito si solo le presto equipo a un amigo?', a: 'Legalmente no, pero "solo un amigo" es exactamente la situación donde un acuerdo verbal es más difícil de hacer valer si algo sale mal, porque hay más presión social para simplemente dejarlo pasar.' },
       { q: 'Puedo cobrar por los días de retraso sin haberlo indicado en el contrato?', a: 'Puedes intentarlo, pero sin un cargo por retraso acordado por escrito de antemano, dependes de que la otra persona acepte voluntariamente un monto después de los hechos.' },
-      { q: 'El depósito debería ser reembolsable por defecto?', a: 'Sí — el contrato debería indicar que el depósito se devuelve completo si el equipo regresa a tiempo y en la condición en que salió, y especificar exactamente qué reduciría ese reembolso.' },
+      { q: 'El depósito debería ser reembolsable por defecto?', a: 'Sí, el contrato debería indicar que el depósito se devuelve completo si el equipo regresa a tiempo y en la condición en que salió, y especificar exactamente qué reduciría ese reembolso.' },
       { q: 'Un contrato de alquiler firmado electrónicamente es válido?', a: 'Sí, tiene la misma validez legal que uno firmado en papel en la mayoría de los países de Latinoamérica, siempre que ambas partes acepten firmar electrónicamente.' },
     ],
     ctaHeading: 'Envía un contrato de alquiler en minutos',

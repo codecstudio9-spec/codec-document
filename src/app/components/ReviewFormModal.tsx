@@ -94,7 +94,7 @@ export function ReviewFormModal({ open, onOpenChange, language, onSubmitted }: P
             ) : submitted || existing?.status === 'pending' ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
                 <Clock className="size-10 text-amber-400" />
-                <h3 className="text-lg font-black text-white">{t(language, 'Thanks — under review', 'Gracias, en revisión')}</h3>
+                <h3 className="text-lg font-black text-white">{t(language, 'Thanks, under review', 'Gracias, en revisión')}</h3>
                 <p className="text-sm text-white/50">
                   {t(
                     language,
@@ -131,8 +131,8 @@ export function ReviewFormModal({ open, onOpenChange, language, onSubmitted }: P
                   <p className="mt-1.5 text-sm text-white/40">
                     {t(
                       language,
-                      'Only customers who have created a real document can leave a review — every submission is checked before publishing.',
-                      'Solo clientes que ya generaron un documento real pueden reseñar — revisamos cada envío antes de publicarlo.',
+                      'Only customers who have created a real document can leave a review, every submission is checked before publishing.',
+                      'Solo clientes que ya generaron un documento real pueden reseñar, revisamos cada envío antes de publicarlo.',
                     )}
                   </p>
                 </div>

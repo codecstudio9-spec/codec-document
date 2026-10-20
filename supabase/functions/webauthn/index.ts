@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!challengeRow || new Date(challengeRow.expires_at) < new Date()) {
-        return new Response(JSON.stringify({ error: 'Verification challenge expired or missing — please try again' }), {
+        return new Response(JSON.stringify({ error: 'Verification challenge expired or missing, please try again' }), {
           status: 400, headers: corsHeaders(origin),
         });
       }
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
       await admin.from('webauthn_challenges').update({ used: true }).eq('id', challengeRow.id);
 
       if (!verification.verified || !verification.registrationInfo?.userVerified) {
-        return new Response(JSON.stringify({ error: 'Biometric verification did not complete — user was not verified by the device sensor' }), {
+        return new Response(JSON.stringify({ error: 'Biometric verification did not complete, user was not verified by the device sensor' }), {
           status: 400, headers: corsHeaders(origin),
         });
       }

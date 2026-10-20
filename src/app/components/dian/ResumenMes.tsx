@@ -156,7 +156,7 @@ export function CifrasMes({ datos }: { datos: Datos }) {
       />
       <CifraAnillo
         etiqueta="Sin observaciones"
-        valor={datos.sinErroresPct === null ? '—' : `${datos.sinErroresPct}%`}
+        valor={datos.sinErroresPct === null ? '-' : `${datos.sinErroresPct}%`}
         pct={datos.sinErroresPct}
         icono={CheckCircle2} color="#10B981" indice={1}
         pie={

@@ -137,8 +137,8 @@ const PRODUCTS: Product[] = [
     price: '$251.99',
     titleEs: 'Plan Anual',
     titleEn: 'Annual Plan',
-    taglineEs: 'El mejor valor — ahorra 30%',
-    taglineEn: 'Best value — Save 30%',
+    taglineEs: 'El mejor valor, ahorra 30%',
+    taglineEn: 'Best value: Save 30%',
     descriptionEs: SHARED_FEATURES_ES,
     descriptionEn: SHARED_FEATURES_EN,
     glow: 'rgba(245,158,11,0.60)',
@@ -477,15 +477,15 @@ export function PricingSection() {
           setPromoParcial(info);
           setPromoError('');
           toast.success(language === 'en'
-            ? `${info.discountPct}% off applied — pay below to finish.`
-            : `${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
+            ? `${info.discountPct}% off applied, pay below to finish.`
+            : `${info.discountPct}% de descuento aplicado, paga abajo para terminar.`);
           return;
         }
       }
 
       await redeemPromoCode(code, contexto);
       await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);
-      toast.success(language === 'en' ? 'Promo code applied — plan activated!' : '¡Código aplicado — plan activado!');
+      toast.success(language === 'en' ? 'Promo code applied, plan activated!' : '¡Código aplicado, plan activado!');
       closeModal();
     } catch (err) {
       setPromoError(err instanceof Error ? err.message : (language === 'en' ? 'Invalid code.' : 'Código inválido.'));
@@ -957,8 +957,8 @@ export function PricingSection() {
                         <Tag className="size-3.5 shrink-0 text-indigo-600" />
                         <span className="text-xs font-semibold text-indigo-700">
                           {language === 'en'
-                            ? `${promoParcial.discountPct}% off — pay below to finish`
-                            : `${promoParcial.discountPct}% de descuento — paga abajo para terminar`}
+                            ? `${promoParcial.discountPct}% off, pay below to finish`
+                            : `${promoParcial.discountPct}% de descuento, paga abajo para terminar`}
                         </span>
                         {promoParcial.discountedAmount !== null && (
                           <span className="ml-auto shrink-0 text-xs font-black text-indigo-700">
@@ -986,7 +986,7 @@ export function PricingSection() {
             {isAdmin ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-2">
                 <p className="text-sm font-semibold text-emerald-800">
-                  🛡 Admin bypass — {user?.email || 'admin'}
+                  🛡 Admin bypass: {user?.email || 'admin'}
                 </p>
                 <button
                   type="button"
@@ -994,8 +994,8 @@ export function PricingSection() {
                     await Promise.allSettled([refreshSubscription(), refreshPurchasedDocuments()]);
                     toast.success(
                       language === 'en'
-                        ? 'Admin simulation complete — subscription activated'
-                        : 'Simulación admin completada — suscripción activada',
+                        ? 'Admin simulation complete, subscription activated'
+                        : 'Simulación admin completada, suscripción activada',
                     );
                     closeModal();
                   }}
@@ -1058,8 +1058,8 @@ export function PricingSection() {
                 />
                 <p className="text-[11px] text-slate-400">
                   {language === 'en'
-                    ? 'Only used if you don\'t have a company workspace yet — you can rename it anytime from "My Company".'
-                    : 'Solo se usa si aún no tienes un espacio de empresa — puedes cambiarlo cuando quieras desde "Mi Empresa".'}
+                    ? 'Only used if you don\'t have a company workspace yet, you can rename it anytime from "My Company".'
+                    : 'Solo se usa si aún no tienes un espacio de empresa, puedes cambiarlo cuando quieras desde "Mi Empresa".'}
                 </p>
                 {!enterpriseCheckoutReady && (
                   <button
@@ -1089,15 +1089,15 @@ export function PricingSection() {
             {isAdmin ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center space-y-2">
                 <p className="text-sm font-semibold text-emerald-800">
-                  🛡 Admin bypass — {user?.email || 'admin'}
+                  🛡 Admin bypass: {user?.email || 'admin'}
                 </p>
                 <button
                   type="button"
                   onClick={() => {
                     toast.success(
                       language === 'en'
-                        ? 'Admin bypass — no charge needed for this account.'
-                        : 'Bypass de admin — esta cuenta no necesita pagar.',
+                        ? 'Admin bypass, no charge needed for this account.'
+                        : 'Bypass de admin, esta cuenta no necesita pagar.',
                     );
                     closeEnterpriseModal();
                     navigate('/my-company');

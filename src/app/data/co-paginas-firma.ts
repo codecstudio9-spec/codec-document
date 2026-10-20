@@ -20,7 +20,7 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
       texto: 'Lo habitual es imprimir, firmar con esfero, tomar una foto y mandarla por WhatsApp. O pegar una imagen de la firma encima del PDF. Las dos cosas se pueden hacer en un minuto, y las dos dejan el mismo hueco: nada demuestra que esa imagen la puso la persona que dice haberla puesto, ni que el documento no cambió después. Si el otro lado niega haber firmado, lo único que hay es una imagen que cualquiera pudo copiar. El problema no es el celular; es que firmar sin registro deja todo el peso de la prueba en el aire.',
     },
     puntos: [
-      { titulo: 'Firma con el dedo, sin instalar nada', texto: 'Abres el enlace en el navegador del celular —Android o iPhone—, revisas el documento completo y firmas con el dedo sobre la pantalla. No hay que descargar una aplicación, crear una cuenta ni tener un certificado digital instalado.' },
+      { titulo: 'Firma con el dedo, sin instalar nada', texto: 'Abres el enlace en el navegador del celular (Android o iPhone), revisas el documento completo y firmas con el dedo sobre la pantalla. No hay que descargar una aplicación, crear una cuenta ni tener un certificado digital instalado.' },
       { titulo: 'Cada firma queda con su registro', texto: 'Junto con la firma se guardan la fecha y la hora, la dirección IP, el dispositivo y una huella SHA-256 del documento. Si alguien cambia una coma después de firmado, la huella ya no coincide y se nota.' },
       { titulo: 'Verificación de identidad si el documento lo amerita', texto: 'Para un contrato de arriendo o un pagaré puedes pedir que quien firma tome una selfie y una foto de su cédula, o que confirme con el reconocimiento facial o la huella de su propio celular. Para una autorización sencilla, basta la firma.' },
       { titulo: 'Lo envías por donde ya hablas con la gente', texto: 'El enlace para firmar se manda por WhatsApp, por correo o se muestra como código QR en tu pantalla. Cuando todos firman, cada persona recibe el PDF firmado con su certificado de firma al final.' },
@@ -71,7 +71,7 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
     ],
     ley: {
       titulo: 'Qué dice la ley colombiana',
-      texto: 'La Ley 527 de 1999 reconoce los mensajes de datos —un documento electrónico— con el mismo valor que el papel (artículo 5) y considera cumplido el requisito de firma cuando se usa un método confiable que identifique a quien firma y muestre que aprueba el contenido (artículo 7). El artículo 8 añade la exigencia de integridad: que la información se haya mantenido completa e inalterada. Por eso importa más el registro y el sellado del documento que la apariencia de la firma. El Decreto 2364 de 2012, compilado en el Decreto 1074 de 2015, precisa que la firma es confiable si es posible detectar cualquier alteración hecha después de firmar.',
+      texto: 'La Ley 527 de 1999 reconoce los mensajes de datos (un documento electrónico) con el mismo valor que el papel (artículo 5) y considera cumplido el requisito de firma cuando se usa un método confiable que identifique a quien firma y muestre que aprueba el contenido (artículo 7). El artículo 8 añade la exigencia de integridad: que la información se haya mantenido completa e inalterada. Por eso importa más el registro y el sellado del documento que la apariencia de la firma. El Decreto 2364 de 2012, compilado en el Decreto 1074 de 2015, precisa que la firma es confiable si es posible detectar cualquier alteración hecha después de firmar.',
     },
     caso: {
       titulo: 'La cotización que cambió de precio',
@@ -134,14 +134,14 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
       texto: 'Cuando el cliente firma en la tableta del negocio, el registro dice que la firma se hizo desde un dispositivo que controla el negocio. Si después hay un reclamo, el cliente puede alegar que no leyó el documento, que se lo pusieron rápido o que la firma se reutilizó. Además, pasar un celular de mano en mano en un mostrador no es cómodo para nadie, y el papel que se firma «mientras tanto» termina perdido en una carpeta.',
     },
     puntos: [
-      { titulo: 'El QR abre el documento en el celular del cliente', texto: 'Tocas «En persona» y aparece en tu pantalla un código QR grande y con alto contraste. El cliente lo escanea con la cámara de su celular —cualquier Android o iPhone— y el documento se abre para leerlo y firmarlo.' },
+      { titulo: 'El QR abre el documento en el celular del cliente', texto: 'Tocas «En persona» y aparece en tu pantalla un código QR grande y con alto contraste. El cliente lo escanea con la cámara de su celular (cualquier Android o iPhone) y el documento se abre para leerlo y firmarlo.' },
       { titulo: 'La pantalla no se apaga mientras esperas', texto: 'Mientras el QR está en pantalla, la app evita que el teléfono se bloquee, para que el cliente pueda escanearlo con calma.' },
-      { titulo: 'Tarjeta NFC para quien firma seguido', texto: 'En celulares Android con Chrome puedes grabar el enlace en una tarjeta o sticker NFC. El cliente acerca su teléfono a la tarjeta —también funciona con iPhone— y se abre el documento para firmar.' },
+      { titulo: 'Tarjeta NFC para quien firma seguido', texto: 'En celulares Android con Chrome puedes grabar el enlace en una tarjeta o sticker NFC. El cliente acerca su teléfono a la tarjeta (también funciona con iPhone) y se abre el documento para firmar.' },
       { titulo: 'Cada firmante con su propio enlace', texto: 'Si firman dos o tres personas, cada una escanea su propio QR. El registro muestra que cada firma se hizo desde el dispositivo de esa persona.' },
     ],
     ley: {
       titulo: 'Por qué el dispositivo propio fortalece la firma',
-      texto: 'El Decreto 2364 de 2012, compilado en el artículo 2.2.2.47.4 del Decreto 1074 de 2015, considera confiable una firma electrónica cuando los datos de creación de la firma corresponden exclusivamente al firmante en el contexto en que se usan. Que la persona firme desde su propio celular, con su propio registro de dispositivo e IP, ayuda a demostrar precisamente eso. Sumado a la huella de integridad del documento —la posibilidad de detectar cualquier alteración posterior—, cumple los dos criterios de confiabilidad de la norma y los del artículo 7 de la Ley 527 de 1999.',
+      texto: 'El Decreto 2364 de 2012, compilado en el artículo 2.2.2.47.4 del Decreto 1074 de 2015, considera confiable una firma electrónica cuando los datos de creación de la firma corresponden exclusivamente al firmante en el contexto en que se usan. Que la persona firme desde su propio celular, con su propio registro de dispositivo e IP, ayuda a demostrar precisamente eso. Sumado a la huella de integridad del documento (la posibilidad de detectar cualquier alteración posterior), cumple los dos criterios de confiabilidad de la norma y los del artículo 7 de la Ley 527 de 1999.',
     },
     caso: {
       titulo: 'Entrega de un apartamento sin papel',
@@ -184,9 +184,9 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
     },
     faq: [
       { q: '¿Un contrato de trabajo firmado electrónicamente es válido?', a: 'Sí. El Código Sustantivo del Trabajo exige que ciertos contratos consten por escrito, y la Ley 527 de 1999 equipara el documento electrónico al escrito cuando es accesible para su consulta posterior. La firma electrónica confiable cumple el requisito de firma.' },
-      { q: '¿Qué contratos deben ser escritos después de la reforma?', a: 'Según la Ley 2466 de 2025: el de término fijo, el de obra o labor —que debe detallar la labor contratada— y el del trabajo doméstico. El indefinido puede ser verbal, pero hacerlo por escrito evita discusiones sobre salario, cargo y jornada.' },
+      { q: '¿Qué contratos deben ser escritos después de la reforma?', a: 'Según la Ley 2466 de 2025: el de término fijo, el de obra o labor (que debe detallar la labor contratada) y el del trabajo doméstico. El indefinido puede ser verbal, pero hacerlo por escrito evita discusiones sobre salario, cargo y jornada.' },
       { q: '¿El trabajador necesita un certificado digital?', a: 'No. Firma con el dedo desde su celular. Si quieres más seguridad, pides selfie y cédula al firmar.' },
-      { q: '¿También puedo firmar otrosíes y cartas de terminación?', a: 'Sí. Cualquier documento laboral —otrosí, carta de terminación, certificado, paz y salvo— se firma igual y queda archivado con el contrato.' },
+      { q: '¿También puedo firmar otrosíes y cartas de terminación?', a: 'Sí. Cualquier documento laboral (otrosí, carta de terminación, certificado, paz y salvo) se firma igual y queda archivado con el contrato.' },
     ],
     fotos: [F.oficina, F.firma, F.escritorio],
     cta: 'Firmar contratos de trabajo en línea',
@@ -201,7 +201,7 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
     intro: 'Un contrato de arriendo en Colombia suele tener tres o cuatro firmas: arrendador, arrendatario y uno o dos deudores solidarios, que casi nunca viven en la misma ciudad. Reunirlos en una notaría o mover el papel de casa en casa puede tomar una semana, y en ese tiempo el inmueble sigue vacío. Firmar en línea pone a todos a firmar el mismo día, cada uno desde donde esté.',
     problema: {
       titulo: 'El codeudor que vive en otra ciudad',
-      texto: 'El arrendatario está listo, el arrendador también, pero el deudor solidario vive en Tunja y viene a Bogotá en quince días. Mientras tanto se negocia con promesas, se recibe un pago «de buena fe» o se entregan las llaves sin contrato firmado. Cuando algo sale mal en ese intervalo —un daño, un pago que no llega—, no hay documento que diga qué se había acordado. Y si el contrato se firma en papel por partes, nadie garantiza que las tres copias sean idénticas.',
+      texto: 'El arrendatario está listo, el arrendador también, pero el deudor solidario vive en Tunja y viene a Bogotá en quince días. Mientras tanto se negocia con promesas, se recibe un pago «de buena fe» o se entregan las llaves sin contrato firmado. Cuando algo sale mal en ese intervalo (un daño, un pago que no llega), no hay documento que diga qué se había acordado. Y si el contrato se firma en papel por partes, nadie garantiza que las tres copias sean idénticas.',
     },
     puntos: [
       { titulo: 'Cada firmante desde su ciudad', texto: 'Arrendador, arrendatario y codeudores reciben su propio enlace. Cada uno firma desde su celular cuando puede, y el contrato queda completo cuando firma el último.' },
@@ -236,7 +236,7 @@ export const PAGINAS_CO_FIRMA: PaginaCO[] = [
     intro: 'Todo negocio tiene su contrato en Word: el que hizo el abogado hace años, el que se ha ido corrigiendo con cada cliente. Cada vez que se usa, alguien abre el archivo, busca dónde cambiar el nombre, la cédula y la fecha, se le pasa uno y guarda encima del original. Convertirlo en plantilla significa llenar solo los datos que cambian y no volver a tocar el texto.',
     problema: {
       titulo: 'El contrato con los datos del cliente anterior',
-      texto: 'El error más común con un modelo en Word es enviar un contrato con un dato del cliente anterior: la cédula de otra persona en la segunda página, un valor viejo en una cláusula que nadie revisó. Pasa porque los datos están repartidos por todo el documento y se cambian a mano. El otro problema es que, después de muchas copias, ya nadie sabe cuál es la versión buena del modelo. Una plantilla separa lo que nunca cambia —las cláusulas— de lo que cambia cada vez —los datos—.',
+      texto: 'El error más común con un modelo en Word es enviar un contrato con un dato del cliente anterior: la cédula de otra persona en la segunda página, un valor viejo en una cláusula que nadie revisó. Pasa porque los datos están repartidos por todo el documento y se cambian a mano. El otro problema es que, después de muchas copias, ya nadie sabe cuál es la versión buena del modelo. Una plantilla separa lo que nunca cambia (las cláusulas) de lo que cambia cada vez (los datos).',
     },
     puntos: [
       { titulo: 'No tienes que preparar el Word', texto: 'Lo subes tal como lo usas. La app encuentra sola los espacios para llenar: líneas como ______, textos entre corchetes como [Nombre del cliente], XXXX, campos entre <<>> y el texto resaltado en amarillo. Cada uno se vuelve un campo con su nombre.' },

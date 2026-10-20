@@ -101,7 +101,7 @@ export function QuickSignPage() {
         </div>
         <div>
           <p className="text-xl font-extrabold text-slate-900">Signature sent!</p>
-          <p className="mt-1.5 text-sm text-slate-500">Your signature has been submitted. You can close this tab — the desktop will update automatically.</p>
+          <p className="mt-1.5 text-sm text-slate-500">Your signature has been submitted. You can close this tab, the desktop will update automatically.</p>
         </div>
         <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
           <ShieldCheck className="size-3.5" />

@@ -17,8 +17,8 @@ const SLIDES = [
     image: '/imagen1.jpg',
     text1Es: 'Sube, Firma y Certifica', text2Es: 'tus documentos en línea.',
     text1En: 'Upload, Sign & Certify', text2En: 'your documents online.',
-    subEs: 'Sube tu documento, personalízalo con tu marca, fírmalo con validez legal, y descarga el certificado — todo desde un solo lugar.',
-    subEn: 'Upload your document, personalize it with your brand, sign it with legal validity, and download the certificate — all in one place.',
+    subEs: 'Sube tu documento, personalízalo con tu marca, fírmalo con validez legal, y descarga el certificado, todo desde un solo lugar.',
+    subEn: 'Upload your document, personalize it with your brand, sign it with legal validity, and download the certificate, all in one place.',
   },
   {
     image: '/imagen2.jpg',

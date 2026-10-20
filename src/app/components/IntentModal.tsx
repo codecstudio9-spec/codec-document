@@ -36,7 +36,7 @@ const OPTIONS: IntentOption[] = [
     id:           'fill_self',
     icon:         FileSignature,
     title:        { en: 'Fill & Sign Yourself', es: 'Llenar y Firmar Yo Mismo' },
-    desc:         { en: 'Complete the form and sign the document on this device — no link needed.', es: 'Rellena el formulario y firma en este dispositivo, sin necesidad de enlace.' },
+    desc:         { en: 'Complete the form and sign the document on this device, no link needed.', es: 'Rellena el formulario y firma en este dispositivo, sin necesidad de enlace.' },
     iconGradient: 'linear-gradient(135deg,#34d399 0%,#059669 100%)',
     iconShadow:   '0 3px 10px rgba(5,150,105,0.45)',
     borderColor:  '#a7f3d0',

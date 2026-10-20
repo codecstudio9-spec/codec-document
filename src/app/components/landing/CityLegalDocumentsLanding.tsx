@@ -32,7 +32,7 @@ function CityLegalDocumentsLandingContent({ city }: { city: CitySeoConfig }) {
   const state = city.state;
 
   const title = `Free Legal Documents & E-Signatures in ${city.cityName}, ${state.name} | CodecDocument`;
-  const desc = `Create legally-vetted documents and ESIGN Act compliant e-signatures in ${city.cityName}, ${state.name} — under ${state.name} law. Free NDA, lease agreement, and contract templates with identity verification and audit trail.`;
+  const desc = `Create legally-vetted documents and ESIGN Act compliant e-signatures in ${city.cityName}, ${state.name}, under ${state.name} law. Free NDA, lease agreement, and contract templates with identity verification and audit trail.`;
   const canonicalUrl = `${SITE_URL}/${city.slug}`;
 
   // Hero/body copy — deliberately about California, not "San Jose".
@@ -63,7 +63,7 @@ function CityLegalDocumentsLandingContent({ city }: { city: CitySeoConfig }) {
         // La ciudad, no el estado: con el estado, el H1 era idéntico al de
         // /legal-documents-<estado> y las dos páginas competían entre sí.
         titleAccentEn={`${city.cityName}, ${state.abbreviation}`} titleAccentEs={`${city.cityName}, ${state.abbreviation}`}
-        titleRestEn="— Legal Documents & E-Signatures" titleRestEs="— Documentos Legales y Firma Electrónica"
+        titleRestEn="Legal Documents & E-Signatures" titleRestEs="Documentos Legales y Firma Electrónica"
         subtitleEn={heroSubtitle} subtitleEs={heroSubtitle}
         ctaLabelEn="Create a Document" ctaLabelEs="Crear un Documento"
         ctaHref="/"

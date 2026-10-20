@@ -92,7 +92,7 @@ export async function verifyBiometric(signerLabel: string): Promise<BiometricPro
       throw new Error('Verificación cancelada o denegada.');
     }
     if (name === 'InvalidStateError') {
-      throw new Error('Ya existe una verificación en curso — intenta de nuevo.');
+      throw new Error('Ya existe una verificación en curso, intenta de nuevo.');
     }
     throw new Error('No se pudo completar la verificación biométrica. Verifica que Face ID/Touch ID/huella esté activado en este dispositivo.');
   }

@@ -33,7 +33,7 @@ export interface ClauseSegment {
 const MAYUS = 'A-ZÁÉÍÓÚÑÜ';
 
 const HEADING_RE = new RegExp(
-  `\\n\\n+([${MAYUS}0-9][${MAYUS}0-9.,()'/ ]{1,40}—[${MAYUS}0-9.,()'/ ]{2,90})\\n\\n+`,
+  `\\n\\n+([${MAYUS}0-9][${MAYUS}0-9.,()'/ ]{1,40}, [${MAYUS}0-9.,()'/ ]{2,90})\\n\\n+`,
   'g',
 );
 

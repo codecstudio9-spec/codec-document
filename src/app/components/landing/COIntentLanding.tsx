@@ -110,7 +110,7 @@ function Contenido({ pagina, soloHero = false }: { pagina: PaginaCO; soloHero?: 
             <div className="relative">
               <img
                 src={foto1}
-                alt={`${pagina.h1} — preparando y firmando el documento en línea`}
+                alt={`${pagina.h1}, preparando y firmando el documento en línea`}
                 loading="eager"
                 // React 18 no reconoce fetchPriority; el atributo HTML va en minúsculas.
                 {...{ fetchpriority: 'high' }}
@@ -133,7 +133,7 @@ function Contenido({ pagina, soloHero = false }: { pagina: PaginaCO; soloHero?: 
           <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <img
               src={foto2}
-              alt={`${pagina.problema.titulo} — revisando el documento antes de firmar`}
+              alt={`${pagina.problema.titulo}, revisando el documento antes de firmar`}
               loading="lazy"
               width={1000}
               height={750}
@@ -195,7 +195,7 @@ function Contenido({ pagina, soloHero = false }: { pagina: PaginaCO; soloHero?: 
             </div>
             <img
               src={foto3}
-              alt={`${pagina.caso.titulo} — el documento firmado y archivado`}
+              alt={`${pagina.caso.titulo}, el documento firmado y archivado`}
               loading="lazy"
               width={1000}
               height={750}

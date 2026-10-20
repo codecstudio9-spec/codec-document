@@ -1700,7 +1700,7 @@ export class PDFGenerator {
     this.setFontForLang('bold');
     this.doc.setFontSize(8.5);
     this.doc.setTextColor(157, 23, 77);
-    this.safeText(language === 'es' ? 'AUTENTICACIÓN BIOMÉTRICA — VERIFICADA' : 'BIOMETRIC AUTHENTICATION — VERIFIED', textX, y + 6.5);
+    this.safeText(language === 'es' ? 'AUTENTICACIÓN BIOMÉTRICA: VERIFICADA' : 'BIOMETRIC AUTHENTICATION: VERIFIED', textX, y + 6.5);
 
     this.setFontForLang('normal');
     this.doc.setFontSize(7);
@@ -1711,7 +1711,7 @@ export class PDFGenerator {
     this.safeText(`${language === 'es' ? 'Método' : 'Method'}: ${biometric.deviceLabel}`, textX, y + 12);
     this.safeText(`${language === 'es' ? 'Verificado el' : 'Verified at'}: ${verifiedDate}`, textX, y + 17);
     this.safeText(
-      `${language === 'es' ? 'Referencia de credencial' : 'Credential reference'}: ${biometric.credentialIdHash || '—'} · WebAuthn/FIDO2`,
+      `${language === 'es' ? 'Referencia de credencial' : 'Credential reference'}: ${biometric.credentialIdHash || '-'} · WebAuthn/FIDO2`,
       textX, y + 22,
     );
 
@@ -1745,7 +1745,7 @@ export class PDFGenerator {
     this.setFontForLang('normal');
     this.doc.setFontSize(8);
     this.doc.setTextColor(191, 219, 254);
-    this.safeText(`Codec Document — ${this.jurisdiction.badgeEn} Compliant Digital Identity Record`, PW / 2, 15.2, { align: 'center' });
+    this.safeText(`Codec Document: ${this.jurisdiction.badgeEn} Compliant Digital Identity Record`, PW / 2, 15.2, { align: 'center' });
 
     this.currentY = 28;
 
@@ -1852,10 +1852,10 @@ export class PDFGenerator {
       ['Verification Date',    now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
       ['Verification Time',    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })],
       ['Verification Method',  methodParts.join(' + ')],
-      ...(biometric ? [['Biometric Verification', `Passed — ${biometric.deviceLabel} (Platform Authenticator)`] as [string, string]] : []),
+      ...(biometric ? [['Biometric Verification', `Passed: ${biometric.deviceLabel} (Platform Authenticator)`] as [string, string]] : []),
       ['Compliance Framework', this.jurisdiction.complianceFrameworkEn],
       ['Signature Algorithm',  'SHA-256 Cryptographic Hash'],
-      ['Legal Status',         'VALID — Legally Binding Electronic Signature'],
+      ['Legal Status',         'VALID: Legally Binding Electronic Signature'],
     ];
 
     const minTableHeight = tableRows.length * 9 + 34;
@@ -1918,7 +1918,7 @@ export class PDFGenerator {
     this.doc.setFontSize(7);
     this.doc.setTextColor(100, 116, 139);
     const legalNote = biometric
-      ? 'This Identity Verification Report is an integral part of the executed agreement. Biometric authentication was performed locally on the signatory\'s own device (WebAuthn/FIDO2) — Codec Document never received or stored a fingerprint image, face scan, or any raw biometric data, only the device\'s cryptographic proof of a successful local verification. Any photo evidence and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.'
+      ? 'This Identity Verification Report is an integral part of the executed agreement. Biometric authentication was performed locally on the signatory\'s own device (WebAuthn/FIDO2): Codec Document never received or stored a fingerprint image, face scan, or any raw biometric data, only the device\'s cryptographic proof of a successful local verification. Any photo evidence and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.'
       : 'This Identity Verification Report is an integral part of the executed agreement. The biometric images and metadata herein were collected with the explicit consent of the signatory under applicable privacy laws. This record may be used as evidence of signer identity and intent in any legal proceeding.';
     const legalLines = this.splitTextToSize(legalNote, PW - M * 2);
     legalLines.forEach((line: string) => {

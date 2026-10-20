@@ -17,7 +17,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     intro: 'Con la reforma laboral, el contrato a término indefinido dejó de ser una opción entre varias y pasó a ser la regla general en Colombia. Es el contrato que no tiene fecha de terminación pactada: dura mientras subsistan las causas que le dieron origen y la materia del trabajo. Puede celebrarse de palabra, pero hacerlo por escrito es lo que evita las discusiones sobre cargo, salario y jornada que llegan años después.',
     problema: {
       titulo: 'El contrato verbal que nadie recuerda igual',
-      texto: 'Un contrato indefinido verbal es válido, pero cuando hay una discusión —un cambio de cargo, un salario que se dice que era otro, una jornada que se amplió sin acuerdo— cada parte recuerda una cosa distinta y la prueba son testigos. Un contrato escrito fija desde el primer día el cargo, las funciones, el salario, la forma de pago, el lugar de trabajo y el periodo de prueba. Es una página y media que evita meses de pelea.',
+      texto: 'Un contrato indefinido verbal es válido, pero cuando hay una discusión (un cambio de cargo, un salario que se dice que era otro, una jornada que se amplió sin acuerdo) cada parte recuerda una cosa distinta y la prueba son testigos. Un contrato escrito fija desde el primer día el cargo, las funciones, el salario, la forma de pago, el lugar de trabajo y el periodo de prueba. Es una página y media que evita meses de pelea.',
     },
     puntos: [
       { titulo: 'Las cláusulas que no pueden faltar', texto: 'Identificación de las partes, cargo y funciones, salario y forma de pago, jornada, lugar de trabajo, fecha de inicio y, si se pacta, periodo de prueba. Con esos datos completos el contrato responde casi cualquier pregunta futura.' },
@@ -61,7 +61,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     metaDescription: 'Contrato a término fijo en Colombia tras la Ley 2466 de 2025: por escrito, máximo 4 años y preaviso de 30 días. Qué incluir y cómo firmarlo en línea.',
     h1: 'Contrato de trabajo a término fijo',
     grupo: 'laboral',
-    intro: 'El contrato a término fijo sigue existiendo después de la reforma laboral, pero ya no es la forma por defecto de contratar: es una excepción con reglas estrictas. Debe constar por escrito, no puede durar más de cuatro años y, si no se cumplen sus requisitos, se entiende celebrado a término indefinido desde el inicio. Por eso el papel —o el documento electrónico— dejó de ser un trámite y pasó a definir qué contrato tienes.',
+    intro: 'El contrato a término fijo sigue existiendo después de la reforma laboral, pero ya no es la forma por defecto de contratar: es una excepción con reglas estrictas. Debe constar por escrito, no puede durar más de cuatro años y, si no se cumplen sus requisitos, se entiende celebrado a término indefinido desde el inicio. Por eso el papel (o el documento electrónico) dejó de ser un trámite y pasó a definir qué contrato tienes.',
     problema: {
       titulo: 'Un fijo mal hecho es un indefinido',
       texto: 'Muchas empresas siguen contratando «a término fijo» como hace diez años: un contrato de seis meses que se renueva solo, a veces firmado semanas después de que la persona empezó a trabajar. Con la Ley 2466 de 2025, si el contrato a término fijo no consta por escrito, se entiende indefinido desde el inicio de la relación. Y el preaviso de treinta días para no renovarlo sigue siendo la diferencia entre terminar el contrato o encontrarse con que se prorrogó por el mismo término.',
@@ -123,7 +123,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     },
     caso: {
       titulo: 'Un maestro de obra que siguió en la siguiente obra',
-      texto: 'Una constructora de Villavicencio contrataba a sus maestros de obra por obra o labor, pero los pasaba de un proyecto al siguiente sin contrato nuevo. Cuando uno de ellos fue desvinculado al final del tercer proyecto, reclamó un contrato indefinido, y el contrato original —que solo decía «obra o labor»— no lo desmentía. Hoy la constructora firma un contrato nuevo por cada proyecto, con la obra descrita y su fecha estimada de entrega.',
+      texto: 'Una constructora de Villavicencio contrataba a sus maestros de obra por obra o labor, pero los pasaba de un proyecto al siguiente sin contrato nuevo. Cuando uno de ellos fue desvinculado al final del tercer proyecto, reclamó un contrato indefinido, y el contrato original (que solo decía «obra o labor») no lo desmentía. Hoy la constructora firma un contrato nuevo por cada proyecto, con la obra descrita y su fecha estimada de entrega.',
     },
     checklist: {
       titulo: 'Qué debe incluir un contrato por obra o labor',
@@ -151,7 +151,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     metaDescription: 'Desde la reforma laboral, el trabajo doméstico requiere contrato escrito, también por días u horas (Ley 2466 de 2025). Qué incluir y cómo firmarlo.',
     h1: 'Contrato de servicio doméstico',
     grupo: 'laboral',
-    intro: 'Durante décadas, la mayoría de las relaciones de trabajo doméstico en Colombia se acordaron de palabra. La reforma laboral cambió eso: hoy toda persona trabajadora del hogar —interna, externa, por días o por horas— debe tener un contrato escrito. Para muchas familias es la primera vez que firman un contrato de trabajo como empleadores, y la buena noticia es que no hace falta ir a ninguna oficina.',
+    intro: 'Durante décadas, la mayoría de las relaciones de trabajo doméstico en Colombia se acordaron de palabra. La reforma laboral cambió eso: hoy toda persona trabajadora del hogar (interna, externa, por días o por horas) debe tener un contrato escrito. Para muchas familias es la primera vez que firman un contrato de trabajo como empleadores, y la buena noticia es que no hace falta ir a ninguna oficina.',
     problema: {
       titulo: 'El acuerdo de palabra ya no es suficiente',
       texto: 'Una familia contrata a una persona dos días a la semana, acuerdan el pago por día y todo funciona por años. Hasta que hay que liquidar y nadie sabe si se acordaron prima, vacaciones o el pago de transporte, ni desde qué fecha empezó realmente la relación. La Ley 2466 de 2025 eliminó el acuerdo verbal como forma de vincular a una trabajadora doméstica: el contrato escrito es obligatorio, y además protege a las dos partes en el momento en que más se necesita.',
@@ -164,7 +164,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     ],
     ley: {
       titulo: 'Contrato escrito obligatorio desde la Ley 2466 de 2025',
-      texto: 'El artículo 33 de la Ley 2466 de 2025, en desarrollo del Convenio 189 de la OIT, exige que todos los trabajadores domésticos, sin importar si laboran tiempo completo, por días o por horas, se vinculen mediante contrato de trabajo escrito. La ley prevé además el registro del contrato en la PILA como acto de publicidad, cuya omisión no invalida el contrato. Las prestaciones —prima, cesantías y vacaciones— se reconocen de forma proporcional al tiempo trabajado. El contrato escrito puede firmarse electrónicamente: el artículo 6 de la Ley 527 de 1999 equipara el mensaje de datos al escrito.',
+      texto: 'El artículo 33 de la Ley 2466 de 2025, en desarrollo del Convenio 189 de la OIT, exige que todos los trabajadores domésticos, sin importar si laboran tiempo completo, por días o por horas, se vinculen mediante contrato de trabajo escrito. La ley prevé además el registro del contrato en la PILA como acto de publicidad, cuya omisión no invalida el contrato. Las prestaciones (prima, cesantías y vacaciones) se reconocen de forma proporcional al tiempo trabajado. El contrato escrito puede firmarse electrónicamente: el artículo 6 de la Ley 527 de 1999 equipara el mensaje de datos al escrito.',
     },
     caso: {
       titulo: 'Una familia con una trabajadora por días',
@@ -197,7 +197,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
     metaDescription: 'El contrato de aprendizaje ahora es un contrato laboral especial a término fijo (Ley 2466 de 2025). Qué cambió, qué incluir y cómo firmarlo en línea.',
     h1: 'Contrato de aprendizaje',
     grupo: 'laboral',
-    intro: 'El contrato de aprendizaje vincula a un estudiante —del SENA, de una institución técnica o tecnológica, o universitario— con una empresa para que aprenda un oficio mientras trabaja. La reforma laboral le devolvió su carácter laboral: hoy es un contrato de trabajo especial a término fijo, con los derechos que eso implica. Para las empresas obligadas a tener aprendices, la reforma cambió los números y también el papeleo.',
+    intro: 'El contrato de aprendizaje vincula a un estudiante (del SENA, de una institución técnica o tecnológica, o universitario) con una empresa para que aprenda un oficio mientras trabaja. La reforma laboral le devolvió su carácter laboral: hoy es un contrato de trabajo especial a término fijo, con los derechos que eso implica. Para las empresas obligadas a tener aprendices, la reforma cambió los números y también el papeleo.',
     problema: {
       titulo: 'Contratos de aprendizaje firmados con las reglas viejas',
       texto: 'Antes de la reforma, el contrato de aprendizaje no era un contrato laboral: el aprendiz recibía un apoyo de sostenimiento y no prestaciones. Muchas empresas siguen usando el formato de antes, que no refleja que el aprendiz hoy es trabajador para efectos de prestaciones y seguridad social. Un formato desactualizado no cambia los derechos del aprendiz, pero sí deja a la empresa con un documento que dice algo distinto de lo que la ley exige.',
@@ -341,7 +341,7 @@ export const PAGINAS_CO_LABORAL: PaginaCO[] = [
       texto: 'Un salario se aumenta por correo, un canon se ajusta por WhatsApp, un cargo cambia en la práctica pero no en el papel. Meses después, el contrato original dice una cosa y la realidad otra, y cada parte cita la versión que le conviene. El otrosí existe para que el contrato siga diciendo la verdad: cada cambio relevante, firmado por las partes, con fecha desde la cual aplica.',
     },
     puntos: [
-      { titulo: 'Identifica el contrato que modifica', texto: 'El otrosí debe decir qué contrato modifica —partes, fecha y objeto— para que no haya duda de a cuál se refiere.' },
+      { titulo: 'Identifica el contrato que modifica', texto: 'El otrosí debe decir qué contrato modifica (partes, fecha y objeto) para que no haya duda de a cuál se refiere.' },
       { titulo: 'Qué cláusula cambia y cómo queda', texto: 'Lo más claro es transcribir la cláusula modificada con su nueva redacción, y aclarar que las demás siguen vigentes sin cambios.' },
       { titulo: 'Desde cuándo aplica', texto: 'La fecha de vigencia del cambio es tan importante como el cambio mismo: un aumento de salario desde el primero del mes, una prórroga desde el vencimiento.' },
       { titulo: 'Firmado por las mismas partes', texto: 'Cada parte del contrato original recibe su enlace y firma desde su celular. El otrosí queda archivado junto al contrato que modifica.' },

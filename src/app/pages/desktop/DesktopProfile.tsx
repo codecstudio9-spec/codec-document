@@ -85,7 +85,7 @@ function ProfileContent() {
               <Calendar className="size-4 text-slate-400" />
               <span className="text-slate-500">{language === 'en' ? 'Member since' : 'Miembro desde'}</span>
               <span className="ml-auto font-semibold text-slate-800">
-                {plan?.createdAt ? new Date(plan.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                {plan?.createdAt ? new Date(plan.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
               </span>
             </div>
           </div>

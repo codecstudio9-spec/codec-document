@@ -26,7 +26,7 @@ export default function ElectronicSignatureLanding() {
         previewLabel="Signature Audit Preview"
         backgroundImage="/imagen3.jpg"
         titleAccentEn="Electronic Signatures" titleAccentEs="Electronic Signatures"
-        titleRestEn="— Create, Sign & Verify" titleRestEs="— Create, Sign & Verify"
+        titleRestEn="Create, Sign & Verify" titleRestEs="Create, Sign & Verify"
         subtitleEn={desc} subtitleEs={desc}
         ctaLabelEn="Sign a Document" ctaLabelEs="Sign a Document"
         ctaHref="/firma-electronica"

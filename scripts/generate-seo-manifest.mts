@@ -89,10 +89,10 @@ for (const a of ARTICLES) {
 for (const d of DOCTYPE_STATE_CONFIGS) {
   add(
     `/${d.docType}-${d.stateSlug}`,
-    `Free ${d.docTypeLabelEn} — ${d.stateName} Template`,
+    `Free ${d.docTypeLabelEn}, ${d.stateName} Template`,
     // La descripción cabe en ~155 caracteres y responde la única pregunta que
     // decide el clic: qué me llevo, cuánto cuesta y si vale legalmente.
-    `Free ${d.docTypeLabelEn.toLowerCase()} template written for ${d.stateName} law. Fill it in, preview it, and sign online — legally valid under the ESIGN Act.`,
+    `Free ${d.docTypeLabelEn.toLowerCase()} template written for ${d.stateName} law. Fill it in, preview it, and sign online, legally valid under the ESIGN Act.`,
   );
 }
 
@@ -103,8 +103,8 @@ for (const city of CITY_SEO_CONFIGS) {
     if (d.stateSlug !== city.state.slug) continue;
     add(
       `/${d.docType}-${city.slug}`,
-      `Free ${d.docTypeLabelEn} — ${city.cityName}, ${city.state.name}`,
-      `Free ${d.docTypeLabelEn.toLowerCase()} template for ${city.cityName} under ${city.state.name} law. Fill it in, preview it, and sign online — valid under the ESIGN Act.`,
+      `Free ${d.docTypeLabelEn}, ${city.cityName}, ${city.state.name}`,
+      `Free ${d.docTypeLabelEn.toLowerCase()} template for ${city.cityName} under ${city.state.name} law. Fill it in, preview it, and sign online, valid under the ESIGN Act.`,
     );
   }
 }
@@ -132,7 +132,7 @@ for (const city of CITY_SEO_CONFIGS) {
 for (const c of LATAM_COUNTRIES) {
   add(
     `/firma-electronica-${c.slug}`,
-    `Firma Electrónica en ${c.nameEs} | Válida y Legal — CodecDocument`,
+    `Firma Electrónica en ${c.nameEs} | Válida y Legal | CodecDocument`,
     `Firma documentos electrónicamente en ${c.nameEs}, con total cumplimiento de la ley local (${c.lawBadgeEs}). Plan gratuito, verificación de identidad y pista de auditoría SHA-256 en cada firma.`,
     'es',
   );
@@ -166,7 +166,7 @@ for (const p of QUOTE_SEO_PAGES) {
 // electrónicos» es como se llama la norma, no como se busca el problema.
 add(
   '/documentos-electronicos',
-  'Descargar XML de la DIAN y pasarlos a Excel — Automatización para Contadores | Codec Document',
+  'Descargar XML de la DIAN y pasarlos a Excel: Automatización para Contadores | Codec Document',
   'Convierte los XML de la DIAN en información contable lista para usar: arrastra los ZIP y obtén el Excel con IVA, retenciones y totales cuadrados. Cruza lo reportado en la DIAN contra tu contabilidad y detecta las facturas que faltan. Hecho en Colombia para contadores.',
   'es',
 );
@@ -234,7 +234,7 @@ for (const s of US_FREE_SIGNATURE_STATES) {
 // `vite build`) y se sube al repo para que funcionen el modo dev y tsc.
 fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-slugs.generated.ts'),
-  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  `// Generado por scripts/generate-seo-manifest.mts, no editar a mano.\n`
   + `export const SLUGS_PAGINAS_US: readonly string[] = ${JSON.stringify(PAGINAS_US.map((p) => p.slug), null, 2)};\n`,
   'utf-8',
 );
@@ -256,7 +256,7 @@ const indiceUS = PAGINAS_US.map((p) => ({
 }));
 fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'us-pages-index.generated.ts'),
-  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  `// Generado por scripts/generate-seo-manifest.mts, no editar a mano.\n`
   + `import type { ModuloUS } from './us-intent-seo-content';\n`
   + `export interface IndiceUS { slug: string; h1: string; metaDescription: string; grupo: string; titleTag: string; intro: string; cta: string; ctaTo?: string; foto: string; audiencia?: string; modulo: ModuloUS; hermanas: string[] }\n`
   + `export const INDICE_US: readonly IndiceUS[] = ${JSON.stringify(indiceUS)};\n`,
@@ -270,7 +270,7 @@ const indiceCO = PAGINAS_CO.map((p) => ({
 }));
 fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'co-pages-index.generated.ts'),
-  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  `// Generado por scripts/generate-seo-manifest.mts, no editar a mano.\n`
   + `import type { ModuloCO } from './co-intent-seo-content';\n`
   + `export interface IndiceCO { slug: string; h1: string; metaDescription: string; grupo: string; titleTag: string; intro: string; cta: string; ctaTo: string; foto: string; modulo: ModuloCO; hermanas: string[] }\n`
   + `export const INDICE_CO: readonly IndiceCO[] = ${JSON.stringify(indiceCO)};\n`,
@@ -278,7 +278,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   path.join(process.cwd(), 'src', 'app', 'data', 'co-pages-slugs.generated.ts'),
-  `// Generado por scripts/generate-seo-manifest.mts — no editar a mano.\n`
+  `// Generado por scripts/generate-seo-manifest.mts, no editar a mano.\n`
   + `export const SLUGS_PAGINAS_CO: readonly string[] = ${JSON.stringify(PAGINAS_CO.map((p) => p.slug), null, 2)};\n`,
   'utf-8',
 );

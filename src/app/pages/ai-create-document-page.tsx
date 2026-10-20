@@ -213,8 +213,8 @@ export function AiCreateDocumentPage() {
       if (signersNeedingEmail.length > 0) {
         const names = signersNeedingEmail.map((s) => s.name).join(', ');
         toast.info(language === 'en'
-          ? `${names} ${signersNeedingEmail.length > 1 ? "don't" : "doesn't"} have an email, so their signing link wasn't created automatically — add it in the next step to send it.`
-          : `${names} no ${signersNeedingEmail.length > 1 ? 'tienen' : 'tiene'} correo, así que su enlace de firma no se generó automáticamente — agrégalo en el siguiente paso para enviárselo.`);
+          ? `${names} ${signersNeedingEmail.length > 1 ? "don't" : "doesn't"} have an email, so their signing link wasn't created automatically, add it in the next step to send it.`
+          : `${names} no ${signersNeedingEmail.length > 1 ? 'tienen' : 'tiene'} correo, así que su enlace de firma no se generó automáticamente, agrégalo en el siguiente paso para enviárselo.`);
       }
       // /electronic-signature is the public marketing landing page
       // (routes.tsx), not the actual signing tool — that lives at

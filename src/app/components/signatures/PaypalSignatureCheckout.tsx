@@ -144,7 +144,7 @@ export function PaypalSignatureCheckout({ userId, onSuccess, mode = 'signature' 
       if (info && info.discountPct < 100) {
         setPromoParcial(info);
         setPromoError('');
-        toast.success(`${info.discountPct}% de descuento aplicado — paga abajo para terminar.`);
+        toast.success(`${info.discountPct}% de descuento aplicado, paga abajo para terminar.`);
         return;
       }
 

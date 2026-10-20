@@ -170,7 +170,7 @@ function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
               <li className="flex items-start gap-3 rounded-xl px-4 py-3" style={{ background: '#FEF2F2' }}>
                 <FileWarning className="mt-0.5 size-5 shrink-0 text-red-500" />
                 <span className="text-sm font-semibold leading-relaxed text-red-900">
-                  Y si el token se vence a mitad — dura 60 minutos y sirve una sola vez — se
+                  Y si el token se vence a mitad, dura 60 minutos y sirve una sola vez, se
                   vuelve a empezar desde el paso 2.
                 </span>
               </li>
@@ -406,7 +406,7 @@ function Contenido({ ciudad }: { ciudad: CiudadContadorSeo }) {
               La facturación electrónica en Colombia se rige por la{' '}
               <strong className="text-slate-900">Resolución DIAN 000042 de 2020</strong> y sus
               modificaciones, que fijan el formato XML bajo el estándar UBL 2.1 y la obligación de
-              conservar el documento electrónico. El XML —no el PDF— es el documento con validez: el
+              conservar el documento electrónico. El XML (no el PDF) es el documento con validez: el
               PDF es una representación gráfica. Por eso esta herramienta trabaja siempre sobre el
               XML, que es donde están el CUFE, los códigos de impuesto y las bases gravables tal
               como se reportaron.

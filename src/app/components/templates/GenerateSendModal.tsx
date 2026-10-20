@@ -323,7 +323,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                           ? <>We emailed <strong className="text-slate-700">{emailResult.to}</strong> a link to review and sign. It's saved in My documents, and you'll be notified when it's signed.</>
                           : <>Le enviamos a <strong className="text-slate-700">{emailResult.to}</strong> un enlace para revisarlo y firmarlo. Quedó guardado en Mis documentos y te avisaremos cuando lo firme.</>)
                       : (language === 'en'
-                          ? 'Saved in My documents. Share this one-time link — the document is already filled in, they just review and sign.'
+                          ? 'Saved in My documents. Share this one-time link, the document is already filled in, they just review and sign.'
                           : 'Quedó guardado en Mis documentos. Comparte este enlace único: el documento ya está lleno, solo deben revisarlo y firmarlo.')}
                   </p>
 

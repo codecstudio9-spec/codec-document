@@ -104,7 +104,7 @@ export async function updateDocumentPdfUrl(
   });
   if (error) throw new Error(`updateDocumentPdfUrl: ${error.message}`);
   if (!data || !(data as { id?: string }).id) {
-    throw new Error('updateDocumentPdfUrl: unexpected response — no updated row returned');
+    throw new Error('updateDocumentPdfUrl: unexpected response, no updated row returned');
   }
 }
 
@@ -409,11 +409,11 @@ export async function verifySigningTokenPublic(token: string): Promise<{
   });
 
   if (error) {
-    console.error('verifySigningTokenPublic — DB error:', error.code, error.message);
+    console.error('verifySigningTokenPublic: DB error:', error.code, error.message);
     return null;
   }
   if (!data) {
-    console.warn('verifySigningTokenPublic — token not found in signing_links');
+    console.warn('verifySigningTokenPublic, token not found in signing_links');
     return null;
   }
 
@@ -432,7 +432,7 @@ export async function verifySigningTokenPublic(token: string): Promise<{
 
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : Number.NaN;
   if (Number.isFinite(expiresAt) && Date.now() > expiresAt) {
-    console.warn('verifySigningTokenPublic — token expired at:', row.expires_at);
+    console.warn('verifySigningTokenPublic, token expired at:', row.expires_at);
     return null;
   }
 
@@ -441,12 +441,12 @@ export async function verifySigningTokenPublic(token: string): Promise<{
   const status = String(row.doc_status || '').toLowerCase();
 
   if (terminalStatuses.has(status)) {
-    console.warn('verifySigningTokenPublic — document in terminal status:', row.doc_status);
+    console.warn('verifySigningTokenPublic, document in terminal status:', row.doc_status);
     return null;
   }
 
   if (!activeStatuses.has(status)) {
-    console.warn('verifySigningTokenPublic — document status is not signable:', row.doc_status);
+    console.warn('verifySigningTokenPublic, document status is not signable:', row.doc_status);
     return null;
   }
 

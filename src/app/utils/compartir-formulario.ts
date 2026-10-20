@@ -25,8 +25,8 @@ export async function compartirFormularioEnBlanco(templateId: string, name: stri
   try {
     await navigator.clipboard.writeText(url);
     toast.success(language === 'en'
-      ? 'Link copied — it opens blank for whoever opens it.'
-      : 'Enlace copiado — se abre en blanco para quien lo abra.');
+      ? 'Link copied, it opens blank for whoever opens it.'
+      : 'Enlace copiado, se abre en blanco para quien lo abra.');
   } catch {
     toast.error(language === 'en' ? 'Could not copy the link.' : 'No se pudo copiar el enlace.');
   }

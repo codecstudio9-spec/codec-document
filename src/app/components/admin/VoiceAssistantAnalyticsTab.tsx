@@ -52,7 +52,7 @@ const STEP_LABELS: Record<string, { en: string; es: string }> = {
 };
 
 function formatSeconds(s: number | null, language: 'en' | 'es'): string {
-  if (s === null) return '—';
+  if (s === null) return '-';
   if (s < 60) return `${Math.round(s)}s`;
   return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
 }
@@ -108,7 +108,7 @@ export function VoiceAssistantAnalyticsTab({ language }: { language: 'en' | 'es'
             {FLOW_LABELS[flow]?.[language] ?? flow}
           </h3>
           <p className="mt-0.5 text-xs text-slate-400">
-            {language === 'en' ? 'Plays, drop-off, and average time per step — this is where to look for confusing steps.' : 'Reproducciones, abandono y tiempo promedio por paso — aquí se ve qué paso genera más dudas.'}
+            {language === 'en' ? 'Plays, drop-off, and average time per step, this is where to look for confusing steps.' : 'Reproducciones, abandono y tiempo promedio por paso, aquí se ve qué paso genera más dudas.'}
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-xs">

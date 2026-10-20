@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'desconocida';
   if (excedeLimite(ip)) {
-    return new Response(JSON.stringify({ error: 'Demasiadas solicitudes seguidas — espera unos minutos.' }), {
+    return new Response(JSON.stringify({ error: 'Demasiadas solicitudes seguidas, espera unos minutos.' }), {
       status: 429, headers: corsHeaders(),
     });
   }

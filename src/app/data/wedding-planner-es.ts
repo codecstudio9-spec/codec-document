@@ -189,7 +189,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
     },
     {
       id: 'onsite_visits_na',
-      label: 'No aplica — no habrá visitas presenciales antes del evento',
+      label: 'No aplica, no habrá visitas presenciales antes del evento',
       type: 'checkbox',
       required: false,
     },
@@ -202,7 +202,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
     },
     {
       id: 'arrival_days_before_na',
-      label: 'No aplica — la planner no necesita llegar con anticipación (ya vive ahí o no aplica)',
+      label: 'No aplica, la planner no necesita llegar con anticipación (ya vive ahí o no aplica)',
       type: 'checkbox',
       required: false,
     },
@@ -312,7 +312,7 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       type: 'select',
       required: true,
       options: ['Estados Unidos', 'Colombia', 'México', 'Chile', 'Perú', 'Argentina', 'Ecuador'],
-      helpText: 'Se detecta solo según tu ubicación — cámbialo si no es correcto.',
+      helpText: 'Se detecta solo según tu ubicación, cámbialo si no es correcto.',
     },
     {
       id: 'governing_state',
@@ -334,8 +334,8 @@ export const weddingPlannerTemplateES: DocumentTemplate = {
       label: 'Cláusulas adicionales personalizadas',
       type: 'textarea',
       required: false,
-      placeholder: 'Dile a la IA qué quieres, por ejemplo: "Agrega una cláusula donde el valor total pueda aumentar si ambas partes lo acuerdan en una sesión de negociación posterior" o "Agrega un pago adicional de un monto fijo en una fecha específica" — y pulsa "Redactar con IA".',
-      helpText: 'Cualquier otra cosa que quieras dejar por escrito va aquí — escribe una instrucción y pulsa "Redactar con IA" para que ella escriba la cláusula por ti, o dicta/escribe la cláusula tú mismo. En los dos casos ves el resultado antes de que entre al contrato, y siempre puedes deshacerlo.',
+      placeholder: 'Dile a la IA qué quieres, por ejemplo: "Agrega una cláusula donde el valor total pueda aumentar si ambas partes lo acuerdan en una sesión de negociación posterior" o "Agrega un pago adicional de un monto fijo en una fecha específica", y pulsa "Redactar con IA".',
+      helpText: 'Cualquier otra cosa que quieras dejar por escrito va aquí, escribe una instrucción y pulsa "Redactar con IA" para que ella escriba la cláusula por ti, o dicta/escribe la cláusula tú mismo. En los dos casos ves el resultado antes de que entre al contrato, y siempre puedes deshacerlo.',
     },
   ],
 
@@ -353,14 +353,14 @@ y
 se celebra el presente contrato, que se regirá por las siguientes cláusulas.
 
 
-PRIMERA — OBJETO
+PRIMERA: OBJETO
 
 LA PLANNER se obliga a prestar a EL CLIENTE los servicios profesionales de planeación, asesoría y coordinación del evento descrito en la cláusula segunda, en los términos y con el alcance que este contrato define.
 
 LA PLANNER presta el servicio de forma independiente, con su propio equipo y sus propios medios. Este contrato no crea relación laboral, de subordinación ni de exclusividad entre las partes.
 
 
-SEGUNDA — EL EVENTO
+SEGUNDA: EL EVENTO
 
 Tipo de evento: {{event_type}}
 Fecha: {{event_date}}{{#if event_time}}
@@ -372,7 +372,7 @@ Número aproximado de invitados: {{guest_count}}{{/if}}
 La fecha queda reservada para EL CLIENTE únicamente desde el momento en que se paga el anticipo previsto en la cláusula octava. Antes de ese pago, LA PLANNER puede aceptar otro evento para el mismo día.
 
 
-TERCERA — QUÉ INCLUYE EL SERVICIO
+TERCERA: QUÉ INCLUYE EL SERVICIO
 
 LA PLANNER se obliga a lo siguiente:
 
@@ -387,7 +387,7 @@ d) Coordinar el montaje, el desarrollo y el desmonte del evento en el horario pa
 e) Ser el único punto de contacto con los proveedores el día del evento, de modo que EL CLIENTE no tenga que resolver nada ese día.
 
 
-CUARTA — QUÉ NO INCLUYE EL SERVICIO
+CUARTA: QUÉ NO INCLUYE EL SERVICIO
 
 Los honorarios de este contrato remuneran el trabajo de LA PLANNER. No comprenden, salvo pacto escrito distinto:
 
@@ -402,7 +402,7 @@ d) Cualquier servicio que no esté escrito en la cláusula tercera.
 Lo que no aparece en la cláusula tercera no está contratado. Si EL CLIENTE lo solicita después, las partes acordarán por escrito su alcance y su precio antes de ejecutarlo.
 
 
-QUINTA — COORDINACIÓN A DISTANCIA
+QUINTA: COORDINACIÓN A DISTANCIA
 
 Las partes reconocen que LA PLANNER trabaja desde {{planner_city}} y que el evento se realiza en {{event_city}}. Por eso acuerdan expresamente:
 
@@ -413,7 +413,7 @@ c) El resto de la planeación se hará por videollamada, teléfono y correo. Las
 d) Cada parte mantendrá actualizados sus datos de contacto. Las comunicaciones se entienden recibidas cuando se envían a los medios señalados en este contrato.
 
 
-SEXTA — PROVEEDORES
+SEXTA: PROVEEDORES
 
 Modalidad acordada: {{vendor_contracting}}
 
@@ -425,14 +425,14 @@ c) Cuando LA PLANNER contrate a nombre de EL CLIENTE, lo hace por cuenta de este
 d) LA PLANNER informará a EL CLIENTE de cualquier comisión, descuento o beneficio que reciba de un proveedor.
 
 
-SÉPTIMA — GASTOS DE VIAJE Y ALOJAMIENTO
+SÉPTIMA: GASTOS DE VIAJE Y ALOJAMIENTO
 
 {{#if self_hosted_venue}}El evento se realiza en un lugar de propiedad o bajo administración directa de LA PLANNER, quien provee el espacio y, cuando aplique, el alojamiento asociado, como parte integral de los honorarios y costos ya pactados en este contrato. Por esta razón, no se generarán a cargo de EL CLIENTE cobros adicionales de transporte o alojamiento de LA PLANNER ni de su equipo distintos de los ya incluidos.{{/if}}{{#if travel_costs}}Los gastos de transporte, alojamiento y alimentación de LA PLANNER y de su equipo, necesarios para las visitas y para el evento, quedan así: {{travel_costs}}.
 
 Cuando estén a cargo de EL CLIENTE, LA PLANNER los cotizará por anticipado y los soportará con facturas. EL CLIENTE no está obligado a reembolsar un gasto que no haya aprobado antes.{{/if}}
 
 
-OCTAVA — HONORARIOS Y FORMA DE PAGO
+OCTAVA: HONORARIOS Y FORMA DE PAGO
 
 Honorarios totales: {{currency_code}} {{total_fee}}
 
@@ -443,14 +443,14 @@ Saldo: {{payment_plan}}
 El último pago deberá estar realizado a más tardar {{final_payment_days}} día(s) antes del evento. LA PLANNER no está obligada a ejecutar el evento si el saldo no ha sido pagado en esa fecha.
 
 
-NOVENA — CAMBIOS
+NOVENA: CAMBIOS
 
 EL CLIENTE puede solicitar cambios en el diseño, los proveedores o el número de invitados, por escrito.{{#if changes_deadline_days}} Los cambios se reciben hasta {{changes_deadline_days}} día(s) antes del evento; después de esa fecha los proveedores ya están confirmados y sólo se aceptarán los que sean materialmente posibles y cuyo sobrecosto asuma EL CLIENTE.{{/if}}
 
 Todo cambio que aumente el costo del evento o el trabajo de LA PLANNER se acordará por escrito antes de ejecutarse, con su precio.
 
 
-DÉCIMA — CANCELACIÓN POR EL CLIENTE
+DÉCIMA: CANCELACIÓN POR EL CLIENTE
 
 Si EL CLIENTE cancela el evento, se aplicará lo siguiente: {{cancellation_policy}}.
 
@@ -459,7 +459,7 @@ Lo anterior se entiende sin perjuicio de las sumas ya pagadas a proveedores, que
 La cancelación debe comunicarse por escrito. La fecha de esa comunicación es la que determina el porcentaje aplicable.
 
 
-DÉCIMA PRIMERA — CANCELACIÓN POR LA PLANNER
+DÉCIMA PRIMERA: CANCELACIÓN POR LA PLANNER
 
 LA PLANNER sólo puede terminar este contrato antes del evento por causa grave: incumplimiento de pago de EL CLIENTE, imposibilidad médica o de fuerza mayor, o trato irrespetuoso o agresivo hacia ella o su equipo.
 
@@ -468,23 +468,23 @@ Si termina el contrato sin causa, devolverá a EL CLIENTE la totalidad de lo pag
 Si la causa es imposibilidad médica o de fuerza mayor, LA PLANNER hará todo lo posible por conseguir un reemplazo idóneo y devolverá la parte de los honorarios correspondiente al trabajo no ejecutado.
 
 
-DÉCIMA SEGUNDA — REPROGRAMACIÓN Y FUERZA MAYOR
+DÉCIMA SEGUNDA: REPROGRAMACIÓN Y FUERZA MAYOR
 
-Si el evento debe aplazarse por un hecho ajeno a las partes —una prohibición de autoridad, un desastre natural, una emergencia sanitaria, la muerte de un familiar cercano— las partes acordarán una nueva fecha y este contrato seguirá vigente para ella, sin penalidad.
+Si el evento debe aplazarse por un hecho ajeno a las partes (una prohibición de autoridad, un desastre natural, una emergencia sanitaria, la muerte de un familiar cercano) las partes acordarán una nueva fecha y este contrato seguirá vigente para ella, sin penalidad.
 
 Los honorarios ya pagados se abonan a la nueva fecha. Si en la nueva fecha LA PLANNER ya tiene un evento comprometido, devolverá lo pagado descontando el trabajo efectivamente realizado hasta ese momento.
 
 Los valores no recuperables que ya se hayan pagado a proveedores no son responsabilidad de LA PLANNER.
 
 
-DÉCIMA TERCERA — RESPONSABILIDAD
+DÉCIMA TERCERA: RESPONSABILIDAD
 
 LA PLANNER responde por la diligencia de su propio trabajo. No responde por hechos de terceros, por el clima, por decisiones que EL CLIENTE haya tomado contra su recomendación escrita, ni por daños que ocurran en el lugar del evento y sean de cargo de este o de sus invitados.
 
 En todo caso, la responsabilidad total de LA PLANNER derivada de este contrato no excederá el valor de los honorarios efectivamente pagados.
 
 
-DÉCIMA CUARTA — OBLIGACIONES DE EL CLIENTE
+DÉCIMA CUARTA: OBLIGACIONES DE EL CLIENTE
 
 a) Pagar en las fechas pactadas.
 b) Entregar a tiempo la información que LA PLANNER le solicite: lista de invitados, decisiones de menú, tiempos de la ceremonia y demás.
@@ -492,26 +492,26 @@ c) Tomar las decisiones que le corresponden dentro de los plazos del plan de tra
 d) Tratar con respeto a LA PLANNER, a su equipo y a los proveedores.
 
 
-DÉCIMA QUINTA — IMÁGENES DEL EVENTO
+DÉCIMA QUINTA: IMÁGENES DEL EVENTO
 
 Sobre el uso de fotografías y video del evento por parte de LA PLANNER: {{portfolio_use}}.
 
 Esta autorización, cuando se concede, es gratuita, no exclusiva y limitada a mostrar su trabajo profesional. No permite ceder las imágenes a terceros para publicidad ajena, ni usarlas en un contexto que afecte la honra o la intimidad de EL CLIENTE. EL CLIENTE puede revocarla en cualquier momento por escrito, y LA PLANNER retirará las imágenes de los medios que controle.
 
 
-DÉCIMA SEXTA — DISEÑO Y CONFIDENCIALIDAD
+DÉCIMA SEXTA: DISEÑO Y CONFIDENCIALIDAD
 
 Los conceptos, bocetos, paletas y propuestas creadas por LA PLANNER son suyos hasta que el evento se pague en su totalidad; desde ese momento EL CLIENTE puede usarlos libremente para su propio evento. Ninguna de las partes puede revenderlos como propios a un tercero.
 
 Ambas partes guardarán reserva sobre la información personal, familiar y económica que conozcan por razón de este contrato, incluso después de terminado.
 
 {{#if custom_ai_clauses}}
-DÉCIMA SÉPTIMA — CLÁUSULAS ADICIONALES PERSONALIZADAS
+DÉCIMA SÉPTIMA: CLÁUSULAS ADICIONALES PERSONALIZADAS
 
 {{custom_ai_clauses}}
 
 {{/if}}
-CLÁUSULA FINAL — ACUERDO ÍNTEGRO, MODIFICACIONES Y CONTROVERSIAS
+CLÁUSULA FINAL: ACUERDO ÍNTEGRO, MODIFICACIONES Y CONTROVERSIAS
 
 Este documento recoge todo lo acordado entre las partes y reemplaza cualquier conversación o cotización anterior. Sólo puede modificarse por escrito firmado por ambas.
 
@@ -550,7 +550,7 @@ Documento {{client_partner_id}}{{/if}}{{/if}}`,
   // recibir"), lo que suena a consejo para un solo lado de un contrato
   // entre dos. Esta versión se dirige a quien la esté leyendo, planner o
   // cliente por igual.
-  signerNote: `NOTA PARA AMBAS PARTES — no forma parte del contrato
+  signerNote: `NOTA PARA AMBAS PARTES, no forma parte del contrato
 
 Revisen juntos que la cláusula tercera diga de verdad todo lo que la planner debe entregar. Lo que se habló por WhatsApp y no quedó escrito ahí, no está contratado, para ninguna de las dos partes.
 

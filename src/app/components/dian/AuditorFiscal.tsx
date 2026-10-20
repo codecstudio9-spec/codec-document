@@ -290,7 +290,7 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
                 >
                   {hojas.map((h, i) => (
                     <option key={h.ruta} value={i}>
-                      {h.nombre} — {h.encabezados.filter(Boolean).length} columnas, {h.filasConDatos} filas
+                      {h.nombre} - {h.encabezados.filter(Boolean).length} columnas, {h.filasConDatos} filas
                     </option>
                   ))}
                 </select>
@@ -307,7 +307,7 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
               {hojas[hojaSel]?.encabezados.filter(Boolean).length < 3 ? (
                 <div className="rounded-xl bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
                   Solo encontré {hojas[hojaSel]?.encabezados.filter(Boolean).length ?? 0} columna(s)
-                  en esta hoja. Seguramente es un resumen y no la lista de documentos —
+                  en esta hoja. Seguramente es un resumen y no la lista de documentos,
                   {hojas.length > 1 ? ' prueba con otra hoja arriba.' : ' revisa que el archivo traiga el listado detallado.'}
                 </div>
               ) : (
@@ -366,7 +366,7 @@ export function AuditorFiscal({ cargarDocumentos, narrar, onCerrar }: Props) {
                         : campo.requerido ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-400'
                     }`}
                   >
-                    <option value="">— no la tengo —</option>
+                    <option value="">No la tengo</option>
                     {hojas[hojaSel]?.encabezados.map((h, i) => h ? (
                       <option key={i} value={i}>{h}</option>
                     ) : null)}

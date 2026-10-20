@@ -89,7 +89,7 @@ export function SEOHead({
 
     const imageUrl = image || DEFAULT_OG_IMAGE;
     updateMetaTag('og:image', imageUrl, true);
-    updateMetaTag('og:image:alt', title || 'Codec Document — Legal Document Generator', true);
+    updateMetaTag('og:image:alt', title || 'Codec Document: Legal Document Generator', true);
     updateMetaTag('twitter:image', imageUrl);
     updateMetaTag('twitter:site', '@codecdocument');
     updateMetaTag('twitter:creator', '@codecdocument');

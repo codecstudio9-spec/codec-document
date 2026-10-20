@@ -134,7 +134,7 @@ function Contenido({ pagina, es: moduloEs, soloHero = false }: { pagina: PaginaU
             <div className="relative">
               <img
                 src={foto1}
-                alt={`${v.h1} — ${T.altFirma}`}
+                alt={`${v.h1}, ${T.altFirma}`}
                 loading="eager"
                 // React 18 no reconoce fetchPriority; el atributo HTML va en minúsculas.
                 {...{ fetchpriority: 'high' }}
@@ -157,7 +157,7 @@ function Contenido({ pagina, es: moduloEs, soloHero = false }: { pagina: PaginaU
           <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <img
               src={foto2}
-              alt={`${v.problema.titulo} — ${T.altRevisar}`}
+              alt={`${v.problema.titulo}, ${T.altRevisar}`}
               loading="lazy"
               width={1000}
               height={750}
@@ -229,7 +229,7 @@ function Contenido({ pagina, es: moduloEs, soloHero = false }: { pagina: PaginaU
             </div>
             <img
               src={foto3}
-              alt={`${v.caso.titulo} — ${T.altArchivado}`}
+              alt={`${v.caso.titulo}, ${T.altArchivado}`}
               loading="lazy"
               width={1000}
               height={750}

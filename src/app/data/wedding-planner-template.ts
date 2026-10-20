@@ -189,7 +189,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
     },
     {
       id: 'onsite_visits_na',
-      label: 'N/A — no in-person site visits before the event',
+      label: 'N/A, no in-person site visits before the event',
       type: 'checkbox',
       required: false,
     },
@@ -202,7 +202,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
     },
     {
       id: 'arrival_days_before_na',
-      label: "N/A — the planner does not need to arrive early (already local, or it doesn't apply)",
+      label: "N/A, the planner does not need to arrive early (already local, or it doesn't apply)",
       type: 'checkbox',
       required: false,
     },
@@ -312,7 +312,7 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       type: 'select',
       required: true,
       options: ['United States', 'Colombia', 'Mexico', 'Chile', 'Peru', 'Argentina', 'Ecuador'],
-      helpText: 'Detected automatically from your location — change it if it is wrong.',
+      helpText: 'Detected automatically from your location, change it if it is wrong.',
     },
     {
       id: 'governing_state',
@@ -334,8 +334,8 @@ export const weddingPlannerTemplate: DocumentTemplate = {
       label: 'Additional custom clauses',
       type: 'textarea',
       required: false,
-      placeholder: 'Tell the AI what you want, e.g. "Add a clause saying the total fee may increase if both parties agree to it in a later negotiation session" or "Add a payment of a set amount due on a specific date" — then press "Draft with AI".',
-      helpText: 'Anything else you want in writing goes here — type an instruction and press "Draft with AI" to have it write the clause for you, or dictate/write the clause yourself. Either way you see the result before it goes into the contract, and you can always undo it.',
+      placeholder: 'Tell the AI what you want, e.g. "Add a clause saying the total fee may increase if both parties agree to it in a later negotiation session" or "Add a payment of a set amount due on a specific date", then press "Draft with AI".',
+      helpText: 'Anything else you want in writing goes here, type an instruction and press "Draft with AI" to have it write the clause for you, or dictate/write the clause yourself. Either way you see the result before it goes into the contract, and you can always undo it.',
     },
   ],
 
@@ -353,14 +353,14 @@ and
 this agreement is entered into under the following terms.
 
 
-ONE — PURPOSE
+ONE: PURPOSE
 
 THE PLANNER agrees to provide THE CLIENT with professional planning, advisory and coordination services for the event described in clause two, on the terms and within the scope this agreement defines.
 
 THE PLANNER provides the service independently, with her own team and her own means. This agreement creates no employment, subordination or exclusivity relationship between the parties.
 
 
-TWO — THE EVENT
+TWO: THE EVENT
 
 Type of event: {{event_type}}
 Date: {{event_date}}{{#if event_time}}
@@ -372,7 +372,7 @@ Approximate number of guests: {{guest_count}}{{/if}}
 The date is held for THE CLIENT only from the moment the deposit set out in clause eight is paid. Before that payment, THE PLANNER may accept another event for the same day.
 
 
-THREE — WHAT THE SERVICE INCLUDES
+THREE: WHAT THE SERVICE INCLUDES
 
 THE PLANNER undertakes to provide the following:
 
@@ -387,7 +387,7 @@ d) Coordinate setup, the event itself and teardown within the agreed hours.
 e) Be the single point of contact with the vendors on the day of the event, so that THE CLIENT has nothing to resolve that day.
 
 
-FOUR — WHAT THE SERVICE DOES NOT INCLUDE
+FOUR: WHAT THE SERVICE DOES NOT INCLUDE
 
 The fee under this agreement pays for THE PLANNER's work. Unless separately agreed in writing, it does not cover:
 
@@ -402,7 +402,7 @@ d) Any service not written into clause three.
 Anything absent from clause three is not contracted. If THE CLIENT requests it later, the parties will agree its scope and price in writing before it is carried out.
 
 
-FIVE — WORKING FROM A DIFFERENT CITY
+FIVE: WORKING FROM A DIFFERENT CITY
 
 The parties acknowledge that THE PLANNER works from {{planner_city}} and that the event takes place in {{event_city}}. They therefore expressly agree:
 
@@ -413,7 +413,7 @@ c) The rest of the planning is done by video call, phone and email. Decisions ta
 d) Each party will keep its contact details current. Communications are deemed received when sent to the channels stated in this agreement.
 
 
-SIX — VENDORS
+SIX: VENDORS
 
 Agreed arrangement: {{vendor_contracting}}
 
@@ -425,14 +425,14 @@ c) Where THE PLANNER contracts on behalf of THE CLIENT, she does so for their ac
 d) THE PLANNER will disclose to THE CLIENT any commission, discount or benefit she receives from a vendor.
 
 
-SEVEN — TRAVEL AND LODGING COSTS
+SEVEN: TRAVEL AND LODGING COSTS
 
 {{#if self_hosted_venue}}The event takes place at a venue owned or directly managed by THE PLANNER, who provides the venue and, where it applies, the associated lodging, as an integral part of the fees and costs already agreed in this agreement. For this reason, no additional transport or lodging charges for THE PLANNER or her team, beyond what is already included, will be billed to THE CLIENT.{{/if}}{{#if travel_costs}}Transport, lodging and meal costs for THE PLANNER and her team, needed for the visits and for the event, are handled as follows: {{travel_costs}}.
 
 Where they fall on THE CLIENT, THE PLANNER will quote them in advance and support them with receipts. THE CLIENT is not obliged to reimburse a cost they did not approve beforehand.{{/if}}
 
 
-EIGHT — FEE AND PAYMENT
+EIGHT: FEE AND PAYMENT
 
 Total fee: {{currency_code}} {{total_fee}}
 
@@ -443,14 +443,14 @@ Balance: {{payment_plan}}
 The final payment must be made no later than {{final_payment_days}} day(s) before the event. THE PLANNER is not obliged to run the event if the balance has not been paid by that date.
 
 
-NINE — CHANGES
+NINE: CHANGES
 
 THE CLIENT may request changes to the design, the vendors or the guest count, in writing.{{#if changes_deadline_days}} Changes are accepted up to {{changes_deadline_days}} day(s) before the event; after that date vendors are already confirmed and only changes that are materially possible and whose extra cost THE CLIENT covers will be accepted.{{/if}}
 
 Any change that increases the cost of the event or THE PLANNER's workload will be agreed in writing, with its price, before it is carried out.
 
 
-TEN — CANCELLATION BY THE CLIENT
+TEN: CANCELLATION BY THE CLIENT
 
 If THE CLIENT cancels the event, the following applies: {{cancellation_policy}}.
 
@@ -459,7 +459,7 @@ This is without prejudice to amounts already paid to vendors, which are governed
 Cancellation must be communicated in writing. The date of that communication determines the applicable percentage.
 
 
-ELEVEN — CANCELLATION BY THE PLANNER
+ELEVEN: CANCELLATION BY THE PLANNER
 
 THE PLANNER may only terminate this agreement before the event for serious cause: THE CLIENT's failure to pay, medical impossibility or force majeure, or disrespectful or abusive treatment towards her or her team.
 
@@ -468,23 +468,23 @@ If she terminates without cause, she will refund THE CLIENT everything paid and 
 If the cause is medical impossibility or force majeure, THE PLANNER will do everything possible to find a suitable replacement and will refund the portion of the fee corresponding to work not performed.
 
 
-TWELVE — RESCHEDULING AND FORCE MAJEURE
+TWELVE: RESCHEDULING AND FORCE MAJEURE
 
-If the event has to be postponed because of an event outside the parties' control — an order from the authorities, a natural disaster, a health emergency, the death of a close relative — the parties will agree a new date and this agreement remains in force for it, with no penalty.
+If the event has to be postponed because of an event outside the parties' control, an order from the authorities, a natural disaster, a health emergency, the death of a close relative, the parties will agree a new date and this agreement remains in force for it, with no penalty.
 
 Fees already paid are credited to the new date. If THE PLANNER is already committed to another event on the new date, she will refund what was paid, less the work actually performed up to that point.
 
 Non-recoverable amounts already paid to vendors are not THE PLANNER's responsibility.
 
 
-THIRTEEN — LIABILITY
+THIRTEEN: LIABILITY
 
 THE PLANNER is answerable for the diligence of her own work. She is not answerable for the acts of third parties, for the weather, for decisions THE CLIENT took against her written recommendation, or for damage occurring at the venue that falls on THE CLIENT or their guests.
 
 In any case, THE PLANNER's total liability under this agreement will not exceed the fees actually paid.
 
 
-FOURTEEN — THE CLIENT'S OBLIGATIONS
+FOURTEEN: THE CLIENT'S OBLIGATIONS
 
 a) Pay on the agreed dates.
 b) Provide in good time the information THE PLANNER requests: guest list, menu decisions, ceremony timings and the like.
@@ -492,26 +492,26 @@ c) Make the decisions that fall to them within the deadlines of the work plan. A
 d) Treat THE PLANNER, her team and the vendors with respect.
 
 
-FIFTEEN — IMAGES OF THE EVENT
+FIFTEEN: IMAGES OF THE EVENT
 
 On THE PLANNER's use of photographs and video of the event: {{portfolio_use}}.
 
 Where granted, this authorisation is free of charge, non-exclusive and limited to showcasing her professional work. It does not allow the images to be assigned to third parties for unrelated advertising, nor used in a context that harms THE CLIENT's reputation or privacy. THE CLIENT may revoke it at any time in writing, and THE PLANNER will remove the images from the channels she controls.
 
 
-SIXTEEN — DESIGN AND CONFIDENTIALITY
+SIXTEEN: DESIGN AND CONFIDENTIALITY
 
 The concepts, sketches, palettes and proposals created by THE PLANNER remain hers until the event is paid in full; from that moment THE CLIENT may use them freely for their own event. Neither party may resell them as their own to a third party.
 
 Both parties will keep confidential the personal, family and financial information they learn by reason of this agreement, including after it ends.
 
 {{#if custom_ai_clauses}}
-SEVENTEEN — ADDITIONAL CUSTOM CLAUSES
+SEVENTEEN: ADDITIONAL CUSTOM CLAUSES
 
 {{custom_ai_clauses}}
 
 {{/if}}
-FINAL CLAUSE — ENTIRE AGREEMENT, AMENDMENTS AND DISPUTES
+FINAL CLAUSE: ENTIRE AGREEMENT, AMENDMENTS AND DISPUTES
 
 This document contains everything agreed between the parties and supersedes any earlier conversation or quote. It may only be amended in writing signed by both.
 
@@ -549,7 +549,7 @@ ID {{client_partner_id}}{{/if}}{{/if}}`,
   // client's point of view only ("everything you expect to receive"), which
   // reads as advice for one side of a two-sided agreement. This version is
   // addressed to whichever party is reading it, planner or client alike.
-  signerNote: `NOTE FOR BOTH PARTIES — not part of the agreement
+  signerNote: `NOTE FOR BOTH PARTIES, not part of the agreement
 
 Check together that clause three really lists everything the planner is expected to deliver. Whatever was discussed over chat and never written there is not contracted, for either side.
 

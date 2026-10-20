@@ -28,8 +28,8 @@ export function VoiceGuideToggle({ className }: { className?: string }) {
         className ?? '',
       ].join(' ')}
       title={enabled
-        ? (language === 'en' ? 'Voice guide is on — tap to turn off' : 'Guía por voz activada — toca para apagar')
-        : (language === 'en' ? 'Voice guide is off — tap to turn on' : 'Guía por voz desactivada — toca para activar')}
+        ? (language === 'en' ? 'Voice guide is on, tap to turn off' : 'Guía por voz activada, toca para apagar')
+        : (language === 'en' ? 'Voice guide is off, tap to turn on' : 'Guía por voz desactivada, toca para activar')}
     >
       {enabled ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
       {language === 'en' ? 'Voice guide' : 'Guía por voz'}

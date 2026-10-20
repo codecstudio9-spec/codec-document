@@ -18,7 +18,7 @@ export function BackupCodesReveal({ codes, onContinue, continueLabel }: Props) {
 
   const download = () => {
     const blob = new Blob(
-      [`Códigos de respaldo — Codec Document\n\nGuarda esto en un lugar seguro. Cada código solo funciona una vez y reemplaza tu app autenticadora si pierdes el teléfono.\n\n${text}\n`],
+      [`Códigos de respaldo: Codec Document\n\nGuarda esto en un lugar seguro. Cada código solo funciona una vez y reemplaza tu app autenticadora si pierdes el teléfono.\n\n${text}\n`],
       { type: 'text/plain' },
     );
     // triggerDownload — iOS Safari doesn't reliably honor `download` on a
@@ -44,7 +44,7 @@ export function BackupCodesReveal({ codes, onContinue, continueLabel }: Props) {
       </div>
       <h2 className="text-center text-lg font-bold text-slate-900">Guarda tus códigos de respaldo</h2>
       <p className="mt-1.5 text-center text-sm text-slate-500">
-        Úsalos si pierdes tu teléfono con la app autenticadora. Cada uno funciona una sola vez —
+        Úsalos si pierdes tu teléfono con la app autenticadora. Cada uno funciona una sola vez,
         no podrás volver a verlos después de esto.
       </p>
 

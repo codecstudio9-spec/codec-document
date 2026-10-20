@@ -34,7 +34,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
       texto: 'Word can add content controls and legacy form fields, but that means opening the Developer tab, placing each control by hand, protecting the document, and hoping the recipient\'s version of Word renders it the same way. Most people give up and keep editing copies. The result is the most common contract error there is: a document that still carries the previous client\'s name on page three, or a fee from last year in a clause nobody re-read.',
     },
     puntos: [
-      { titulo: 'Upload it exactly as you use it', texto: 'Drag in the .docx. We detect the blanks people actually use — underscores like ______, bracketed placeholders like [Client Name], XXXX, <<field>>, and yellow highlighting — and turn each one into a named field. You do not have to add tags or learn a syntax.' },
+      { titulo: 'Upload it exactly as you use it', texto: 'Drag in the .docx. We detect the blanks people actually use, underscores like ______, bracketed placeholders like [Client Name], XXXX, <<field>>, and yellow highlighting, and turn each one into a named field. You do not have to add tags or learn a syntax.' },
       { titulo: 'Mark anything we missed', texto: 'If a name or date is written out instead of left blank, select it with your mouse and make it a field. Or open the document full screen and drag each field to the exact spot where it belongs, the way you would in Dropbox Sign.' },
       { titulo: 'Fill it with the document beside you', texto: 'Filling the form is a short list of inputs. Turn on the live preview and every value appears in place as you type, with missing fields highlighted in yellow so nothing goes out blank.' },
       { titulo: 'Send it, share it, or download it', texto: 'Send the finished document for e-signature by email, text, or QR code, download a PDF, or share a public link so your client fills in their own details and signs.' },
@@ -49,7 +49,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     },
     faq: [
       { q: 'Do I need to put {{double braces}} in my Word file?', a: 'No. Braces work if you already use them, but we detect the placeholders people really use: underscores, brackets, XXXX and highlighting.' },
-      { q: 'Will my formatting survive?', a: 'Yes. The template keeps your original Word file — fonts, bold, tables, numbering and margins — and only replaces the values.' },
+      { q: 'Will my formatting survive?', a: 'Yes. The template keeps your original Word file, fonts, bold, tables, numbering and margins, and only replaces the values.' },
       { q: 'Can I bring the file from Google Drive?', a: 'Yes. Pick it from your Drive; a Google Doc is converted to Word automatically.' },
       { q: 'What if I only have a PDF or a scan?', a: 'That works too. With a PDF or a photo, you click on the page where each field goes.' },
     ],
@@ -63,7 +63,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Make any contract fillable: upload your template, fill in the details with a live preview, and send it for signature. Works with Word, PDF and Google Docs.',
     h1: 'Fillable Contract Template',
     grupo: 'howto',
-    intro: 'A fillable contract template is a contract whose fixed language stays locked while the details — names, dates, amounts, addresses — are typed into fields. It is the difference between editing a document and completing one. For a business that signs the same agreement every week, it removes the slowest and most error-prone part of the job.',
+    intro: 'A fillable contract template is a contract whose fixed language stays locked while the details, names, dates, amounts, addresses, are typed into fields. It is the difference between editing a document and completing one. For a business that signs the same agreement every week, it removes the slowest and most error-prone part of the job.',
     problema: {
       titulo: 'Fillable PDFs that nobody can sign properly',
       texto: 'The usual route is a fillable PDF made in Acrobat: fields drawn on top of the page, sent by email, filled in by the other side, then printed and signed or signed with a pasted image. The fields do not reflow, long names overflow, and the signature carries no record of who applied it or when. You end up with a completed form and no reliable proof of agreement.',
@@ -88,7 +88,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
         "Have the fixed language reviewed once, for your state, before it becomes the master copy.",
         "Mark as fields only what truly changes per client: names, addresses, dates, amounts, scope.",
         "Decide which fields are required so nobody can sign an incomplete contract.",
-        "Choose who fills each field — you or the client — before you share the link.",
+        "Choose who fills each field, you or the client, before you share the link.",
         "Keep one master template and delete old copies so the reviewed version is the only one in use.",
       ],
     },
@@ -157,7 +157,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     intro: 'Android has no single built-in way to sign a PDF: depending on the phone, you may have Google Drive\'s viewer, a manufacturer app, or nothing at all. Most people end up installing a random app from the Play Store that asks for too many permissions. You can sign in Chrome instead, with a signature that carries a real record of who signed and when.',
     problema: {
       titulo: 'Sign-a-PDF apps that want your whole phone',
-      texto: 'Search the Play Store for "sign PDF" and you will find dozens of apps, many free with ads, some requesting access to your files, contacts or location. They draw a signature on the page and save the file — usually with no audit trail, and sometimes with a watermark until you pay. For a contract, you get a picture of a signature, not proof of one.',
+      texto: 'Search the Play Store for "sign PDF" and you will find dozens of apps, many free with ads, some requesting access to your files, contacts or location. They draw a signature on the page and save the file, usually with no audit trail, and sometimes with a watermark until you pay. For a contract, you get a picture of a signature, not proof of one.',
     },
     puntos: [
       { titulo: 'Sign in Chrome', texto: 'Open the link, read the document, sign with your finger. Nothing to install, no permissions to grant.' },
@@ -183,7 +183,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
       ],
     },
     faq: [
-      { q: 'How do I sign a PDF on Android for free?', a: 'Open the signing link in Chrome and sign with your finger. To sign your own PDF, upload it, add your signature and download it — no app required.' },
+      { q: 'How do I sign a PDF on Android for free?', a: 'Open the signing link in Chrome and sign with your finger. To sign your own PDF, upload it, add your signature and download it, no app required.' },
       { q: 'Do I need Adobe Acrobat on Android?', a: 'No. Signing works in the browser.' },
       { q: 'Can I sign a PDF from Google Drive on Android?', a: 'Yes. Pick it directly from Drive when you upload.' },
       { q: 'Is a finger-drawn signature legal?', a: 'Yes, under the ESIGN Act and UETA. An audit trail makes it far more defensible if it is ever challenged.' },
@@ -200,7 +200,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Text a signing link instead of an email attachment. Signers read and sign on their phone in two minutes, and you get the signed PDF with an audit trail.',
     h1: 'Send a Document for Signature by Text',
     grupo: 'howto',
-    intro: 'Email open rates are mediocre and signing emails land in spam. Text messages get read, usually within minutes. For contractors, landlords, salons, tutors and anyone whose customers live on their phones, texting a signing link is the fastest way to get a document signed — as long as the link opens a real signing flow, not a PDF the customer has to print.',
+    intro: 'Email open rates are mediocre and signing emails land in spam. Text messages get read, usually within minutes. For contractors, landlords, salons, tutors and anyone whose customers live on their phones, texting a signing link is the fastest way to get a document signed, as long as the link opens a real signing flow, not a PDF the customer has to print.',
     problema: {
       titulo: 'The attachment that never comes back',
       texto: 'Email a PDF and ask for a signature, and you start a cycle: the customer opens it on a phone, has no printer, means to deal with it later, and forgets. Or they reply with a photo of a signed printout, crooked, missing page two. Days pass and the job, the lease or the enrollment waits on paperwork.',
@@ -294,7 +294,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     intro: 'If your contracts live in Google Drive, the slowest part of getting one signed is getting it out of Drive: download, convert, upload somewhere else, place fields, send. Picking the file straight from Drive removes those steps, and a Google Doc arrives converted to Word with its formatting intact, ready to sign or to become a reusable template.',
     problema: {
       titulo: 'Download, convert, re-upload, repeat',
-      texto: 'The common workflow is to export the Google Doc as PDF, find it in downloads, upload it to a signing tool, and place every field by hand — every time, even for the same agreement. Version control suffers too: the PDF that got signed is no longer connected to the Doc that keeps being edited.',
+      texto: 'The common workflow is to export the Google Doc as PDF, find it in downloads, upload it to a signing tool, and place every field by hand, every time, even for the same agreement. Version control suffers too: the PDF that got signed is no longer connected to the Doc that keeps being edited.',
     },
     puntos: [
       { titulo: 'Pick from Drive directly', texto: 'The Google Drive button opens Google\'s own file picker. Choose a Google Doc, a Word file or a PDF.' },
@@ -304,7 +304,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     ],
     ley: {
       titulo: 'A signed Google Doc is a signed contract',
-      texto: ESIGN + ' The source of the document — Google Docs, Word or a scanned page — makes no legal difference. What matters is that the parties intended to sign that exact text and that you can show it did not change, which the tamper-evident seal provides.',
+      texto: ESIGN + ' The source of the document, Google Docs, Word or a scanned page, makes no legal difference. What matters is that the parties intended to sign that exact text and that you can show it did not change, which the tamper-evident seal provides.',
     },
     caso: {
       titulo: 'A marketing agency living in Drive',
@@ -340,7 +340,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     intro: 'You do not need to download a separate app to sign documents anymore. A web app that runs in your phone\'s browser does the same job, installs to your home screen in one tap if you want it there, and keeps your documents in sync between phone and laptop. Signers never need to install anything at all.',
     problema: {
       titulo: 'Free apps that are free until you need them',
-      texto: 'Many "free" e-signature apps cap you at a few documents, watermark the PDF, or lock the audit trail — the part that makes the signature defensible — behind a subscription. Others require every signer to install the app and create an account, which is where most signatures stall.',
+      texto: 'Many "free" e-signature apps cap you at a few documents, watermark the PDF, or lock the audit trail, the part that makes the signature defensible, behind a subscription. Others require every signer to install the app and create an account, which is where most signatures stall.',
     },
     puntos: [
       { titulo: 'Runs in the browser, installs if you like', texto: 'Use it in Safari or Chrome, or add it to your home screen to open it like any other app. Nothing for signers to install.' },
@@ -350,7 +350,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Free does not mean less binding',
-      texto: ESIGN + ' Legal effect does not depend on what you pay for the tool. It depends on intent to sign, consent to do business electronically, and a record that can be retained and reproduced accurately — which is what the audit trail and sealed PDF provide.',
+      texto: ESIGN + ' Legal effect does not depend on what you pay for the tool. It depends on intent to sign, consent to do business electronically, and a record that can be retained and reproduced accurately, which is what the audit trail and sealed PDF provide.',
     },
     caso: {
       titulo: 'A dog walker who quit paper waivers',
@@ -385,7 +385,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Create a reusable document template from Word, a PDF or plain text. Mark the fields once, then fill, preview and send it for signature in minutes.',
     h1: 'How to Create a Document Template',
     grupo: 'howto',
-    intro: 'A document template separates the words that never change from the details that change every time. Building one used to mean learning merge fields, content controls or a template language. Today you can start from the file you already have — a Word document, a PDF, even a photo — or from text you paste, and mark the fields in a couple of minutes.',
+    intro: 'A document template separates the words that never change from the details that change every time. Building one used to mean learning merge fields, content controls or a template language. Today you can start from the file you already have, a Word document, a PDF, even a photo, or from text you paste, and mark the fields in a couple of minutes.',
     problema: {
       titulo: 'The template nobody maintains',
       texto: 'Teams usually end up with a folder of "final_v3_USE_THIS.docx" files, each copied from the last and edited by hand. Nobody knows which one has the clause the attorney fixed last year. A real template has one master copy, fields for what changes, and a clear way to fill and send it.',
@@ -435,7 +435,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Looking for a HelloSign or Dropbox Sign alternative? Word templates with automatic fields, signing by text or QR, identity checks and a free plan.',
     h1: 'A Dropbox Sign (HelloSign) Alternative',
     grupo: 'compare',
-    intro: 'Dropbox Sign — HelloSign until Dropbox renamed it in 2022 — popularized a clean way to send documents for signature and to build templates by dragging fields onto a page. If you are comparing alternatives, the questions that usually matter are how fast you can turn your existing documents into templates, how signers on phones experience it, and what you pay as you grow.',
+    intro: 'Dropbox Sign, HelloSign until Dropbox renamed it in 2022, popularized a clean way to send documents for signature and to build templates by dragging fields onto a page. If you are comparing alternatives, the questions that usually matter are how fast you can turn your existing documents into templates, how signers on phones experience it, and what you pay as you grow.',
     problema: {
       titulo: 'Why teams look for an alternative',
       texto: 'The reasons we hear most are practical: per-seat pricing that adds up as a small team grows, template building that still means placing every field by hand, and signers who mostly use phones and messaging apps rather than email. None of these is a flaw in Dropbox Sign; they are signs that a different workflow may fit better.',
@@ -483,7 +483,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'A simpler Adobe Acrobat Sign alternative for small businesses: Word templates with automatic fields, signing by text or QR, identity checks, free plan.',
     h1: 'An Adobe Acrobat Sign Alternative',
     grupo: 'compare',
-    intro: 'Adobe Acrobat Sign — formerly Adobe Sign and, before that, EchoSign — is built for organizations that already run on Adobe and need enterprise workflows. Small businesses often find they are paying for capability they do not use while still placing fields by hand on every new document. If that sounds familiar, a lighter tool may fit better.',
+    intro: 'Adobe Acrobat Sign, formerly Adobe Sign and, before that, EchoSign, is built for organizations that already run on Adobe and need enterprise workflows. Small businesses often find they are paying for capability they do not use while still placing fields by hand on every new document. If that sounds familiar, a lighter tool may fit better.',
     problema: {
       titulo: 'Enterprise tools for small-business jobs',
       texto: 'A landlord, a contractor or a tutoring center needs three things: turn the documents they already have into templates, get them signed quickly on phones, and keep proof. Enterprise suites do all of that and much more, but the setup, the per-user licensing and the learning curve are sized for a different organization.',
@@ -583,7 +583,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
   {
     slug: 'employment-offer-letter',
     titleTag: 'Employment Offer Letter: What to Include',
-    metaDescription: 'What a job offer letter should say — and what it should not promise. At-will language, pay transparency and start conditions. Send it for e-signature.',
+    metaDescription: 'What a job offer letter should say, and what it should not promise. At-will language, pay transparency and start conditions. Send it for e-signature.',
     h1: 'Employment Offer Letter',
     grupo: 'b2b',
     intro: 'An offer letter is often the first legal document between an employer and a new hire. It confirms the role, pay, start date and conditions, and it sets expectations that can matter years later. Written carefully, it is a welcome; written carelessly, it can read like a contract the employer never meant to sign.',
@@ -647,7 +647,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Why the signature matters',
-      texto: 'Change orders are governed by the contract and state law. Many contracts — including widely used industry forms — require changes to be authorized in writing and signed by the owner and contractor, and some states impose writing requirements on home improvement work, such as California Business and Professions Code § 7159 for home improvement contracts. A signed change order is also key evidence in a mechanic\'s lien or payment dispute. ' + ESIGN,
+      texto: 'Change orders are governed by the contract and state law. Many contracts, including widely used industry forms, require changes to be authorized in writing and signed by the owner and contractor, and some states impose writing requirements on home improvement work, such as California Business and Professions Code § 7159 for home improvement contracts. A signed change order is also key evidence in a mechanic\'s lien or payment dispute. ' + ESIGN,
     },
     caso: {
       titulo: 'A kitchen upgrade that got paid',
@@ -669,7 +669,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
       { q: 'Can a change order be signed electronically?', a: 'Yes. Under the ESIGN Act and UETA, an e-signed change order has the same effect as one signed on paper.' },
       { q: 'What if the owner refuses to sign?', a: 'Do not proceed with the extra work until scope and price are agreed in writing, unless your contract says otherwise.' },
       { q: 'Should change orders be numbered?', a: 'Yes. Sequential numbering makes it easy to reconcile the final contract price.' },
-      { q: "Who should sign a change order on a commercial job?", a: "Whoever the contract names as authorized to approve changes — often the owner's representative or project manager. Check the contract so the signature binds the owner." },
+      { q: "Who should sign a change order on a commercial job?", a: "Whoever the contract names as authorized to approve changes, often the owner's representative or project manager. Check the contract so the signature binds the owner." },
       { q: "Can change orders be approved by text?", a: "A text approval is weak evidence. Text the change order itself and let the owner sign it; that is quick and leaves a proper record." },
     ],
     fotos: [F.hombre, F.movil, F.firma],
@@ -682,7 +682,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'A work order template for maintenance and service jobs: what to include, customer sign-off on completion, and signing on the customer\'s phone.',
     h1: 'Work Order Template',
     grupo: 'b2b',
-    intro: 'A work order authorizes a specific job — a repair, an installation, a maintenance visit — and later records that it was completed. For service businesses and property managers it is the link between the customer\'s request, the technician\'s visit and the invoice. When the customer signs off on completion, billing disputes mostly disappear.',
+    intro: 'A work order authorizes a specific job, a repair, an installation, a maintenance visit, and later records that it was completed. For service businesses and property managers it is the link between the customer\'s request, the technician\'s visit and the invoice. When the customer signs off on completion, billing disputes mostly disappear.',
     problema: {
       titulo: 'Work done, nothing signed',
       texto: 'A technician finishes a job and leaves. Two weeks later the customer disputes the invoice: the work was not what they asked for, took less time, or did not fix the problem. Without a signed authorization before and a signed completion after, it is the company\'s word against the customer\'s.',
@@ -731,7 +731,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Put a payment plan in writing: amount, schedule, late fees and what happens on default. What to include and when lending rules apply. Sign it online.',
     h1: 'Payment Plan Agreement',
     grupo: 'b2b',
-    intro: 'A payment plan agreement lets a customer pay an amount they owe over time — a dental bill, a tuition balance, a past-due invoice, a private loan between people. Without a written plan, a few missed payments become an argument about what was agreed. With one, both sides know the schedule and what happens if it slips.',
+    intro: 'A payment plan agreement lets a customer pay an amount they owe over time, a dental bill, a tuition balance, a past-due invoice, a private loan between people. Without a written plan, a few missed payments become an argument about what was agreed. With one, both sides know the schedule and what happens if it slips.',
     problema: {
       titulo: '"I thought we said monthly"',
       texto: 'Informal payment plans fail on details: the due date, whether a payment can be skipped, whether a late payment cancels the arrangement, and whether interest applies. When the plan is only a text exchange, collecting the balance later means reconstructing it from messages.',
@@ -780,7 +780,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     metaDescription: 'Send any PDF or Word document for signature by email, text, WhatsApp or QR code. Track who signed and get a sealed PDF with an audit trail. Start free.',
     h1: 'Send Documents for Signature',
     grupo: 'b2b',
-    intro: 'Sending a document for signature should take less time than writing the email about it. Upload the file, add the people who need to sign, choose how to reach them — email, text, WhatsApp or a QR code in person — and track it until the last signature comes in. Everyone gets the same sealed PDF at the end.',
+    intro: 'Sending a document for signature should take less time than writing the email about it. Upload the file, add the people who need to sign, choose how to reach them, email, text, WhatsApp or a QR code in person, and track it until the last signature comes in. Everyone gets the same sealed PDF at the end.',
     problema: {
       titulo: 'Signatures that stall in inboxes',
       texto: 'Most documents do not stall because people refuse to sign; they stall because the request is buried in email, the signer is on a phone, or the process asks them to print and scan. Every extra step costs a day. The fastest workflows meet signers where they already are.',
@@ -793,7 +793,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
     ],
     ley: {
       titulo: 'Legally binding nationwide',
-      texto: ESIGN + ' A few document types remain outside these laws — wills, certain family-law documents and some court and utility notices, for example — so check before sending those for e-signature.',
+      texto: ESIGN + ' A few document types remain outside these laws, wills, certain family-law documents and some court and utility notices, for example, so check before sending those for e-signature.',
     },
     caso: {
       titulo: 'A nonprofit\'s volunteer forms',
@@ -814,7 +814,7 @@ export const PAGINAS_US_PRODUCTO: PaginaUS[] = [
       { q: 'Do signers need an account?', a: 'No. They open their link and sign in the browser.' },
       { q: 'Can I see who has signed?', a: 'Yes. Each document shows which signers are pending and who has signed.' },
       { q: 'Which documents cannot be signed electronically?', a: 'ESIGN excludes wills, codicils and testamentary trusts, certain family-law documents, court documents, and some notices such as utility shut-offs and eviction or foreclosure notices for a primary residence.' },
-      { q: "Can I send the same document to many people?", a: "Yes. For forms each person signs separately — waivers, policies, releases — share a template link so every person completes and signs their own copy." },
+      { q: "Can I send the same document to many people?", a: "Yes. For forms each person signs separately, waivers, policies, releases, share a template link so every person completes and signs their own copy." },
       { q: "What do signers receive at the end?", a: "A copy of the fully signed PDF with its signature certificate." },
       { q: "Can I send a reminder?", a: "Yes. Re-send the link by text, WhatsApp or email to anyone who has not signed yet." },
       { q: "Can I cancel a request?", a: "Yes. Delete the pending document and its links stop working." },
