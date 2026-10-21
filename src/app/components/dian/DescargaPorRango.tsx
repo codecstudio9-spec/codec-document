@@ -87,7 +87,7 @@ export function DescargaPorRango({ enviar, onImportar }: Props) {
 
   const importar = async () => {
     const picker = (window as unknown as { showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker;
-    if (!picker) { toast.error('Tu navegador no permite elegir carpetas. Usa Chrome, o arrastra la carpeta a "Subir mis XML".'); return; }
+    if (!picker) { toast.error('Tu navegador no permite elegir carpetas. Usa Chrome, o arrastra la carpeta al recuadro de XML en Inicio.'); return; }
     try {
       const dir = await picker();
       setImportando(true);

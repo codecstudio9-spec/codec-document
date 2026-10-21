@@ -942,16 +942,6 @@ function ContenidoDian() {
   const menuLateral: GrupoLateral[] = useMemo(() => {
     const grupos: GrupoLateral[] = [
       {
-        // Contabilidad (módulo de pago) va arriba: es el siguiente paso
-        // natural después de traer los XML. A quien no lo tiene se le ofrece
-        // la prueba; a quien lo tiene, lo lleva directo a sus empresas.
-        titulo: 'Contabilidad',
-        items: [{
-          id: 'contabilidad', etiqueta: 'Mis empresas y contabilidad', icono: Building2,
-          marca: contabilidad?.activo ? undefined : contabilidad?.pruebaDisponible ? '15 días gratis' : 'Plan',
-        }],
-      },
-      {
         items: [
           { id: 'inicio', etiqueta: 'Inicio', icono: LayoutDashboard },
           { id: 'documentos', etiqueta: 'Documentos', icono: Table2 },
@@ -980,6 +970,12 @@ function ContenidoDian() {
       {
         titulo: 'Llevarme los datos',
         items: [
+          // Contabilidad (módulo de pago): a quien no lo tiene se le ofrece la
+          // prueba; a quien lo tiene, lo lleva a sus empresas.
+          {
+            id: 'contabilidad', etiqueta: 'Mis empresas', icono: Building2,
+            marca: contabilidad?.activo ? undefined : contabilidad?.pruebaDisponible ? '15 días' : 'Nuevo',
+          },
           { id: 'causar', etiqueta: 'Causar facturas', icono: BookOpenCheck, marca: 'Nuevo' },
           { id: 'reportes', etiqueta: 'Excel y plantillas', icono: FileSpreadsheet },
           { id: 'auditor', etiqueta: 'Cruzar contabilidad', icono: Scale },
@@ -1048,12 +1044,16 @@ function ContenidoDian() {
    * funciona; uno que no está no genera esa pregunta.
    */
   const accionesRapidas: Accion[] = useMemo(() => [
+    // «Subir mis XML» se quitó de aquí: el recuadro de arrastrar está justo
+    // debajo y hacía lo mismo. Su lugar lo toma el módulo Contabilidad, que
+    // es el paso siguiente a traer los XML.
     {
-      id: 'subir',
-      etiqueta: 'Subir mis XML',
-      icono: FileUp,
+      id: 'empresas',
+      etiqueta: 'Mis empresas',
+      icono: Building2,
       variante: 'principal',
-      onClick: () => { setSeccion('inicio'); inputRef.current?.click(); },
+      insignia: contabilidad?.activo ? undefined : contabilidad?.pruebaDisponible ? '15 DÍAS GRATIS' : 'NUEVO',
+      onClick: () => navegar('/contabilidad'),
     },
     ...(puedeDescargar
       ? [{
@@ -1086,7 +1086,7 @@ function ContenidoDian() {
       variante: 'excel',
       onClick: () => setSeccion('reportes'),
     },
-  ], [puedeDescargar]);
+  ], [puedeDescargar, contabilidad, navegar]);
 
   /**
    * La promoción de lanzamiento, si está viva.

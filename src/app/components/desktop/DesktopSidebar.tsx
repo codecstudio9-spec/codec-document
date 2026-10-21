@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut, BarChart3, Building2, Code2, Calculator } from 'lucide-react';
-import { useContabilidadActiva } from '../../hooks/use-contabilidad-activa';
+import { Home, FileText, PenLine, LayoutTemplate, Sparkles, Settings, User, LogOut, BarChart3, Building2, Code2 } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import { Logo } from '../brand/Logo';
@@ -16,11 +15,6 @@ const NAV_ITEMS = [
   { to: '/dashboard/ai', labelEs: 'Asistente IA', labelEn: 'AI Assistant', icon: Sparkles },
   { to: '/dashboard/settings', labelEs: 'Configuración', labelEn: 'Settings', icon: Settings },
 ] as const;
-
-// Sólo para quien tiene el módulo de pago Contabilidad (o su prueba).
-const CONTABILIDAD_NAV_ITEM = {
-  to: '/contabilidad', labelEs: 'Contabilidad', labelEn: 'Accounting', icon: Calculator,
-} as const;
 
 const ADMIN_NAV_ITEM = {
   to: '/dashboard/admin/analytics', labelEs: 'Analytics', labelEn: 'Analytics', icon: BarChart3,
@@ -45,11 +39,8 @@ export function DesktopSidebar() {
   const { user, isAdmin, isAnalyticsAdmin, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const conContabilidad = useContabilidadActiva(user?.id);
   const navItems = [
-    ...NAV_ITEMS.slice(0, -1),
-    ...(conContabilidad ? [CONTABILIDAD_NAV_ITEM] : []),
-    ...NAV_ITEMS.slice(-1),
+    ...NAV_ITEMS,
     ...(isAdmin || isAnalyticsAdmin ? [ADMIN_NAV_ITEM] : []),
     ...(isAdmin ? [ADMIN_INSTITUTIONS_NAV_ITEM, ADMIN_API_NAV_ITEM] : []),
   ];
