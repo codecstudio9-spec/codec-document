@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useLanguage } from '../contexts/language-context';
 import { useCompany } from '../hooks/useCompany';
 import {
-  detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks,
+  detectFields, detectBoldFields, extractFormattedParagraphs, detectEditableClauseBlocks, detectTitleBlock,
   fetchDocxArrayBuffer, type DetectedField, type DetectedFieldType, type ClauseBlock, type ExtraClause,
 } from '../../lib/docxTemplateEngine';
 import {
@@ -83,6 +83,8 @@ export function MyDocxTemplateEditorPage() {
   // clauseOverrides is only the paragraphs the owner actually rewrote,
   // keyed by that same index (see docxTemplateEngine.ts).
   const [clauseBlocks, setClauseBlocks] = useState<ClauseBlock[]>([]);
+  // El título del documento (primer párrafo), editable aparte.
+  const [tituloBloque, setTituloBloque] = useState<ClauseBlock | null>(null);
   const [clauseOverrides, setClauseOverrides] = useState<Record<string, string>>({});
   const [extraClauses, setExtraClauses] = useState<ExtraClause[]>([]);
   const [clausesOpen, setClausesOpen] = useState(false);
@@ -133,7 +135,9 @@ export function MyDocxTemplateEditorPage() {
       listTemplateShares(id).then(setShares).catch(() => {});
       try {
         const buffer = await fetchDocxArrayBuffer(t.docxFileUrl);
-        setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(buffer)));
+        const parrafos = extractFormattedParagraphs(buffer);
+        setClauseBlocks(detectEditableClauseBlocks(parrafos));
+        setTituloBloque(detectTitleBlock(parrafos));
         try { setEtiquetasWord(detectFields(buffer)); } catch { /* sin lista de etiquetas */ }
       } catch {
         // Non-fatal — the fields/signers/security sections above still work
@@ -198,9 +202,12 @@ export function MyDocxTemplateEditorPage() {
       setDocxFile(fileForUpload);
       setDocxBuffer(finalBuffer);
       try {
-        setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(finalBuffer)));
+        const parrafos = extractFormattedParagraphs(finalBuffer);
+        setClauseBlocks(detectEditableClauseBlocks(parrafos));
+        setTituloBloque(detectTitleBlock(parrafos));
       } catch {
         setClauseBlocks([]);
+        setTituloBloque(null);
       }
       setClauseOverrides({});
       // Object URL only for the "file selected" UI state below — the real
@@ -682,6 +689,42 @@ export function MyDocxTemplateEditorPage() {
                 )}
               </div>
             )}
+
+            {tituloBloque && (() => {
+              const clave = String(tituloBloque.index);
+              const editado = clauseOverrides[clave] !== undefined;
+              return (
+                <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label htmlFor="titulo-documento" className="text-sm font-black uppercase tracking-wide text-slate-500">
+                      {language === 'en' ? 'Document title' : 'Título del documento'}
+                    </label>
+                    {editado && (
+                      <button
+                        type="button"
+                        onClick={() => restoreClauseOriginal(tituloBloque.index)}
+                        className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-indigo-600"
+                      >
+                        <RotateCcw className="size-3" /> {language === 'en' ? 'Restore original' : 'Restaurar original'}
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    id="titulo-documento"
+                    rows={2}
+                    disabled={!canEditFields}
+                    value={clauseOverrides[clave] ?? tituloBloque.originalText}
+                    onChange={(e) => setClauseOverrides((prev) => ({ ...prev, [clave]: e.target.value }))}
+                    className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-center text-sm font-black tracking-wide text-slate-800 outline-none focus:border-indigo-400 disabled:bg-slate-50"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {language === 'en'
+                      ? 'Appears centered and in bold at the top of every document made with this template.'
+                      : 'Sale centrado y en negrita arriba de cada documento que se haga con esta plantilla.'}
+                  </p>
+                </section>
+              );
+            })()}
 
             {/* Detected fields — collapsible drawer; field DEFINITIONS are
                 admin-only once this user belongs to a company (see

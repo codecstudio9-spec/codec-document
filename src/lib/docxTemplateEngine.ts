@@ -413,6 +413,22 @@ function looksLikeShortLine(text: string, wordCount: number): boolean {
  * Nombres: {{nombre}} ..." can rack up plenty of words from all the field
  * labels, but it's still form data wired to real {{tags}}, not prose — an
  * owner freely rewriting it as plain text would destroy those tags. */
+/**
+ * El título del documento: el primer párrafo con texto, si es corto y no
+ * lleva {{campos}}. No entra en detectEditableClauseBlocks (que sólo ofrece
+ * párrafos largos), así que antes no había dónde cambiarlo. Se edita con el
+ * mismo mecanismo de clause_overrides, por índice de párrafo.
+ */
+export function detectTitleBlock(paragraphs: DocxParagraph[]): ClauseBlock | null {
+  for (let index = 0; index < Math.min(paragraphs.length, 8); index++) {
+    const text = paragraphs[index].runs.map((r) => r.text).join('').trim();
+    if (!text) continue;
+    if (text.includes('{{') || text.split(/\s+/).length > 40) return null;
+    return { index, originalText: text };
+  }
+  return null;
+}
+
 export function detectEditableClauseBlocks(paragraphs: DocxParagraph[]): ClauseBlock[] {
   const blocks: ClauseBlock[] = [];
   paragraphs.forEach((para, index) => {
@@ -443,7 +459,10 @@ export function applyClauseOverrides(paragraphs: DocxParagraph[], overrides?: Re
     if (!(key in overrides)) { result.push(para); return; }
     const override = overrides[key];
     if (override.trim() === '') return; // deleted by the owner — omit
-    result.push({ ...para, runs: [{ text: override, bold: false }] });
+    // Un párrafo que era todo negrita (el título del documento) sigue en
+    // negrita al reescribirlo; si no, el título editado salía como texto normal.
+    const todoNegrita = para.runs.some((r) => r.text.trim()) && para.runs.every((r) => r.bold || !r.text.trim());
+    result.push({ ...para, runs: [{ text: override, bold: todoNegrita }] });
   });
   return result;
 }
