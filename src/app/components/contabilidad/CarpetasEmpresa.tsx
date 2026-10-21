@@ -319,7 +319,7 @@ function ContenidoCarpeta({
       </div>
 
       {def.id === 'pos' ? (
-        <CarpetaCodecPos empresa={empresa} />
+        <CarpetaCodecPos empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />
       ) : def.id === 'archivos' ? (
         archivos.length === 0 ? (
           <Vacio icono={Paperclip} titulo="Sin archivos en este periodo" descripcion="Guarda aquí el RUT, la cámara de comercio, extractos bancarios o lo que quieras tener a mano de esta empresa." />

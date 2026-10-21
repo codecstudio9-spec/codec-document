@@ -30,3 +30,13 @@ verify_jwt = false
 
 [functions.send-signing-invitation]
 verify_jwt = true
+
+# Codec POS → Contabilidad: se autentican con su propio token (cdp_…)
+[functions.pos-vincular]
+verify_jwt = false
+
+[functions.pos-ingesta]
+verify_jwt = false
+
+[functions.pos-desvincular]
+verify_jwt = false

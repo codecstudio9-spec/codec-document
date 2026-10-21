@@ -577,3 +577,84 @@ export async function repartoDeHoy(): Promise<Array<{ empresa: string; cantidad:
   return ((data ?? []) as unknown as Array<{ cantidad: number; fiscal_entities: { razon_social: string; nombre_comercial: string | null } | null }>)
     .map((a) => ({ empresa: a.fiscal_entities?.nombre_comercial || a.fiscal_entities?.razon_social || 'Empresa', cantidad: a.cantidad }));
 }
+
+// ── Codec POS ─────────────────────────────────────────────────────────────
+
+export interface VinculoPos {
+  id: string;
+  estado: 'pendiente' | 'activo' | 'revocado';
+  codigo: string | null;
+  codigo_vence: string | null;
+  nombre_negocio: string | null;
+  vinculado_at: string | null;
+  ultimo_envio_at: string | null;
+  eventos_recibidos: number;
+}
+
+export async function vinculoPos(empresaId: string): Promise<VinculoPos | null> {
+  const { data, error } = await supabase.from('cont_pos_vinculos')
+    .select('id,estado,codigo,codigo_vence,nombre_negocio,vinculado_at,ultimo_envio_at,eventos_recibidos')
+    .eq('empresa_id', empresaId).neq('estado', 'revocado').limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as VinculoPos | null;
+}
+
+export async function generarCodigoPos(empresaId: string): Promise<{ codigo: string; vence: string }> {
+  const { data, error } = await supabase.rpc('cont_pos_generar_codigo', { p_empresa: empresaId });
+  if (error) throw new Error(error.message);
+  return data as { codigo: string; vence: string };
+}
+
+export async function desconectarPos(empresaId: string): Promise<void> {
+  const { error } = await supabase.rpc('cont_pos_desconectar', { p_empresa: empresaId });
+  if (error) throw new Error(error.message);
+}
+
+export interface VentaPos {
+  id: string;
+  id_origen: string;
+  numero: string | null;
+  fecha: string;
+  total: number;
+  subtotal: number;
+  iva: number;
+  descuento: number;
+  propina: number;
+  medio_pago: string | null;
+  cajero: string | null;
+  tienda: string | null;
+  factura_cufe: string | null;
+  items: Array<{ nombre: string | null; cantidad: number; precio_unitario: number; subtotal: number; iva_pct: number }>;
+  anulada: boolean;
+  comprobante_id: string | null;
+}
+
+export async function ventasPos(empresaId: string, desde: string, hasta: string): Promise<VentaPos[]> {
+  const todas: VentaPos[] = [];
+  for (let d = 0; ; d += 1000) {
+    const { data, error } = await supabase.from('pos_ventas')
+      .select('id,id_origen,numero,fecha,total,subtotal,iva,descuento,propina,medio_pago,cajero,tienda,factura_cufe,items,anulada,comprobante_id')
+      .eq('empresa_id', empresaId)
+      .gte('fecha', `${desde}T00:00:00-05:00`).lte('fecha', `${hasta}T23:59:59-05:00`)
+      .order('fecha', { ascending: false }).range(d, d + 999);
+    if (error) throw new Error(error.message);
+    todas.push(...((data ?? []) as VentaPos[]));
+    if (!data || data.length < 1000) break;
+  }
+  return todas;
+}
+
+export async function contabilizarDiaPos(empresaId: string, fecha: string): Promise<{ numero?: number; ventas: number }> {
+  const { data, error } = await supabase.rpc('pos_contabilizar_dia', { p_empresa: empresaId, p_fecha: fecha });
+  if (error) throw new Error(error.message);
+  return data as { numero?: number; ventas: number };
+}
+
+/** Las facturas electrónicas que mandó Codec POS esperan en la bandeja (la
+ *  misma del correo). Se leen con el mismo motor que todo lo demás, sin que
+ *  el contador tenga que hacer nada: basta con abrir Contabilidad. */
+export async function facturasPosPendientes(): Promise<number> {
+  const { count } = await supabase.from('ed_inbox_files').select('id', { count: 'exact', head: true })
+    .eq('status', 'PENDING').eq('origen', 'pos');
+  return count ?? 0;
+}

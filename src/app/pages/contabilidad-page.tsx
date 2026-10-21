@@ -43,10 +43,11 @@ import { useAuth } from '../contexts/auth-context';
 import type { Notificacion } from '../hooks/use-notificaciones';
 import {
   estadoContabilidad, listarEmpresas, resumenEmpresas, listarAvisos, marcarAvisosLeidos, periodosEmpresa,
-  cuentasPropias, datosCausacionEmpresa, contabilizarCausacion,
+  cuentasPropias, datosCausacionEmpresa, contabilizarCausacion, facturasPosPendientes,
   type EstadoContabilidad, type Empresa, type ResumenEmpresa, type AvisoContable,
 } from '../services/contabilidad-service';
 import { planDeCuentas, type Cuenta } from '../../lib/contabilidad/puc';
+import { importarBandeja } from '../services/dian-service';
 
 type Seccion = 'empresas' | 'avisos' | 'carpetas' | 'comprobantes' | 'reportes' | 'cuentas' | 'pos' | 'plan';
 
@@ -95,6 +96,26 @@ export default function ContabilidadPage() {
   }, []);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+
+  // Las facturas electrónicas que mandó Codec POS esperan en la bandeja. Se
+  // leen solas al abrir Contabilidad, con el mismo motor de los XML, y quedan
+  // en la carpeta de su empresa.
+  const leyendoPos = useRef(false);
+  useEffect(() => {
+    if (!estado?.activo || leyendoPos.current) return;
+    leyendoPos.current = true;
+    void facturasPosPendientes().then(async (n) => {
+      if (n === 0) return;
+      const t = toast.loading(`Leyendo ${n} ${n === 1 ? 'factura' : 'facturas'} de Codec POS…`);
+      try {
+        const r = await importarBandeja(() => {});
+        toast.success(`${r.procesados} ${r.procesados === 1 ? 'factura' : 'facturas'} de Codec POS en sus carpetas`, { id: t });
+        void refrescar();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'No pude leer las facturas de Codec POS', { id: t });
+      }
+    });
+  }, [estado?.activo, refrescar]);
 
   // Vuelta de Wompi: el webhook puede tardar unos segundos en activar el
   // plan, así que se pregunta un par de veces antes de rendirse.
@@ -158,7 +179,9 @@ export default function ContabilidadPage() {
   const notificaciones: Notificacion[] = avisos.slice(0, 20).map((a) => ({
     id: a.id,
     tipo: a.tipo === 'pos_nuevos' ? 'pago' : 'proceso',
-    titulo: `${a.cantidad} ${a.cantidad === 1 ? 'documento nuevo' : 'documentos nuevos'} de ${nombreDe(a.empresa_id)}`,
+    titulo: a.tipo === 'pos_nuevos'
+      ? `${a.cantidad} ${a.cantidad === 1 ? 'venta' : 'ventas'} de Codec POS en ${nombreDe(a.empresa_id)}`
+      : `${a.cantidad} ${a.cantidad === 1 ? 'documento nuevo' : 'documentos nuevos'} de ${nombreDe(a.empresa_id)}`,
     detalle: [a.detalle.compras ? `${a.detalle.compras} de compra` : '', a.detalle.ventas ? `${a.detalle.ventas} de venta` : '']
       .filter(Boolean).join(' · ') || undefined,
     fecha: new Date(a.updated_at).getTime(),
@@ -190,7 +213,7 @@ export default function ContabilidadPage() {
           { id: 'comprobantes', etiqueta: 'Comprobantes', icono: BookOpen },
           { id: 'reportes', etiqueta: 'Reportes', icono: BarChart3 },
           { id: 'cuentas', etiqueta: 'Plan de cuentas', icono: ListTree },
-          { id: 'pos', etiqueta: 'Codec POS', icono: Store, marca: 'Pronto' },
+          { id: 'pos', etiqueta: 'Codec POS', icono: Store },
         ],
       });
     }
@@ -356,7 +379,7 @@ export default function ContabilidadPage() {
                       {empresa && seccion === 'pos' && (
                         <>
                           <Cabecera titulo="Codec POS" descripcion="Las ventas y gastos del negocio, directo a su contabilidad." icono={Store} color="#EA580C" />
-                          <Tarjeta className="p-5"><CarpetaCodecPos empresa={empresa} /></Tarjeta>
+                          <Tarjeta className="p-5"><CarpetaCodecPos empresa={empresa} puedeEditar={puedeEditar} /></Tarjeta>
                         </>
                       )}
                     </motion.div>
@@ -508,7 +531,9 @@ function VistaAvisos({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-slate-900">
-                  {a.cantidad} {a.cantidad === 1 ? 'documento nuevo' : 'documentos nuevos'} de {nombreDe(a.empresa_id)}
+                  {a.tipo === 'pos_nuevos'
+                    ? `${a.cantidad} ${a.cantidad === 1 ? 'venta' : 'ventas'} de Codec POS en ${nombreDe(a.empresa_id)}`
+                    : `${a.cantidad} ${a.cantidad === 1 ? 'documento nuevo' : 'documentos nuevos'} de ${nombreDe(a.empresa_id)}`}
                 </p>
                 <p className="text-xs text-slate-500">
                   {new Date(`${a.fecha}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
