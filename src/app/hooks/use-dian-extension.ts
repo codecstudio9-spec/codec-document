@@ -9,7 +9,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *     se publique allí.
  * Se prueban en orden y se usa el primero que responde.
  */
-const EXTENSION_IDS = ['cljhonndmjmhffapnmleppolcabndaob', 'hgikepfbdgaajbmkagdjebfeodiepcp'];
+// Primero el de la Web Store (el que tienen los contadores). Estuvo mal
+// escrito (le faltaba una «i») y por eso la extensión publicada nunca se
+// detectaba. El segundo es el de la copia de desarrollo cargada a mano.
+const EXTENSION_IDS = ['hgikiepfbdgaajbmkagdjebfeodiepcp', 'cljhonndmjmhffapnmleppolcabndaob'];
 
 export type EstadoExtensionDian = 'revisando' | 'instalada' | 'no-instalada';
 

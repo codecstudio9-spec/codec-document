@@ -72,7 +72,7 @@ import {
   importarBandeja, listarBandeja, resumenMes,
   type EstadoCorreo, type ArchivoBandeja, type ResumenMes as ResumenMesDatos,
   cruzarCufes, obtenerDocumento, type CruceCufes,
-  enviarFeedback, listarFeedback, guardarPermitidosDescarga, type Feedback,
+  enviarFeedback, listarFeedback, type Feedback,
   listarExcepciones, resolverExcepcion, borrarDocumentos, type ExcepcionListada,
   type DocumentoListado, type EventoProgreso, type ResumenImportacion, type TotalesPanel,
 } from '../services/dian-service';
@@ -282,7 +282,9 @@ function ContenidoDian() {
   // antes de declararlo es un error de zona muerta temporal que tumba la
   // página entera al montar, y en producción sale como «Ocurrió un
   // inconveniente» sin más pistas.
-  const puedeDescargar = beta?.puedeDescargar ?? ilimitado;
+  // La extensión ya está publicada en la Chrome Web Store: la descarga corre en el
+  // Chrome de cada contador, con su propia sesión de la DIAN, así que se abre a todos.
+  const puedeDescargar = true;
   // Siempre en español. Este módulo existe sólo para Colombia y su interfaz
   // está escrita en español fijo: con un navegador en inglés, la voz explicaba
   // en inglés lo que se estaba viendo en español.
@@ -314,41 +316,9 @@ function ContenidoDian() {
   const [panelDescarga, setPanelDescarga] = useState(false);
   const [panelCausacion, setPanelCausacion] = useState(false);
 
-  // ── Panel del propietario: quién prueba la descarga, y qué respondieron ──
-  const [nuevoTester, setNuevoTester] = useState('');
-  const [guardandoTesters, setGuardandoTesters] = useState(false);
+  // ── Panel del propietario: qué respondieron en la encuesta ──
   const [respuestas, setRespuestas] = useState<Record<string, unknown>[] | null>(null);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
-
-  const guardarTesters = async (correos: string[], aviso: string) => {
-    setGuardandoTesters(true);
-    try {
-      await guardarPermitidosDescarga(correos);
-      await refrescar();
-      toast.success(aviso);
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setGuardandoTesters(false); }
-  };
-
-  const agregarTester = async () => {
-    const correo = nuevoTester.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
-      toast.error('Escribe un correo válido');
-      return;
-    }
-    const actuales = beta?.descargaPermitidos ?? [];
-    if (actuales.includes(correo)) {
-      toast.error('Esa persona ya tiene acceso');
-      return;
-    }
-    await guardarTesters([...actuales, correo], `${correo} ya puede usar la descarga`);
-    setNuevoTester('');
-  };
-
-  const quitarTester = async (correo: string) => {
-    const actuales = beta?.descargaPermitidos ?? [];
-    await guardarTesters(actuales.filter((c) => c !== correo), `Se le quitó el acceso a ${correo}`);
-  };
 
   const cargarRespuestas = async () => {
     setCargandoRespuestas(true);
@@ -966,10 +936,8 @@ function ContenidoDian() {
             bloqueado: buzon ? !buzon.disponible : false,
           },
           { id: 'cufes', etiqueta: 'Verificar CUFEs', icono: ListChecks },
-          // Visible para todos, con la marca «Pronto»: el panel explica que
-          // está en construcción por los controles de seguridad de la DIAN y
-          // ofrece la alternativa que sí es automática (el correo).
-          { id: 'descargar', etiqueta: 'Descargar de la DIAN', icono: CloudDownload, marca: puedeDescargar ? undefined : 'Pronto' },
+          // Abierta a todos: la extensión ya está en la Chrome Web Store.
+          { id: 'descargar', etiqueta: 'Descargar de la DIAN', icono: CloudDownload },
         ],
       },
       {
@@ -1714,87 +1682,6 @@ function ContenidoDian() {
           <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
             Los cambios aplican de inmediato para todos, sin desplegar nada.
           </p>
-
-          {/* ── Quién puede probar la descarga masiva ─────────────────────
-              La descarga sale por las IPs de Supabase, compartidas con el
-              resto de la plataforma: si la DIAN bloquea esa IP por abuso, la
-              bloquea para todos. Por eso se abre persona por persona y no
-              con un interruptor de «todos». */}
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <h3 className="text-xs font-bold text-slate-700">Acceso a «Descargar XML de la DIAN»</h3>
-
-            {/* Abrir y cerrar en un clic, sin desplegar. Todo el tráfico sale
-                por las IPs de Supabase, compartidas con el resto de la
-                plataforma: si la DIAN bloquea esa IP por abuso, la bloquea
-                para todos los clientes a la vez. */}
-            <label className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5">
-              <input
-                type="checkbox"
-                checked={Boolean(beta.descargaAbierta)}
-                onChange={(e) => {
-                  const abrir = e.target.checked;
-                  void configurarBeta('dian_descarga_abierta', abrir ? 'true' : 'false')
-                    .then(() => { toast.success(abrir ? 'Abierta para todos' : 'Cerrada: sólo tú y los autorizados'); void refrescar(); })
-                    .catch((err) => toast.error(err.message));
-                }}
-                className="size-4 accent-emerald-600"
-              />
-              <span className="text-xs">
-                <span className="block font-bold">Abierta para todos</span>
-                <span className="block text-slate-400">
-                  {beta.descargaAbierta
-                    ? 'Cualquier usuario con sesión puede descargar. Siguen vigentes el cierre por fecha, el tope global y el ritmo de 2 peticiones por segundo.'
-                    : 'Sólo tú y los correos de abajo.'}
-                </span>
-              </span>
-            </label>
-
-            <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">
-              Escribe el correo con el que la persona entra a Codec. Tendrá acceso
-              en cuanto recargue; tú siempre lo tienes.
-            </p>
-
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              <input
-                value={nuevoTester}
-                onChange={(e) => setNuevoTester(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void agregarTester(); } }}
-                placeholder="contador@correo.com"
-                className="min-w-0 flex-1 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:bg-slate-200"
-              />
-              <button
-                type="button"
-                onClick={() => void agregarTester()}
-                disabled={guardandoTesters}
-                className="rounded-lg bg-slate-200 px-3.5 py-2 text-xs font-bold transition hover:bg-slate-300 disabled:opacity-50"
-              >
-                {guardandoTesters ? <Loader2 className="size-3.5 animate-spin" /> : 'Dar acceso'}
-              </button>
-            </div>
-
-            {beta.descargaPermitidos && beta.descargaPermitidos.length > 0 ? (
-              <ul className="mt-2.5 flex flex-wrap gap-1.5">
-                {beta.descargaPermitidos.map((correo) => (
-                  <li key={correo} className="flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-xs">
-                    <span className="max-w-[220px] truncate">{correo}</span>
-                    <button
-                      type="button"
-                      onClick={() => void quitarTester(correo)}
-                      disabled={guardandoTesters}
-                      title={`Quitar acceso a ${correo}`}
-                      className="rounded-full p-0.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-800 disabled:opacity-50"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-[11px] text-slate-300">
-                Nadie más tiene acceso todavía.
-              </p>
-            )}
-          </div>
 
           {/* ── Respuestas de la encuesta ─────────────────────────────────
               Se guardaban desde el primer día pero no había dónde leerlas,
@@ -3447,8 +3334,6 @@ function ContenidoDian() {
       >
         <DescargarDeDian
           onCerrar={() => setPanelDescarga(false)}
-          habilitada={puedeDescargar}
-          onIrACorreo={() => { setPanelDescarga(false); setSeccion('correo'); }}
           onImportar={(archivos) => { setPanelDescarga(false); setSeccion('inicio'); void procesar(archivos); }}
           narrar={narrar}
           // Los que la verificación ya identificó como faltantes: se pueden
