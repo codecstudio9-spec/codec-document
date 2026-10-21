@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useMemo, useDeferredValue, useRef, useCallback, type ReactNode } from 'react';
+import { resolverCondicionales } from '../utils/condicionales-plantilla';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { getTemplateById } from '../data/templates';
@@ -1475,10 +1476,7 @@ function ContenidoGenerador() {
    * document that actually gets signed. */
   const computeLiveDocumentText = (): string => {
     let text = previewTemplate;
-    text = text.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match: string, fieldName: string, innerContent: string) => {
-      const value = formData[fieldName.trim()];
-      return value && value !== '' && value !== 'No' && value !== 'false' ? innerContent : '';
-    });
+    text = resolverCondicionales(text, formData as Record<string, unknown>);
     Object.entries(formData).forEach(([key, value]) => {
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');

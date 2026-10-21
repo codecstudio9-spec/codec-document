@@ -15,6 +15,7 @@
  *   owner-only one (this page has no logged-in owner to authenticate as).
  */
 import { getTemplateById } from '../data/templates';
+import { resolverCondicionales } from './condicionales-plantilla';
 import { spanishTemplates, spanishSignerNotes } from '../data/templates-es';
 import { getStateSpecificTemplate } from '../data/state-variations';
 import { getDocumentTranslation } from '../data/document-translations';
@@ -38,10 +39,7 @@ function interpolateBuiltInTemplate(documentType: string, rawDocumentData: Recor
   const dataWithDate = normalizeLanguageSensitiveFields(enrichDocumentDataWithDates(documentData, language, template.id), language);
 
   let content = templateToUse;
-  content = content.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match, fieldName, innerContent) => {
-    const value = dataWithDate[fieldName.trim() as keyof typeof dataWithDate];
-    return value && value !== '' && value !== 'No' && value !== 'false' ? innerContent : '';
-  });
+  content = resolverCondicionales(content, dataWithDate as Record<string, unknown>);
   Object.entries(dataWithDate).forEach(([key, value]) => {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');

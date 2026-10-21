@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
+import { resolverCondicionales } from '../utils/condicionales-plantilla';
 import { DocumentData } from '../types/document';
 import { useLanguage } from '../contexts/language-context';
 import { enrichDocumentDataWithDates } from '../utils/document-dates';
@@ -593,14 +594,7 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
   );
 
   const contentAfterConditionals = useMemo(() => {
-    return template.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_match, fieldName, innerContent) => {
-      const cleanFieldName = fieldName.trim() as keyof typeof enrichedData;
-      const fieldValue = enrichedData[cleanFieldName];
-      if (fieldValue && fieldValue !== '' && fieldValue !== 'No' && fieldValue !== 'false') {
-        return innerContent;
-      }
-      return '';
-    });
+    return resolverCondicionales(template, enrichedData as Record<string, unknown>);
   }, [template, enrichedData]);
 
   const formattedContent = useMemo(() => {

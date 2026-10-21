@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { resolverCondicionales } from '../utils/condicionales-plantilla';
 import { useParams, useNavigate, Link } from 'react-router';
 import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
@@ -811,15 +812,7 @@ export function PreviewPage() {
       
       // Process Handlebars-like conditionals {{#if field}}...{{/if}}
       // Use a safe regex that handles nested content
-      content = content.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, fieldName, innerContent) => {
-        const cleanFieldName = fieldName.trim();
-        const fieldValue = dataWithDate[cleanFieldName];
-        // Show content if field has a truthy value
-        if (fieldValue && fieldValue !== '' && fieldValue !== 'No' && fieldValue !== 'false') {
-          return innerContent;
-        }
-        return '';
-      });
+      content = resolverCondicionales(content, dataWithDate as Record<string, unknown>);
       
       // Replace all variables with data
       Object.entries(dataWithDate).forEach(([key, value]) => {
@@ -930,14 +923,7 @@ export function PreviewPage() {
       exportLanguage,
     );
 
-    content = content.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, fieldName, innerContent) => {
-      const cleanFieldName = fieldName.trim();
-      const fieldValue = enrichedData[cleanFieldName];
-      if (fieldValue && fieldValue !== '' && fieldValue !== 'No' && fieldValue !== 'false') {
-        return innerContent;
-      }
-      return '';
-    });
+    content = resolverCondicionales(content, enrichedData as Record<string, unknown>);
 
     Object.entries(enrichedData).forEach(([key, value]) => {
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1003,14 +989,7 @@ export function PreviewPage() {
     );
     
     // Process Handlebars-like conditionals {{#if field}}...{{/if}}
-    exportContent = exportContent.replace(/\{\{#if\s+([^}]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, fieldName, innerContent) => {
-      const cleanFieldName = fieldName.trim();
-      const fieldValue = enrichedData[cleanFieldName];
-      if (fieldValue && fieldValue !== '' && fieldValue !== 'No' && fieldValue !== 'false') {
-        return innerContent;
-      }
-      return '';
-    });
+    exportContent = resolverCondicionales(exportContent, enrichedData as Record<string, unknown>);
     
     // Replace all variables with data
     Object.entries(enrichedData).forEach(([key, value]) => {
