@@ -30,12 +30,24 @@ import Docxtemplater from 'docxtemplater';
 // {{tag}} value — purely a fill-form organization aid.
 export type DetectedFieldType = 'text' | 'date' | 'number' | 'choice' | 'section';
 
+/**
+ * De dónde sale un dato que NO escribe quien llena el formulario: se copia de
+ * otros datos, se calcula una resta (deuda = valor total − cuota inicial) o se
+ * toma de una fecha. Un campo con `fuente` no aparece en el formulario; ver
+ * src/lib/camposDerivados.ts.
+ */
+export type FuenteCampo =
+  | { tipo: 'copiar'; campos: string[] }
+  | { tipo: 'restar'; campo: string; menos: string[] }
+  | { tipo: 'fecha'; campo: string; parte: 'completa' | 'dia' | 'mes' | 'mesNumero' | 'anio' | 'anio2'; sumarMesesDe?: string };
+
 export interface DetectedField {
   key: string;
   label: string;
   type: DetectedFieldType;
   options?: string[];
   required: boolean;
+  fuente?: FuenteCampo;
 }
 
 const TAG_RE = /\{\{\s*([^}]+?)\s*\}\}/g;

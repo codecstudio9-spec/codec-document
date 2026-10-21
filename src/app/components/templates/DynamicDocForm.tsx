@@ -68,7 +68,13 @@ export function DynamicDocForm({ fields: camposOriginales, values, onChange, lan
     return () => { cancelado = true; };
   }, [docxFileUrl, yaTieneSecciones]);
   const fields = useMemo(
-    () => withInferredSections(camposOriginales, seccionesDelDocumento),
+    // Los datos automáticos (con `fuente`) no se le piden a nadie: salen de
+    // otros datos del formulario (ver lib/camposDerivados.ts).
+    () => {
+      const visibles = withInferredSections(camposOriginales.filter((f) => !f.fuente), seccionesDelDocumento);
+      // Una sección que quedó sin casillas (todas se llenan solas) no se muestra.
+      return visibles.filter((f, i) => f.type !== 'section' || (visibles[i + 1] && visibles[i + 1].type !== 'section'));
+    },
     [camposOriginales, seccionesDelDocumento],
   );
 

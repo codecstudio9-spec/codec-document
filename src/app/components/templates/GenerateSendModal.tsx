@@ -17,6 +17,7 @@ import { saveDocumentRecord } from '../../services/documents-service';
 import { sendSigningInvitation } from '../../services/signing-email-service';
 import { downloadFilledTemplatePdf } from '../../services/template-download';
 import { InPersonSignModal } from '../signatures/InPersonSignModal';
+import { completarDerivados } from '../../../lib/camposDerivados';
 import { nombrePersonaDeValores, tituloDeDocumento } from '../../utils/nombre-del-documento';
 
 interface GenerateSendModalProps {
@@ -171,7 +172,9 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
 
   const emailValid = EMAIL_RE.test(recipientEmail.trim());
 
-  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !values[f.key]?.trim());
+  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !f.fuente && !values[f.key]?.trim());
+  // Lo escrito más los datos que se llenan solos (ciudad y valor del anexo, etc.).
+  const valoresCompletos = completarDerivados(values, template?.detectedFields);
   const invalidKeys = showValidation ? new Set(missingRequired.map((f) => f.key)) : undefined;
 
   const handleGenerate = async () => {
@@ -183,7 +186,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
     }
     setGenerating(true);
     try {
-      const txId = await createCustomTemplateTransaction(template.publicSlug, values, {
+      const txId = await createCustomTemplateTransaction(template.publicSlug, valoresCompletos, {
         securityOverride: securityOverride ?? undefined,
         intent: 'fill_send',
       });
@@ -259,7 +262,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
     }
     setDownloading(true);
     try {
-      await downloadFilledTemplatePdf(template, values, language, user?.id);
+      await downloadFilledTemplatePdf(template, valoresCompletos, language, user?.id);
       toast.success(language === 'en' ? 'PDF downloaded and saved to My documents.' : 'PDF descargado y guardado en Mis documentos.');
     } catch (err) {
       console.error('downloadFilledTemplatePdf:', err);
@@ -544,7 +547,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                   clauseOverrides={template.clauseOverrides}
                   extraClauses={template.extraClauses}
                   fields={template.detectedFields}
-                  values={values}
+                  values={valoresCompletos}
                   language={language}
                   campoActivo={campoActivo}
                 />

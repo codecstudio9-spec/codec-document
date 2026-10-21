@@ -21,6 +21,7 @@ import {
 import { MarcarCamposPanel } from '../components/templates/MarcarCamposPanel';
 import { ColocarCamposPanel } from '../components/templates/ColocarCamposPanel';
 import { GoogleDriveButton } from '../components/templates/GoogleDriveButton';
+import { FuenteCampoEditor } from '../components/templates/FuenteCampoEditor';
 import { MIME_DOCX, MIME_GOOGLE_DOC } from '../services/google-drive-picker';
 import { tomarArchivoPendiente } from '../services/archivo-plantilla';
 import {
@@ -73,6 +74,9 @@ export function MyDocxTemplateEditorPage() {
   const [templateName, setTemplateName] = useState('');
   const [fields, setFields] = useState<DetectedField[]>([]);
   const [fieldsOpen, setFieldsOpen] = useState(false);
+  // Todas las {{etiquetas}} que tiene el Word, estén o no en el formulario:
+  // las que se quitaron del formulario salían en blanco en el documento.
+  const [etiquetasWord, setEtiquetasWord] = useState<DetectedField[]>([]);
   // Large fixed clause paragraphs the owner can rewrite entirely — distinct
   // from `fields` above (small {{tag}} values). clauseBlocks is what got
   // DETECTED in the source .docx (stable original text + paragraph index);
@@ -130,6 +134,7 @@ export function MyDocxTemplateEditorPage() {
       try {
         const buffer = await fetchDocxArrayBuffer(t.docxFileUrl);
         setClauseBlocks(detectEditableClauseBlocks(extractFormattedParagraphs(buffer)));
+        try { setEtiquetasWord(detectFields(buffer)); } catch { /* sin lista de etiquetas */ }
       } catch {
         // Non-fatal — the fields/signers/security sections above still work
         // fine; the clause-blocks section will just show nothing to edit.
@@ -512,7 +517,7 @@ export function MyDocxTemplateEditorPage() {
         </button>
 
         <h1 className="text-2xl font-black text-slate-900">
-          {isEditMode ? (language === 'en' ? 'Edit Word Template' : 'Editar Plantilla Word') : (language === 'en' ? 'New Word Template' : 'Nueva Plantilla Word')}
+          {isEditMode ? (language === 'en' ? 'Edit template' : 'Editar plantilla') : (language === 'en' ? 'New template' : 'Nueva plantilla')}
         </h1>
 
         {!docxFileUrl ? (
@@ -804,6 +809,13 @@ export function MyDocxTemplateEditorPage() {
                                   </button>
                                 </div>
                               )}
+
+                              <FuenteCampoEditor
+                                campo={f}
+                                campos={fields}
+                                language={language}
+                                onChange={(fuente) => updateField(f.key, { fuente, ...(fuente ? { required: false } : {}) })}
+                              />
                             </div>
                           ) : (
                             <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center">
@@ -817,6 +829,38 @@ export function MyDocxTemplateEditorPage() {
                           )}
                         </div>
                       ))}
+
+                      {canEditFields && (() => {
+                        const enFormulario = new Set(fields.map((f) => f.key));
+                        const faltan = etiquetasWord.filter((e) => e.type !== 'section' && !enFormulario.has(e.key));
+                        if (!faltan.length) return null;
+                        return (
+                          <div className="my-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-xs font-bold text-amber-800">
+                              {language === 'en'
+                                ? `Your document has ${faltan.length} detail(s) the form doesn't ask for. They print as a blank line.`
+                                : `Tu documento tiene ${faltan.length} dato(s) que el formulario no pide. Salen como una raya en blanco.`}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-amber-700">
+                              {language === 'en'
+                                ? 'Add them back and choose "Automatic" so they fill themselves from other details.'
+                                : 'Agrégalos y elige «Se llena solo» para que tomen el valor de otros datos, sin preguntarlo.'}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {faltan.map((e) => (
+                                <button
+                                  key={e.key}
+                                  type="button"
+                                  onClick={() => setFields((prev) => [...prev, { ...e, required: false }])}
+                                  className="flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100"
+                                >
+                                  <Plus className="size-3" /> {e.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {canEditFields && (
                         <button
