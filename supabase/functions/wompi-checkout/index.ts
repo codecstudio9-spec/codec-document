@@ -34,6 +34,7 @@ const INTEGRITY_SECRET = Deno.env.get('WOMPI_INTEGRITY_SECRET') ?? '';
 // contra routes.tsx.
 const REDIRECT_URL = Deno.env.get('WOMPI_REDIRECT_URL')
   ?? 'https://www.codecdocument.com/documentos-electronicos';
+const REDIRECT_URL_CONTABILIDAD = 'https://www.codecdocument.com/contabilidad?pago=1';
 
 function cors(origin: string | null) {
   return {
@@ -77,10 +78,17 @@ Deno.serve(async (req) => {
   // Llega el CÓDIGO del plan, no el precio. El precio lo pone ed_crear_pago()
   // leyendo ed_plans; así el navegador no tiene ni voz ni voto sobre cuánto se
   // cobra, sólo sobre qué se compra.
+  // `producto` separa el plan de XML del módulo de Contabilidad, que se
+  // cobra con su propia función de base (cont_crear_pago) y admite pago
+  // anual. Sin `producto`, todo sigue como siempre.
   let planCode = '';
+  let producto = 'dian';
+  let meses = 1;
   try {
     const body = await req.json();
     planCode = String(body?.plan ?? '').trim();
+    producto = body?.producto === 'contabilidad' ? 'contabilidad' : 'dian';
+    meses = Number(body?.meses) === 12 ? 12 : 1;
   } catch {
     planCode = '';
   }
@@ -95,7 +103,9 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: auth } },
   });
 
-  const { data, error } = await supabase.rpc('ed_crear_pago', { p_plan_code: planCode });
+  const { data, error } = producto === 'contabilidad'
+    ? await supabase.rpc('cont_crear_pago', { p_plan_code: planCode, p_meses: meses })
+    : await supabase.rpc('ed_crear_pago', { p_plan_code: planCode });
   // El mensaje de la base ya viene redactado para el contador («El plan
   // Ilimitado todavía no está a la venta»), así que se pasa tal cual en vez
   // de taparlo con un genérico.
@@ -124,7 +134,7 @@ Deno.serve(async (req) => {
     amountInCents: pago.amount_in_cents,
     currency: pago.currency,
     signature: firma,
-    redirectUrl: REDIRECT_URL,
+    redirectUrl: producto === 'contabilidad' ? REDIRECT_URL_CONTABILIDAD : REDIRECT_URL,
     email: correo,
     // Se devuelve lo que se está comprando para que la pantalla lo confirme
     // con las mismas cifras que se van a cobrar, no con las que ella creía.

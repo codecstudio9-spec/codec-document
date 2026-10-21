@@ -612,6 +612,17 @@ function ProtectedSignaturePage() {
 // sólo la abre el propietario. Excluida de sitemap y de middleware.ts —
 // ver EXCLUDED_EXACT en ambos.
 const DianDocumentsPage = lazy(() => import("./pages/dian-documents-page"));
+// Contabilidad para contadores (módulo de pago). La página decide qué ver
+// según el plan; la base exige el plan en cada escritura.
+const ContabilidadPage = lazy(() => import("./pages/contabilidad-page"));
+
+function ProtectedContabilidadPage() {
+  return (
+    <ProtectedRoute>
+      <ContabilidadPage />
+    </ProtectedRoute>
+  );
+}
 
 export const router = createBrowserRouter([
   {
@@ -622,6 +633,11 @@ export const router = createBrowserRouter([
   {
     path: "/documentos-electronicos",
     Component: DianDocumentsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/contabilidad",
+    Component: ProtectedContabilidadPage,
     errorElement: <RouteErrorBoundary />,
   },
   {

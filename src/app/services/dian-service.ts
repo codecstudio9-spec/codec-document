@@ -642,6 +642,13 @@ export async function importarArchivos(
     ? entradas.length
     : Math.min(entradas.length, cuota.restantes ?? entradas.length);
 
+  // Quien tiene el módulo Contabilidad ve sus XML dentro de las carpetas de
+  // cada empresa y los puede volver a bajar: para eso el original se guarda
+  // en el bucket privado. A los demás no se les sube nada (se guarda sólo la
+  // huella, como siempre), así la importación no se vuelve más lenta.
+  const { data: conContabilidad } = await supabase.rpc('cont_acceso_activo');
+  const carpetaXml = conContabilidad === true ? `${userId}/xml` : null;
+
   const { data: imp, error: errImp } = await supabase
     .from('ed_imports')
     .insert({
@@ -686,7 +693,7 @@ export async function importarArchivos(
           importId, parseMs: ms, validacionDian: r.validacionDian,
         });
         const sha = await sha256Hex(entrada.contenido);
-        const guardado = await guardarDocumento(payload, sha, entrada, importId);
+        const guardado = await guardarDocumento(payload, sha, entrada, importId, carpetaXml);
 
         if (guardado === 'duplicado') {
           resumen.duplicados++;
@@ -754,6 +761,7 @@ async function guardarDocumento(
   sha256: string,
   entrada: EntradaZip,
   importId: string,
+  carpetaXml: string | null = null,
 ): Promise<'guardado' | 'duplicado'> {
   const { data: doc, error } = await supabase
     .from('ed_documents')
@@ -806,13 +814,25 @@ async function guardarDocumento(
       .upsert(payload.terceros, { onConflict: 'owner_user_id,nit', ignoreDuplicates: true });
   }
 
+  // Sin Contabilidad el XML no se sube: se guarda su huella para deduplicar.
+  // Con Contabilidad se sube al bucket privado; si la subida falla, el
+  // documento igual queda guardado (perder la copia es mejor que perder la
+  // factura) y se vuelve a la huella.
+  let rutaXml = `pendiente/${sha256}.xml`;
+  if (carpetaXml) {
+    const ruta = `${carpetaXml}/${sha256}.xml`;
+    const { error: errSubida } = await supabase.storage.from('fiscal-documents').upload(
+      ruta, new Blob([entrada.contenido], { type: 'application/xml' }), { contentType: 'application/xml', upsert: true },
+    );
+    if (!errSubida) rutaXml = ruta;
+    else console.warn('[dian] no se pudo guardar la copia del XML', entrada.nombre, errSubida.message);
+  }
+
   await supabase.from('ed_document_files').insert({
     document_id: documentId,
     import_id: importId,
     kind: 'attached_document',
-    // En esta etapa el XML no se sube a Storage todavía: se guarda su huella
-    // para deduplicar. La subida al bucket privado entra con el worker.
-    storage_path: `pendiente/${sha256}.xml`,
+    storage_path: rutaXml,
     original_filename: entrada.nombre,
     sha256,
     byte_size: entrada.bytes,

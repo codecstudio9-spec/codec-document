@@ -26,7 +26,7 @@ import {
   Search, Download, HelpCircle, ChevronRight, Lock, Sparkles, ListChecks, X,
   Trash2, Inbox, CheckCheck, FileSpreadsheet, MessageSquare, Scale, CloudDownload,
   Mail, Menu, LayoutDashboard, Table2, CreditCard, BarChart3, SlidersHorizontal,
-  FolderOpen, ChevronLeft, ArrowRight, Clock3, BookOpenCheck,
+  FolderOpen, ChevronLeft, ArrowRight, Clock3, BookOpenCheck, Building2,
 } from 'lucide-react';
 import {
   PanelLateral, ANCHO_LATERAL, ANCHO_LATERAL_PLEGADA, type GrupoLateral,
@@ -78,6 +78,7 @@ import {
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
 import { triggerDownload } from '../utils/download';
+import { repartoDeHoy, estadoContabilidad, type EstadoContabilidad } from '../services/contabilidad-service';
 
 /** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
  *  porque aquí encabezan una frase leída en voz alta: «Nota crédito 1234 de
@@ -240,6 +241,7 @@ function ContenidoDian() {
   const [ayudaAbierta, setAyudaAbierta] = useState(false);
   const [beta, setBeta] = useState<EstadoBeta | null>(null);
   const [cuota, setCuota] = useState<EstadoCuota | null>(null);
+  const [contabilidad, setContabilidad] = useState<EstadoContabilidad | null>(null);
   const [planes, setPlanes] = useState<PlanCatalogo[]>([]);
   const [pagando, setPagando] = useState('');
   /** Se abre solo al chocar con el límite, y se puede abrir a mano. */
@@ -588,6 +590,12 @@ function ContenidoDian() {
   }, [permitido, busqueda, filtroEstado, pagina, ilimitado]);
 
   useEffect(() => { void refrescar(); }, [refrescar]);
+  // Sólo para la marca del menú («15 días gratis» o nada): si falla, el menú
+  // sale igual, sin marca.
+  useEffect(() => {
+    if (!user) return;
+    estadoContabilidad().then(setContabilidad).catch(() => setContabilidad(null));
+  }, [user]);
 
   /** Al cambiar el filtro hay que volver a la primera página. Quedarse en la
    *  9 después de buscar algo que sólo tiene dos páginas enseña una tabla
@@ -807,6 +815,24 @@ function ContenidoDian() {
 
       await refrescar();
 
+      // Con Contabilidad, los XML ya quedaron repartidos por NIT en las
+      // carpetas de cada empresa (lo hace la base al guardarlos). Se le dice
+      // al contador dónde quedó cada cosa, con un botón para ir.
+      const reparto = await repartoDeHoy();
+      if (reparto.length > 0) {
+        const detalle = reparto.slice(0, 4).map((x) => `${x.empresa}: ${x.cantidad}`).join(' · ')
+          + (reparto.length > 4 ? ` y ${reparto.length - 4} más` : '');
+        avisos.añadir({
+          tipo: 'proceso',
+          titulo: `Repartí tus XML en ${reparto.length} ${reparto.length === 1 ? 'empresa' : 'empresas'}`,
+          detalle,
+        });
+        toast.success(`Repartidos por empresa: ${detalle}`, {
+          duration: 9000,
+          action: { label: 'Ver en Contabilidad', onClick: () => navegar('/contabilidad') },
+        });
+      }
+
       // Si esta importación agotó el tramo, se agradece y se dice cuándo
       // vuelve. Va DESPUÉS de refrescar porque la espera la calcula el
       // servidor a partir de lo que se acaba de procesar: preguntarla antes
@@ -916,6 +942,16 @@ function ContenidoDian() {
   const menuLateral: GrupoLateral[] = useMemo(() => {
     const grupos: GrupoLateral[] = [
       {
+        // Contabilidad (módulo de pago) va arriba: es el siguiente paso
+        // natural después de traer los XML. A quien no lo tiene se le ofrece
+        // la prueba; a quien lo tiene, lo lleva directo a sus empresas.
+        titulo: 'Contabilidad',
+        items: [{
+          id: 'contabilidad', etiqueta: 'Mis empresas y contabilidad', icono: Building2,
+          marca: contabilidad?.activo ? undefined : contabilidad?.pruebaDisponible ? '15 días gratis' : 'Plan',
+        }],
+      },
+      {
         items: [
           { id: 'inicio', etiqueta: 'Inicio', icono: LayoutDashboard },
           { id: 'documentos', etiqueta: 'Documentos', icono: Table2 },
@@ -970,7 +1006,7 @@ function ContenidoDian() {
       });
     }
     return grupos;
-  }, [totales?.revision, buzon, puedeDescargar, ilimitado]);
+  }, [totales?.revision, buzon, puedeDescargar, ilimitado, contabilidad]);
 
   /**
    * Primer nombre para el saludo.
@@ -1333,6 +1369,7 @@ function ContenidoDian() {
           if (id === 'descargar') { setPanelDescarga(true); return; }
           if (id === 'auditor') { setPanelAuditor(true); return; }
           if (id === 'causar') { setPanelCausacion(true); return; }
+          if (id === 'contabilidad') { navegar('/contabilidad'); return; }
 
           setSeccion(id);
           if (id === 'revision') setVista('revision');

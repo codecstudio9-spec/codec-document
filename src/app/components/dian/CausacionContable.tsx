@@ -34,6 +34,10 @@ interface Props {
   cargarDatos: () => Promise<{ documentos: DocCausable[]; lineas: LineaCausable[] }>;
   narrar?: (es: string, en: string) => void;
   onCerrar: () => void;
+  /** Dentro del módulo Contabilidad la empresa ya está elegida: no se
+   *  pregunta, y el resultado se puede guardar en su contabilidad. */
+  empresaFija?: { nit: string; nombre: string };
+  onContabilizar?: (r: ResultadoCausacion) => Promise<void>;
 }
 
 const pesos = (v: number) =>
@@ -49,7 +53,7 @@ const CONCEPTOS: Array<{ id: ConceptoRetencion; etiqueta: string }> = [
 
 type ReglaEditable = ReglaTercero & { rol: 'compra' | 'venta'; documentos: number; valor: number; sugerencia: Sugerencia | null; traeRet: boolean; confirmada: boolean };
 
-export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
+export function CausacionContable({ cargarDatos, narrar, onCerrar, empresaFija, onContabilizar }: Props) {
   const [cargando, setCargando] = useState(true);
   const [docs, setDocs] = useState<DocCausable[]>([]);
   const [lineas, setLineas] = useState<LineaCausable[]>([]);
@@ -62,6 +66,8 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
   const [resultado, setResultado] = useState<ResultadoCausacion | null>(null);
   const [trabajando, setTrabajando] = useState(false);
   const [primeraVez, setPrimeraVez] = useState(false);
+  const [contabilizando, setContabilizando] = useState(false);
+  const [contabilizado, setContabilizado] = useState(false);
 
   useEffect(() => {
     narrar?.(
@@ -73,7 +79,9 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
         const d = await cargarDatos();
         setDocs(d.documentos);
         setLineas(d.lineas);
-        const emp = empresasDetectadas(d.documentos);
+        const emp = empresaFija
+          ? [{ nit: empresaFija.nit, nombre: empresaFija.nombre, documentos: d.documentos.length }]
+          : empresasDetectadas(d.documentos);
         if (emp[0]) setEmpresaNit(emp[0].nit);
         // El mes por defecto es el último en que ESTA empresa tiene
         // documentos, no el último de todo lo subido: si el más reciente es
@@ -91,7 +99,10 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const empresas = useMemo(() => empresasDetectadas(docs), [docs]);
+  const empresas = useMemo(
+    () => (empresaFija ? [{ nit: empresaFija.nit, nombre: empresaFija.nombre, documentos: docs.length }] : empresasDetectadas(docs)),
+    [docs, empresaFija],
+  );
   const meses = useMemo(
     () => [...new Set(docs.map((x) => (x.issue_date ?? '').slice(0, 7)).filter(Boolean))].sort().reverse(),
     [docs],
@@ -108,6 +119,7 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
     if (!empresaNit) return;
     let vivo = true;
     setResultado(null);
+    setContabilizado(false);
     setCargandoEmpresa(true);
     (async () => {
       try {
@@ -222,6 +234,14 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
           <>
             {/* 1. Empresa y mes */}
             <div className="grid gap-3 sm:grid-cols-2">
+              {empresaFija ? (
+                <div className="block text-xs font-semibold text-slate-600">
+                  Empresa
+                  <p className="mt-1 truncate rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800">
+                    {empresaFija.nombre}, NIT {empresaFija.nit}
+                  </p>
+                </div>
+              ) : (
               <label className="block text-xs font-semibold text-slate-600">
                 Empresa que estás causando
                 <select
@@ -234,6 +254,7 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
                   ))}
                 </select>
               </label>
+              )}
               <label className="block text-xs font-semibold text-slate-600">
                 Mes
                 <select
@@ -498,6 +519,23 @@ export function CausacionContable({ cargarDatos, narrar, onCerrar }: Props) {
                   </div>
                 )}
 
+                {onContabilizar && (
+                  <button
+                    type="button"
+                    disabled={contabilizando || contabilizado || !cuadra}
+                    onClick={() => {
+                      setContabilizando(true);
+                      void onContabilizar(resultado)
+                        .then(() => setContabilizado(true))
+                        .catch((e) => toast.error(e instanceof Error ? e.message : 'No pude guardar en la contabilidad'))
+                        .finally(() => setContabilizando(false));
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {contabilizando ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                    {contabilizado ? 'Guardado en la contabilidad' : `Guardar en la contabilidad de ${empresaNombre || 'la empresa'}`}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={descargar}
