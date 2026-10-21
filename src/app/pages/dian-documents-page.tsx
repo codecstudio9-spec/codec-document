@@ -3061,11 +3061,11 @@ function ContenidoDian() {
                     <th className="px-3 py-3 text-left font-bold">Número</th>
                     <th className="px-3 py-3 text-left font-bold">Fecha</th>
                     <th className="px-3 py-3 text-left font-bold">Proveedor</th>
-                    <th className="hidden px-3 py-3 text-right font-bold 2xl:table-cell">Subtotal</th>
+                    <th className="hidden px-3 py-3 text-right font-bold min-[1800px]:table-cell">Subtotal</th>
                     <th className="px-3 py-3 text-right font-bold">IVA</th>
                     <th className="px-3 py-3 text-right font-bold">Total</th>
                     <th className="px-3 py-3 text-left font-bold">Estado</th>
-                    <th className="w-16 px-4 py-3 text-right font-bold">Acción</th>
+                    <th className="w-8 px-2 py-3"><span className="sr-only">Abrir</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3116,7 +3116,7 @@ function ContenidoDian() {
                           <span className="block truncate text-slate-800">{d.issuer_name}</span>
                           <span className="block truncate text-xs tabular-nums text-slate-400">{d.issuer_nit}</span>
                         </td>
-                        <td className="hidden px-3 py-3.5 text-right tabular-nums text-slate-600 2xl:table-cell">{pesos(Number(d.line_total))}</td>
+                        <td className="hidden px-3 py-3.5 text-right tabular-nums text-slate-600 min-[1800px]:table-cell">{pesos(Number(d.line_total))}</td>
                         <td className="px-3 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
                         <td className="px-3 py-3.5 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
                         <td className="px-3 py-3.5">
@@ -3145,13 +3145,15 @@ function ContenidoDian() {
                             tendría nada que bajar. Un icono que no hace nada
                             gasta más confianza de la que ahorra: la descarga
                             por fila entra cuando entre la retención del XML. */}
-                        <td className="px-3 py-3.5 text-right" onClick={(ev) => ev.stopPropagation()}>
+                        <td className="px-2 py-3.5 text-right" onClick={(ev) => ev.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => void abrirDetalle(d.id)}
-                            className="text-xs font-bold text-blue-600 transition hover:text-blue-700"
+                            aria-label="Abrir documento"
+                            title="Abrir"
+                            className="rounded-lg p-1 text-slate-300 transition hover:bg-blue-50 hover:text-blue-600"
                           >
-                            Abrir
+                            <ChevronRight className="size-4" />
                           </button>
                         </td>
                       </tr>
