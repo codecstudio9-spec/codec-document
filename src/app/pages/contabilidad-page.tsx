@@ -98,6 +98,12 @@ export default function ContabilidadPage() {
 
   useEffect(() => { void refrescar(); }, [refrescar]);
 
+  useEffect(() => {
+    const antes = document.title;
+    document.title = 'Mis empresas · Contabilidad | Codec Document';
+    return () => { document.title = antes; };
+  }, []);
+
   // Las facturas electrónicas que mandó Codec POS esperan en la bandeja. Se
   // leen solas al abrir Contabilidad, con el mismo motor de los XML, y quedan
   // en la carpeta de su empresa.
@@ -197,7 +203,7 @@ export default function ContabilidadPage() {
   const menu: GrupoLateral[] = useMemo(() => {
     // La flecha de volver va primero: Contabilidad es una parte de Documentos
     // DIAN, no otro programa.
-    const volver = { items: [{ id: 'dian', etiqueta: 'Volver a Documentos DIAN', icono: ArrowLeft }] };
+    const volver = { items: [{ id: 'dian', etiqueta: 'Documentos DIAN', icono: ArrowLeft }] };
     if (!estado?.activo) {
       return [
         volver,

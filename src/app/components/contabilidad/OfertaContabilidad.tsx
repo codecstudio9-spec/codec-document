@@ -27,7 +27,7 @@ const BENEFICIOS = [
   { icono: FolderOpen, titulo: 'Carpetas por mes', texto: 'Compras, ventas, notas, comprobantes y tus archivos, ordenados por periodo.' },
   { icono: BookOpenCheck, titulo: 'Contabilidad completa', texto: 'Causación desde el XML, comprobantes con consecutivo y saldos iniciales.' },
   { icono: BarChart3, titulo: 'Reportes', texto: 'Balance de prueba, libro diario, mayor, estados financieros, cartera e impuestos en Excel.' },
-  { icono: Store, titulo: 'Conexión con Codec POS (en camino)', texto: 'Las ventas y gastos de tus clientes que usan Codec POS llegarán solos a su carpeta.' },
+  { icono: Store, titulo: 'Conectado con Codec POS', texto: 'Las ventas y facturas de tus clientes que usan Codec POS llegan solas a su carpeta.' },
 ];
 
 export function OfertaContabilidad({
@@ -138,13 +138,31 @@ export function OfertaContabilidad({
         </div>
       ) : (
       <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-black text-slate-900">{modo === 'planes' ? 'Planes de Contabilidad (Mis empresas)' : activo ? 'Cambiar o renovar plan' : 'Planes'}</h3>
+        <div className="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+          {[false, true].map((a) => (
+            <button
+              key={String(a)}
+              type="button"
+              onClick={() => setAnual(a)}
+              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${anual === a ? 'bg-blue-600 text-white' : 'text-slate-500'}`}
+            >
+              {a ? 'Anual' : 'Mensual'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {modo === 'planes' && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-slate-200">
           <span className="text-slate-700">
             {estado.activo
               ? estado.enPrueba
                 ? <>Estás en la <strong>prueba gratis</strong> hasta el {estado.hasta ? new Date(estado.hasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''}.</>
-                : <>Plan <strong>{estado.planNombre ?? 'activo'}</strong>{estado.hasta ? ` hasta el ${new Date(estado.hasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. {estado.empresasUsadas}{estado.maxEmpresas !== null ? ` de ${estado.maxEmpresas}` : ''} empresas.</>
+                : estado.admin && !estado.planNombre
+                  ? <>Acceso de administrador, sin límite de empresas. Tienes {estado.empresasUsadas} {estado.empresasUsadas === 1 ? 'empresa' : 'empresas'}.</>
+                  : <>Tu plan: <strong>{estado.planNombre}</strong>{estado.hasta ? `, vigente hasta el ${new Date(estado.hasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. {estado.empresasUsadas}{estado.maxEmpresas !== null ? ` de ${estado.maxEmpresas}` : ''} {estado.empresasUsadas === 1 && estado.maxEmpresas === null ? 'empresa' : 'empresas'}.</>
               : 'Todavía no tienes Contabilidad.'}
           </span>
           {estado.pruebaDisponible && (
@@ -160,22 +178,6 @@ export function OfertaContabilidad({
           )}
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-black text-slate-900">{modo === 'planes' ? 'Contabilidad (Mis empresas)' : activo ? 'Cambiar o renovar plan' : 'Planes'}</h3>
-        <div className="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-          {[false, true].map((a) => (
-            <button
-              key={String(a)}
-              type="button"
-              onClick={() => setAnual(a)}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${anual === a ? 'bg-blue-600 text-white' : 'text-slate-500'}`}
-            >
-              {a ? 'Anual' : 'Mensual'}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <FilaPlanes titulo="Sólo contabilidad" planes={solo} anual={anual} estado={estado} trabajando={trabajando} onComprar={comprar} />
       <FilaPlanes
         titulo="Todo en uno: contabilidad + XML de la DIAN"
@@ -211,7 +213,7 @@ function FilaPlanes({
   return (
     <div>
       <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">{titulo}</p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className={`grid gap-4 ${planes.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
         {planes.map((p, i) => {
           const precio = anual ? p.precioAnual : p.precioMes;
           const actual = estado.planCode === p.code && estado.activo && !estado.enPrueba;
@@ -238,7 +240,7 @@ function FilaPlanes({
                 )}
                 <li className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />Avisos y carpetas por NIT</li>
                 <li className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />Comprobantes y reportes en Excel</li>
-                <li className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />Conexión con Codec POS (en camino)</li>
+                <li className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />Conexión con Codec POS</li>
               </ul>
               <Boton
                 estilo={actual ? BOTON_NEUTRO : destacado ? BOTON_EXITO : BOTON_PRIMARIO}

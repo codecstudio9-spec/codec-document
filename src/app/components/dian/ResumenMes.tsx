@@ -59,7 +59,7 @@ function Variacion({ valor, sufijo }: { valor: number | null; sufijo?: string })
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${sube ? 'text-emerald-600' : 'text-rose-600'}`}>
       <Icono className="size-3" />
-      {sube ? '+' : ''}{valor}%{sufijo ? ` ${sufijo}` : ' vs. mes anterior'}
+      {sube ? '+' : ''}{valor}%{sufijo ? ` ${sufijo}` : ' vs. mes ant.'}
     </span>
   );
 }
@@ -72,9 +72,7 @@ function Variacion({ valor, sufijo }: { valor: number | null; sufijo?: string })
  * máximo contra el que medirlo— y dibujarlo al 100 % para que se vea bonito
  * sería inventarse una escala.
  */
-function Anillo({ pct, color, children }: { pct: number | null; color: string; children: React.ReactNode }) {
-  const tamano = 96;
-  const grosor = 8;
+function Anillo({ pct, color, children, tamano = 96, grosor = 8 }: { pct: number | null; color: string; children: React.ReactNode; tamano?: number; grosor?: number }) {
   const radio = (tamano - grosor) / 2;
   const circ = 2 * Math.PI * radio;
   const lleno = pct === null ? circ : circ * (Math.min(100, Math.max(0, pct)) / 100);
@@ -117,16 +115,17 @@ function CifraAnillo({
   icono: LucideIcon; color: string; indice: number; pie?: React.ReactNode;
 }) {
   return (
+    // El número va FUERA del anillo: dentro sólo cabían cifras cortas, y un
+    // valor en pesos («$10.722.803») se salía del círculo. El anillo queda
+    // con el ícono, como marca de color y, en «sin observaciones», como medida.
     <motion.div {...aparecer(indice)} className="flex items-center gap-4 bg-white p-5" style={CARD}>
-      <Anillo pct={pct} color={color}>
-        <span className="text-[15px] font-black leading-none tabular-nums text-slate-900">{valor}</span>
+      <Anillo pct={pct} color={color} tamano={60} grosor={6}>
+        <Icono className="size-5" style={{ color }} />
       </Anillo>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <Icono className="size-3.5 shrink-0" style={{ color }} />
-          <p className="truncate text-[13px] font-bold text-slate-700">{etiqueta}</p>
-        </div>
-        {pie && <div className="mt-1.5 truncate">{pie}</div>}
+        <p className="text-[11px] font-bold uppercase leading-tight tracking-wide text-slate-400">{etiqueta}</p>
+        <p className="mt-1 text-[22px] font-black leading-none tabular-nums text-slate-900">{valor}</p>
+        {pie && <div className="mt-1.5 leading-snug">{pie}</div>}
       </div>
     </motion.div>
   );
@@ -177,7 +176,7 @@ export function CifrasMes({ datos }: { datos: Datos }) {
       />
       <CifraAnillo
         etiqueta="Valor total"
-        valor={pesos(datos.valorTotal).replace(/\s/g, '')}
+        valor={pesos(datos.valorTotal)}
         pct={null}
         icono={DollarSign} color="#7C3AED" indice={3}
         pie={<Variacion valor={datos.variacionValor} />}

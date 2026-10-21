@@ -165,7 +165,7 @@ export function CarpetasEmpresa({
                   type="button"
                   onClick={() => setPeriodo(p)}
                   className={`relative rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
-                    activo ? 'bg-blue-600 text-white shadow' : conDatos.has(p) ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'text-slate-300 hover:bg-slate-50'
+                    activo ? 'bg-blue-600 text-white shadow' : conDatos.has(p) ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'text-slate-400 hover:bg-slate-50'
                   }`}
                 >
                   {m}
@@ -307,7 +307,9 @@ function ContenidoCarpeta({
           <ChevronLeft className="size-4" /> Carpetas
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <def.icono className="size-5 shrink-0" style={{ color: def.color }} />
+          {def.id === 'pos'
+            ? <img src="/brand/codec-pos.png" alt="" className="size-6 shrink-0 object-contain" style={{ mixBlendMode: 'multiply' }} />
+            : <def.icono className="size-5 shrink-0" style={{ color: def.color }} />}
           <p className="truncate text-base font-black text-slate-900">{def.nombre}</p>
           <span className="text-xs text-slate-400">· {MESES[Number(periodo.slice(5, 7)) - 1]} {periodo.slice(0, 4)}</span>
         </div>

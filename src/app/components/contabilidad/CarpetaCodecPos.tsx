@@ -98,16 +98,10 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
   return (
     <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
       <div>
-        <div className="flex items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
-            <img src="/brand/codec-pos.png" alt="Codec POS" className="size-full object-contain" style={{ mixBlendMode: 'multiply' }} />
-          </div>
-          <div>
-            <p className="text-base font-black text-slate-900">Las ventas de Codec POS, directo aquí</p>
-            <p className="text-xs text-slate-500">Si {nombre} usa Codec POS, conéctala una vez y listo</p>
-          </div>
-        </div>
-        <ul className="mt-4 space-y-3 text-[13px] text-slate-600">
+        {/* El título y el logo ya están en la cabecera de la sección: aquí
+            se repetían y la tarjeta arrancaba con dos títulos seguidos. */}
+        <p className="text-sm font-bold text-slate-900">Si {nombre} usa Codec POS, conéctala una vez y listo:</p>
+        <ul className="mt-3 space-y-3 text-[13px] text-slate-600">
           <li className="flex gap-2.5"><ReceiptText className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada factura electrónica llega con su XML a la carpeta de Ventas, lista para causar.</li>
           <li className="flex gap-2.5"><Store className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada venta, con o sin factura, con sus productos, su IVA y su medio de pago.</li>
           <li className="flex gap-2.5"><Zap className="mt-0.5 size-4 shrink-0 text-orange-500" />Con un clic las ventas del día se vuelven comprobante de ventas (VP).</li>

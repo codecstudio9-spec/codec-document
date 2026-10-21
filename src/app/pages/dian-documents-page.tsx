@@ -1953,7 +1953,8 @@ function ContenidoDian() {
           )}
 
           {/* El catálogo, siempre a la vista. */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {/* Cuatro planes en una fila: en tres columnas el cuarto quedaba solo abajo. */}
+          <div className={`grid gap-4 sm:grid-cols-2 ${planes.length === 4 ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
             {planes.map((p, i) => {
               const actual = p.code === cuota.planCode;
               const esDePago = p.precio !== null && p.precio > 0;
@@ -3034,17 +3035,20 @@ function ContenidoDian() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              {/* Las celdas van a px-4, no a los px-6 del resto de la tarjeta.
+              {/* Las celdas van a px-3 y «Subtotal» sólo aparece en pantallas
+                  anchas (2xl): con las diez columnas, en una laptop el estado
+                  y «Abrir» quedaban cortados contra el borde.
+                  Antes: las celdas iban a px-4, no a los px-6 del resto de la tarjeta.
                   «Actividad reciente» del dashboard usa px-6 y le sobra sitio
                   porque tiene cuatro columnas; ésta tiene diez, y con px-6 la
                   fecha se partía en dos líneas y el estado quedaba cortado
                   contra el borde. La tarjeta conserva sus px-6 en la barra de
                   filtros y en el pie: lo que se aprieta es la rejilla de
                   datos, que es lo que la necesita. */}
-              <table className="w-full min-w-[900px] text-sm" translate="no">
+              <table className="w-full min-w-[820px] text-sm" translate="no">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
-                    <th className="w-12 px-5 py-3">
+                    <th className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
                         aria-label="Seleccionar todos"
@@ -3053,15 +3057,15 @@ function ContenidoDian() {
                         className="size-4 accent-blue-600"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left font-bold">Tipo</th>
-                    <th className="px-4 py-3 text-left font-bold">Número</th>
-                    <th className="px-4 py-3 text-left font-bold">Fecha</th>
-                    <th className="px-4 py-3 text-left font-bold">Proveedor</th>
-                    <th className="px-4 py-3 text-right font-bold">Subtotal</th>
-                    <th className="px-4 py-3 text-right font-bold">IVA</th>
-                    <th className="px-4 py-3 text-right font-bold">Total</th>
-                    <th className="px-4 py-3 text-left font-bold">Estado</th>
-                    <th className="w-20 px-5 py-3 text-right font-bold">Acción</th>
+                    <th className="px-3 py-3 text-left font-bold">Tipo</th>
+                    <th className="px-3 py-3 text-left font-bold">Número</th>
+                    <th className="px-3 py-3 text-left font-bold">Fecha</th>
+                    <th className="px-3 py-3 text-left font-bold">Proveedor</th>
+                    <th className="hidden px-3 py-3 text-right font-bold 2xl:table-cell">Subtotal</th>
+                    <th className="px-3 py-3 text-right font-bold">IVA</th>
+                    <th className="px-3 py-3 text-right font-bold">Total</th>
+                    <th className="px-3 py-3 text-left font-bold">Estado</th>
+                    <th className="w-16 px-4 py-3 text-right font-bold">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3075,7 +3079,7 @@ function ContenidoDian() {
                         onClick={() => void abrirDetalle(d.id)}
                         className="cursor-pointer border-b border-slate-50 transition last:border-0 hover:bg-slate-50/60"
                       >
-                        <td className="px-4 py-3.5" onClick={(ev) => ev.stopPropagation()}>
+                        <td className="px-3 py-3.5" onClick={(ev) => ev.stopPropagation()}>
                           <input
                             type="checkbox"
                             aria-label={`Seleccionar ${d.full_number ?? ''}`}
@@ -3088,7 +3092,7 @@ function ContenidoDian() {
                             mismo que usa la dona del reparto por tipo. Es lo
                             que permite recorrer 50 filas y ver dónde están las
                             notas crédito sin leer una por una. */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-3.5">
                           {(() => {
                             const c = COLOR_TIPO[d.doc_type] ?? COLOR_TIPO.desconocido;
                             return (
@@ -3101,21 +3105,21 @@ function ContenidoDian() {
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-slate-800">{d.full_number}</td>
-                        <td className="whitespace-nowrap px-4 py-3.5 tabular-nums text-slate-400">{d.issue_date}</td>
+                        <td className="px-3 py-3.5 font-semibold text-slate-800">{d.full_number}</td>
+                        <td className="whitespace-nowrap px-3 py-3.5 tabular-nums text-slate-400">{d.issue_date}</td>
                         {/* 180 y no 220: con 220 la tabla medía 1.100 px en
                             una caja de 1.062 y la columna «Acción» quedaba
                             cortada contra el borde. El nombre del proveedor ya
                             iba truncado de todos modos, así que los 40 px
                             salen de donde no se estaba leyendo nada. */}
-                        <td className="max-w-[180px] px-4 py-3.5">
+                        <td className="max-w-[200px] px-3 py-3.5">
                           <span className="block truncate text-slate-800">{d.issuer_name}</span>
                           <span className="block truncate text-xs tabular-nums text-slate-400">{d.issuer_nit}</span>
                         </td>
-                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.line_total))}</td>
-                        <td className="px-4 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
-                        <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
-                        <td className="px-4 py-3.5">
+                        <td className="hidden px-3 py-3.5 text-right tabular-nums text-slate-600 2xl:table-cell">{pesos(Number(d.line_total))}</td>
+                        <td className="px-3 py-3.5 text-right tabular-nums text-slate-600">{pesos(Number(d.total_iva))}</td>
+                        <td className="px-3 py-3.5 text-right font-semibold tabular-nums text-slate-900">{pesos(Number(d.total))}</td>
+                        <td className="px-3 py-3.5">
                           {/* La pastilla dice el estado, pero no el porqué, y
                               «Requiere revisión» sin motivo deja al contador
                               adivinando. Se marca como pulsable y abre el
@@ -3141,7 +3145,7 @@ function ContenidoDian() {
                             tendría nada que bajar. Un icono que no hace nada
                             gasta más confianza de la que ahorra: la descarga
                             por fila entra cuando entre la retención del XML. */}
-                        <td className="px-4 py-3.5 text-right" onClick={(ev) => ev.stopPropagation()}>
+                        <td className="px-3 py-3.5 text-right" onClick={(ev) => ev.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => void abrirDetalle(d.id)}
