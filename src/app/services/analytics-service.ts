@@ -136,21 +136,45 @@ function classifyReferrerSource(referrer: string, search: string): string {
   return 'Referidos';
 }
 
-let geoCache: { country: string | null; city: string | null; region: string | null } | null = null;
+type Geo = { country: string | null; city: string | null; region: string | null; proveedor: string | null };
+let geoCache: Geo | null = null;
 
-async function resolveGeo(): Promise<{ country: string | null; city: string | null; region: string | null }> {
+/** Proveedores de nube y hosting: una visita desde su red es un servidor
+ *  (rastreador, monitor, IA), no una persona en su casa u oficina. */
+const RED_DE_SERVIDORES = /amazon|aws|microsoft|azure|google llc|google cloud|digitalocean|ovh|hetzner|linode|akamai|oracle|alibaba|tencent|contabo|vultr|leaseweb|choopa|m247|datacamp|hosting|servers?\b|data ?cent|colocation|cloudflare|fastly|scaleway|ionos|godaddy|hostinger|limestone|psychz|quadranet/i;
+
+/** Rastreadores que ejecutan JavaScript (Bing, Google, IA, monitores de
+ *  disponibilidad, auditorías). Inflaban el panel de visitas: de 4.800
+ *  visitas en 60 días, ~2.600 eran esto. */
+const UA_DE_ROBOT = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|gtmetrix|pingdom|uptime|monitor|preview|facebookexternalhit|python|curl|wget|axios|node-fetch|go-http|java\/|phantom|puppeteer|playwright|selenium|chrome-lighthouse|adsbot|mediapartners|ahrefs|semrush|mj12|petalbot|bytespider|gptbot|claudebot|perplexity|ccbot|dataforseo|screaming frog/i;
+
+function motivoDeRobot(ua: string, browser: string, proveedor: string | null): string | null {
+  if (UA_DE_ROBOT.test(ua)) return 'user agent de robot';
+  try { if ((navigator as Navigator & { webdriver?: boolean }).webdriver) return 'navegador automatizado'; } catch { /* sin navigator */ }
+  if (proveedor && RED_DE_SERVIDORES.test(proveedor)) return `red de servidores: ${proveedor}`;
+  if (browser === 'Otro' && !/Mobi|Android|iPhone|iPad/i.test(ua)) return 'navegador sin identificar';
+  try { if (!navigator.languages || navigator.languages.length === 0) return 'sin idiomas del navegador'; } catch { /* noop */ }
+  return null;
+}
+
+async function resolveGeo(): Promise<Geo> {
   if (geoCache) return geoCache;
   try {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 4000);
     const res = await fetch('https://ipwho.is/', { signal: controller.signal });
     window.clearTimeout(timeout);
-    const data = await res.json() as { success?: boolean; country?: string; city?: string; region?: string };
+    const data = await res.json() as { success?: boolean; country?: string; city?: string; region?: string; connection?: { org?: string; isp?: string } };
     geoCache = data?.success
-      ? { country: data.country ?? null, city: data.city ?? null, region: data.region ?? null }
-      : { country: null, city: null, region: null };
+      ? {
+          country: data.country ?? null,
+          city: data.city ?? null,
+          region: data.region ?? null,
+          proveedor: [data.connection?.org, data.connection?.isp].filter(Boolean).join(' / ') || null,
+        }
+      : { country: null, city: null, region: null, proveedor: null };
   } catch {
-    geoCache = { country: null, city: null, region: null };
+    geoCache = { country: null, city: null, region: null, proveedor: null };
   }
   return geoCache;
 }
@@ -169,7 +193,9 @@ export function trackVisitorSession(): void {
     try {
       const geo = await resolveGeo();
       const source = classifyReferrerSource(document.referrer, window.location.search);
-      const { device, os, browser } = parseUserAgent(navigator.userAgent ?? '');
+      const ua = navigator.userAgent ?? '';
+      const { device, os, browser } = parseUserAgent(ua);
+      const motivo = motivoDeRobot(ua, browser, geo.proveedor);
 
       await publicSupabase.from('analytics_visitors').insert({
         session_id: sessionId,
@@ -182,6 +208,9 @@ export function trackVisitorSession(): void {
         os,
         browser,
         is_new_visitor: isNewVisitor,
+        es_robot: Boolean(motivo),
+        motivo_robot: motivo,
+        proveedor_red: geo.proveedor ? geo.proveedor.slice(0, 120) : null,
       });
     } catch { /* tracking must never break the real user experience */ }
   })();
@@ -252,6 +281,15 @@ export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
     newVisitorsPct: Number(row?.new_visitors_pct ?? 0),
     returningVisitorsPct: Number(row?.returning_visitors_pct ?? 0),
   };
+}
+
+/** Visitas de robots excluidas del panel (rastreadores, monitores, IA) frente
+ *  a personas, en los últimos `daysLimit` días. */
+export async function fetchRobotSummary(daysLimit: number): Promise<{ robots: number; humanos: number }> {
+  const { data, error } = await withTimeout(supabase.rpc('get_robot_summary', { days_limit: daysLimit }));
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as { robots?: number; humanos?: number } | null;
+  return { robots: Number(row?.robots ?? 0), humanos: Number(row?.humanos ?? 0) };
 }
 
 export async function fetchVisitorsTrend(daysLimit: number): Promise<Array<{ day: string; visitors: number }>> {

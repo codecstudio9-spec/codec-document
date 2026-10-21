@@ -8,7 +8,7 @@ import { DesktopAppShell } from '../../components/desktop/DesktopAppShell';
 import { useAuth } from '../../contexts/auth-context';
 import { useLanguage } from '../../contexts/language-context';
 import {
-  fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary,
+  fetchAnalyticsSummary, fetchVisitorsTrend, fetchTrafficSources, fetchLocationSummary, fetchRobotSummary,
   fetchRecentVisitors, topCountriesFromLocations, SOURCE_LABELS,
   type AnalyticsSummary,
 } from '../../services/analytics-service';
@@ -58,6 +58,7 @@ function AdminAnalyticsContent() {
   const [sources, setSources] = useState<Array<{ source: string; visitors: number }> | null>(null);
   const [locations, setLocations] = useState<Array<{ city: string; country: string; visitors: number }> | null>(null);
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof fetchRecentVisitors>> | null>(null);
+  const [robots, setRobots] = useState<{ robots: number; humanos: number } | null>(null);
 
   useEffect(() => {
     fetchAnalyticsSummary().then(setSummary).catch(() => setSummary({
@@ -73,6 +74,7 @@ function AdminAnalyticsContent() {
   useEffect(() => {
     setSeries(null);
     fetchVisitorsTrend(range).then(setSeries).catch(() => setSeries([]));
+    fetchRobotSummary(range).then(setRobots).catch(() => setRobots(null));
   }, [range]);
 
   const RANGE_OPTIONS: Array<{ key: RangeDays; label: string }> = [
@@ -101,6 +103,13 @@ function AdminAnalyticsContent() {
           <p className="mt-0.5 text-sm text-slate-400">
             {language === 'en' ? 'Who visits Codec Document, and where they come from' : 'Quién visita Codec Document y de dónde vienen'}
           </p>
+          {robots && robots.robots > 0 && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+              {language === 'en'
+                ? `Only real people are counted: ${robots.robots.toLocaleString('en-US')} robot visits (crawlers, monitors, AI) excluded in this period.`
+                : `Solo se cuentan personas reales: se excluyeron ${robots.robots.toLocaleString('es-CO')} visitas de robots (rastreadores, monitores, IA) en este periodo.`}
+            </p>
+          )}
         </div>
         {tab === 'visitantes' && (
           <div className="flex gap-1.5 rounded-full bg-white p-1" style={{ boxShadow: CARD_SHADOW }}>
