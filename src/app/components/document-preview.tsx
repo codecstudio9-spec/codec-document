@@ -4,6 +4,16 @@ import { useLanguage } from '../contexts/language-context';
 import { enrichDocumentDataWithDates } from '../utils/document-dates';
 
 const EMPTY_FIELD_TOKEN = '__EMPTY_FIELD__';
+
+// Diseño del documento (2026-10-21). Antes era Times a 10 px con interlineado
+// 1,2, encabezados del mismo color que el texto y los datos de cada parte en
+// renglones sueltos «Nombre:», «Dirección:»: se leía como un borrador. Ahora
+// es una hoja de contrato profesional: tipografía sin serifa, título con
+// filete de color, encabezados de sección en azul marino con línea, y los
+// datos de cada parte en una ficha de dos columnas.
+const FUENTE_DOC = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+const COLOR_TITULOS = '#0f2a5f';
+const COLOR_ACENTO = '#4f46e5';
 const ACTIVE_EMPTY_TOKEN = '__ACTIVE_EMPTY__';
 const ACTIVE_OPEN = '\x01';
 const ACTIVE_CLOSE = '\x02';
@@ -51,7 +61,7 @@ function formatDocumentContent(
 ): React.ReactNode {
   const renderSolidDivider = (key: string) => (
     <div key={key} className="my-3">
-      <div className="border-b border-slate-300 w-full" aria-hidden="true" />
+      <div className="border-b border-slate-200 w-full" aria-hidden="true" />
     </div>
   );
 
@@ -74,7 +84,7 @@ function formatDocumentContent(
         return <strong key={`${keyPrefix}-uv-${i}`} className="font-bold">{part}</strong>;
       }
       if (part === EMPTY_FIELD_TOKEN) {
-        return <span key={`${keyPrefix}-ef-${i}`} className="inline-flex min-w-[8rem] h-[1.1em] border-b border-slate-400 align-bottom mx-1" aria-hidden="true" />;
+        return <span key={`${keyPrefix}-ef-${i}`} className="inline-flex min-w-[7rem] h-[1.1em] border-b border-dashed border-slate-300 align-bottom mx-1" aria-hidden="true" />;
       }
       if (part === ACTIVE_EMPTY_TOKEN) {
         return <span key={`${keyPrefix}-ae-${i}`} data-active-field="true" className="inline-flex min-w-[8rem] h-[1.1em] border-b-2 border-blue-400 align-bottom mx-1 animate-pulse bg-blue-50/60 rounded-sm" aria-hidden="true" />;
@@ -115,7 +125,7 @@ function formatDocumentContent(
     if (SIG_LINE_RE.test(trimmedLine)) {
       const label = trimmedLine.replace(/_{5,}/g, '').replace(/Signature\s*:/i, '').replace(/Firma\s*:/i, '').trim();
       return (
-        <div key={key} className={`mt-3 ${gapClass}`} style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+        <div key={key} className={`mt-3 ${gapClass}`} style={{ fontFamily: FUENTE_DOC }}>
           <div className="border-b-[1.5px] border-black w-full" />
           {label && <p className="mt-0.5 text-[10px] font-semibold text-black">{label}</p>}
         </div>
@@ -127,7 +137,7 @@ function formatDocumentContent(
       const label    = trimmedLine.slice(0, colonIdx).trim();
       const rest     = trimmedLine.slice(colonIdx + 1).trim();
       return (
-        <div key={key} className="mt-0.5 flex items-baseline gap-1" style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+        <div key={key} className="mt-0.5 flex items-baseline gap-1" style={{ fontFamily: FUENTE_DOC }}>
           <span className="text-[10px] font-bold text-black min-w-[60px]">{label}:</span>
           {rest
             ? <span className="text-[10px] font-semibold text-black">{rest}</span>
@@ -162,9 +172,9 @@ function formatDocumentContent(
     // nombre de su empresa en mayúsculas se lo encontraba compuesto como
     // título del documento.
     if (
-      /^[A-ZÀ-ſ\s\-–—()&,.'"]+$/.test(trimmedLine) &&
+      /^[A-ZÀ-ſ\s\-–—()&,.'"]+:?$/.test(trimmedLine) &&
       trimmedLine.length > 3 && trimmedLine.length <= 80 &&
-      !/[:;]/.test(trimmedLine) &&
+      !/[:;]/.test(trimmedLine.replace(/:$/, '')) &&
       !datosUsuario.has(trimmedLine.toUpperCase())
     ) {
       // Sólo el título del documento va centrado. Los encabezados de cláusula
@@ -179,41 +189,51 @@ function formatDocumentContent(
       // encabezados de forma distinta.
       const esTitulo = !tituloEmitido;
       tituloEmitido = true;
+      const texto = trimmedLine.replace(/:$/, '');
+      if (esTitulo) {
+        return (
+          <div key={key} className={`text-center mt-[0.2em] mb-[1.2em] ${gapClass}`} style={{ fontFamily: FUENTE_DOC }}>
+            <div className="text-[14px] font-bold uppercase leading-snug tracking-[0.06em]" style={{ color: COLOR_TITULOS }}>
+              {renderTokens(texto, `title-${key}`)}
+            </div>
+            <div className="mx-auto mt-[0.6em] h-[2px] w-14 rounded-full" style={{ background: COLOR_ACENTO }} aria-hidden="true" />
+          </div>
+        );
+      }
       return (
         <div
           key={key}
-          className={`font-bold uppercase leading-tight ${
-            esTitulo
-              ? 'text-center text-[13px] tracking-[0.08em] mt-[0.2em] mb-[0.9em]'
-              : 'text-[10.5px] tracking-[0.06em] mt-[0.5em] mb-[0.15em]'
-          } ${gapClass}`}
-          style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+          className={`text-[10.5px] font-bold uppercase leading-tight tracking-[0.06em] mt-[0.9em] mb-[0.45em] pb-[0.3em] border-b border-slate-200 ${gapClass}`}
+          style={{ fontFamily: FUENTE_DOC, color: COLOR_TITULOS }}
         >
-          {renderTokens(trimmedLine, `title-${key}`)}
+          {renderTokens(texto, `title-${key}`)}
         </div>
       );
     }
 
     if (/^(ARTICLE|ART\.|ARTÍCULO|SECTION|SECCIÓN)\s+[IVXivx\d]+/i.test(trimmedLine)) {
       return (
-        <div key={key} className={`font-bold uppercase tracking-wide text-[10px] leading-tight mt-[0.4em] mb-[0.05em] ${gapClass}`} style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+        <div key={key} className={`font-bold uppercase tracking-[0.05em] text-[10.5px] leading-tight mt-[0.9em] mb-[0.45em] pb-[0.3em] border-b border-slate-200 ${gapClass}`} style={{ fontFamily: FUENTE_DOC, color: COLOR_TITULOS }}>
           {renderTokens(trimmedLine, `article-${key}`)}
         </div>
       );
     }
 
     if (/^\d+\.\d+/.test(trimmedLine)) {
-      const match = trimmedLine.match(/^(\d+\.\d+\s+[A-ZÀ-ſ][A-ZÀ-ſ\s.]+?)(\s+.*)$/s);
+      // «2.1. PRECIO DE COMPRA. El precio…» o «2.3. ESTADO DEL PAGO: …»: el
+      // número y el rótulo en mayúsculas van en negrita y del color de los
+      // encabezados. Antes el punto tras «2.1» impedía reconocerlo.
+      const match = trimmedLine.match(/^(\d+\.\d+\.?\s+[A-ZÀ-ſ][A-ZÀ-ſ\s/()-]*?[.:])(\s*.*)$/s);
       if (match) {
         return (
-          <div key={key} className={`text-[10px] leading-[1.2] ${gapClass}`}>
-            <span className="font-bold">{match[1]}</span>
+          <div key={key} className={`text-[10px] text-justify leading-[1.5] ${gapClass}`}>
+            <span className="font-bold" style={{ color: COLOR_TITULOS }}>{match[1]}</span>
             <span>{renderTokens(match[2], `sub-${key}`)}</span>
           </div>
         );
       }
       return (
-        <div key={key} className={`text-[10px] leading-[1.2] ${gapClass}`}>
+        <div key={key} className={`text-[10px] leading-[1.5] ${gapClass}`}>
           {renderTokens(trimmedLine, `numbered-${key}`)}
         </div>
       );
@@ -224,7 +244,7 @@ function formatDocumentContent(
       const label    = trimmedLine.slice(0, colonIdx);
       const rest     = trimmedLine.slice(colonIdx + 1);
       return (
-        <div key={key} className={`text-[10px] leading-[1.2] ${gapClass}`}>
+        <div key={key} className={`text-[10px] leading-[1.5] ${gapClass}`}>
           <span className="font-semibold">{label}:</span>
           {renderTokens(rest, `lbl-${key}`)}
         </div>
@@ -239,7 +259,7 @@ function formatDocumentContent(
       return (
         <div
           key={key}
-          className={`text-[10px] text-justify leading-[1.2] ${gapClass}`}
+          className={`text-[10px] text-justify leading-[1.5] ${gapClass}`}
           style={{ paddingLeft: '1.4em', textIndent: '-1.4em' }}
         >
           {renderTokens(trimmedLine, `item-${key}`)}
@@ -255,7 +275,7 @@ function formatDocumentContent(
     if (formattedLine.includes('**')) {
       const parts = formattedLine.split(/(\*\*[^*]+\*\*)/g);
       return (
-        <div key={key} className={`text-[10px] text-justify leading-[1.2] ${gapClass}`}>
+        <div key={key} className={`text-[10px] text-justify leading-[1.5] ${gapClass}`}>
           {parts.map((part, i) =>
             part.startsWith('**') && part.endsWith('**')
               ? <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>
@@ -266,7 +286,7 @@ function formatDocumentContent(
     }
 
     return (
-      <div key={key} className={`text-[10px] text-justify leading-[1.2] indent-[1em] ${gapClass}`}>
+      <div key={key} className={`text-[10px] text-justify leading-[1.5] indent-[1em] ${gapClass}`}>
         {renderTokens(trimmedLine, `line-${key}`)}
       </div>
     );
@@ -282,6 +302,17 @@ function formatDocumentContent(
       const m        = trimmedLine.match(/^([^_]*)_{5,}(.*)$/s);
       const rawLabel = m ? m[1].trim().replace(/:$/, '').trim() : '';
       const rawDate  = m ? m[2].replace(/_{5,}/g, '').trim() : '';
+      // Un renglón «Fecha: ______» no es un lugar para firmar: antes salía
+      // con su propio recuadro «Espacio para firma» al lado de la firma real.
+      const etiquetaLimpia = (rawLabel || rawDate).replace(/[:\s]+$/, '');
+      if (/^(fecha|date)$/i.test(etiquetaLimpia)) {
+        return (
+          <div key={key} style={{ marginTop: 'auto', paddingTop: 72 }}>
+            <div style={{ borderTop: '1px solid #94a3b8', width: '100%', marginBottom: 6 }} />
+            <span style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: FUENTE_DOC }}>{etiquetaLimpia}</span>
+          </div>
+        );
+      }
       return (
         <div key={key} style={{ marginTop: 14 }}>
           <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, marginBottom: 10, overflow: 'hidden', backgroundColor: sigUrl ? 'transparent' : '#f9fafb', border: sigUrl ? 'none' : '1px dashed #e2e8f0' }}>
@@ -295,12 +326,12 @@ function formatDocumentContent(
           </div>
           <div style={{ borderTop: '1.5px solid #1e293b', width: '100%', marginBottom: 6 }} />
           {rawLabel && (
-            <strong style={{ fontSize: 10, color: '#0f172a', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+            <strong style={{ fontSize: 10, color: '#0f172a', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: FUENTE_DOC }}>
               {rawLabel}
             </strong>
           )}
           {rawDate && (
-            <span style={{ fontSize: 9, color: '#64748b', display: 'block', marginTop: 3, fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+            <span style={{ fontSize: 9, color: '#64748b', display: 'block', marginTop: 3, fontFamily: FUENTE_DOC }}>
               {rawDate}
             </span>
           )}
@@ -310,25 +341,91 @@ function formatDocumentContent(
     // All-caps label (e.g. "ARRENDADOR:" with colon)
     if (/^[A-Z0-9\sÀ-ſ\-–—()&,.:'"]+$/.test(trimmedLine) && trimmedLine.length > 2 && trimmedLine.length <= 60) {
       return (
-        <div key={key} style={{ fontWeight: 700, fontSize: 10, color: '#1e293b', marginBottom: 6, fontFamily: '"Times New Roman", Times, Georgia, serif', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div key={key} style={{ fontWeight: 700, fontSize: 10, color: '#1e293b', marginBottom: 6, fontFamily: FUENTE_DOC, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {trimmedLine}
         </div>
       );
     }
     return (
-      <div key={key} style={{ fontSize: 10, color: '#475569', marginBottom: 2, fontFamily: '"Times New Roman", Times, Georgia, serif' }}>
+      <div key={key} style={{ fontSize: 10, color: '#475569', marginBottom: 2, fontFamily: FUENTE_DOC }}>
         {renderTokens(trimmedLine, key)}
       </div>
     );
   }
 
   // ── Render a paragraph's lines in normal flow ─────────────────────────────────
+  // Un renglón «Etiqueta: valor» de una ficha de datos. Etiqueta corta (hasta
+  // cinco palabras) para no confundir una frase que lleva dos puntos.
+  const FICHA_RE = /^([A-ZÀ-ſ][A-Za-zÀ-ſ0-9\s/().#º°-]{0,38}?):\s+(\S.*)$/;
+  const esRenglonFicha = (t: string) => {
+    const m = t.match(FICHA_RE);
+    return Boolean(m && m[1].trim().split(/\s+/).length <= 5 && !/^\d/.test(t));
+  };
+
+  function renderFicha(filas: Array<{ etiqueta: string; valor: string[] }>, key: string, gapClass: string): React.ReactNode {
+    return (
+      <div
+        key={key}
+        className={`my-[0.5em] grid grid-cols-[minmax(7.5em,auto)_1fr] gap-x-4 gap-y-[0.35em] rounded-md border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-[10px] leading-[1.4] ${gapClass}`}
+        style={{ fontFamily: FUENTE_DOC }}
+      >
+        {filas.map((f, i) => (
+          <div key={i} className="contents">
+            <span className="font-semibold uppercase tracking-[0.04em] text-[8.5px] text-slate-500 pt-[0.15em]">{f.etiqueta}</span>
+            <span className="font-semibold text-slate-900">
+              {f.valor.map((v, j) => <span key={j} className="block">{renderTokens(v, `${key}-${i}-${j}`)}</span>)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   function renderParaLines(lines: string[], baseKey: string): React.ReactNode[] {
     let blankCount = 0;
     let inSigBlock = false;
-    return lines.flatMap((line, li) => {
+    // Renglones «Etiqueta: valor» seguidos: se juntan en una ficha. Un renglón
+    // sangrado justo debajo («  Bogotá, Cundinamarca 110111») sigue el valor
+    // de arriba, como la segunda línea de una dirección.
+    let ficha: Array<{ etiqueta: string; valor: string[] }> = [];
+    let fichaGap = '';
+    const salida: React.ReactNode[] = [];
+    const cerrarFicha = (k: string) => {
+      if (ficha.length === 0) return;
+      if (ficha.length === 1) {
+        const f = ficha[0];
+        salida.push(renderLine(`${f.etiqueta}: ${f.valor.join(' ')}`, k, fichaGap, false));
+      } else {
+        salida.push(renderFicha(ficha, k, fichaGap));
+      }
+      ficha = [];
+      fichaGap = '';
+    };
+    lines.forEach((line, li) => {
       const trimmed = line.trim();
-      if (!trimmed) { blankCount++; return [] as React.ReactNode[]; }
+      if (!trimmed) { blankCount++; return; }
+      if (!inSigBlock && !SIG_LINE_RE.test(trimmed)) {
+        if (ficha.length > 0 && /^\s{4,}\S/.test(line) && !FICHA_RE.test(trimmed)) {
+          ficha[ficha.length - 1].valor.push(trimmed);
+          return;
+        }
+        if (esRenglonFicha(trimmed)) {
+          const m = trimmed.match(FICHA_RE)!;
+          if (ficha.length === 0) fichaGap = blankCount >= 2 ? 'mt-[1.5em]' : blankCount === 1 ? 'mt-[0.85em]' : '';
+          else if (blankCount > 0) { cerrarFicha(`${baseKey}-f${li}`); fichaGap = 'mt-[0.85em]'; }
+          blankCount = 0;
+          ficha.push({ etiqueta: m[1].trim(), valor: [m[2].trim()] });
+          return;
+        }
+      }
+      cerrarFicha(`${baseKey}-f${li}`);
+      for (const n of renglon(line, li)) salida.push(n);
+    });
+    cerrarFicha(`${baseKey}-fin`);
+    return salida;
+
+    function renglon(line: string, li: number): React.ReactNode[] {
+      const trimmed = line.trim();
       // Una línea en blanco en la plantilla se convertía en 0,18em, que a
       // 10px son menos de dos píxeles: en la práctica no se veía, y el
       // documento salía como un bloque continuo sin respiración entre la
@@ -340,7 +437,7 @@ function formatDocumentContent(
       if (SIG_LINE_RE.test(trimmed)) inSigBlock = true;
       const node = renderLine(trimmed, `${baseKey}-${li}`, gapClass, inSigBlock);
       return node ? [node] : [] as React.ReactNode[];
-    });
+    }
   }
 
   // ── Render a paragraph's lines inside a flex signature column ─────────────────
@@ -564,11 +661,12 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
   return (
     <div
       className="relative bg-white shadow-sm border border-slate-200 overflow-hidden"
-      style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+      style={{ fontFamily: FUENTE_DOC }}
       onCopy={handleCopy}
       onCut={handleCopy}
       onContextMenu={handleContextMenu}
     >
+      <div className="h-[4px] w-full" style={{ background: `linear-gradient(90deg, ${COLOR_TITULOS} 0%, ${COLOR_ACENTO} 100%)` }} aria-hidden="true" />
       {/* Márgenes de la hoja. Estaban en 24px y el texto llegaba casi al
           borde del papel, que es lo que más delata a un documento generado:
           una carta o un contrato reales respiran por los cuatro lados. 44px
@@ -590,7 +688,7 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
           <div className="mt-10 pt-4 border-t border-slate-200 text-center" aria-hidden="true">
             <p
               className="mx-auto max-w-[85%] whitespace-pre-line text-[9px] italic leading-relaxed text-slate-300"
-              style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+              style={{ fontFamily: FUENTE_DOC }}
             >
               {signerNote}
             </p>

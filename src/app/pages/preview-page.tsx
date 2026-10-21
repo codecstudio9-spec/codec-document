@@ -1522,9 +1522,13 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
       // ── 2. Clone element into a hidden off-screen container ───────────────
       // Cloning avoids scroll-container clipping and timing issues with the live DOM.
       const clone = sourceEl.cloneNode(true) as HTMLElement;
-      const sourceW = sourceEl.offsetWidth || 850;
-      const targetWidth = Math.max(sourceW, 900);
-      const html2canvasScale = sourceW > 0 ? Math.min(3, Math.max(2, targetWidth / sourceW)) : 2;
+      // Ancho de la captura = tamaño de la letra en el PDF. Se capturaba a
+      // 900 px y se metía en los 188 mm útiles de una hoja carta: el texto de
+      // 10 px quedaba en unos 6 pt, ilegible, y el documento parecía una
+      // miniatura. A 640 px queda en ~8,5 pt, el cuerpo de un contrato real.
+      // Escala 3 para que la letra salga nítida y no pixelada.
+      const targetWidth = 640;
+      const html2canvasScale = 3;
       clone.style.width = `${targetWidth}px`;
       const offscreen = document.createElement('div');
       offscreen.style.cssText =
@@ -1629,15 +1633,43 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
 
       const pxPerMm   = captured.width / contentW;
       const pxPerPage = contentH * pxPerMm;
-      const numPages  = Math.max(1, Math.ceil(captured.height / pxPerPage));
+
+      // Cortes de página en un renglón en blanco. Cortando cada N píxeles
+      // exactos, una línea de texto quedaba partida por la mitad entre dos
+      // hojas. Se busca hacia arriba (hasta ~12 % de la hoja) la primera
+      // fila de la imagen que sea toda blanca.
+      const cortes: number[] = [0];
+      {
+        const cctx = captured.getContext('2d', { willReadFrequently: true } as CanvasRenderingContext2DSettings)!;
+        const filaEnBlanco = (y: number): boolean => {
+          const fila = cctx.getImageData(0, y, captured.width, 1).data;
+          for (let i = 0; i < fila.length; i += 16) {
+            if (fila[i] < 245 || fila[i + 1] < 245 || fila[i + 2] < 245) return false;
+          }
+          return true;
+        };
+        let inicio = 0;
+        while (captured.height - inicio > pxPerPage) {
+          const ideal = Math.floor(inicio + pxPerPage);
+          let corte = ideal;
+          const limite = Math.floor(ideal - pxPerPage * 0.12);
+          for (let y = ideal; y > limite; y--) {
+            if (filaEnBlanco(y)) { corte = y; break; }
+          }
+          cortes.push(corte);
+          inicio = corte;
+        }
+        cortes.push(captured.height);
+      }
+      const numPages  = cortes.length - 1;
       const docTitle  = getDocumentTranslation(template.id, 'name', exportLanguage);
 
       for (let page = 0; page < numPages; page++) {
         if (page > 0) pdf.addPage();
         renderPdfHeader(pdf, branding, docTitle, PW, M, HEADER_H);
 
-        const sliceStartPx = Math.floor(page * pxPerPage);
-        const sliceHPx     = Math.min(Math.ceil(pxPerPage), captured.height - sliceStartPx);
+        const sliceStartPx = cortes[page];
+        const sliceHPx     = cortes[page + 1] - cortes[page];
         if (sliceHPx > 0) {
           const slice = document.createElement('canvas');
           slice.width  = captured.width;
