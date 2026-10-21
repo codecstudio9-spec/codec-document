@@ -4,7 +4,9 @@ import { FileType2, X, Loader, Eye, EyeOff, Copy, Check, ExternalLink, Shield, P
 import { toast } from 'sonner';
 import type { DocxTemplate } from '../../services/docx-template-service';
 import { createCustomTemplateTransaction } from '../../services/docx-template-service';
-import type { SecurityConfig } from '../../services/sign-transaction-service';
+import type { SecurityConfig, SignTransaction } from '../../services/sign-transaction-service';
+import { getSignTransaction, stashSignedTransactionForDownload, markTransactionViewed } from '../../services/sign-transaction-service';
+import { supabase } from '../../../lib/supabase';
 import { SecurityConfigModal } from '../SecurityConfigModal';
 import { SITE_URL } from '../../config/site';
 import { DynamicDocForm } from './DynamicDocForm';
@@ -81,6 +83,10 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const [emailResult, setEmailResult] = useState<{ ok: true; to: string } | { ok: false; error: string } | null>(null);
   const [inPersonOpen, setInPersonOpen] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  // Cuando la persona firma, esta misma ventana pasa de «Enviado a firmar» a
+  // «Firmado» con la descarga del documento firmado.
+  const [firmado, setFirmado] = useState<SignTransaction | null>(null);
+  const [abriendoFirmado, setAbriendoFirmado] = useState(false);
   // «Ver documento mientras lleno»: opcional, apagado por defecto. Se
   // recuerda en este navegador para quien lo prefiere siempre abierto.
   const [verDocumento, setVerDocumento] = useState<boolean>(() => {
@@ -117,6 +123,34 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
     if (template && !resultLink) writeDraft(template.id, values, recipientEmail);
   }, [template?.id, values, recipientEmail, resultLink]);
 
+  const txId = resultLink ? resultLink.split('/').pop() ?? null : null;
+  useEffect(() => {
+    if (!txId || firmado) return;
+    let vivo = true;
+    const revisar = async () => {
+      const tx = await getSignTransaction(txId).catch(() => null);
+      if (vivo && tx?.status === 'completed') setFirmado(tx);
+    };
+    // Realtime avisa al instante; la consulta cada pocos segundos cubre una
+    // conexión de realtime caída o una pestaña que estuvo dormida.
+    const canal = supabase
+      .channel(`plantilla-firmada-${txId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sign_transactions', filter: `id=eq.${txId}` },
+        (payload) => { if ((payload.new as SignTransaction).status === 'completed') void revisar(); })
+      .subscribe();
+    const intervalo = window.setInterval(() => void revisar(), 6000);
+    return () => { vivo = false; window.clearInterval(intervalo); supabase.removeChannel(canal); };
+  }, [txId, firmado]);
+
+  const handleDescargarFirmado = async () => {
+    if (!firmado) return;
+    setAbriendoFirmado(true);
+    void markTransactionViewed(firmado.id);
+    const tx = (await getSignTransaction(firmado.id).catch(() => null)) ?? firmado;
+    stashSignedTransactionForDownload(tx, language);
+    window.location.href = '/preview/custom-template';
+  };
+
   const open = Boolean(template);
   const effectiveSecurity = securityOverride ?? template?.securityConfig;
   const activeCount = effectiveSecurity ? Object.values(effectiveSecurity).filter(Boolean).length : 0;
@@ -124,7 +158,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
   const resetForm = () => {
     setValues({}); setSecurityOverride(null); setResultLink(null); setCopied(false);
     setRecipientEmail(''); setSendingEmail(false); setShowValidation(false);
-    setEmailResult(null); setDraftRestored(false);
+    setEmailResult(null); setDraftRestored(false); setFirmado(null); setAbriendoFirmado(false);
   };
   const handleClose = () => {
     resetForm();
@@ -312,6 +346,22 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
               {resultLink ? (
                 <div className="flex flex-col items-center gap-4 py-2 text-center">
                   <div className="rounded-full bg-emerald-100 p-4"><Check className="size-8 text-emerald-600" /></div>
+                  {firmado ? (
+                    <>
+                      <h3 className="text-lg font-black text-slate-900">{language === 'en' ? 'Document signed!' : '¡Documento firmado!'}</h3>
+                      <p className="max-w-sm text-sm text-slate-500">
+                        {language === 'en'
+                          ? <>It was signed{firmado.signed_at ? <> on <strong className="text-slate-700">{new Date(firmado.signed_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</strong></> : null}. Download it with its signature certificate.</>
+                          : <>Ya lo firmaron{firmado.signed_at ? <> el <strong className="text-slate-700">{new Date(firmado.signed_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}</strong></> : null}. Descárgalo con su certificado de firma.</>}
+                      </p>
+                      <button type="button" onClick={() => void handleDescargarFirmado()} disabled={abriendoFirmado}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-60"
+                        style={{ background: 'linear-gradient(180deg,#34d399 0%,#059669 68%,#065f46 100%)', boxShadow: '0 3px 0 #065f46' }}>
+                        {abriendoFirmado ? <Loader className="size-4 animate-spin" /> : <Download className="size-4" />}
+                        {language === 'en' ? 'Download signed document' : 'Descargar documento firmado'}
+                      </button>
+                    </>
+                  ) : (<>
                   <h3 className="text-lg font-black text-slate-900">
                     {emailResult?.ok
                       ? (language === 'en' ? 'Sent for signature' : 'Enviado a firmar')
@@ -383,6 +433,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
                     </div>
                   )}
 
+                  </>)}
                   <div className="mt-1 flex w-full gap-2">
                     <button type="button" onClick={resetForm}
                       className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 py-2.5 text-sm font-bold text-indigo-700 hover:bg-indigo-100">

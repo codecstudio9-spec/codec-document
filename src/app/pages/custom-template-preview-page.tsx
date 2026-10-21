@@ -39,6 +39,19 @@ import { resolveJurisdiction } from '../data/signature-jurisdictions';
 import { AiReviewPanel } from '../components/ai-review-panel';
 
 interface StashedSig { id: string; name: string; sigDataUrl: string }
+interface SignTxMeta { id?: string; signedAt?: string | null; createdAt?: string | null; recipientIp?: string | null }
+
+// Huella SHA-256 del texto final: va al pie de cada página y al informe de
+// firmas, igual que en los demás documentos firmados.
+async function hashDelContenido(content: string): Promise<string | undefined> {
+  try {
+    const bytes = new TextEncoder().encode(content);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return undefined;
+  }
+}
 
 export function CustomTemplatePreviewPage() {
   const { user } = useAuth();
@@ -101,6 +114,8 @@ export function CustomTemplatePreviewPage() {
       const coSignersJson = sessionStorage.getItem('coSigners');
       const coSigners: StashedSig[] = coSignersJson ? JSON.parse(coSignersJson) : [];
       const recipientSig = coSigners.find((s) => s.id === 'recipient');
+      let meta: SignTxMeta = {};
+      try { meta = JSON.parse(sessionStorage.getItem('signTxMeta') || '{}') as SignTxMeta; } catch { /* sin datos de la firma */ }
 
       const identitySelfie = sessionStorage.getItem('identitySelfie') || undefined;
       const identityIdDocFront = sessionStorage.getItem('identityIdDocFront') || undefined;
@@ -120,6 +135,33 @@ export function CustomTemplatePreviewPage() {
       );
       const fileName = nombreDeArchivo(titulo);
 
+      // Certificado de firma al final del documento: quién firmó, cuándo y
+      // con qué número de documento. Antes este PDF salía sin él, a
+      // diferencia de los demás documentos firmados de la plataforma.
+      const nombreFirmante = nombrePersonaDeValores(savedData.values ?? {}, template.detectedFields)
+        || recipientSig?.name
+        || (language === 'en' ? 'Recipient' : 'Destinatario');
+      const nombreRemitente = String(user.name || user.email || (language === 'en' ? 'Sender' : 'Remitente'));
+      const signedAt = meta.signedAt ?? undefined;
+      const token = meta.id ? `CDX-${meta.id.slice(0, 8).toUpperCase()}` : undefined;
+      const signatures = [
+        ...(ownerSigUrl ? [{
+          signerName: nombreRemitente,
+          signerRole: language === 'en' ? 'Sender' : 'Remitente',
+          token: token ? `${token}-01` : undefined,
+          guestSignedAt: meta.createdAt ?? undefined,
+          signatureDataUrl: ownerSigUrl,
+        }] : []),
+        ...(recipientSig ? [{
+          signerName: nombreFirmante,
+          signerRole: language === 'en' ? 'Signer' : 'Firmante',
+          token: token ? `${token}-${ownerSigUrl ? '02' : '01'}` : undefined,
+          guestSignedAt: signedAt,
+          signatureDataUrl: recipientSig.sigDataUrl,
+        }] : []),
+      ];
+      const documentHash = await hashDelContenido(content);
+
       const blob = await PDFGenerator.generateBlob({
         content,
         formattedParagraphs: paragraphs,
@@ -130,8 +172,10 @@ export function CustomTemplatePreviewPage() {
         showWatermark: false,
         branding,
         jurisdiction,
-        leftSig: ownerSigUrl ? { dataUrl: ownerSigUrl, name: language === 'en' ? 'Sender' : 'Remitente' } : undefined,
-        rightSig: recipientSig ? { dataUrl: recipientSig.sigDataUrl, name: recipientSig.name } : undefined,
+        leftSig: ownerSigUrl ? { dataUrl: ownerSigUrl, name: language === 'en' ? 'Sender' : 'Remitente', signedAt: meta.createdAt ?? undefined } : undefined,
+        rightSig: recipientSig ? { dataUrl: recipientSig.sigDataUrl, name: nombreFirmante, signedAt } : undefined,
+        signatures: signatures.length ? signatures : undefined,
+        documentHash,
         mirrorLayout: true,
         mirrorLanguage: language,
         identitySelfie,

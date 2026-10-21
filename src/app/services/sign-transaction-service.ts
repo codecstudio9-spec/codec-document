@@ -340,5 +340,15 @@ export function stashSignedTransactionForDownload(tx: SignTransaction, language:
     safeSessionStorageRemove('identityBiometric');
   }
 
+  // Lo que necesita el certificado de firma de las plantillas de Word
+  // (custom-template-preview-page): cuándo firmó, desde qué IP y el ID real
+  // del documento para el informe de firmas.
+  safeSessionStorageSet('signTxMeta', JSON.stringify({
+    id: tx.id,
+    signedAt: tx.signed_at ?? null,
+    createdAt: tx.created_at ?? null,
+    recipientIp: tx.recipient_ip ?? null,
+  }));
+
   safeSessionStorageSet('isPurchased', 'true');
 }
