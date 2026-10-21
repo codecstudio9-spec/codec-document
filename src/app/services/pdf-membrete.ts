@@ -9,8 +9,9 @@
  * documento se leía como un borrador generado, no como un contrato. El modelo
  * es el de DocuSign / Dropbox Sign: una cabecera sobria con quién emite el
  * documento y su número, y un pie con el identificador, la huella SHA-256, el
- * marco legal y «Página X de Y», que es lo que un trabajador en EE. UU.
- * reconoce como documento serio.
+ * texto de pie del CLIENTE (o el nombre de su empresa), el marco legal y
+ * «Página X de Y». Cabecera y pie son de quien emite el documento: aquí no
+ * va publicidad de Codec Document.
  */
 import type { jsPDF } from 'jspdf';
 import type { DocumentBranding } from '../types/document';
@@ -72,7 +73,7 @@ export function pintarCabecera(o: MembreteOpciones): void {
   pdf.setFillColor(...INDIGO);
   pdf.rect(PW * 0.72, 0, PW * 0.28, 1.6, 'F');
 
-  const centroY = (1.6 + o.headerBottom) / 2 + 1.2;
+  const centroY = (1.6 + o.headerBottom) / 2 + 1.1;
   let x = M;
 
   const hasLogo = Boolean(branding?.enableLogo && branding?.logoDataUrl);
@@ -96,13 +97,19 @@ export function pintarCabecera(o: MembreteOpciones): void {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8.5);
     pdf.setTextColor(...NAVY);
-    texto(pdf, empresa.slice(0, 48), x, centroY);
     const lema = (branding?.headerText || '').trim();
-    if (lema && lema.toLowerCase() !== empresa.toLowerCase()) {
+    const conLema = lema && lema.toLowerCase() !== empresa.toLowerCase();
+    // Con cabecera baja (10 mm, PDFGenerator) no caben dos renglones: el lema
+    // va al lado del nombre. Con cabecera alta va debajo.
+    const dosRenglones = o.headerBottom >= 13;
+    const yEmpresa = conLema && dosRenglones ? centroY - 1.4 : centroY;
+    texto(pdf, empresa.slice(0, 48), x, yEmpresa);
+    if (conLema) {
+      const xLema = dosRenglones ? x : x + ancho(pdf, empresa.slice(0, 48)) + 2.5;
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(6.2);
       pdf.setTextColor(...GRIS);
-      texto(pdf, lema.slice(0, 60), x, centroY + 3.2);
+      texto(pdf, dosRenglones ? lema.slice(0, 60) : `· ${lema.slice(0, 50)}`, xLema, dosRenglones ? yEmpresa + 3 : yEmpresa);
     }
   }
 
@@ -131,17 +138,9 @@ export function pintarCabecera(o: MembreteOpciones): void {
 }
 
 export function pintarPie(o: MembreteOpciones): void {
-  const { pdf, pageWidth: PW, pageHeight: PH, margin: M, branding, language } = o;
+  const { pdf, pageWidth: PW, margin: M, branding, language } = o;
   const es = language === 'es';
   const y0 = o.footerTop;
-
-  const propio = (branding?.footerText || '').trim();
-  if (propio) {
-    pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(6.4);
-    pdf.setTextColor(...GRIS);
-    texto(pdf, propio.slice(0, 120), PW / 2, y0 - 1.8, { align: 'center' });
-  }
 
   pdf.setDrawColor(...LINEA);
   pdf.setLineWidth(0.25);
@@ -150,7 +149,8 @@ export function pintarPie(o: MembreteOpciones): void {
   const fila1 = y0 + 3.6;
   const fila2 = y0 + 6.6;
 
-  // Izquierda: número del documento y huella.
+  // Izquierda: número del documento y huella. Son datos del documento, no
+  // publicidad: sirven para verificarlo.
   const numero = numeroDeDocumento(o.documentHash);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(6.4);
@@ -163,26 +163,37 @@ export function pintarPie(o: MembreteOpciones): void {
     texto(pdf, `SHA-256 ${o.documentHash.slice(0, 16)}…${o.documentHash.slice(-8)}`, M, fila2);
   }
 
-  // Centro: marco legal y quién lo protege.
+  // Centro: el pie es del CLIENTE. Su texto de pie (Configuración → marca)
+  // o, si no puso uno, el nombre de su empresa. Nunca publicidad de Codec
+  // Document: el documento es de quien lo emite, con su logo y sus datos.
+  const propio = (branding?.footerText || '').trim() || (branding?.companyLegalName || '').trim();
+  const centroFilas: Array<{ t: string; estilo: 'cliente' | 'legal' }> = [];
+  if (propio) centroFilas.push({ t: propio.slice(0, 110), estilo: 'cliente' });
   if (o.marcoLegal) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6.2);
-    pdf.setTextColor(...INDIGO);
-    texto(pdf, es ? `Firma electrónica conforme a ${o.marcoLegal}` : `Electronic signature compliant with ${o.marcoLegal}`, PW / 2, fila1, { align: 'center' });
+    centroFilas.push({
+      t: es ? `Firma electrónica conforme a ${o.marcoLegal}` : `Electronic signature compliant with ${o.marcoLegal}`,
+      estilo: 'legal',
+    });
   }
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(5.6);
-  pdf.setTextColor(...GRIS_CLARO);
-  texto(pdf, es ? 'Protegido con Codec Document · codecdocument.com' : 'Secured by Codec Document · codecdocument.com', PW / 2, fila2, { align: 'center' });
+  centroFilas.slice(0, 2).forEach((f, idx) => {
+    const y = idx === 0 ? fila1 : fila2;
+    if (f.estilo === 'cliente') {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(6.4);
+      pdf.setTextColor(...NAVY);
+    } else {
+      pdf.setFont('helvetica', idx === 0 ? 'bold' : 'normal');
+      pdf.setFontSize(idx === 0 ? 6.2 : 5.6);
+      pdf.setTextColor(...(idx === 0 ? INDIGO : GRIS));
+    }
+    texto(pdf, f.t, PW / 2, y, { align: 'center' });
+  });
 
   // Derecha: página.
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(7);
   pdf.setTextColor(...NAVY);
   texto(pdf, es ? `Página ${o.page} de ${o.totalPages}` : `Page ${o.page} of ${o.totalPages}`, PW - M, fila1, { align: 'right' });
-
-  // Línea fina de cierre, para que el pie no quede flotando.
-  void PH;
 }
 
 /**
