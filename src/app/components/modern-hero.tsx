@@ -1,286 +1,177 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Zap, ChevronLeft, ChevronRight, Home, ShieldCheck, Briefcase, Settings, Car, TrendingUp } from 'lucide-react';
+import { ArrowRight, Home, ShieldCheck, Briefcase, Settings, Car, TrendingUp, Lock, BadgeCheck, FileCheck2, Clock3, PenLine } from 'lucide-react';
 import { useLanguage } from '../contexts/language-context';
-import { useAuth } from '../contexts/auth-context';
 
-const SLIDES = [
-  {
-    image: '/imagen1.jpg',
-    text1Es: 'Crea, Firma y Verifica',
-    text2Es: 'Documentos en una plataforma segura.',
-    text1En: 'Create, Sign & Verify',
-    text2En: 'Documents in one secure platform.',
-    subEs: 'Genera documentos legales, recopila firmas electrónicas y verifica la identidad del firmante con auditoría completa y geolocalización.',
-    subEn: 'Generate legal documents, collect electronic signatures and verify signer identity with audit trails and geolocation evidence.',
-  },
-  {
-    image: '/imagen2.jpg',
-    text1Es: 'Documentos Legales',
-    text2Es: 'Lista para usar en cualquier estado.',
-    text1En: 'Legal Documents',
-    text2En: 'Ready to use in any state.',
-    subEs: 'Plantillas editables válidas en los 50 estados de EE. UU. Firmas electrónicas con conformidad ESIGN y UETA.',
-    subEn: 'Editable templates valid across all 50 U.S. states. Electronic signatures with ESIGN Act and UETA compliance.',
-  },
-  {
-    image: '/imagen3.jpg',
-    text1Es: 'Firma Electrónica',
-    text2Es: 'Segura y verificable.',
-    text1En: 'Electronic Signatures',
-    text2En: 'Secure and verifiable.',
-    subEs: 'Verifica identidad con biometría. Pista de auditoría SHA-256 con geolocalización e IP logging automático.',
-    subEn: 'Identity verification with biometric authentication. SHA-256 audit trail with automatic geolocation and IP logging.',
-  },
-  {
-    image: '/imagen4.jpg',
-    text1Es: 'Verifica Signatarios',
-    text2Es: 'Con prueba completa de identidad.',
-    text1En: 'Verify Signers',
-    text2En: 'with Complete Identity Proof.',
-    subEs: 'Captura selfie, valida documentos y almacena registro de auditoría completo. Todo en una plataforma integrada.',
-    subEn: 'Capture selfie, validate documents and store complete audit record. All on one integrated platform.',
-  },
+/**
+ * Portada para visitantes de EE. UU.
+ *
+ * Rehecha el 2026-10-21. La anterior era un carrusel de cuatro titulares
+ * genéricos («Create, Sign & Verify Documents in one secure platform») que
+ * rotaban cada 5,5 s, con las tarjetas de documentos pidiendo registro antes
+ * de dejar probar nada (aunque /generator/* está abierto a todos) y un botón
+ * principal que llevaba a la firma de PDFs en lugar de a crear un documento.
+ * En 60 días, ninguna visita real de EE. UU. creó un documento.
+ *
+ * Ahora: un titular fijo con el resultado que la persona busca, los seis
+ * documentos a un clic y sin registro, señales de confianza concretas
+ * (E-SIGN/UETA, cifrado, número de documento verificable) y, a la derecha,
+ * cómo se ve el documento terminado.
+ */
+
+const DOCUMENTOS = [
+  { en: 'Lease Agreement', es: 'Contrato de arrendamiento', subEn: 'Residential, any state', subEs: 'Vivienda, cualquier estado', route: '/generator/residential-lease', icon: Home, color: '#2563eb' },
+  { en: 'Vehicle Bill of Sale', es: 'Compraventa de vehículo', subEn: 'With odometer disclosure', subEs: 'Con declaración de odómetro', route: '/generator/bill-of-sale-vehicle', icon: Car, color: '#0891b2' },
+  { en: 'Non-Disclosure (NDA)', es: 'Confidencialidad (NDA)', subEn: 'Mutual or one-way', subEs: 'Mutuo o unilateral', route: '/generator/nda', icon: ShieldCheck, color: '#7c3aed' },
+  { en: 'Service Agreement', es: 'Contrato de servicios', subEn: 'Scope, price, payment terms', subEs: 'Alcance, precio y pagos', route: '/generator/service-agreement', icon: Settings, color: '#0284c7' },
+  { en: 'Independent Contractor', es: 'Contratista independiente', subEn: '1099 contractor terms', subEs: 'Términos de contratista 1099', route: '/generator/independent-contractor', icon: Briefcase, color: '#4f46e5' },
+  { en: 'Promissory Note', es: 'Pagaré', subEn: 'Loan with payment schedule', subEs: 'Préstamo con plan de pagos', route: '/generator/promissory-note', icon: TrendingUp, color: '#d97706' },
 ];
 
-const TEMPLATE_CARDS = [
-  { titleEn: 'Residential Lease\nAgreement', titleEs: 'Contrato de\nArrendamiento', badge: 'LEASE', color: '#2563eb', route: '/generator/residential-lease', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Home },
-  { titleEn: 'Non-Disclosure\nAgreement', titleEs: 'Acuerdo de\nConfidencialidad', badge: 'NDA', color: '#7c3aed', route: '/generator/nda', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: ShieldCheck },
-  { titleEn: 'Independent\nContractor Agr.', titleEs: 'Contrato\nIndependiente', badge: 'FREELANCE', color: '#4f46e5', route: '/generator/independent-contractor', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Briefcase },
-  { titleEn: 'Service\nAgreement', titleEs: 'Acuerdo de\nServicios', badge: 'SERVICES', color: '#0284c7', route: '/generator/service-agreement', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Settings },
-  { titleEn: 'Bill of Sale\nVehicle', titleEs: 'Contrato de\nCompraventa', badge: 'VEHICLE', color: '#0891b2', route: '/generator/bill-of-sale-vehicle', btnEn: 'Use Template', btnEs: 'Usar Plantilla', icon: Car },
-  { titleEn: 'Promissory\nNote', titleEs: 'Pagaré\nComercial', badge: 'FINANCE', color: '#d97706', route: '/generator/promissory-note', btnEn: 'Sign Here', btnEs: 'Firmar Aquí', icon: TrendingUp },
-];
-
-const SIMULATED_LINES = [100, 76, 92, 58, 85];
-const INTERVAL_MS = 5500;
-
-const textVariants = {
-  enter: (dir: number) => ({ y: dir >= 0 ? 24 : -24, opacity: 0 }),
-  center: { y: 0, opacity: 1 },
-  exit: (dir: number) => ({ y: dir >= 0 ? -16 : 16, opacity: 0 }),
-};
-
-function GlassCard({ card, language, isAuthed, onRequireAuth }: { card: typeof TEMPLATE_CARDS[0]; language: 'en' | 'es'; isAuthed: boolean; onRequireAuth: () => void }) {
-  const Icon = card.icon;
-  const title = language === 'en' ? card.titleEn : card.titleEs;
-  const btnLabel = language === 'en' ? card.btnEn : card.btnEs;
+function DocumentoTerminado({ en }: { en: boolean }) {
+  const fila = (etiqueta: string, valor: string) => (
+    <div className="contents">
+      <span className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">{etiqueta}</span>
+      <span className="text-[10px] font-semibold text-slate-800">{valor}</span>
+    </div>
+  );
   return (
-    <a
-      href={card.route}
-      onClick={(e) => { if (!isAuthed) { e.preventDefault(); onRequireAuth(); } }}
-      style={{
-        width: '178px', flexShrink: 0, borderRadius: '20px',
-        background: 'rgba(255,255,255,0.10)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        border: '1px solid rgba(255,255,255,0.22)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.18)',
-        padding: '0', overflow: 'hidden', textDecoration: 'none', display: 'block',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-3px)';
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 16px 48px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.22)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.18)';
-      }}
-    >
-      <div style={{ height: '3px', background: `linear-gradient(90deg, ${card.color}, ${card.color}88)` }} />
-      <div style={{ padding: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon size={16} color="white" />
+    <div className="relative w-full max-w-[420px]">
+      {/* Hoja de atrás, para dar profundidad */}
+      <div className="absolute inset-0 translate-x-4 translate-y-4 rotate-[2deg] rounded-xl bg-white/40" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-xl bg-white shadow-[0_30px_80px_rgba(15,23,42,0.45)]">
+        <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg,#0f2a5f 0%,#0f2a5f 72%,#4f46e5 72%)' }} />
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 pb-2 pt-3">
+          <span className="text-[10px] font-bold text-[#0f2a5f]">Carter Motors LLC</span>
+          <span className="text-right text-[8px] leading-tight text-slate-500">
+            <b className="block text-[#0f2a5f]">BILL OF SALE - MOTOR VEHICLE</b>
+            Document ID: CDX-2D7C4759
+          </span>
+        </div>
+        <div className="px-5 pb-4 pt-4">
+          <p className="text-center text-[13px] font-bold tracking-wide text-[#0f2a5f]">BILL OF SALE - MOTOR VEHICLE</p>
+          <div className="mx-auto mt-1.5 h-[2px] w-12 rounded-full bg-indigo-600" />
+          <p className="mt-3 text-[9px] font-bold uppercase tracking-wider text-[#0f2a5f]">{en ? 'Seller' : 'Vendedor'}</p>
+          <div className="mt-1 grid grid-cols-[70px_1fr] gap-x-3 gap-y-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            {fila(en ? 'Name' : 'Nombre', 'John Carter')}
+            {fila(en ? 'Address' : 'Dirección', '120 Ocean Dr, Miami, FL 33139')}
           </div>
-          <span style={{ fontSize: '8px', fontWeight: 800, letterSpacing: '0.07em', color: 'rgba(255,255,255,0.90)', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', padding: '2px 7px', borderRadius: '20px' }}>{card.badge}</span>
+          <p className="mt-3 text-[9px] font-bold uppercase tracking-wider text-[#0f2a5f]">{en ? 'Vehicle' : 'Vehículo'}</p>
+          <div className="mt-1 grid grid-cols-[70px_1fr] gap-x-3 gap-y-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            {fila(en ? 'Vehicle' : 'Vehículo', '2019 Toyota Camry · Silver')}
+            {fila('VIN', '4T1B11HK5KU123456')}
+            {fila(en ? 'Price' : 'Precio', 'USD 18,500')}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-5">
+            {['John Carter', 'Maria Lopez'].map((n, i) => (
+              <div key={n}>
+                <div className="flex h-9 items-end">
+                  <span className="font-[cursive] text-[19px] leading-none text-slate-800" style={{ fontFamily: '"Brush Script MT","Segoe Script",cursive' }}>{n}</span>
+                </div>
+                <div className="border-t border-slate-800 pt-1">
+                  <p className="text-[8.5px] font-bold uppercase text-slate-800">{n}</p>
+                  <p className="text-[7.5px] text-slate-500">{en ? 'Signed electronically' : 'Firmado electrónicamente'} · Oct {21 + i}, 2026</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(255,255,255,0.95)', lineHeight: 1.35, marginBottom: '10px', whiteSpace: 'pre-line' }}>{title}</p>
-        <div style={{ marginBottom: '12px' }}>
-          {SIMULATED_LINES.map((w, i) => (
-            <div key={i} style={{ height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.20)', marginBottom: '5px', width: `${w}%` }} />
-          ))}
+        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-2 text-[7.5px]">
+          <span className="font-bold text-[#0f2a5f]">Document CDX-2D7C4759</span>
+          <span className="font-semibold text-indigo-600">{en ? 'Compliant with E-SIGN & UETA' : 'Conforme a E-SIGN y UETA'}</span>
+          <span className="font-bold text-[#0f2a5f]">Page 1 of 4</span>
         </div>
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.12)', marginBottom: '10px' }} />
-        <div style={{
-          width: '100%', borderRadius: '10px',
-          background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 38%, #1d4ed8 68%, #1e3a8a 100%)',
-          boxShadow: '0 3px 0 #1e3a8a, 0 5px 14px rgba(29,78,216,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
-          color: 'white', fontWeight: 800, fontSize: '10px', textAlign: 'center',
-          padding: '8px 0', letterSpacing: '0.04em', textShadow: '0 1px 2px rgba(0,0,0,0.30)',
-        }}>{btnLabel}</div>
       </div>
-    </a>
+      {/* Sello de firmado */}
+      <div className="absolute -left-8 bottom-24 flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-xl ring-1 ring-slate-200">
+        <span className="flex size-7 items-center justify-center rounded-full bg-emerald-500 text-white"><BadgeCheck className="size-4" /></span>
+        <span className="text-[11px] font-bold leading-tight text-slate-800">
+          {en ? 'Signed by both parties' : 'Firmado por ambas partes'}
+          <span className="block text-[10px] font-medium text-slate-500">{en ? 'Audit trail + SHA-256' : 'Auditoría + SHA-256'}</span>
+        </span>
+      </div>
+    </div>
   );
 }
 
-export function ModernHero({ onRequireAuth }: { onRequireAuth: () => void }) {
+export function ModernHero(_props: { onRequireAuth: () => void }) {
   const { language } = useLanguage();
-  const { user } = useAuth();
-  const [[current, direction], setSlide] = useState([0, 1]);
-  const [paused, setPaused] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const en = language === 'en';
 
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => setSlide(([p]) => [(p + 1) % SLIDES.length, 1]), INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [paused]);
-
-  const goTo = (next: number, dir: number) => {
-    const idx = ((next % SLIDES.length) + SLIDES.length) % SLIDES.length;
-    setSlide([idx, dir]);
-    setPaused(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setPaused(false), 9000);
-  };
-
-  const prev = () => goTo(current - 1, -1);
-  const next = () => goTo(current + 1, 1);
-
-  // Duplicate cards for seamless infinite loop
-  const carouselCards = [...TEMPLATE_CARDS, ...TEMPLATE_CARDS];
-
-  const trustChips = ['Legal Documents', 'E-Signatures', 'Identity Verification', 'Audit Trail', 'Geolocation', 'Secure Workflow'];
+  const confianza = [
+    { icon: FileCheck2, t: en ? 'E-SIGN Act & UETA compliant' : 'Conforme a E-SIGN y UETA' },
+    { icon: Lock, t: en ? 'Encrypted, with audit trail' : 'Cifrado y con auditoría' },
+    { icon: BadgeCheck, t: en ? 'Verifiable document ID' : 'N.º de documento verificable' },
+    { icon: Clock3, t: en ? 'Ready in about 5 minutes' : 'Listo en unos 5 minutos' },
+  ];
 
   return (
     <section className="bg-white px-3 pt-4 sm:px-5 sm:pt-6 lg:px-8">
       <div
-        className="relative mx-auto min-h-[78vh] max-w-[1600px] overflow-hidden rounded-[2rem] sm:rounded-[2.75rem]"
-        style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4338ca 55%, #3730a3 100%)' }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
+        className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[2rem] sm:rounded-[2.75rem]"
+        style={{ background: 'linear-gradient(135deg, #0f2a5f 0%, #1e3a8a 45%, #3730a3 100%)' }}
       >
-      <style>{`
-        @keyframes docCardScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
+        <div className="pointer-events-none absolute -left-24 -top-24 size-[26rem] rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -right-16 size-[30rem] rounded-full bg-indigo-400/20 blur-3xl" />
 
-      {/* Soft decorative glow blobs — flat-color depth instead of a photo */}
-      <div className="pointer-events-none absolute -left-24 -top-24 size-[26rem] rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-16 size-[30rem] rounded-full bg-indigo-400/20 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '44px 44px' }} />
+        <div className="relative z-10 grid items-center gap-10 px-5 pb-12 pt-16 sm:px-8 sm:pt-20 lg:grid-cols-[1.15fr_1fr] lg:px-12 lg:py-16 xl:px-16">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold text-emerald-200">
+              <span className="size-1.5 rounded-full bg-emerald-400" />
+              {en ? 'Free to start · No credit card · Valid in all 50 states' : 'Gratis para empezar · Sin tarjeta · Válido en los 50 estados'}
+            </p>
 
-      {/* Two-column layout */}
-      <div className="relative z-10 flex min-h-[78vh] items-center">
+            <h1 className="mt-4 text-[2rem] font-black leading-[1.08] tracking-tight text-white sm:text-[2.6rem] lg:text-[3.1rem]">
+              {en ? <>Create a legally binding<br className="hidden sm:block" /> contract <span className="text-sky-300">in 5 minutes.</span></> : <>Crea un contrato con validez legal <span className="text-sky-300">en 5 minutos.</span></>}
+            </h1>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+              {en
+                ? 'Pick your document, answer a few simple questions, sign it online and download a professional PDF your clients will trust.'
+                : 'Elige tu documento, responde unas preguntas sencillas, fírmalo en línea y descarga un PDF profesional que tus clientes van a confiar.'}
+            </p>
 
-        {/* LEFT — text */}
-        <div className="flex w-full flex-col justify-center px-5 pt-20 pb-14 sm:px-8 sm:pt-24 sm:pb-16 lg:w-[54%] lg:px-12 xl:px-16 lg:pt-0 lg:pb-0 lg:py-16">
-
-          {/* Slide counter */}
-          <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white/55 backdrop-blur-sm">
-            <span className="flex size-1.5 rounded-full bg-blue-400" />
-            {String(current + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
-          </div>
-
-          {/* Animated title */}
-          <div className="relative min-h-[180px] sm:min-h-[200px] lg:min-h-[240px]">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={current}
-                custom={direction}
-                variants={textVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {/* Siempre un h1, sea cual sea la diapositiva: con h1 sólo en la
-                    primera, al avanzar el carrusel la portada se quedaba sin
-                    h1, y Google puede renderizarla en cualquier momento. */}
-                <h1 className="mb-3 text-3xl font-black leading-[1.1] tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.60)] sm:text-4xl lg:text-[3.1rem]">
-                  <span className="text-blue-400">{language === 'en' ? SLIDES[current].text1En : SLIDES[current].text1Es}</span>{' '}
-                  <span className="text-white">{language === 'en' ? SLIDES[current].text2En : SLIDES[current].text2Es}</span>
-                </h1>
-                <p className="text-sm font-medium leading-relaxed text-white/65 drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)] sm:text-base md:text-lg">
-                  {language === 'en' ? SLIDES[current].subEn : SLIDES[current].subEs}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {trustChips.map((chip) => (
-                    <span key={chip} className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur-sm">
-                      {'✓'} {chip}
+            <p className="mt-7 text-xs font-bold uppercase tracking-[0.14em] text-white/55">
+              {en ? 'What do you need to create?' : '¿Qué necesitas crear?'}
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {DOCUMENTOS.map((d) => {
+                const Icon = d.icon;
+                return (
+                  <a
+                    key={d.route}
+                    href={d.route}
+                    className="group flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.08] px-3.5 py-3 text-left transition hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/[0.14]"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg" style={{ background: d.color }}>
+                      <Icon className="size-5" />
                     </span>
-                  ))}
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* CTAs */}
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="/firma-electronica"
-              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-6 py-3.5 text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 sm:px-7 sm:py-4"
-              style={{ background: 'linear-gradient(180deg, #60a5fa 0%, #2563eb 40%, #1d4ed8 100%)', boxShadow: '0 4px 0 #1e3a8a, 0 8px 24px rgba(29,78,216,0.55)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 0 #1e3a8a, 0 12px 32px rgba(29,78,216,0.65)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 0 #1e3a8a, 0 8px 24px rgba(29,78,216,0.55)'; }}
-            >
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-              <Zap className="size-4 shrink-0" />
-              {language === 'en' ? 'Get Started Free' : 'Empezar Gratis'}
-              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
-            </a>
-            <button
-              type="button"
-              onClick={() => document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl border border-white/22 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-white/35 hover:bg-white/16 sm:px-7 sm:py-4"
-            >
-              {language === 'en' ? 'Browse Templates' : 'Ver Plantillas'}
-              <ArrowRight className="size-4 opacity-50" />
-            </button>
-          </div>
-
-          {/* Slide controls */}
-          <div className="mt-8 flex items-center gap-3">
-            <button type="button" onClick={prev} aria-label="Previous"
-              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white/60 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/35 hover:text-white">
-              <ChevronLeft className="size-4" />
-            </button>
-            <div className="flex items-center gap-2">
-              {SLIDES.map((_, i) => (
-                <button key={i} type="button" onClick={() => goTo(i, i > current ? 1 : -1)} aria-label={`Slide ${i + 1}`}
-                  className={['h-1.5 rounded-full transition-all duration-500', i === current ? 'w-7 bg-white shadow-[0_0_6px_rgba(255,255,255,0.5)]' : 'w-2 bg-white/30 hover:bg-white/55'].join(' ')}
-                />
-              ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-bold leading-tight text-white">{en ? d.en : d.es}</span>
+                      <span className="block truncate text-xs text-white/55">{en ? d.subEn : d.subEs}</span>
+                    </span>
+                    <ArrowRight className="size-4 shrink-0 text-white/40 transition group-hover:translate-x-0.5 group-hover:text-white" />
+                  </a>
+                );
+              })}
             </div>
-            <button type="button" onClick={next} aria-label="Next"
-              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/25 text-white/60 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/35 hover:text-white">
-              <ChevronRight className="size-4" />
-            </button>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+              <a href="/electronic-signature" className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-200 hover:text-white">
+                <PenLine className="size-4" /> {en ? 'Already have a document? Upload and sign it' : '¿Ya tienes tu documento? Súbelo y fírmalo'}
+              </a>
+            </div>
+
+            <ul className="mt-7 grid grid-cols-1 gap-2 border-t border-white/10 pt-5 sm:grid-cols-2">
+              {confianza.map(({ icon: Icon, t }) => (
+                <li key={t} className="flex items-center gap-2 text-[13px] font-medium text-white/80">
+                  <Icon className="size-4 shrink-0 text-emerald-300" /> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="hidden justify-center lg:flex">
+            <DocumentoTerminado en={en} />
           </div>
         </div>
-
-        {/* RIGHT — single card carousel, desktop only */}
-        <div className="hidden lg:flex lg:w-[46%] flex-col items-center justify-center py-16 pr-6">
-          <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
-            {language === 'en' ? 'Click any card, free' : 'Haz clic en una tarjeta gratis'}
-          </p>
-
-          <div
-            className="relative w-full overflow-hidden"
-            style={{
-              maskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
-            }}
-          >
-            <div
-              className="flex gap-4 py-3"
-              style={{ width: 'max-content', animation: 'docCardScroll 32s linear infinite', willChange: 'transform' }}
-            >
-              {carouselCards.map((card, i) => (
-                <GlassCard key={`card-${i}`} card={card} language={language} isAuthed={!!user} onRequireAuth={onRequireAuth} />
-              ))}
-            </div>
-          </div>
-
-          <p className="mt-4 text-[10px] font-semibold text-white/28">
-            {language === 'en' ? '6 legal templates · ESIGN Act compliant · 2026' : '6 plantillas legales · Conformes ESIGN · 2026'}
-          </p>
-        </div>
-      </div>
       </div>
     </section>
   );

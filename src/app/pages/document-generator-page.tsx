@@ -316,7 +316,13 @@ function ContenidoGenerador() {
   // transaction (?tx=<id>) — there is otherwise no way to get back to the
   // "waiting for signature" / download screen once this component unmounts
   // (its state lives only in memory), e.g. after closing the tab.
-  const [intentModalOpen,  setIntentModalOpen]  = useState(!resumeTxId);
+  // La pregunta «¿cómo quieres usar este documento?» ya no se abre al entrar:
+  // era lo primero que veía un visitante nuevo, cuatro opciones que aún no
+  // entendía antes de ver siquiera el formulario, y ninguna visita real de
+  // EE. UU. pasó de ahí en 60 días. Ahora se llena primero y la pregunta se
+  // hace al terminar, en el botón de seguir (ver handleSiguiente).
+  const [intentModalOpen,  setIntentModalOpen]  = useState(false);
+  const [continuarAlElegir, setContinuarAlElegir] = useState(false);
   const [intent,           setIntent]           = useState<SigningIntent | null>(null);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [txShareData, setTxShareData]           = useState<{ txId: string; shareUrl: string; config: SecurityConfig } | null>(null);
@@ -917,11 +923,31 @@ function ContenidoGenerador() {
   const handleIntentSelect = (selected: SigningIntent) => {
     setIntent(selected);
     setIntentModalOpen(false);
-    if (selected === 'blank_send') setSecurityModalOpen(true);
+    if (selected === 'blank_send') { setContinuarAlElegir(false); setSecurityModalOpen(true); return; }
+    // Eligió al terminar el formulario: se sigue de una vez con lo que eligió.
+    if (continuarAlElegir) {
+      setContinuarAlElegir(false);
+      setTimeout(() => { void avanzarCon(selected); }, 0);
+    }
   };
 
-  const handleFormNextIntent = async () => {
-    if (intent === 'fill_send' || intent === 'fill_approve') {
+  /** Botón de seguir al final del formulario. Si todavía no eligió cómo
+   *  usar el documento, se le pregunta aquí, con el documento ya lleno. */
+  const handleSiguiente = () => {
+    if (!intent) {
+      setContinuarAlElegir(true);
+      setIntentModalOpen(true);
+      return;
+    }
+    void avanzarCon(intent);
+  };
+  const avanzarCon = async (elegido: SigningIntent) => {
+    if (elegido === 'fill_send' || elegido === 'fill_approve') await handleFormNextIntent(elegido);
+    else await handleFormNext();
+  };
+
+  const handleFormNextIntent = async (elegido: SigningIntent | null = intent) => {
+    if (elegido === 'fill_send' || elegido === 'fill_approve') {
       const missing = getMissingRequiredFields();
       setMissingRequiredFields(missing);
       if (missing.length > 0) { toast.error(t('generator.fillAllFields')); return; }
@@ -2461,8 +2487,8 @@ function ContenidoGenerador() {
                 {!selectedState && (
                   <p className="mt-2 text-xs font-medium text-indigo-600">
                     {language === 'en'
-                      ? 'âš  Required, without a state, generic clauses will be used'
-                      : 'âš  Requerido, sin estado se usarán cláusulas genéricas'}
+                      ? 'Required: without a state, generic clauses will be used'
+                      : 'Obligatorio: sin estado se usan cláusulas genéricas'}
                   </p>
                 )}
               </div>
@@ -2692,14 +2718,16 @@ function ContenidoGenerador() {
                 {language === 'en' ? 'Clear & start over' : 'Borrar y empezar de nuevo'}
               </button>
               <Button
-                onClick={intent === 'fill_send' || intent === 'fill_approve' ? handleFormNextIntent : handleFormNext}
+                onClick={handleSiguiente}
                 size="lg"
                 disabled={formProgress < 100}
                 className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white shadow-lg shadow-blue-500/20"
               >
                 {intent === 'fill_send' || intent === 'fill_approve'
-                  ? (language === 'en' ? 'Continue to Send' : 'Continuar al Envio')
-                  : (language === 'en' ? 'Next: Sign Document' : 'Siguiente: Firmar Documento')}
+                  ? (language === 'en' ? 'Continue to Send' : 'Continuar al Envío')
+                  : intent
+                    ? (language === 'en' ? 'Next: Sign Document' : 'Siguiente: Firmar Documento')
+                    : (language === 'en' ? 'Next: Sign or Send' : 'Siguiente: Firmar o Enviar')}
                 <PenLine className="size-4" />
               </Button>
             </div>
