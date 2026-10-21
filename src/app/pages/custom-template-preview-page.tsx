@@ -32,7 +32,7 @@ import { fetchDocxArrayBuffer, renderDocxTemplate, extractFormattedParagraphs, a
 import { PDFGenerator } from '../services/pdf-generator';
 import { loadDocumentBrandingForUser } from '../services/branding-service';
 import { saveDocumentRecord } from '../services/documents-service';
-import { nombrePersonaDeValores, tituloDeDocumento, nombreDeArchivo } from '../utils/nombre-del-documento';
+import { nombrePersonaDeValores, nombreFirmanteDeValores, tituloDeDocumento, nombreDeArchivo } from '../utils/nombre-del-documento';
 import { triggerDownload } from '../utils/download';
 import { detectSignerCountryCode } from '../../lib/geo';
 import { resolveJurisdiction } from '../data/signature-jurisdictions';
@@ -138,7 +138,7 @@ export function CustomTemplatePreviewPage() {
       // Certificado de firma al final del documento: quién firmó, cuándo y
       // con qué número de documento. Antes este PDF salía sin él, a
       // diferencia de los demás documentos firmados de la plataforma.
-      const nombreFirmante = nombrePersonaDeValores(savedData.values ?? {}, template.detectedFields)
+      const nombreFirmante = nombreFirmanteDeValores(savedData.values ?? {}, template.detectedFields)
         || recipientSig?.name
         || (language === 'en' ? 'Recipient' : 'Destinatario');
       const nombreRemitente = String(user.name || user.email || (language === 'en' ? 'Sender' : 'Remitente'));

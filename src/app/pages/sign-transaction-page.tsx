@@ -215,6 +215,9 @@ export default function SignTransactionPage() {
   const [submitStatus,  setSubmitStatus]  = useState('');
 
   const videoRef  = useRef<HTMLVideoElement>(null);
+  // El círculo de la selfie y el marco de la cédula: la foto se recorta a lo
+  // que quedó dentro de ellos, no al cuadro completo de la cámara.
+  const guiaRef   = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   // Synchronous guard against double-submit (mobile touch+click double-fire,
   // or a second tap landing before React re-renders the disabled button) —
@@ -387,12 +390,42 @@ export default function SignTransactionPage() {
     try { console.log('USER', user); console.log('IS_ADMIN', isAdmin); console.log('PERMISSIONS', (user as any)?.permissions || null); } catch {}
     if (!videoRef.current) return;
     const v = videoRef.current;
+    const vw = v.videoWidth || 1920;
+    const vh = v.videoHeight || 1080;
+    // Qué parte del cuadro de la cámara quedó dentro de la guía en pantalla.
+    // El video se ve con object-cover (recortado) y la guía es una fracción de
+    // eso; sin este recorte la selfie era el cuadro entero reducido (la cara
+    // quedaba diminuta: el detector de rostros no existe en Safari/iPhone) y
+    // la cédula salía pequeña dentro de una foto vertical.
+    let sx = 0, sy = 0, sw = vw, sh = vh;
+    const guia = guiaRef.current;
+    const vr = v.getBoundingClientRect();
+    if (guia && vr.width > 0 && vr.height > 0) {
+      const gr = guia.getBoundingClientRect();
+      const esc = Math.max(vr.width / vw, vr.height / vh);
+      const offX = (vr.width - vw * esc) / 2;
+      const offY = (vr.height - vh * esc) / 2;
+      // Selfie: un poco más que el círculo para que entren pelo, mentón y
+      // cuello. Cédula: el marco justo, con un borde mínimo.
+      const margen = target === 'selfie' ? 1.45 : 1.06;
+      let gx = (gr.left - vr.left - offX) / esc;
+      const gy = (gr.top - vr.top - offY) / esc;
+      const gw = gr.width / esc;
+      const gh = gr.height / esc;
+      if (target === 'selfie') gx = vw - gx - gw; // la vista previa está en espejo
+      const cx = gx + gw / 2;
+      const cy = gy + gh / 2;
+      sw = Math.min(vw, gw * margen);
+      sh = Math.min(vh, gh * margen);
+      sx = Math.max(0, Math.min(vw - sw, cx - sw / 2));
+      sy = Math.max(0, Math.min(vh - sh, cy - sh / 2));
+    }
     const canvas = document.createElement('canvas');
-    canvas.width  = v.videoWidth  || 1920;
-    canvas.height = v.videoHeight || 1080;
+    canvas.width  = Math.round(sw);
+    canvas.height = Math.round(sh);
     const ctx = canvas.getContext('2d')!;
     if (target === 'selfie') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(v, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
     const rawUrl = canvas.toDataURL('image/jpeg', 0.9);
     try {
@@ -988,7 +1021,7 @@ export default function SignTransactionPage() {
                     style={{ transform: 'scaleX(-1)', maxHeight: 280 }}
                   />
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div className="size-36 rounded-full border-[3px] border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                    <div ref={guiaRef} className="size-40 rounded-full border-[3px] border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -1092,7 +1125,8 @@ export default function SignTransactionPage() {
                     style={{ maxHeight: 280 }}
                   />
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-xl border-[3px] border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" style={{ width: '82%', height: '72%' }} />
+                    {/* Proporción real de una cédula (85,6 × 54 mm): la foto sale horizontal. */}
+                    <div ref={guiaRef} className="rounded-xl border-[3px] border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" style={{ width: '88%', maxHeight: '92%', aspectRatio: '85.6 / 54' }} />
                   </div>
                 </div>
                 <div className="flex gap-2">
