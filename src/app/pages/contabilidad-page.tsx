@@ -21,7 +21,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, BellRing, FolderOpen, BookOpenCheck, BookOpen, BarChart3, ListTree, Store, CreditCard,
-  FileSpreadsheet, ChevronDown, Search, Loader2, ArrowRight, Check,
+  ArrowLeft, ChevronDown, Search, Loader2, ArrowRight, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PanelLateral, ANCHO_LATERAL, ANCHO_LATERAL_PLEGADA, type GrupoLateral } from '../components/dian/PanelLateral';
@@ -49,7 +49,7 @@ import {
 import { planDeCuentas, type Cuenta } from '../../lib/contabilidad/puc';
 import { importarBandeja } from '../services/dian-service';
 
-type Seccion = 'empresas' | 'avisos' | 'carpetas' | 'comprobantes' | 'reportes' | 'cuentas' | 'pos' | 'plan';
+type Seccion = 'empresas' | 'avisos' | 'carpetas' | 'comprobantes' | 'reportes' | 'cuentas' | 'pos';
 
 const CLAVE_EMPRESA = 'codec_cont_empresa';
 const CLAVE_PLEGADA = 'codec_dian_lateral_plegada';
@@ -189,13 +189,17 @@ export default function ContabilidadPage() {
   }));
 
   const menu: GrupoLateral[] = useMemo(() => {
+    // La flecha de volver va primero: Contabilidad es una parte de Documentos
+    // DIAN, no otro programa.
+    const volver = { items: [{ id: 'dian', etiqueta: 'Volver a Documentos DIAN', icono: ArrowLeft }] };
     if (!estado?.activo) {
       return [
-        { items: [{ id: 'plan', etiqueta: 'Contabilidad', icono: Building2, marca: estado?.pruebaDisponible ? '15 días' : undefined }] },
-        { titulo: 'Herramientas', items: [{ id: 'dian', etiqueta: 'Documentos DIAN', icono: FileSpreadsheet }] },
+        volver,
+        { items: [{ id: 'empresas', etiqueta: 'Mis empresas', icono: Building2, marca: estado?.pruebaDisponible ? '15 días' : undefined }] },
       ];
     }
     const grupos: GrupoLateral[] = [
+      volver,
       {
         items: [
           { id: 'empresas', etiqueta: 'Mis empresas', icono: Building2 },
@@ -218,14 +222,17 @@ export default function ContabilidadPage() {
       });
     }
     grupos.push(
-      { titulo: 'Herramientas', items: [{ id: 'dian', etiqueta: 'Traer XML (DIAN)', icono: FileSpreadsheet }] },
-      { titulo: 'Cuenta', items: [{ id: 'plan', etiqueta: 'Mi plan', icono: CreditCard, marca: estado.enPrueba ? 'Prueba' : undefined }] },
+      { titulo: 'Cuenta', items: [{ id: 'plan', etiqueta: 'Planes y consumo', icono: CreditCard, marca: estado.enPrueba ? 'Prueba' : undefined }] },
     );
     return grupos;
   }, [estado, empresa, resumen, sinLeer]);
 
+  const verPlanes = () => navegar('/documentos-electronicos?seccion=planes');
+
   const seleccionar = (id: string) => {
     if (id === 'dian') { navegar('/documentos-electronicos'); return; }
+    // Los precios viven en un solo lugar: «Planes y consumo» de Documentos DIAN.
+    if (id === 'plan') { verPlanes(); return; }
     if (id === 'causar') { setCausando(true); return; }
     setSeccion(id as Seccion);
   };
@@ -263,7 +270,7 @@ export default function ContabilidadPage() {
         plan={estado?.activo && estado.planNombre
           ? { nombre: estado.planNombre, limite: estado.maxEmpresas, usados: estado.empresasUsadas }
           : undefined}
-        onVerPlan={() => setSeccion('plan')}
+        onVerPlan={verPlanes}
         onSalir={() => { void logout().then(() => navegar('/', { replace: true })); }}
         abierta={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
@@ -279,7 +286,7 @@ export default function ContabilidadPage() {
           nombre={nombreCorto}
           foto={user?.picture ?? undefined}
           onAbrirMenu={() => setMenuAbierto(true)}
-          onPerfil={() => setSeccion('plan')}
+          onPerfil={verPlanes}
           campana={estado?.activo ? (
             <Campana
               lista={notificaciones}
@@ -295,10 +302,10 @@ export default function ContabilidadPage() {
             <div className="flex justify-center py-24"><Loader2 className="size-7 animate-spin text-slate-300" /></div>
           ) : (
             <ErrorBoundary zona="Contabilidad">
-              {diasPrueba !== null && seccion !== 'plan' && (
+              {diasPrueba !== null && (
                 <button
                   type="button"
-                  onClick={() => setSeccion('plan')}
+                  onClick={verPlanes}
                   className="mb-5 flex w-full items-center justify-between gap-3 rounded-2xl bg-blue-50 px-4 py-3 text-left text-sm text-blue-900 ring-1 ring-blue-200 hover:bg-blue-100"
                 >
                   <span>
@@ -309,9 +316,11 @@ export default function ContabilidadPage() {
                 </button>
               )}
 
-              {!estado.activo || seccion === 'plan' ? (
+              {!estado.activo ? (
                 <OfertaContabilidad
                   estado={estado}
+                  modo="presentacion"
+                  onVerPlanes={verPlanes}
                   vencido={!estado.activo && Boolean(estado.planCode)}
                   onActualizado={(e) => { setEstado(e); setSeccion('empresas'); void refrescar(); }}
                 />

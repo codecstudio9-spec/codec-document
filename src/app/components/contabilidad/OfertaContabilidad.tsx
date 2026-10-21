@@ -31,12 +31,18 @@ const BENEFICIOS = [
 ];
 
 export function OfertaContabilidad({
-  estado, onActualizado, vencido,
+  estado, onActualizado, vencido, modo = 'completo', onVerPlanes,
 }: {
   estado: EstadoContabilidad;
   onActualizado: (e: EstadoContabilidad) => void;
   /** Tuvo plan y se le venció: su información sigue guardada. */
   vencido?: boolean;
+  /** «planes»: sólo el estado y las tarjetas de precios (va dentro de
+   *  «Planes y consumo» de Documentos DIAN, el único lugar con precios).
+   *  «presentacion»: qué hace y la prueba gratis, sin precios; el botón
+   *  «Ver planes y precios» lleva a ese lugar único. */
+  modo?: 'completo' | 'planes' | 'presentacion';
+  onVerPlanes?: () => void;
 }) {
   const [anual, setAnual] = useState(false);
   const [trabajando, setTrabajando] = useState<string | null>(null);
@@ -70,7 +76,7 @@ export function OfertaContabilidad({
 
   return (
     <div className="space-y-6">
-      {!activo && (
+      {!activo && modo !== 'planes' && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -110,7 +116,7 @@ export function OfertaContabilidad({
         </motion.div>
       )}
 
-      {!estado.activo && (
+      {!estado.activo && modo !== 'planes' && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {BENEFICIOS.map((b, i) => (
             <Tarjeta key={b.titulo} indice={i} className="flex items-start gap-3 p-4">
@@ -126,8 +132,36 @@ export function OfertaContabilidad({
         </div>
       )}
 
+      {modo === 'presentacion' ? (
+        <div className="flex justify-center">
+          <Boton estilo={BOTON_NEUTRO} className="text-slate-700" onClick={onVerPlanes}>Ver planes y precios</Boton>
+        </div>
+      ) : (
+      <>
+      {modo === 'planes' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-slate-200">
+          <span className="text-slate-700">
+            {estado.activo
+              ? estado.enPrueba
+                ? <>Estás en la <strong>prueba gratis</strong> hasta el {estado.hasta ? new Date(estado.hasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''}.</>
+                : <>Plan <strong>{estado.planNombre ?? 'activo'}</strong>{estado.hasta ? ` hasta el ${new Date(estado.hasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. {estado.empresasUsadas}{estado.maxEmpresas !== null ? ` de ${estado.maxEmpresas}` : ''} empresas.</>
+              : 'Todavía no tienes Contabilidad.'}
+          </span>
+          {estado.pruebaDisponible && (
+            <button
+              type="button"
+              onClick={() => void probar()}
+              disabled={trabajando !== null}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {trabajando === 'prueba' ? <Loader2 className="size-3.5 animate-spin" /> : <Gift className="size-3.5" />}
+              Probar gratis 15 días
+            </button>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-black text-slate-900">{activo ? 'Cambiar o renovar plan' : 'Planes'}</h3>
+        <h3 className="text-lg font-black text-slate-900">{modo === 'planes' ? 'Contabilidad (Mis empresas)' : activo ? 'Cambiar o renovar plan' : 'Planes'}</h3>
         <div className="inline-flex rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
           {[false, true].map((a) => (
             <button
@@ -156,6 +190,8 @@ export function OfertaContabilidad({
         Pagas con Wompi (tarjeta, PSE, Nequi o Bancolombia). Precios en pesos colombianos, sin cobro automático:
         al terminar el periodo eliges si renuevas.
       </p>
+      </>
+      )}
     </div>
   );
 }

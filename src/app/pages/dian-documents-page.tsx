@@ -79,6 +79,7 @@ import {
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
 import { triggerDownload } from '../utils/download';
 import { repartoDeHoy, estadoContabilidad, type EstadoContabilidad } from '../services/contabilidad-service';
+import { OfertaContabilidad } from '../components/contabilidad/OfertaContabilidad';
 
 /** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
  *  porque aquí encabezan una frase leída en voz alta: «Nota crédito 1234 de
@@ -382,7 +383,11 @@ function ContenidoDian() {
   /** Sección del panel. Es la navegación principal desde que esto dejó de ser
    *  una columna única: antes, para llegar al auditor había que pasar por
    *  delante de la importación, los CUFEs y la tabla entera. */
-  const [seccion, setSeccion] = useState<string>('inicio');
+  // ?seccion=planes abre directo «Planes y consumo» (lo usa Contabilidad, que
+  // no tiene precios propios: todos viven aquí).
+  const [seccion, setSeccion] = useState<string>(() => {
+    try { return new URLSearchParams(window.location.search).get('seccion') === 'planes' ? 'planes' : 'inicio'; } catch { return 'inicio'; }
+  });
   /** El menú arranca OCULTO y recuerda la elección.
    *
    *  El recorrido normal cabe entero en Inicio —soltar, ver el avance, mirar
@@ -2213,6 +2218,18 @@ function ContenidoDian() {
             <Lock className="size-3.5 shrink-0" />
             Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal. Se cancela cuando quieras.
           </p>
+
+          {/* Contabilidad (Mis empresas): sus planes van aquí, con los de XML,
+              para que haya un solo lugar de precios en todo el módulo. */}
+          {contabilidad && (
+            <div className="mt-10 border-t border-slate-200 pt-8">
+              <OfertaContabilidad
+                estado={contabilidad}
+                modo="planes"
+                onActualizado={(e) => { setContabilidad(e); toast.success('Ya puedes entrar a Mis empresas'); }}
+              />
+            </div>
+          )}
         </div>
         )}
 
