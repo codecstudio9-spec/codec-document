@@ -4,6 +4,7 @@ import { getTemplateById } from '../data/templates';
 import { DocumentBranding, DocumentData } from '../types/document';
 import { loadDocumentBrandingForUser } from '../services/branding-service';
 import { DocumentPreview } from '../components/document-preview';
+import { pintarCabecera, pintarPie, pintarMarcaDeAgua } from '../services/pdf-membrete';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
@@ -403,56 +404,6 @@ function safePdfText(
   }
 }
 
-function renderPdfHeader(
-  pdf: import('jspdf').jsPDF,
-  branding: import('../types/document').DocumentBranding,
-  _title: string,
-  PW: number,
-  M: number,
-  HEADER_H: number,
-) {
-  // Only render header when user has supplied custom branding (logo or company name).
-  // No Codec Document promotional content in the body of a paid legal document.
-  const hasLogo = branding?.enableLogo && branding?.logoDataUrl;
-  const hasCompany = branding?.companyLegalName?.trim() || branding?.headerText?.trim();
-
-  if (!hasLogo && !hasCompany) {
-    // Minimal top margin line only — keeps top-of-page clean
-    pdf.setDrawColor(220, 220, 230);
-    pdf.setLineWidth(0.15);
-    pdf.line(M, M + HEADER_H, PW - M, M + HEADER_H);
-    return;
-  }
-
-  // Custom branding block
-  pdf.setFillColor(250, 250, 252);
-  pdf.rect(0, 0, PW, M + HEADER_H, 'F');
-
-  if (hasLogo) {
-    const fmt = branding.logoDataUrl!.includes('image/png') ? 'PNG' : 'JPEG';
-    const logoX = branding.logoPosition === 'right' ? PW - M - 14 : M;
-    safePdfAddImage(pdf, branding.logoDataUrl!, fmt, logoX, 5, 14, 14);
-  }
-
-  if (hasCompany) {
-    safePdfSetFont(pdf, 'helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.setTextColor(30, 30, 60);
-    const companyOnRight = hasLogo && branding.logoPosition !== 'right';
-    safePdfText(
-      pdf,
-      hasCompany,
-      companyOnRight ? PW - M : M,
-      12,
-      companyOnRight ? { align: 'right' } : undefined,
-    );
-  }
-
-  pdf.setDrawColor(210, 215, 230);
-  pdf.setLineWidth(0.2);
-  pdf.line(M, M + HEADER_H, PW - M, M + HEADER_H);
-}
-
 function safePdfAddImage(
   pdf: import('jspdf').jsPDF,
   imageData: string,
@@ -467,72 +418,6 @@ function safePdfAddImage(
   } catch (err) {
     console.warn('safePdfAddImage failed, skipping image', err, imageData?.slice?.(0, 40));
   }
-}
-
-function renderLogoWatermark(
-  pdf: import('jspdf').jsPDF,
-  branding: import('../types/document').DocumentBranding,
-  PW: number,
-  PH: number,
-) {
-  if (!branding.enableLogoWatermark || !branding.logoDataUrl) return;
-  try {
-    const anyPdf = pdf as any;
-    pdf.saveGraphicsState();
-    if (typeof anyPdf.GState === 'function' && typeof anyPdf.setGState === 'function') {
-      anyPdf.setGState(new anyPdf.GState({ opacity: 0.10 }));
-    }
-    const fmt = branding.logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-    safePdfAddImage(pdf, branding.logoDataUrl, fmt, PW * 0.2, PH * 0.28, PW * 0.6, PH * 0.36);
-    pdf.restoreGraphicsState();
-  } catch { /* watermark is decorative; keep the export usable on failure */ }
-}
-
-function renderPdfFooter(
-  pdf: import('jspdf').jsPDF,
-  company: string,
-  hashSnippet: string,
-  pageNum: number,
-  totalPages: number,
-  PW: number,
-  PH: number,
-  M: number,
-  FOOTER_H: number,
-  lang: 'en' | 'es',
-) {
-  const footerY = PH - FOOTER_H;
-
-  // Thin hairline separator only — no colored background box
-  pdf.setDrawColor(210, 215, 230);
-  pdf.setLineWidth(0.15);
-  pdf.line(M, footerY, PW - M, footerY);
-
-  safePdfSetFont(pdf, 'helvetica', 'normal');
-  pdf.setFontSize(6);
-  pdf.setTextColor(160, 160, 175);
-
-  // Left: company (only if custom; omit Codec Document branding)
-  const companyLabel = company !== 'Codec Document' ? company : '';
-  if (companyLabel) {
-    safePdfSetFont(pdf, 'helvetica', 'normal');
-    pdf.setFontSize(6);
-    pdf.setTextColor(160, 160, 175);
-    safePdfText(pdf, companyLabel, M, footerY + 5.5);
-  }
-
-  // Center: SHA-256 snippet (audit trail, discrete gray)
-  if (hashSnippet) {
-    safePdfSetFont(pdf, 'helvetica', 'normal');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(170, 170, 185);
-    safePdfText(pdf, hashSnippet, PW / 2, footerY + 5.5, { align: 'center' });
-  }
-
-  // Right: page number
-  pdf.setFontSize(6);
-  pdf.setTextColor(160, 160, 175);
-  const lbl = lang === 'es' ? `${pageNum} / ${totalPages}` : `${pageNum} / ${totalPages}`;
-  safePdfText(pdf, lbl, PW - M, footerY + 5.5, { align: 'right' });
 }
 
 function renderCertificationPage(
@@ -1522,6 +1407,7 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
       // ── 2. Clone element into a hidden off-screen container ───────────────
       // Cloning avoids scroll-container clipping and timing issues with the live DOM.
       const clone = sourceEl.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('[data-solo-pantalla]').forEach((el) => el.remove());
       // Ancho de la captura = tamaño de la letra en el PDF. Se capturaba a
       // 900 px y se metía en los 188 mm útiles de una hoja carta: el texto de
       // 10 px quedaba en unos 6 pt, ilegible, y el documento parecía una
@@ -1617,19 +1503,21 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
 
       // ── 6. Slice canvas into letter-size PDF pages ─────────────────────────
       const documentHash = await computeDocumentHash(exportContent);
-      const hashSnippet  = documentHash
-        ? `SHA-256: ${documentHash.slice(0, 16)}...${documentHash.slice(-8)}`
-        : '';
-      const company = (documentBranding?.companyLegalName || 'Codec Document').trim();
 
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
       const PW = pdf.internal.pageSize.getWidth();
       const PH = pdf.internal.pageSize.getHeight();
       const M  = 14;
-      const HEADER_H = 20;
-      const FOOTER_H = 13;
+      // Cabecera hasta 15 mm y pie desde PH-14 (pdf-membrete.ts). El cuerpo
+      // va entre los dos con aire: antes empezaba a 34 mm y dejaba una franja
+      // vacía enorme arriba de cada hoja.
+      const HEADER_BOTTOM = 15;
+      const FOOTER_TOP = PH - 14;
+      const BODY_TOP = HEADER_BOTTOM + 4;
       const contentW = PW - 2 * M;
-      const contentH = PH - HEADER_H - FOOTER_H - 2 * M;
+      const contentH = FOOTER_TOP - 4 - BODY_TOP;
+      const jurisdiccion = resolveJurisdiction((await detectSignerCountryCode().catch(() => null)) || null);
+      const marcoLegal = exportLanguage === 'es' ? jurisdiccion.badgeEs : jurisdiccion.badgeEn;
 
       const pxPerMm   = captured.width / contentW;
       const pxPerPage = contentH * pxPerMm;
@@ -1666,7 +1554,12 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
 
       for (let page = 0; page < numPages; page++) {
         if (page > 0) pdf.addPage();
-        renderPdfHeader(pdf, branding, docTitle, PW, M, HEADER_H);
+        const membrete = {
+          pdf, pageWidth: PW, pageHeight: PH, margin: M, page: page + 1, totalPages: numPages,
+          language: exportLanguage, branding, docTitle, documentHash, marcoLegal,
+          headerBottom: HEADER_BOTTOM, footerTop: FOOTER_TOP,
+        };
+        pintarCabecera(membrete);
 
         const sliceStartPx = cortes[page];
         const sliceHPx     = cortes[page + 1] - cortes[page];
@@ -1678,12 +1571,11 @@ ${language === 'es' ? 'Descárgalo aquí' : 'Download it here'}: ${url}`);
           sCtx.fillStyle = '#ffffff';
           sCtx.fillRect(0, 0, slice.width, slice.height);
           sCtx.drawImage(captured, 0, sliceStartPx, captured.width, sliceHPx, 0, 0, captured.width, sliceHPx);
-          safePdfAddImage(pdf, slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, M + HEADER_H, contentW, sliceHPx / pxPerMm);
+          safePdfAddImage(pdf, slice.toDataURL('image/jpeg', 0.92), 'JPEG', M, BODY_TOP, contentW, sliceHPx / pxPerMm);
         }
 
-        renderLogoWatermark(pdf, branding, PW, PH);
-
-        renderPdfFooter(pdf, company, hashSnippet, page + 1, numPages, PW, PH, M, FOOTER_H, exportLanguage);
+        pintarMarcaDeAgua(pdf, branding, PW, PH);
+        pintarPie(membrete);
       }
 
       renderCertificationPage(pdf, inlineSigs, documentHash, exportLanguage, PW, PH, M);

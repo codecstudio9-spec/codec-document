@@ -5,6 +5,18 @@ import { etiquetaFiscal, nombrePais } from '../data/paises-fiscales';
 import type { DocxParagraph, DocxRun } from '../../lib/docxTemplateEngine';
 import { resolveEvidenceImageDataUrl } from './document-evidence-service';
 import { pulirParrafos } from '../utils/pulir-redaccion';
+import { pintarCabecera, pintarPie, pintarMarcaDeAgua } from './pdf-membrete';
+
+/** Huella SHA-256 del texto, para el número de documento del pie cuando
+ *  quien llama no la trae calculada. */
+async function huellaDelTexto(texto: string): Promise<string | undefined> {
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return undefined;
+  }
+}
 
 interface PDFGeneratorOptions {
   content: string;
@@ -1262,46 +1274,10 @@ export class PDFGenerator {
    * without duplicating logos in the header area.
    */
   private addLogoWatermark(branding?: PDFGeneratorOptions['branding']) {
-    if (!branding?.enableLogoWatermark || !branding?.logoDataUrl) return;
-
     const pageCount = this.doc.getNumberOfPages();
-
     for (let i = 1; i <= pageCount; i++) {
       this.doc.setPage(i);
-      this.doc.saveGraphicsState();
-
-      try {
-        // La caja se mide en PROPORCIÓN de la página, no en milímetros fijos.
-        // Así la marca ocupa lo mismo en A4 que en carta, en vez de quedar
-        // descentrada de tamaño según el formato del documento.
-        //
-        // 72% del ancho y 58% del alto deja la marca claramente grande y aun
-        // así dentro de los márgenes. drawImageFit encaja el logo dentro
-        // respetando su proporción real: antes se forzaban 82×82 y cualquier
-        // logotipo apaisado salía estirado a lo alto en todas las páginas.
-        // Más pequeña y más tenue que antes (72%×58% al 10%): a ese tamaño el
-        // logo —que suele traer el nombre escrito— se leía como un segundo
-        // texto encima del contrato y le quitaba seriedad al documento.
-        const cajaW = this.pageWidth * 0.5;
-        const cajaH = this.pageHeight * 0.36;
-        const x = (this.pageWidth - cajaW) / 2;
-        const y = (this.pageHeight - cajaH) / 2;
-
-        // Al crecer la caja, la marca pasa por debajo de mucho más texto. Se
-        // baja la opacidad de 0.15 a 0.10 para compensar: un documento legal
-        // se firma y se lee entero, y el logo no puede competir con la letra
-        // que da fe de lo que se firma.
-        const anyDoc = this.doc as any;
-        if (typeof anyDoc.GState === 'function' && typeof anyDoc.setGState === 'function') {
-          anyDoc.setGState(new anyDoc.GState({ opacity: 0.05 }));
-        }
-
-        this.drawImageFit(branding.logoDataUrl, x, y, cajaW, cajaH);
-      } catch {
-        // If logo watermark fails, continue generating PDF without interrupting output.
-      }
-
-      this.doc.restoreGraphicsState();
+      pintarMarcaDeAgua(this.doc, branding, this.pageWidth, this.pageHeight);
     }
   }
 
@@ -1337,112 +1313,33 @@ export class PDFGenerator {
   /**
    * Add header/footer + page numbering across all pages
    */
-  private addDocumentChrome(branding?: PDFGeneratorOptions['branding'], language: 'en' | 'es' = 'en', documentHash?: string) {
+  /** Encabezado y pie de todas las páginas: ver services/pdf-membrete.ts.
+   *  La cabecera ocupa los 10 mm de arriba (las páginas de informe y de
+   *  identidad ya dejan ese espacio) y el pie empieza 14 mm antes del borde. */
+  private addDocumentChrome(branding?: PDFGeneratorOptions['branding'], language: 'en' | 'es' = 'en', documentHash?: string, docTitle?: string) {
     const pageCount = this.doc.getNumberOfPages();
-
     for (let i = 1; i <= pageCount; i++) {
       this.doc.setPage(i);
-
-      // Top header band
-      const headerH = 10;
-      this.doc.setFillColor(37, 99, 235);
-      this.doc.rect(0, 0, this.pageWidth, 2.5, 'F');
-
-      this.doc.setFillColor(255, 255, 255);
-      this.doc.rect(0, 2.5, this.pageWidth, headerH - 2.5, 'F');
-
-      // Franja superior: a la izquierda quién emite el documento (la empresa,
-      // o Codec Document si no hay una configurada) y a la derecha su lema.
-      // Antes el nombre y el lema se pintaban en el MISMO punto centrado y
-      // salían encimados, y el logo pequeño de esta franja quedaba justo
-      // encima del logo grande de la cabecera de la primera página: logo
-      // doble. Ahora el logo de la franja sólo va de la página 2 en adelante.
-      // La atribución a Codec Document sigue en el pie de todas las páginas.
-      const hasLogo = Boolean(branding?.enableLogo && branding?.logoDataUrl);
-      const logoEnFranja = hasLogo && i > 1;
-      const logoOnRight = branding?.logoPosition === 'right';
-      let anchoLogo = 0;
-      if (logoEnFranja) {
-        try {
-          anchoLogo = this.drawImageFit(
-            branding!.logoDataUrl!,
-            logoOnRight ? this.pageWidth - this.margin - 18 : this.margin,
-            3.3,
-            18,
-            5,
-            logoOnRight ? 'right' : 'left',
-          ).width;
-        } catch { /* broken logos must not block legal-document generation */ }
-      }
-
-      // En la primera página el membrete ya presenta a la empresa (logo,
-      // nombre y datos): repetir su nombre y lema en la franja de arriba
-      // es ruido. Ahí sólo queda la línea de color.
-      const omitirTextoFranja = i === 1 && this.primeraPaginaConMembrete;
-      const identityLabel = (branding?.companyLegalName || '').trim() || 'Codec Document';
-      const lema = (branding?.headerText || '').trim();
-      const textoIzqX = anchoLogo && !logoOnRight ? this.margin + anchoLogo + 2.5 : this.margin;
-      this.doc.setFont('helvetica', 'bold');
-      this.doc.setFontSize(6.5);
-      this.doc.setTextColor(37, 99, 235);
-      if (!omitirTextoFranja) this.safeText(identityLabel.toUpperCase().slice(0, 60), textoIzqX, 7.6);
-
-      const derecha = lema && lema.toLowerCase() !== identityLabel.toLowerCase()
-        ? lema.slice(0, 70)
-        : (language === 'en' && branding?.companyState ? `State of ${branding.companyState}` : '');
-      if (derecha && !omitirTextoFranja) {
-        this.doc.setFont('helvetica', 'normal');
-        this.doc.setFontSize(6);
-        this.doc.setTextColor(100, 116, 139);
-        const derechaX = anchoLogo && logoOnRight ? this.pageWidth - this.margin - anchoLogo - 2.5 : this.pageWidth - this.margin;
-        this.safeText(derecha, derechaX, 7.6, { align: 'right' });
-      }
-
-      this.doc.setDrawColor(226, 232, 240);
-      this.doc.setLineWidth(0.3);
-      this.doc.line(this.margin, headerH, this.pageWidth - this.margin, headerH);
-
-      // Bottom footer
-      const footerY = this.pageHeight - 8;
-
-      // Custom footer text (e.g. a company slogan), configured in Settings —
-      // rendered on its own centered line above the standard footer row so
-      // it never crowds out the platform attribution/compliance badge/page
-      // number that always render below it.
-      const customFooter = (branding?.footerText || '').trim();
-      if (customFooter) {
-        this.doc.setFont('helvetica', 'italic');
-        this.doc.setFontSize(6.5);
-        this.doc.setTextColor(71, 85, 105);
-        this.safeText(customFooter.slice(0, 110), this.pageWidth / 2, footerY - 5, { align: 'center' });
-      }
-
-      this.doc.setDrawColor(226, 232, 240);
-      this.doc.setLineWidth(0.3);
-      this.doc.line(this.margin, footerY - 2, this.pageWidth - this.margin, footerY - 2);
-
-      this.doc.setFont('helvetica', 'normal');
-      this.doc.setFontSize(6);
-      this.doc.setTextColor(100, 116, 139);
-      this.safeText(language === 'es' ? 'Generado por Codec Document' : 'Generated by Codec Document', this.margin, footerY + 2);
-
-      this.doc.setFont('helvetica', 'bold');
-      this.doc.setFontSize(6);
-      this.doc.setTextColor(37, 99, 235);
-      this.safeText(language === 'es' ? `Conforme a ${this.jurisdiction.badgeEs}` : `Legally Compliant ${this.jurisdiction.badgeEn}`, this.pageWidth / 2, footerY + 2, { align: 'center' });
-
-      this.doc.setFont('helvetica', 'normal');
-      this.doc.setFontSize(6);
-      this.doc.setTextColor(100, 116, 139);
-      const pageLabel = language === 'es' ? `Página ${i} de ${pageCount}` : `Page ${i} of ${pageCount}`;
-      this.safeText(pageLabel, this.pageWidth - this.margin, footerY + 2, { align: 'right' });
-
-      if (documentHash) {
-        this.doc.setFontSize(5);
-        this.doc.setTextColor(148, 163, 184);
-        const hashSnip = `SHA-256: ${documentHash.slice(0, 12)}...${documentHash.slice(-6)}`;
-        this.safeText(hashSnip, this.pageWidth - this.margin, footerY + 5.5, { align: 'right' });
-      }
+      const opciones = {
+        pdf: this.doc,
+        pageWidth: this.pageWidth,
+        pageHeight: this.pageHeight,
+        margin: Math.min(this.margin, 18),
+        page: i,
+        totalPages: pageCount,
+        language,
+        branding,
+        docTitle,
+        documentHash,
+        marcoLegal: language === 'es' ? this.jurisdiction.badgeEs : this.jurisdiction.badgeEn,
+        headerBottom: 10,
+        footerTop: this.pageHeight - 14,
+        // La primera página con membrete grande ya presenta a la empresa.
+        omitirEmpresaEnCabecera: i === 1 && this.primeraPaginaConMembrete,
+        logoEnCabecera: !(i === 1 && this.primeraPaginaConMembrete),
+      };
+      pintarCabecera(opciones);
+      pintarPie(opciones);
     }
   }
 
@@ -2903,7 +2800,7 @@ export class PDFGenerator {
     }
 
     // Add header/footer/page numbering (with SHA-256 hash in footer)
-    generator.addDocumentChrome(opts.branding, opts.language, opts.documentHash);
+    generator.addDocumentChrome(opts.branding, opts.language, opts.documentHash ?? await huellaDelTexto(opts.content), opts.title);
 
     // Add brand logo as watermark to avoid dual-logo header rendering.
     generator.addLogoWatermark(opts.branding);
@@ -3029,7 +2926,7 @@ export class PDFGenerator {
     }
 
     // Add header/footer/page numbering (with SHA-256 hash in footer)
-    generator.addDocumentChrome(opts.branding, opts.language, opts.documentHash);
+    generator.addDocumentChrome(opts.branding, opts.language, opts.documentHash ?? await huellaDelTexto(opts.content), opts.title);
 
     // Add brand logo as watermark to avoid dual-logo header rendering.
     generator.addLogoWatermark(opts.branding);

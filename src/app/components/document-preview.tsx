@@ -666,7 +666,8 @@ export const DocumentPreview = memo(function DocumentPreview({ template, data, a
       onCut={handleCopy}
       onContextMenu={handleContextMenu}
     >
-      <div className="h-[4px] w-full" style={{ background: `linear-gradient(90deg, ${COLOR_TITULOS} 0%, ${COLOR_ACENTO} 100%)` }} aria-hidden="true" />
+      {/* Sólo en pantalla: en el PDF la cabecera ya trae su filete (pdf-membrete.ts). */}
+      <div data-solo-pantalla="true" className="h-[4px] w-full" style={{ background: `linear-gradient(90deg, ${COLOR_TITULOS} 0%, ${COLOR_ACENTO} 100%)` }} aria-hidden="true" />
       {/* Márgenes de la hoja. Estaban en 24px y el texto llegaba casi al
           borde del papel, que es lo que más delata a un documento generado:
           una carta o un contrato reales respiran por los cuatro lados. 44px
