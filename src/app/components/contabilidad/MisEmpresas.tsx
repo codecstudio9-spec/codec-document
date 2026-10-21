@@ -250,6 +250,7 @@ export function EmpresaModal({
     notas: empresa?.notas ?? '',
     color: empresa?.color ?? colorSugerido,
     activo: empresa?.activo ?? true,
+    causacion_automatica: empresa?.causacion_automatica ?? true,
   }));
   const [guardando, setGuardando] = useState(false);
   const set = (k: keyof DatosEmpresa, v: string | boolean) => setD((x) => ({ ...x, [k]: v }));
@@ -340,6 +341,18 @@ export function EmpresaModal({
             />
           ))}
         </div>
+        <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl bg-emerald-50 px-3 py-2.5 ring-1 ring-emerald-200">
+          <input
+            type="checkbox"
+            checked={d.causacion_automatica !== false}
+            onChange={(e) => set('causacion_automatica', e.target.checked)}
+            className="mt-0.5 size-4 accent-emerald-600"
+          />
+          <span className="text-xs text-emerald-900">
+            <span className="block font-bold">Causar sola las facturas que lleguen</span>
+            Solo de proveedores que ya causaste antes, con la misma cuenta y retención. Los proveedores nuevos te esperan para que los revises.
+          </span>
+        </label>
         <label className="mt-3 block text-xs font-semibold text-slate-600">
           Notas
           <textarea value={d.notas ?? ''} rows={2} onChange={(e) => set('notas', e.target.value)} className={campo} />

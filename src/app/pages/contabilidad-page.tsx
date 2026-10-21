@@ -48,6 +48,7 @@ import {
 } from '../services/contabilidad-service';
 import { planDeCuentas, type Cuenta } from '../../lib/contabilidad/puc';
 import { importarBandeja } from '../services/dian-service';
+import { causarEmpresasAutomaticamente, avisarCausacion, type ResultadoAutomatico } from '../services/causacion-automatica';
 
 type Seccion = 'empresas' | 'avisos' | 'carpetas' | 'comprobantes' | 'reportes' | 'cuentas' | 'pos';
 
@@ -104,17 +105,22 @@ export default function ContabilidadPage() {
   useEffect(() => {
     if (!estado?.activo || leyendoPos.current) return;
     leyendoPos.current = true;
-    void facturasPosPendientes().then(async (n) => {
-      if (n === 0) return;
-      const t = toast.loading(`Leyendo ${n} ${n === 1 ? 'factura' : 'facturas'} de Codec POS…`);
-      try {
-        const r = await importarBandeja(() => {});
-        toast.success(`${r.procesados} ${r.procesados === 1 ? 'factura' : 'facturas'} de Codec POS en sus carpetas`, { id: t });
-        void refrescar();
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'No pude leer las facturas de Codec POS', { id: t });
+    void (async () => {
+      const n = await facturasPosPendientes();
+      if (n > 0) {
+        const t = toast.loading(`Leyendo ${n} ${n === 1 ? 'factura' : 'facturas'} de Codec POS…`);
+        try {
+          const r = await importarBandeja(() => {});
+          toast.success(`${r.procesados} ${r.procesados === 1 ? 'factura' : 'facturas'} de Codec POS en sus carpetas`, { id: t });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'No pude leer las facturas de Codec POS', { id: t });
+        }
       }
-    });
+      // Después, la causación automática de lo que esté pendiente.
+      const res = await causarEmpresasAutomaticamente(await listarEmpresas()).catch(() => [] as ResultadoAutomatico[]);
+      avisarCausacion(res);
+      void refrescar();
+    })();
   }, [estado?.activo, refrescar]);
 
   // Vuelta de Wompi: el webhook puede tardar unos segundos en activar el

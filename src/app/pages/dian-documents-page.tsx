@@ -78,7 +78,8 @@ import {
 } from '../services/dian-service';
 import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type LineaReporte } from '../../lib/dian/reporte';
 import { triggerDownload } from '../utils/download';
-import { repartoDeHoy, estadoContabilidad, type EstadoContabilidad } from '../services/contabilidad-service';
+import { repartoDeHoy, estadoContabilidad, listarEmpresas, type EstadoContabilidad } from '../services/contabilidad-service';
+import { causarEmpresasAutomaticamente, avisarCausacion } from '../services/causacion-automatica';
 import { OfertaContabilidad } from '../components/contabilidad/OfertaContabilidad';
 
 /** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
@@ -806,6 +807,14 @@ function ContenidoDian() {
           duration: 9000,
           action: { label: 'Ver en Contabilidad', onClick: () => navegar('/contabilidad') },
         });
+      }
+
+      // Y lo que ya se sabe causar, se causa solo (proveedores ya enseñados).
+      if (contabilidad?.activo) {
+        void listarEmpresas()
+          .then(causarEmpresasAutomaticamente)
+          .then(avisarCausacion)
+          .catch(() => {});
       }
 
       // Si esta importación agotó el tramo, se agradece y se dice cuándo

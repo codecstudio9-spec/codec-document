@@ -115,6 +115,7 @@ export interface Empresa {
   notas: string | null;
   color: string | null;
   activo: boolean;
+  causacion_automatica: boolean;
   created_at: string;
 }
 
@@ -127,7 +128,7 @@ export interface ResumenEmpresa {
   comprobantes: number;
 }
 
-const CAMPOS_EMPRESA = 'id,nit,dv,razon_social,nombre_comercial,regimen,ciudad,email,telefono,notas,color,activo,created_at';
+const CAMPOS_EMPRESA = 'id,nit,dv,razon_social,nombre_comercial,regimen,ciudad,email,telefono,notas,color,activo,causacion_automatica,created_at';
 
 export async function listarEmpresas(): Promise<Empresa[]> {
   const { data, error } = await supabase.from('fiscal_entities').select(CAMPOS_EMPRESA).order('razon_social');
@@ -155,6 +156,7 @@ export async function guardarEmpresa(datos: DatosEmpresa, id?: string): Promise<
     telefono: datos.telefono?.trim() || null,
     notas: datos.notas?.trim() || null,
     color: datos.color || null,
+    ...(datos.causacion_automatica === undefined ? {} : { causacion_automatica: datos.causacion_automatica }),
     ...(datos.activo === undefined ? {} : { activo: datos.activo }),
   };
   const q = id

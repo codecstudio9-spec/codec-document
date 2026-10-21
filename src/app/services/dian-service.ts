@@ -493,9 +493,18 @@ export async function importarBandeja(
 
   const resumen = await importarArchivos(archivos, onProgreso);
 
-  await supabase.rpc('ed_inbox_marcar', {
-    p_ids: bajados, p_status: 'IMPORTED', p_import_id: resumen.importId, p_error: null,
-  });
+  // Si el cupo del mes no alcanzó para todos, los que quedaron sin procesar
+  // (van al final, en el mismo orden) se dejan PENDING: se leen solos cuando
+  // haya cupo. Antes se marcaban todos como importados y esos XML se perdían.
+  // Si alguno era un ZIP con varios XML, a lo sumo se relee entero y lo ya
+  // guardado vuelve como duplicado, que no gasta cupo.
+  const sinCupo = Math.min(bajados.length, resumen.sinProcesarPorCuota ?? 0);
+  const importados = bajados.slice(0, bajados.length - sinCupo);
+  if (importados.length > 0) {
+    await supabase.rpc('ed_inbox_marcar', {
+      p_ids: importados, p_status: 'IMPORTED', p_import_id: resumen.importId, p_error: null,
+    });
+  }
 
   return { ...resumen, desdeCorreo: archivos.length };
 }
