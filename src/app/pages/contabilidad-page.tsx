@@ -393,7 +393,15 @@ export default function ContabilidadPage() {
                       )}
                       {empresa && seccion === 'pos' && (
                         <>
-                          <Cabecera titulo="Codec POS" descripcion="Las ventas y gastos del negocio, directo a su contabilidad." icono={Store} color="#EA580C" />
+                          <div className="mb-5 flex items-start gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-slate-200">
+                              <img src="/brand/codec-pos.png" alt="Codec POS" className="size-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                            </div>
+                            <div>
+                              <h2 className="text-lg font-black tracking-tight text-slate-900">Codec POS</h2>
+                              <p className="mt-0.5 text-[13px] leading-relaxed text-slate-500">Las ventas y gastos del negocio, directo a su contabilidad.</p>
+                            </div>
+                          </div>
                           <Tarjeta className="p-5"><CarpetaCodecPos empresa={empresa} puedeEditar={puedeEditar} /></Tarjeta>
                         </>
                       )}

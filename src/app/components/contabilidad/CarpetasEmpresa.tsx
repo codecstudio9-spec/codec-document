@@ -226,12 +226,18 @@ export function CarpetasEmpresa({
                   style={CARD}
                 >
                   <div className="relative">
+                    {c.id === 'pos' ? (
+                      <div className="flex size-12 items-center justify-center rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
+                        <img src="/brand/codec-pos.png" alt="Codec POS" className="size-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      </div>
+                    ) : (
                     <div
                       className="flex size-12 items-center justify-center rounded-2xl"
                       style={{ background: `linear-gradient(135deg, ${c.color}22, ${c.color}10)`, border: `1px solid ${c.color}30` }}
                     >
                       <c.icono className="size-5.5" style={{ color: c.color }} />
                     </div>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold leading-tight text-slate-900">{c.nombre}</p>

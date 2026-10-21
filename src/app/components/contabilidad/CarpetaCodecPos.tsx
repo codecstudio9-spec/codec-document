@@ -99,8 +99,8 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
     <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
       <div>
         <div className="flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl" style={{ background: 'linear-gradient(135deg,#EA580C,#F97316)' }}>
-            <Store className="size-6 text-white" />
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
+            <img src="/brand/codec-pos.png" alt="Codec POS" className="size-full object-contain" style={{ mixBlendMode: 'multiply' }} />
           </div>
           <div>
             <p className="text-base font-black text-slate-900">Las ventas de Codec POS, directo aquí</p>
