@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DetectedField } from '../../../lib/docxTemplateEngine';
+import { fuenteCompleta } from '../../../lib/camposDerivados';
 import { fetchDocxArrayBuffer, inferSectionsFromDocx, withInferredSections } from '../../../lib/docxTemplateEngine';
 import { rememberFieldValue, recallFieldValue } from '../../utils/field-memory';
 import { DictarFormulario } from '../DictarFormulario';
@@ -71,7 +72,7 @@ export function DynamicDocForm({ fields: camposOriginales, values, onChange, lan
     // Los datos automáticos (con `fuente`) no se le piden a nadie: salen de
     // otros datos del formulario (ver lib/camposDerivados.ts).
     () => {
-      const visibles = withInferredSections(camposOriginales.filter((f) => !f.fuente), seccionesDelDocumento);
+      const visibles = withInferredSections(camposOriginales.filter((f) => !fuenteCompleta(f.fuente)), seccionesDelDocumento);
       // Una sección que quedó sin casillas (todas se llenan solas) no se muestra.
       return visibles.filter((f, i) => f.type !== 'section' || (visibles[i + 1] && visibles[i + 1].type !== 'section'));
     },

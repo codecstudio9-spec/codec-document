@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/language-context';
 import { getTemplateBySlugPublic, createCustomTemplateTransaction, type PublicDocxTemplate } from '../services/docx-template-service';
 import { LanguageToggle } from '../components/language-toggle';
 import { DynamicDocForm } from '../components/templates/DynamicDocForm';
-import { completarDerivados } from '../../lib/camposDerivados';
+import { completarDerivados, fuenteCompleta } from '../../lib/camposDerivados';
 
 const DEFAULT_INSTRUCTIONS = {
   en: [
@@ -40,7 +40,7 @@ export function TemplateFillPublicPage() {
 
   const setFieldValue = (key: string, value: string) => setValues((prev) => ({ ...prev, [key]: value }));
 
-  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !f.fuente && !values[f.key]?.trim());
+  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !fuenteCompleta(f.fuente) && !values[f.key]?.trim());
   const invalidKeys = showValidation ? new Set(missingRequired.map((f) => f.key)) : undefined;
 
   const handleSubmit = async () => {

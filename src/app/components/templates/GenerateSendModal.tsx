@@ -17,7 +17,7 @@ import { saveDocumentRecord } from '../../services/documents-service';
 import { sendSigningInvitation } from '../../services/signing-email-service';
 import { downloadFilledTemplatePdf } from '../../services/template-download';
 import { InPersonSignModal } from '../signatures/InPersonSignModal';
-import { completarDerivados } from '../../../lib/camposDerivados';
+import { completarDerivados, fuenteCompleta } from '../../../lib/camposDerivados';
 import { nombrePersonaDeValores, tituloDeDocumento } from '../../utils/nombre-del-documento';
 
 interface GenerateSendModalProps {
@@ -172,7 +172,7 @@ export function GenerateSendModal({ template, language, onClose }: GenerateSendM
 
   const emailValid = EMAIL_RE.test(recipientEmail.trim());
 
-  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !f.fuente && !values[f.key]?.trim());
+  const missingRequired = (template?.detectedFields ?? []).filter((f) => f.required && !fuenteCompleta(f.fuente) && !values[f.key]?.trim());
   // Lo escrito más los datos que se llenan solos (ciudad y valor del anexo, etc.).
   const valoresCompletos = completarDerivados(values, template?.detectedFields);
   const invalidKeys = showValidation ? new Set(missingRequired.map((f) => f.key)) : undefined;

@@ -50,12 +50,12 @@ function leerFecha(texto: string | undefined): Date | null {
 
 function calcular(fuente: FuenteCampo, v: Record<string, string>): string {
   if (fuente.tipo === 'copiar') {
-    return fuente.campos.map((k) => (v[k] ?? '').trim()).filter(Boolean).join(' ');
+    return fuente.campos.filter(Boolean).map((k) => (v[k] ?? '').trim()).filter(Boolean).join(' ');
   }
   if (fuente.tipo === 'restar') {
     const base = leerNumero(v[fuente.campo]);
     if (base === null) return '';
-    const resta = fuente.menos.reduce((acc, k) => acc + (leerNumero(v[k]) ?? 0), 0);
+    const resta = fuente.menos.filter(Boolean).reduce((acc, k) => acc + (leerNumero(v[k]) ?? 0), 0);
     return formatearNumero(base - resta);
   }
   const fecha = leerFecha(v[fuente.campo]);
@@ -83,13 +83,21 @@ function calcular(fuente: FuenteCampo, v: Record<string, string>): string {
   }
 }
 
+/** Una fuente a medio configurar (sin elegir de qué dato sale) no cuenta:
+ *  ese campo se sigue pidiendo en el formulario. */
+export function fuenteCompleta(fuente: FuenteCampo | undefined): boolean {
+  if (!fuente) return false;
+  if (fuente.tipo === 'copiar') return fuente.campos.some(Boolean);
+  return Boolean(fuente.campo);
+}
+
 /**
  * Devuelve los valores con los datos automáticos ya puestos. Lo que el
  * usuario sí escribió a mano nunca se pisa. Se resuelve en varias pasadas por
  * si un dato automático sale de otro dato automático.
  */
 export function completarDerivados(values: Record<string, string>, fields: DetectedField[] | undefined): Record<string, string> {
-  const derivados = (fields ?? []).filter((f) => f.fuente && f.type !== 'section');
+  const derivados = (fields ?? []).filter((f) => fuenteCompleta(f.fuente) && f.type !== 'section');
   if (!derivados.length) return values;
   const out = { ...values };
   for (let pasada = 0; pasada < 3; pasada++) {

@@ -29,14 +29,17 @@ export function FuenteCampoEditor({ campo, campos, language, onChange }: Props) 
 
   const cambiarModo = (m: Modo) => {
     if (m === 'formulario') return onChange(undefined);
-    if (m === 'copiar') return onChange({ tipo: 'copiar', campos: [otros[0]?.key ?? ''] });
-    if (m === 'restar') return onChange({ tipo: 'restar', campo: numericos[0]?.key ?? otros[0]?.key ?? '', menos: [numericos[1]?.key ?? ''] });
-    return onChange({ tipo: 'fecha', campo: fechas[0]?.key ?? otros[0]?.key ?? '', parte: 'completa' });
+    // Sin dato preseleccionado: antes se ponía el primero de la lista (la
+    // fecha) y un «Celular» quedaba copiando la fecha del contrato sin que
+    // nadie lo eligiera.
+    if (m === 'copiar') return onChange({ tipo: 'copiar', campos: [''] });
+    if (m === 'restar') return onChange({ tipo: 'restar', campo: '', menos: [''] });
+    return onChange({ tipo: 'fecha', campo: '', parte: 'completa' });
   };
 
   const opciones = (lista: DetectedField[], valor: string, alCambiar: (k: string) => void, vacio?: string) => (
-    <select value={valor} onChange={(e) => alCambiar(e.target.value)} className={selectClass}>
-      {vacio !== undefined && <option value="">{vacio}</option>}
+    <select value={valor} onChange={(e) => alCambiar(e.target.value)} className={`${selectClass} ${!valor && vacio === undefined ? 'border-amber-400 bg-amber-50' : ''}`}>
+      <option value="">{vacio ?? (es ? 'Elige un dato…' : 'Pick a detail…')}</option>
       {(lista.length ? lista : otros).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
     </select>
   );
