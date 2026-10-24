@@ -105,8 +105,8 @@ function DashboardHomeContent() {
                 // Sólo «DIAN». Es como el contador llama a esto, y en un botón
                 // de cinco palabras el nombre largo se partía en dos líneas y
                 // desalineaba la fila entera.
-                label: 'DIAN',
-                onClick: () => navigate('/documentos-electronicos'),
+                label: 'Contadores',
+                onClick: () => navigate('/contadores'),
                 variant: 'dian' as const,
               }]
             : []),

@@ -217,7 +217,7 @@ function DashboardContent() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             type="button"
-            onClick={() => navigate('/documentos-electronicos')}
+            onClick={() => navigate('/contadores')}
             className="relative flex w-full items-center justify-center gap-2 overflow-hidden text-white"
             style={{
               borderRadius: 16, height: 52, fontWeight: 900, fontSize: 16, letterSpacing: '0.03em',
@@ -231,9 +231,8 @@ function DashboardContent() {
             }}
           >
             <FileSpreadsheet className="size-4" />
-            {/* Sólo «DIAN»: es como el contador llama a esto, y el nombre
-                largo se partía en dos líneas dentro de un botón de 52px. */}
-            DIAN
+            {/* «Contadores»: el nombre del producto, corto para el botón de 52px. */}
+            Contadores
             <span className="absolute right-3 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">
               {language === 'en' ? 'Beta' : 'Beta'}
             </span>

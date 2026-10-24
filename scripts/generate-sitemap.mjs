@@ -34,7 +34,8 @@ const EXCLUDE_PREFIXES = ['/generator', '/preview', '/my-', '/admin', '/sign', '
 // en Google. Pide sesión para usarla, pero la pantalla previa explica qué hace
 // —que es justo lo que el buscador debe indexar.
 // '/contabilidad' (módulo de pago con sesión) sí se excluye.
-const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '/contabilidad', '*', '']);
+// '/contadores' es un alias de /documentos-electronicos dentro de la app.
+const EXCLUDE_EXACT = new Set(['/firma-electronica', '/signatures', '/contabilidad', '/contadores', '*', '']);
 
 function isExcluded(p) {
   if (EXCLUDE_EXACT.has(p)) return true;

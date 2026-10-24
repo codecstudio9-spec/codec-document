@@ -42,7 +42,9 @@ const EXCLUDED = /^\/(api|generator|preview|my-[a-z-]+|admin|dashboard|app|sign|
 // pruebas cerradas, sin identidad SEO propia todavía. Mantener en sync con
 // EXCLUDE_EXACT de scripts/generate-sitemap.mjs.
 // '/contabilidad' es el módulo de pago para contadores: herramienta con sesión.
-const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures', '/contabilidad']);
+// '/contadores' es la misma herramienta que /documentos-electronicos con otro
+// nombre: se excluye para no indexar dos veces la misma pantalla.
+const EXCLUDED_EXACT = new Set(['/firma-electronica', '/signatures', '/contabilidad', '/contadores']);
 
 export default function middleware(request: Request) {
   const url = new URL(request.url);

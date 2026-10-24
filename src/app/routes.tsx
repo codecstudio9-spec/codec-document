@@ -635,6 +635,13 @@ export const router = createBrowserRouter([
     Component: DianDocumentsPage,
     errorElement: <RouteErrorBoundary />,
   },
+  // «Contadores»: la misma herramienta con su nombre de producto. La dirección
+  // vieja sigue viva porque está indexada y la usan la extensión y los correos.
+  {
+    path: "/contadores",
+    Component: DianDocumentsPage,
+    errorElement: <RouteErrorBoundary />,
+  },
   {
     path: "/contabilidad",
     Component: ProtectedContabilidadPage,

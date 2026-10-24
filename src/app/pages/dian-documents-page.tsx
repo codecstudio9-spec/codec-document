@@ -66,7 +66,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import {
   importarArchivos, listarDocumentos, DOCS_POR_PAGINA, obtenerTotales, datosParaReporte,
   estadoBeta, configurarBeta, BetaCerradaError, type EstadoBeta,
-  estadoCuota, listarPlanes, iniciarPagoPlan, LimiteDelPlanError,
+  estadoCuota, listarPlanes, LimiteDelPlanError,
   type EstadoCuota, type PlanCatalogo,
   estadoCorreo, activarCorreo, renombrarCorreo, previsualizarAlias,
   importarBandeja, listarBandeja, resumenMes,
@@ -80,7 +80,7 @@ import { construirReporte, type DocumentoReporte, type ImpuestoReporte, type Lin
 import { triggerDownload } from '../utils/download';
 import { repartoDeHoy, estadoContabilidad, listarEmpresas, type EstadoContabilidad } from '../services/contabilidad-service';
 import { causarEmpresasAutomaticamente, avisarCausacion } from '../services/causacion-automatica';
-import { OfertaContabilidad } from '../components/contabilidad/OfertaContabilidad';
+import { MiPlanContador } from '../components/contadores/MiPlanContador';
 
 /** Cómo se NOMBRA cada tipo al hablarlo. Aparte de las etiquetas del Excel
  *  porque aquí encabezan una frase leída en voz alta: «Nota crédito 1234 de
@@ -245,7 +245,6 @@ function ContenidoDian() {
   const [cuota, setCuota] = useState<EstadoCuota | null>(null);
   const [contabilidad, setContabilidad] = useState<EstadoContabilidad | null>(null);
   const [planes, setPlanes] = useState<PlanCatalogo[]>([]);
-  const [pagando, setPagando] = useState('');
   /** Se abre solo al chocar con el límite, y se puede abrir a mano. */
   const [panelPlanes, setPanelPlanes] = useState(false);
   // `buzon`, no `correo`: en esta pantalla `correo` ya es el que se teclea
@@ -578,21 +577,26 @@ function ContenidoDian() {
    *  vacía y parece que la búsqueda no encontró nada. */
   useEffect(() => { setPagina(1); }, [busqueda, filtroEstado]);
 
-  /** Lleva al Checkout de Wompi. El importe y la firma los pone el servidor;
-   *  aquí sólo viaja el código del plan. */
-  const pagarPlan = async (planCode: string) => {
-    setPagando(planCode);
+  /** Todos los candados llevan a «Mi plan» con lo que hace falta ya marcado
+   *  y una frase que dice por qué. */
+  const [motivoPlan, setMotivoPlan] = useState<{ modulo?: 'xml' | 'contador'; texto?: string } | null>(() => {
+    // Desde un candado de Mis empresas llega ?seccion=planes&modulo=contador.
     try {
-      const url = await iniciarPagoPlan(planCode);
-      // Misma pestaña: Wompi devuelve aquí al terminar, y con una pestaña
-      // nueva el contador se queda mirando la vieja sin enterarse de que ya
-      // pagó.
-      window.location.href = url;
-    } catch (e) {
-      toast.error((e as Error).message);
-      setPagando('');
-    }
+      const m = new URLSearchParams(window.location.search).get('modulo');
+      return m === 'contador' ? { modulo: 'contador', texto: 'Para usar la contabilidad de tus empresas necesitas el Plan Contador.' }
+        : m === 'xml' ? { modulo: 'xml' } : null;
+    } catch { return null; }
+  });
+  useEffect(() => {
+    const antes = document.title;
+    document.title = 'Contadores | Codec Document';
+    return () => { document.title = antes; };
+  }, []);
+  const irAPlanes = (modulo?: 'xml' | 'contador', texto?: string) => {
+    setMotivoPlan(modulo || texto ? { modulo, texto } : null);
+    setSeccion('planes');
   };
+  useEffect(() => { if (seccion !== 'planes') setMotivoPlan(null); }, [seccion]);
   useEffect(() => {
     if (vista !== 'revision') return;
     void cargarExcepciones();
@@ -958,14 +962,15 @@ function ContenidoDian() {
             id: 'contabilidad', etiqueta: 'Mis empresas', icono: Building2,
             marca: contabilidad?.activo ? undefined : contabilidad?.pruebaDisponible ? '15 días' : 'Nuevo',
           },
-          { id: 'causar', etiqueta: 'Causar facturas', icono: BookOpenCheck, marca: 'Nuevo' },
+          // Causar es del Plan Contador (o la prueba): sin él, candado que lleva a «Mi plan».
+          { id: 'causar', etiqueta: 'Causar facturas', icono: BookOpenCheck, bloqueado: !contabilidad?.activo },
           { id: 'reportes', etiqueta: 'Excel y plantillas', icono: FileSpreadsheet },
           { id: 'auditor', etiqueta: 'Cruzar contabilidad', icono: Scale },
         ],
       },
       {
         titulo: 'Cuenta',
-        items: [{ id: 'planes', etiqueta: 'Planes y consumo', icono: CreditCard }],
+        items: [{ id: 'planes', etiqueta: 'Mi plan', icono: CreditCard }],
       },
     ];
 
@@ -1051,8 +1056,10 @@ function ContenidoDian() {
       etiqueta: 'Causar facturas',
       icono: BookOpenCheck,
       variante: 'excel',
-      insignia: 'NUEVO',
-      onClick: () => setPanelCausacion(true),
+      insignia: contabilidad?.activo ? 'NUEVO' : 'PLAN CONTADOR',
+      onClick: () => (contabilidad?.activo
+        ? setPanelCausacion(true)
+        : irAPlanes('contador', 'Para causar facturas con tus cuentas necesitas el Plan Contador.')),
     },
     {
       id: 'auditor',
@@ -1350,7 +1357,10 @@ function ContenidoDian() {
           // botón para abrir ese mismo cajón — un clic para llegar a un clic.
           if (id === 'descargar') { setPanelDescarga(true); return; }
           if (id === 'auditor') { setPanelAuditor(true); return; }
-          if (id === 'causar') { setPanelCausacion(true); return; }
+          if (id === 'causar') {
+            if (!contabilidad?.activo) { irAPlanes('contador', 'Para causar facturas con tus cuentas necesitas el Plan Contador.'); return; }
+            setPanelCausacion(true); return;
+          }
           if (id === 'contabilidad') { navegar('/contabilidad'); return; }
 
           setSeccion(id);
@@ -1799,335 +1809,19 @@ function ContenidoDian() {
             ver ningún plan es exactamente lo contrario de lo que uno espera, y
             un botón menos entre el contador y la decisión de pagar no le hace
             daño a nadie. */}
-        {seccion === 'planes' && cuota && (
-        <div>
-          <Cabecera
-            titulo="Planes y consumo"
-            descripcion="Sólo cuentan los documentos que se procesan bien. Los duplicados y los que fallan no gastan cupo."
-            icono={CreditCard}
-            color="#7C3AED"
+        {/* Mi plan: el único lugar de precios de Contadores. Un solo plan por
+            cuenta (XML o Contador) con una sola fecha de corte; lo que se paga
+            hoy lo calcula la base. */}
+        {seccion === 'planes' && (
+          <MiPlanContador
+            cuota={cuota ? { usados: cuota.usados, limite: cuota.ilimitado ? null : cuota.limite, renuevaEl: cuota.renuevaEl } : null}
+            preseleccion={motivoPlan?.modulo}
+            motivo={motivoPlan?.texto}
+            onCambio={() => {
+              void refrescar();
+              estadoContabilidad().then(setContabilidad).catch(() => undefined);
+            }}
           />
-
-          {/* Anuncio del lanzamiento, con los días que quedan de verdad.
-              La cuenta atrás sale de la fecha que la base ya conoce, no de una
-              constante escrita aquí: cuando la promoción caduca, el aviso
-              desaparece solo el mismo día en que el tope vuelve a 50. Un banner
-              que sigue prometiendo algo que ya no se da es peor que no
-              tenerlo. */}
-          {promoLanzamiento && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={MOV.entrada}
-              className="relative mb-5 overflow-hidden p-6 sm:p-7"
-              style={{
-                borderRadius: CARD_RADIUS,
-                // Azul noche, no ámbar. El ámbar es el color que esta misma
-                // herramienta usa para «requiere revisión», así que un banner
-                // ámbar se lee como una advertencia — justo lo contrario de una
-                // oferta. El azul profundo con filo dorado es lo que el ojo
-                // asocia a algo premium, y es el mismo fondo oscuro que ya usa
-                // el dashboard principal para lo destacado.
-                background: 'linear-gradient(120deg,#1e1b4b,#312e81 55%,#111827)',
-                boxShadow: '0 24px 56px rgba(30,27,75,0.34)',
-              }}
-            >
-              {/* Dos luces muy difusas y un filo dorado arriba. Es lo que
-                  separa un rectángulo oscuro de una superficie con
-                  profundidad. */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    'radial-gradient(90% 120% at 88% -20%, rgba(251,191,36,0.22) 0%, transparent 60%),'
-                    + 'radial-gradient(70% 90% at 0% 120%, rgba(99,102,241,0.30) 0%, transparent 60%)',
-                }}
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-px"
-                style={{ background: 'linear-gradient(90deg,transparent,rgba(251,191,36,0.7),transparent)' }}
-              />
-
-              <div className="relative flex flex-wrap items-center gap-x-6 gap-y-5">
-                <div className="min-w-0 flex-1">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300 ring-1 ring-amber-400/30">
-                    <Sparkles className="size-3" />
-                    Por lanzamiento
-                  </span>
-
-                  <p className="mt-3 text-2xl font-black leading-tight text-white sm:text-[28px]">
-                    {promoLanzamiento.limite} documentos gratis al mes
-                  </p>
-
-                  {/* Se dice qué pasa después SIN plantearlo como una pérdida.
-                      «Vuelve a 50» hace que el contador sienta que le quitan
-                      algo antes de haberlo usado; «continúas con 50» dice lo
-                      mismo y deja claro que el plan gratuito no se acaba. */}
-                  <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed text-white/70">
-                    Sin tarjeta y sin compromiso. Aprovéchalo para procesar un mes completo
-                    de un cliente y comprobar que las cifras te cuadran. Después de este
-                    periodo continúas gratis con {promoLanzamiento.normal} documentos al mes.
-                  </p>
-
-                  <motion.button
-                    type="button"
-                    onClick={() => { setSeccion('inicio'); setTimeout(() => inputRef.current?.click(), 260); }}
-                    whileHover={{ y: -2 }}
-                    whileTap={PULSACION}
-                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-[13.5px] font-black text-indigo-950 shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition hover:bg-amber-50"
-                  >
-                    <FileUp className="size-4" />
-                    Aprovechar ahora
-                    <ArrowRight className="size-4" />
-                  </motion.button>
-                </div>
-
-                {/* La cuenta atrás, en su propia pieza. El número grande es lo
-                    que crea la urgencia; el resto del banner explica. */}
-                <div className="shrink-0 rounded-2xl bg-white/[0.07] px-6 py-5 text-center ring-1 ring-white/15">
-                  <p className="text-[46px] font-black leading-none tabular-nums text-white">
-                    {promoLanzamiento.dias}
-                  </p>
-                  <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-300">
-                    {promoLanzamiento.dias === 1 ? 'día restante' : 'días restantes'}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Tu consumo, en grande. Es lo primero que se mira al entrar. */}
-          {!cuota.ilimitado && (
-            <Tarjeta className="mb-4 p-6" indice={0}>
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                    Tu plan actual
-                  </p>
-                  <p className="mt-1 text-2xl font-black text-slate-900">
-                    {cuota.planNombre}
-                    {cuota.planPrecio ? (
-                      <span className="ml-2 text-sm font-bold text-slate-400">
-                        {pesos(cuota.planPrecio)}/mes
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-                <p className="text-sm font-bold tabular-nums text-slate-500">
-                  {cuota.usados.toLocaleString('es-CO')} de {(cuota.limite ?? 0).toLocaleString('es-CO')} documentos este mes
-                </p>
-              </div>
-
-              {/* La barra dice de un vistazo lo que la cifra dice exacto. */}
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
-                <motion.div
-                  className="h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: `${Math.min(100, Math.round((cuota.usados / Math.max(1, cuota.limite ?? 1)) * 100))}%`,
-                  }}
-                  transition={MOV.lenta}
-                  style={{
-                    background: (cuota.restantes ?? 0) === 0
-                      ? '#F43F5E'
-                      : (cuota.restantes ?? 0) <= (cuota.limite ?? 1) * 0.15
-                        ? '#F59E0B'
-                        : 'linear-gradient(90deg,#10B981,#059669)',
-                  }}
-                />
-              </div>
-
-              <p className="mt-2.5 text-[12.5px] leading-relaxed text-slate-500">
-                {(cuota.restantes ?? 0) === 0
-                  ? 'Llegaste al límite de tu plan.'
-                  : `Te quedan ${(cuota.restantes ?? 0).toLocaleString('es-CO')} documentos.`}
-                {cuota.renuevaEl && (
-                  <> Tu cupo se repone el{' '}
-                    {new Date(cuota.renuevaEl).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.
-                  </>
-                )}
-              </p>
-            </Tarjeta>
-          )}
-
-          {/* El catálogo, siempre a la vista. */}
-          {/* Cuatro planes en una fila: en tres columnas el cuarto quedaba solo abajo. */}
-          <div className={`grid gap-4 sm:grid-cols-2 ${planes.length === 4 ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
-            {planes.map((p, i) => {
-              const actual = p.code === cuota.planCode;
-              const esDePago = p.precio !== null && p.precio > 0;
-              // El plan que se quiere vender es el más barato de los que sí
-              // están a la venta y superan al actual. Marcarlos todos como
-              // «recomendado» es no recomendar ninguno.
-              const recomendado = !actual
-                && p.aLaVenta
-                && p.precio !== null && p.precio > 0
-                && planes.filter((o) => o.aLaVenta && (o.precio ?? 0) > 0)
-                  .sort((a, b) => (a.precio ?? 0) - (b.precio ?? 0))[0]?.code === p.code;
-
-              return (
-                <motion.div
-                  key={p.code}
-                  {...aparecer(i)}
-                  whileHover={{ y: -3 }}
-                  className="relative flex flex-col overflow-hidden bg-white p-6"
-                  style={{
-                    borderRadius: CARD_RADIUS,
-                    boxShadow: actual
-                      ? '0 2px 4px rgba(16,185,129,0.10), 0 20px 44px rgba(16,185,129,0.22)'
-                      : recomendado
-                        ? '0 2px 4px rgba(37,99,235,0.10), 0 20px 44px rgba(37,99,235,0.20)'
-                        : CARD_SHADOW,
-                    outline: actual
-                      ? '2px solid #10B981'
-                      : recomendado ? '2px solid #2563EB' : 'none',
-                    outlineOffset: -2,
-                  }}
-                >
-                  {/* Resplandor de esquina: da profundidad sin meter un borde
-                      de color que compita con el precio. */}
-                  <div
-                    className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full"
-                    style={{
-                      background: `radial-gradient(circle, ${
-                        actual ? 'rgba(16,185,129,0.16)' : recomendado ? 'rgba(37,99,235,0.16)' : 'rgba(148,163,184,0.10)'
-                      }, transparent 70%)`,
-                    }}
-                  />
-
-                  <div className="relative flex items-center justify-between gap-2">
-                    <p className="text-base font-black text-slate-900">{p.nombre}</p>
-                    {actual ? (
-                      <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">
-                        Tu plan
-                      </span>
-                    ) : recomendado ? (
-                      <span className="flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700">
-                        <Sparkles className="size-2.5" /> Recomendado
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <p className="relative mt-3 text-3xl font-black tabular-nums text-slate-900">
-                    {p.precio === null
-                      ? <span className="text-base font-bold text-slate-400">Precio por definir</span>
-                      : p.precio === 0
-                        ? 'Gratis'
-                        : <>{pesos(p.precio)}<span className="text-sm font-bold text-slate-400">/mes</span></>}
-                  </p>
-
-                  {/* El límite se dice SIEMPRE y con el número. Es la cifra
-                      por la que se está pagando. */}
-                  {/* Todo lo que incluye, plan por plan.
-                      Antes sólo se decía el tope, y con eso un contador no
-                      puede comparar nada: no sabía si el Gratis traía el
-                      auditor, si el Excel era de pago, ni qué gana de verdad
-                      al subir. La lista es la MISMA para todos salvo el
-                      correo, y eso es exactamente lo que hay que dejar claro
-                      — lo que se compra es cupo, no funciones a medias. */}
-                  <ul className="relative mt-4 space-y-2">
-                    <li className="flex items-start gap-2 text-[13px] font-bold text-slate-800">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                      {p.limite === null
-                        ? 'Documentos sin límite'
-                        : `${p.limite.toLocaleString('es-CO')} documentos al mes`}
-                    </li>
-
-                    {/* La promoción se cuenta ENTERA: cuánto es ahora, hasta
-                        cuándo y a cuánto vuelve. Enseñar sólo el 100 sería
-                        cierto hoy y una sorpresa desagradable el mes que
-                        viene, que es como se pierde un cliente que acababa de
-                        empezar a confiar. */}
-                    {p.limiteNormal !== null && p.promoHasta && (
-                      <li className="flex items-start gap-2 rounded-xl bg-indigo-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-indigo-900">
-                        <Sparkles className="mt-0.5 size-3.5 shrink-0 text-indigo-500" />
-                        <span>
-                          Por lanzamiento, hasta el{' '}
-                          {new Date(p.promoHasta).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.
-                          Después continúas gratis con {p.limiteNormal.toLocaleString('es-CO')} al mes.
-                        </span>
-                      </li>
-                    )}
-
-                    {[
-                      'Subir ZIP o XML sueltos, sin descomprimir',
-                      'Causación automática con tus cuentas',
-                      'Verificar por lista de CUFEs',
-                      'Excel de cuatro hojas listo para declarar',
-                      'Plantillas de tu programa contable',
-                      'Cruzar con tu contabilidad',
-                    ].map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-[12.5px] text-slate-500">
-                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                        {f}
-                      </li>
-                    ))}
-
-                    {/* La única diferencia real entre gratis y de pago. Se
-                        dibuja en las dos, tachada donde no la hay: un contador
-                        que sólo ve la lista del plan gratis no puede saber qué
-                        le falta. */}
-                    <li className={`flex items-start gap-2 text-[12.5px] ${
-                      esDePago ? 'font-bold text-slate-800' : 'text-slate-300'
-                    }`}>
-                      {esDePago
-                        ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-                        : <Lock className="mt-0.5 size-4 shrink-0 text-slate-300" />}
-                      Facturas por correo, sin ir a buscarlas
-                    </li>
-                  </ul>
-
-                  {p.usoJusto && (
-                    <p className="relative mt-3 text-[11.5px] leading-relaxed text-slate-400">{p.usoJusto}</p>
-                  )}
-
-                  <div className="relative mt-auto pt-5">
-                    {actual ? (
-                      <p className="rounded-2xl bg-emerald-50 px-4 py-2.5 text-center text-[12px] font-bold text-emerald-700">
-                        Es el que tienes activo
-                      </p>
-                    ) : p.aLaVenta ? (
-                      <Boton
-                        estilo={recomendado ? BOTON_PRIMARIO : BOTON_EXITO}
-                        className="w-full"
-                        disabled={pagando !== ''}
-                        onClick={() => void pagarPlan(p.code)}
-                      >
-                        {pagando === p.code ? 'Abriendo el pago…' : `Pasar a ${p.nombre}`}
-                      </Boton>
-                    ) : p.precio === null ? (
-                      <p className="rounded-2xl bg-slate-50 px-4 py-2.5 text-center text-[11.5px] text-slate-500">
-                        Todavía no está a la venta. Escríbenos si lo necesitas.
-                      </p>
-                    ) : null}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Se nombra el medio de pago antes de salir de la app. Llegar a una
-              pasarela sin saber si acepta lo que uno usa es la forma más tonta
-              de perder un pago. */}
-          <p className="mt-5 flex items-center justify-center gap-2 text-[12px] leading-relaxed text-slate-400">
-            <Lock className="size-3.5 shrink-0" />
-            Pago seguro con Wompi: Nequi, PSE, tarjeta o corresponsal. Se cancela cuando quieras.
-          </p>
-
-          {/* Contabilidad (Mis empresas): sus planes van aquí, con los de XML,
-              para que haya un solo lugar de precios en todo el módulo. */}
-          {contabilidad && (
-            <div className="mt-10 border-t border-slate-200 pt-8">
-              <OfertaContabilidad
-                estado={contabilidad}
-                modo="planes"
-                onActualizado={(e) => { setContabilidad(e); toast.success('Ya puedes entrar a Mis empresas'); }}
-              />
-            </div>
-          )}
-        </div>
         )}
 
         {/* ── Recibir por correo ────────────────────────────────────────
@@ -2179,29 +1873,24 @@ function ContenidoDian() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-base font-black text-slate-900">
-                        Se abre con el plan {buzon.planMinimo?.nombre ?? 'Básico'}
+                        Se abre con cualquier plan
                       </h3>
                       <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
                         Estás en el plan <strong className="text-slate-700">{buzon.planActual}</strong>.
-                        Recibir por correo es lo único que necesita un plan de pago, porque cada
-                        cuenta lleva su propio buzón y su almacenamiento.
+                        Recibir por correo viene con el Plan XML y el Plan Contador (y con la prueba
+                        gratis), porque cada cuenta lleva su propio buzón y su almacenamiento.
                       </p>
                     </div>
                   </div>
 
-                  {buzon.planMinimo && (
-                    <Boton
-                      estilo={BOTON_CORREO}
-                      icono={Mail}
-                      className="mt-5"
-                      disabled={pagando !== ''}
-                      onClick={() => void pagarPlan(buzon.planMinimo!.code)}
-                    >
-                      {pagando === buzon.planMinimo.code
-                        ? 'Abriendo el pago…'
-                        : `Pasar a ${buzon.planMinimo.nombre} · ${pesos(buzon.planMinimo.precio)}/mes`}
-                    </Boton>
-                  )}
+                  <Boton
+                    estilo={BOTON_CORREO}
+                    icono={Mail}
+                    className="mt-5"
+                    onClick={() => irAPlanes('xml', 'Recibir facturas por correo viene con cualquier plan.')}
+                  >
+                    Ver planes
+                  </Boton>
 
                   {/* Que no se quede pensando que sin pagar no puede hacer
                       nada: los otros tres caminos siguen abiertos. */}

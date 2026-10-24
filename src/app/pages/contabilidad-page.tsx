@@ -31,7 +31,7 @@ import { CajonDerecho } from '../components/dian/CajonDerecho';
 import { CausacionContable } from '../components/dian/CausacionContable';
 import { Cabecera, Tarjeta, Boton, Vacio } from '../components/dian/PiezasPanel';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { OfertaContabilidad } from '../components/contabilidad/OfertaContabilidad';
+import { MiPlanContador } from '../components/contadores/MiPlanContador';
 import { MisEmpresas, COLORES_EMPRESA, nitBonito } from '../components/contabilidad/MisEmpresas';
 import { CarpetasEmpresa } from '../components/contabilidad/CarpetasEmpresa';
 import { ComprobantesEmpresa } from '../components/contabilidad/ComprobantesEmpresa';
@@ -80,13 +80,16 @@ export default function ContabilidadPage() {
 
   const empresa = empresas.find((e) => e.id === empresaId) ?? null;
   const plan: Cuenta[] = useMemo(() => planDeCuentas(propias), [propias]);
+  // Contabilidad (causar, comprobantes, reportes, Codec POS): Plan Contador o prueba.
+  // Empresas: cualquier plan, también el de XML, que las usa para organizar por NIT.
+  // Sin plan (o vencido) se ve todo lo suyo, con candado en las acciones.
   const puedeEditar = Boolean(estado?.activo);
+  const puedeEmpresas = estado?.maxEmpresas === null || (estado?.maxEmpresas ?? 0) > 0;
 
   const refrescar = useCallback(async () => {
     try {
       const e = await estadoContabilidad();
       setEstado(e);
-      if (!e.activo && !e.admin) return;
       const [emp, res, av] = await Promise.all([listarEmpresas(), resumenEmpresas(), listarAvisos()]);
       setEmpresas(emp);
       setResumen(res);
@@ -100,7 +103,7 @@ export default function ContabilidadPage() {
 
   useEffect(() => {
     const antes = document.title;
-    document.title = 'Mis empresas · Contabilidad | Codec Document';
+    document.title = 'Mis empresas · Contadores | Codec Document';
     return () => { document.title = antes; };
   }, []);
 
@@ -203,13 +206,9 @@ export default function ContabilidadPage() {
   const menu: GrupoLateral[] = useMemo(() => {
     // La flecha de volver va primero: Contabilidad es una parte de Documentos
     // DIAN, no otro programa.
-    const volver = { items: [{ id: 'dian', etiqueta: 'Documentos DIAN', icono: ArrowLeft }] };
-    if (!estado?.activo) {
-      return [
-        volver,
-        { items: [{ id: 'empresas', etiqueta: 'Mis empresas', icono: Building2, marca: estado?.pruebaDisponible ? '15 días' : undefined }] },
-      ];
-    }
+    const volver = { items: [{ id: 'dian', etiqueta: 'Contadores', icono: ArrowLeft }] };
+    // Sin Plan Contador las herramientas se ven con candado: llevan a «Mi plan».
+    const bloq = !estado?.activo;
     const grupos: GrupoLateral[] = [
       volver,
       {
@@ -225,26 +224,29 @@ export default function ContabilidadPage() {
         titulo: (empresa.nombre_comercial || empresa.razon_social).slice(0, 26),
         items: [
           { id: 'carpetas', etiqueta: 'Carpetas', icono: FolderOpen },
-          { id: 'causar', etiqueta: 'Causar XML', icono: BookOpenCheck, pendientes: r?.por_causar ?? 0 },
-          { id: 'comprobantes', etiqueta: 'Comprobantes', icono: BookOpen },
-          { id: 'reportes', etiqueta: 'Reportes', icono: BarChart3 },
-          { id: 'cuentas', etiqueta: 'Plan de cuentas', icono: ListTree },
-          { id: 'pos', etiqueta: 'Codec POS', icono: Store },
+          { id: 'causar', etiqueta: 'Causar XML', icono: BookOpenCheck, pendientes: bloq ? 0 : r?.por_causar ?? 0, bloqueado: bloq },
+          { id: 'comprobantes', etiqueta: 'Comprobantes', icono: BookOpen, bloqueado: bloq },
+          { id: 'reportes', etiqueta: 'Reportes', icono: BarChart3, bloqueado: bloq },
+          { id: 'cuentas', etiqueta: 'Plan de cuentas', icono: ListTree, bloqueado: bloq },
+          { id: 'pos', etiqueta: 'Codec POS', icono: Store, bloqueado: bloq },
         ],
       });
     }
     grupos.push(
-      { titulo: 'Cuenta', items: [{ id: 'plan', etiqueta: 'Planes y consumo', icono: CreditCard, marca: estado.enPrueba ? 'Prueba' : undefined }] },
+      { titulo: 'Cuenta', items: [{ id: 'plan', etiqueta: 'Mi plan', icono: CreditCard, marca: estado?.enPrueba ? 'Prueba' : estado?.pruebaDisponible ? '15 días' : undefined }] },
     );
     return grupos;
   }, [estado, empresa, resumen, sinLeer]);
 
-  const verPlanes = () => navegar('/documentos-electronicos?seccion=planes');
+  const verPlanes = (modulo?: 'xml' | 'contador') =>
+    navegar(`/contadores?seccion=planes${modulo ? `&modulo=${modulo}` : ''}`);
 
+  const BLOQUEADAS = new Set(['causar', 'comprobantes', 'reportes', 'cuentas', 'pos']);
   const seleccionar = (id: string) => {
-    if (id === 'dian') { navegar('/documentos-electronicos'); return; }
-    // Los precios viven en un solo lugar: «Planes y consumo» de Documentos DIAN.
+    if (id === 'dian') { navegar('/contadores'); return; }
+    // Los precios viven en un solo lugar: «Mi plan» de Contadores.
     if (id === 'plan') { verPlanes(); return; }
+    if (!estado?.activo && BLOQUEADAS.has(id)) { verPlanes('contador'); return; }
     if (id === 'causar') { setCausando(true); return; }
     setSeccion(id as Seccion);
   };
@@ -282,7 +284,7 @@ export default function ContabilidadPage() {
         plan={estado?.activo && estado.planNombre
           ? { nombre: estado.planNombre, limite: estado.maxEmpresas, usados: estado.empresasUsadas }
           : undefined}
-        onVerPlan={verPlanes}
+        onVerPlan={() => verPlanes()}
         onSalir={() => { void logout().then(() => navegar('/', { replace: true })); }}
         abierta={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
@@ -298,7 +300,7 @@ export default function ContabilidadPage() {
           nombre={nombreCorto}
           foto={user?.picture ?? undefined}
           onAbrirMenu={() => setMenuAbierto(true)}
-          onPerfil={verPlanes}
+          onPerfil={() => verPlanes()}
           campana={estado?.activo ? (
             <Campana
               lista={notificaciones}
@@ -317,7 +319,7 @@ export default function ContabilidadPage() {
               {diasPrueba !== null && (
                 <button
                   type="button"
-                  onClick={verPlanes}
+                  onClick={() => verPlanes()}
                   className="mb-5 flex w-full items-center justify-between gap-3 rounded-2xl bg-blue-50 px-4 py-3 text-left text-sm text-blue-900 ring-1 ring-blue-200 hover:bg-blue-100"
                 >
                   <span>
@@ -328,13 +330,17 @@ export default function ContabilidadPage() {
                 </button>
               )}
 
-              {!estado.activo ? (
-                <OfertaContabilidad
-                  estado={estado}
-                  modo="presentacion"
-                  onVerPlanes={verPlanes}
-                  vencido={!estado.activo && Boolean(estado.planCode)}
-                  onActualizado={(e) => { setEstado(e); setSeccion('empresas'); void refrescar(); }}
+              {!estado.activo && !puedeEmpresas && (
+                <AvisoSinPlan
+                  vencido={empresas.length > 0}
+                  pruebaDisponible={estado.pruebaDisponible}
+                  onPlanes={() => verPlanes('contador')}
+                />
+              )}
+              {!estado.activo && !puedeEmpresas && empresas.length === 0 ? (
+                <MiPlanContador
+                  preseleccion="contador"
+                  onCambio={(e) => { if (e.activo) { setSeccion('empresas'); void refrescar(); } }}
                 />
               ) : (
                 <>
@@ -368,7 +374,7 @@ export default function ContabilidadPage() {
                           empresas={empresas}
                           resumen={resumen}
                           maxEmpresas={estado.maxEmpresas}
-                          puedeEditar={puedeEditar}
+                          puedeEditar={puedeEmpresas}
                           onAbrir={(e) => abrirEmpresa(e)}
                           onCambio={() => void refrescar()}
                         />
@@ -586,5 +592,25 @@ function VistaAvisos({
         </Tarjeta>
       )}
     </div>
+  );
+}
+
+/** Sin plan: qué puede hacer y el camino corto para seguir. */
+function AvisoSinPlan({ vencido, pruebaDisponible, onPlanes }: { vencido: boolean; pruebaDisponible: boolean; onPlanes: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onPlanes}
+      className="mb-5 flex w-full items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 ring-1 ring-amber-200 hover:bg-amber-100"
+    >
+      <span>
+        {vencido
+          ? <><strong>Tu plan venció.</strong> Tus empresas y todo lo que hiciste siguen aquí. Para volver a usar las herramientas, elige tu plan.</>
+          : pruebaDisponible
+            ? <><strong>Pruébalo todo gratis 15 días:</strong> empresas, causación, reportes y Codec POS.</>
+            : <><strong>Elige tu plan</strong> para agregar empresas y usar la contabilidad.</>}
+      </span>
+      <ArrowRight className="size-4 shrink-0" />
+    </button>
   );
 }
