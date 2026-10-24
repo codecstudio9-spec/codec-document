@@ -591,12 +591,24 @@ export interface VinculoPos {
   vinculado_at: string | null;
   ultimo_envio_at: string | null;
   eventos_recibidos: number;
+  updated_at?: string;
 }
 
 export async function vinculoPos(empresaId: string): Promise<VinculoPos | null> {
   const { data, error } = await supabase.from('cont_pos_vinculos')
     .select('id,estado,codigo,codigo_vence,nombre_negocio,vinculado_at,ultimo_envio_at,eventos_recibidos')
     .eq('empresa_id', empresaId).neq('estado', 'revocado').limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as VinculoPos | null;
+}
+
+/** La última conexión que se cortó, para decirle al contador que tiene que
+ *  reconectar (el negocio no se entera solo de que se desconectó). */
+export async function conexionPosAnterior(empresaId: string): Promise<VinculoPos | null> {
+  const { data, error } = await supabase.from('cont_pos_vinculos')
+    .select('id,estado,codigo,codigo_vence,nombre_negocio,vinculado_at,ultimo_envio_at,eventos_recibidos,updated_at')
+    .eq('empresa_id', empresaId).eq('estado', 'revocado').not('vinculado_at', 'is', null)
+    .order('updated_at', { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(error.message);
   return data as VinculoPos | null;
 }
@@ -646,10 +658,92 @@ export async function ventasPos(empresaId: string, desde: string, hasta: string)
   return todas;
 }
 
-export async function contabilizarDiaPos(empresaId: string, fecha: string): Promise<{ numero?: number; ventas: number }> {
+export async function contabilizarDiaPos(empresaId: string, fecha: string): Promise<{ numero?: number; ventas: number; devoluciones?: number }> {
   const { data, error } = await supabase.rpc('pos_contabilizar_dia', { p_empresa: empresaId, p_fecha: fecha });
   if (error) throw new Error(error.message);
-  return data as { numero?: number; ventas: number };
+  return data as { numero?: number; ventas: number; devoluciones?: number };
+}
+
+export interface GastoPos {
+  id: string;
+  fecha: string;
+  concepto: string | null;
+  categoria: string | null;
+  valor: number;
+  iva: number;
+  medio_pago: string | null;
+  proveedor_nombre: string | null;
+  proveedor_nit: string | null;
+  numero_soporte: string | null;
+  cajero: string | null;
+  tienda: string | null;
+  anulado: boolean;
+  comprobante_id: string | null;
+}
+
+export interface DevolucionPos {
+  id: string;
+  venta_id_origen: string | null;
+  fecha: string;
+  total: number;
+  iva: number;
+  medio_pago: string | null;
+  motivo: string | null;
+  nota_credito_cufe: string | null;
+  items: Array<{ nombre: string | null; cantidad: number }>;
+  anulada: boolean;
+  comprobante_id: string | null;
+}
+
+export interface CierrePos {
+  id: string;
+  apertura: string | null;
+  cierre: string;
+  cajero: string | null;
+  tienda: string | null;
+  caja: string | null;
+  base_inicial: number;
+  ventas_total: number;
+  ventas_por_medio: Record<string, number>;
+  gastos_efectivo: number;
+  efectivo_esperado: number;
+  efectivo_contado: number;
+  diferencia: number;
+  num_ventas: number;
+  observaciones: string | null;
+}
+
+/** Lee todo el mes de una tabla de Codec POS, de a 1000 filas. */
+async function delMes<T>(tabla: string, columnas: string, campoFecha: string, empresaId: string, desde: string, hasta: string): Promise<T[]> {
+  const todas: T[] = [];
+  for (let d = 0; ; d += 1000) {
+    const { data, error } = await supabase.from(tabla).select(columnas)
+      .eq('empresa_id', empresaId)
+      .gte(campoFecha, `${desde}T00:00:00-05:00`).lte(campoFecha, `${hasta}T23:59:59-05:00`)
+      .order(campoFecha, { ascending: false }).range(d, d + 999);
+    if (error) throw new Error(error.message);
+    todas.push(...((data ?? []) as T[]));
+    if (!data || data.length < 1000) break;
+  }
+  return todas;
+}
+
+export const gastosPos = (empresaId: string, desde: string, hasta: string) => delMes<GastoPos>('pos_gastos',
+  'id,fecha,concepto,categoria,valor,iva,medio_pago,proveedor_nombre,proveedor_nit,numero_soporte,cajero,tienda,anulado,comprobante_id',
+  'fecha', empresaId, desde, hasta);
+
+export const devolucionesPos = (empresaId: string, desde: string, hasta: string) => delMes<DevolucionPos>('pos_devoluciones',
+  'id,venta_id_origen,fecha,total,iva,medio_pago,motivo,nota_credito_cufe,items,anulada,comprobante_id',
+  'fecha', empresaId, desde, hasta);
+
+export const cierresPos = (empresaId: string, desde: string, hasta: string) => delMes<CierrePos>('pos_cierres_caja',
+  'id,apertura,cierre,cajero,tienda,caja,base_inicial,ventas_total,ventas_por_medio,gastos_efectivo,efectivo_esperado,efectivo_contado,diferencia,num_ventas,observaciones',
+  'cierre', empresaId, desde, hasta);
+
+export async function contabilizarGastosDiaPos(empresaId: string, fecha: string): Promise<{ numero?: number; gastos: number }> {
+  const { data, error } = await supabase.rpc('pos_contabilizar_gastos_dia', { p_empresa: empresaId, p_fecha: fecha });
+  if (error) throw new Error(error.message);
+  return data as { numero?: number; gastos: number };
 }
 
 /** Las facturas electrónicas que mandó Codec POS esperan en la bandeja (la

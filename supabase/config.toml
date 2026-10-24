@@ -40,3 +40,6 @@ verify_jwt = false
 
 [functions.pos-desvincular]
 verify_jwt = false
+
+[functions.pos-estado]
+verify_jwt = false

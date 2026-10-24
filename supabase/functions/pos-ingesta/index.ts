@@ -1,4 +1,8 @@
-// Codec POS → Contabilidad: recibe las facturas electrónicas y las ventas.
+// Codec POS → Contabilidad: recibe todo lo que el negocio comparte con su
+// contador. Tipos de evento:
+//   venta · gasto · devolucion · cierre_caja · anulacion (campo `de`:
+//   venta | gasto | devolucion) · factura_electronica · nota_credito ·
+//   nota_debito · documento_soporte (estos cuatro llevan el XML).
 //
 // Lo llama la nube de Codec POS con el token que le dio pos-vincular, en
 // lotes de hasta 200 eventos. Es idempotente por `id_origen`: reenviar un
@@ -99,16 +103,47 @@ Deno.serve(async (req) => {
   return json({ aceptados, duplicados, rechazados });
 });
 
+/** Documentos electrónicos: todos entran a la bandeja y los lee el mismo motor. */
+const TIPOS_XML: Record<string, string> = {
+  factura_electronica: 'pos',
+  nota_credito: 'pos-nc',
+  nota_debito: 'pos-nd',
+  documento_soporte: 'pos-ds',
+};
+
+/** Fecha del evento; null si no se puede leer. */
+const fechaDe = (v: unknown) => {
+  const f = new Date(String(v ?? ''));
+  return Number.isNaN(f.getTime()) ? null : f.toISOString();
+};
+
+const lineas = (v: unknown) => Array.isArray(v) ? (v as Evento[]).slice(0, 500).map((i) => ({
+  nombre: txt(i.nombre, 200),
+  cantidad: num(i.cantidad),
+  precio_unitario: num(i.precio_unitario),
+  subtotal: num(i.subtotal),
+  iva_pct: num(i.iva_pct),
+})) : [];
+
+/** Insert idempotente: la fila repetida (mismo id_origen) es un duplicado, no un error. */
+async function insertar(tabla: string, fila: Record<string, unknown>): Promise<'ok' | 'duplicado'> {
+  const { error } = await admin.from(tabla).insert(fila);
+  if (error?.code === '23505') return 'duplicado';
+  if (error) throw new Error(error.message);
+  return 'ok';
+}
+
 async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'duplicado' | string> {
   const tipo = String(e.tipo ?? '');
+  const base = { owner_user_id: v.owner_user_id, empresa_id: v.empresa_id, vinculo_id: v.id, id_origen: id };
 
-  if (tipo === 'factura_electronica') {
+  if (tipo in TIPOS_XML) {
     const xml = typeof e.xml === 'string' ? e.xml : '';
     if (!xml.trim().startsWith('<') || xml.length > MAX_XML) return 'xml_invalido';
     const bytes = new TextEncoder().encode(xml);
     const sha = await sha256Hex(bytes);
-    const cufe = txt(e.cufe, 120) ?? id;
-    const nombre = `pos-${cufe.replace(/[^\w-]/g, '').slice(0, 60)}.xml`;
+    const cufe = txt(e.cufe, 120) ?? txt(e.cude, 120) ?? id;
+    const nombre = `${TIPOS_XML[tipo]}-${cufe.replace(/[^\w-]/g, '').slice(0, 60)}.xml`;
     const ruta = `${v.owner_user_id}/pos/${v.empresa_id}/${sha.slice(0, 16)}-${nombre}`;
     const subida = await admin.storage.from(BUCKET).upload(ruta, bytes, { contentType: 'application/xml', upsert: true });
     if (subida.error) throw new Error(subida.error.message);
@@ -131,22 +166,12 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
   }
 
   if (tipo === 'venta') {
-    const fecha = new Date(String(e.fecha ?? ''));
-    if (Number.isNaN(fecha.getTime())) return 'fecha_invalida';
-    const items = Array.isArray(e.items) ? (e.items as Evento[]).slice(0, 500).map((i) => ({
-      nombre: txt(i.nombre, 200),
-      cantidad: num(i.cantidad),
-      precio_unitario: num(i.precio_unitario),
-      subtotal: num(i.subtotal),
-      iva_pct: num(i.iva_pct),
-    })) : [];
-    const { error } = await admin.from('pos_ventas').insert({
-      owner_user_id: v.owner_user_id,
-      empresa_id: v.empresa_id,
-      vinculo_id: v.id,
-      id_origen: id,
+    const fecha = fechaDe(e.fecha);
+    if (!fecha) return 'fecha_invalida';
+    return insertar('pos_ventas', {
+      ...base,
       numero: txt(e.numero, 40),
-      fecha: fecha.toISOString(),
+      fecha,
       total: num(e.total),
       subtotal: num(e.subtotal),
       iva: num(e.iva),
@@ -157,21 +182,91 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
       cajero: txt(e.cajero, 120),
       tienda: txt(e.tienda, 120),
       factura_cufe: txt(e.factura_cufe, 120),
-      items,
+      items: lineas(e.items),
     });
-    if (error?.code === '23505') return 'duplicado';
-    if (error) throw new Error(error.message);
-    return 'ok';
+  }
+
+  if (tipo === 'gasto') {
+    const fecha = fechaDe(e.fecha);
+    if (!fecha) return 'fecha_invalida';
+    const valor = num(e.valor);
+    if (valor <= 0) return 'valor_invalido';
+    return insertar('pos_gastos', {
+      ...base,
+      fecha,
+      concepto: txt(e.concepto, 300),
+      categoria: txt(e.categoria, 120),
+      valor,
+      iva: Math.min(num(e.iva), valor),
+      medio_pago: txt(e.medio_pago, 40)?.toLowerCase() ?? null,
+      proveedor_nombre: txt(e.proveedor_nombre, 200),
+      proveedor_nit: txt(e.proveedor_nit, 30),
+      numero_soporte: txt(e.numero_soporte, 60),
+      cajero: txt(e.cajero, 120),
+      tienda: txt(e.tienda, 120),
+      notas: txt(e.notas, 500),
+    });
+  }
+
+  if (tipo === 'devolucion') {
+    const fecha = fechaDe(e.fecha);
+    if (!fecha) return 'fecha_invalida';
+    return insertar('pos_devoluciones', {
+      ...base,
+      venta_id_origen: txt(e.venta_id_origen, 100),
+      fecha,
+      total: num(e.total),
+      subtotal: num(e.subtotal),
+      iva: num(e.iva),
+      medio_pago: txt(e.medio_pago, 40)?.toLowerCase() ?? null,
+      motivo: txt(e.motivo, 300),
+      nota_credito_cufe: txt(e.nota_credito_cufe, 120),
+      items: lineas(e.items),
+    });
+  }
+
+  if (tipo === 'cierre_caja') {
+    const cierre = fechaDe(e.cierre);
+    if (!cierre) return 'fecha_invalida';
+    const porMedio = e.ventas_por_medio && typeof e.ventas_por_medio === 'object' && !Array.isArray(e.ventas_por_medio)
+      ? Object.fromEntries(Object.entries(e.ventas_por_medio as Evento).slice(0, 30).map(([k, val]) => [k.slice(0, 40).toLowerCase(), num(val)]))
+      : {};
+    return insertar('pos_cierres_caja', {
+      ...base,
+      apertura: fechaDe(e.apertura),
+      cierre,
+      cajero: txt(e.cajero, 120),
+      tienda: txt(e.tienda, 120),
+      caja: txt(e.caja, 60),
+      base_inicial: num(e.base_inicial),
+      ventas_total: num(e.ventas_total),
+      ventas_por_medio: porMedio,
+      gastos_efectivo: num(e.gastos_efectivo),
+      retiros: num(e.retiros),
+      ingresos_extra: num(e.ingresos_extra),
+      efectivo_esperado: num(e.efectivo_esperado),
+      efectivo_contado: num(e.efectivo_contado),
+      diferencia: num(e.diferencia),
+      num_ventas: Math.max(0, Math.round(num(e.num_ventas))),
+      observaciones: txt(e.observaciones, 500),
+    });
   }
 
   if (tipo === 'anulacion') {
-    const { data, error } = await admin.from('pos_ventas')
-      .update({ anulada: true, updated_at: new Date().toISOString() })
+    // `id_origen` es el del registro anulado; `de` dice de qué tabla (venta por defecto).
+    const de = String(e.de ?? 'venta');
+    const destino = de === 'gasto'
+      ? { tabla: 'pos_gastos', campo: 'anulado' }
+      : de === 'devolucion'
+        ? { tabla: 'pos_devoluciones', campo: 'anulada' }
+        : de === 'venta' ? { tabla: 'pos_ventas', campo: 'anulada' } : null;
+    if (!destino) return 'tipo_desconocido';
+    const { data, error } = await admin.from(destino.tabla)
+      .update({ [destino.campo]: true, updated_at: new Date().toISOString() })
       .eq('empresa_id', v.empresa_id).eq('id_origen', id).select('id');
     if (error) throw new Error(error.message);
-    return data && data.length > 0 ? 'ok' : 'venta_no_encontrada';
+    return data && data.length > 0 ? 'ok' : `${de}_no_encontrada`;
   }
 
-  if (tipo === 'gasto' || tipo === 'cierre_caja') return 'aun_no_soportado';
   return 'tipo_desconocido';
 }

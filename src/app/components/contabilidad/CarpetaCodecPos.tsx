@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Store, Zap, ReceiptText, ExternalLink, MessageCircle, Loader2, Copy, Link2, Unplug, CheckCircle2,
-  Download, BookOpenCheck, ChevronDown,
+  Download, BookOpenCheck, ChevronDown, Wallet, Undo2, Calculator, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Boton, Vacio } from '../dian/PiezasPanel';
 import { BOTON_PRIMARIO, BOTON_NEUTRO, BOTON_EXITO } from '../../styles/contador-theme';
 import {
-  vinculoPos, generarCodigoPos, desconectarPos, ventasPos, contabilizarDiaPos,
-  type Empresa, type VinculoPos, type VentaPos,
+  vinculoPos, conexionPosAnterior, generarCodigoPos, desconectarPos, ventasPos, contabilizarDiaPos,
+  gastosPos, devolucionesPos, cierresPos, contabilizarGastosDiaPos,
+  type Empresa, type VinculoPos, type VentaPos, type GastoPos, type DevolucionPos, type CierrePos,
 } from '../../services/contabilidad-service';
 import { generarXlsx, type ValorCelda } from '../../../lib/dian/xlsx';
 import { triggerDownload } from '../../utils/download';
@@ -21,9 +22,11 @@ import { triggerDownload } from '../../utils/download';
  * negocio es quien autoriza compartir sus ventas. Si el cliente no usa Codec
  * POS, aquí mismo se le recomienda por WhatsApp.
  *
- * Conectada: las ventas por día con su medio de pago, y un botón por día que
- * las vuelve comprobante de ventas (VP). Las ventas con factura electrónica
- * no entran al VP: su XML llega aparte y se causa como cualquier factura.
+ * Conectada: ventas, gastos, devoluciones y cierres de caja del mes. Las
+ * ventas del día (netas de devoluciones) se vuelven comprobante de ventas
+ * (VP) y los gastos del día comprobante de egreso (CE). Lo que tiene factura
+ * o nota crédito electrónica no entra: su XML llega aparte y se causa como
+ * cualquier documento.
  */
 
 const pesos = (v: number) => v.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
@@ -31,10 +34,15 @@ const diaBogota = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { t
 
 export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empresa: Empresa; periodo?: string; puedeEditar?: boolean }) {
   const [vinculo, setVinculo] = useState<VinculoPos | null | undefined>(undefined);
+  const [anterior, setAnterior] = useState<VinculoPos | null>(null);
   const [trabajando, setTrabajando] = useState(false);
 
   const cargar = useCallback(async () => {
-    try { setVinculo(await vinculoPos(empresa.id)); } catch (e) { toast.error((e as Error).message); setVinculo(null); }
+    try {
+      const [actual, previo] = await Promise.all([vinculoPos(empresa.id), conexionPosAnterior(empresa.id)]);
+      setVinculo(actual);
+      setAnterior(previo);
+    } catch (e) { toast.error((e as Error).message); setVinculo(null); }
   }, [empresa.id]);
   useEffect(() => { void cargar(); }, [cargar]);
 
@@ -67,7 +75,8 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
             <strong>Conectada con Codec POS</strong>
             {vinculo.nombre_negocio ? ` (${vinculo.nombre_negocio})` : ''}.
             {vinculo.ultimo_envio_at
-              ? ` Último envío: ${new Date(vinculo.ultimo_envio_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}.`
+              ? ` Último envío: ${new Date(vinculo.ultimo_envio_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}`
+                + ` · ${vinculo.eventos_recibidos.toLocaleString('es-CO')} registros recibidos.`
               : ' Esperando el primer envío.'}
           </div>
           {puedeEditar && (
@@ -76,7 +85,7 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
             </button>
           )}
         </div>
-        <VentasPos empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />
+        <SeccionesPos empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />
       </div>
     );
   }
@@ -100,11 +109,23 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
       <div>
         {/* El título y el logo ya están en la cabecera de la sección: aquí
             se repetían y la tarjeta arrancaba con dos títulos seguidos. */}
+        {anterior && (
+          <div className="mb-4 flex gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-[13px] text-amber-900 ring-1 ring-amber-200">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <p>
+              <strong>La conexión con Codec POS{anterior.nombre_negocio ? ` (${anterior.nombre_negocio})` : ''} se desconectó</strong>
+              {anterior.updated_at ? ` el ${new Date(anterior.updated_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}.
+              {' '}Lo que ya llegó ({anterior.eventos_recibidos.toLocaleString('es-CO')} registros) se conserva, pero no llegará nada nuevo hasta que tu cliente
+              pegue un código nuevo en Codec POS. Al reconectar, Codec POS reenvía lo que falte sin duplicar.
+            </p>
+          </div>
+        )}
         <p className="text-sm font-bold text-slate-900">Si {nombre} usa Codec POS, conéctala una vez y listo:</p>
         <ul className="mt-3 space-y-3 text-[13px] text-slate-600">
-          <li className="flex gap-2.5"><ReceiptText className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada factura electrónica llega con su XML a la carpeta de Ventas, lista para causar.</li>
-          <li className="flex gap-2.5"><Store className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada venta, con o sin factura, con sus productos, su IVA y su medio de pago.</li>
-          <li className="flex gap-2.5"><Zap className="mt-0.5 size-4 shrink-0 text-orange-500" />Con un clic las ventas del día se vuelven comprobante de ventas (VP).</li>
+          <li className="flex gap-2.5"><ReceiptText className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada factura, nota crédito y documento soporte electrónico llega con su XML, listo para causar.</li>
+          <li className="flex gap-2.5"><Store className="mt-0.5 size-4 shrink-0 text-orange-500" />Cada venta, con o sin factura, con sus productos, su IVA y su medio de pago, y las devoluciones.</li>
+          <li className="flex gap-2.5"><Wallet className="mt-0.5 size-4 shrink-0 text-orange-500" />Los gastos que paga el negocio y el cierre de caja de cada turno, con su diferencia.</li>
+          <li className="flex gap-2.5"><Zap className="mt-0.5 size-4 shrink-0 text-orange-500" />Con un clic las ventas del día se vuelven comprobante de ventas (VP) y los gastos, de egreso (CE).</li>
         </ul>
 
         {puedeEditar && (
@@ -225,8 +246,8 @@ function VentasPos({ empresa, periodo, puedeEditar }: { empresa: Empresa; period
     setContabilizando(dia);
     try {
       const r = await contabilizarDiaPos(empresa.id, dia);
-      if (r.ventas === 0) toast.message('No hay ventas sin factura pendientes de ese día');
-      else toast.success(`VP-${r.numero} creado con ${r.ventas} ventas`);
+      if (r.ventas === 0 && !r.devoluciones) toast.message('No hay ventas sin factura pendientes de ese día');
+      else toast.success(`VP-${r.numero} creado con ${r.ventas} ventas${r.devoluciones ? ` y ${r.devoluciones} devoluciones` : ''}`);
       await cargar();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No pude contabilizar');
@@ -296,9 +317,247 @@ function VentasPos({ empresa, periodo, puedeEditar }: { empresa: Empresa; period
         })}
       </div>
       <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
-        «Contabilizar día» crea un comprobante VP con las ventas sin factura electrónica: efectivo a 110505, otros medios a 111005,
-        ingresos a 413595 e IVA a 240805. Las ventas con factura se causan desde su XML, en la carpeta Ventas.
+        «Contabilizar día» crea un comprobante VP con las ventas sin factura electrónica, menos las devoluciones sin nota crédito:
+        efectivo a 110505, otros medios a 111005, ingresos a 413595 e IVA a 240805. Las ventas con factura se causan desde su XML, en la carpeta Ventas.
       </p>
+    </div>
+  );
+}
+
+// ── Pestañas de lo que manda Codec POS ────────────────────────────────────
+
+type Seccion = 'ventas' | 'gastos' | 'devoluciones' | 'cierres';
+
+const SECCIONES: Array<{ id: Seccion; nombre: string; icono: typeof Store }> = [
+  { id: 'ventas', nombre: 'Ventas', icono: Store },
+  { id: 'gastos', nombre: 'Gastos', icono: Wallet },
+  { id: 'devoluciones', nombre: 'Devoluciones', icono: Undo2 },
+  { id: 'cierres', nombre: 'Cierres de caja', icono: Calculator },
+];
+
+function SeccionesPos({ empresa, periodo, puedeEditar }: { empresa: Empresa; periodo?: string; puedeEditar: boolean }) {
+  const [seccion, setSeccion] = useState<Seccion>('ventas');
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap gap-1.5" role="tablist">
+        {SECCIONES.map(({ id, nombre, icono: Icono }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={seccion === id}
+            onClick={() => setSeccion(id)}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+              seccion === id ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Icono className="size-3.5" /> {nombre}
+          </button>
+        ))}
+      </div>
+      {seccion === 'ventas' && <VentasPos empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />}
+      {seccion === 'gastos' && <GastosPosLista empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />}
+      {seccion === 'devoluciones' && <DevolucionesPosLista empresa={empresa} periodo={periodo} />}
+      {seccion === 'cierres' && <CierresPosLista empresa={empresa} periodo={periodo} />}
+    </div>
+  );
+}
+
+const periodoDe = (periodo?: string) => periodo ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }).slice(0, 7);
+const nombreArchivo = (texto: string) => texto.replace(/[\\/:*?"<>|]/g, '');
+const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' });
+const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', weekday: 'short', day: 'numeric', month: 'short' });
+
+function descargarXlsx(nombre: string, hoja: Parameters<typeof generarXlsx>[0][number]) {
+  const bytes = generarXlsx([hoja]);
+  void triggerDownload(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nombreArchivo(nombre));
+}
+
+function GastosPosLista({ empresa, periodo, puedeEditar }: { empresa: Empresa; periodo?: string; puedeEditar: boolean }) {
+  const p = periodoDe(periodo);
+  const [gastos, setGastos] = useState<GastoPos[] | null>(null);
+  const [contabilizando, setContabilizando] = useState<string | null>(null);
+
+  const cargar = useCallback(async () => {
+    try { setGastos(await gastosPos(empresa.id, `${p}-01`, finDeMes(p))); } catch (e) { toast.error((e as Error).message); setGastos([]); }
+  }, [empresa.id, p]);
+  useEffect(() => { void cargar(); }, [cargar]);
+
+  const dias = useMemo(() => {
+    const m = new Map<string, GastoPos[]>();
+    for (const g of gastos ?? []) m.set(diaBogota(g.fecha), [...(m.get(diaBogota(g.fecha)) ?? []), g]);
+    return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [gastos]);
+
+  const contabilizar = async (dia: string) => {
+    setContabilizando(dia);
+    try {
+      const r = await contabilizarGastosDiaPos(empresa.id, dia);
+      if (r.gastos === 0) toast.message('No hay gastos pendientes de ese día');
+      else toast.success(`CE-${r.numero} creado con ${r.gastos} gastos`);
+      await cargar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No pude contabilizar');
+    } finally {
+      setContabilizando(null);
+    }
+  };
+
+  if (gastos === null) return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-slate-300" /></div>;
+  if (gastos.length === 0) return <Vacio icono={Wallet} titulo="Sin gastos de Codec POS este mes" descripcion="Los gastos que el negocio registre en su caja llegan aquí solos." />;
+
+  return (
+    <div>
+      <div className="mb-3 flex justify-end">
+        <Boton
+          estilo={BOTON_NEUTRO}
+          className="text-slate-700"
+          icono={Download}
+          onClick={() => descargarXlsx(`Gastos Codec POS ${empresa.nombre_comercial || empresa.razon_social} ${p}.xlsx`, {
+            nombre: 'Gastos Codec POS',
+            encabezados: ['Fecha', 'Concepto', 'Categoría', 'Proveedor', 'NIT proveedor', 'Soporte', 'Medio de pago', 'Base', 'IVA', 'Valor', 'Anulado', 'Cajero', 'Tienda'],
+            filas: gastos.map((g) => [
+              new Date(g.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' }), g.concepto ?? '', g.categoria ?? '', g.proveedor_nombre ?? '',
+              g.proveedor_nit ?? '', g.numero_soporte ?? '', g.medio_pago ?? '', Number(g.valor) - Number(g.iva), Number(g.iva), Number(g.valor),
+              g.anulado ? 'Sí' : '', g.cajero ?? '', g.tienda ?? '',
+            ] as ValorCelda[]),
+            anchos: [20, 36, 18, 28, 14, 14, 14, 14, 12, 14, 8, 18, 16],
+          })}
+        >
+          Excel del mes
+        </Boton>
+      </div>
+      <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
+        {dias.map(([dia, lista]) => {
+          const vivos = lista.filter((g) => !g.anulado);
+          const pendientes = vivos.filter((g) => !g.comprobante_id).length;
+          return (
+            <div key={dia} className="px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="w-28 shrink-0 text-sm font-bold text-slate-800">{fechaCorta(`${dia}T12:00:00-05:00`)}</span>
+                <span className="min-w-0 flex-1 text-xs text-slate-500">{vivos.length} gastos</span>
+                <span className="text-sm font-black tabular-nums text-slate-900">{pesos(vivos.reduce((s, g) => s + Number(g.valor), 0))}</span>
+                {puedeEditar && (pendientes > 0 ? (
+                  <Boton estilo={BOTON_EXITO} className="px-3 py-1.5 text-xs text-white" icono={contabilizando === dia ? Loader2 : BookOpenCheck} disabled={contabilizando !== null} onClick={() => void contabilizar(dia)}>
+                    Contabilizar gastos
+                  </Boton>
+                ) : (
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">Contabilizado</span>
+                ))}
+              </div>
+              <ul className="mt-2 space-y-1 text-[12.5px] text-slate-600">
+                {lista.map((g) => (
+                  <li key={g.id} className={`flex gap-3 ${g.anulado ? 'text-slate-300 line-through' : ''}`}>
+                    <span className="w-12 shrink-0 tabular-nums text-slate-400">{hora(g.fecha)}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {g.concepto || g.categoria || 'Gasto'}{g.proveedor_nombre ? ` · ${g.proveedor_nombre}` : ''}{g.medio_pago ? ` · ${g.medio_pago}` : ''}
+                    </span>
+                    <span className="font-semibold tabular-nums">{pesos(Number(g.valor))}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+        «Contabilizar gastos» crea un comprobante de egreso (CE): el gasto a 519595, el IVA a 240810 y el pago a 110505 (efectivo) o 111005.
+        Puedes ajustar las cuentas en el comprobante.
+      </p>
+    </div>
+  );
+}
+
+function DevolucionesPosLista({ empresa, periodo }: { empresa: Empresa; periodo?: string }) {
+  const p = periodoDe(periodo);
+  const [devoluciones, setDevoluciones] = useState<DevolucionPos[] | null>(null);
+  useEffect(() => {
+    devolucionesPos(empresa.id, `${p}-01`, finDeMes(p)).then(setDevoluciones).catch((e) => { toast.error((e as Error).message); setDevoluciones([]); });
+  }, [empresa.id, p]);
+
+  if (devoluciones === null) return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-slate-300" /></div>;
+  if (devoluciones.length === 0) return <Vacio icono={Undo2} titulo="Sin devoluciones este mes" descripcion="Si el negocio devuelve una venta, aparece aquí y se descuenta en el VP de ese día." />;
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+      <table className="w-full text-[12.5px]" translate="no">
+        <thead><tr className="bg-slate-50 text-left text-slate-400"><th className="px-4 py-2">Fecha</th><th className="py-2 pr-3">Productos</th><th className="py-2 pr-3">Motivo</th><th className="py-2 pr-3">Reembolso</th><th className="py-2 pr-3 text-right">Total</th><th className="py-2 pr-4">Estado</th></tr></thead>
+        <tbody>
+          {devoluciones.map((d) => (
+            <tr key={d.id} className={`border-t border-slate-100 ${d.anulada ? 'text-slate-300 line-through' : ''}`}>
+              <td className="px-4 py-2">{fechaCorta(d.fecha)} {hora(d.fecha)}</td>
+              <td className="max-w-[240px] truncate py-2 pr-3">{d.items.map((i) => `${i.cantidad} ${i.nombre}`).join(', ')}</td>
+              <td className="max-w-[180px] truncate py-2 pr-3">{d.motivo ?? ''}</td>
+              <td className="py-2 pr-3">{d.medio_pago ?? ''}</td>
+              <td className="py-2 pr-3 text-right font-semibold tabular-nums">{pesos(Number(d.total))}</td>
+              <td className="py-2 pr-4 text-[11px]">{d.anulada ? 'Anulada' : d.nota_credito_cufe ? 'Con nota crédito' : d.comprobante_id ? 'En VP' : 'Pendiente'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CierresPosLista({ empresa, periodo }: { empresa: Empresa; periodo?: string }) {
+  const p = periodoDe(periodo);
+  const [cierres, setCierres] = useState<CierrePos[] | null>(null);
+  useEffect(() => {
+    cierresPos(empresa.id, `${p}-01`, finDeMes(p)).then(setCierres).catch((e) => { toast.error((e as Error).message); setCierres([]); });
+  }, [empresa.id, p]);
+
+  if (cierres === null) return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-slate-300" /></div>;
+  if (cierres.length === 0) return <Vacio icono={Calculator} titulo="Sin cierres de caja este mes" descripcion="Cada cierre de turno en Codec POS llega aquí con su arqueo." />;
+
+  const descuadres = cierres.filter((c) => Math.abs(Number(c.diferencia)) >= 1);
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-slate-500">
+          {cierres.length} cierres · {descuadres.length === 0 ? 'todos cuadraron' : `${descuadres.length} con diferencia`}
+        </p>
+        <Boton
+          estilo={BOTON_NEUTRO}
+          className="text-slate-700"
+          icono={Download}
+          onClick={() => descargarXlsx(`Cierres de caja ${empresa.nombre_comercial || empresa.razon_social} ${p}.xlsx`, {
+            nombre: 'Cierres de caja',
+            encabezados: ['Apertura', 'Cierre', 'Cajero', 'Tienda', 'Caja', 'Base inicial', 'Ventas', 'Ventas por medio', 'Gastos en efectivo', 'Efectivo esperado', 'Efectivo contado', 'Diferencia', 'N.º ventas', 'Observaciones'],
+            filas: cierres.map((c) => [
+              c.apertura ? new Date(c.apertura).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : '',
+              new Date(c.cierre).toLocaleString('es-CO', { timeZone: 'America/Bogota' }), c.cajero ?? '', c.tienda ?? '', c.caja ?? '',
+              Number(c.base_inicial), Number(c.ventas_total), Object.entries(c.ventas_por_medio ?? {}).map(([m, v]) => `${m}: ${v}`).join('; '),
+              Number(c.gastos_efectivo), Number(c.efectivo_esperado), Number(c.efectivo_contado), Number(c.diferencia), c.num_ventas, c.observaciones ?? '',
+            ] as ValorCelda[]),
+            anchos: [20, 20, 18, 16, 10, 14, 14, 40, 14, 14, 14, 12, 10, 40],
+          })}
+        >
+          Excel del mes
+        </Boton>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <table className="w-full text-[12.5px]" translate="no">
+          <thead><tr className="bg-slate-50 text-left text-slate-400"><th className="px-4 py-2">Cierre</th><th className="py-2 pr-3">Cajero</th><th className="py-2 pr-3 text-right">Ventas</th><th className="py-2 pr-3 text-right">Esperado</th><th className="py-2 pr-3 text-right">Contado</th><th className="py-2 pr-4 text-right">Diferencia</th></tr></thead>
+          <tbody>
+            {cierres.map((c) => {
+              const dif = Number(c.diferencia);
+              return (
+                <tr key={c.id} className="border-t border-slate-100">
+                  <td className="px-4 py-2">{fechaCorta(c.cierre)} {hora(c.cierre)}</td>
+                  <td className="py-2 pr-3">{c.cajero ?? ''}{c.tienda ? ` · ${c.tienda}` : ''}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{pesos(Number(c.ventas_total))}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{pesos(Number(c.efectivo_esperado))}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{pesos(Number(c.efectivo_contado))}</td>
+                  <td className={`py-2 pr-4 text-right font-bold tabular-nums ${Math.abs(dif) < 1 ? 'text-emerald-600' : dif < 0 ? 'text-rose-600' : 'text-amber-600'}`}>
+                    {Math.abs(dif) < 1 ? 'Cuadró' : pesos(dif)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
