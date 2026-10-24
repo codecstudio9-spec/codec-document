@@ -92,3 +92,12 @@ Solo las aceptadas por la DIAN en producción. El XML preferido es el **Attached
 2. En Codec POS, Configuración → Mi contador → pegar el código.
 3. En `contador_eventos` deben quedar `enviado` las ventas, gastos, devoluciones, cierres y documentos del historial. En Codec Document se ven en las pestañas Ventas, Gastos, Devoluciones y Cierres de caja.
 4. Desconectar desde Codec Document → abrir «Mi contador» en el POS → debe decir que el contador desconectó y dejar pegar un código nuevo sin pasos extra.
+
+## 5. Respuestas a Codec POS (2026-10-24, tras su commit 2714337)
+
+- **Cupo:** `pos-ingesta` nunca rechaza por cupo. Todo XML entra a la bandeja y el cupo del plan se aplica cuando el contador la lee; lo que no cabe queda pendiente en Codec Document. La regla de las 6 horas no hace daño, pero ningún motivo actual la activa.
+- **Anulación antes de su registro:** el motivo es `<de>_no_encontrada`: `venta_no_encontrada`, `gasto_no_encontrada` y `devolucion_no_encontrada` (todas en femenino). Si `de` no es venta, gasto ni devolución: `tipo_desconocido`.
+- **Gasto sin documento de compra:** está bien con `iva` en 0 y el proveedor en null. Va a 519595 sin tercero.
+- **Cierre con `tienda` y `caja` en null:** está bien.
+- **`pos-estado`:** acepta POST (con cualquier cuerpo, también `{}`) y GET; ignora el cuerpo.
+- **Duplicados:** desde ahora un duplicado CORRIGE el registro. Ventas, gastos y devoluciones que todavía no están contabilizados se reemplazan enteros. Si ya están en un comprobante, solo se actualizan los ítems (las cifras quedan como se contabilizaron). Los cierres de caja se reemplazan siempre. La anulación nunca se deshace con un reenvío. Hoy no hay ninguna venta con ítems incompletos: las 287 cuadran con su total.

@@ -125,12 +125,39 @@ const lineas = (v: unknown) => Array.isArray(v) ? (v as Evento[]).slice(0, 500).
   iva_pct: num(i.iva_pct),
 })) : [];
 
-/** Insert idempotente: la fila repetida (mismo id_origen) es un duplicado, no un error. */
-async function insertar(tabla: string, fila: Record<string, unknown>): Promise<'ok' | 'duplicado'> {
+/**
+ * Insert idempotente: la fila repetida (mismo id_origen) es un duplicado, no un
+ * error. El reenvío trae la versión más reciente de Codec POS (por ejemplo una
+ * venta que antes llegó con ítems de menos), así que el duplicado la corrige:
+ * entera si todavía no está contabilizada; si ya está en un comprobante, sólo
+ * los ítems, para no mover cifras que ya están en la contabilidad. Los cierres
+ * de caja no se contabilizan y se reemplazan siempre. `anulada`/`anulado` no
+ * viajan en la fila, así que una anulación nunca se deshace con un reenvío.
+ */
+async function insertar(tabla: string, v: Vinculo, fila: Record<string, unknown>): Promise<'ok' | 'duplicado'> {
   const { error } = await admin.from(tabla).insert(fila);
-  if (error?.code === '23505') return 'duplicado';
-  if (error) throw new Error(error.message);
-  return 'ok';
+  if (!error) return 'ok';
+  if (error.code !== '23505') throw new Error(error.message);
+
+  const { owner_user_id: _o, empresa_id: _e, vinculo_id: _v, id_origen, ...datos } = fila;
+  const filtro = admin.from(tabla);
+  if (tabla === 'pos_cierres_caja') {
+    const { error: e2 } = await filtro.update(datos).eq('empresa_id', v.empresa_id).eq('id_origen', id_origen as string);
+    if (e2) throw new Error(e2.message);
+    return 'duplicado';
+  }
+  const { data: actual, error: e1 } = await admin.from(tabla).select('id, comprobante_id')
+    .eq('empresa_id', v.empresa_id).eq('id_origen', id_origen as string).maybeSingle();
+  if (e1) throw new Error(e1.message);
+  if (!actual) return 'duplicado';
+  const cambios = actual.comprobante_id
+    ? ('items' in datos ? { items: datos.items } : null)
+    : datos;
+  if (cambios) {
+    const { error: e3 } = await admin.from(tabla).update({ ...cambios, updated_at: new Date().toISOString() }).eq('id', actual.id);
+    if (e3) throw new Error(e3.message);
+  }
+  return 'duplicado';
 }
 
 async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'duplicado' | string> {
@@ -168,7 +195,7 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
   if (tipo === 'venta') {
     const fecha = fechaDe(e.fecha);
     if (!fecha) return 'fecha_invalida';
-    return insertar('pos_ventas', {
+    return insertar('pos_ventas', v, {
       ...base,
       numero: txt(e.numero, 40),
       fecha,
@@ -191,7 +218,7 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
     if (!fecha) return 'fecha_invalida';
     const valor = num(e.valor);
     if (valor <= 0) return 'valor_invalido';
-    return insertar('pos_gastos', {
+    return insertar('pos_gastos', v, {
       ...base,
       fecha,
       concepto: txt(e.concepto, 300),
@@ -211,7 +238,7 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
   if (tipo === 'devolucion') {
     const fecha = fechaDe(e.fecha);
     if (!fecha) return 'fecha_invalida';
-    return insertar('pos_devoluciones', {
+    return insertar('pos_devoluciones', v, {
       ...base,
       venta_id_origen: txt(e.venta_id_origen, 100),
       fecha,
@@ -231,7 +258,7 @@ async function procesar(v: Vinculo, id: string, e: Evento): Promise<'ok' | 'dupl
     const porMedio = e.ventas_por_medio && typeof e.ventas_por_medio === 'object' && !Array.isArray(e.ventas_por_medio)
       ? Object.fromEntries(Object.entries(e.ventas_por_medio as Evento).slice(0, 30).map(([k, val]) => [k.slice(0, 40).toLowerCase(), num(val)]))
       : {};
-    return insertar('pos_cierres_caja', {
+    return insertar('pos_cierres_caja', v, {
       ...base,
       apertura: fechaDe(e.apertura),
       cierre,
