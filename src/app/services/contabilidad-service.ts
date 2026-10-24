@@ -602,6 +602,58 @@ export async function vinculoPos(empresaId: string): Promise<VinculoPos | null> 
   return data as VinculoPos | null;
 }
 
+export interface EstadoPosEmpresa {
+  estado: 'pendiente' | 'activo';
+  ultimo_envio_at: string | null;
+  eventos_recibidos: number;
+  nombre_negocio: string | null;
+}
+
+/** Estado de Codec POS de todas las empresas del contador, para «Mis empresas». */
+export async function estadosPos(): Promise<Map<string, EstadoPosEmpresa>> {
+  const { data, error } = await supabase.from('cont_pos_vinculos')
+    .select('empresa_id,estado,ultimo_envio_at,eventos_recibidos,nombre_negocio')
+    .neq('estado', 'revocado');
+  if (error) throw new Error(error.message);
+  return new Map((data ?? []).map((v) => [v.empresa_id as string, v as unknown as EstadoPosEmpresa]));
+}
+
+/** Menos de 10 minutos desde el último envío: Codec POS está mandando datos ahora. */
+export const posRecibiendo = (ultimoEnvio: string | null | undefined) =>
+  Boolean(ultimoEnvio) && Date.now() - new Date(ultimoEnvio!).getTime() < 10 * 60_000;
+
+/** «hace 3 min», «hace 2 h», o la fecha si fue hace más de un día. */
+export function haceCuanto(iso: string): string {
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (min < 1) return 'hace un momento';
+  if (min < 60) return `hace ${min} min`;
+  if (min < 24 * 60) return `hace ${Math.round(min / 60)} h`;
+  return `el ${new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+}
+
+export interface ResumenPos {
+  ventas: number;
+  gastos: number;
+  devoluciones: number;
+  cierres: number;
+  documentos: number;
+}
+
+/** Cuánto ha llegado de Codec POS a una empresa, de todos los tiempos. */
+export async function resumenPos(empresaId: string): Promise<ResumenPos> {
+  const contar = async (tabla: string, extra?: (q: any) => any) => {
+    let q = supabase.from(tabla).select('id', { count: 'exact', head: true }).eq('empresa_id', empresaId);
+    if (extra) q = extra(q);
+    const { count } = await q;
+    return count ?? 0;
+  };
+  const [ventas, gastos, devoluciones, cierres, documentos] = await Promise.all([
+    contar('pos_ventas'), contar('pos_gastos'), contar('pos_devoluciones'), contar('pos_cierres_caja'),
+    contar('ed_inbox_files', (q) => q.eq('origen', 'pos')),
+  ]);
+  return { ventas, gastos, devoluciones, cierres, documentos };
+}
+
 /** La última conexión que se cortó, para decirle al contador que tiene que
  *  reconectar (el negocio no se entera solo de que se desconectó). */
 export async function conexionPosAnterior(empresaId: string): Promise<VinculoPos | null> {

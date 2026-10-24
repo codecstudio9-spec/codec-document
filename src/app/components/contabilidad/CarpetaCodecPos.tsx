@@ -8,8 +8,8 @@ import { Boton, Vacio } from '../dian/PiezasPanel';
 import { BOTON_PRIMARIO, BOTON_NEUTRO, BOTON_EXITO } from '../../styles/contador-theme';
 import {
   vinculoPos, conexionPosAnterior, generarCodigoPos, desconectarPos, ventasPos, contabilizarDiaPos,
-  gastosPos, devolucionesPos, cierresPos, contabilizarGastosDiaPos,
-  type Empresa, type VinculoPos, type VentaPos, type GastoPos, type DevolucionPos, type CierrePos,
+  gastosPos, devolucionesPos, cierresPos, contabilizarGastosDiaPos, resumenPos, posRecibiendo, haceCuanto,
+  type Empresa, type VinculoPos, type VentaPos, type GastoPos, type DevolucionPos, type CierrePos, type ResumenPos,
 } from '../../services/contabilidad-service';
 import { generarXlsx, type ValorCelda } from '../../../lib/dian/xlsx';
 import { triggerDownload } from '../../utils/download';
@@ -37,14 +37,39 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
   const [anterior, setAnterior] = useState<VinculoPos | null>(null);
   const [trabajando, setTrabajando] = useState(false);
 
-  const cargar = useCallback(async () => {
+  const [resumen, setResumen] = useState<ResumenPos | null>(null);
+
+  const cargar = useCallback(async (silencioso = false) => {
     try {
       const [actual, previo] = await Promise.all([vinculoPos(empresa.id), conexionPosAnterior(empresa.id)]);
-      setVinculo(actual);
+      setVinculo((antes) => {
+        // El cliente acaba de pegar el código: se celebra una sola vez.
+        if (antes?.estado === 'pendiente' && actual?.estado === 'activo') {
+          toast.success(`¡${empresa.nombre_comercial || empresa.razon_social} quedó conectada con Codec POS!`, {
+            description: 'Ya está recibiendo sus ventas, gastos, cierres de caja y documentos.',
+          });
+        }
+        return actual;
+      });
       setAnterior(previo);
-    } catch (e) { toast.error((e as Error).message); setVinculo(null); }
-  }, [empresa.id]);
+      if (actual?.estado === 'activo') setResumen(await resumenPos(empresa.id));
+    } catch (e) {
+      if (!silencioso) { toast.error((e as Error).message); setVinculo(null); }
+    }
+  }, [empresa.id, empresa.nombre_comercial, empresa.razon_social]);
   useEffect(() => { void cargar(); }, [cargar]);
+
+  // Mientras el código espera se revisa cada 5 s para ver la conexión apenas
+  // ocurre; ya conectada, cada 20 s para que los contadores se muevan solos.
+  // Con la pestaña oculta no se pregunta nada.
+  const estado = vinculo?.estado;
+  useEffect(() => {
+    if (estado !== 'pendiente' && estado !== 'activo') return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void cargar(true);
+    }, estado === 'pendiente' ? 5_000 : 20_000);
+    return () => window.clearInterval(id);
+  }, [estado, cargar]);
 
   const generar = async () => {
     setTrabajando(true);
@@ -67,23 +92,44 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
   if (vinculo === undefined) return <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-slate-300" /></div>;
 
   if (vinculo?.estado === 'activo') {
+    const recibiendo = posRecibiendo(vinculo.ultimo_envio_at);
+    const cifras: Array<[string, number | undefined]> = [
+      ['Ventas', resumen?.ventas], ['Gastos', resumen?.gastos], ['Devoluciones', resumen?.devoluciones],
+      ['Cierres de caja', resumen?.cierres], ['Documentos electrónicos', resumen?.documentos],
+    ];
     return (
       <div>
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
-          <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
-          <div className="min-w-0 flex-1 text-sm text-emerald-900">
-            <strong>Conectada con Codec POS</strong>
-            {vinculo.nombre_negocio ? ` (${vinculo.nombre_negocio})` : ''}.
-            {vinculo.ultimo_envio_at
-              ? ` Último envío: ${new Date(vinculo.ultimo_envio_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}`
-                + ` · ${vinculo.eventos_recibidos.toLocaleString('es-CO')} registros recibidos.`
-              : ' Esperando el primer envío.'}
+        <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-white ring-1 ring-emerald-200">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3.5">
+            <span className="relative flex size-3 shrink-0">
+              {recibiendo && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+              <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-emerald-900">
+                Conectada con Codec POS{vinculo.nombre_negocio ? ` · ${vinculo.nombre_negocio}` : ''}
+              </p>
+              <p className="text-xs text-emerald-800">
+                {vinculo.ultimo_envio_at
+                  ? `${recibiendo ? 'Recibiendo información ahora' : 'Conexión activa'} · último envío ${haceCuanto(vinculo.ultimo_envio_at)}`
+                  : 'Conexión activa · esperando el primer envío de Codec POS'}
+                {vinculo.vinculado_at ? ` · conectada desde el ${new Date(vinculo.vinculado_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}` : ''}
+              </p>
+            </div>
+            {puedeEditar && (
+              <button type="button" onClick={() => void desconectar()} disabled={trabajando} className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-rose-600">
+                <Unplug className="size-3.5" /> Desconectar
+              </button>
+            )}
           </div>
-          {puedeEditar && (
-            <button type="button" onClick={() => void desconectar()} disabled={trabajando} className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-rose-600">
-              <Unplug className="size-3.5" /> Desconectar
-            </button>
-          )}
+          <div className="grid grid-cols-2 gap-px border-t border-emerald-100 bg-emerald-100 sm:grid-cols-5">
+            {cifras.map(([nombre, valor]) => (
+              <div key={nombre} className="bg-white/90 px-3 py-2.5 text-center">
+                <p className="text-lg font-black tabular-nums text-slate-900">{valor === undefined ? '…' : valor.toLocaleString('es-CO')}</p>
+                <p className="text-[10.5px] font-semibold text-slate-500">{nombre}</p>
+              </div>
+            ))}
+          </div>
         </div>
         <SeccionesPos empresa={empresa} periodo={periodo} puedeEditar={puedeEditar} />
       </div>
@@ -156,7 +202,9 @@ export function CarpetaCodecPos({ empresa, periodo, puedeEditar = true }: { empr
                   {vinculo.codigo_vence ? new Date(vinculo.codigo_vence).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''}.
                   El NIT del negocio debe ser {empresa.nit}.
                 </p>
-                <button type="button" onClick={() => void cargar()} className="mt-2 text-xs font-bold text-orange-700 hover:underline">Ya lo pegó, revisar</button>
+                <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-orange-800">
+                  <Loader2 className="size-3.5 animate-spin" /> Esperando a que tu cliente lo pegue. Esta pantalla se actualiza sola.
+                </p>
               </>
             ) : (
               <>

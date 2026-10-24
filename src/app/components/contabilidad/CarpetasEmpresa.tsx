@@ -10,7 +10,8 @@ import { Tarjeta, Boton, Vacio, Cifra } from '../dian/PiezasPanel';
 import { BOTON_PRIMARIO, BOTON_NEUTRO, CARD } from '../../styles/contador-theme';
 import {
   documentosEmpresa, listarComprobantes, listarArchivos, subirArchivo, urlArchivo, borrarArchivo, urlXmlOriginal,
-  type Empresa, type DocumentoEmpresa, type Comprobante, type ArchivoEmpresa,
+  vinculoPos, posRecibiendo,
+  type Empresa, type DocumentoEmpresa, type Comprobante, type ArchivoEmpresa, type VinculoPos,
 } from '../../services/contabilidad-service';
 import { CarpetaCodecPos } from './CarpetaCodecPos';
 
@@ -114,6 +115,14 @@ export function CarpetasEmpresa({
 
   useEffect(() => { void cargar(); }, [cargar]);
   useEffect(() => { setAbierta(null); }, [empresa.id]);
+
+  // El estado de Codec POS se vuelve a leer al volver de su carpeta: ahí es
+  // donde el contador genera el código y ve cómo se conecta.
+  const [pos, setPos] = useState<VinculoPos | null>(null);
+  useEffect(() => {
+    if (abierta) return;
+    vinculoPos(empresa.id).then(setPos).catch(() => setPos(null));
+  }, [empresa.id, abierta]);
 
   const porCarpeta = useMemo(() => {
     const m = new Map<IdCarpeta, DocumentoEmpresa[]>();
@@ -227,8 +236,14 @@ export function CarpetasEmpresa({
                 >
                   <div className="relative">
                     {c.id === 'pos' ? (
-                      <div className="flex size-12 items-center justify-center rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
+                      <div className={`flex size-12 items-center justify-center rounded-2xl bg-white p-1.5 ring-1 ${pos?.estado === 'activo' ? 'ring-2 ring-emerald-400' : 'ring-slate-200'}`}>
                         <img src="/brand/codec-pos.png" alt="Codec POS" className="size-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                        {pos?.estado === 'activo' && (
+                          <span className="absolute -right-1 -top-1 flex size-3.5">
+                            {posRecibiendo(pos.ultimo_envio_at) && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+                            <span className="relative inline-flex size-3.5 rounded-full border-2 border-white bg-emerald-500" />
+                          </span>
+                        )}
                       </div>
                     ) : (
                     <div
@@ -241,9 +256,15 @@ export function CarpetasEmpresa({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold leading-tight text-slate-900">{c.nombre}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {c.id === 'pos' ? 'Conectar' : `${n.toLocaleString('es-CO')} ${n === 1 ? 'elemento' : 'elementos'}`}
-                    </p>
+                    {c.id === 'pos' ? (
+                      <p className={`mt-0.5 text-xs ${pos?.estado === 'activo' ? 'font-bold text-emerald-600' : pos?.estado === 'pendiente' ? 'font-semibold text-orange-600' : 'text-slate-400'}`}>
+                        {pos?.estado === 'activo'
+                          ? (posRecibiendo(pos.ultimo_envio_at) ? 'Conectada · recibiendo' : 'Conectada')
+                          : pos?.estado === 'pendiente' ? 'Código pendiente' : 'Conectar'}
+                      </p>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-slate-400">{`${n.toLocaleString('es-CO')} ${n === 1 ? 'elemento' : 'elementos'}`}</p>
+                    )}
                   </div>
                 </motion.button>
               );

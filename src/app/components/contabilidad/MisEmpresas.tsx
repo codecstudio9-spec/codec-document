@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { Cabecera, Tarjeta, Boton, Vacio } from '../dian/PiezasPanel';
 import { BOTON_PRIMARIO, BOTON_NEUTRO, CARD } from '../../styles/contador-theme';
 import {
-  guardarEmpresa, nitsSinRegistrar, type Empresa, type ResumenEmpresa, type DatosEmpresa,
+  guardarEmpresa, nitsSinRegistrar, estadosPos, posRecibiendo, haceCuanto,
+  type Empresa, type ResumenEmpresa, type DatosEmpresa, type EstadoPosEmpresa,
 } from '../../services/contabilidad-service';
 
 /**
@@ -49,6 +50,16 @@ export function MisEmpresas({
     if (!puedeEditar) return;
     nitsSinRegistrar(new Set(empresas.map((e) => e.nit))).then(setSugeridas).catch(() => setSugeridas([]));
   }, [empresas, puedeEditar]);
+
+  // Qué empresas están conectadas con Codec POS. Se refresca cada 30 s para que
+  // el punto de «recibiendo» se encienda y apague solo.
+  const [pos, setPos] = useState<Map<string, EstadoPosEmpresa>>(new Map());
+  useEffect(() => {
+    const leer = () => { estadosPos().then(setPos).catch(() => undefined); };
+    leer();
+    const id = window.setInterval(() => { if (document.visibilityState === 'visible') leer(); }, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const visibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -194,6 +205,7 @@ export function MisEmpresas({
                   <Mini icono={BookOpenCheck} valor={r?.por_causar ?? 0} etiqueta="Por causar" alerta={(r?.por_causar ?? 0) > 0} />
                   <Mini icono={BellRing} valor={r?.avisos ?? 0} etiqueta="Nuevos" alerta={(r?.avisos ?? 0) > 0} color="#2563EB" />
                 </div>
+                <SelloPos estado={pos.get(e.id)} />
                 {!e.activo && (
                   <p className="mt-3 flex items-center gap-1 text-[11px] font-bold text-slate-400"><Archive className="size-3" /> Archivada</p>
                 )}
@@ -213,6 +225,32 @@ export function MisEmpresas({
         />
       )}
     </div>
+  );
+}
+
+/** Si la empresa está conectada con Codec POS: verde, con pulso si está mandando datos ahora. */
+function SelloPos({ estado }: { estado?: EstadoPosEmpresa }) {
+  if (!estado) return null;
+  if (estado.estado === 'pendiente') {
+    return (
+      <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[11px] font-bold text-orange-700">
+        <img src="/brand/codec-pos.png" alt="" className="size-4 object-contain" style={{ mixBlendMode: 'multiply' }} />
+        Codec POS: esperando que el cliente pegue el código
+      </p>
+    );
+  }
+  const recibiendo = posRecibiendo(estado.ultimo_envio_at);
+  return (
+    <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700">
+      <span className="relative flex size-2.5 shrink-0">
+        {recibiendo && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+        <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
+      </span>
+      <span className="truncate">
+        Codec POS conectado · {recibiendo ? 'recibiendo' : estado.ultimo_envio_at ? `último envío ${haceCuanto(estado.ultimo_envio_at)}` : 'esperando el primer envío'}
+        {estado.eventos_recibidos > 0 ? ` · ${estado.eventos_recibidos.toLocaleString('es-CO')} registros` : ''}
+      </span>
+    </p>
   );
 }
 
