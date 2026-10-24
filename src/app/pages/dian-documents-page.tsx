@@ -1370,7 +1370,7 @@ function ContenidoDian() {
         nombre={nombreCorto}
         correo={user?.email ?? undefined}
         foto={user?.picture ?? undefined}
-        plan={cuota ? { nombre: cuota.planNombre, limite: cuota.limite, usados: cuota.usados } : undefined}
+        plan={cuota ? { nombre: cuota.ilimitado ? 'Sin tope' : cuota.planNombre, limite: cuota.ilimitado ? null : cuota.limite, usados: cuota.usados } : undefined}
         onVerPlan={() => setSeccion('planes')}
         onAyuda={() => { setSeccion('inicio'); setAyudaAbierta(true); }}
         onSalir={() => { void logout().then(() => navegar('/', { replace: true })); }}

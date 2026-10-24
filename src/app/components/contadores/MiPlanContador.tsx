@@ -222,7 +222,7 @@ export function MiPlanContador({
           </div>
         </div>
 
-        {estado.pruebaDisponible && (
+        {estado.pruebaDisponible && !estado.admin && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-blue-50 to-violet-50 px-4 py-3 ring-1 ring-blue-200">
             <p className="text-sm text-slate-700">
               <strong className="text-slate-900">Pruébalo todo gratis 15 días.</strong> Hasta 5 empresas y 300 XML, sin tarjeta.
