@@ -339,6 +339,15 @@ export default function ContabilidadPage() {
               ) : (
                 <>
                   {empresa && seccion !== 'empresas' && seccion !== 'avisos' && (
+                    <button
+                      type="button"
+                      onClick={() => setSeccion('empresas')}
+                      className="mb-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-sm font-bold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                    >
+                      ← Volver a Mis empresas
+                    </button>
+                  )}
+                  {empresa && seccion !== 'empresas' && seccion !== 'avisos' && (
                     <SelectorEmpresa
                       empresa={empresa}
                       empresas={empresas.filter((e) => e.activo)}
